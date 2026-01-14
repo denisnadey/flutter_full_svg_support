@@ -2,7 +2,9 @@ import 'dart:ui' as ui;
 
 import 'package:xml/xml.dart';
 
+import 'css_animations.dart';
 import 'svg_dom.dart';
+import 'svg_filters.dart';
 
 /// Парсер SVG XML в DOM-дерево
 ///
@@ -17,6 +19,12 @@ class SvgParser {
     final document = XmlDocument.parse(svgXml);
     final svgElement = document.findElements('svg').first;
 
+    // Парсим фильтры из <defs><filter>...</filter></defs>
+    final filters = _parseFilters(svgElement);
+
+    // Парсим CSS <style> элементы для @keyframes
+    final keyframes = _parseStyleElements(svgElement);
+
     // Парсим корневой <svg> элемент
     final rootNode = _parseElement(svgElement);
 
@@ -25,12 +33,184 @@ class SvgParser {
     final width = _parseLength(svgElement.getAttribute('width'));
     final height = _parseLength(svgElement.getAttribute('height'));
 
-    return SvgDocument(
+    final svgDocument = SvgDocument(
       root: rootNode,
       viewBox: viewBox,
       width: width,
       height: height,
+      filters: filters,
+      cssKeyframes: keyframes,
     );
+    
+    return svgDocument;
+  }
+
+  /// Парсит фильтры из <defs><filter> элементов
+  static SvgFilters _parseFilters(XmlElement svgElement) {
+    final filters = SvgFilters();
+    
+    // Ищем <defs> элемент
+    final defsElements = svgElement.findElements('defs');
+    if (defsElements.isEmpty) {
+      return filters;
+    }
+    
+    final defs = defsElements.first;
+    
+    // Ищем все <filter> элементы
+    for (final filterElement in defs.findElements('filter')) {
+      final filterId = filterElement.getAttribute('id');
+      if (filterId == null || filterId.isEmpty) {
+        continue; // Фильтр без ID не может быть использован
+      }
+      
+      // Парсим примитивы фильтра (feGaussianBlur, feDropShadow, etc.)
+      for (final child in filterElement.childElements) {
+        final filter = _parseFilterPrimitive(child, filterId);
+        if (filter != null) {
+          filters.add(filter);
+        }
+      }
+    }
+    
+    return filters;
+  }
+
+  /// Парсит примитив фильтра (feGaussianBlur, feDropShadow, feColorMatrix)
+  static SvgFilter? _parseFilterPrimitive(XmlElement element, String filterId) {
+    final tagName = element.name.local;
+    
+    switch (tagName) {
+      case 'feGaussianBlur':
+        return _parseGaussianBlur(element, filterId);
+      case 'feDropShadow':
+        return _parseDropShadow(element, filterId);
+      case 'feColorMatrix':
+        return _parseColorMatrix(element, filterId);
+      default:
+        // Другие фильтры пока не поддерживаются
+        return null;
+    }
+  }
+
+  /// Парсит feGaussianBlur элемент
+  static SvgGaussianBlurFilter _parseGaussianBlur(
+    XmlElement element,
+    String filterId,
+  ) {
+    final stdDeviationStr = element.getAttribute('stdDeviation') ?? '0';
+    final stdDeviation = _parseNumberOptionalNumber(stdDeviationStr);
+    
+    return SvgGaussianBlurFilter(
+      id: filterId,
+      stdDeviationX: stdDeviation.$1,
+      stdDeviationY: stdDeviation.$2,
+    );
+  }
+
+  /// Парсит feDropShadow элемент
+  static SvgDropShadowFilter _parseDropShadow(
+    XmlElement element,
+    String filterId,
+  ) {
+    final dx = _parseNumber(element.getAttribute('dx') ?? '2');
+    final dy = _parseNumber(element.getAttribute('dy') ?? '2');
+    final stdDeviationStr = element.getAttribute('stdDeviation') ?? '2';
+    final stdDeviation = _parseNumberOptionalNumber(stdDeviationStr);
+    final stdDev = stdDeviation.$1; // Используем X значение
+    
+    // Парсим flood-color
+    final floodColorStr = element.getAttribute('flood-color') ??
+        element.getAttribute('floodColor') ??
+        'black';
+    final parsedColor = _parseColor(floodColorStr);
+    final color = parsedColor is ui.Color ? parsedColor : null;
+    
+    return SvgDropShadowFilter(
+      id: filterId,
+      dx: dx,
+      dy: dy,
+      stdDeviation: stdDev,
+      floodColor: color,
+    );
+  }
+
+  /// Парсит feColorMatrix элемент
+  static SvgColorMatrixFilter _parseColorMatrix(
+    XmlElement element,
+    String filterId,
+  ) {
+    final typeStr = element.getAttribute('type') ?? 'matrix';
+    final valuesStr = element.getAttribute('values') ?? '';
+    
+    SvgColorMatrixType matrixType;
+    switch (typeStr.toLowerCase()) {
+      case 'saturate':
+        matrixType = SvgColorMatrixType.saturate;
+        break;
+      case 'huerotate':
+      case 'hueRotate':
+        matrixType = SvgColorMatrixType.hueRotate;
+        break;
+      case 'luminancetoalpha':
+      case 'luminanceToAlpha':
+        matrixType = SvgColorMatrixType.luminanceToAlpha;
+        break;
+      case 'matrix':
+      default:
+        matrixType = SvgColorMatrixType.matrix;
+        break;
+    }
+    
+    // Парсим values
+    final values = valuesStr
+        .split(RegExp(r'[\s,]+'))
+        .map((s) => double.tryParse(s.trim()))
+        .whereType<double>()
+        .toList();
+    
+    return SvgColorMatrixFilter(
+      id: filterId,
+      matrixType: matrixType,
+      values: values,
+    );
+  }
+
+  /// Парсит CSS <style> элементы и извлекает @keyframes
+  static List<CssKeyframes> _parseStyleElements(XmlElement svgElement) {
+    final keyframes = <CssKeyframes>[];
+    
+    // Ищем все <style> элементы
+    final styleElements = svgElement.findElements('style');
+    
+    for (final styleElement in styleElements) {
+      final cssText = styleElement.text;
+      if (cssText.isEmpty) continue;
+      
+      // Парсим @keyframes из CSS текста
+      final parsedKeyframes = CssParser.parseKeyframes(cssText);
+      keyframes.addAll(parsedKeyframes);
+    }
+    
+    return keyframes;
+  }
+
+  /// Парсит число или пару чисел (например "5" или "5 10")
+  static (double, double) _parseNumberOptionalNumber(String value) {
+    final parts = value
+        .trim()
+        .split(RegExp(r'[\s,]+'))
+        .map((s) => double.tryParse(s))
+        .whereType<double>()
+        .toList();
+    
+    if (parts.isEmpty) {
+      return (0.0, 0.0);
+    } else if (parts.length == 1) {
+      return (parts[0], parts[0]);
+    } else {
+      return (parts[0], parts[1]);
+    }
   }
 
   /// Парсит XML элемент в SvgNode
@@ -62,6 +242,10 @@ class SvgParser {
 
     // Рекурсивно парсим дочерние элементы
     for (final child in element.childElements) {
+      // Пропускаем <style> элементы - они обрабатываются отдельно
+      if (child.name.local == 'style') {
+        continue; // CSS parsing будет позже
+      }
       final childNode = _parseElement(child);
       node.addChild(childNode);
     }

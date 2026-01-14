@@ -247,9 +247,24 @@
    - Added comprehensive tests (7 tests passing)
    - Files: `smil_animation.dart`, `interpolators.dart`, `additive_accumulate_test.dart`
 
+6. ✅ **SVG Filters IMPLEMENTED** (January 14, 2026)
+   - Implemented feGaussianBlur (ImageFilter.blur)
+   - Implemented feDropShadow (basic blur support)
+   - Implemented feColorMatrix (saturate, hueRotate, matrix, luminanceToAlpha)
+   - Filter parsing from <defs><filter> elements
+   - Filter application via Paint.imageFilter in AnimatedSvgPainter
+   - Files: `svg_filters.dart`, `svg_parser.dart`, `animated_svg_painter.dart`
+
+7. 🔄 **CSS Animations - PARSING COMPLETE** (January 14, 2026)
+   - CSS parser for @keyframes rules
+   - Parser for animation shorthand property
+   - Parsing of <style> elements
+   - Files: `css_animations.dart`, `svg_parser.dart`
+   - ⏳ TODO: Convert to SMIL structure, integrate into SvgTimeline
+
 **Next Steps:**
-1. Stage 9: CSS Animations (@keyframes)
-2. Stage 10: SVG Filters & Effects
+1. Complete CSS Animations integration (convert to SMIL, integrate into timeline)
+2. Add tests and examples for filters and CSS animations
 
 ---
 

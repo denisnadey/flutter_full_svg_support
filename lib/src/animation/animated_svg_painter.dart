@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/rendering.dart';
 
 import 'svg_dom.dart';
+import 'svg_filters.dart';
 import 'svg_transform.dart';
 
 /// CustomPainter для отрисовки анимированного SVG
@@ -76,22 +77,32 @@ class AnimatedSvgPainter extends CustomPainter {
     // Применяем transform если есть
     _applyTransform(canvas, node);
 
+    // Применяем фильтр если есть
+    final filterId = _getFilterId(node);
+    ui.ImageFilter? imageFilter;
+    if (filterId != null && document.filters != null) {
+      final filter = document.filters!.getById(filterId);
+      if (filter != null) {
+        imageFilter = filter.apply();
+      }
+    }
+
     // Рисуем сам узел в зависимости от типа
     switch (node.tagName) {
       case 'rect':
-        _paintRect(canvas, node);
+        _paintRect(canvas, node, imageFilter: imageFilter);
         break;
       case 'circle':
-        _paintCircle(canvas, node);
+        _paintCircle(canvas, node, imageFilter: imageFilter);
         break;
       case 'ellipse':
-        _paintEllipse(canvas, node);
+        _paintEllipse(canvas, node, imageFilter: imageFilter);
         break;
       case 'path':
-        _paintPath(canvas, node);
+        _paintPath(canvas, node, imageFilter: imageFilter);
         break;
       case 'line':
-        _paintLine(canvas, node);
+        _paintLine(canvas, node, imageFilter: imageFilter);
         break;
       case 'g':
       case 'svg':
@@ -111,7 +122,7 @@ class AnimatedSvgPainter extends CustomPainter {
   }
 
   /// Рисует <rect>
-  void _paintRect(ui.Canvas canvas, SvgNode node) {
+  void _paintRect(ui.Canvas canvas, SvgNode node, {ui.ImageFilter? imageFilter}) {
     final x = _getNumber(node, 'x') ?? 0.0;
     final y = _getNumber(node, 'y') ?? 0.0;
     final width = _getNumber(node, 'width') ?? 0.0;
@@ -122,7 +133,7 @@ class AnimatedSvgPainter extends CustomPainter {
     if (width <= 0 || height <= 0) return;
 
     final rect = ui.Rect.fromLTWH(x, y, width, height);
-    final paint = _createPaint(node);
+    final paint = _createPaint(node, imageFilter: imageFilter);
 
     if (rx > 0 || ry > 0) {
       final rrect = ui.RRect.fromRectXY(rect, rx, ry);
@@ -132,7 +143,7 @@ class AnimatedSvgPainter extends CustomPainter {
     }
 
     // Stroke если указан
-    final strokePaint = _createStrokePaint(node);
+    final strokePaint = _createStrokePaint(node, imageFilter: imageFilter);
     if (strokePaint != null) {
       if (rx > 0 || ry > 0) {
         final rrect = ui.RRect.fromRectXY(rect, rx, ry);
@@ -144,7 +155,7 @@ class AnimatedSvgPainter extends CustomPainter {
   }
 
   /// Рисует <circle>
-  void _paintCircle(ui.Canvas canvas, SvgNode node) {
+  void _paintCircle(ui.Canvas canvas, SvgNode node, {ui.ImageFilter? imageFilter}) {
     final cx = _getNumber(node, 'cx') ?? 0.0;
     final cy = _getNumber(node, 'cy') ?? 0.0;
     final r = _getNumber(node, 'r') ?? 0.0;
@@ -152,18 +163,18 @@ class AnimatedSvgPainter extends CustomPainter {
     if (r <= 0) return;
 
     final center = ui.Offset(cx, cy);
-    final paint = _createPaint(node);
+    final paint = _createPaint(node, imageFilter: imageFilter);
 
     canvas.drawCircle(center, r, paint);
 
-    final strokePaint = _createStrokePaint(node);
+    final strokePaint = _createStrokePaint(node, imageFilter: imageFilter);
     if (strokePaint != null) {
       canvas.drawCircle(center, r, strokePaint);
     }
   }
 
   /// Рисует <ellipse>
-  void _paintEllipse(ui.Canvas canvas, SvgNode node) {
+  void _paintEllipse(ui.Canvas canvas, SvgNode node, {ui.ImageFilter? imageFilter}) {
     final cx = _getNumber(node, 'cx') ?? 0.0;
     final cy = _getNumber(node, 'cy') ?? 0.0;
     final rx = _getNumber(node, 'rx') ?? 0.0;
@@ -176,31 +187,31 @@ class AnimatedSvgPainter extends CustomPainter {
       width: rx * 2,
       height: ry * 2,
     );
-    final paint = _createPaint(node);
+    final paint = _createPaint(node, imageFilter: imageFilter);
 
     canvas.drawOval(rect, paint);
 
-    final strokePaint = _createStrokePaint(node);
+    final strokePaint = _createStrokePaint(node, imageFilter: imageFilter);
     if (strokePaint != null) {
       canvas.drawOval(rect, strokePaint);
     }
   }
 
   /// Рисует <line>
-  void _paintLine(ui.Canvas canvas, SvgNode node) {
+  void _paintLine(ui.Canvas canvas, SvgNode node, {ui.ImageFilter? imageFilter}) {
     final x1 = _getNumber(node, 'x1') ?? 0.0;
     final y1 = _getNumber(node, 'y1') ?? 0.0;
     final x2 = _getNumber(node, 'x2') ?? 0.0;
     final y2 = _getNumber(node, 'y2') ?? 0.0;
 
-    final strokePaint = _createStrokePaint(node);
+    final strokePaint = _createStrokePaint(node, imageFilter: imageFilter);
     if (strokePaint != null) {
       canvas.drawLine(ui.Offset(x1, y1), ui.Offset(x2, y2), strokePaint);
     }
   }
 
   /// Рисует <path>
-  void _paintPath(ui.Canvas canvas, SvgNode node) {
+  void _paintPath(ui.Canvas canvas, SvgNode node, {ui.ImageFilter? imageFilter}) {
     final pathData = _getString(node, 'd');
     if (pathData == null || pathData.isEmpty) return;
 
@@ -209,7 +220,7 @@ class AnimatedSvgPainter extends CustomPainter {
   }
 
   /// Создаёт Paint для fill
-  ui.Paint _createPaint(SvgNode node) {
+  ui.Paint _createPaint(SvgNode node, {ui.ImageFilter? imageFilter}) {
     final paint = ui.Paint()..style = ui.PaintingStyle.fill;
 
     // Fill color
@@ -227,11 +238,34 @@ class AnimatedSvgPainter extends CustomPainter {
 
     paint.color = paint.color.withOpacity(finalOpacity);
 
+    // Применяем фильтр если есть
+    if (imageFilter != null) {
+      paint.imageFilter = imageFilter;
+    }
+
     return paint;
   }
 
+  /// Получить ID фильтра из атрибута filter
+  /// Поддерживает формат url(#filterId) или просто filterId
+  String? _getFilterId(SvgNode node) {
+    final filterAttr = _getString(node, 'filter');
+    if (filterAttr == null || filterAttr.isEmpty) {
+      return null;
+    }
+    
+    // Парсим url(#filterId) формат
+    final urlMatch = RegExp(r'url\(#([^)]+)\)').firstMatch(filterAttr);
+    if (urlMatch != null) {
+      return urlMatch.group(1);
+    }
+    
+    // Или просто ID если нет url()
+    return filterAttr.trim();
+  }
+
   /// Создаёт Paint для stroke (или null если нет stroke)
-  ui.Paint? _createStrokePaint(SvgNode node) {
+  ui.Paint? _createStrokePaint(SvgNode node, {ui.ImageFilter? imageFilter}) {
     final stroke = _getColor(node, 'stroke');
     if (stroke == null) return null;
 
@@ -249,6 +283,11 @@ class AnimatedSvgPainter extends CustomPainter {
     final finalOpacity = (opacity * strokeOpacity).clamp(0.0, 1.0);
 
     paint.color = paint.color.withOpacity(finalOpacity);
+
+    // Применяем фильтр если есть
+    if (imageFilter != null) {
+      paint.imageFilter = imageFilter;
+    }
 
     return paint;
   }

@@ -2,6 +2,9 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 
+import 'css_animations.dart';
+import 'svg_filters.dart';
+
 /// Тип атрибута SVG элемента для корректной интерполяции
 enum SvgAttributeType {
   /// Числовое значение: x, y, width, height, opacity, stroke-width
@@ -262,7 +265,14 @@ class SvgNode {
 /// Корневой документ SVG
 class SvgDocument {
   /// Создаёт SVG документ
-  SvgDocument({required this.root, this.viewBox, this.width, this.height});
+  SvgDocument({
+    required this.root,
+    this.viewBox,
+    this.width,
+    this.height,
+    this.filters,
+    this.cssKeyframes,
+  });
 
   /// Корневой <svg> узел
   final SvgNode root;
@@ -275,6 +285,12 @@ class SvgDocument {
 
   /// Высота документа
   final double? height;
+
+  /// Коллекция фильтров в документе
+  final SvgFilters? filters;
+
+  /// CSS @keyframes анимации
+  final List<CssKeyframes>? cssKeyframes;
 
   /// Найти узел по ID во всём документе
   SvgNode? getElementById(String id) => root.findById(id);
