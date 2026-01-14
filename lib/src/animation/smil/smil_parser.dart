@@ -1,3 +1,5 @@
+import '../css_animations.dart';
+import '../css_to_smil_converter.dart';
 import '../svg_dom.dart';
 import 'smil_animation.dart';
 import 'timing_condition.dart';
@@ -7,11 +9,55 @@ import 'timing_parser.dart';
 class SmilParser {
   SmilParser._();
 
-  /// Извлечь все SMIL анимации из документа
+  /// Извлечь все SMIL анимации из документа (включая CSS анимации)
   static List<SmilAnimation> parseAnimations(SvgDocument document) {
     final animations = <SmilAnimation>[];
+    
+    // Парсим SMIL анимации (<animate>, <animateTransform>, etc.)
     _extractAnimations(document.root, document, animations);
+    
+    // Парсим CSS анимации из style атрибутов и @keyframes
+    _extractCssAnimations(document.root, document, animations);
+    
     return animations;
+  }
+
+  /// Извлечь CSS анимации из элементов с style атрибутами
+  static void _extractCssAnimations(
+    SvgNode node,
+    SvgDocument document,
+    List<SmilAnimation> animations,
+  ) {
+    // Парсим style атрибут если есть
+    final styleAttr = node.getAttributeValue('style') as String?;
+    if (styleAttr != null && styleAttr.isNotEmpty) {
+      final cssAnimation = CssParser.parseAnimationFromStyle(styleAttr);
+      if (cssAnimation != null && document.cssKeyframes != null) {
+        // Находим соответствующий @keyframes
+        final keyframesList = document.cssKeyframes!
+            .where((kf) => kf.name == cssAnimation.name)
+            .toList();
+        if (keyframesList.isEmpty) return;
+        final keyframes = keyframesList.first;
+        
+        // Конвертируем CSS анимацию в SMIL
+        final smilAnims = CssToSmilConverter.convert(
+          keyframes,
+          cssAnimation,
+          node,
+          document,
+        );
+        animations.addAll(smilAnims);
+        
+        // Помечаем узел как имеющий анимации
+        node.hasAnimations = true;
+      }
+    }
+
+    // Рекурсивно обрабатываем детей
+    for (final child in node.children) {
+      _extractCssAnimations(child, document, animations);
+    }
   }
 
   /// Рекурсивно извлечь анимации из узла и его детей

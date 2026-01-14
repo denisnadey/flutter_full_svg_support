@@ -4,7 +4,7 @@
 
 ## ⚠️ Current Work: Fixing Critical ID Parsing Bug
 
-### SMIL Animation Support - 402+ Tests Passing! ✅
+### SMIL Animation Support + CSS Animations + SVG Filters - 417+ Tests Passing! ✅
 
 | Stage | Feature | Tests | Status |
 |-------|---------|-------|--------|
@@ -19,6 +19,8 @@
 | **8** | **Event-Based Timing** | **383+** | **✅** |
 | **8-cont.** | **calcMode="paced"** | **393+** | **✅** |
 | **8-cont.** | **Additive & Accumulate** | **402+** | **✅** |
+| **9** | **SVG Filters** | **417+** | **✅** |
+| **10** | **CSS Animations** | **417+** | **✅** |
 
 ## What Works
 
@@ -35,6 +37,9 @@
 - ✅ **calcMode="paced"** - equal velocity animations with automatic keyTimes generation
 - ✅ **additive="sum"** - add animation value to base value
 - ✅ **accumulate="sum"** - accumulate values across animation repeats
+- ✅ **CSS @keyframes** - parse and convert to SMIL animations
+- ✅ **CSS animation property** - support animation shorthand and animation-* properties
+- ✅ **SVG Filters** - feGaussianBlur, feDropShadow, feColorMatrix
 
 **Programmatic Control:**
 - ✅ `AnimatedSvgController` - Timeline control API
@@ -255,16 +260,20 @@
    - Filter application via Paint.imageFilter in AnimatedSvgPainter
    - Files: `svg_filters.dart`, `svg_parser.dart`, `animated_svg_painter.dart`
 
-7. 🔄 **CSS Animations - PARSING COMPLETE** (January 14, 2026)
+7. ✅ **CSS Animations - COMPLETE** (January 14, 2026)
    - CSS parser for @keyframes rules
-   - Parser for animation shorthand property
+   - Parser for animation shorthand and animation-* properties
    - Parsing of <style> elements
-   - Files: `css_animations.dart`, `svg_parser.dart`
-   - ⏳ TODO: Convert to SMIL structure, integrate into SvgTimeline
+   - Converter from CSS keyframes to SMIL animations
+   - Integration into SmilParser.parseAnimations()
+   - Support for style attributes with animation properties
+   - 13 tests passing
+   - Files: `css_animations.dart`, `css_to_smil_converter.dart`, `svg_parser.dart`, `smil_parser.dart`
 
 **Next Steps:**
-1. Complete CSS Animations integration (convert to SMIL, integrate into timeline)
-2. Add tests and examples for filters and CSS animations
+1. CSS Transitions (transition-* properties)
+2. Additional SVG filters (feComposite, feBlend, etc.)
+3. Performance optimizations
 
 ---
 

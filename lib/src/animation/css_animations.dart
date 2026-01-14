@@ -42,23 +42,39 @@ class CssParser {
   static List<CssKeyframes> parseKeyframes(String cssText) {
     final keyframes = <CssKeyframes>[];
     
-    // Регулярное выражение для @keyframes
+    // Регулярное выражение для @keyframes с поддержкой вложенных фигурных скобок
     final keyframesRegex = RegExp(
-      r'@keyframes\s+([\w-]+)\s*\{([^}]+)\}',
+      r'@keyframes\s+([\w-]+)\s*\{',
       multiLine: true,
-      dotAll: true,
+      caseSensitive: false,
     );
     
-    final matches = keyframesRegex.allMatches(cssText);
-    
-    for (final match in matches) {
+    int pos = 0;
+    while (pos < cssText.length) {
+      final remainingText = cssText.substring(pos);
+      final match = keyframesRegex.firstMatch(remainingText);
+      if (match == null) break;
+      
       final name = match.group(1)!.trim();
-      final body = match.group(2)!;
+      final relativeStart = match.end;
+      final start = pos + relativeStart;
       
-      // Парсим keyframes внутри блока
-      final keyframeList = _parseKeyframeBody(body);
+      // Находим закрывающую скобку, учитывая вложенность
+      int depth = 1;
+      int end = start;
+      while (end < cssText.length && depth > 0) {
+        if (cssText[end] == '{') depth++;
+        if (cssText[end] == '}') depth--;
+        end++;
+      }
       
-      keyframes.add(CssKeyframes(name: name, keyframes: keyframeList));
+      if (depth == 0) {
+        final body = cssText.substring(start, end - 1);
+        final keyframeList = _parseKeyframeBody(body);
+        keyframes.add(CssKeyframes(name: name, keyframes: keyframeList));
+      }
+      
+      pos = end;
     }
     
     return keyframes;
@@ -142,12 +158,14 @@ class CssParser {
     String direction = 'normal';
     String fillMode = 'none';
     
+    bool durationFound = false;
+    
     // Парсим остальные части
     for (int i = 1; i < parts.length; i++) {
       final part = parts[i];
       
-      // Duration (например "2s", "500ms")
-      if (part.endsWith('s') || part.endsWith('ms')) {
+      // Duration (например "2s", "500ms") - первое встреченное время
+      if ((part.endsWith('s') || part.endsWith('ms')) && !durationFound) {
         if (part.endsWith('ms')) {
           final ms = double.tryParse(part.replaceAll('ms', '')) ?? 1000.0;
           duration = Duration(milliseconds: ms.toInt());
@@ -155,6 +173,7 @@ class CssParser {
           final seconds = double.tryParse(part.replaceAll('s', '')) ?? 1.0;
           duration = Duration(milliseconds: (seconds * 1000).toInt());
         }
+        durationFound = true;
         continue;
       }
       
@@ -164,10 +183,8 @@ class CssParser {
         continue;
       }
       
-      // Delay (аналогично duration)
-      if (i < parts.length - 1 && (part.endsWith('s') || part.endsWith('ms'))) {
-        // Уже обработано выше
-      } else if (part.endsWith('s') || part.endsWith('ms')) {
+      // Delay - второе встреченное время (после duration)
+      if (part.endsWith('s') || part.endsWith('ms')) {
         if (part.endsWith('ms')) {
           final ms = double.tryParse(part.replaceAll('ms', '')) ?? 0.0;
           delay = Duration(milliseconds: ms.toInt());
@@ -224,5 +241,75 @@ class CssParser {
       'step-start',
       'step-end',
     ].contains(value) || value.startsWith('cubic-bezier(');
+  }
+
+  /// Парсит animation-* свойства из style атрибута или строки стилей
+  static CssAnimation? parseAnimationFromStyle(String styleText) {
+    // Парсим style атрибут (CSS свойства)
+    final properties = _parseProperties(styleText);
+    
+    // Проверяем наличие animation или animation-* свойств
+    String? animationValue = properties['animation'];
+    String? animationName = properties['animation-name'];
+    String? animationDuration = properties['animation-duration'];
+    String? animationTimingFunction = properties['animation-timing-function'];
+    String? animationDelay = properties['animation-delay'];
+    String? animationIterationCount = properties['animation-iteration-count'];
+    String? animationDirection = properties['animation-direction'];
+    String? animationFillMode = properties['animation-fill-mode'];
+
+    // Если есть shorthand animation, используем его
+    if (animationValue != null) {
+      return parseAnimation(animationValue);
+    }
+
+    // Иначе собираем из отдельных свойств
+    if (animationName == null) {
+      return null; // Без имени анимации ничего не делаем
+    }
+
+    // Парсим duration
+    Duration duration = const Duration(seconds: 1);
+    if (animationDuration != null) {
+      if (animationDuration.endsWith('ms')) {
+        final ms = double.tryParse(animationDuration.replaceAll('ms', '')) ?? 1000.0;
+        duration = Duration(milliseconds: ms.toInt());
+      } else if (animationDuration.endsWith('s')) {
+        final seconds = double.tryParse(animationDuration.replaceAll('s', '')) ?? 1.0;
+        duration = Duration(milliseconds: (seconds * 1000).toInt());
+      }
+    }
+
+    // Парсим delay
+    Duration delay = Duration.zero;
+    if (animationDelay != null) {
+      if (animationDelay.endsWith('ms')) {
+        final ms = double.tryParse(animationDelay.replaceAll('ms', '')) ?? 0.0;
+        delay = Duration(milliseconds: ms.toInt());
+      } else if (animationDelay.endsWith('s')) {
+        final seconds = double.tryParse(animationDelay.replaceAll('s', '')) ?? 0.0;
+        delay = Duration(milliseconds: (seconds * 1000).toInt());
+      }
+    }
+
+    // Парсим iteration count
+    double iterationCount = 1.0;
+    if (animationIterationCount != null) {
+      if (animationIterationCount == 'infinite') {
+        iterationCount = double.infinity;
+      } else {
+        iterationCount = double.tryParse(animationIterationCount) ?? 1.0;
+      }
+    }
+
+    return CssAnimation(
+      name: animationName,
+      duration: duration,
+      timingFunction: animationTimingFunction ?? 'ease',
+      delay: delay,
+      iterationCount: iterationCount,
+      direction: animationDirection ?? 'normal',
+      fillMode: animationFillMode ?? 'none',
+    );
   }
 }
