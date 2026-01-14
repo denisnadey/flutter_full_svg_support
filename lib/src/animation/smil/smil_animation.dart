@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../svg_dom.dart';
+import 'distance_calculator.dart';
 import 'interpolators.dart';
 import 'motion_path.dart';
 import 'timing_condition.dart';
@@ -96,7 +97,63 @@ class SmilAnimation {
           );
         }
       }
+
+      // Генерируем keyTimes для paced mode, если они не заданы явно
+      // Реализация основана на Blink SVGAnimationElement::calculateKeyTimesForCalcModePaced()
+      if (calcMode == SmilCalcMode.paced && 
+          keyTimes == null && 
+          values != null && 
+          values!.length >= 2) {
+        _pacedKeyTimes = _generatePacedKeyTimes();
+      }
     }
+  }
+
+  /// Генерирует keyTimes для calcMode="paced" на основе расстояний между значениями
+  /// Реализация основана на Blink SVGAnimationElement::calculateKeyTimesForCalcModePaced()
+  List<double>? _generatePacedKeyTimes() {
+    if (values == null || values!.length < 2) return null;
+
+    final calculator = DistanceCalculatorFactory.create(attributeType);
+    final keyTimesForPaced = <double>[0.0];
+    double totalDistance = 0.0;
+    final distances = <double>[];
+
+    // Вычисляем расстояния между последовательными значениями
+    for (int i = 0; i < values!.length - 1; i++) {
+      final distance = calculator.distance(values![i], values![i + 1]);
+      if (distance < 0) {
+        // Если расстояние не может быть вычислено, возвращаем null
+        // Это означает, что paced mode не поддерживается для этого типа
+        return null;
+      }
+      totalDistance += distance;
+      distances.add(distance);
+    }
+
+    // Если totalDistance равен нулю, все значения одинаковые
+    if (totalDistance == 0.0) {
+      // Равномерное распределение
+      final step = 1.0 / (values!.length - 1);
+      for (int i = 1; i < values!.length; i++) {
+        keyTimesForPaced.add(i * step);
+      }
+      keyTimesForPaced[values!.length - 1] = 1.0;
+      return keyTimesForPaced;
+    }
+
+    // Нормализуем расстояния в keyTimes
+    // Алгоритм из Blink: keyTimesForPaced[n] = keyTimesForPaced[n-1] + distances[n] / totalDistance
+    double cumulative = 0.0;
+    for (int i = 0; i < distances.length; i++) {
+      cumulative += distances[i] / totalDistance;
+      keyTimesForPaced.add(cumulative);
+    }
+
+    // Последний keyTime всегда 1.0
+    keyTimesForPaced[values!.length - 1] = 1.0;
+
+    return keyTimesForPaced;
   }
 
   /// ID анимации (из атрибута xml:id или id)
@@ -134,6 +191,9 @@ class SmilAnimation {
 
   /// Временные метки для values (от 0.0 до 1.0)
   final List<double>? keyTimes;
+
+  /// Сгенерированные keyTimes для paced mode (если calcMode == paced и keyTimes не заданы)
+  List<double>? _pacedKeyTimes;
 
   /// Контрольные точки кубических кривых Безье для spline интерполяции
   /// Каждый элемент представляет кривую между двумя соседними keyframes
@@ -289,14 +349,17 @@ class SmilAnimation {
     int toIndex = 1;
     double segmentProgress = t;
 
-    if (keyTimes != null) {
-      // С явными keyTimes
-      for (int i = 0; i < keyTimes!.length - 1; i++) {
-        if (t >= keyTimes![i] && t <= keyTimes![i + 1]) {
+    // Используем paced keyTimes если они есть, иначе обычные keyTimes
+    final effectiveKeyTimes = _pacedKeyTimes ?? keyTimes;
+
+    if (effectiveKeyTimes != null) {
+      // С явными keyTimes (или сгенерированными для paced)
+      for (int i = 0; i < effectiveKeyTimes.length - 1; i++) {
+        if (t >= effectiveKeyTimes[i] && t <= effectiveKeyTimes[i + 1]) {
           fromIndex = i;
           toIndex = i + 1;
-          final segmentStart = keyTimes![i];
-          final segmentEnd = keyTimes![i + 1];
+          final segmentStart = effectiveKeyTimes[i];
+          final segmentEnd = effectiveKeyTimes[i + 1];
           segmentProgress = segmentEnd > segmentStart
               ? (t - segmentStart) / (segmentEnd - segmentStart)
               : 0.0;

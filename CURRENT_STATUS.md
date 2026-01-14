@@ -17,6 +17,7 @@
 | **P0** | **Critical Priorities** | **329** | **✅** |
 | **7** | **Syncbase Timing** | **369** | **✅** |
 | **8** | **Event-Based Timing** | **383+** | **✅** |
+| **8-cont.** | **calcMode="paced"** | **393+** | **✅** |
 
 ## What Works
 
@@ -225,11 +226,17 @@
 1. ✅ Fixed ID parsing bug in `SmilParser` and `SvgNode.getAttributeValue()`
 2. ✅ Removed debug print statements from test files
 3. ✅ Verified calcMode="spline" is already fully implemented with CubicBezier class
+4. ✅ **calcMode="paced" IMPLEMENTED** (January 14, 2026)
+   - Created `DistanceCalculator` system based on Blink implementation
+   - Implemented `NumericDistanceCalculator`, `ColorDistanceCalculator`, `LengthDistanceCalculator`
+   - Added `_generatePacedKeyTimes()` method following Blink's algorithm
+   - Integrated paced keyTimes generation into `SmilAnimation`
+   - Added comprehensive tests (10 tests passing)
+   - Files: `distance_calculator.dart`, `smil_animation.dart`, `paced_calcmode_test.dart`
 
 **Next Steps:**
-1. Stage 8 (continued): calcMode="paced" for equal velocity (parsed but logic needs implementation)
-2. Stage 8 (continued): Additive and Accumulate attributes (parsed, need implementation)
-3. Stage 9: CSS Animations (@keyframes)
+1. Stage 8 (continued): Additive and Accumulate attributes (parsed, need implementation)
+2. Stage 9: CSS Animations (@keyframes)
 
 ---
 
