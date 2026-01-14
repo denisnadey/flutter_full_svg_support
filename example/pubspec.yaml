@@ -1,0 +1,35 @@
+name: FlutterSVGExample
+version: 1.0.0
+description: An SVG samnple app.
+publish_to: none
+
+environment:
+  sdk: ^3.8.0
+  flutter: ">=3.32.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_driver:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  flutter_svg:
+    path: ../
+  vector_graphics: ^1.1.13
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+# The following section is specific to Flutter.
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/
+    - assets/w3samples/
+    - assets/deborah_ufw/
+    - assets/simple/
+    - assets/wikimedia/
+    - assets/android_vd/

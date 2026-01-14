@@ -1,0 +1,24 @@
+name: widget_preview_scaffold
+description: Scaffolding for Flutter Widget Previews
+publish_to: none
+version: 0.0.1
+environment:
+  sdk: ^3.10.0
+dependencies:
+  dtd: ^4.0.0
+  flutter:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  flutter_svg:
+    path: ../..
+  google_fonts: ^6.3.2
+  json_rpc_2: ^4.0.0
+  path: ^1.9.1
+  stack_trace: ^1.12.1
+  url_launcher: ^6.3.2
+  web: ^1.1.1
+flutter:
+  uses-material-design: true
+dependency_overrides:
+  flutter_svg:
+    path: ../..

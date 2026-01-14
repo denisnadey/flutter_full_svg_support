@@ -1,0 +1,212 @@
+# Development Guide
+
+Complete guide for developing animated SVG features in flutter_svg.
+
+## Quick Start
+
+```bash
+# Run tests after changes
+flutter test test/animation/
+
+# Run example app
+cd example && flutter run
+
+# Run all tests
+flutter test
+```
+
+## Architecture
+
+This package uses **two separate rendering pipelines**:
+
+### 1. Static SVG (Production)
+- Path: SVG → `vector_graphics_compiler` → `.vec` binary → `VectorGraphic` widget
+- Fast, optimized, no DOM tree
+- Use: `SvgPicture.asset()`, `SvgPicture.network()`
+
+### 2. Animated SVG (Experimental)
+- Path: SVG → XML parser → DOM tree → SMIL engine → `AnimatedSvgPicture`
+- Preserves structure for animations
+- Use: `AnimatedSvgPicture.string()`
+
+**Why separate?** The `vector_graphics` compiler discards DOM structure, IDs, and animation elements for optimization. Animated SVG needs full DOM.
+
+## Development Progress
+
+### Completed Stages ✅
+
+| Stage | Feature | Tests | Status |
+|-------|---------|-------|--------|
+| 1 | Infrastructure (DOM, parser, detector) | 61 | ✅ Complete |
+| 2 | SMIL Core (numeric animations) | - | ✅ Complete |
+| 3 | Rendering (CustomPainter, widget) | - | ✅ Complete |
+| 4 | Color animations (fill, stroke) | - | ✅ Complete |
+| 5 | Transforms (rotate, translate, scale) | 100+ | ✅ Complete |
+| 6 | Paths (morphing, animateMotion) | 313 | ✅ Complete |
+
+**Total: 313 tests, 100% passing**
+
+### Roadmap 🔜
+
+- **Stage 7**: Advanced SMIL (keySplines, calcMode paced, syncbase)
+- **Stage 8**: CSS Animations (@keyframes)
+- **Stage 9**: CSS Transitions
+- **Stage 10**: Performance (caching, dirty tracking)
+- **Stage 11**: Production readiness
+
+## Code Organization
+
+```
+lib/src/animation/
+├── animated_svg_picture.dart    # Main widget
+├── animated_svg_painter.dart    # CustomPainter renderer
+├── svg_parser.dart              # XML → DOM
+├── svg_dom.dart                 # DOM model
+├── svg_transform.dart           # Transform handling
+├── path_*.dart                  # Path parsing/interpolation
+└── smil/
+    ├── smil_animation.dart      # Animation engine
+    ├── smil_parser.dart         # Extract animations from DOM
+    ├── smil_timeline.dart       # Time management
+    ├── interpolators.dart       # Value interpolation
+    ├── motion_path.dart         # AnimateMotion
+    └── timing.dart              # Duration/timing logic
+```
+
+## Testing Strategy
+
+### Test Categories
+
+1. **Unit tests** - Logic verification (parsers, interpolators)
+2. **Integration tests** - End-to-end animation flows
+3. **Golden tests** - Visual regression (50 baseline images)
+4. **Visual tests** - Pixel analysis for geometry
+
+### Running Tests
+
+```bash
+# All animation tests
+flutter test test/animation/
+
+# Specific feature
+flutter test test/animation/smil_test.dart
+
+# Verbose output
+flutter test test/animation/ --reporter expanded
+
+# Skip golden tests (CI)
+flutter test test/animation/ --exclude-tags golden
+```
+
+### Visual Testing Pattern
+
+```dart
+testWidgets('animation renders correctly', (tester) async {
+  await tester.pumpWidget(AnimatedSvgPicture.string(svgData));
+  await tester.pump(); // Build
+  await tester.pump(); // Initialize
+  
+  // Capture pixels (MUST use runAsync!)
+  final pixels = await tester.runAsync(() async {
+    final boundary = find.byType(RepaintBoundary).first;
+    final image = await boundary.toImage(pixelRatio: 1.0);
+    final byteData = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+    image.dispose(); // Always dispose!
+    return byteData!.buffer.asUint8List();
+  });
+  
+  // Analyze geometry
+  final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+  expect(analysis.pixelCount, greaterThan(0));
+  expect(analysis.centroid.dx, closeTo(400, 5));
+});
+```
+
+**Critical Rules:**
+- ✅ Wrap `toImage()` in `tester.runAsync()` (prevents hangs)
+- ✅ Use `autoPlay: true` (autoPlay: false has rendering bug)
+- ❌ Never use `pumpAndSettle()` with infinite animations (hangs forever)
+- ✅ Always `dispose()` images
+
+## Adding Features
+
+### New SMIL Animation Type
+
+1. **Parse XML** in `smil/smil_parser.dart`:
+```dart
+if (element.name.local == 'animateNewType') {
+  return _parseAnimateNewType(element, targetNode);
+}
+```
+
+2. **Interpolate** in `smil/smil_animation.dart`:
+```dart
+dynamic _computeValue(double t) {
+  return Interpolators.interpolateNewType(from, to, t);
+}
+```
+
+3. **Render** in `animated_svg_painter.dart`:
+```dart
+void _applyAnimations(Canvas canvas, SvgNode node) {
+  final value = animation.getValue(time);
+  // Apply to canvas
+}
+```
+
+4. **Test** - unit, integration, visual tests
+
+### Adding Example
+
+1. Create `example/lib/widgets/smil_*_widget.dart`
+2. Add tab to `example/lib/pages/unified_examples_page.dart`
+3. Add SVG asset to `example/assets/`
+4. Update info panel with description
+
+## Debugging
+
+### Animation Not Working?
+
+Check in order:
+1. `AnimationDetector.hasAnimations()` returns true?
+2. Animations parsed in `SmilParser.parseAnimations()`?
+3. Timeline ticking in `SvgTimeline.tick()`?
+4. Values interpolating in `SmilAnimation.getValue()`?
+5. Painter applying in `AnimatedSvgPainter.paint()`?
+
+### Enable Logging
+
+```dart
+print('Animations: ${timeline.animations.length}');
+print('Time: ${timeline.currentTime}');
+print('Value at t=$t: ${animation.getValue(t)}');
+```
+
+## Performance Targets
+
+From production testing:
+- Path interpolation: <1ms
+- AnimateMotion: 60 updates in <100ms
+- Simple animations: 60 FPS
+- Complex animations: 30+ FPS
+
+## Common Pitfalls
+
+1. **Pipeline mixing**: `SvgPicture` cannot render SMIL (compiled away)
+2. **Path morphing**: Requires normalized path structures
+3. **RepaintBoundary**: Captures 800x600, not widget size
+4. **Memory leaks**: Always dispose images in tests
+5. **Known bug**: `autoPlay: false` renders 0 pixels
+
+## Dependencies
+
+- `vector_graphics` ^1.1.13 - Static rendering
+- `vector_graphics_compiler` ^1.1.14 - SVG compiler
+- `xml` ^6.0.0 - XML parsing
+
+## Resources
+
+- `.github/copilot-instructions.md` - AI agent guide
+- `VISUAL_TESTING_GUIDELINES.md` - Testing details
+- `ANIMATION_ARCHITECTURE.md` - Original architectural plan
+- `docs/archive/STAGE_*` - Completed stage reports
