@@ -181,7 +181,13 @@ class SvgNode {
   AnimatableSvgAttribute? getAttribute(String name) => attributes[name];
 
   /// Получить эффективное значение атрибута (с учётом анимации)
-  Object? getAttributeValue(String name) => attributes[name]?.effectiveValue;
+  /// Также поддерживает специальные поля 'id' и 'className'
+  Object? getAttributeValue(String name) {
+    // Специальные поля хранятся отдельно, не в attributes
+    if (name == 'id') return id;
+    if (name == 'className' || name == 'class') return className;
+    return attributes[name]?.effectiveValue;
+  }
 
   /// Установить атрибут
   void setAttribute(

@@ -124,7 +124,7 @@ class SmilParser {
       }
 
       // Парсим ID анимации (для syncbase timing)
-      final id = animNode.getAttributeValue('id')?.toString();
+      final id = animNode.id;
 
       // Парсим тайминг
       final dur = _parseDuration(animNode.getAttributeValue('dur'));
@@ -463,7 +463,7 @@ class SmilParser {
   ) {
     try {
       // Парсим ID анимации (для syncbase timing)
-      final id = animNode.getAttributeValue('id')?.toString();
+      final id = animNode.id;
 
       // Получаем path атрибут
       final pathData = animNode.getAttributeValue('path') as String?;

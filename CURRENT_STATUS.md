@@ -4,7 +4,7 @@
 
 ## ⚠️ Current Work: Fixing Critical ID Parsing Bug
 
-### SMIL Animation Support - 383 Tests Passing (2 blocked by ID parsing bug)
+### SMIL Animation Support - All Critical Bugs Fixed!
 
 | Stage | Feature | Tests | Status |
 |-------|---------|-------|--------|
@@ -16,7 +16,7 @@
 | 6 | Path animations & motion | 313 | ✅ |
 | **P0** | **Critical Priorities** | **329** | **✅** |
 | **7** | **Syncbase Timing** | **369** | **✅** |
-| **8** | **Event-Based Timing** | **383** | **✅** |
+| **8** | **Event-Based Timing** | **383+** | **✅** |
 
 ## What Works
 
@@ -83,46 +83,29 @@
 - Could be enhanced with seekTo() method for testing
 - **Decision:** Current implementation is sufficient for now
 
-## 🐛 Critical Bug Discovered (January 9, 2026)
+## ✅ Critical Bug Fixed (January 9, 2026)
 
-### ID Attribute Parsing Bug - BLOCKS SYNCBASE TIMING
-**Status:** ❌ CRITICAL - Blocks 1 test, affects syncbase timing functionality
+### ID Attribute Parsing Bug - FIXED
+**Status:** ✅ FIXED - ID attributes are now correctly parsed from SVG elements
 
-**Problem:**
-- SVG `id` attributes on `<animate>` elements are not being parsed
-- Example: `<animate id="anim1" ...>` results in `SmilAnimation.id = null`
-- This breaks syncbase timing references like `begin="anim1.end"`
+**Problem (RESOLVED):**
+- SVG `id` attributes on `<animate>` elements were not being parsed
+- `SmilParser` was using `getAttributeValue('id')` which looked in `attributes` map
+- But `id` was stored in `SvgNode.id` field, not in `attributes` map
 
-**Evidence:**
-```dart
-// SVG input:
-<animate id="anim1" attributeName="x" from="0" to="80" dur="2s" begin="click"/>
+**Solution:**
+- Updated `SmilParser` to use `animNode.id` directly instead of `getAttributeValue('id')`
+- Enhanced `SvgNode.getAttributeValue()` to support `id` and `className` fields for compatibility
+- Both `_parseAnimationElement()` and `_parseAnimateMotion()` now correctly read IDs
 
-// Parsed result:
-Animation 0: id=null  // ❌ Should be id=anim1
-```
-
-**Impact:**
-- ❌ Event chain test fails: "Event chain: click triggers animation that triggers another"
-- ✅ Syncbase condition parsing works: `SyncbaseCondition(id: anim1, type: end)` is correct
-- ❌ Dependency graph cannot match animations without IDs
-- Affects all `begin="animId.begin/end/repeat"` scenarios
-
-**Root Cause:**
-- `svg_parser.dart` does not parse `id` attribute from XML elements
-- `animNode.getAttributeValue('id')` returns `null`
-- Need to investigate XML attribute parsing in `SvgParser`
-
-**Affected Files:**
-- `lib/src/animation/svg_parser.dart` - needs to parse `id` attribute
-- `lib/src/animation/smil/smil_parser.dart` - correctly tries to get `id`
-- `test/animation/event_timing_test.dart` - 1 test blocked
+**Files Changed:**
+- `lib/src/animation/smil/smil_parser.dart` - Lines 127, 466: Use `animNode.id` instead of `getAttributeValue('id')`
+- `lib/src/animation/svg_dom.dart` - Enhanced `getAttributeValue()` to support `id` and `className`
 
 **Next Steps:**
-1. Debug `svg_parser.dart` to ensure XML attributes are captured
-2. Verify `SvgNode.getAttributeValue('id')` works correctly
-3. Re-run event timing tests after fix
-4. Verify all syncbase timing tests still pass
+1. ✅ Re-run event timing tests to confirm fix
+2. ✅ Verify all syncbase timing tests still pass with proper IDs
+3. Remove debug print statements from test files
 
 ---
 
@@ -238,18 +221,23 @@ Animation 0: id=null  // ❌ Should be id=anim1
 3. Re-run `event_timing_test.dart` to confirm fix
 4. Verify all syncbase timing tests still pass with proper IDs
 
-**After ID Fix:**
-1. Remove debug print statements from test files
-2. Stage 8 (continued): calcMode="spline" with cubic-bezier easing
-3. Stage 8 (continued): calcMode="paced" for equal velocity
-4. Stage 9: CSS Animations (@keyframes)
+**After ID Fix (COMPLETED):**
+1. ✅ Fixed ID parsing bug in `SmilParser` and `SvgNode.getAttributeValue()`
+2. ✅ Removed debug print statements from test files
+3. ✅ Verified calcMode="spline" is already fully implemented with CubicBezier class
+
+**Next Steps:**
+1. Stage 8 (continued): calcMode="paced" for equal velocity (parsed but logic needs implementation)
+2. Stage 8 (continued): Additive and Accumulate attributes (parsed, need implementation)
+3. Stage 9: CSS Animations (@keyframes)
 
 ---
 
 ## Known Issues
 
-1. ❌ **ID attribute not parsed from SVG** (CRITICAL) - blocks syncbase timing with element references
+1. ✅ **ID attribute parsing** - FIXED (January 9, 2026) - Now correctly parsed from SVG elements
 2. ⚠️ **Path morphing** - Requires compatible path structures (normalized automatically)
+3. ⚠️ **calcMode="paced"** - Parsed but equal velocity logic needs implementation
 
 ## Quick Links
 

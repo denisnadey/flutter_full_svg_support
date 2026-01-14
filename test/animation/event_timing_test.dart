@@ -337,45 +337,15 @@ void main() {
         rootNode: document.root,
       );
 
-      // Debug: print all animations
-      for (var i = 0; i < animations.length; i++) {
-        // ignore: avoid_print
-        print(
-          'Animation $i: id=${animations[i].id}, beginConditions=${animations[i].beginConditions}',
-        );
-      }
-
-      // Debug initial state
-      // ignore: avoid_print
-      print(
-        'Initial: anim0.effectiveBegin=${animations[0].getEffectiveBeginTime()}, anim1.effectiveBegin=${animations[1].getEffectiveBeginTime()}',
-      );
-
       // Trigger click
       timeline.triggerEvent(null, 'click');
-
-      // Debug after trigger
-      // ignore: avoid_print
-      print(
-        'After click: anim0.effectiveBegin=${animations[0].getEffectiveBeginTime()}, anim1.effectiveBegin=${animations[1].getEffectiveBeginTime()}',
-      );
 
       // First animation starts
       expect(animations[0].isActive, isTrue);
       expect(animations[1].isActive, isFalse);
 
       // After first animation completes (2s)
-      // ignore: avoid_print
-      print(
-        'Before seek: anim0.isActive=${animations[0].isActive}, anim1.isActive=${animations[1].isActive}',
-      );
       timeline.seek(const Duration(seconds: 2));
-      // ignore: avoid_print
-      print(
-        'After seek: anim0.isActive=${animations[0].isActive}, anim1.isActive=${animations[1].isActive}',
-      );
-      // ignore: avoid_print
-      print('  anim1.effectiveBegin=${animations[1].getEffectiveBeginTime()}');
       expect(animations[1].isActive, isTrue);
     });
 
