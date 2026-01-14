@@ -295,24 +295,47 @@ class SmilAnimation {
   ///
   /// Параметр [t] представляет прогресс внутри одной итерации анимации.
   /// Учитывает calcMode для выбора метода интерполяции.
-  Object? computeValue(double t) {
+  /// [completedRepeats] - количество завершённых повторений (для accumulate)
+  Object? computeValue(double t, {int completedRepeats = 0}) {
     // Для animateMotion используем специальную логику
     if (type == SmilAnimationType.animateMotion) {
-      return _computeMotionValue(t);
+      // animateMotion обычно не использует additive (он всегда суммирует трансформации)
+      // Но применяем accumulate если нужно
+      final motionValue = _computeMotionValue(t);
+      // Для motion accumulate применяется внутри _computeMotionValue через keyPoints
+      return motionValue;
     }
 
     // Для discrete calcMode - без интерполяции
     if (calcMode == SmilCalcMode.discrete) {
-      return _computeDiscreteValue(t);
+      final animValue = _computeDiscreteValue(t);
+      
+      // Применяем accumulate="sum"
+      final accumulatedValue = _applyAccumulate(animValue, completedRepeats);
+
+      // Применяем additive="sum"
+      return _applyAdditive(accumulatedValue);
     }
 
     // Для values-based анимации
     if (values != null && values!.isNotEmpty) {
-      return _computeValuesBasedValue(t);
+      final animValue = _computeValuesBasedValue(t);
+      
+      // Применяем accumulate="sum" (если есть завершённые повторения)
+      final accumulatedValue = _applyAccumulate(animValue, completedRepeats);
+
+      // Применяем additive="sum" (добавляем к базовому значению)
+      return _applyAdditive(accumulatedValue);
     }
 
     // Для from/to/by анимации
-    return _computeSimpleValue(t);
+    final animValue = _computeSimpleValue(t);
+
+    // Применяем accumulate="sum" (если есть завершённые повторения)
+    final accumulatedValue = _applyAccumulate(animValue, completedRepeats);
+
+    // Применяем additive="sum" (добавляем к базовому значению)
+    return _applyAdditive(accumulatedValue);
   }
 
   /// Вычислить дискретное значение (без интерполяции)
@@ -473,6 +496,73 @@ class SmilAnimation {
     return Interpolators.add(base, delta, attributeType);
   }
 
+  /// Применить accumulate="sum" - добавить финальное значение * количество повторений
+  /// Реализация основана на Blink SVGAnimationElement::animateAdditiveNumber()
+  @protected
+  Object? _applyAccumulate(Object? animValue, int completedRepeats) {
+    if (!accumulate || completedRepeats == 0 || animValue == null) {
+      return animValue;
+    }
+
+    // Получаем финальное значение анимации (в конце одной итерации, t=1.0)
+    final finalValue = _computeFinalValue();
+
+    if (finalValue == null || animValue == null) {
+      return animValue;
+    }
+
+    // Для accumulate="sum" добавляем финальное значение * количество завершённых повторений
+    // Как в Blink: number += toAtEndOfDurationNumber * repeatCount
+    Object accumulated = animValue;
+    for (int i = 0; i < completedRepeats; i++) {
+      final result = Interpolators.add(accumulated, finalValue, attributeType);
+      if (result == null) break;
+      accumulated = result;
+    }
+
+    return accumulated;
+  }
+
+  /// Вычислить финальное значение анимации (t=1.0)
+  @protected
+  Object? _computeFinalValue() {
+    // Для values-based: последнее значение
+    if (values != null && values!.isNotEmpty) {
+      return values!.last;
+    }
+    // Для from/to: значение to
+    return to ?? from;
+  }
+
+  /// Применить additive="sum" - добавить к базовому значению элемента
+  /// Реализация основана на Blink SVGAnimationElement::animateAdditiveNumber()
+  @protected
+  Object? _applyAdditive(Object? animValue) {
+    if (animValue == null) return null;
+    
+    // animValue уже не null здесь
+    final animValueNonNull = animValue;
+
+    // Если additive="replace" или это ToAnimation, просто возвращаем значение
+    // В нашей реализации пока нет явного ToAnimation, но можно проверить
+    if (additive == SmilAdditiveMode.replace) {
+      return animValueNonNull;
+    }
+
+    // additive="sum" - добавляем к базовому значению
+    // Получаем базовое значение из targetNode
+    final baseAttr = targetNode.getAttribute(attributeName);
+    final baseValue = baseAttr?.baseValue;
+
+    if (baseValue == null) {
+      // Если базового значения нет, возвращаем animValue
+      return animValueNonNull;
+    }
+
+    // Добавляем animValue к baseValue
+    return Interpolators.add(baseValue, animValueNonNull, attributeType);
+  }
+
   /// Обновить состояние анимации для заданного глобального времени
   void updateForTime(Duration globalTime) {
     final effectiveBegin = getEffectiveBeginTime();
@@ -523,8 +613,8 @@ class SmilAnimation {
       // Прогресс внутри итерации (0.0 - 1.0)
       final t = iterationMicros / durMicros;
 
-      // Вычисляем значение
-      _lastValue = computeValue(t);
+      // Вычисляем значение с учётом завершённых повторений
+      _lastValue = computeValue(t, completedRepeats: _currentIteration);
 
       // Применяем значение
       if (_lastValue != null) {

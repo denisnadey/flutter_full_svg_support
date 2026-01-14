@@ -4,7 +4,7 @@
 
 ## ⚠️ Current Work: Fixing Critical ID Parsing Bug
 
-### SMIL Animation Support - All Critical Bugs Fixed!
+### SMIL Animation Support - 402+ Tests Passing! ✅
 
 | Stage | Feature | Tests | Status |
 |-------|---------|-------|--------|
@@ -18,6 +18,7 @@
 | **7** | **Syncbase Timing** | **369** | **✅** |
 | **8** | **Event-Based Timing** | **383+** | **✅** |
 | **8-cont.** | **calcMode="paced"** | **393+** | **✅** |
+| **8-cont.** | **Additive & Accumulate** | **402+** | **✅** |
 
 ## What Works
 
@@ -31,6 +32,9 @@
 - ✅ **Event-based timing** - begin="click", begin="mouseover", begin="click+1s"
 - ✅ Interpolation - linear, discrete, spline, paced
 - ✅ Keyframes - values + keyTimes + keySplines
+- ✅ **calcMode="paced"** - equal velocity animations with automatic keyTimes generation
+- ✅ **additive="sum"** - add animation value to base value
+- ✅ **accumulate="sum"** - accumulate values across animation repeats
 
 **Programmatic Control:**
 - ✅ `AnimatedSvgController` - Timeline control API
@@ -234,9 +238,18 @@
    - Added comprehensive tests (10 tests passing)
    - Files: `distance_calculator.dart`, `smil_animation.dart`, `paced_calcmode_test.dart`
 
+5. ✅ **Additive & Accumulate IMPLEMENTED** (January 14, 2026)
+   - Implemented `additive="sum"` - adds animation value to base value
+   - Implemented `accumulate="sum"` - accumulates final value across repeats
+   - Updated `computeValue()` to accept `completedRepeats` parameter
+   - Added `_applyAdditive()` and `_applyAccumulate()` methods following Blink's `animateAdditiveNumber()`
+   - Enhanced `Interpolators.add()` for value composition
+   - Added comprehensive tests (7 tests passing)
+   - Files: `smil_animation.dart`, `interpolators.dart`, `additive_accumulate_test.dart`
+
 **Next Steps:**
-1. Stage 8 (continued): Additive and Accumulate attributes (parsed, need implementation)
-2. Stage 9: CSS Animations (@keyframes)
+1. Stage 9: CSS Animations (@keyframes)
+2. Stage 10: SVG Filters & Effects
 
 ---
 
@@ -244,7 +257,8 @@
 
 1. ✅ **ID attribute parsing** - FIXED (January 9, 2026) - Now correctly parsed from SVG elements
 2. ⚠️ **Path morphing** - Requires compatible path structures (normalized automatically)
-3. ⚠️ **calcMode="paced"** - Parsed but equal velocity logic needs implementation
+3. ✅ **calcMode="paced"** - IMPLEMENTED (January 14, 2026)
+4. ✅ **additive & accumulate** - IMPLEMENTED (January 14, 2026)
 
 ## Quick Links
 
