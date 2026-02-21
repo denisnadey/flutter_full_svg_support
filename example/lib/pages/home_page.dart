@@ -129,7 +129,7 @@ class HomePage extends StatelessWidget {
                     ),
                     _buildNavigationCard(
                       context,
-                      title: 'Custom SVG',
+                      title: 'SVG Playground',
                       icon: Icons.code,
                       color: Colors.deepPurple,
                       isMobile: isMobile,

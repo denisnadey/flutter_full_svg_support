@@ -1,85 +1,31 @@
-# CSS Animations & SVG Filters - Implementation Status
+# CSS Animations & SVG Filters - Notes
 
-## ✅ SVG Filters - COMPLETE
+**Last Updated:** February 21, 2026
 
-### Supported Filters
+For authoritative status, use:
+- `/Users/denisnadey/apps/flutter_full_svg_support/CURRENT_STATUS.md`
 
-1. **feGaussianBlur** - Gaussian blur effect
-   ```xml
-   <filter id="blur">
-     <feGaussianBlur stdDeviation="5"/>
-   </filter>
-   ```
+## Implemented
 
-2. **feDropShadow** - Drop shadow effect
-   ```xml
-   <filter id="shadow">
-     <feDropShadow dx="2" dy="2" stdDeviation="3" flood-color="black"/>
-   </filter>
-   ```
+### SVG Filters
+- `feGaussianBlur`
+- `feDropShadow` (currently simplified)
+- `feColorMatrix`
 
-3. **feColorMatrix** - Color transformations
-   ```xml
-   <filter id="grayscale">
-     <feColorMatrix type="saturate" values="0"/>
-   </filter>
-   ```
+### CSS Animations
+- `@keyframes` parsing
+- `animation` / `animation-*` parsing
+- CSS keyframes conversion into SMIL animation objects
+- Integration through `SmilParser.parseAnimations()`
 
-### Usage
+## Remaining parity gaps
 
-Apply filters to elements using the `filter` attribute:
+- Full `feDropShadow` composition behavior.
+- CSS conversion parity for `transform` functions, `cubic-bezier(...)`, and `alternate*` direction modes.
 
-```xml
-<rect x="10" y="10" width="100" height="100" fill="blue" filter="url(#blur)"/>
-```
+## Key files
 
-### Implementation Details
-
-- Filters are parsed from `<defs><filter>` elements
-- Applied via Flutter's `ImageFilter` API
-- Integrated into `AnimatedSvgPainter`
-
-## 🔄 CSS Animations - PARSING COMPLETE, INTEGRATION PENDING
-
-### Supported Parsing
-
-1. **@keyframes** - CSS keyframe animations
-   ```css
-   <style>
-     @keyframes spin {
-       from { transform: rotate(0deg); }
-       to { transform: rotate(360deg); }
-     }
-   </style>
-   ```
-
-2. **animation** shorthand property
-   ```css
-   #circle {
-     animation: spin 2s infinite linear;
-   }
-   ```
-
-### Current Status
-
-- ✅ CSS parser for `@keyframes` rules
-- ✅ Parser for `animation` shorthand property
-- ✅ Parsing of `<style>` elements
-- ⏳ Conversion to SMIL-like structure (TODO)
-- ⏳ Integration into SvgTimeline (TODO)
-- ⏳ Parsing animation-* properties from style attributes (TODO)
-
-### Next Steps
-
-1. Create converter from CSS keyframes to `SmilAnimation` objects
-2. Parse `animation-*` properties from element style attributes
-3. Integrate CSS animations into `SvgTimeline` alongside SMIL animations
-4. Add tests and examples
-
-## Files Created/Modified
-
-- `lib/src/animation/svg_filters.dart` - Filter models and parsing
-- `lib/src/animation/css_animations.dart` - CSS parser for keyframes and animations
-- `lib/src/animation/svg_parser.dart` - Added filter and style parsing
-- `lib/src/animation/svg_dom.dart` - Added filters and cssKeyframes to SvgDocument
-- `lib/src/animation/animated_svg_painter.dart` - Added filter application
+- `/Users/denisnadey/apps/flutter_full_svg_support/lib/src/animation/css_animations.dart`
+- `/Users/denisnadey/apps/flutter_full_svg_support/lib/src/animation/css_to_smil_converter.dart`
+- `/Users/denisnadey/apps/flutter_full_svg_support/lib/src/animation/smil/smil_parser.dart`
+- `/Users/denisnadey/apps/flutter_full_svg_support/lib/src/animation/svg_filters.dart`

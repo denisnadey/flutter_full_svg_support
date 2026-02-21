@@ -25,6 +25,50 @@ void main() {
       expect(animations[0].repeatCount, equals(double.infinity));
     });
 
+    test('animateMotion with mpath href resolves referenced path', () {
+      final svgString = '''
+<svg viewBox="0 0 200 200">
+  <defs>
+    <path id="motionPath" d="M0,0 L100,0 L100,100"/>
+  </defs>
+  <circle r="5">
+    <animateMotion dur="2s">
+      <mpath href="#motionPath"/>
+    </animateMotion>
+  </circle>
+</svg>
+''';
+
+      final document = SvgParser.parse(svgString);
+      final animations = SmilParser.parseAnimations(document);
+
+      expect(animations.length, equals(1));
+      expect(animations[0].type, equals(SmilAnimationType.animateMotion));
+      expect(animations[0].from, equals('M0,0 L100,0 L100,100'));
+      expect(animations[0].dur, equals(const Duration(seconds: 2)));
+    });
+
+    test('animateMotion with mpath xlink:href resolves referenced path', () {
+      final svgString = '''
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 200 200">
+  <defs>
+    <path id="motionPath" d="M0,0 L80,0"/>
+  </defs>
+  <rect>
+    <animateMotion dur="1s">
+      <mpath xlink:href="#motionPath"/>
+    </animateMotion>
+  </rect>
+</svg>
+''';
+
+      final document = SvgParser.parse(svgString);
+      final animations = SmilParser.parseAnimations(document);
+
+      expect(animations.length, equals(1));
+      expect(animations[0].from, equals('M0,0 L80,0'));
+    });
+
     test('animateMotion interpolates position at t=0', () {
       final svgString = '''
 <svg><rect><animateMotion path="M0,0 L100,100" dur="1s"/></rect></svg>

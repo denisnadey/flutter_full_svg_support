@@ -18,6 +18,7 @@ Development guides and technical documentation:
 - **[ARCHITECTURE.md](../ARCHITECTURE.md)** - Dual pipeline design rationale
 - **[VISUAL_TESTING_GUIDELINES.md](../VISUAL_TESTING_GUIDELINES.md)** - Visual testing patterns
 - **[CURRENT_STATUS.md](../CURRENT_STATUS.md)** - Latest development status
+- **[BLINK_PARITY_AUDIT.md](BLINK_PARITY_AUDIT.md)** - Gap matrix vs Blink SVG features
 
 ## 🤖 For AI Coding Agents
 
@@ -25,7 +26,7 @@ Optimized instructions for GitHub Copilot and other AI tools:
 
 - **[.github/copilot-instructions.md](../.github/copilot-instructions.md)** - Comprehensive AI agent guide
   - Project architecture and why it's designed this way
-  - Test-first workflow (313 tests, all passing)
+  - Test-first workflow
   - Visual testing requirements and gotchas
   - Code locations and organization
   - Common patterns for adding features
@@ -60,14 +61,17 @@ Historical implementation documents (Stages 1-6):
 **See what's implemented**
 → [CURRENT_STATUS.md](../CURRENT_STATUS.md)
 
+**See what is still missing vs Blink**
+→ [BLINK_PARITY_AUDIT.md](BLINK_PARITY_AUDIT.md)
+
 **Run the example app**
 ```bash
-cd example && flutter run
+cd example && ../.fvm/flutter_sdk/bin/flutter run
 ```
 
 **Run tests**
 ```bash
-flutter test test/animation/
+./.fvm/flutter_sdk/bin/flutter test test/animation/
 ```
 
 ## Documentation Structure
@@ -87,6 +91,7 @@ flutter_svg/
 └── docs/
     ├── README.md                      # This file
     ├── DEVELOPMENT.md                 # Complete dev guide
+    ├── BLINK_PARITY_AUDIT.md          # Blink gap matrix
     └── archive/                       # Historical docs
         ├── README.md
         ├── ANIMATION_ARCHITECTURE.md
@@ -97,7 +102,7 @@ flutter_svg/
 ## Contributing
 
 1. Read [DEVELOPMENT.md](DEVELOPMENT.md)
-2. Run tests: `flutter test test/animation/`
+2. Run tests: `./.fvm/flutter_sdk/bin/flutter test test/animation/`
 3. Check [CURRENT_STATUS.md](../CURRENT_STATUS.md) for roadmap
 4. Submit PR with tests
 

@@ -210,15 +210,11 @@ class SvgTimeline {
 
       // Если анимация закончилась (была активна, теперь неактивна)
       if (wasActive && !isActive && time >= animation.getEffectiveEndTime()) {
-        // ignore: avoid_print
-        print('DEBUG: Animation ended: id=${animation.id}, time=$time');
         _triggerSyncbaseEvent(animation, 'end', time);
       }
 
       // Если анимация началась (не была активна, теперь активна)
       if (!wasActive && isActive) {
-        // ignore: avoid_print
-        print('DEBUG: Animation started: id=${animation.id}, time=$time');
         _triggerSyncbaseEvent(animation, 'begin', time);
       }
     }
@@ -230,21 +226,11 @@ class SvgTimeline {
     String eventType,
     Duration time,
   ) {
-    // ignore: avoid_print
-    print(
-      'DEBUG _triggerSyncbaseEvent: sourceAnim=${sourceAnim.id}, eventType=$eventType, time=$time',
-    );
-
     // Найти все анимации, зависящие от этого события
     final dependents = _dependents[sourceAnim];
     if (dependents == null || dependents.isEmpty) {
-      // ignore: avoid_print
-      print('  No dependents');
       return;
     }
-
-    // ignore: avoid_print
-    print('  Found ${dependents.length} dependents');
 
     // Преобразовать строку в SyncbaseType
     SyncbaseType? syncType;
@@ -257,8 +243,6 @@ class SvgTimeline {
     }
 
     if (syncType == null) {
-      // ignore: avoid_print
-      print('  Invalid syncType');
       return;
     }
 
@@ -266,14 +250,8 @@ class SvgTimeline {
       // Проверить, есть ли у зависимой анимации syncbase условие на это событие
       for (final condition in dependent.beginConditions) {
         if (condition is SyncbaseCondition) {
-          // ignore: avoid_print
-          print(
-            '  DEBUG: Checking condition: animId=${condition.animationId}, type=${condition.type}, matches=${condition.animationId == sourceAnim.id && condition.type == syncType}',
-          );
           if (condition.animationId == sourceAnim.id &&
               condition.type == syncType) {
-            // ignore: avoid_print
-            print('  DEBUG: MATCHED! Setting resolvedBeginTime');
             // Вычислить время начала с учётом offset
             final resolvedTime = time + condition.offset;
             dependent.setResolvedBeginTime(resolvedTime);
@@ -383,9 +361,6 @@ class SvgTimeline {
         }
         break;
     }
-
-    if (baseTime == null) return null;
-
     return baseTime + condition.offset;
   }
 

@@ -100,9 +100,9 @@ class SmilAnimation {
 
       // Генерируем keyTimes для paced mode, если они не заданы явно
       // Реализация основана на Blink SVGAnimationElement::calculateKeyTimesForCalcModePaced()
-      if (calcMode == SmilCalcMode.paced && 
-          keyTimes == null && 
-          values != null && 
+      if (calcMode == SmilCalcMode.paced &&
+          keyTimes == null &&
+          values != null &&
           values!.length >= 2) {
         _pacedKeyTimes = _generatePacedKeyTimes();
       }
@@ -309,7 +309,7 @@ class SmilAnimation {
     // Для discrete calcMode - без интерполяции
     if (calcMode == SmilCalcMode.discrete) {
       final animValue = _computeDiscreteValue(t);
-      
+
       // Применяем accumulate="sum"
       final accumulatedValue = _applyAccumulate(animValue, completedRepeats);
 
@@ -320,7 +320,7 @@ class SmilAnimation {
     // Для values-based анимации
     if (values != null && values!.isNotEmpty) {
       final animValue = _computeValuesBasedValue(t);
-      
+
       // Применяем accumulate="sum" (если есть завершённые повторения)
       final accumulatedValue = _applyAccumulate(animValue, completedRepeats);
 
@@ -507,7 +507,7 @@ class SmilAnimation {
     // Получаем финальное значение анимации (в конце одной итерации, t=1.0)
     final finalValue = _computeFinalValue();
 
-    if (finalValue == null || animValue == null) {
+    if (finalValue == null) {
       return animValue;
     }
 
@@ -539,7 +539,7 @@ class SmilAnimation {
   @protected
   Object? _applyAdditive(Object? animValue) {
     if (animValue == null) return null;
-    
+
     // animValue уже не null здесь
     final animValueNonNull = animValue;
 

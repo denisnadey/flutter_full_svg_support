@@ -1,169 +1,72 @@
-# TODO List - flutter_svg Animation
+# TODO - Animation Work Queue
 
-**Дата:** 9 января 2026 г.
+**Last Updated:** February 21, 2026  
+**Status Source:** `/Users/denisnadey/apps/flutter_full_svg_support/CURRENT_STATUS.md`
 
-## ✅ ЗАВЕРШЕНО: Stage 7 - Syncbase Timing
+This file tracks actionable implementation tasks.
+For factual project status, use `CURRENT_STATUS.md` only.
 
-- [x] **S7-1:** Syncbase Timing - парсинг, dependency tracking, интеграция
-  - [x] Парсер для syncbase conditions (begin="anim1.end+2s")
-  - [x] Dependency tracking в SvgTimeline
-  - [x] Topological sort для разрешения зависимостей
-  - [x] 40 тестов (timing_parser_test + syncbase_timing_test)
-  - [x] Примеры в example app (6 интерактивных демо)
-  - **РЕЗУЛЬТАТ:** Syncbase timing полностью работает ✅
+## Completed Recently
 
-**Итого:** 369 тестов проходят, все задачи Stage 7 выполнены ✅
+- [x] Element-level hit-testing for event timing (`click/mouseover/mouseout`) on `rect/circle/ellipse/line`
+- [x] Target-specific event parser support (`id.click`)
+- [x] SVG Playground with runtime traces/logs/problems/checklist
+- [x] Runtime trace callback API in `AnimatedSvgPicture`
+- [x] `<polygon>` and `<polyline>` rendering + hit-testing
+- [x] `<path>` hit-testing for element-targeted events (`target.click`)
+- [x] Gradient paint servers (`<linearGradient>`, `<radialGradient>`, `<stop>`) for fill/stroke
+- [x] Baseline `<use href="#...">` + `<defs>` reference rendering
+- [x] Baseline `<symbol>` rendering via `<use>` (`viewBox` + `use width/height`)
+- [x] Baseline `<clipPath>` support
+- [x] Baseline `<mask>` support
+- [x] Filter primitives: `feFlood`, `feBlend`, `feComposite` (baseline approximation)
+- [x] Baseline `feMerge`/`feMergeNode` parsing support
+- [x] `animateMotion` path reference support via `<mpath href="#...">` / `<mpath xlink:href="#...">`
 
----
+## P0 - Blink Parity Foundations
 
-## 🟠 STAGE 8: Advanced SMIL (следующий этап)
+- [x] Implement actual `<path>` painting in animated renderer.
+- [x] Add `<polygon>` and `<polyline>` rendering.
+- [x] Add gradient paint servers (`<linearGradient>`, `<radialGradient>`, `<stop>`).
+- [x] Add `<use>`/`<symbol>` + `<defs>` baseline reference resolution.
+- [x] Add baseline `<clipPath>` support.
+- [x] Add baseline `<mask>` support.
 
-### Syncbase Timing
-- [ ] **S7-1:** Парсинг syncbase conditions
-  - [ ] Парсить "anim1.end+2s" формат
-  - [ ] Создать класс SyncbaseCondition
-  - [ ] Обновить SmilParser
-  
-- [ ] **S7-1:** Dependency tracking
-  - [ ] Добавить Map dependencies в SvgTimeline
-  - [ ] Трекать зависимости между анимациями
+## P1 - Core Feature Gaps
 
-### Event-based Timing
-- [ ] **S8-1:** Парсинг event conditions
-  - [ ] Парсить "click", "mouseover" и т.д.
-  - [ ] Обновить EventCondition класс
-  
-- [ ] **S8-1:** Event handling в AnimatedSvgPicture
-  - [ ] Добавить GestureDetector для элементов
-  - [ ] Связать Flutter events с SMIL анимациями
-  - [ ] Обработать tap/hover/focus events
-  - [ ] Интегрировать с SvgTimeline
-  
-- [ ] **S8-1:** Тесты и примеры
-  - [ ] Написать интерактивные тесты
-  - [ ] Добавить интерактивные примеры в example app
-  - [ ] Демо с кликабельными элементами
+- [ ] Add text pipeline (`<text>`, `<tspan>`, `<textPath>` at minimum baseline).
+- [ ] Add `<image>` support in animated pipeline.
+- [x] Add `animateMotion` support for `<mpath xlink:href="...">` references.
+- [ ] Expand element hit-testing to advanced semantics (`clipPath`/`mask`/`use`/text-aware hit regions).
 
-### calcMode="spline"
-- [ ] **S8-2:** Парсинг keySplines
-  - [ ] Парсить "x1 y1 x2 y2" формат (4 координаты)
-  - [ ] Создать класс CubicBezier для cubic-bezier easing
-  - [ ] Поддержка нескольких splines для values list
-  
-- [ ] **S8-2:** Spline interpolation
-  - [ ] Имплементировать solve() метод (Newton-Raphson)
-  - [ ] Интегрировать в SmilAnimation
-  - [ ] Добавить CSS easing presets (ease, ease-in, ease-out, ease-in-out)
-  
-- [ ] **S8-2:** Тесты и примеры
-  - [ ] Unit тесты для CubicBezier.solve()
-  - [ ] Примеры с разными easing функциями
-  - [ ] Сравнение linear vs spline
+## P2 - Filters (Blink FE coverage)
 
-### calcMode="paced"
-- [ ] **S8-3:** Distance calculation
-  - [ ] Вычислять расстояние между числовыми значениями
-  - [ ] Path distance через PathMetrics
-  - [ ] Color distance в RGB/HSL space
-  - [ ] Transform distance (сложная метрика)
-  
-- [ ] **S8-3:** Auto keyTimes generation
-  - [ ] Генерировать keyTimes для равномерной скорости
-  - [ ] Интегрировать в SmilAnimation
-  - [ ] Обновить interpolation logic
-  
-- [ ] **S8-3:** Тесты и примеры
-  - [ ] Unit тесты для distance functions
-  - [ ] Integration тесты для paced mode
-  - [ ] Примеры с paced анимациями
-  - [ ] Визуальное сравнение linear vs paced
+- [ ] Improve `feDropShadow` to full composition behavior.
+- [x] Implement `feOffset`.
+- [x] Implement `feBlend`.
+- [x] Implement `feComposite`.
+- [x] Implement `feFlood`.
+- [x] Implement baseline `feMerge` / `feMergeNode` parsing.
+- [ ] Upgrade `feMerge` / `feMergeNode` to full input-graph composition semantics.
+- [ ] Evaluate and prioritize remaining FE primitives from Blink list.
 
-### Additive & Accumulate
-- [ ] **S8-4:** Парсинг атрибутов
-  - [ ] Уже парсятся в SmilAnimation (additive, accumulate)
-  - [ ] Проверить корректность парсинга
-  
-- [ ] **S8-4:** Implementation
-  - [ ] Суммировать с базовым значением (additive="sum")
-  - [ ] Накапливать при повторениях (accumulate="sum")
-  - [ ] Обновить computeValue() в SmilAnimation
-  
-- [ ] **S8-4:** Тесты и примеры
-  - [ ] Unit тесты для additive animations
-  - [ ] Unit тесты для accumulate behavior
-  - [ ] Примеры в example app
+## P3 - CSS/Timing Parity
 
----
+- [ ] CSS `transform` parsing in CSS->SMIL converter.
+- [ ] CSS `cubic-bezier(...)` to spline conversion.
+- [ ] CSS direction `alternate` / `alternate-reverse`.
+- [ ] Full color parsing parity (`rgb/rgba/hsl/hsla` in parser path).
 
-## 🟡 STAGE 9: CSS Animations (после Stage 8)
+## P4 - Quality
 
-### @keyframes Support
-- [ ] **S9-1:** CSS parser
-  - [ ] Парсить <style> элементы
-  - [ ] Парсить @keyframes rules
-  - [ ] Парсить animation-* properties
-  
-- [ ] **S8-1:** Конвертация в SMIL
-  - [ ] Конвертировать @keyframes в анимации
-  - [ ] Применять animation-* properties
-  
-- [ ] **S8-1:** Тесты и примеры
+- [ ] Add parity regression suite based on Blink-style fixtures.
+- [ ] Reduce analyzer info-level deprecations in package/example/tests.
+- [ ] Add performance benchmarks for new renderer coverage.
+- [x] Add playground import of exported JSON report bundles.
+- [x] Add playground analyzer/trace-store unit tests in `test/playground/**`.
+- [ ] Add playground widget tests for log filters/search and problem grouping UI behavior.
 
-### CSS Transitions
-- [ ] **S9-1:** Парсинг transition-*
-- [ ] **S9-1:** Трекинг CSS property changes
-- [ ] **S9-1:** Auto-создание анимаций
-- [ ] **S9-1:** Тесты и примеры
+## Notes
 
----
-
-## 🟢 STAGE 10-12: Advanced Features (долгосрочно)
-
-### SVG Filters
-- [ ] **S10-1:** feGaussianBlur
-- [ ] **S10-1:** feDropShadow
-- [ ] **S10-1:** feColorMatrix
-- [ ] **S10-2:** Animated filters
-
-### Performance
-- [ ] **S11-1:** Layer caching
-- [ ] **S11-2:** Dirty region tracking
-- [ ] **S11-3:** Path optimization
-- [ ] **S11-4:** Multi-threading
-
-### Documentation
-- [ ] **S12-1:** Полное dartdoc покрытие
-- [ ] **S12-2:** Example app enhancement
-- [ ] **S12-3:** Testing coverage 90%+
-- [ ] **S12-4:** Error handling & validation
-
----
-
-## 📝 Notes
-
-### В процессе:
-- Нет задач в процессе
-
-### Заблокировано:
-- CSS Transitions (зависит от CSS Animations)
-- Animated Filters (зависит от Basic Filters)
-
-### Завершено:
-- ✅ Stage 1-6 (313 тестов)
-- ✅ Infrastructure, SMIL Core, Rendering
-- ✅ Color, Transform, Path animations
-
----
-
-## 🎯 Ближайшие цели (1 неделя)
-
-1. [ ] Исправить autoPlay: false bug (1 день)
-2. [ ] Реализовать Timeline Control API (3 дня)
-3. [ ] Добавить initialTime (1 день)
-4. [ ] Начать Syncbase Timing (2-3 дня)
-
-**Прогресс:** 0/4 задач
-
----
-
-**Обновлено:** 9 января 2026 г.
+- Full Blink parity reference and scope are documented in:  
+  `/Users/denisnadey/apps/flutter_full_svg_support/docs/BLINK_PARITY_AUDIT.md`

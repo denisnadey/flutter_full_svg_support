@@ -1,3 +1,9 @@
 
 # FVM Version Cache
 .fvm/
+
+# Generated tooling/build outputs
+.dart_tool/
+build/
+example/.dart_tool/
+example/build/

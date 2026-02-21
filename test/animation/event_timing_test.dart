@@ -1,9 +1,7 @@
-import 'package:flutter_svg/src/animation/smil/smil_animation.dart';
 import 'package:flutter_svg/src/animation/smil/smil_parser.dart';
 import 'package:flutter_svg/src/animation/smil/smil_timeline.dart';
 import 'package:flutter_svg/src/animation/smil/timing_condition.dart';
 import 'package:flutter_svg/src/animation/smil/timing_parser.dart';
-import 'package:flutter_svg/src/animation/svg_dom.dart';
 import 'package:flutter_svg/src/animation/svg_parser.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -56,6 +54,17 @@ void main() {
       final blurCond = TimingParser.parse('blur');
       expect(blurCond, hasLength(1));
       expect((blurCond[0] as EventCondition).eventType, 'blur');
+    });
+
+    test('Parse target-specific event', () {
+      final conditions = TimingParser.parse('button.click+250ms');
+      expect(conditions, hasLength(1));
+      expect(conditions[0], isA<EventCondition>());
+
+      final event = conditions[0] as EventCondition;
+      expect(event.targetId, 'button');
+      expect(event.eventType, 'click');
+      expect(event.offset, const Duration(milliseconds: 250));
     });
 
     test('Parse mixed conditions with events', () {
@@ -122,6 +131,30 @@ void main() {
       // Value should be at start (0)
       final valueAtStart = anim.computeValue(0.0);
       expect(valueAtStart, 0.0);
+    });
+
+    test('Target-specific event activates only on matching element ID', () {
+      final svgString = '''
+<svg viewBox="0 0 100 100">
+  <rect id="target" x="0" y="0" width="20" height="20" fill="blue">
+    <animate attributeName="x" from="0" to="80" dur="2s" begin="target.click"/>
+  </rect>
+</svg>
+''';
+
+      final document = SvgParser.parse(svgString);
+      final animations = SmilParser.parseAnimations(document);
+      final timeline = SvgTimeline(
+        animations: animations,
+        rootNode: document.root,
+      );
+      final anim = animations[0];
+
+      timeline.triggerEvent(null, 'click');
+      expect(anim.isActive, isFalse);
+
+      timeline.triggerEvent('target', 'click');
+      expect(anim.isActive, isTrue);
     });
 
     test('Event with offset delays animation start', () {

@@ -12,13 +12,13 @@ class SmilParser {
   /// Извлечь все SMIL анимации из документа (включая CSS анимации)
   static List<SmilAnimation> parseAnimations(SvgDocument document) {
     final animations = <SmilAnimation>[];
-    
+
     // Парсим SMIL анимации (<animate>, <animateTransform>, etc.)
     _extractAnimations(document.root, document, animations);
-    
+
     // Парсим CSS анимации из style атрибутов и @keyframes
     _extractCssAnimations(document.root, document, animations);
-    
+
     return animations;
   }
 
@@ -39,7 +39,7 @@ class SmilParser {
             .toList();
         if (keyframesList.isEmpty) return;
         final keyframes = keyframesList.first;
-        
+
         // Конвертируем CSS анимацию в SMIL
         final smilAnims = CssToSmilConverter.convert(
           keyframes,
@@ -48,7 +48,7 @@ class SmilParser {
           document,
         );
         animations.addAll(smilAnims);
-        
+
         // Помечаем узел как имеющий анимации
         node.hasAnimations = true;
       }
@@ -511,8 +511,8 @@ class SmilParser {
       // Парсим ID анимации (для syncbase timing)
       final id = animNode.id;
 
-      // Получаем path атрибут
-      final pathData = animNode.getAttributeValue('path') as String?;
+      // Получаем path из inline path или <mpath href="#...">.
+      final pathData = _resolveAnimateMotionPathData(animNode, document);
       if (pathData == null || pathData.trim().isEmpty) {
         return null; // animateMotion без path невалидна
       }
@@ -619,6 +619,67 @@ class SmilParser {
     } catch (e) {
       return null;
     }
+  }
+
+  static String? _resolveAnimateMotionPathData(
+    SvgNode animNode,
+    SvgDocument document,
+  ) {
+    final inlinePath = animNode.getAttributeValue('path')?.toString();
+    if (inlinePath != null && inlinePath.trim().isNotEmpty) {
+      return inlinePath.trim();
+    }
+
+    SvgNode? mpath;
+    for (final child in animNode.children) {
+      if (child.tagName == 'mpath') {
+        mpath = child;
+        break;
+      }
+    }
+    if (mpath == null) {
+      return null;
+    }
+
+    final hrefValue =
+        mpath.getAttributeValue('href')?.toString() ??
+        mpath.getAttributeValue('xlink:href')?.toString();
+    final referencedId = _extractHrefId(hrefValue);
+    if (referencedId == null) {
+      return null;
+    }
+
+    final referencedNode = document.getElementById(referencedId);
+    if (referencedNode == null || referencedNode.tagName != 'path') {
+      return null;
+    }
+
+    final referencedPath = referencedNode.getAttributeValue('d')?.toString();
+    if (referencedPath == null || referencedPath.trim().isEmpty) {
+      return null;
+    }
+    return referencedPath.trim();
+  }
+
+  static String? _extractHrefId(String? href) {
+    if (href == null) {
+      return null;
+    }
+    final trimmed = href.trim();
+    if (trimmed.isEmpty) {
+      return null;
+    }
+
+    if (trimmed.startsWith('#') && trimmed.length > 1) {
+      return trimmed.substring(1);
+    }
+
+    final urlMatch = RegExp(r'url\(#([^)]+)\)').firstMatch(trimmed);
+    if (urlMatch != null) {
+      return urlMatch.group(1);
+    }
+
+    return null;
   }
 
   // Наборы известных атрибутов

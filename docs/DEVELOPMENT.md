@@ -6,13 +6,13 @@ Complete guide for developing animated SVG features in flutter_svg.
 
 ```bash
 # Run tests after changes
-flutter test test/animation/
+./.fvm/flutter_sdk/bin/flutter test test/animation/
 
 # Run example app
-cd example && flutter run
+cd example && ../.fvm/flutter_sdk/bin/flutter run
 
 # Run all tests
-flutter test
+./.fvm/flutter_sdk/bin/flutter test
 ```
 
 ## Architecture
@@ -33,26 +33,13 @@ This package uses **two separate rendering pipelines**:
 
 ## Development Progress
 
-### Completed Stages ✅
+Current stage/progress numbers can change quickly.
+Use `/Users/denisnadey/apps/flutter_full_svg_support/CURRENT_STATUS.md` as the
+single source of truth for:
 
-| Stage | Feature | Tests | Status |
-|-------|---------|-------|--------|
-| 1 | Infrastructure (DOM, parser, detector) | 61 | ✅ Complete |
-| 2 | SMIL Core (numeric animations) | - | ✅ Complete |
-| 3 | Rendering (CustomPainter, widget) | - | ✅ Complete |
-| 4 | Color animations (fill, stroke) | - | ✅ Complete |
-| 5 | Transforms (rotate, translate, scale) | 100+ | ✅ Complete |
-| 6 | Paths (morphing, animateMotion) | 313 | ✅ Complete |
-
-**Total: 313 tests, 100% passing**
-
-### Roadmap 🔜
-
-- **Stage 7**: Advanced SMIL (keySplines, calcMode paced, syncbase)
-- **Stage 8**: CSS Animations (@keyframes)
-- **Stage 9**: CSS Transitions
-- **Stage 10**: Performance (caching, dirty tracking)
-- **Stage 11**: Production readiness
+- what is completed,
+- what is currently broken or partial,
+- and the current execution plan.
 
 ## Code Organization
 
@@ -86,16 +73,16 @@ lib/src/animation/
 
 ```bash
 # All animation tests
-flutter test test/animation/
+./.fvm/flutter_sdk/bin/flutter test test/animation/
 
 # Specific feature
-flutter test test/animation/smil_test.dart
+./.fvm/flutter_sdk/bin/flutter test test/animation/smil_test.dart
 
 # Verbose output
-flutter test test/animation/ --reporter expanded
+./.fvm/flutter_sdk/bin/flutter test test/animation/ --reporter expanded
 
 # Skip golden tests (CI)
-flutter test test/animation/ --exclude-tags golden
+./.fvm/flutter_sdk/bin/flutter test test/animation/ --exclude-tags golden
 ```
 
 ### Visual Testing Pattern
@@ -124,7 +111,6 @@ testWidgets('animation renders correctly', (tester) async {
 
 **Critical Rules:**
 - ✅ Wrap `toImage()` in `tester.runAsync()` (prevents hangs)
-- ✅ Use `autoPlay: true` (autoPlay: false has rendering bug)
 - ❌ Never use `pumpAndSettle()` with infinite animations (hangs forever)
 - ✅ Always `dispose()` images
 
@@ -196,7 +182,6 @@ From production testing:
 2. **Path morphing**: Requires normalized path structures
 3. **RepaintBoundary**: Captures 800x600, not widget size
 4. **Memory leaks**: Always dispose images in tests
-5. **Known bug**: `autoPlay: false` renders 0 pixels
 
 ## Dependencies
 

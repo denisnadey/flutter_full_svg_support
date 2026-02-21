@@ -1,368 +1,104 @@
 # Current Development Status
 
-**Last Updated:** January 9, 2026
+**Last Updated:** February 21, 2026  
+**Authority:** This file is the single source of truth for current project state.
 
-## ⚠️ Current Work: Fixing Critical ID Parsing Bug
+## Snapshot
 
-### SMIL Animation Support + CSS Animations + SVG Filters - 417+ Tests Passing! ✅
+- Branch: `main`
+- Flutter SDK: `3.38.1` (via `./.fvm/flutter_sdk/bin/flutter`)
+- Dart SDK: `3.10.0`
 
-| Stage | Feature | Tests | Status |
-|-------|---------|-------|--------|
-| 1 | Infrastructure (DOM, parser, detector) | 61 | ✅ |
-| 2 | SMIL Core (numeric animations) | - | ✅ |
-| 3 | Rendering (CustomPainter, widget) | - | ✅ |
-| 4 | Color animations | - | ✅ |
-| 5 | Transform animations | 100+ | ✅ |
-| 6 | Path animations & motion | 313 | ✅ |
-| **P0** | **Critical Priorities** | **329** | **✅** |
-| **7** | **Syncbase Timing** | **369** | **✅** |
-| **8** | **Event-Based Timing** | **383+** | **✅** |
-| **8-cont.** | **calcMode="paced"** | **393+** | **✅** |
-| **8-cont.** | **Additive & Accumulate** | **402+** | **✅** |
-| **9** | **SVG Filters** | **417+** | **✅** |
-| **10** | **CSS Animations** | **417+** | **✅** |
+## Verified Health (February 21, 2026)
 
-## What Works
-
-**SMIL Animations:**
-- ✅ `<animate>` - numeric, color, transform, path attributes
-- ✅ `<animateTransform>` - translate, rotate, scale, skewX, skewY
-- ✅ `<animateMotion>` - path following with auto-rotation
-- ✅ Path morphing - smooth shape transitions
-- ✅ Timing - dur, begin, end, repeatCount (including indefinite)
-- ✅ **Syncbase timing** - begin="anim1.begin", begin="anim1.end+2s", begin="anim1.repeat(2)"
-- ✅ **Event-based timing** - begin="click", begin="mouseover", begin="click+1s"
-- ✅ Interpolation - linear, discrete, spline, paced
-- ✅ Keyframes - values + keyTimes + keySplines
-- ✅ **calcMode="paced"** - equal velocity animations with automatic keyTimes generation
-- ✅ **additive="sum"** - add animation value to base value
-- ✅ **accumulate="sum"** - accumulate values across animation repeats
-- ✅ **CSS @keyframes** - parse and convert to SMIL animations
-- ✅ **CSS animation property** - support animation shorthand and animation-* properties
-- ✅ **SVG Filters** - feGaussianBlur, feDropShadow, feColorMatrix
-
-**Programmatic Control:**
-- ✅ `AnimatedSvgController` - Timeline control API
-- ✅ Play/Pause/Resume
-- ✅ Seek to specific time
-- ✅ Playback rate control (0.5x, 1x, 1.5x, 2x)
-- ✅ Reverse/Forward direction
-- ✅ Restart animation
-
-**Interactive Features:**
-- ✅ Click events - begin="click"
-- ✅ Hover events - begin="mouseover" / begin="mouseout"
-- ✅ Focus events - begin="focus" / begin="blur"
-- ✅ Event delays - begin="click+1s"
-- ✅ Event chains - click → anim1 → anim2
-
-**Performance:**
-- 60 FPS for simple animations
-- 30+ FPS for complex animations
-- Path interpolation: <1msg (2 minor edge cases)s
-- 369 tests, 100% passing
-
-## ✅ Completed Priority Tasks (P0)
-
-### P0-1: autoPlay: false Bug Fix
-**Status:** ✅ FIXED (was already working)
-- Tested with 3 test cases in `autoplay_false_fix_test.dart`
-- Renders initial frame correctly at t=0
-- Animation starts when switching autoPlay false→true
-- **Resolution:** Bug was already fixed in previous session
-
-### P0-2: Timeline Control API
-**Status:** ✅ COMPLETE
-- Created `AnimatedSvgController` class with full API
-- Integrated into `AnimatedSvgPicture` widget
-- 13 comprehensive tests covering all functionality:
-  - Basic state management (pause, resume, seek)
-  - Integration with widget lifecycle
-  - Visual verification of pause behavior
-  - Playback rate control validation
-- **Files:**
-  - `lib/src/animation/animated_svg_controller.dart`
-  - `lib/src/animation/animated_svg_picture.dart` (enhanced)
-  - `test/animation/controller_test.dart` (13 tests)
-  - `example/lib/pages/controller_demo_page.dart` (interactive demo)
-
-### P0-3: initialTime Parameter
-**Status:** ⚠️ PARTIALLY COMPLETE
-- Parameter exists in `AnimatedSvgPicture`
-- Works for setting initial animation time
-- Could be enhanced with seekTo() method for testing
-- **Decision:** Current implementation is sufficient for now
-
-## ✅ Critical Bug Fixed (January 9, 2026)
-
-### ID Attribute Parsing Bug - FIXED
-**Status:** ✅ FIXED - ID attributes are now correctly parsed from SVG elements
-
-**Problem (RESOLVED):**
-- SVG `id` attributes on `<animate>` elements were not being parsed
-- `SmilParser` was using `getAttributeValue('id')` which looked in `attributes` map
-- But `id` was stored in `SvgNode.id` field, not in `attributes` map
-
-**Solution:**
-- Updated `SmilParser` to use `animNode.id` directly instead of `getAttributeValue('id')`
-- Enhanced `SvgNode.getAttributeValue()` to support `id` and `className` fields for compatibility
-- Both `_parseAnimationElement()` and `_parseAnimateMotion()` now correctly read IDs
-
-**Files Changed:**
-- `lib/src/animation/smil/smil_parser.dart` - Lines 127, 466: Use `animNode.id` instead of `getAttributeValue('id')`
-- `lib/src/animation/svg_dom.dart` - Enhanced `getAttributeValue()` to support `id` and `className`
-
-**Next Steps:**
-1. ✅ Re-run event timing tests to confirm fix
-2. ✅ Verify all syncbase timing tests still pass with proper IDs
-3. Remove debug print statements from test files
-
----
-
-## Roadmap
-
-### ✅ Stage 7: Syncbase Timing (COMPLETED)
-- ✅ ✅ Stage 8: Event-Based Timing (MOSTLY COMPLETE - 1 test blocked by ID bug)
-- ✅ Syncbase parsing - begin="anim1.begin", "anim1.end+2s", "anim1.repeat(2)"
-- ✅ Dependency tracking in SvgTimeline
-- ✅ Topological sort for resolving dependencies
-- ✅ 40 tests (timing_parser_test.dart + syncbase_timing_test.dart)
-- ✅ Example widget with 6 interactive demos
-- **Files:** timing_condition.dart, timing_parser.dart, smil_timeline.dart
-
-### ✅ Stage 8: Event-Based Timing (COMPLETED)
-- ✅ Event parsing - begin="click", begin="mouseover+1s", begin="focus"
-- ✅ GestureDetector integration in AnimatedSvgPicture
-- ✅ Timeline event triggering with triggerEvent() API
-- ✅ Event listeners registration in dependency graph
-- ✅ Support for click, hover (mouseover/mouseout), focus/blur events
-- ✅ Event offset support - begin="click+2s"
-- ✅ Event chains - click triggers animation that triggers another
-- ✅ 14 tests (event_timing_test.dart)
-- ✅ Example widget with 6 interactive demos
-- **Files:** smil_timeline.dart, animated_svg_picture.dart, timing_parser.dart, event_timing_test.dart, smil_event_timing_widget.dart
-
-### Stage 8 (Continued): Advanced SMIL Features (Next)
-- calcMode="spline" with keySplines (cubic-bezier easing)
-- calcMode="paced" - equal velocity animations
-- Additive and accumulate attributes
-- Element-specific event targeting (click on specific SVG element)
-### Stage 9: CSS Animations
-- @keyframes support
-- animation-* properties
-- CSS parser integration
-
-### Stage 10: CSS Transitions
-- transition-* properties
-- Dynamic property changes
-
-### Stage 11-12: Production Polish
-- Memory optimizations
-- Performance profiling
-- API finalization
-- Documentation
-- Migration guide
-- Pub.dev release
-
----
-
-## 📁 Последние изменения (January 9, 2026)
-
-### Исправления и улучшения:
-- `lib/src/animation/smil/smil_animation.dart` - Добавлен метод `reset()` для сброса состояния анимации
-- `lib/src/animation/smil/smil_timeline.dart` - Улучшены методы:
-  - `reset()` - теперь правильно сбрасывает все анимации и очищает event history
-  - `_updateAnimations()` - добавлено отслеживание begin/end событий для syncbase timing
-  - `_triggerSyncbaseEvent()` - немедленно обновляет зависимые анимации
-  - `_resolveTimingConditions()` - исправлена перезапись infinity begin times для event-based анимаций
-- `test/animation/event_timing_test.dart` - 15 из 16 тестов теперь проходят
-
-### Исправленные баги:
-✅ **Event-based animations activating immediately** - FIXED
-  - **Проблема**: Анимации с `begin="click"` активировались сразу вместо ожидания события
-  - **Причина**: `_resolveTimingConditions()` устанавливал `resolvedBeginTime = anim.begin (0)` вместо сохранения infinity
-  - **Решение**: Добавлена проверка event-only условий в `_resolveTimingConditions()`
-
-### Обнаруженные проблемы:
-❌ **ID attribute not parsed** - CRITICAL BUG (см. выше)
-
----
-
-## 📁 Файлы изменены (Stage 8: Event-Based Timing)
-
-### Новая функциональность:
-- `lib/src/animation/smil/smil_timeline.dart` - Добавлены методы triggerEvent(), event tracking, event listeners
-- `lib/src/animation/animated_svg_picture.dart` - Интеграция GestureDetector и MouseRegion для событий
-- `lib/src/animation/smil/timing_parser.dart` - Добавлены 'focus' и 'blur' в список событий
-
-### Новые тесты (14 тестов):
-- `test/animation/event_timing_test.dart` - Комплексное тестирование event-based timing (15/16 проходят):
-  - ✅ Парсинг event conditions (click, mouseover, focus, blur)
-  - ✅ События с offset'ами (click+1s)
-  - ✅ Активация анимаций по событиям
-  - ✅ Множественные анимации от одного события
-  - ✅ Разные типы событий
-  - ❌ Event chains (click → anim1 → anim2) - BLOCKED by ID parsing bug
-  - ✅ Смешанные условия (time + event)
-
-### Новые примеры:
-- `example/lib/widgets/smil_event_timing_widget.dart` - 6 интерактивных демо:
-  - Click to Start - базовый клик
-  - Hover Effect - наведение мыши
-  - Delayed Start - задержка после клика
-  - Multi-Click - повторные клики
-  - Event Chain - цепные реакции
-  - Interactive Button - кнопка с эффектами
-- `example/lib/pages/unified_examples_page.dart` - Добавлена вкладка "Events"
-
-### Документация:
-- `CURRENT_STATUS.md` - Обновлен статус с информацией о Stage 8 и критическом баге ID parsing
-
-### Исправления кода:
-- `test/animation/visual_test_utils.dart` - Добавлен `tester.runAsync()` в `captureWidgetPixels()`
-
----
-
-## 🎯 Next Steps
-
-**Immediate Priority (CRITICAL):**
-1. ❗ Fix ID attribute parsing in `svg_parser.dart`
-2. Verify `SvgNode.getAttributeValue('id')` implementation
-3. Re-run `event_timing_test.dart` to confirm fix
-4. Verify all syncbase timing tests still pass with proper IDs
-
-**After ID Fix (COMPLETED):**
-1. ✅ Fixed ID parsing bug in `SmilParser` and `SvgNode.getAttributeValue()`
-2. ✅ Removed debug print statements from test files
-3. ✅ Verified calcMode="spline" is already fully implemented with CubicBezier class
-4. ✅ **calcMode="paced" IMPLEMENTED** (January 14, 2026)
-   - Created `DistanceCalculator` system based on Blink implementation
-   - Implemented `NumericDistanceCalculator`, `ColorDistanceCalculator`, `LengthDistanceCalculator`
-   - Added `_generatePacedKeyTimes()` method following Blink's algorithm
-   - Integrated paced keyTimes generation into `SmilAnimation`
-   - Added comprehensive tests (10 tests passing)
-   - Files: `distance_calculator.dart`, `smil_animation.dart`, `paced_calcmode_test.dart`
-
-5. ✅ **Additive & Accumulate IMPLEMENTED** (January 14, 2026)
-   - Implemented `additive="sum"` - adds animation value to base value
-   - Implemented `accumulate="sum"` - accumulates final value across repeats
-   - Updated `computeValue()` to accept `completedRepeats` parameter
-   - Added `_applyAdditive()` and `_applyAccumulate()` methods following Blink's `animateAdditiveNumber()`
-   - Enhanced `Interpolators.add()` for value composition
-   - Added comprehensive tests (7 tests passing)
-   - Files: `smil_animation.dart`, `interpolators.dart`, `additive_accumulate_test.dart`
-
-6. ✅ **SVG Filters IMPLEMENTED** (January 14, 2026)
-   - Implemented feGaussianBlur (ImageFilter.blur)
-   - Implemented feDropShadow (basic blur support)
-   - Implemented feColorMatrix (saturate, hueRotate, matrix, luminanceToAlpha)
-   - Filter parsing from <defs><filter> elements
-   - Filter application via Paint.imageFilter in AnimatedSvgPainter
-   - Files: `svg_filters.dart`, `svg_parser.dart`, `animated_svg_painter.dart`
-
-7. ✅ **CSS Animations - COMPLETE** (January 14, 2026)
-   - CSS parser for @keyframes rules
-   - Parser for animation shorthand and animation-* properties
-   - Parsing of <style> elements
-   - Converter from CSS keyframes to SMIL animations
-   - Integration into SmilParser.parseAnimations()
-   - Support for style attributes with animation properties
-   - 13 tests passing
-   - Files: `css_animations.dart`, `css_to_smil_converter.dart`, `svg_parser.dart`, `smil_parser.dart`
-
-**Next Steps:**
-1. CSS Transitions (transition-* properties)
-2. Additional SVG filters (feComposite, feBlend, etc.)
-3. Performance optimizations
-
----
-
-## Known Issues
-
-1. ✅ **ID attribute parsing** - FIXED (January 9, 2026) - Now correctly parsed from SVG elements
-2. ⚠️ **Path morphing** - Requires compatible path structures (normalized automatically)
-3. ✅ **calcMode="paced"** - IMPLEMENTED (January 14, 2026)
-4. ✅ **additive & accumulate** - IMPLEMENTED (January 14, 2026)
-
-## Quick Links
-
-- [ANIMATION.md](ANIMATION.md) - User guide with examples
-- [ROADMAP.md](ROADMAP.md) - Detailed development roadmap
-- [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) - Development workflow
-- [VISUAL_TESTING_GUIDELINES.md](VISUAL_TESTING_GUIDELINES.md) - Testing patterns
-- [docs/archive/](docs/archive/) - Completed stage reports
-
-## For Developers
+Commands run in `/Users/denisnadey/apps/flutter_full_svg_support`:
 
 ```bash
-# Run all animation tests
-flutter test test/animation/
-
-# Run specific test file
-flutter test test/animation/event_timing_test.dart
-
-# Run example app
-cd example && flutter run
-
-# Check all tests (383 passing, 2 blocked by ID bug)
-flutter test
+./.fvm/flutter_sdk/bin/flutter test
+./.fvm/flutter_sdk/bin/flutter analyze
 ```
 
-See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for complete development guide.
+Result:
+- `flutter test`: **All tests passed** (`+493 ~1`)
+- `flutter analyze`: **0 errors**, **0 warnings** (info-level deprecations remain)
 
----
+## What Is Implemented
 
-## Test Results Summary
+### SMIL Engine
+- `<animate>`, `<animateTransform>`, `<animateMotion>`, `<set>`, `<animateColor>` parsing
+- `animateMotion`: inline `path` and `<mpath href="#...">` / `<mpath xlink:href="#...">` references
+- Timing conditions: offset, syncbase, event-based
+- Event target syntax support: `id.click`, `id.mouseover+200ms`
+- `calcMode="spline"`, `calcMode="paced"`
+- `additive="sum"`, `accumulate="sum"`
+- `AnimatedSvgController`: pause/resume/seek/playbackRate/restart/reverse
 
-**Total Tests:** 385
-- ✅ **Passing:** 383 (99.5%)
-- ❌ **Failing:** 2 (0.5%)
-  - 1 in `event_timing_test.dart` - blocked by ID parsing bug
-  - 1 in other test - needs investigation
+### Interaction & Events
+- Document-level events: click/mouseover/mouseout dispatch
+- Element-level hit-testing and dispatch for `rect/circle/ellipse/line/path/polygon/polyline`
+- Target-specific event activation in timeline and tests
 
-**Test Coverage by Stage:**
-- Stage 1-6: ✅ All passing
-- Stage 7 (Syncbase): ✅ All passing
-- Stage 8 (Events): ⚠️ 15/16 passing (1 blocked by ID bug)
-   - Event timing edge cases** - 2 minor test failures in complex scenarios (mixed time+event conditions)
-2. **Pulsing Border 🆕
+### Runtime Diagnostics
+- Structured trace API in `AnimatedSvgPicture`:
+  - `SvgTraceEvent`, `SvgTraceLevel`, `onTrace`
+  - Optional per-frame tick tracing (`traceFrameTicks`)
 
-3. **Colors** (3 примера):
-   - Fill Color Animation
-   - Stroke Color Animation
-   - Gradient Animation 🆕
-   - Fading Colors 🆕
+### Example Playground
+- `example/lib/pages/custom_svg_viewer_page.dart` now provides:
+  - SVG input (code + URL)
+  - Live preview with controller controls
+  - Trace logs, problems panel, and system checklist
+  - Structured static diagnostics (parity/unsupported tags, unsupported filter primitives, broken references)
+  - Export/import of full run report as JSON (source + diagnostics + runtime trace log)
+  - Trace logs filtering (severity/category) and search
+  - Problems grouping by `code`/`category`
 
-4. **Timing** (2 примера):
-   - Different Durations
-   - Easing Functions
+### SVG Filters (Animated Pipeline)
+- Parsed/applied primitives:
+  - `feGaussianBlur`
+  - `feOffset`
+  - `feFlood`
+  - `feBlend`
+  - `feComposite`
+  - `feMerge` (baseline parsing/composition placeholder)
+  - `feDropShadow` (simplified)
+  - `feColorMatrix`
 
-5. **Path Morphing** (2 примера):
-   - Rectangle to Circle
-   - Star to Heart
+### Geometry Rendering (Animated Pipeline)
+- Painted: `rect`, `circle`, `ellipse`, `line`, `path`, `polygon`, `polyline`
+- `path` rendering implemented via `PathParser` + command-to-canvas conversion
+- Gradient paint servers for fill/stroke: `linearGradient`, `radialGradient`, `stop`
 
-6. **Motion** (3 примера):
-   - Circle Path
-   - Auto Rotation
-   - Variable Speed
+### Structural / Reuse (Animated Pipeline)
+- Baseline `<use href="#id">` rendering is implemented
+- Baseline `<symbol>` rendering through `<use href="#symbolId">` is implemented (`viewBox` + `use width/height` scaling)
+- `<defs>` content is treated as definitions-only (not painted directly)
 
-**Результат:**
-- ✅ Все 313 тестов проходят после изменений
-- ✅ Приложение компилируется без ошибок
-- ✅ Готова инфраструктура для демонстрации всех возможностей SMIL анимаций
-- ✅ 20 разнообразных примеров покрывающих все типы анимаций
+### Clipping / Masking (Animated Pipeline)
+- Baseline `clipPath` support (`clip-path="url(#id)"`) is implemented
+- Baseline `mask` support (`mask="url(#id)"`) is implemented (geometry clipping semantics)
 
----
+## Known Gaps (Blink Parity, Animated Pipeline)
 
-## 🎯 Next Steps
+Detailed audit: `/Users/denisnadey/apps/flutter_full_svg_support/docs/BLINK_PARITY_AUDIT.md`
 
-**Immediate priorities:**
-1. Stage 8 (continued): calcMode="spline" with cubic-bezier easing
-2. Stage 8 (continued): calcMode="paced" for equal velocity
-3. Fix 2 remaining edge case test failures
+High-impact gaps:
+1. No animated-pipeline support for text, full mask/clip semantics parity, full reuse parity (advanced `<use>` inheritance and `symbol` semantics), image/foreignObject.
+2. Hit-testing still misses text and advanced painted-geometry semantics (full clip/mask/use-aware hit regions).
+3. Filter parity is partial: 8/25 Blink filter primitives.
+4. CSS animation conversion is partial (`transform` parsing, `cubic-bezier`, `alternate*`).
+5. `animateMotion` still lacks broader Blink-level semantics beyond path references.
+6. `paced` distance fallback for `path`/`transform` remains incomplete.
 
-**Future work:**
-- Stage 9: CSS Animations (@keyframes)
-- Stage 10: CSS Transitions
-- Stage 11: Performance optimizations
-- Stage 12: Production release
+## Documentation Policy
+
+To avoid drift:
+- Current factual status lives only here.
+- `NEXT_STEPS.md` and `TODO.md` are planning documents.
+
+## Next Execution Plan
+
+1. Expand filter primitive support beyond current 8/25 by upgrading `feMerge`/`feMergeNode` and `feDropShadow` to full composition semantics.
+2. Expand hit-testing beyond current baseline to cover advanced painted geometry semantics (clip/mask/use and text).
+3. Continue CSS/SMIL parity gaps (`transform`, `cubic-bezier`, `alternate*`).
+4. Improve `<use>`/`symbol` inheritance semantics.

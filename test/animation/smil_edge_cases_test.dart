@@ -76,6 +76,24 @@ void main() {
       expect(animations, isEmpty);
     });
 
+    test('handles animateMotion with unresolved mpath reference', () {
+      final svgString = '''
+<svg>
+  <rect>
+    <animateMotion dur="2s">
+      <mpath href="#missingPath"/>
+    </animateMotion>
+  </rect>
+</svg>
+''';
+
+      final document = SvgParser.parse(svgString);
+      final animations = SmilParser.parseAnimations(document);
+
+      // Should be ignored since mpath reference can't be resolved.
+      expect(animations, isEmpty);
+    });
+
     test('handles invalid path data in animateMotion', () {
       final svgString = '''
 <svg>

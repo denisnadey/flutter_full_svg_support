@@ -15,6 +15,14 @@ void main() {
 </svg>
 ''';
 
+    const reverseSvg = '''
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <rect x="10" y="10" width="30" height="30" fill="red">
+    <animate attributeName="x" from="10" to="60" dur="2s" fill="freeze"/>
+  </rect>
+</svg>
+''';
+
     test('controller initial state', () {
       final controller = AnimatedSvgController();
 
@@ -280,6 +288,48 @@ void main() {
         centroid2.dx,
         greaterThan(centroid1.dx + 5),
         reason: 'Rectangle should move faster with 2x playback rate',
+      );
+    });
+
+    testWidgets('controller reverse changes playback direction', (
+      tester,
+    ) async {
+      final controller = AnimatedSvgController();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: AnimatedSvgPicture.string(
+                reverseSvg,
+                width: 200,
+                height: 200,
+                controller: controller,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 600));
+
+      final pixels1 = await VisualTestUtils.captureWidgetPixels(tester);
+      final analysis1 = VisualTestUtils.analyzeRedPixels(pixels1, 800, 600);
+      final centroidForward = analysis1.centroid;
+
+      controller.reverse();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final pixels2 = await VisualTestUtils.captureWidgetPixels(tester);
+      final analysis2 = VisualTestUtils.analyzeRedPixels(pixels2, 800, 600);
+      final centroidReverse = analysis2.centroid;
+
+      expect(
+        centroidReverse.dx,
+        lessThan(centroidForward.dx - 3),
+        reason: 'Rectangle should move left after reverse()',
       );
     });
   });

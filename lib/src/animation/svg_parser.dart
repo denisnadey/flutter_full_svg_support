@@ -41,29 +41,29 @@ class SvgParser {
       filters: filters,
       cssKeyframes: keyframes,
     );
-    
+
     return svgDocument;
   }
 
   /// Парсит фильтры из <defs><filter> элементов
   static SvgFilters _parseFilters(XmlElement svgElement) {
     final filters = SvgFilters();
-    
+
     // Ищем <defs> элемент
     final defsElements = svgElement.findElements('defs');
     if (defsElements.isEmpty) {
       return filters;
     }
-    
+
     final defs = defsElements.first;
-    
+
     // Ищем все <filter> элементы
     for (final filterElement in defs.findElements('filter')) {
       final filterId = filterElement.getAttribute('id');
       if (filterId == null || filterId.isEmpty) {
         continue; // Фильтр без ID не может быть использован
       }
-      
+
       // Парсим примитивы фильтра (feGaussianBlur, feDropShadow, etc.)
       for (final child in filterElement.childElements) {
         final filter = _parseFilterPrimitive(child, filterId);
@@ -72,17 +72,27 @@ class SvgParser {
         }
       }
     }
-    
+
     return filters;
   }
 
   /// Парсит примитив фильтра (feGaussianBlur, feDropShadow, feColorMatrix)
   static SvgFilter? _parseFilterPrimitive(XmlElement element, String filterId) {
     final tagName = element.name.local;
-    
+
     switch (tagName) {
       case 'feGaussianBlur':
         return _parseGaussianBlur(element, filterId);
+      case 'feOffset':
+        return _parseOffset(element, filterId);
+      case 'feFlood':
+        return _parseFlood(element, filterId);
+      case 'feBlend':
+        return _parseBlend(element, filterId);
+      case 'feComposite':
+        return _parseComposite(element, filterId);
+      case 'feMerge':
+        return _parseMerge(element, filterId);
       case 'feDropShadow':
         return _parseDropShadow(element, filterId);
       case 'feColorMatrix':
@@ -100,7 +110,7 @@ class SvgParser {
   ) {
     final stdDeviationStr = element.getAttribute('stdDeviation') ?? '0';
     final stdDeviation = _parseNumberOptionalNumber(stdDeviationStr);
-    
+
     return SvgGaussianBlurFilter(
       id: filterId,
       stdDeviationX: stdDeviation.$1,
@@ -118,20 +128,77 @@ class SvgParser {
     final stdDeviationStr = element.getAttribute('stdDeviation') ?? '2';
     final stdDeviation = _parseNumberOptionalNumber(stdDeviationStr);
     final stdDev = stdDeviation.$1; // Используем X значение
-    
+
     // Парсим flood-color
-    final floodColorStr = element.getAttribute('flood-color') ??
+    final floodColorStr =
+        element.getAttribute('flood-color') ??
         element.getAttribute('floodColor') ??
         'black';
     final parsedColor = _parseColor(floodColorStr);
     final color = parsedColor is ui.Color ? parsedColor : null;
-    
+
     return SvgDropShadowFilter(
       id: filterId,
       dx: dx,
       dy: dy,
       stdDeviation: stdDev,
       floodColor: color,
+    );
+  }
+
+  /// Парсит feOffset элемент
+  static SvgOffsetFilter _parseOffset(XmlElement element, String filterId) {
+    final dx = _parseNumber(element.getAttribute('dx') ?? '0');
+    final dy = _parseNumber(element.getAttribute('dy') ?? '0');
+
+    return SvgOffsetFilter(id: filterId, dx: dx, dy: dy);
+  }
+
+  /// Парсит feFlood элемент
+  static SvgFloodFilter _parseFlood(XmlElement element, String filterId) {
+    final floodColorStr =
+        element.getAttribute('flood-color') ??
+        element.getAttribute('floodColor') ??
+        'black';
+    final parsedColor = _parseColor(floodColorStr);
+    final floodColor = parsedColor is ui.Color
+        ? parsedColor
+        : const ui.Color(0xFF000000);
+    final floodOpacity = _parseNumber(
+      element.getAttribute('flood-opacity') ??
+          element.getAttribute('floodOpacity') ??
+          '1',
+    );
+
+    return SvgFloodFilter(
+      id: filterId,
+      floodColor: floodColor,
+      floodOpacity: floodOpacity.clamp(0.0, 1.0),
+    );
+  }
+
+  /// Парсит feBlend элемент
+  static SvgBlendFilter _parseBlend(XmlElement element, String filterId) {
+    final mode = parseSvgBlendMode(element.getAttribute('mode'));
+    return SvgBlendFilter(id: filterId, mode: mode);
+  }
+
+  /// Парсит feComposite элемент
+  static SvgCompositeFilter _parseComposite(
+    XmlElement element,
+    String filterId,
+  ) {
+    final operatorType = element.getAttribute('operator') ?? 'over';
+    final mode = parseSvgCompositeOperator(operatorType);
+
+    return SvgCompositeFilter(
+      id: filterId,
+      operatorType: operatorType,
+      mode: mode,
+      k1: _parseNumber(element.getAttribute('k1') ?? '0'),
+      k2: _parseNumber(element.getAttribute('k2') ?? '0'),
+      k3: _parseNumber(element.getAttribute('k3') ?? '0'),
+      k4: _parseNumber(element.getAttribute('k4') ?? '0'),
     );
   }
 
@@ -142,7 +209,7 @@ class SvgParser {
   ) {
     final typeStr = element.getAttribute('type') ?? 'matrix';
     final valuesStr = element.getAttribute('values') ?? '';
-    
+
     SvgColorMatrixType matrixType;
     switch (typeStr.toLowerCase()) {
       case 'saturate':
@@ -161,14 +228,14 @@ class SvgParser {
         matrixType = SvgColorMatrixType.matrix;
         break;
     }
-    
+
     // Парсим values
     final values = valuesStr
         .split(RegExp(r'[\s,]+'))
         .map((s) => double.tryParse(s.trim()))
         .whereType<double>()
         .toList();
-    
+
     return SvgColorMatrixFilter(
       id: filterId,
       matrixType: matrixType,
@@ -176,22 +243,40 @@ class SvgParser {
     );
   }
 
+  /// Парсит feMerge элемент и его дочерние feMergeNode.
+  static SvgMergeFilter _parseMerge(XmlElement element, String filterId) {
+    final nodeInputs = <String?>[];
+
+    for (final child in element.childElements) {
+      if (child.name.local != 'feMergeNode') {
+        continue;
+      }
+      final inAttr = child.getAttribute('in');
+      final normalized = inAttr?.trim();
+      nodeInputs.add(
+        normalized == null || normalized.isEmpty ? null : normalized,
+      );
+    }
+
+    return SvgMergeFilter(id: filterId, nodeInputs: nodeInputs);
+  }
+
   /// Парсит CSS <style> элементы и извлекает @keyframes
   static List<CssKeyframes> _parseStyleElements(XmlElement svgElement) {
     final keyframes = <CssKeyframes>[];
-    
+
     // Ищем все <style> элементы
     final styleElements = svgElement.findElements('style');
-    
+
     for (final styleElement in styleElements) {
-      final cssText = styleElement.text;
+      final cssText = styleElement.innerText;
       if (cssText.isEmpty) continue;
-      
+
       // Парсим @keyframes из CSS текста
       final parsedKeyframes = CssParser.parseKeyframes(cssText);
       keyframes.addAll(parsedKeyframes);
     }
-    
+
     return keyframes;
   }
 
@@ -203,7 +288,7 @@ class SvgParser {
         .map((s) => double.tryParse(s))
         .whereType<double>()
         .toList();
-    
+
     if (parts.isEmpty) {
       return (0.0, 0.0);
     } else if (parts.length == 1) {
@@ -330,6 +415,11 @@ class SvgParser {
   /// Парсит цвет (упрощённая версия, полный парсинг будет позже)
   static Object _parseColor(String value) {
     final trimmed = value.trim().toLowerCase();
+
+    // paint servers, e.g. url(#gradientId)
+    if (trimmed.startsWith('url(')) {
+      return value.trim();
+    }
 
     // Пока возвращаем строку, позже добавим полный парсинг
     // #RGB, #RRGGBB, rgb(), rgba(), named colors, etc.

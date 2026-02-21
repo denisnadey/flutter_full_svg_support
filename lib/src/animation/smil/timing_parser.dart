@@ -63,7 +63,11 @@ class TimingParser {
 
   static bool _isEventName(String value) {
     // Extract event name (before any +/- offset)
-    final eventName = value.split(RegExp(r'[+-]')).first.trim();
+    // Supports both "click" and "elementId.click" syntaxes
+    final eventPart = value.split(RegExp(r'[+-]')).first.trim();
+    final eventName = eventPart.contains('.')
+        ? eventPart.split('.').last.trim()
+        : eventPart;
 
     // Common DOM events
     const events = {
@@ -139,12 +143,15 @@ class TimingParser {
 
   /// Parse event condition: "click", "mouseover+1s"
   static EventCondition? _parseEvent(String value) {
-    // Pattern: eventName[+/-offset]
-    final match = RegExp(r'^([a-zA-Z]+)([+-].+)?$').firstMatch(value);
+    // Pattern: [targetId.]eventName[+/-offset]
+    final match = RegExp(
+      r'^(?:([a-zA-Z0-9_-]+)\.)?([a-zA-Z]+)([+-].+)?$',
+    ).firstMatch(value);
     if (match == null) return null;
 
-    final eventType = match.group(1)!;
-    final offsetStr = match.group(2);
+    final targetId = match.group(1);
+    final eventType = match.group(2)!;
+    final offsetStr = match.group(3);
 
     Duration offset = Duration.zero;
     if (offsetStr != null && offsetStr.isNotEmpty) {
@@ -156,7 +163,11 @@ class TimingParser {
       }
     }
 
-    return EventCondition(eventType: eventType, offset: offset);
+    return EventCondition(
+      eventType: eventType,
+      offset: offset,
+      targetId: targetId,
+    );
   }
 
   /// Parse offset condition: "2s", "500ms", "0.5s"
