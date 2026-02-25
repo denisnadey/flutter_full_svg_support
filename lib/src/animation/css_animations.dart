@@ -2,8 +2,15 @@
 class CssKeyframe {
   final double offset; // 0.0 - 1.0
   final Map<String, String> properties;
+  /// Per-keyframe timing function override (animation-timing-function in keyframe body).
+  /// Applies to the interval starting at this keyframe. null means use animation-level default.
+  final String? timingFunction;
 
-  CssKeyframe({required this.offset, required this.properties});
+  CssKeyframe({
+    required this.offset,
+    required this.properties,
+    this.timingFunction,
+  });
 }
 
 /// CSS @keyframes анимация
@@ -110,7 +117,16 @@ class CssParser {
       // Парсим CSS свойства
       final properties = _parseProperties(propertiesStr);
 
-      keyframes.add(CssKeyframe(offset: offset, properties: properties));
+      // Извлекаем per-keyframe animation-timing-function (не анимируемое свойство)
+      final perKeyframeTiming = properties.remove('animation-timing-function');
+
+      keyframes.add(
+        CssKeyframe(
+          offset: offset,
+          properties: properties,
+          timingFunction: perKeyframeTiming,
+        ),
+      );
     }
 
     // Сортируем по offset

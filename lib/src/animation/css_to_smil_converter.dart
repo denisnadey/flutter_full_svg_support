@@ -25,6 +25,21 @@ class CssToSmilConverter {
       // Определяем тип атрибута
       final attributeType = _inferAttributeType(propertyName, targetNode);
 
+      // Для transform: проверяем не является ли значение compound transform.
+      // SVGator генерирует: translate(Xpx,Ypx) scale(sx,sy) — несколько функций.
+      // Такой compound нужно разложить на отдельные SmilAnimation per-function.
+      if (propertyName == 'transform' &&
+          attributeType == SvgAttributeType.transform) {
+        final decomposed = _decomposeCompoundTransform(
+          keyframes: keyframes,
+          animation: animation,
+          targetNode: targetNode,
+          values: values,
+        );
+        smilAnimations.addAll(decomposed);
+        continue;
+      }
+
       // Создаём SMIL анимацию
       final smilAnim = _createSmilAnimation(
         keyframes: keyframes,
@@ -41,6 +56,223 @@ class CssToSmilConverter {
     }
 
     return smilAnimations;
+  }
+
+  /// Раскладывает compound CSS transform (`translate(...) scale(...)`) на
+  /// отдельные SmilAnimation — по одной на каждую изменяющуюся функцию.
+  static List<SmilAnimation> _decomposeCompoundTransform({
+    required CssKeyframes keyframes,
+    required CssAnimation animation,
+    required SvgNode targetNode,
+    required List<Object> values,
+  }) {
+    final result = <SmilAnimation>[];
+
+    // Разбираем каждый keyframe-value на список (functionName, normalizedValue).
+    // Нормализованное значение — строка вида `translate(x, y)` / `scale(sx, sy)` etc.
+    final funcRegex = RegExp(
+      r'(translate|translatex|translatey|rotate|scale|scalex|scaley|skewx|skewy|matrix)\s*\(\s*([^)]+)\s*\)',
+      caseSensitive: false,
+    );
+
+    // Collect per-function values per keyframe.
+    // Map: functionName -> list of (offset, normalizedValue)
+    final byFunction = <String, Map<double, String>>{};
+
+    final relevantKfs = keyframes.keyframes
+        .where((kf) => kf.properties.containsKey('transform'))
+        .toList()
+      ..sort((a, b) => a.offset.compareTo(b.offset));
+
+    for (final kf in relevantKfs) {
+      final rawTransform = kf.properties['transform']!;
+      for (final m in funcRegex.allMatches(rawTransform)) {
+        final funcName = m.group(1)!.toLowerCase();
+        final args = m
+            .group(2)!
+            .split(RegExp(r'[\s,]+'))
+            .where((s) => s.trim().isNotEmpty)
+            .map((s) => s.trim())
+            .toList();
+
+        String? normalized;
+        switch (funcName) {
+          case 'translate':
+            normalized = _normalizeTranslate(args);
+            break;
+          case 'translatex':
+            normalized = _normalizeTranslate([
+              if (args.isNotEmpty) args[0],
+              '0',
+            ]);
+            break;
+          case 'translatey':
+            normalized = _normalizeTranslate([
+              '0',
+              if (args.isNotEmpty) args[0],
+            ]);
+            break;
+          case 'rotate':
+            normalized = _normalizeRotate(args);
+            break;
+          case 'scale':
+            normalized = _normalizeScale(args);
+            break;
+          case 'scalex':
+            normalized = _normalizeScale([
+              if (args.isNotEmpty) args[0],
+              '1',
+            ]);
+            break;
+          case 'scaley':
+            normalized = _normalizeScale([
+              '1',
+              if (args.isNotEmpty) args[0],
+            ]);
+            break;
+          case 'skewx':
+            normalized = _normalizeSkew(args, 'skewX');
+            break;
+          case 'skewy':
+            normalized = _normalizeSkew(args, 'skewY');
+            break;
+          case 'matrix':
+            normalized = _normalizeMatrix(args);
+            break;
+        }
+        if (normalized != null) {
+          byFunction.putIfAbsent(funcName, () => {});
+          byFunction[funcName]![kf.offset] = normalized;
+        }
+      }
+    }
+
+    if (byFunction.isEmpty) {
+      // Fallback: no recognised functions — treat as single animation.
+      final fallback = _createSmilAnimation(
+        keyframes: keyframes,
+        animation: animation,
+        targetNode: targetNode,
+        attributeName: 'transform',
+        attributeType: SvgAttributeType.transform,
+        values: values,
+      );
+      if (fallback != null) result.add(fallback);
+      return result;
+    }
+
+    for (final entry in byFunction.entries) {
+      final funcName = entry.key;
+      final funcOffsets = entry.value;
+
+      // Determine SMIL transform type.
+      String smilTransformType;
+      switch (funcName) {
+        case 'rotate':
+          smilTransformType = 'rotate';
+          break;
+        case 'scale':
+        case 'scalex':
+        case 'scaley':
+          smilTransformType = 'scale';
+          break;
+        case 'skewx':
+          smilTransformType = 'skewX';
+          break;
+        case 'skewy':
+          smilTransformType = 'skewY';
+          break;
+        case 'translate':
+        case 'translatex':
+        case 'translatey':
+        default:
+          smilTransformType = 'translate';
+          break;
+      }
+
+      // Extract inner values (the arguments to the function).
+      final smilValues = <Object>[];
+      final smilKeyTimes = <double>[];
+      final sortedOffsets = funcOffsets.keys.toList()..sort();
+      for (final offset in sortedOffsets) {
+        final raw = funcOffsets[offset]!;
+        // Extract arguments from normalised `func(args)`.
+        final inner =
+            RegExp(r'\(([^)]+)\)').firstMatch(raw)?.group(1) ?? raw;
+        smilValues.add(inner);
+        smilKeyTimes.add(offset);
+      }
+
+      if (smilValues.length < 2) continue;
+
+      // Build per-keyframe timing.
+      final intervalCount = smilValues.length - 1;
+      SmilCalcMode calcMode = SmilCalcMode.linear;
+      List<CubicBezier>? keySplines;
+
+      final perInterval = <_TimingConversion>[];
+      for (int i = 0; i < intervalCount; i++) {
+        final kfOffset = sortedOffsets[i];
+        final kf = relevantKfs.firstWhere(
+          (k) => (k.offset - kfOffset).abs() < 1e-6,
+          orElse: () => relevantKfs.first,
+        );
+        final kfTiming = kf.timingFunction ?? animation.timingFunction;
+        perInterval.add(_convertTimingFunction(kfTiming, 2));
+      }
+
+      final anySpline = perInterval.any(
+        (t) => t.calcMode == SmilCalcMode.spline,
+      );
+      if (anySpline) {
+        calcMode = SmilCalcMode.spline;
+        keySplines = [];
+        for (final t in perInterval) {
+          keySplines.add(
+            t.keySplines?.isNotEmpty == true
+                ? t.keySplines!.first
+                : const CubicBezier(0.0, 0.0, 1.0, 1.0),
+          );
+        }
+      } else {
+        final globalT = _convertTimingFunction(
+          animation.timingFunction,
+          smilValues.length,
+        );
+        calcMode = globalT.calcMode;
+        keySplines = globalT.keySplines;
+      }
+
+      final fillMode = _convertFillMode(animation.fillMode);
+      final playbackDirection = _convertDirection(animation.direction);
+
+      try {
+        result.add(
+          SmilAnimation(
+            type: SmilAnimationType.animateTransform,
+            targetNode: targetNode,
+            attributeName: 'transform',
+            attributeType: SvgAttributeType.transform,
+            transformType: smilTransformType,
+            values: smilValues,
+            keyTimes: smilKeyTimes,
+            keySplines: keySplines,
+            dur: animation.duration,
+            begin: animation.delay,
+            repeatCount: animation.iterationCount,
+            fillMode: fillMode,
+            calcMode: calcMode,
+            playbackDirection: playbackDirection,
+            additive: SmilAdditiveMode.sum,
+            accumulate: false,
+          ),
+        );
+      } catch (_) {
+        // skip invalid animation
+      }
+    }
+
+    return result;
   }
 
   /// Извлекает все анимируемые свойства из keyframes
@@ -89,11 +321,54 @@ class CssToSmilConverter {
     // Конвертируем direction в runtime направление проигрывания итераций
     final playbackDirection = _convertDirection(animation.direction);
 
-    // Конвертируем timing function в calcMode/keySplines
-    final timing = _convertTimingFunction(
-      animation.timingFunction,
-      smilValues.length,
-    );
+    // Строим per-keyframe timing.
+    // Each interval [i..i+1] uses the timingFunction of keyframe[i], or the
+    // animation-level timing as fallback.
+    final relevantKeyframes = keyframes.keyframes
+        .where((kf) => kf.properties.containsKey(attributeName))
+        .toList()
+      ..sort((a, b) => a.offset.compareTo(b.offset));
+
+    final intervalCount = smilValues.length > 1 ? smilValues.length - 1 : 0;
+    SmilCalcMode calcMode = SmilCalcMode.linear;
+    List<CubicBezier>? keySplines;
+
+    if (intervalCount > 0) {
+      // Try to detect per-keyframe overrides first.
+      final perInterval = <_TimingConversion>[];
+      for (int i = 0; i < intervalCount; i++) {
+        final kfTimingStr = i < relevantKeyframes.length
+            ? relevantKeyframes[i].timingFunction
+            : null;
+        final effectiveTiming = kfTimingStr ?? animation.timingFunction;
+        perInterval.add(_convertTimingFunction(effectiveTiming, 2));
+      }
+
+      // If any interval is spline, the whole animation must be spline.
+      final anySpline = perInterval.any(
+        (t) => t.calcMode == SmilCalcMode.spline,
+      );
+      if (anySpline) {
+        calcMode = SmilCalcMode.spline;
+        keySplines = [];
+        for (final t in perInterval) {
+          if (t.keySplines != null && t.keySplines!.isNotEmpty) {
+            keySplines.add(t.keySplines!.first);
+          } else {
+            // linear interval mapped to cubic-bezier(0,0,1,1)
+            keySplines.add(const CubicBezier(0.0, 0.0, 1.0, 1.0));
+          }
+        }
+      } else {
+        // All intervals are the same non-spline mode — use animation-level default.
+        final globalTiming = _convertTimingFunction(
+          animation.timingFunction,
+          smilValues.length,
+        );
+        calcMode = globalTiming.calcMode;
+        keySplines = globalTiming.keySplines;
+      }
+    }
 
     // Конвертируем fillMode
     final fillMode = _convertFillMode(animation.fillMode);
@@ -119,12 +394,12 @@ class CssToSmilConverter {
         transformType: transformType,
         values: smilValues,
         keyTimes: keyTimes,
-        keySplines: timing.keySplines,
+        keySplines: keySplines,
         dur: animation.duration,
         begin: animation.delay,
         repeatCount: animation.iterationCount,
         fillMode: fillMode,
-        calcMode: timing.calcMode,
+        calcMode: calcMode,
         playbackDirection: playbackDirection,
         additive: SmilAdditiveMode.replace,
         accumulate: false,
@@ -266,6 +541,8 @@ class CssToSmilConverter {
       'fill-opacity',
       'stroke-opacity',
       'stroke-width',
+      'stroke-dashoffset',
+      'stop-opacity',
     };
 
     if (numericAttributes.contains(attributeName)) {
@@ -273,7 +550,9 @@ class CssToSmilConverter {
     }
 
     // Цветовые атрибуты
-    if (attributeName == 'fill' || attributeName == 'stroke') {
+    if (attributeName == 'fill' ||
+        attributeName == 'stroke' ||
+        attributeName == 'stop-color') {
       return SvgAttributeType.color;
     }
 

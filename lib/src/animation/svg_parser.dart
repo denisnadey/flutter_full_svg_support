@@ -816,6 +816,7 @@ class SvgParser {
     'stroke-opacity',
     'stroke-width',
     'stroke-miterlimit',
+    'stroke-dashoffset',
     'font-size',
     'offset',
   };
