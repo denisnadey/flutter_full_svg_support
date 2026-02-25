@@ -26,6 +26,9 @@ class SvgParser {
     // Парсим CSS <style> элементы для @keyframes
     final keyframes = _parseStyleElements(svgElement);
 
+    // Парсим CSS правила для селекторов (id, class)
+    final selectorRules = _parseSelectorRulesElements(svgElement);
+
     // Парсим корневой <svg> элемент
     final rootNode = _parseElement(svgElement);
 
@@ -41,6 +44,7 @@ class SvgParser {
       height: height,
       filters: filters,
       cssKeyframes: keyframes,
+      cssSelectorRules: selectorRules,
     );
 
     return svgDocument;
@@ -333,6 +337,25 @@ class SvgParser {
     }
 
     return keyframes;
+  }
+
+  /// Парсит CSS <style> элементы и извлекает правила для селекторов
+  static List<CssSelectorRule> _parseSelectorRulesElements(
+    XmlElement svgElement,
+  ) {
+    final rules = <CssSelectorRule>[];
+
+    final styleElements = svgElement.findElements('style');
+
+    for (final styleElement in styleElements) {
+      final cssText = styleElement.innerText;
+      if (cssText.isEmpty) continue;
+
+      final parsedRules = CssParser.parseSelectorRules(cssText);
+      rules.addAll(parsedRules);
+    }
+
+    return rules;
   }
 
   /// Парсит число или пару чисел (например "5" или "5 10")

@@ -79,10 +79,11 @@ class CssToSmilConverter {
     // Map: functionName -> list of (offset, normalizedValue)
     final byFunction = <String, Map<double, String>>{};
 
-    final relevantKfs = keyframes.keyframes
-        .where((kf) => kf.properties.containsKey('transform'))
-        .toList()
-      ..sort((a, b) => a.offset.compareTo(b.offset));
+    final relevantKfs =
+        keyframes.keyframes
+            .where((kf) => kf.properties.containsKey('transform'))
+            .toList()
+          ..sort((a, b) => a.offset.compareTo(b.offset));
 
     for (final kf in relevantKfs) {
       final rawTransform = kf.properties['transform']!;
@@ -119,16 +120,10 @@ class CssToSmilConverter {
             normalized = _normalizeScale(args);
             break;
           case 'scalex':
-            normalized = _normalizeScale([
-              if (args.isNotEmpty) args[0],
-              '1',
-            ]);
+            normalized = _normalizeScale([if (args.isNotEmpty) args[0], '1']);
             break;
           case 'scaley':
-            normalized = _normalizeScale([
-              '1',
-              if (args.isNotEmpty) args[0],
-            ]);
+            normalized = _normalizeScale(['1', if (args.isNotEmpty) args[0]]);
             break;
           case 'skewx':
             normalized = _normalizeSkew(args, 'skewX');
@@ -197,8 +192,7 @@ class CssToSmilConverter {
       for (final offset in sortedOffsets) {
         final raw = funcOffsets[offset]!;
         // Extract arguments from normalised `func(args)`.
-        final inner =
-            RegExp(r'\(([^)]+)\)').firstMatch(raw)?.group(1) ?? raw;
+        final inner = RegExp(r'\(([^)]+)\)').firstMatch(raw)?.group(1) ?? raw;
         smilValues.add(inner);
         smilKeyTimes.add(offset);
       }
@@ -209,6 +203,7 @@ class CssToSmilConverter {
       final intervalCount = smilValues.length - 1;
       SmilCalcMode calcMode = SmilCalcMode.linear;
       List<CubicBezier>? keySplines;
+      List<StepTiming>? keySteps;
 
       final perInterval = <_TimingConversion>[];
       for (int i = 0; i < intervalCount; i++) {
@@ -224,6 +219,8 @@ class CssToSmilConverter {
       final anySpline = perInterval.any(
         (t) => t.calcMode == SmilCalcMode.spline,
       );
+      final anyStep = perInterval.any((t) => t.keySteps != null);
+
       if (anySpline) {
         calcMode = SmilCalcMode.spline;
         keySplines = [];
@@ -234,6 +231,16 @@ class CssToSmilConverter {
                 : const CubicBezier(0.0, 0.0, 1.0, 1.0),
           );
         }
+      } else if (anyStep) {
+        calcMode = SmilCalcMode.linear;
+        keySteps = [];
+        for (final t in perInterval) {
+          keySteps.add(
+            t.keySteps?.isNotEmpty == true
+                ? t.keySteps!.first
+                : const StepTiming(steps: 1000), // fake linear
+          );
+        }
       } else {
         final globalT = _convertTimingFunction(
           animation.timingFunction,
@@ -241,6 +248,7 @@ class CssToSmilConverter {
         );
         calcMode = globalT.calcMode;
         keySplines = globalT.keySplines;
+        keySteps = globalT.keySteps;
       }
 
       final fillMode = _convertFillMode(animation.fillMode);
@@ -257,6 +265,7 @@ class CssToSmilConverter {
             values: smilValues,
             keyTimes: smilKeyTimes,
             keySplines: keySplines,
+            keySteps: keySteps,
             dur: animation.duration,
             begin: animation.delay,
             repeatCount: animation.iterationCount,
@@ -324,14 +333,16 @@ class CssToSmilConverter {
     // Строим per-keyframe timing.
     // Each interval [i..i+1] uses the timingFunction of keyframe[i], or the
     // animation-level timing as fallback.
-    final relevantKeyframes = keyframes.keyframes
-        .where((kf) => kf.properties.containsKey(attributeName))
-        .toList()
-      ..sort((a, b) => a.offset.compareTo(b.offset));
+    final relevantKeyframes =
+        keyframes.keyframes
+            .where((kf) => kf.properties.containsKey(attributeName))
+            .toList()
+          ..sort((a, b) => a.offset.compareTo(b.offset));
 
     final intervalCount = smilValues.length > 1 ? smilValues.length - 1 : 0;
     SmilCalcMode calcMode = SmilCalcMode.linear;
     List<CubicBezier>? keySplines;
+    List<StepTiming>? keySteps;
 
     if (intervalCount > 0) {
       // Try to detect per-keyframe overrides first.
@@ -348,6 +359,8 @@ class CssToSmilConverter {
       final anySpline = perInterval.any(
         (t) => t.calcMode == SmilCalcMode.spline,
       );
+      final anyStep = perInterval.any((t) => t.keySteps != null);
+
       if (anySpline) {
         calcMode = SmilCalcMode.spline;
         keySplines = [];
@@ -359,6 +372,16 @@ class CssToSmilConverter {
             keySplines.add(const CubicBezier(0.0, 0.0, 1.0, 1.0));
           }
         }
+      } else if (anyStep) {
+        calcMode = SmilCalcMode.linear;
+        keySteps = [];
+        for (final t in perInterval) {
+          if (t.keySteps != null && t.keySteps!.isNotEmpty) {
+            keySteps.add(t.keySteps!.first);
+          } else {
+            keySteps.add(const StepTiming(steps: 1000));
+          }
+        }
       } else {
         // All intervals are the same non-spline mode — use animation-level default.
         final globalTiming = _convertTimingFunction(
@@ -367,6 +390,7 @@ class CssToSmilConverter {
         );
         calcMode = globalTiming.calcMode;
         keySplines = globalTiming.keySplines;
+        keySteps = globalTiming.keySteps;
       }
     }
 
@@ -395,6 +419,7 @@ class CssToSmilConverter {
         values: smilValues,
         keyTimes: keyTimes,
         keySplines: keySplines,
+        keySteps: keySteps,
         dur: animation.duration,
         begin: animation.delay,
         repeatCount: animation.iterationCount,
@@ -483,6 +508,10 @@ class CssToSmilConverter {
         );
       default:
         if (normalized.startsWith('steps(')) {
+          final step = _parseSteps(normalized);
+          if (step != null) {
+            return _stepTiming(step, valueCount);
+          }
           return const _TimingConversion(calcMode: SmilCalcMode.discrete);
         }
 
@@ -492,6 +521,34 @@ class CssToSmilConverter {
         }
         return const _TimingConversion(calcMode: SmilCalcMode.linear);
     }
+  }
+
+  static _TimingConversion _splineTiming(CubicBezier bezier, int valueCount) {
+    return _TimingConversion(
+      calcMode: SmilCalcMode.spline,
+      keySplines: List<CubicBezier>.filled(valueCount - 1, bezier),
+    );
+  }
+
+  static _TimingConversion _stepTiming(StepTiming step, int valueCount) {
+    return _TimingConversion(
+      calcMode: SmilCalcMode.linear, // Using linear to interpolate steps
+      keySteps: List<StepTiming>.filled(valueCount - 1, step),
+    );
+  }
+
+  static StepTiming? _parseSteps(String value) {
+    // Expected format: steps(5) or steps(5, end) or steps(5, start)
+    final match = RegExp(
+      r'^steps\(\s*(\d+)(?:\s*,\s*(start|end))?\s*\)$',
+      caseSensitive: false,
+    ).firstMatch(value.trim());
+    if (match != null) {
+      final steps = int.tryParse(match.group(1) ?? '') ?? 1;
+      final type = (match.group(2) ?? 'end').toLowerCase();
+      return StepTiming(steps: steps, stepAtStart: type == 'start');
+    }
+    return null;
   }
 
   /// Конвертирует CSS fillMode в SMIL fillMode
@@ -543,6 +600,9 @@ class CssToSmilConverter {
       'stroke-width',
       'stroke-dashoffset',
       'stop-opacity',
+      'font-size',
+      'letter-spacing',
+      'word-spacing',
     };
 
     if (numericAttributes.contains(attributeName)) {
@@ -576,13 +636,6 @@ class CssToSmilConverter {
     if (str.startsWith('skewy')) return 'skewY';
 
     return 'translate'; // По умолчанию
-  }
-
-  static _TimingConversion _splineTiming(CubicBezier spline, int valueCount) {
-    return _TimingConversion(
-      calcMode: SmilCalcMode.spline,
-      keySplines: List<CubicBezier>.filled(valueCount - 1, spline),
-    );
   }
 
   static CubicBezier? _parseCubicBezier(String value) {
@@ -772,8 +825,13 @@ class CssToSmilConverter {
 }
 
 class _TimingConversion {
-  const _TimingConversion({required this.calcMode, this.keySplines});
+  const _TimingConversion({
+    required this.calcMode,
+    this.keySplines,
+    this.keySteps,
+  });
 
   final SmilCalcMode calcMode;
   final List<CubicBezier>? keySplines;
+  final List<StepTiming>? keySteps;
 }

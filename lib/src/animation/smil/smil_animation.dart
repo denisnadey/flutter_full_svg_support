@@ -88,6 +88,7 @@ class SmilAnimation {
     this.values,
     this.keyTimes,
     this.keySplines,
+    this.keySteps,
     required this.dur,
     this.begin = Duration.zero,
     this.end,
@@ -214,6 +215,10 @@ class SmilAnimation {
   /// Контрольные точки кубических кривых Безье для spline интерполяции
   /// Каждый элемент представляет кривую между двумя соседними keyframes
   final List<CubicBezier>? keySplines;
+
+  /// Шаги для дискретной интерполяции (CSS steps())
+  /// Содержится по одному на каждый интервал между соседними keyframes
+  final List<StepTiming>? keySteps;
 
   // === Тайминг ===
 
@@ -420,10 +425,13 @@ class SmilAnimation {
       segmentProgress = (t * segmentCount) - segmentIndex;
     }
 
-    // Применяем easing если есть keySplines
+    // Применяем easing если есть keySplines или keySteps
     if (calcMode == SmilCalcMode.spline && keySplines != null) {
       final spline = keySplines![fromIndex];
       segmentProgress = spline.transform(segmentProgress);
+    } else if (keySteps != null && fromIndex < keySteps!.length) {
+      final step = keySteps![fromIndex];
+      segmentProgress = step.transform(segmentProgress);
     }
 
     // Интерполируем между значениями
@@ -800,31 +808,28 @@ class CubicBezier {
     return _bezierY(x);
   }
 
-  /// Вычислить X координату кривой Безье
+  // Вспомогательные функции для вычисления полинома
   double _bezierX(double t) {
-    final t2 = t * t;
-    final t3 = t2 * t;
-    final mt = 1 - t;
-    final mt2 = mt * mt;
-
-    return 3 * mt2 * t * x1 + 3 * mt * t2 * x2 + t3;
+    return _bezierA(x1, x2) * t * t * t +
+        _bezierB(x1, x2) * t * t +
+        _bezierC(x1) * t;
   }
 
-  /// Вычислить Y координату кривой Безье
   double _bezierY(double t) {
-    final t2 = t * t;
-    final t3 = t2 * t;
-    final mt = 1 - t;
-    final mt2 = mt * mt;
-
-    return 3 * mt2 * t * y1 + 3 * mt * t2 * y2 + t3;
+    return _bezierA(y1, y2) * t * t * t +
+        _bezierB(y1, y2) * t * t +
+        _bezierC(y1) * t;
   }
 
-  /// Производная X по t
   double _bezierXDerivative(double t) {
-    final mt = 1 - t;
-    return 3 * mt * mt * x1 + 6 * mt * t * (x2 - x1) + 3 * t * t * (1 - x2);
+    return 3 * _bezierA(x1, x2) * t * t +
+        2 * _bezierB(x1, x2) * t +
+        _bezierC(x1);
   }
+
+  double _bezierA(double p1, double p2) => 1.0 - 3.0 * p2 + 3.0 * p1;
+  double _bezierB(double p1, double p2) => 3.0 * p2 - 6.0 * p1;
+  double _bezierC(double p1) => 3.0 * p1;
 
   @override
   bool operator ==(Object other) =>
@@ -840,4 +845,29 @@ class CubicBezier {
 
   @override
   String toString() => 'CubicBezier($x1, $y1, $x2, $y2)';
+}
+
+/// Дискретная функция времени (аналог CSS steps())
+@immutable
+class StepTiming {
+  /// Создаёт ступенчатую функцию
+  const StepTiming({required this.steps, this.stepAtStart = false});
+
+  /// Количество шагов
+  final int steps;
+
+  /// Делать ли шаг в самом начале интервала
+  final bool stepAtStart;
+
+  /// Вычислить значение ступенчатой функции для t ∈ [0, 1]
+  double transform(double t) {
+    if (t >= 1.0) return 1.0;
+    if (t <= 0.0) return 0.0;
+
+    if (stepAtStart) {
+      return (t * steps).floor() / steps + (1.0 / steps);
+    } else {
+      return (t * steps).floor() / steps;
+    }
+  }
 }

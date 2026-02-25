@@ -272,6 +272,7 @@ class SvgDocument {
     this.height,
     this.filters,
     this.cssKeyframes,
+    this.cssSelectorRules,
   });
 
   /// Корневой <svg> узел
@@ -291,6 +292,9 @@ class SvgDocument {
 
   /// CSS @keyframes анимации
   final List<CssKeyframes>? cssKeyframes;
+
+  /// CSS selector rules (#id, .class)
+  final List<CssSelectorRule>? cssSelectorRules;
 
   /// Найти узел по ID во всём документе
   SvgNode? getElementById(String id) => root.findById(id);

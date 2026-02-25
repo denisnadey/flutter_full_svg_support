@@ -6,6 +6,7 @@ import 'unified_examples_page.dart';
 import 'examples_page.dart';
 import 'custom_svg_viewer_page.dart';
 import 'controller_demo_page.dart';
+import 'astronaut_helmet_page.dart';
 
 /// The SVG to display on home page
 const String svgString = '''
@@ -153,6 +154,21 @@ class HomePage extends StatelessWidget {
                           context,
                           MaterialPageRoute(
                             builder: (context) => const ControllerDemoPage(),
+                          ),
+                        );
+                      },
+                    ),
+                    _buildNavigationCard(
+                      context,
+                      title: 'Helmet Demo',
+                      icon: Icons.rocket_launch,
+                      color: Colors.teal,
+                      isMobile: isMobile,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const AstronautHelmetPage(),
                           ),
                         );
                       },

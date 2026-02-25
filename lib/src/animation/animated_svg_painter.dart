@@ -86,6 +86,12 @@ class AnimatedSvgPainter extends CustomPainter {
 
   /// Рисует узел и его детей
   void _paintNode(ui.Canvas canvas, SvgNode node, {Set<String>? useStack}) {
+    final display = node.getAttributeValue('display') as String?;
+    if (display == 'none') return;
+
+    final visibility = node.getAttributeValue('visibility') as String?;
+    final isHidden = visibility == 'hidden' || visibility == 'collapse';
+
     final currentUseStack = useStack ?? <String>{};
     canvas.save();
 
@@ -104,141 +110,143 @@ class AnimatedSvgPainter extends CustomPainter {
     final filterPasses = _resolveFilterPasses(node);
 
     // Рисуем сам узел в зависимости от типа
-    switch (node.tagName) {
-      case 'rect':
-        _paintWithFilterPasses(
-          canvas,
-          filterPasses,
-          (imageFilter, colorFilter, blendMode) => _paintRect(
+    if (!isHidden) {
+      switch (node.tagName) {
+        case 'rect':
+          _paintWithFilterPasses(
             canvas,
-            node,
-            imageFilter: imageFilter,
-            colorFilter: colorFilter,
-            blendMode: blendMode,
-          ),
-        );
-        break;
-      case 'circle':
-        _paintWithFilterPasses(
-          canvas,
-          filterPasses,
-          (imageFilter, colorFilter, blendMode) => _paintCircle(
+            filterPasses,
+            (imageFilter, colorFilter, blendMode) => _paintRect(
+              canvas,
+              node,
+              imageFilter: imageFilter,
+              colorFilter: colorFilter,
+              blendMode: blendMode,
+            ),
+          );
+          break;
+        case 'circle':
+          _paintWithFilterPasses(
             canvas,
-            node,
-            imageFilter: imageFilter,
-            colorFilter: colorFilter,
-            blendMode: blendMode,
-          ),
-        );
-        break;
-      case 'ellipse':
-        _paintWithFilterPasses(
-          canvas,
-          filterPasses,
-          (imageFilter, colorFilter, blendMode) => _paintEllipse(
+            filterPasses,
+            (imageFilter, colorFilter, blendMode) => _paintCircle(
+              canvas,
+              node,
+              imageFilter: imageFilter,
+              colorFilter: colorFilter,
+              blendMode: blendMode,
+            ),
+          );
+          break;
+        case 'ellipse':
+          _paintWithFilterPasses(
             canvas,
-            node,
-            imageFilter: imageFilter,
-            colorFilter: colorFilter,
-            blendMode: blendMode,
-          ),
-        );
-        break;
-      case 'path':
-        _paintWithFilterPasses(
-          canvas,
-          filterPasses,
-          (imageFilter, colorFilter, blendMode) => _paintPath(
+            filterPasses,
+            (imageFilter, colorFilter, blendMode) => _paintEllipse(
+              canvas,
+              node,
+              imageFilter: imageFilter,
+              colorFilter: colorFilter,
+              blendMode: blendMode,
+            ),
+          );
+          break;
+        case 'path':
+          _paintWithFilterPasses(
             canvas,
-            node,
-            imageFilter: imageFilter,
-            colorFilter: colorFilter,
-            blendMode: blendMode,
-          ),
-        );
-        break;
-      case 'polygon':
-        _paintWithFilterPasses(
-          canvas,
-          filterPasses,
-          (imageFilter, colorFilter, blendMode) => _paintPolygon(
+            filterPasses,
+            (imageFilter, colorFilter, blendMode) => _paintPath(
+              canvas,
+              node,
+              imageFilter: imageFilter,
+              colorFilter: colorFilter,
+              blendMode: blendMode,
+            ),
+          );
+          break;
+        case 'polygon':
+          _paintWithFilterPasses(
             canvas,
-            node,
-            imageFilter: imageFilter,
-            colorFilter: colorFilter,
-            blendMode: blendMode,
-          ),
-        );
-        break;
-      case 'polyline':
-        _paintWithFilterPasses(
-          canvas,
-          filterPasses,
-          (imageFilter, colorFilter, blendMode) => _paintPolyline(
+            filterPasses,
+            (imageFilter, colorFilter, blendMode) => _paintPolygon(
+              canvas,
+              node,
+              imageFilter: imageFilter,
+              colorFilter: colorFilter,
+              blendMode: blendMode,
+            ),
+          );
+          break;
+        case 'polyline':
+          _paintWithFilterPasses(
             canvas,
-            node,
-            imageFilter: imageFilter,
-            colorFilter: colorFilter,
-            blendMode: blendMode,
-          ),
-        );
-        break;
-      case 'line':
-        _paintWithFilterPasses(
-          canvas,
-          filterPasses,
-          (imageFilter, colorFilter, blendMode) => _paintLine(
+            filterPasses,
+            (imageFilter, colorFilter, blendMode) => _paintPolyline(
+              canvas,
+              node,
+              imageFilter: imageFilter,
+              colorFilter: colorFilter,
+              blendMode: blendMode,
+            ),
+          );
+          break;
+        case 'line':
+          _paintWithFilterPasses(
             canvas,
-            node,
-            imageFilter: imageFilter,
-            colorFilter: colorFilter,
-            blendMode: blendMode,
-          ),
-        );
-        break;
-      case 'image':
-        _paintWithFilterPasses(
-          canvas,
-          filterPasses,
-          (imageFilter, colorFilter, blendMode) => _paintImage(
+            filterPasses,
+            (imageFilter, colorFilter, blendMode) => _paintLine(
+              canvas,
+              node,
+              imageFilter: imageFilter,
+              colorFilter: colorFilter,
+              blendMode: blendMode,
+            ),
+          );
+          break;
+        case 'image':
+          _paintWithFilterPasses(
             canvas,
-            node,
-            imageFilter: imageFilter,
-            colorFilter: colorFilter,
-            blendMode: blendMode,
-          ),
-        );
-        break;
-      case 'text':
-        _paintWithFilterPasses(
-          canvas,
-          filterPasses,
-          (imageFilter, colorFilter, blendMode) => _paintText(
+            filterPasses,
+            (imageFilter, colorFilter, blendMode) => _paintImage(
+              canvas,
+              node,
+              imageFilter: imageFilter,
+              colorFilter: colorFilter,
+              blendMode: blendMode,
+            ),
+          );
+          break;
+        case 'text':
+          _paintWithFilterPasses(
             canvas,
-            node,
-            imageFilter: imageFilter,
-            colorFilter: colorFilter,
-            blendMode: blendMode,
-          ),
-        );
-        break;
-      case 'tspan':
-        // Рендерится из родительского <text> прохода.
-        break;
-      case 'textPath':
-        // Рендерится из родительского <text> прохода.
-        break;
-      case 'use':
-        _paintUse(canvas, node, useStack: currentUseStack);
-        break;
-      case 'g':
-      case 'svg':
-      case 'foreignObject':
-        // Группы не рисуются, только применяют атрибуты к детям
-        break;
-      default:
-        // Игнорируем неподдерживаемые элементы (animate, text, etc.)
-        break;
+            filterPasses,
+            (imageFilter, colorFilter, blendMode) => _paintText(
+              canvas,
+              node,
+              imageFilter: imageFilter,
+              colorFilter: colorFilter,
+              blendMode: blendMode,
+            ),
+          );
+          break;
+        case 'tspan':
+          // Рендерится из родительского <text> прохода.
+          break;
+        case 'textPath':
+          // Рендерится из родительского <text> прохода.
+          break;
+        case 'use':
+          _paintUse(canvas, node, useStack: currentUseStack);
+          break;
+        case 'g':
+        case 'svg':
+        case 'foreignObject':
+          // Группы не рисуются, только применяют атрибуты к детям
+          break;
+        default:
+          // Игнорируем неподдерживаемые элементы (animate, text, etc.)
+          break;
+      }
     }
 
     // Рекурсивно рисуем детей.
@@ -649,12 +657,12 @@ class AnimatedSvgPainter extends CustomPainter {
       blendMode: blendMode,
     );
     if (strokePaint != null) {
-      if (rx > 0 || ry > 0) {
-        final rrect = ui.RRect.fromRectXY(rect, rx, ry);
-        canvas.drawRRect(rrect, strokePaint);
-      } else {
-        canvas.drawRect(rect, strokePaint);
-      }
+      // Convert to path for dasharray/dashoffset support.
+      final strokePath = (rx > 0 || ry > 0)
+          ? (ui.Path()..addRRect(ui.RRect.fromRectXY(rect, rx, ry)))
+          : (ui.Path()..addRect(rect));
+      final dashedPath = _buildDashedPath(strokePath, node);
+      canvas.drawPath(dashedPath, strokePaint);
     }
   }
 
@@ -694,7 +702,9 @@ class AnimatedSvgPainter extends CustomPainter {
       blendMode: blendMode,
     );
     if (strokePaint != null) {
-      canvas.drawCircle(center, r, strokePaint);
+      final circlePath = ui.Path()..addOval(bounds);
+      final dashedPath = _buildDashedPath(circlePath, node);
+      canvas.drawPath(dashedPath, strokePaint);
     }
   }
 
@@ -738,7 +748,9 @@ class AnimatedSvgPainter extends CustomPainter {
       blendMode: blendMode,
     );
     if (strokePaint != null) {
-      canvas.drawOval(rect, strokePaint);
+      final ellipsePath = ui.Path()..addOval(rect);
+      final dashedPath = _buildDashedPath(ellipsePath, node);
+      canvas.drawPath(dashedPath, strokePaint);
     }
   }
 
@@ -764,7 +776,11 @@ class AnimatedSvgPainter extends CustomPainter {
       blendMode: blendMode,
     );
     if (strokePaint != null) {
-      canvas.drawLine(ui.Offset(x1, y1), ui.Offset(x2, y2), strokePaint);
+      final linePath = ui.Path()
+        ..moveTo(x1, y1)
+        ..lineTo(x2, y2);
+      final dashedPath = _buildDashedPath(linePath, node);
+      canvas.drawPath(dashedPath, strokePaint);
     }
   }
 

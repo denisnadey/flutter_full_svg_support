@@ -19,6 +19,16 @@ class SmilParser {
     // Парсим CSS анимации из style атрибутов и @keyframes
     _extractCssAnimations(document.root, document, animations);
 
+    // Парсим CSS анимации из <style> селекторов (#id, .class, tagName)
+    if (document.cssSelectorRules != null) {
+      _extractCssSelectorAnimations(
+        document.root,
+        document,
+        document.cssSelectorRules!,
+        animations,
+      );
+    }
+
     return animations;
   }
 
@@ -57,6 +67,66 @@ class SmilParser {
     // Рекурсивно обрабатываем детей
     for (final child in node.children) {
       _extractCssAnimations(child, document, animations);
+    }
+  }
+
+  /// Применить CSS правила из <style> к узлам по селекторам
+  static void _extractCssSelectorAnimations(
+    SvgNode node,
+    SvgDocument document,
+    List<CssSelectorRule> rules,
+    List<SmilAnimation> animations,
+  ) {
+    // Проверяем каждое правило на совпадение с текущим узлом
+    for (final rule in rules) {
+      bool matches = false;
+
+      if (rule.isIdSelector) {
+        matches = node.id == rule.targetId;
+      } else if (rule.isClassSelector) {
+        matches =
+            node.className != null &&
+            node.className!.split(RegExp(r'\s+')).contains(rule.targetClass);
+      } else {
+        // Простой элементный селектор
+        matches = node.tagName == rule.selector;
+      }
+
+      if (matches && rule.hasAnimation && document.cssKeyframes != null) {
+        // Создаем фейковую строку style для парсинга animation свойств
+        // (переиспользуем existing логику parseAnimationFromStyle)
+        final styleStr = rule.declarations.entries
+            .map((e) => '${e.key}: ${e.value}')
+            .join('; ');
+
+        final cssAnimation = CssParser.parseAnimationFromStyle(styleStr);
+        if (cssAnimation != null) {
+          final keyframesList = document.cssKeyframes!
+              .where((kf) => kf.name == cssAnimation.name)
+              .toList();
+
+          if (keyframesList.isNotEmpty) {
+            final keyframes = keyframesList.first;
+
+            // Конвертируем CSS анимацию в SMIL
+            final smilAnims = CssToSmilConverter.convert(
+              keyframes,
+              cssAnimation,
+              node,
+              document,
+            );
+            animations.addAll(smilAnims);
+
+            // Помечаем узел как имеющий анимации
+            node.hasAnimations = true;
+          }
+        }
+      }
+    }
+
+    // Рекурсивно обрабатываем детей
+    for (final child in node.children) {
+      _extractCssSelectorAnimations(child, document, rules, animations);
     }
   }
 
@@ -701,8 +771,12 @@ class SmilParser {
     'fill-opacity',
     'stroke-opacity',
     'stroke-width',
+    'stroke-dashoffset',
+    'stop-opacity',
     'stroke-miterlimit',
     'font-size',
+    'letter-spacing',
+    'word-spacing',
     'offset',
   };
 
