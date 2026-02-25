@@ -1,6 +1,10 @@
+import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'animated_svg_controller.dart';
 import 'animated_svg_painter.dart';
@@ -150,6 +154,9 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
   bool _hasAnimations = false;
   bool _isReversed = false;
   String? _hoveredElementId;
+  final Map<String, ui.Image> _imagesByHref = <String, ui.Image>{};
+  final Set<String> _pendingImageHrefs = <String>{};
+  int _imageLoadGeneration = 0;
 
   @override
   void initState() {
@@ -207,6 +214,9 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
       },
     );
 
+    _imageLoadGeneration++;
+    _disposeResolvedImages();
+
     try {
       // Проверяем наличие анимаций
       _hasAnimations = AnimationDetector.hasAnimations(widget._svgString);
@@ -223,6 +233,7 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
           'viewBox': _document.viewBox?.toString(),
         },
       );
+      _scheduleImagePreload();
 
       if (_hasAnimations) {
         // Парсим анимации
@@ -451,8 +462,156 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
     }
   }
 
+  void _scheduleImagePreload() {
+    final hrefs = <String>{};
+    _collectImageHrefs(_document.root, hrefs);
+    if (hrefs.isEmpty) {
+      return;
+    }
+
+    final generation = _imageLoadGeneration;
+    _pendingImageHrefs
+      ..clear()
+      ..addAll(hrefs);
+
+    _trace(
+      category: 'image',
+      message: 'Image preload scheduled',
+      data: <String, Object?>{'count': hrefs.length},
+    );
+
+    for (final href in hrefs) {
+      unawaited(_resolveImageByHref(href, generation));
+    }
+  }
+
+  void _collectImageHrefs(SvgNode node, Set<String> hrefs) {
+    if (node.tagName == 'image') {
+      final href = _extractImageHref(node);
+      if (href != null) {
+        hrefs.add(href);
+      }
+    }
+    for (final child in node.children) {
+      _collectImageHrefs(child, hrefs);
+    }
+  }
+
+  String? _extractImageHref(SvgNode node) {
+    final raw =
+        node.getAttributeValue('href') ?? node.getAttributeValue('xlink:href');
+    if (raw == null) {
+      return null;
+    }
+    final href = raw.toString().trim();
+    return href.isEmpty ? null : href;
+  }
+
+  Future<void> _resolveImageByHref(String href, int generation) async {
+    try {
+      final bytes = await _loadImageBytes(href);
+      if (bytes == null || bytes.isEmpty) {
+        _trace(
+          category: 'image',
+          level: SvgTraceLevel.warning,
+          message: 'Image source is not supported or failed to load',
+          data: <String, Object?>{'href': href},
+        );
+        return;
+      }
+
+      final codec = await ui.instantiateImageCodec(bytes);
+      try {
+        final frame = await codec.getNextFrame();
+        final image = frame.image;
+        if (!mounted || generation != _imageLoadGeneration) {
+          image.dispose();
+          return;
+        }
+
+        final previous = _imagesByHref[href];
+        if (!identical(previous, image)) {
+          previous?.dispose();
+        }
+        _imagesByHref[href] = image;
+
+        _trace(
+          category: 'image',
+          message: 'Image decoded',
+          data: <String, Object?>{
+            'href': href,
+            'width': image.width,
+            'height': image.height,
+          },
+        );
+
+        setState(() {});
+      } finally {
+        codec.dispose();
+      }
+    } catch (error, stackTrace) {
+      _trace(
+        category: 'image',
+        level: SvgTraceLevel.warning,
+        message: 'Failed to decode image source',
+        data: <String, Object?>{'href': href},
+        error: error,
+        stackTrace: stackTrace,
+      );
+    } finally {
+      if (generation == _imageLoadGeneration) {
+        _pendingImageHrefs.remove(href);
+      }
+    }
+  }
+
+  Future<Uint8List?> _loadImageBytes(String href) async {
+    if (href.startsWith('data:')) {
+      return _decodeDataUriBytes(href);
+    }
+
+    final uri = Uri.tryParse(href);
+    if (uri != null && (uri.scheme == 'http' || uri.scheme == 'https')) {
+      final data = await NetworkAssetBundle(uri).load(uri.toString());
+      return data.buffer.asUint8List();
+    }
+
+    final data = await rootBundle.load(href);
+    return data.buffer.asUint8List();
+  }
+
+  Uint8List? _decodeDataUriBytes(String href) {
+    final commaIndex = href.indexOf(',');
+    if (commaIndex <= 5) {
+      return null;
+    }
+
+    final metadata = href.substring(5, commaIndex).toLowerCase();
+    final payload = href.substring(commaIndex + 1);
+
+    try {
+      if (metadata.contains(';base64')) {
+        return Uint8List.fromList(base64.decode(payload));
+      }
+      final decoded = Uri.decodeComponent(payload);
+      return Uint8List.fromList(decoded.codeUnits);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void _disposeResolvedImages() {
+    for (final image in _imagesByHref.values) {
+      image.dispose();
+    }
+    _imagesByHref.clear();
+    _pendingImageHrefs.clear();
+  }
+
   void _dispose() {
     _trace(category: 'lifecycle', message: 'Disposing AnimatedSvgPicture');
+    _imageLoadGeneration++;
+    _disposeResolvedImages();
     widget.controller?.removeListener(_onControllerUpdate);
     _controller?.removeListener(_onAnimationTick);
     _controller?.dispose();
@@ -473,6 +632,7 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
       painter: AnimatedSvgPainter(
         document: _document,
         backgroundColor: widget.backgroundColor,
+        imagesByHref: _imagesByHref,
       ),
       size: Size.infinite,
     );
@@ -594,7 +754,12 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
     );
     if (documentPoint == null) return null;
 
-    return _hitTestNode(_document.root, documentPoint, Matrix4.identity());
+    return _hitTestNode(
+      _document.root,
+      documentPoint,
+      Matrix4.identity(),
+      useStack: const <String>{},
+    );
   }
 
   Offset? _localToDocumentPoint(Offset localPosition, Size size) {
@@ -628,20 +793,46 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
   String? _hitTestNode(
     SvgNode node,
     Offset documentPoint,
-    Matrix4 parentTransform,
-  ) {
+    Matrix4 parentTransform, {
+    required Set<String> useStack,
+  }) {
+    if (_isDefinitionOnlyTag(node.tagName)) {
+      return null;
+    }
+
+    final currentUseStack = useStack;
     final currentTransform = Matrix4.copy(parentTransform);
     _applyNodeTransform(currentTransform, node);
+
+    if (!_isPointVisibleForNode(node, documentPoint, currentTransform)) {
+      return null;
+    }
+
+    final childTransform = Matrix4.copy(currentTransform);
+    _applyForeignObjectChildTransform(childTransform, node);
 
     // Идём с конца: последний нарисованный элемент визуально сверху
     for (int i = node.children.length - 1; i >= 0; i--) {
       final hitChild = _hitTestNode(
         node.children[i],
         documentPoint,
-        currentTransform,
+        childTransform,
+        useStack: currentUseStack,
       );
       if (hitChild != null) {
         return hitChild;
+      }
+    }
+
+    if (node.tagName == 'use') {
+      final hitReferenced = _hitTestUseReference(
+        useNode: node,
+        documentPoint: documentPoint,
+        currentTransform: currentTransform,
+        useStack: currentUseStack,
+      );
+      if (hitReferenced != null) {
+        return hitReferenced;
       }
     }
 
@@ -661,7 +852,206 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
         tagName == 'path' ||
         tagName == 'polygon' ||
         tagName == 'polyline' ||
-        tagName == 'line';
+        tagName == 'line' ||
+        tagName == 'image' ||
+        tagName == 'foreignObject' ||
+        tagName == 'text' ||
+        tagName == 'tspan' ||
+        tagName == 'textPath';
+  }
+
+  bool _isDefinitionOnlyTag(String tagName) {
+    return tagName == 'defs' ||
+        tagName == 'symbol' ||
+        tagName == 'linearGradient' ||
+        tagName == 'radialGradient' ||
+        tagName == 'stop' ||
+        tagName == 'clipPath' ||
+        tagName == 'mask' ||
+        tagName == 'pattern' ||
+        tagName == 'filter';
+  }
+
+  bool _isPointVisibleForNode(
+    SvgNode node,
+    Offset documentPoint,
+    Matrix4 transform,
+  ) {
+    final inverse = Matrix4.tryInvert(transform);
+    if (inverse == null) {
+      return false;
+    }
+    final localPoint = MatrixUtils.transformPoint(inverse, documentPoint);
+    return _isPointVisibleInNodeSpace(node, localPoint);
+  }
+
+  bool _isPointVisibleInNodeSpace(SvgNode node, Offset localPoint) {
+    if (!_isPointInsideClipPath(node, localPoint)) {
+      return false;
+    }
+    if (!_isPointInsideMask(node, localPoint)) {
+      return false;
+    }
+    if (!_isPointInsideForeignObjectViewport(node, localPoint)) {
+      return false;
+    }
+    return true;
+  }
+
+  bool _isPointInsideClipPath(SvgNode node, Offset localPoint) {
+    final clipId = _extractUrlId(node.getAttributeValue('clip-path'));
+    if (clipId == null || clipId.isEmpty) {
+      return true;
+    }
+    final clipNode = _document.root.findById(clipId);
+    if (clipNode == null || clipNode.tagName != 'clipPath') {
+      return true;
+    }
+    final clipPath = _buildContainerGeometryPath(clipNode);
+    if (clipPath == null) {
+      return true;
+    }
+    return clipPath.contains(localPoint);
+  }
+
+  bool _isPointInsideMask(SvgNode node, Offset localPoint) {
+    final maskId = _extractUrlId(node.getAttributeValue('mask'));
+    if (maskId == null || maskId.isEmpty) {
+      return true;
+    }
+    final maskNode = _document.root.findById(maskId);
+    if (maskNode == null || maskNode.tagName != 'mask') {
+      return true;
+    }
+    final maskPath = _buildContainerGeometryPath(maskNode);
+    if (maskPath == null) {
+      return true;
+    }
+    return maskPath.contains(localPoint);
+  }
+
+  bool _isPointInsideForeignObjectViewport(SvgNode node, Offset localPoint) {
+    if (node.tagName != 'foreignObject') {
+      return true;
+    }
+    final x = _getNumber(node, 'x') ?? 0.0;
+    final y = _getNumber(node, 'y') ?? 0.0;
+    final width = _getNumber(node, 'width') ?? 0.0;
+    final height = _getNumber(node, 'height') ?? 0.0;
+    if (width <= 0 || height <= 0) {
+      return false;
+    }
+    return Rect.fromLTWH(x, y, width, height).contains(localPoint);
+  }
+
+  String? _hitTestUseReference({
+    required SvgNode useNode,
+    required Offset documentPoint,
+    required Matrix4 currentTransform,
+    required Set<String> useStack,
+  }) {
+    final hrefId = _extractHrefId(useNode);
+    if (hrefId == null || hrefId.isEmpty || useStack.contains(hrefId)) {
+      return null;
+    }
+
+    final referenced = _document.root.findById(hrefId);
+    if (referenced == null) {
+      return null;
+    }
+
+    final referenceTransform = Matrix4.copy(currentTransform)
+      ..translate(
+        _getNumber(useNode, 'x') ?? 0.0,
+        _getNumber(useNode, 'y') ?? 0.0,
+      );
+
+    final nextUseStack = <String>{...useStack, hrefId};
+    if (referenced.tagName == 'symbol') {
+      final symbolTransform = Matrix4.copy(referenceTransform);
+      _applySymbolUseTransform(symbolTransform, useNode, referenced);
+      for (int i = referenced.children.length - 1; i >= 0; i--) {
+        final hitChild = _hitTestNode(
+          referenced.children[i],
+          documentPoint,
+          symbolTransform,
+          useStack: nextUseStack,
+        );
+        if (hitChild != null) {
+          return hitChild;
+        }
+      }
+      return null;
+    }
+
+    return _hitTestNode(
+      referenced,
+      documentPoint,
+      referenceTransform,
+      useStack: nextUseStack,
+    );
+  }
+
+  void _applySymbolUseTransform(
+    Matrix4 matrix,
+    SvgNode useNode,
+    SvgNode symbolNode,
+  ) {
+    final viewBox = _parseViewBox(symbolNode.getAttributeValue('viewBox'));
+    final width = _getNumber(useNode, 'width');
+    final height = _getNumber(useNode, 'height');
+    if (viewBox == null ||
+        width == null ||
+        height == null ||
+        width <= 0 ||
+        height <= 0 ||
+        viewBox.width <= 0 ||
+        viewBox.height <= 0) {
+      return;
+    }
+
+    final scaleX = width / viewBox.width;
+    final scaleY = height / viewBox.height;
+    final scale = math.min(scaleX, scaleY);
+    final translateX =
+        (width - viewBox.width * scale) / 2 - viewBox.left * scale;
+    final translateY =
+        (height - viewBox.height * scale) / 2 - viewBox.top * scale;
+    matrix
+      ..translate(translateX, translateY)
+      ..scale(scale, scale);
+  }
+
+  Rect? _parseViewBox(Object? rawValue) {
+    final viewBox = rawValue?.toString();
+    if (viewBox == null || viewBox.trim().isEmpty) {
+      return null;
+    }
+    final parts = viewBox
+        .trim()
+        .split(RegExp(r'[,\s]+'))
+        .where((part) => part.isNotEmpty)
+        .map(double.tryParse)
+        .toList();
+    if (parts.length < 4 || parts.take(4).any((value) => value == null)) {
+      return null;
+    }
+    return Rect.fromLTWH(parts[0]!, parts[1]!, parts[2]!, parts[3]!);
+  }
+
+  String? _extractUrlId(Object? value) {
+    final raw = value?.toString().trim();
+    if (raw == null || raw.isEmpty) {
+      return null;
+    }
+    if (raw.startsWith('#') && raw.length > 1) {
+      return raw.substring(1);
+    }
+    final urlMatch = RegExp(
+      r'''url\(\s*['"]?#([^'")\s]+)['"]?\s*\)''',
+      caseSensitive: false,
+    ).firstMatch(raw);
+    return urlMatch?.group(1);
   }
 
   bool _nodeContainsPoint(
@@ -711,6 +1101,24 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
           Offset(x2, y2),
         );
         return distance <= tolerance;
+      case 'image':
+        final x = _getNumber(node, 'x') ?? 0.0;
+        final y = _getNumber(node, 'y') ?? 0.0;
+        final width = _getNumber(node, 'width') ?? 0.0;
+        final height = _getNumber(node, 'height') ?? 0.0;
+        if (width <= 0 || height <= 0) {
+          return false;
+        }
+        return Rect.fromLTWH(x, y, width, height).contains(point);
+      case 'foreignObject':
+        final x = _getNumber(node, 'x') ?? 0.0;
+        final y = _getNumber(node, 'y') ?? 0.0;
+        final width = _getNumber(node, 'width') ?? 0.0;
+        final height = _getNumber(node, 'height') ?? 0.0;
+        if (width <= 0 || height <= 0) {
+          return false;
+        }
+        return Rect.fromLTWH(x, y, width, height).contains(point);
       case 'path':
         final path = _buildPathGeometry(node);
         if (path == null) {
@@ -779,9 +1187,97 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
           return polylinePath.contains(point);
         }
         return false;
+      case 'text':
+      case 'tspan':
+        return _textNodeContainsPoint(node, point);
+      case 'textPath':
+        return _textPathContainsPoint(node, point);
       default:
         return false;
     }
+  }
+
+  bool _textNodeContainsPoint(SvgNode node, Offset point) {
+    final textBounds = _computeTextBounds(node);
+    if (textBounds != null && textBounds.contains(point)) {
+      return true;
+    }
+
+    for (final child in node.children) {
+      if (child.tagName == 'tspan' && _textNodeContainsPoint(child, point)) {
+        return true;
+      }
+      if (child.tagName == 'textPath' && _textPathContainsPoint(child, point)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  bool _textPathContainsPoint(SvgNode textPathNode, Offset point) {
+    final path = _resolveTextPathGeometry(textPathNode);
+    if (path == null) {
+      return false;
+    }
+    final fontSize = (_getInheritedNumber(textPathNode, 'font-size') ?? 16.0)
+        .clamp(1.0, 4096.0);
+    final tolerance = (fontSize / 2).clamp(2.0, 32.0);
+    return _pathStrokeContains(path, point, tolerance);
+  }
+
+  Rect? _computeTextBounds(SvgNode node) {
+    final text = _extractTextContent(node);
+    if (text == null || text.isEmpty) {
+      return null;
+    }
+
+    final fontSize = (_getInheritedNumber(node, 'font-size') ?? 16.0).clamp(
+      1.0,
+      4096.0,
+    );
+    final fontFamily = _getInheritedString(node, 'font-family');
+    final fontWeight = _resolveFontWeight(
+      _getInheritedString(node, 'font-weight'),
+    );
+    final fontStyle = _resolveFontStyle(
+      _getInheritedString(node, 'font-style'),
+    );
+
+    final painter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(
+          fontSize: fontSize,
+          fontFamily: fontFamily,
+          fontWeight: fontWeight,
+          fontStyle: fontStyle,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+      maxLines: 1,
+    )..layout();
+
+    final x =
+        (_getInheritedNumber(node, 'x') ?? 0.0) +
+        (_getNumber(node, 'dx') ?? 0.0);
+    final y =
+        (_getInheritedNumber(node, 'y') ?? 0.0) +
+        (_getNumber(node, 'dy') ?? 0.0);
+    final textAnchor = _getInheritedString(node, 'text-anchor')?.toLowerCase();
+
+    var left = x;
+    if (textAnchor == 'middle') {
+      left -= painter.width / 2;
+    } else if (textAnchor == 'end') {
+      left -= painter.width;
+    }
+
+    final baseline = painter.computeDistanceToActualBaseline(
+      TextBaseline.alphabetic,
+    );
+    final top = y - baseline;
+    return Rect.fromLTWH(left, top, painter.width, painter.height);
   }
 
   Path? _buildPathGeometry(SvgNode node) {
@@ -797,6 +1293,127 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
 
     _applyPathFillType(path, node);
     return path;
+  }
+
+  Path? _buildGeometryPath(SvgNode node) {
+    switch (node.tagName) {
+      case 'rect':
+        final x = _getNumber(node, 'x') ?? 0.0;
+        final y = _getNumber(node, 'y') ?? 0.0;
+        final width = _getNumber(node, 'width') ?? 0.0;
+        final height = _getNumber(node, 'height') ?? 0.0;
+        if (width <= 0 || height <= 0) {
+          return null;
+        }
+        final rx = _getNumber(node, 'rx') ?? 0.0;
+        final ry = _getNumber(node, 'ry') ?? rx;
+        if (rx > 0 || ry > 0) {
+          return Path()..addRRect(
+            RRect.fromRectXY(Rect.fromLTWH(x, y, width, height), rx, ry),
+          );
+        }
+        return Path()..addRect(Rect.fromLTWH(x, y, width, height));
+      case 'circle':
+        final cx = _getNumber(node, 'cx') ?? 0.0;
+        final cy = _getNumber(node, 'cy') ?? 0.0;
+        final r = _getNumber(node, 'r') ?? 0.0;
+        if (r <= 0) {
+          return null;
+        }
+        return Path()
+          ..addOval(Rect.fromCircle(center: Offset(cx, cy), radius: r));
+      case 'ellipse':
+        final cx = _getNumber(node, 'cx') ?? 0.0;
+        final cy = _getNumber(node, 'cy') ?? 0.0;
+        final rx = _getNumber(node, 'rx') ?? 0.0;
+        final ry = _getNumber(node, 'ry') ?? 0.0;
+        if (rx <= 0 || ry <= 0) {
+          return null;
+        }
+        return Path()..addOval(
+          Rect.fromCenter(
+            center: Offset(cx, cy),
+            width: rx * 2,
+            height: ry * 2,
+          ),
+        );
+      case 'line':
+        final x1 = _getNumber(node, 'x1') ?? 0.0;
+        final y1 = _getNumber(node, 'y1') ?? 0.0;
+        final x2 = _getNumber(node, 'x2') ?? 0.0;
+        final y2 = _getNumber(node, 'y2') ?? 0.0;
+        return Path()
+          ..moveTo(x1, y1)
+          ..lineTo(x2, y2);
+      case 'polygon':
+        final points = _parsePoints(node);
+        if (points.length < 3) {
+          return null;
+        }
+        final path = Path()..moveTo(points.first.dx, points.first.dy);
+        for (int i = 1; i < points.length; i++) {
+          path.lineTo(points[i].dx, points[i].dy);
+        }
+        path.close();
+        _applyPathFillType(path, node);
+        return path;
+      case 'polyline':
+        final points = _parsePoints(node);
+        if (points.length < 2) {
+          return null;
+        }
+        final path = Path()..moveTo(points.first.dx, points.first.dy);
+        for (int i = 1; i < points.length; i++) {
+          path.lineTo(points[i].dx, points[i].dy);
+        }
+        _applyPathFillType(path, node);
+        return path;
+      case 'path':
+        return _buildPathGeometry(node);
+      default:
+        return null;
+    }
+  }
+
+  Path? _buildContainerGeometryPath(SvgNode containerNode) {
+    final path = Path();
+    var added = false;
+    for (final child in containerNode.children) {
+      final childGeometry = _buildGeometryPath(child);
+      if (childGeometry == null) {
+        continue;
+      }
+      final transform = Matrix4.identity();
+      _applyNodeTransform(transform, child);
+      path.addPath(childGeometry.transform(transform.storage), Offset.zero);
+      added = true;
+    }
+    return added ? path : null;
+  }
+
+  Path? _resolveTextPathGeometry(SvgNode textPathNode) {
+    final hrefId = _extractHrefId(textPathNode);
+    if (hrefId == null || hrefId.isEmpty) {
+      return null;
+    }
+
+    final referenced = _document.root.findById(hrefId);
+    if (referenced == null || referenced.tagName != 'path') {
+      return null;
+    }
+
+    final path = _buildPathGeometry(referenced);
+    if (path == null) {
+      return null;
+    }
+
+    final transformAttr = referenced.getAttributeValue('transform');
+    if (transformAttr == null || transformAttr.toString().trim().isEmpty) {
+      return path;
+    }
+    final matrix = Matrix4.identity();
+    _applyNodeTransform(matrix, referenced);
+    return path.transform(matrix.storage);
   }
 
   void _applyPathFillType(Path path, SvgNode node) {
@@ -969,6 +1586,20 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
     return false;
   }
 
+  void _applyForeignObjectChildTransform(Matrix4 matrix, SvgNode node) {
+    if (node.tagName != 'foreignObject') {
+      return;
+    }
+    final width = _getNumber(node, 'width') ?? 0.0;
+    final height = _getNumber(node, 'height') ?? 0.0;
+    if (width <= 0 || height <= 0) {
+      return;
+    }
+    final x = _getNumber(node, 'x') ?? 0.0;
+    final y = _getNumber(node, 'y') ?? 0.0;
+    matrix.translate(x, y);
+  }
+
   void _applyNodeTransform(Matrix4 matrix, SvgNode node) {
     final transformAttr = node.getAttributeValue('transform')?.toString();
     if (transformAttr == null || transformAttr.isEmpty) return;
@@ -1034,6 +1665,29 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
     }
   }
 
+  String? _extractHrefId(SvgNode node) {
+    final href =
+        node.getAttributeValue('href') ?? node.getAttributeValue('xlink:href');
+    if (href == null) {
+      return null;
+    }
+
+    final raw = href.toString().trim();
+    if (raw.isEmpty) {
+      return null;
+    }
+
+    if (raw.startsWith('#') && raw.length > 1) {
+      return raw.substring(1);
+    }
+
+    final urlMatch = RegExp(
+      r'''url\(\s*['"]?#([^'")\s]+)['"]?\s*\)''',
+      caseSensitive: false,
+    ).firstMatch(raw);
+    return urlMatch?.group(1);
+  }
+
   double? _getNumber(SvgNode node, String attributeName) {
     final value = node.getAttributeValue(attributeName);
     if (value is num) {
@@ -1044,6 +1698,98 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
       return double.tryParse(cleaned);
     }
     return null;
+  }
+
+  Object? _getInheritedAttributeValue(SvgNode node, String attributeName) {
+    SvgNode? current = node;
+    while (current != null) {
+      final value = current.getAttributeValue(attributeName);
+      if (value != null) {
+        return value;
+      }
+      current = current.parent;
+    }
+    return null;
+  }
+
+  String? _getInheritedString(SvgNode node, String attributeName) {
+    final value = _getInheritedAttributeValue(node, attributeName);
+    final str = value?.toString();
+    if (str == null) {
+      return null;
+    }
+    final trimmed = str.trim();
+    return trimmed.isEmpty ? null : trimmed;
+  }
+
+  double? _getInheritedNumber(SvgNode node, String attributeName) {
+    final value = _getInheritedAttributeValue(node, attributeName);
+    if (value == null) {
+      return null;
+    }
+    if (value is num) {
+      return value.toDouble();
+    }
+    final raw = value.toString().trim();
+    if (raw.isEmpty) {
+      return null;
+    }
+    final cleaned = raw.replaceAll(RegExp(r'[a-zA-Z%]+$'), '');
+    return double.tryParse(cleaned);
+  }
+
+  String? _extractTextContent(SvgNode node) {
+    final raw = node.getAttributeValue('__text')?.toString();
+    if (raw == null) {
+      return null;
+    }
+    final normalized = raw.replaceAll(RegExp(r'\s+'), ' ').trim();
+    return normalized.isEmpty ? null : normalized;
+  }
+
+  FontWeight _resolveFontWeight(String? fontWeight) {
+    if (fontWeight == null) {
+      return FontWeight.normal;
+    }
+    switch (fontWeight.toLowerCase()) {
+      case '100':
+      case 'thin':
+        return FontWeight.w100;
+      case '200':
+      case 'extralight':
+      case 'extra-light':
+        return FontWeight.w200;
+      case '300':
+      case 'light':
+        return FontWeight.w300;
+      case '500':
+      case 'medium':
+        return FontWeight.w500;
+      case '600':
+      case 'semibold':
+      case 'semi-bold':
+        return FontWeight.w600;
+      case '700':
+      case 'bold':
+        return FontWeight.w700;
+      case '800':
+      case 'extrabold':
+      case 'extra-bold':
+        return FontWeight.w800;
+      case '900':
+      case 'black':
+        return FontWeight.w900;
+      case '400':
+      case 'normal':
+      default:
+        return FontWeight.normal;
+    }
+  }
+
+  FontStyle _resolveFontStyle(String? fontStyle) {
+    return fontStyle?.toLowerCase() == 'italic'
+        ? FontStyle.italic
+        : FontStyle.normal;
   }
 
   double _distanceToSegment(Offset p, Offset a, Offset b) {

@@ -32,7 +32,7 @@ void main() {
       <feConvolveMatrix/>
     </filter>
   </defs>
-  <text id="label" x="10" y="20">Hello</text>
+  <switch id="label"/>
   <rect
     id="shape"
     x="0"
@@ -46,7 +46,7 @@ void main() {
 
       final report = analyzer.analyze(svg);
 
-      expect(report.unsupportedTags, contains('text'));
+      expect(report.unsupportedTags, contains('switch'));
       expect(report.unsupportedFilterPrimitives, contains('feConvolveMatrix'));
       expect(
         report.brokenReferences.any(

@@ -7,6 +7,7 @@ import 'package:flutter/rendering.dart';
 import 'path_data.dart';
 import 'path_parser.dart';
 import 'svg_dom.dart';
+import 'svg_filters.dart';
 import 'svg_transform.dart';
 
 /// CustomPainter для отрисовки анимированного SVG
@@ -18,13 +19,20 @@ import 'svg_transform.dart';
 /// cachedPicture для оптимизации.
 class AnimatedSvgPainter extends CustomPainter {
   /// Создаёт painter для анимированного SVG
-  AnimatedSvgPainter({required this.document, this.backgroundColor});
+  AnimatedSvgPainter({
+    required this.document,
+    this.backgroundColor,
+    this.imagesByHref = const <String, ui.Image>{},
+  });
 
   /// SVG документ с актуальными (анимированными) значениями атрибутов
   final SvgDocument document;
 
   /// Фоновый цвет (опционально)
   final ui.Color? backgroundColor;
+
+  /// Decoded raster images keyed by raw `href`/`xlink:href` value.
+  final Map<String, ui.Image> imagesByHref;
 
   final Map<String, _ResolvedGradientDefinition?> _gradientCache =
       <String, _ResolvedGradientDefinition?>{};
@@ -84,93 +92,148 @@ class AnimatedSvgPainter extends CustomPainter {
     // Применяем transform если есть
     _applyTransform(canvas, node);
 
+    // Baseline foreignObject viewport: смещение + clip children областью.
+    _applyForeignObjectViewport(canvas, node);
+
     // Применяем clipPath если есть.
     _applyClipPath(canvas, node, useStack: currentUseStack);
 
     // Применяем mask если есть (baseline geometry mask).
     _applyMask(canvas, node, useStack: currentUseStack);
 
-    // Применяем фильтр если есть
-    final filterId = _getFilterId(node);
-    ui.ImageFilter? imageFilter;
-    ui.ColorFilter? colorFilter;
-    ui.BlendMode? blendMode;
-    if (filterId != null && document.filters != null) {
-      imageFilter = document.filters!.resolveImageFilter(filterId);
-      colorFilter = document.filters!.resolveColorFilter(filterId);
-      blendMode = document.filters!.resolveBlendMode(filterId);
-    }
+    final filterPasses = _resolveFilterPasses(node);
 
     // Рисуем сам узел в зависимости от типа
     switch (node.tagName) {
       case 'rect':
-        _paintRect(
+        _paintWithFilterPasses(
           canvas,
-          node,
-          imageFilter: imageFilter,
-          colorFilter: colorFilter,
-          blendMode: blendMode,
+          filterPasses,
+          (imageFilter, colorFilter, blendMode) => _paintRect(
+            canvas,
+            node,
+            imageFilter: imageFilter,
+            colorFilter: colorFilter,
+            blendMode: blendMode,
+          ),
         );
         break;
       case 'circle':
-        _paintCircle(
+        _paintWithFilterPasses(
           canvas,
-          node,
-          imageFilter: imageFilter,
-          colorFilter: colorFilter,
-          blendMode: blendMode,
+          filterPasses,
+          (imageFilter, colorFilter, blendMode) => _paintCircle(
+            canvas,
+            node,
+            imageFilter: imageFilter,
+            colorFilter: colorFilter,
+            blendMode: blendMode,
+          ),
         );
         break;
       case 'ellipse':
-        _paintEllipse(
+        _paintWithFilterPasses(
           canvas,
-          node,
-          imageFilter: imageFilter,
-          colorFilter: colorFilter,
-          blendMode: blendMode,
+          filterPasses,
+          (imageFilter, colorFilter, blendMode) => _paintEllipse(
+            canvas,
+            node,
+            imageFilter: imageFilter,
+            colorFilter: colorFilter,
+            blendMode: blendMode,
+          ),
         );
         break;
       case 'path':
-        _paintPath(
+        _paintWithFilterPasses(
           canvas,
-          node,
-          imageFilter: imageFilter,
-          colorFilter: colorFilter,
-          blendMode: blendMode,
+          filterPasses,
+          (imageFilter, colorFilter, blendMode) => _paintPath(
+            canvas,
+            node,
+            imageFilter: imageFilter,
+            colorFilter: colorFilter,
+            blendMode: blendMode,
+          ),
         );
         break;
       case 'polygon':
-        _paintPolygon(
+        _paintWithFilterPasses(
           canvas,
-          node,
-          imageFilter: imageFilter,
-          colorFilter: colorFilter,
-          blendMode: blendMode,
+          filterPasses,
+          (imageFilter, colorFilter, blendMode) => _paintPolygon(
+            canvas,
+            node,
+            imageFilter: imageFilter,
+            colorFilter: colorFilter,
+            blendMode: blendMode,
+          ),
         );
         break;
       case 'polyline':
-        _paintPolyline(
+        _paintWithFilterPasses(
           canvas,
-          node,
-          imageFilter: imageFilter,
-          colorFilter: colorFilter,
-          blendMode: blendMode,
+          filterPasses,
+          (imageFilter, colorFilter, blendMode) => _paintPolyline(
+            canvas,
+            node,
+            imageFilter: imageFilter,
+            colorFilter: colorFilter,
+            blendMode: blendMode,
+          ),
         );
         break;
       case 'line':
-        _paintLine(
+        _paintWithFilterPasses(
           canvas,
-          node,
-          imageFilter: imageFilter,
-          colorFilter: colorFilter,
-          blendMode: blendMode,
+          filterPasses,
+          (imageFilter, colorFilter, blendMode) => _paintLine(
+            canvas,
+            node,
+            imageFilter: imageFilter,
+            colorFilter: colorFilter,
+            blendMode: blendMode,
+          ),
         );
+        break;
+      case 'image':
+        _paintWithFilterPasses(
+          canvas,
+          filterPasses,
+          (imageFilter, colorFilter, blendMode) => _paintImage(
+            canvas,
+            node,
+            imageFilter: imageFilter,
+            colorFilter: colorFilter,
+            blendMode: blendMode,
+          ),
+        );
+        break;
+      case 'text':
+        _paintWithFilterPasses(
+          canvas,
+          filterPasses,
+          (imageFilter, colorFilter, blendMode) => _paintText(
+            canvas,
+            node,
+            imageFilter: imageFilter,
+            colorFilter: colorFilter,
+            blendMode: blendMode,
+          ),
+        );
+        break;
+      case 'tspan':
+        // Рендерится из родительского <text> прохода.
+        break;
+      case 'textPath':
+        // Рендерится из родительского <text> прохода.
         break;
       case 'use':
         _paintUse(canvas, node, useStack: currentUseStack);
         break;
       case 'g':
       case 'svg':
+      case 'foreignObject':
         // Группы не рисуются, только применяют атрибуты к детям
         break;
       default:
@@ -186,6 +249,58 @@ class AnimatedSvgPainter extends CustomPainter {
     }
 
     canvas.restore();
+  }
+
+  List<SvgFilterPaintPass> _resolveFilterPasses(SvgNode node) {
+    final filterId = _getFilterId(node);
+    if (filterId == null || document.filters == null) {
+      return const <SvgFilterPaintPass>[SvgFilterPaintPass.identity];
+    }
+    final passes = document.filters!.resolvePaintPasses(filterId);
+    if (passes.isEmpty) {
+      return const <SvgFilterPaintPass>[SvgFilterPaintPass.identity];
+    }
+    return passes;
+  }
+
+  void _paintWithFilterPasses(
+    ui.Canvas canvas,
+    List<SvgFilterPaintPass> passes,
+    void Function(
+      ui.ImageFilter? imageFilter,
+      ui.ColorFilter? colorFilter,
+      ui.BlendMode? blendMode,
+    )
+    paint,
+  ) {
+    for (final pass in passes) {
+      canvas.save();
+      if (pass.offset != ui.Offset.zero) {
+        canvas.translate(pass.offset.dx, pass.offset.dy);
+      }
+      paint(pass.imageFilter, pass.colorFilter, pass.blendMode);
+      canvas.restore();
+    }
+  }
+
+  void _applyForeignObjectViewport(ui.Canvas canvas, SvgNode node) {
+    if (node.tagName != 'foreignObject') {
+      return;
+    }
+
+    final x = _getNumber(node, 'x') ?? 0.0;
+    final y = _getNumber(node, 'y') ?? 0.0;
+    final width = _getNumber(node, 'width') ?? 0.0;
+    final height = _getNumber(node, 'height') ?? 0.0;
+    if (width <= 0 || height <= 0) {
+      return;
+    }
+
+    canvas.translate(x, y);
+    canvas.clipRect(
+      ui.Rect.fromLTWH(0, 0, width, height),
+      doAntiAlias: true,
+    );
   }
 
   void _paintUse(
@@ -269,7 +384,15 @@ class AnimatedSvgPainter extends CustomPainter {
       case 'pattern':
       case 'filter':
       case 'use':
+      case 'text':
+      case 'tspan':
+      case 'textPath':
+      case 'image':
         return false;
+      case 'foreignObject':
+        final width = _getNumber(node, 'width') ?? 0.0;
+        final height = _getNumber(node, 'height') ?? 0.0;
+        return width > 0 && height > 0;
       default:
         return true;
     }
@@ -648,6 +771,70 @@ class AnimatedSvgPainter extends CustomPainter {
     }
   }
 
+  void _paintImage(
+    ui.Canvas canvas,
+    SvgNode node, {
+    ui.ImageFilter? imageFilter,
+    ui.ColorFilter? colorFilter,
+    ui.BlendMode? blendMode,
+  }) {
+    final href = _extractImageHref(node);
+    if (href == null || href.isEmpty) {
+      return;
+    }
+
+    final image = imagesByHref[href];
+    if (image == null) {
+      return;
+    }
+
+    final x = _getNumber(node, 'x') ?? 0.0;
+    final y = _getNumber(node, 'y') ?? 0.0;
+    final width = _getNumber(node, 'width') ?? image.width.toDouble();
+    final height = _getNumber(node, 'height') ?? image.height.toDouble();
+    if (width <= 0 || height <= 0) {
+      return;
+    }
+
+    final viewport = ui.Rect.fromLTWH(x, y, width, height);
+    final srcRect = ui.Rect.fromLTWH(
+      0,
+      0,
+      image.width.toDouble(),
+      image.height.toDouble(),
+    );
+
+    final layout = _resolveImageLayout(
+      viewport: viewport,
+      imageSize: srcRect.size,
+      preserveAspectRatio: _getString(node, 'preserveAspectRatio'),
+    );
+
+    final paint = ui.Paint();
+    final opacity = (_getNumber(node, 'opacity') ?? 1.0).clamp(0.0, 1.0);
+    paint.color = const ui.Color(0xFFFFFFFF).withValues(alpha: opacity);
+
+    if (imageFilter != null) {
+      paint.imageFilter = imageFilter;
+    }
+    if (colorFilter != null) {
+      paint.colorFilter = colorFilter;
+    }
+    if (blendMode != null) {
+      paint.blendMode = blendMode;
+    }
+
+    if (layout.clipToViewport) {
+      canvas.save();
+      canvas.clipRect(viewport, doAntiAlias: true);
+      canvas.drawImageRect(image, srcRect, layout.destinationRect, paint);
+      canvas.restore();
+      return;
+    }
+
+    canvas.drawImageRect(image, srcRect, layout.destinationRect, paint);
+  }
+
   /// Рисует <path>
   void _paintPath(
     ui.Canvas canvas,
@@ -773,6 +960,439 @@ class AnimatedSvgPainter extends CustomPainter {
     if (strokePaint != null) {
       canvas.drawPath(path, strokePaint);
     }
+  }
+
+  void _paintText(
+    ui.Canvas canvas,
+    SvgNode node, {
+    ui.ImageFilter? imageFilter,
+    ui.ColorFilter? colorFilter,
+    ui.BlendMode? blendMode,
+  }) {
+    final startX = _getNumber(node, 'x') ?? 0.0;
+    final startY = _getNumber(node, 'y') ?? 0.0;
+    final cursor = _TextCursor(x: startX, y: startY);
+
+    _paintTextNode(
+      canvas,
+      node,
+      cursor,
+      imageFilter: imageFilter,
+      colorFilter: colorFilter,
+      blendMode: blendMode,
+    );
+  }
+
+  void _paintTextNode(
+    ui.Canvas canvas,
+    SvgNode node,
+    _TextCursor cursor, {
+    ui.ImageFilter? imageFilter,
+    ui.ColorFilter? colorFilter,
+    ui.BlendMode? blendMode,
+  }) {
+    final x = _getNumber(node, 'x');
+    final y = _getNumber(node, 'y');
+    final dx = _getNumber(node, 'dx') ?? 0.0;
+    final dy = _getNumber(node, 'dy') ?? 0.0;
+
+    if (x != null) {
+      cursor.x = x;
+    }
+    if (y != null) {
+      cursor.y = y;
+    }
+    cursor
+      ..x += dx
+      ..y += dy;
+
+    final style = _resolveTextStyle(node);
+    final text = _extractTextContent(node);
+    if (text != null && text.isNotEmpty) {
+      final consumed = _paintPlainText(
+        canvas,
+        text: text,
+        style: style,
+        x: cursor.x,
+        baselineY: cursor.y,
+        imageFilter: imageFilter,
+        colorFilter: colorFilter,
+        blendMode: blendMode,
+      );
+      cursor.x += consumed;
+    }
+
+    for (final child in node.children) {
+      if (child.tagName == 'tspan') {
+        _paintTextNode(
+          canvas,
+          child,
+          cursor,
+          imageFilter: imageFilter,
+          colorFilter: colorFilter,
+          blendMode: blendMode,
+        );
+      } else if (child.tagName == 'textPath') {
+        final consumed = _paintTextPathNode(
+          canvas,
+          child,
+          imageFilter: imageFilter,
+          colorFilter: colorFilter,
+          blendMode: blendMode,
+        );
+        cursor.x += consumed;
+      }
+    }
+  }
+
+  double _paintTextPathNode(
+    ui.Canvas canvas,
+    SvgNode textPathNode, {
+    ui.ImageFilter? imageFilter,
+    ui.ColorFilter? colorFilter,
+    ui.BlendMode? blendMode,
+  }) {
+    final path = _resolveTextPathGeometry(textPathNode);
+    if (path == null) {
+      return 0.0;
+    }
+    final metricIterator = path.computeMetrics().iterator;
+    if (!metricIterator.moveNext()) {
+      return 0.0;
+    }
+    final metric = metricIterator.current;
+    if (metric.length <= 0) {
+      return 0.0;
+    }
+
+    double offset = _parseTextPathStartOffset(textPathNode, metric.length);
+    var consumed = 0.0;
+
+    final directText = _extractTextContent(textPathNode);
+    if (directText != null && directText.isNotEmpty) {
+      final style = _resolveTextStyle(textPathNode);
+      final textConsumed = _paintTextAlongPath(
+        canvas,
+        text: directText,
+        style: style,
+        metric: metric,
+        startOffset: offset,
+        imageFilter: imageFilter,
+        colorFilter: colorFilter,
+        blendMode: blendMode,
+      );
+      offset += textConsumed;
+      consumed += textConsumed;
+    }
+
+    for (final child in textPathNode.children) {
+      if (child.tagName != 'tspan') {
+        continue;
+      }
+      final childText = _extractTextContent(child);
+      if (childText == null || childText.isEmpty) {
+        continue;
+      }
+      final style = _resolveTextStyle(child);
+      final textConsumed = _paintTextAlongPath(
+        canvas,
+        text: childText,
+        style: style,
+        metric: metric,
+        startOffset: offset,
+        imageFilter: imageFilter,
+        colorFilter: colorFilter,
+        blendMode: blendMode,
+      );
+      offset += textConsumed;
+      consumed += textConsumed;
+    }
+
+    return consumed;
+  }
+
+  double _paintPlainText(
+    ui.Canvas canvas, {
+    required String text,
+    required _ResolvedTextStyle style,
+    required double x,
+    required double baselineY,
+    ui.ImageFilter? imageFilter,
+    ui.ColorFilter? colorFilter,
+    ui.BlendMode? blendMode,
+  }) {
+    final paragraph = _buildTextParagraph(text, style);
+    final width = paragraph.maxIntrinsicWidth;
+    var drawX = x;
+    switch (style.textAnchor) {
+      case _SvgTextAnchor.start:
+        break;
+      case _SvgTextAnchor.middle:
+        drawX -= width / 2;
+        break;
+      case _SvgTextAnchor.end:
+        drawX -= width;
+        break;
+    }
+    final drawY = baselineY - paragraph.alphabeticBaseline;
+
+    _drawParagraphWithEffects(
+      canvas,
+      paragraph: paragraph,
+      x: drawX,
+      y: drawY,
+      imageFilter: imageFilter,
+      colorFilter: colorFilter,
+      blendMode: blendMode,
+    );
+    return width;
+  }
+
+  double _paintTextAlongPath(
+    ui.Canvas canvas, {
+    required String text,
+    required _ResolvedTextStyle style,
+    required ui.PathMetric metric,
+    required double startOffset,
+    ui.ImageFilter? imageFilter,
+    ui.ColorFilter? colorFilter,
+    ui.BlendMode? blendMode,
+  }) {
+    final glyphs = text.runes
+        .map((rune) => String.fromCharCode(rune))
+        .toList(growable: false);
+    if (glyphs.isEmpty) {
+      return 0.0;
+    }
+
+    final paragraphs = glyphs
+        .map((glyph) => _buildTextParagraph(glyph, style))
+        .toList(growable: false);
+    final widths = paragraphs
+        .map((paragraph) => paragraph.maxIntrinsicWidth)
+        .toList(growable: false);
+    final totalWidth = widths.fold<double>(0.0, (sum, w) => sum + w);
+
+    var drawOffset = startOffset;
+    switch (style.textAnchor) {
+      case _SvgTextAnchor.start:
+        break;
+      case _SvgTextAnchor.middle:
+        drawOffset -= totalWidth / 2;
+        break;
+      case _SvgTextAnchor.end:
+        drawOffset -= totalWidth;
+        break;
+    }
+
+    final needsLayer =
+        imageFilter != null || colorFilter != null || blendMode != null;
+    if (needsLayer) {
+      final layerPaint = ui.Paint();
+      if (imageFilter != null) {
+        layerPaint.imageFilter = imageFilter;
+      }
+      if (colorFilter != null) {
+        layerPaint.colorFilter = colorFilter;
+      }
+      if (blendMode != null) {
+        layerPaint.blendMode = blendMode;
+      }
+      final pathBounds = metric
+          .extractPath(0.0, metric.length)
+          .getBounds()
+          .inflate(style.fontSize * 2.0);
+      canvas.saveLayer(pathBounds, layerPaint);
+    }
+
+    var consumed = 0.0;
+    var cursor = drawOffset;
+    for (int i = 0; i < paragraphs.length; i++) {
+      final paragraph = paragraphs[i];
+      final glyphWidth = widths[i];
+      final center = (cursor + glyphWidth / 2).clamp(0.0, metric.length);
+      final tangent = metric.getTangentForOffset(center);
+      if (tangent == null) {
+        cursor += glyphWidth;
+        consumed += glyphWidth;
+        continue;
+      }
+
+      canvas.save();
+      canvas.translate(tangent.position.dx, tangent.position.dy);
+      canvas.rotate(tangent.angle);
+      canvas.drawParagraph(
+        paragraph,
+        ui.Offset(-glyphWidth / 2, -paragraph.alphabeticBaseline),
+      );
+      canvas.restore();
+
+      cursor += glyphWidth;
+      consumed += glyphWidth;
+      if (cursor > metric.length + style.fontSize) {
+        break;
+      }
+    }
+
+    if (needsLayer) {
+      canvas.restore();
+    }
+    return consumed;
+  }
+
+  _ResolvedTextStyle _resolveTextStyle(SvgNode node) {
+    final fontSize = (_getInheritedNumber(node, 'font-size') ?? 16.0).clamp(
+      1.0,
+      4096.0,
+    );
+    final fillValue = _getInheritedAttributeValue(node, 'fill');
+    final fillColor =
+        _resolveColorValue(fillValue) ?? const ui.Color(0xFF000000);
+    final opacity = (_getInheritedNumber(node, 'opacity') ?? 1.0).clamp(
+      0.0,
+      1.0,
+    );
+    final fillOpacity = (_getInheritedNumber(node, 'fill-opacity') ?? 1.0)
+        .clamp(0.0, 1.0);
+    final color = _applyOpacity(fillColor, opacity * fillOpacity);
+    final fontFamily = _getInheritedString(node, 'font-family');
+    final fontWeight = _resolveFontWeight(
+      _getInheritedString(node, 'font-weight'),
+    );
+    final fontStyle = _resolveFontStyle(
+      _getInheritedString(node, 'font-style'),
+    );
+    final textAnchor = _resolveTextAnchor(
+      _getInheritedString(node, 'text-anchor'),
+    );
+
+    return _ResolvedTextStyle(
+      color: color,
+      fontSize: fontSize,
+      fontFamily: fontFamily,
+      fontWeight: fontWeight,
+      fontStyle: fontStyle,
+      textAnchor: textAnchor,
+    );
+  }
+
+  ui.Paragraph _buildTextParagraph(String text, _ResolvedTextStyle style) {
+    final paragraphBuilder = ui.ParagraphBuilder(
+      ui.ParagraphStyle(
+        fontSize: style.fontSize,
+        fontFamily: style.fontFamily,
+        fontWeight: style.fontWeight,
+        fontStyle: style.fontStyle,
+      ),
+    );
+    paragraphBuilder.pushStyle(
+      ui.TextStyle(
+        color: style.color,
+        fontSize: style.fontSize,
+        fontFamily: style.fontFamily,
+        fontWeight: style.fontWeight,
+        fontStyle: style.fontStyle,
+      ),
+    );
+    paragraphBuilder.addText(text);
+    final paragraph = paragraphBuilder.build();
+    paragraph.layout(const ui.ParagraphConstraints(width: 1000000));
+    return paragraph;
+  }
+
+  void _drawParagraphWithEffects(
+    ui.Canvas canvas, {
+    required ui.Paragraph paragraph,
+    required double x,
+    required double y,
+    ui.ImageFilter? imageFilter,
+    ui.ColorFilter? colorFilter,
+    ui.BlendMode? blendMode,
+  }) {
+    if (imageFilter == null && colorFilter == null && blendMode == null) {
+      canvas.drawParagraph(paragraph, ui.Offset(x, y));
+      return;
+    }
+
+    final layerPaint = ui.Paint();
+    if (imageFilter != null) {
+      layerPaint.imageFilter = imageFilter;
+    }
+    if (colorFilter != null) {
+      layerPaint.colorFilter = colorFilter;
+    }
+    if (blendMode != null) {
+      layerPaint.blendMode = blendMode;
+    }
+    final bounds = ui.Rect.fromLTWH(
+      x,
+      y,
+      paragraph.maxIntrinsicWidth,
+      paragraph.height,
+    ).inflate(1.0);
+    canvas.saveLayer(bounds, layerPaint);
+    canvas.drawParagraph(paragraph, ui.Offset(x, y));
+    canvas.restore();
+  }
+
+  ui.Path? _resolveTextPathGeometry(SvgNode textPathNode) {
+    final hrefId = _extractHrefId(textPathNode);
+    if (hrefId == null || hrefId.isEmpty) {
+      return null;
+    }
+
+    final referenced = document.root.findById(hrefId);
+    if (referenced == null || referenced.tagName != 'path') {
+      return null;
+    }
+
+    final path = _buildGeometryPath(referenced);
+    if (path == null) {
+      return null;
+    }
+
+    final transform = _buildTransformMatrixFromValue(
+      referenced.getAttributeValue('transform'),
+    );
+    if (transform == null) {
+      return path;
+    }
+    return path.transform(transform.storage);
+  }
+
+  double _parseTextPathStartOffset(SvgNode textPathNode, double pathLength) {
+    final raw = textPathNode.getAttributeValue('startOffset');
+    if (raw == null) {
+      return 0.0;
+    }
+
+    if (raw is num) {
+      return raw.toDouble().clamp(0.0, pathLength);
+    }
+
+    final value = raw.toString().trim();
+    if (value.isEmpty) {
+      return 0.0;
+    }
+
+    if (value.endsWith('%')) {
+      final percent = double.tryParse(value.substring(0, value.length - 1));
+      if (percent == null) {
+        return 0.0;
+      }
+      return (pathLength * percent / 100.0).clamp(0.0, pathLength);
+    }
+
+    return (double.tryParse(value) ?? 0.0).clamp(0.0, pathLength);
+  }
+
+  String? _extractTextContent(SvgNode node) {
+    final raw = _getString(node, '__text');
+    if (raw == null) {
+      return null;
+    }
+    final normalized = raw.replaceAll(RegExp(r'\s+'), ' ').trim();
+    return normalized.isEmpty ? null : normalized;
   }
 
   ui.Path? _buildGeometryPath(SvgNode node) {
@@ -1399,6 +2019,70 @@ class AnimatedSvgPainter extends CustomPainter {
     return _extractPaintServerId(raw);
   }
 
+  String? _extractImageHref(SvgNode node) {
+    final rawHref =
+        node.getAttributeValue('href') ?? node.getAttributeValue('xlink:href');
+    if (rawHref == null) {
+      return null;
+    }
+    final href = rawHref.toString().trim();
+    return href.isEmpty ? null : href;
+  }
+
+  _ImageLayout _resolveImageLayout({
+    required ui.Rect viewport,
+    required ui.Size imageSize,
+    String? preserveAspectRatio,
+  }) {
+    if (imageSize.width <= 0 || imageSize.height <= 0) {
+      return _ImageLayout(destinationRect: viewport, clipToViewport: false);
+    }
+
+    final tokens = (preserveAspectRatio ?? '')
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((token) => token.isNotEmpty)
+        .where((token) => token.toLowerCase() != 'defer')
+        .toList();
+
+    final alignToken = tokens.isEmpty ? 'xMidYMid' : tokens.first;
+    final fitToken = tokens.length > 1 ? tokens.last.toLowerCase() : 'meet';
+
+    if (alignToken.toLowerCase() == 'none') {
+      return _ImageLayout(destinationRect: viewport, clipToViewport: false);
+    }
+
+    final scaleX = viewport.width / imageSize.width;
+    final scaleY = viewport.height / imageSize.height;
+    final useSlice = fitToken == 'slice';
+    final scale = useSlice
+        ? math.max(scaleX, scaleY)
+        : math.min(scaleX, scaleY);
+
+    final drawWidth = imageSize.width * scale;
+    final drawHeight = imageSize.height * scale;
+
+    final alignLower = alignToken.toLowerCase();
+    final alignX = alignLower.contains('xmin')
+        ? 0.0
+        : alignLower.contains('xmax')
+        ? 1.0
+        : 0.5;
+    final alignY = alignLower.contains('ymin')
+        ? 0.0
+        : alignLower.contains('ymax')
+        ? 1.0
+        : 0.5;
+
+    final dx = viewport.left + (viewport.width - drawWidth) * alignX;
+    final dy = viewport.top + (viewport.height - drawHeight) * alignY;
+
+    return _ImageLayout(
+      destinationRect: ui.Rect.fromLTWH(dx, dy, drawWidth, drawHeight),
+      clipToViewport: useSlice,
+    );
+  }
+
   bool _isPaintNone(Object? value) {
     final str = value?.toString().trim().toLowerCase();
     return str == 'none';
@@ -1645,6 +2329,101 @@ class AnimatedSvgPainter extends CustomPainter {
     return null;
   }
 
+  Object? _getInheritedAttributeValue(SvgNode node, String attributeName) {
+    SvgNode? current = node;
+    while (current != null) {
+      final value = current.getAttributeValue(attributeName);
+      if (value != null) {
+        return value;
+      }
+      current = current.parent;
+    }
+    return null;
+  }
+
+  String? _getInheritedString(SvgNode node, String attributeName) {
+    final value = _getInheritedAttributeValue(node, attributeName);
+    final str = value?.toString();
+    if (str == null) {
+      return null;
+    }
+    final trimmed = str.trim();
+    return trimmed.isEmpty ? null : trimmed;
+  }
+
+  double? _getInheritedNumber(SvgNode node, String attributeName) {
+    final value = _getInheritedAttributeValue(node, attributeName);
+    if (value == null) {
+      return null;
+    }
+    if (value is num) {
+      return value.toDouble();
+    }
+    final raw = value.toString().trim();
+    if (raw.isEmpty) {
+      return null;
+    }
+    final cleaned = raw.replaceAll(RegExp(r'[a-zA-Z%]+$'), '');
+    return double.tryParse(cleaned);
+  }
+
+  ui.FontWeight _resolveFontWeight(String? fontWeight) {
+    if (fontWeight == null) {
+      return ui.FontWeight.normal;
+    }
+    switch (fontWeight.toLowerCase()) {
+      case '100':
+      case 'thin':
+        return ui.FontWeight.w100;
+      case '200':
+      case 'extralight':
+      case 'extra-light':
+        return ui.FontWeight.w200;
+      case '300':
+      case 'light':
+        return ui.FontWeight.w300;
+      case '500':
+      case 'medium':
+        return ui.FontWeight.w500;
+      case '600':
+      case 'semibold':
+      case 'semi-bold':
+        return ui.FontWeight.w600;
+      case '700':
+      case 'bold':
+        return ui.FontWeight.w700;
+      case '800':
+      case 'extrabold':
+      case 'extra-bold':
+        return ui.FontWeight.w800;
+      case '900':
+      case 'black':
+        return ui.FontWeight.w900;
+      case '400':
+      case 'normal':
+      default:
+        return ui.FontWeight.normal;
+    }
+  }
+
+  ui.FontStyle _resolveFontStyle(String? fontStyle) {
+    return fontStyle?.toLowerCase() == 'italic'
+        ? ui.FontStyle.italic
+        : ui.FontStyle.normal;
+  }
+
+  _SvgTextAnchor _resolveTextAnchor(String? anchorValue) {
+    switch (anchorValue?.trim().toLowerCase()) {
+      case 'middle':
+        return _SvgTextAnchor.middle;
+      case 'end':
+        return _SvgTextAnchor.end;
+      case 'start':
+      default:
+        return _SvgTextAnchor.start;
+    }
+  }
+
   ui.Rect? _parseViewBox(String? viewBoxValue) {
     if (viewBoxValue == null || viewBoxValue.trim().isEmpty) {
       return null;
@@ -1846,6 +2625,16 @@ class _GradientLength {
   final bool isPercent;
 }
 
+class _ImageLayout {
+  const _ImageLayout({
+    required this.destinationRect,
+    required this.clipToViewport,
+  });
+
+  final ui.Rect destinationRect;
+  final bool clipToViewport;
+}
+
 class _GradientStop {
   const _GradientStop({required this.offset, required this.color});
 
@@ -1863,4 +2652,31 @@ class _ResolvedGradientDefinition {
   final String type;
   final Map<String, Object?> attributes;
   final List<_GradientStop> stops;
+}
+
+class _TextCursor {
+  _TextCursor({required this.x, required this.y});
+
+  double x;
+  double y;
+}
+
+enum _SvgTextAnchor { start, middle, end }
+
+class _ResolvedTextStyle {
+  const _ResolvedTextStyle({
+    required this.color,
+    required this.fontSize,
+    required this.fontFamily,
+    required this.fontWeight,
+    required this.fontStyle,
+    required this.textAnchor,
+  });
+
+  final ui.Color color;
+  final double fontSize;
+  final String? fontFamily;
+  final ui.FontWeight fontWeight;
+  final ui.FontStyle fontStyle;
+  final _SvgTextAnchor textAnchor;
 }

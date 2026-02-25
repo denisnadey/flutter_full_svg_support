@@ -29,6 +29,40 @@ enum SvgFilterType {
   colorMatrix,
 }
 
+/// Один проход отрисовки фильтра для source-графики.
+///
+/// Animated painter может рендерить элемент в несколько проходов
+/// (например для `feDropShadow` и `feMerge`).
+class SvgFilterPaintPass {
+  const SvgFilterPaintPass({
+    this.imageFilter,
+    this.colorFilter,
+    this.blendMode,
+    this.offset = ui.Offset.zero,
+  });
+
+  static const SvgFilterPaintPass identity = SvgFilterPaintPass();
+
+  final ui.ImageFilter? imageFilter;
+  final ui.ColorFilter? colorFilter;
+  final ui.BlendMode? blendMode;
+  final ui.Offset offset;
+
+  SvgFilterPaintPass copyWith({
+    ui.ImageFilter? imageFilter,
+    ui.ColorFilter? colorFilter,
+    ui.BlendMode? blendMode,
+    ui.Offset? offset,
+  }) {
+    return SvgFilterPaintPass(
+      imageFilter: imageFilter ?? this.imageFilter,
+      colorFilter: colorFilter ?? this.colorFilter,
+      blendMode: blendMode ?? this.blendMode,
+      offset: offset ?? this.offset,
+    );
+  }
+}
+
 /// Offset фильтр
 ///
 /// Смещает входное изображение на dx/dy.
@@ -39,8 +73,13 @@ class SvgOffsetFilter extends SvgFilter {
   /// Смещение по Y
   final double dy;
 
-  SvgOffsetFilter({required super.id, required this.dx, required this.dy})
-    : super(type: SvgFilterType.offset);
+  SvgOffsetFilter({
+    required super.id,
+    required this.dx,
+    required this.dy,
+    super.input,
+    super.resultName,
+  }) : super(type: SvgFilterType.offset);
 
   @override
   ui.ImageFilter? apply() {
@@ -90,7 +129,22 @@ abstract class SvgFilter {
   /// Тип фильтра
   final SvgFilterType type;
 
-  SvgFilter({required this.id, required this.type});
+  /// Primitive input (`in` attribute).
+  final String? input;
+
+  /// Optional secondary input (`in2` attribute).
+  final String? input2;
+
+  /// Named primitive result (`result` attribute).
+  final String? resultName;
+
+  SvgFilter({
+    required this.id,
+    required this.type,
+    this.input,
+    this.input2,
+    this.resultName,
+  });
 
   /// Применить фильтр к изображению
   /// Возвращает ImageFilter для использования в Flutter Canvas
@@ -115,12 +169,15 @@ class SvgFloodFilter extends SvgFilter {
     required super.id,
     required this.floodColor,
     required this.floodOpacity,
+    super.resultName,
   }) : super(type: SvgFilterType.flood);
 
   ui.Color get _effectiveColor {
     final opacity = floodOpacity.clamp(0.0, 1.0);
     return floodColor.withValues(alpha: floodColor.a * opacity);
   }
+
+  ui.Color get effectiveColor => _effectiveColor;
 
   @override
   ui.ImageFilter? apply() {
@@ -138,8 +195,13 @@ class SvgBlendFilter extends SvgFilter {
   /// Режим смешивания.
   final ui.BlendMode mode;
 
-  SvgBlendFilter({required super.id, required this.mode})
-    : super(type: SvgFilterType.blend);
+  SvgBlendFilter({
+    required super.id,
+    required this.mode,
+    super.input,
+    super.input2,
+    super.resultName,
+  }) : super(type: SvgFilterType.blend);
 
   @override
   ui.ImageFilter? apply() => null;
@@ -170,6 +232,9 @@ class SvgCompositeFilter extends SvgFilter {
     this.k2 = 0.0,
     this.k3 = 0.0,
     this.k4 = 0.0,
+    super.input,
+    super.input2,
+    super.resultName,
   }) : super(type: SvgFilterType.composite);
 
   @override
@@ -187,8 +252,11 @@ class SvgMergeFilter extends SvgFilter {
   /// Список входов из дочерних `<feMergeNode in="...">`.
   final List<String?> nodeInputs;
 
-  SvgMergeFilter({required super.id, required this.nodeInputs})
-    : super(type: SvgFilterType.merge);
+  SvgMergeFilter({
+    required super.id,
+    required this.nodeInputs,
+    super.resultName,
+  }) : super(type: SvgFilterType.merge);
 
   /// Количество merge-node в примитиве.
   int get nodeCount => nodeInputs.length;
@@ -254,6 +322,8 @@ class SvgGaussianBlurFilter extends SvgFilter {
     required super.id,
     required this.stdDeviationX,
     required this.stdDeviationY,
+    super.input,
+    super.resultName,
   }) : super(type: SvgFilterType.gaussianBlur);
 
   @override
@@ -274,41 +344,47 @@ class SvgDropShadowFilter extends SvgFilter {
   /// Смещение по Y
   final double dy;
 
-  /// Стандартное отклонение (размытие тени)
-  final double stdDeviation;
+  /// Стандартное отклонение по X (размытие тени)
+  final double stdDeviationX;
+
+  /// Стандартное отклонение по Y (размытие тени)
+  final double stdDeviationY;
 
   /// Цвет тени
   final ui.Color? floodColor;
+
+  /// Прозрачность тени (0..1)
+  final double floodOpacity;
 
   SvgDropShadowFilter({
     required super.id,
     required this.dx,
     required this.dy,
-    required this.stdDeviation,
+    required this.stdDeviationX,
+    required this.stdDeviationY,
     this.floodColor,
+    this.floodOpacity = 1.0,
+    super.input,
+    super.resultName,
   }) : super(type: SvgFilterType.dropShadow);
 
   @override
   ui.ImageFilter? apply() {
-    // Flutter не имеет прямого drop shadow ImageFilter
-    // Используем комбинацию blur + offset
-    // Можно использовать PictureRecorder для создания тени, затем blur
-    // Для упрощения используем только blur, offset будет применен через transform
-    // TODO: Реализовать полный drop shadow с цветом через PictureRecorder
-
-    // Создаем blur фильтр для тени
-    final blurFilter = ui.ImageFilter.blur(
-      sigmaX: stdDeviation,
-      sigmaY: stdDeviation,
-    );
-
-    // TODO: Реализовать полный drop shadow с offset через PictureRecorder
-    // Пока возвращаем blur фильтр
-    return blurFilter;
+    return ui.ImageFilter.blur(sigmaX: stdDeviationX, sigmaY: stdDeviationY);
   }
 
   /// Получить offset для применения через transform
   ui.Offset get offset => ui.Offset(dx, dy);
+
+  /// Эффективный цвет тени с учётом flood-opacity.
+  ui.Color get effectiveShadowColor {
+    final base = floodColor ?? const ui.Color(0xFF000000);
+    final opacity = floodOpacity.clamp(0.0, 1.0);
+    return base.withValues(alpha: base.a * opacity);
+  }
+
+  /// Совместимость со старым API (среднее по осям).
+  double get stdDeviation => (stdDeviationX + stdDeviationY) / 2.0;
 }
 
 /// Color Matrix фильтр
@@ -325,6 +401,8 @@ class SvgColorMatrixFilter extends SvgFilter {
     required super.id,
     required this.matrixType,
     required this.values,
+    super.input,
+    super.resultName,
   }) : super(type: SvgFilterType.colorMatrix);
 
   @override
@@ -490,36 +568,261 @@ class SvgFilters {
     return list != null && list.isNotEmpty;
   }
 
-  /// Скомпоновать ImageFilter цепочку для filter id.
-  ui.ImageFilter? resolveImageFilter(String id) {
+  /// Разрешает фильтр в один или несколько paint-проходов.
+  ///
+  /// Для `feDropShadow` и `feMerge` возвращает multi-pass результат,
+  /// чтобы painter мог рендерить исходник и производные результаты по отдельности.
+  List<SvgFilterPaintPass> resolvePaintPasses(String id) {
     final list = _filters[id];
     if (list == null || list.isEmpty) {
-      return null;
+      return const <SvgFilterPaintPass>[SvgFilterPaintPass.identity];
     }
 
-    ui.ImageFilter? composed;
-    for (final filter in list) {
-      final current = filter.apply();
-      if (current == null) {
-        continue;
+    const sourceGraphic = <SvgFilterPaintPass>[SvgFilterPaintPass.identity];
+    final sourceAlpha = <SvgFilterPaintPass>[
+      const SvgFilterPaintPass(
+        colorFilter: ui.ColorFilter.mode(
+          ui.Color(0xFFFFFFFF),
+          ui.BlendMode.srcIn,
+        ),
+      ),
+    ];
+
+    final namedResults = <String, List<SvgFilterPaintPass>>{};
+    var previous = <SvgFilterPaintPass>[...sourceGraphic];
+
+    for (final primitive in list) {
+      List<SvgFilterPaintPass> output;
+      switch (primitive.type) {
+        case SvgFilterType.gaussianBlur:
+          final blur = primitive as SvgGaussianBlurFilter;
+          final input = _resolveInputPasses(
+            requestedInput: blur.input,
+            previous: previous,
+            namedResults: namedResults,
+            sourceGraphic: sourceGraphic,
+            sourceAlpha: sourceAlpha,
+          );
+          final blurFilter = blur.apply();
+          output = input
+              .map(
+                (pass) => pass.copyWith(
+                  imageFilter: _composeImageFilter(
+                    blurFilter,
+                    pass.imageFilter,
+                  ),
+                ),
+              )
+              .toList(growable: false);
+
+        case SvgFilterType.offset:
+          final offset = primitive as SvgOffsetFilter;
+          final input = _resolveInputPasses(
+            requestedInput: offset.input,
+            previous: previous,
+            namedResults: namedResults,
+            sourceGraphic: sourceGraphic,
+            sourceAlpha: sourceAlpha,
+          );
+          output = input
+              .map(
+                (pass) => pass.copyWith(
+                  offset: pass.offset + ui.Offset(offset.dx, offset.dy),
+                ),
+              )
+              .toList(growable: false);
+
+        case SvgFilterType.flood:
+          final flood = primitive as SvgFloodFilter;
+          output = <SvgFilterPaintPass>[
+            SvgFilterPaintPass(
+              colorFilter: ui.ColorFilter.mode(
+                flood.effectiveColor,
+                ui.BlendMode.src,
+              ),
+            ),
+          ];
+
+        case SvgFilterType.blend:
+          final blend = primitive as SvgBlendFilter;
+          final input = _resolveInputPasses(
+            requestedInput: blend.input,
+            previous: previous,
+            namedResults: namedResults,
+            sourceGraphic: sourceGraphic,
+            sourceAlpha: sourceAlpha,
+          );
+          output = input
+              .map((pass) => pass.copyWith(blendMode: blend.mode))
+              .toList(growable: false);
+
+        case SvgFilterType.composite:
+          final composite = primitive as SvgCompositeFilter;
+          final input = _resolveInputPasses(
+            requestedInput: composite.input,
+            previous: previous,
+            namedResults: namedResults,
+            sourceGraphic: sourceGraphic,
+            sourceAlpha: sourceAlpha,
+          );
+          if (composite.mode == null) {
+            output = input;
+          } else {
+            output = input
+                .map((pass) => pass.copyWith(blendMode: composite.mode))
+                .toList(growable: false);
+          }
+
+        case SvgFilterType.merge:
+          final merge = primitive as SvgMergeFilter;
+          final merged = <SvgFilterPaintPass>[];
+          if (merge.nodeInputs.isEmpty) {
+            merged.addAll(previous);
+          } else {
+            for (final nodeInput in merge.nodeInputs) {
+              merged.addAll(
+                _resolveInputPasses(
+                  requestedInput: nodeInput,
+                  previous: previous,
+                  namedResults: namedResults,
+                  sourceGraphic: sourceGraphic,
+                  sourceAlpha: sourceAlpha,
+                ),
+              );
+            }
+          }
+          output = merged.isEmpty ? previous : merged;
+
+        case SvgFilterType.dropShadow:
+          final shadow = primitive as SvgDropShadowFilter;
+          final input = _resolveInputPasses(
+            requestedInput: shadow.input,
+            previous: previous,
+            namedResults: namedResults,
+            sourceGraphic: sourceGraphic,
+            sourceAlpha: sourceAlpha,
+          );
+          final shadowFilter = shadow.apply();
+          final shadowPasses = input
+              .map(
+                (pass) => SvgFilterPaintPass(
+                  imageFilter: _composeImageFilter(
+                    shadowFilter,
+                    pass.imageFilter,
+                  ),
+                  colorFilter: ui.ColorFilter.mode(
+                    shadow.effectiveShadowColor,
+                    ui.BlendMode.srcIn,
+                  ),
+                  blendMode: ui.BlendMode.srcOver,
+                  offset: pass.offset + shadow.offset,
+                ),
+              )
+              .toList(growable: false);
+          output = <SvgFilterPaintPass>[...shadowPasses, ...input];
+
+        case SvgFilterType.colorMatrix:
+          final colorMatrix = primitive as SvgColorMatrixFilter;
+          final input = _resolveInputPasses(
+            requestedInput: colorMatrix.input,
+            previous: previous,
+            namedResults: namedResults,
+            sourceGraphic: sourceGraphic,
+            sourceAlpha: sourceAlpha,
+          );
+          final colorFilter = colorMatrix.colorFilter();
+          if (colorFilter == null) {
+            output = input;
+          } else {
+            output = input
+                .map((pass) => pass.copyWith(colorFilter: colorFilter))
+                .toList(growable: false);
+          }
       }
-      composed = composed == null
-          ? current
-          : ui.ImageFilter.compose(outer: current, inner: composed);
+
+      previous = output;
+      final resultName = primitive.resultName?.trim();
+      if (resultName != null && resultName.isNotEmpty) {
+        namedResults[resultName] = output
+            .map(
+              (pass) => SvgFilterPaintPass(
+                imageFilter: pass.imageFilter,
+                colorFilter: pass.colorFilter,
+                blendMode: pass.blendMode,
+                offset: pass.offset,
+              ),
+            )
+            .toList(growable: false);
+      }
     }
-    return composed;
+
+    if (previous.isEmpty) {
+      return const <SvgFilterPaintPass>[SvgFilterPaintPass.identity];
+    }
+    return previous;
+  }
+
+  List<SvgFilterPaintPass> _resolveInputPasses({
+    required String? requestedInput,
+    required List<SvgFilterPaintPass> previous,
+    required Map<String, List<SvgFilterPaintPass>> namedResults,
+    required List<SvgFilterPaintPass> sourceGraphic,
+    required List<SvgFilterPaintPass> sourceAlpha,
+  }) {
+    final normalized = requestedInput?.trim();
+    if (normalized == null || normalized.isEmpty) {
+      return previous.isEmpty
+          ? <SvgFilterPaintPass>[...sourceGraphic]
+          : previous;
+    }
+
+    switch (normalized) {
+      case 'SourceGraphic':
+        return <SvgFilterPaintPass>[...sourceGraphic];
+      case 'SourceAlpha':
+        return <SvgFilterPaintPass>[...sourceAlpha];
+      case 'BackgroundImage':
+      case 'BackgroundAlpha':
+      case 'FillPaint':
+      case 'StrokePaint':
+        return <SvgFilterPaintPass>[...sourceGraphic];
+      default:
+        final named = namedResults[normalized];
+        if (named != null && named.isNotEmpty) {
+          return <SvgFilterPaintPass>[...named];
+        }
+        return previous.isEmpty
+            ? <SvgFilterPaintPass>[...sourceGraphic]
+            : previous;
+    }
+  }
+
+  ui.ImageFilter? _composeImageFilter(
+    ui.ImageFilter? outer,
+    ui.ImageFilter? inner,
+  ) {
+    if (outer == null) return inner;
+    if (inner == null) return outer;
+    return ui.ImageFilter.compose(outer: outer, inner: inner);
+  }
+
+  /// Скомпоновать ImageFilter цепочку для filter id.
+  ui.ImageFilter? resolveImageFilter(String id) {
+    final passes = resolvePaintPasses(id);
+    for (final pass in passes) {
+      if (pass.imageFilter != null) {
+        return pass.imageFilter;
+      }
+    }
+    return null;
   }
 
   /// Получить итоговый ColorFilter для цепочки (последний цветовой примитив).
   ui.ColorFilter? resolveColorFilter(String id) {
-    final list = _filters[id];
-    if (list == null || list.isEmpty) {
-      return null;
-    }
-
+    final passes = resolvePaintPasses(id);
     ui.ColorFilter? result;
-    for (final filter in list) {
-      final colorFilter = filter.colorFilter();
+    for (final pass in passes) {
+      final colorFilter = pass.colorFilter;
       if (colorFilter != null) {
         result = colorFilter;
       }
@@ -529,14 +832,10 @@ class SvgFilters {
 
   /// Получить итоговый blend mode для цепочки (последний режим композиции).
   ui.BlendMode? resolveBlendMode(String id) {
-    final list = _filters[id];
-    if (list == null || list.isEmpty) {
-      return null;
-    }
-
+    final passes = resolvePaintPasses(id);
     ui.BlendMode? result;
-    for (final filter in list) {
-      final mode = filter.blendMode();
+    for (final pass in passes) {
+      final mode = pass.blendMode;
       if (mode != null) {
         result = mode;
       }

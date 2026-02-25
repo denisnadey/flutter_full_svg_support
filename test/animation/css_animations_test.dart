@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:flutter_svg/src/animation/css_animations.dart';
 import 'package:flutter_svg/src/animation/svg_parser.dart';
+import 'package:flutter_svg/src/animation/smil/smil_animation.dart';
 import 'package:flutter_svg/src/animation/smil/smil_parser.dart';
 
 void main() {
@@ -80,6 +81,24 @@ void main() {
       expect(animation.delay, equals(const Duration(milliseconds: 500)));
     });
 
+    test('Parse animation shorthand with cubic-bezier and direction', () {
+      final animationValue =
+          'spin 2s cubic-bezier(0.42, 0, 0.58, 1) 120ms 3 alternate-reverse both';
+      final animation = CssParser.parseAnimation(animationValue);
+
+      expect(animation, isNotNull);
+      expect(animation!.name, equals('spin'));
+      expect(animation.duration, equals(const Duration(seconds: 2)));
+      expect(
+        animation.timingFunction,
+        equals('cubic-bezier(0.42, 0, 0.58, 1)'),
+      );
+      expect(animation.delay, equals(const Duration(milliseconds: 120)));
+      expect(animation.iterationCount, equals(3));
+      expect(animation.direction, equals('alternate-reverse'));
+      expect(animation.fillMode, equals('both'));
+    });
+
     test('Parse animation from style attribute', () {
       final styleText = 'animation: spin 2s infinite; fill: blue;';
       final animation = CssParser.parseAnimationFromStyle(styleText);
@@ -142,15 +161,110 @@ void main() {
 
       final document = SvgParser.parse(svgString);
       final animations = SmilParser.parseAnimations(document);
-      
+
       // CSS анимация должна быть сконвертирована в SMIL
       expect(animations, isNotEmpty);
-      
+
       // Проверяем что есть анимация transform
-      final transformAnims = animations.where(
-        (anim) => anim.attributeName == 'transform',
-      ).toList();
+      final transformAnims = animations
+          .where((anim) => anim.attributeName == 'transform')
+          .toList();
       expect(transformAnims, isNotEmpty);
     });
+
+    test(
+      'CSS converter maps cubic-bezier to keySplines and normalizes transform values',
+      () {
+        final svgString = '''
+<svg viewBox="0 0 100 100">
+  <style>
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(1turn); }
+    }
+  </style>
+  <circle
+    id="circle"
+    cx="50"
+    cy="50"
+    r="20"
+    fill="blue"
+    style="
+      animation-name: spin;
+      animation-duration: 2s;
+      animation-iteration-count: 1;
+      animation-timing-function: cubic-bezier(0.42, 0, 0.58, 1);
+      animation-fill-mode: both;
+    "
+  />
+</svg>
+''';
+
+        final document = SvgParser.parse(svgString);
+        final animations = SmilParser.parseAnimations(document);
+        final transformAnim = animations.firstWhere(
+          (anim) => anim.attributeName == 'transform',
+        );
+
+        expect(transformAnim.calcMode, equals(SmilCalcMode.spline));
+        expect(transformAnim.keySplines, isNotNull);
+        expect(transformAnim.keySplines, hasLength(1));
+        expect(transformAnim.values, isNotNull);
+        expect(transformAnim.values![0], equals('rotate(0)'));
+        expect(transformAnim.values![1], equals('rotate(360)'));
+      },
+    );
+
+    test(
+      'alternate direction affects runtime progress in converted CSS animation',
+      () {
+        final svgString = '''
+<svg viewBox="0 0 100 100">
+  <style>
+    @keyframes fade {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+  </style>
+  <rect
+    id="rect"
+    x="0"
+    y="0"
+    width="10"
+    height="10"
+    opacity="0"
+    style="
+      animation-name: fade;
+      animation-duration: 2s;
+      animation-iteration-count: 2;
+      animation-direction: alternate;
+      animation-timing-function: linear;
+    "
+  />
+</svg>
+''';
+
+        final document = SvgParser.parse(svgString);
+        final animations = SmilParser.parseAnimations(document);
+        final opacityAnim = animations.firstWhere(
+          (anim) => anim.attributeName == 'opacity',
+        );
+
+        expect(
+          opacityAnim.playbackDirection,
+          equals(SmilPlaybackDirection.alternate),
+        );
+
+        opacityAnim.updateForTime(const Duration(milliseconds: 500));
+        final valueAt500ms =
+            opacityAnim.targetNode.getAttributeValue('opacity') as double;
+        expect(valueAt500ms, closeTo(0.25, 0.01));
+
+        opacityAnim.updateForTime(const Duration(milliseconds: 2500));
+        final valueAt2500ms =
+            opacityAnim.targetNode.getAttributeValue('opacity') as double;
+        expect(valueAt2500ms, closeTo(0.75, 0.01));
+      },
+    );
   });
 }

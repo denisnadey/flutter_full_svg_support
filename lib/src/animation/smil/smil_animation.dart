@@ -57,6 +57,21 @@ enum SmilAdditiveMode {
   sum,
 }
 
+/// Направление проигрывания повторов (CSS animation-direction compatibility)
+enum SmilPlaybackDirection {
+  /// Каждая итерация проигрывается от 0 до 1
+  normal,
+
+  /// Каждая итерация проигрывается от 1 до 0
+  reverse,
+
+  /// Чередование: 1-я итерация normal, 2-я reverse, ...
+  alternate,
+
+  /// Чередование: 1-я итерация reverse, 2-я normal, ...
+  alternateReverse,
+}
+
 /// Базовый класс для SMIL анимации
 class SmilAnimation {
   /// Создаёт SMIL анимацию
@@ -80,6 +95,7 @@ class SmilAnimation {
     this.repeatDur,
     this.fillMode = SmilFillMode.remove,
     this.calcMode = SmilCalcMode.linear,
+    this.playbackDirection = SmilPlaybackDirection.normal,
     this.additive = SmilAdditiveMode.replace,
     this.accumulate = false,
     this.beginConditions = const [],
@@ -229,6 +245,9 @@ class SmilAnimation {
 
   /// Режим вычисления промежуточных значений
   final SmilCalcMode calcMode;
+
+  /// Направление проигрывания итераций (используется для CSS animation-direction)
+  final SmilPlaybackDirection playbackDirection;
 
   /// Режим добавления к базовому значению
   final SmilAdditiveMode additive;
@@ -586,8 +605,14 @@ class SmilAnimation {
 
       // Применяем fill mode
       if (fillMode == SmilFillMode.freeze) {
-        // Вычисляем финальное значение (t=1.0)
-        final finalValue = computeValue(1.0);
+        final finalProgress = _computeProgressAtEnd(
+          effectiveBegin: effectiveBegin,
+          effectiveEnd: effectiveEnd,
+        );
+        final finalValue = computeValue(
+          finalProgress.t,
+          completedRepeats: finalProgress.completedRepeats,
+        );
         if (finalValue != null) {
           _applyValue(finalValue);
         }
@@ -611,7 +636,8 @@ class SmilAnimation {
       _localTime = Duration(microseconds: iterationMicros);
 
       // Прогресс внутри итерации (0.0 - 1.0)
-      final t = iterationMicros / durMicros;
+      final baseT = iterationMicros / durMicros;
+      final t = _resolveDirectedProgress(baseT, _currentIteration);
 
       // Вычисляем значение с учётом завершённых повторений
       _lastValue = computeValue(t, completedRepeats: _currentIteration);
@@ -656,6 +682,62 @@ class SmilAnimation {
     _clearValue();
   }
 
+  double _resolveDirectedProgress(double t, int iterationIndex) {
+    final shouldReverse = switch (playbackDirection) {
+      SmilPlaybackDirection.normal => false,
+      SmilPlaybackDirection.reverse => true,
+      SmilPlaybackDirection.alternate => iterationIndex.isOdd,
+      SmilPlaybackDirection.alternateReverse => iterationIndex.isEven,
+    };
+
+    return shouldReverse ? 1.0 - t : t;
+  }
+
+  _AnimationProgress _computeProgressAtEnd({
+    required Duration effectiveBegin,
+    required Duration effectiveEnd,
+  }) {
+    final durMicros = dur.inMicroseconds;
+    if (durMicros <= 0) {
+      return _AnimationProgress(
+        t: _resolveDirectedProgress(1.0, 0),
+        completedRepeats: 0,
+      );
+    }
+
+    final elapsedMicros = (effectiveEnd - effectiveBegin).inMicroseconds;
+    if (elapsedMicros <= 0) {
+      return _AnimationProgress(
+        t: _resolveDirectedProgress(0.0, 0),
+        completedRepeats: 0,
+      );
+    }
+
+    final completedWholeIterations = elapsedMicros ~/ durMicros;
+    final remainderMicros = elapsedMicros % durMicros;
+
+    late final int iterationIndex;
+    late final int completedRepeats;
+    late final double baseT;
+
+    if (remainderMicros == 0) {
+      iterationIndex = completedWholeIterations > 0
+          ? completedWholeIterations - 1
+          : 0;
+      completedRepeats = iterationIndex;
+      baseT = 1.0;
+    } else {
+      iterationIndex = completedWholeIterations;
+      completedRepeats = completedWholeIterations;
+      baseT = remainderMicros / durMicros;
+    }
+
+    return _AnimationProgress(
+      t: _resolveDirectedProgress(baseT, iterationIndex),
+      completedRepeats: completedRepeats,
+    );
+  }
+
   @override
   String toString() {
     return 'SmilAnimation('
@@ -665,6 +747,14 @@ class SmilAnimation {
         'active: $_isActive'
         ')';
   }
+}
+
+@immutable
+class _AnimationProgress {
+  const _AnimationProgress({required this.t, required this.completedRepeats});
+
+  final double t;
+  final int completedRepeats;
 }
 
 /// Кубическая кривая Безье для keySplines

@@ -33,7 +33,14 @@ void main() {
 <svg viewBox="0 0 100 100">
   <defs>
     <filter id="shadow">
-      <feDropShadow dx="2" dy="2" stdDeviation="3" flood-color="black"/>
+      <feDropShadow
+        dx="2"
+        dy="2"
+        stdDeviation="3 5"
+        flood-color="black"
+        flood-opacity="0.25"
+        in="SourceGraphic"
+        result="shadowOut"/>
     </filter>
   </defs>
   <rect x="10" y="10" width="50" height="50" fill="blue" filter="url(#shadow)"/>
@@ -47,6 +54,13 @@ void main() {
       final filter = document.filters!.getById('shadow');
       expect(filter, isNotNull);
       expect(filter!.type.toString(), contains('dropShadow'));
+      expect(filter, isA<SvgDropShadowFilter>());
+      final shadow = filter as SvgDropShadowFilter;
+      expect(shadow.stdDeviationX, 3);
+      expect(shadow.stdDeviationY, 5);
+      expect(shadow.floodOpacity, closeTo(0.25, 0.0001));
+      expect(shadow.input, 'SourceGraphic');
+      expect(shadow.resultName, 'shadowOut');
     });
 
     test('Parse feOffset filter', () {
@@ -211,6 +225,53 @@ void main() {
       expect(items.first, isA<SvgGaussianBlurFilter>());
       expect(items.last, isA<SvgOffsetFilter>());
       expect(document.filters!.resolveImageFilter('chainFx'), isNotNull);
+    });
+
+    test('Resolve drop shadow to multi-pass rendering sequence', () {
+      final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="shadowFx">
+      <feDropShadow dx="4" dy="6" stdDeviation="2" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="50" height="50" fill="blue" filter="url(#shadowFx)"/>
+</svg>
+''';
+
+      final document = SvgParser.parse(svgString);
+      final passes = document.filters!.resolvePaintPasses('shadowFx');
+
+      expect(passes, hasLength(2));
+      expect(passes.first.offset, const ui.Offset(4, 6));
+      expect(passes.first.imageFilter, isNotNull);
+      expect(passes.first.colorFilter, isNotNull);
+      expect(passes.last.offset, ui.Offset.zero);
+      expect(passes.last.colorFilter, isNull);
+    });
+
+    test('Resolve feMerge using named primitive results', () {
+      final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="mergeFx">
+      <feGaussianBlur stdDeviation="2" result="blurred"/>
+      <feMerge>
+        <feMergeNode in="blurred"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="50" height="50" fill="blue" filter="url(#mergeFx)"/>
+</svg>
+''';
+
+      final document = SvgParser.parse(svgString);
+      final passes = document.filters!.resolvePaintPasses('mergeFx');
+
+      expect(passes, hasLength(2));
+      expect(passes.first.imageFilter, isNotNull);
+      expect(passes.last.imageFilter, isNull);
     });
 
     test('Filter applied via filter attribute', () {

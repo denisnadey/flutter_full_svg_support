@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:xml/xml.dart';
@@ -110,11 +111,15 @@ class SvgParser {
   ) {
     final stdDeviationStr = element.getAttribute('stdDeviation') ?? '0';
     final stdDeviation = _parseNumberOptionalNumber(stdDeviationStr);
+    final input = _normalizeFilterInput(element.getAttribute('in'));
+    final resultName = _normalizeFilterResult(element.getAttribute('result'));
 
     return SvgGaussianBlurFilter(
       id: filterId,
       stdDeviationX: stdDeviation.$1,
       stdDeviationY: stdDeviation.$2,
+      input: input,
+      resultName: resultName,
     );
   }
 
@@ -127,7 +132,8 @@ class SvgParser {
     final dy = _parseNumber(element.getAttribute('dy') ?? '2');
     final stdDeviationStr = element.getAttribute('stdDeviation') ?? '2';
     final stdDeviation = _parseNumberOptionalNumber(stdDeviationStr);
-    final stdDev = stdDeviation.$1; // Используем X значение
+    final input = _normalizeFilterInput(element.getAttribute('in'));
+    final resultName = _normalizeFilterResult(element.getAttribute('result'));
 
     // Парсим flood-color
     final floodColorStr =
@@ -136,13 +142,22 @@ class SvgParser {
         'black';
     final parsedColor = _parseColor(floodColorStr);
     final color = parsedColor is ui.Color ? parsedColor : null;
+    final floodOpacity = _parseNumber(
+      element.getAttribute('flood-opacity') ??
+          element.getAttribute('floodOpacity') ??
+          '1',
+    ).clamp(0.0, 1.0);
 
     return SvgDropShadowFilter(
       id: filterId,
       dx: dx,
       dy: dy,
-      stdDeviation: stdDev,
+      stdDeviationX: stdDeviation.$1,
+      stdDeviationY: stdDeviation.$2,
       floodColor: color,
+      floodOpacity: floodOpacity,
+      input: input,
+      resultName: resultName,
     );
   }
 
@@ -150,8 +165,16 @@ class SvgParser {
   static SvgOffsetFilter _parseOffset(XmlElement element, String filterId) {
     final dx = _parseNumber(element.getAttribute('dx') ?? '0');
     final dy = _parseNumber(element.getAttribute('dy') ?? '0');
+    final input = _normalizeFilterInput(element.getAttribute('in'));
+    final resultName = _normalizeFilterResult(element.getAttribute('result'));
 
-    return SvgOffsetFilter(id: filterId, dx: dx, dy: dy);
+    return SvgOffsetFilter(
+      id: filterId,
+      dx: dx,
+      dy: dy,
+      input: input,
+      resultName: resultName,
+    );
   }
 
   /// Парсит feFlood элемент
@@ -174,13 +197,20 @@ class SvgParser {
       id: filterId,
       floodColor: floodColor,
       floodOpacity: floodOpacity.clamp(0.0, 1.0),
+      resultName: _normalizeFilterResult(element.getAttribute('result')),
     );
   }
 
   /// Парсит feBlend элемент
   static SvgBlendFilter _parseBlend(XmlElement element, String filterId) {
     final mode = parseSvgBlendMode(element.getAttribute('mode'));
-    return SvgBlendFilter(id: filterId, mode: mode);
+    return SvgBlendFilter(
+      id: filterId,
+      mode: mode,
+      input: _normalizeFilterInput(element.getAttribute('in')),
+      input2: _normalizeFilterInput(element.getAttribute('in2')),
+      resultName: _normalizeFilterResult(element.getAttribute('result')),
+    );
   }
 
   /// Парсит feComposite элемент
@@ -199,6 +229,9 @@ class SvgParser {
       k2: _parseNumber(element.getAttribute('k2') ?? '0'),
       k3: _parseNumber(element.getAttribute('k3') ?? '0'),
       k4: _parseNumber(element.getAttribute('k4') ?? '0'),
+      input: _normalizeFilterInput(element.getAttribute('in')),
+      input2: _normalizeFilterInput(element.getAttribute('in2')),
+      resultName: _normalizeFilterResult(element.getAttribute('result')),
     );
   }
 
@@ -240,6 +273,8 @@ class SvgParser {
       id: filterId,
       matrixType: matrixType,
       values: values,
+      input: _normalizeFilterInput(element.getAttribute('in')),
+      resultName: _normalizeFilterResult(element.getAttribute('result')),
     );
   }
 
@@ -258,7 +293,27 @@ class SvgParser {
       );
     }
 
-    return SvgMergeFilter(id: filterId, nodeInputs: nodeInputs);
+    return SvgMergeFilter(
+      id: filterId,
+      nodeInputs: nodeInputs,
+      resultName: _normalizeFilterResult(element.getAttribute('result')),
+    );
+  }
+
+  static String? _normalizeFilterInput(String? raw) {
+    final normalized = raw?.trim();
+    if (normalized == null || normalized.isEmpty) {
+      return null;
+    }
+    return normalized;
+  }
+
+  static String? _normalizeFilterResult(String? raw) {
+    final normalized = raw?.trim();
+    if (normalized == null || normalized.isEmpty) {
+      return null;
+    }
+    return normalized;
   }
 
   /// Парсит CSS <style> элементы и извлекает @keyframes
@@ -325,6 +380,14 @@ class SvgParser {
       node.setAttribute(attrName, parsedValue, type: attributeType);
     }
 
+    // Сохраняем прямой текстовый контент для текстовых узлов.
+    if (tagName == 'text' || tagName == 'tspan' || tagName == 'textPath') {
+      final directText = _extractDirectText(element);
+      if (directText != null) {
+        node.setAttribute('__text', directText, type: SvgAttributeType.string);
+      }
+    }
+
     // Рекурсивно парсим дочерние элементы
     for (final child in element.childElements) {
       // Пропускаем <style> элементы - они обрабатываются отдельно
@@ -336,6 +399,18 @@ class SvgParser {
     }
 
     return node;
+  }
+
+  static String? _extractDirectText(XmlElement element) {
+    final raw = element.children
+        .whereType<XmlText>()
+        .map((n) => n.value)
+        .join();
+    if (raw.trim().isEmpty) {
+      return null;
+    }
+    final normalized = raw.replaceAll(RegExp(r'\s+'), ' ').trim();
+    return normalized.isEmpty ? null : normalized;
   }
 
   /// Определяет тип атрибута по его имени
@@ -412,7 +487,7 @@ class SvgParser {
     return double.tryParse(cleaned) ?? 0.0;
   }
 
-  /// Парсит цвет (упрощённая версия, полный парсинг будет позже)
+  /// Парсит цвет
   static Object _parseColor(String value) {
     final trimmed = value.trim().toLowerCase();
 
@@ -432,13 +507,24 @@ class SvgParser {
       return _namedColors[trimmed]!;
     }
 
-    // #RGB или #RRGGBB
+    // #RGB/#RGBA/#RRGGBB/#RRGGBBAA
     if (trimmed.startsWith('#')) {
       return _parseHexColor(trimmed);
     }
 
-    // Для всех остальных пока возвращаем чёрный
-    // TODO: добавить парсинг rgb(), rgba(), hsl(), hsla()
+    // rgb()/rgba()
+    final rgbColor = _parseRgbColor(trimmed);
+    if (rgbColor != null) {
+      return rgbColor;
+    }
+
+    // hsl()/hsla()
+    final hslColor = _parseHslColor(trimmed);
+    if (hslColor != null) {
+      return hslColor;
+    }
+
+    // Неподдерживаемый формат -> чёрный (baseline fallback)
     return const ui.Color(0xFF000000);
   }
 
@@ -451,6 +537,11 @@ class SvgParser {
       cleaned = cleaned.split('').map((c) => c + c).join();
     }
 
+    // #RGBA -> #RRGGBBAA
+    if (cleaned.length == 4) {
+      cleaned = cleaned.split('').map((c) => c + c).join();
+    }
+
     // #RRGGBB
     if (cleaned.length == 6) {
       final value = int.tryParse('FF$cleaned', radix: 16);
@@ -459,11 +550,220 @@ class SvgParser {
 
     // #RRGGBBAA
     if (cleaned.length == 8) {
-      final value = int.tryParse(cleaned, radix: 16);
-      return ui.Color(value ?? 0xFF000000);
+      final parsed = int.tryParse(cleaned, radix: 16);
+      if (parsed == null) {
+        return const ui.Color(0xFF000000);
+      }
+
+      final r = (parsed >> 24) & 0xFF;
+      final g = (parsed >> 16) & 0xFF;
+      final b = (parsed >> 8) & 0xFF;
+      final a = parsed & 0xFF;
+      return ui.Color((a << 24) | (r << 16) | (g << 8) | b);
     }
 
     return const ui.Color(0xFF000000);
+  }
+
+  static ui.Color? _parseRgbColor(String value) {
+    final match = RegExp(r'^rgba?\(\s*(.+)\s*\)$').firstMatch(value);
+    if (match == null) {
+      return null;
+    }
+
+    final args = _parseColorFunctionArgs(match.group(1)!);
+    if (args.length < 3) {
+      return null;
+    }
+
+    double alpha = 1.0;
+    late final int r;
+    late final int g;
+    late final int b;
+
+    if (args.contains('/')) {
+      final slashIndex = args.indexOf('/');
+      if (slashIndex != 3 || args.length != 5) {
+        return null;
+      }
+      r = _parseRgbChannel(args[0]);
+      g = _parseRgbChannel(args[1]);
+      b = _parseRgbChannel(args[2]);
+      alpha = _parseAlpha(args[4]);
+    } else {
+      if (args.length < 3) {
+        return null;
+      }
+      r = _parseRgbChannel(args[0]);
+      g = _parseRgbChannel(args[1]);
+      b = _parseRgbChannel(args[2]);
+      if (args.length >= 4) {
+        alpha = _parseAlpha(args[3]);
+      }
+    }
+
+    return _colorFromRgba(r, g, b, alpha);
+  }
+
+  static ui.Color? _parseHslColor(String value) {
+    final match = RegExp(r'^hsla?\(\s*(.+)\s*\)$').firstMatch(value);
+    if (match == null) {
+      return null;
+    }
+
+    final args = _parseColorFunctionArgs(match.group(1)!);
+    if (args.length < 3) {
+      return null;
+    }
+
+    double alpha = 1.0;
+    late final double hue;
+    late final double saturation;
+    late final double lightness;
+
+    if (args.contains('/')) {
+      final slashIndex = args.indexOf('/');
+      if (slashIndex != 3 || args.length != 5) {
+        return null;
+      }
+      hue = _parseHueDegrees(args[0]);
+      saturation = _parseFraction(args[1]);
+      lightness = _parseFraction(args[2]);
+      alpha = _parseAlpha(args[4]);
+    } else {
+      hue = _parseHueDegrees(args[0]);
+      saturation = _parseFraction(args[1]);
+      lightness = _parseFraction(args[2]);
+      if (args.length >= 4) {
+        alpha = _parseAlpha(args[3]);
+      }
+    }
+
+    return _hslToColor(hue, saturation, lightness, alpha);
+  }
+
+  static List<String> _parseColorFunctionArgs(String input) {
+    if (input.contains(',')) {
+      return input
+          .split(',')
+          .map((part) => part.trim())
+          .where((part) => part.isNotEmpty)
+          .toList();
+    }
+
+    return input
+        .replaceAll('/', ' / ')
+        .split(RegExp(r'\s+'))
+        .map((part) => part.trim())
+        .where((part) => part.isNotEmpty)
+        .toList();
+  }
+
+  static int _parseRgbChannel(String input) {
+    final value = input.trim();
+    if (value.endsWith('%')) {
+      final percent =
+          double.tryParse(value.substring(0, value.length - 1)) ?? 0.0;
+      final normalized = percent.clamp(0.0, 100.0) / 100.0;
+      return (normalized * 255).round();
+    }
+
+    final number = double.tryParse(value) ?? 0.0;
+    return number.clamp(0.0, 255.0).round();
+  }
+
+  static double _parseAlpha(String input) {
+    final value = input.trim();
+    if (value.endsWith('%')) {
+      final percent =
+          double.tryParse(value.substring(0, value.length - 1)) ?? 0.0;
+      return (percent.clamp(0.0, 100.0) / 100.0).toDouble();
+    }
+
+    final alpha = double.tryParse(value) ?? 1.0;
+    return alpha.clamp(0.0, 1.0).toDouble();
+  }
+
+  static double _parseFraction(String input) {
+    final value = input.trim();
+    if (value.endsWith('%')) {
+      final percent =
+          double.tryParse(value.substring(0, value.length - 1)) ?? 0.0;
+      return (percent.clamp(0.0, 100.0) / 100.0).toDouble();
+    }
+
+    final number = double.tryParse(value) ?? 0.0;
+    return number.clamp(0.0, 1.0).toDouble();
+  }
+
+  static double _parseHueDegrees(String input) {
+    final match = RegExp(
+      r'^([+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?)\s*(deg|rad|turn|grad)?$',
+      caseSensitive: false,
+    ).firstMatch(input.trim());
+    if (match == null) {
+      return 0.0;
+    }
+
+    final value = double.tryParse(match.group(1) ?? '') ?? 0.0;
+    final unit = (match.group(2) ?? 'deg').toLowerCase();
+    return switch (unit) {
+      'deg' => value,
+      'rad' => value * 180.0 / math.pi,
+      'turn' => value * 360.0,
+      'grad' => value * 0.9,
+      _ => value,
+    };
+  }
+
+  static ui.Color _colorFromRgba(int r, int g, int b, double alpha) {
+    final a = (alpha.clamp(0.0, 1.0) * 255).round();
+    return ui.Color((a << 24) | (r << 16) | (g << 8) | b);
+  }
+
+  static ui.Color _hslToColor(
+    double hueDegrees,
+    double saturation,
+    double lightness,
+    double alpha,
+  ) {
+    final h = ((hueDegrees % 360.0) + 360.0) % 360.0 / 360.0;
+    final s = saturation.clamp(0.0, 1.0).toDouble();
+    final l = lightness.clamp(0.0, 1.0).toDouble();
+
+    if (s == 0.0) {
+      final gray = (l * 255).round();
+      return _colorFromRgba(gray, gray, gray, alpha);
+    }
+
+    final q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    final p = 2 * l - q;
+    final r = _hueToRgb(p, q, h + (1 / 3));
+    final g = _hueToRgb(p, q, h);
+    final b = _hueToRgb(p, q, h - (1 / 3));
+    return _colorFromRgba(
+      (r * 255).round(),
+      (g * 255).round(),
+      (b * 255).round(),
+      alpha,
+    );
+  }
+
+  static double _hueToRgb(double p, double q, double t) {
+    var adjusted = t;
+    if (adjusted < 0) adjusted += 1;
+    if (adjusted > 1) adjusted -= 1;
+
+    if (adjusted < 1 / 6) {
+      return p + (q - p) * 6 * adjusted;
+    }
+    if (adjusted < 1 / 2) {
+      return q;
+    }
+    if (adjusted < 2 / 3) {
+      return p + (q - p) * (2 / 3 - adjusted) * 6;
+    }
+    return p;
   }
 
   /// Парсит viewBox атрибут

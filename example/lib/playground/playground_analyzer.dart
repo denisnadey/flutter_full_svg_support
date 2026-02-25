@@ -21,11 +21,6 @@ class PlaygroundAnalyzer {
 
   // Partial parity map for high-impact Blink gaps.
   static const Set<String> _knownUnsupportedTags = <String>{
-    'text',
-    'tspan',
-    'textPath',
-    'image',
-    'foreignObject',
     'pattern',
     'switch',
   };

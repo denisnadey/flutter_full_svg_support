@@ -182,6 +182,73 @@ void main() {
       );
     });
 
+    test('parses extended hex colors with alpha', () {
+      const svgXml = '''
+        <svg>
+          <rect fill="#1234"/>
+          <circle fill="#11223344"/>
+        </svg>
+      ''';
+
+      final doc = SvgParser.parse(svgXml);
+      final rect = doc.root.children[0];
+      final circle = doc.root.children[1];
+
+      expect(
+        rect.getAttributeValue('fill'),
+        equals(const ui.Color(0x44112233)),
+      );
+      expect(
+        circle.getAttributeValue('fill'),
+        equals(const ui.Color(0x44112233)),
+      );
+    });
+
+    test('parses rgb and rgba colors', () {
+      const svgXml = '''
+        <svg>
+          <rect fill="rgb(255, 0, 0)"/>
+          <circle fill="rgb(100% 0% 0%)"/>
+          <ellipse fill="rgba(255 0 0 / 50%)"/>
+        </svg>
+      ''';
+
+      final doc = SvgParser.parse(svgXml);
+
+      expect(
+        doc.root.children[0].getAttributeValue('fill'),
+        equals(const ui.Color(0xFFFF0000)),
+      );
+      expect(
+        doc.root.children[1].getAttributeValue('fill'),
+        equals(const ui.Color(0xFFFF0000)),
+      );
+      expect(
+        doc.root.children[2].getAttributeValue('fill'),
+        equals(const ui.Color(0x80FF0000)),
+      );
+    });
+
+    test('parses hsl and hsla colors', () {
+      const svgXml = '''
+        <svg>
+          <rect fill="hsl(120, 100%, 50%)"/>
+          <circle fill="hsla(240deg 100% 50% / 25%)"/>
+        </svg>
+      ''';
+
+      final doc = SvgParser.parse(svgXml);
+
+      expect(
+        doc.root.children[0].getAttributeValue('fill'),
+        equals(const ui.Color(0xFF00FF00)),
+      );
+      expect(
+        doc.root.children[1].getAttributeValue('fill'),
+        equals(const ui.Color(0x400000FF)),
+      );
+    });
+
     test('parses named colors', () {
       const svgXml = '''
         <svg>
