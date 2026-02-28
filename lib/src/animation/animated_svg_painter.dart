@@ -6,6 +6,8 @@ import 'package:flutter/rendering.dart';
 
 import 'path_data.dart';
 import 'path_parser.dart';
+import 'preserve_aspect_ratio.dart';
+import 'switch_processing.dart';
 import 'svg_dom.dart';
 import 'svg_filters.dart';
 import 'svg_transform.dart';
@@ -80,8 +82,8 @@ class AnimatedSvgPainter extends CustomPainter {
         (size.height - viewBox.height * scale) / 2 - viewBox.top * scale;
 
     return Matrix4.identity()
-      ..translate(translateX, translateY)
-      ..scale(scale, scale);
+      ..translateByDouble(translateX, translateY, 0, 1)
+      ..scaleByDouble(scale, scale, 1, 1);
   }
 
   /// Рисует узел и его детей
@@ -243,6 +245,9 @@ class AnimatedSvgPainter extends CustomPainter {
         case 'foreignObject':
           // Группы не рисуются, только применяют атрибуты к детям
           break;
+        case 'switch':
+          _paintSwitch(canvas, node, useStack: currentUseStack);
+          break;
         default:
           // Игнорируем неподдерживаемые элементы (animate, text, etc.)
           break;
@@ -319,7 +324,7 @@ class AnimatedSvgPainter extends CustomPainter {
     }
 
     final referenced = document.root.findById(hrefId);
-    if (referenced == null) {
+    if (referenced == null || !_isUseReferenceAllowedTag(referenced.tagName)) {
       return;
     }
 
@@ -329,16 +334,29 @@ class AnimatedSvgPainter extends CustomPainter {
     canvas.save();
     canvas.translate(x, y);
 
-    final nextUseStack = <String>{...useStack, hrefId};
-    if (referenced.tagName == 'symbol') {
-      _paintSymbolReference(
-        canvas,
-        useNode: node,
-        symbolNode: referenced,
-        useStack: nextUseStack,
-      );
-    } else {
-      _paintNode(canvas, referenced, useStack: nextUseStack);
+    final previousParent = referenced.parent;
+    referenced.parent = node;
+    try {
+      final nextUseStack = <String>{...useStack, hrefId};
+      if (referenced.tagName == 'symbol') {
+        _paintSymbolReference(
+          canvas,
+          useNode: node,
+          symbolNode: referenced,
+          useStack: nextUseStack,
+        );
+      } else if (referenced.tagName == 'svg') {
+        _paintSvgUseReference(
+          canvas,
+          useNode: node,
+          svgNode: referenced,
+          useStack: nextUseStack,
+        );
+      } else {
+        _paintNode(canvas, referenced, useStack: nextUseStack);
+      }
+    } finally {
+      referenced.parent = previousParent;
     }
 
     canvas.restore();
@@ -350,31 +368,52 @@ class AnimatedSvgPainter extends CustomPainter {
     required SvgNode symbolNode,
     required Set<String> useStack,
   }) {
-    final viewBox = _parseViewBox(_getString(symbolNode, 'viewBox'));
-    final width = _getNumber(useNode, 'width');
-    final height = _getNumber(useNode, 'height');
-
-    if (viewBox != null &&
-        width != null &&
-        height != null &&
-        width > 0 &&
-        height > 0 &&
-        viewBox.width > 0 &&
-        viewBox.height > 0) {
-      final scaleX = width / viewBox.width;
-      final scaleY = height / viewBox.height;
-      final scale = math.min(scaleX, scaleY);
-      final translateX =
-          (width - viewBox.width * scale) / 2 - viewBox.left * scale;
-      final translateY =
-          (height - viewBox.height * scale) / 2 - viewBox.top * scale;
-      canvas.translate(translateX, translateY);
-      canvas.scale(scale, scale);
+    final viewportTransform = _resolveUseViewportTransform(
+      useNode: useNode,
+      referenceNode: symbolNode,
+    );
+    if (viewportTransform != null) {
+      if (viewportTransform.clipRect != null) {
+        canvas.clipRect(viewportTransform.clipRect!, doAntiAlias: true);
+      }
+      canvas.transform(viewportTransform.matrix.storage);
     }
 
     for (final child in symbolNode.children) {
       _paintNode(canvas, child, useStack: useStack);
     }
+  }
+
+  void _paintSvgUseReference(
+    ui.Canvas canvas, {
+    required SvgNode useNode,
+    required SvgNode svgNode,
+    required Set<String> useStack,
+  }) {
+    final viewportTransform = _resolveUseViewportTransform(
+      useNode: useNode,
+      referenceNode: svgNode,
+    );
+    if (viewportTransform != null) {
+      if (viewportTransform.clipRect != null) {
+        canvas.clipRect(viewportTransform.clipRect!, doAntiAlias: true);
+      }
+      canvas.transform(viewportTransform.matrix.storage);
+    }
+
+    _paintNode(canvas, svgNode, useStack: useStack);
+  }
+
+  void _paintSwitch(
+    ui.Canvas canvas,
+    SvgNode switchNode, {
+    required Set<String> useStack,
+  }) {
+    final activeChild = resolveActiveSwitchChild(switchNode);
+    if (activeChild == null) {
+      return;
+    }
+    _paintNode(canvas, activeChild, useStack: useStack);
   }
 
   bool _shouldPaintChildren(SvgNode node) {
@@ -393,6 +432,7 @@ class AnimatedSvgPainter extends CustomPainter {
       case 'tspan':
       case 'textPath':
       case 'image':
+      case 'switch':
         return false;
       case 'foreignObject':
         final width = _getNumber(node, 'width') ?? 0.0;
@@ -531,12 +571,20 @@ class AnimatedSvgPainter extends CustomPainter {
       useStack: useStack,
     );
 
-    final bounds = maskPath.getBounds();
+    final maskRegionPath = _buildMaskUnitsRegionPath(
+      maskedNode: maskedNode,
+      maskNode: maskNode,
+    );
+    final effectiveMaskPath = maskRegionPath == null
+        ? maskPath
+        : ui.Path.combine(ui.PathOperation.intersect, maskPath, maskRegionPath);
+
+    final bounds = effectiveMaskPath.getBounds();
     if (bounds.width.abs() < 1e-6 || bounds.height.abs() < 1e-6) {
       return null;
     }
 
-    return maskPath;
+    return effectiveMaskPath;
   }
 
   void _appendClipGeometry({
@@ -558,6 +606,7 @@ class AnimatedSvgPainter extends CustomPainter {
       case 'mask':
       case 'g':
       case 'svg':
+      case 'symbol':
         for (final child in node.children) {
           _appendClipGeometry(
             target: target,
@@ -567,13 +616,26 @@ class AnimatedSvgPainter extends CustomPainter {
           );
         }
         return;
+      case 'switch':
+        final activeChild = resolveActiveSwitchChild(node);
+        if (activeChild == null) {
+          return;
+        }
+        _appendClipGeometry(
+          target: target,
+          node: activeChild,
+          currentTransform: matrix,
+          useStack: useStack,
+        );
+        return;
       case 'use':
         final hrefId = _extractHrefId(node);
         if (hrefId == null || hrefId.isEmpty || useStack.contains(hrefId)) {
           return;
         }
         final referenced = document.root.findById(hrefId);
-        if (referenced == null) {
+        if (referenced == null ||
+            !_isUseReferenceAllowedTag(referenced.tagName)) {
           return;
         }
         final x = _getNumber(node, 'x') ?? 0.0;
@@ -584,6 +646,15 @@ class AnimatedSvgPainter extends CustomPainter {
               ..setEntry(0, 3, x)
               ..setEntry(1, 3, y),
           );
+        if (_isUseViewportReferenceTag(referenced.tagName)) {
+          final viewportTransform = _resolveUseViewportTransform(
+            useNode: node,
+            referenceNode: referenced,
+          );
+          if (viewportTransform != null) {
+            translated.multiply(viewportTransform.matrix);
+          }
+        }
         final nextUseStack = <String>{...useStack, hrefId};
         _appendClipGeometry(
           target: target,
@@ -601,6 +672,76 @@ class AnimatedSvgPainter extends CustomPainter {
     }
   }
 
+  bool _isUseViewportReferenceTag(String tagName) {
+    return tagName == 'symbol' || tagName == 'svg';
+  }
+
+  bool _isUseReferenceAllowedTag(String tagName) {
+    switch (tagName) {
+      case 'a':
+      case 'circle':
+      case 'desc':
+      case 'ellipse':
+      case 'g':
+      case 'image':
+      case 'line':
+      case 'metadata':
+      case 'path':
+      case 'polygon':
+      case 'polyline':
+      case 'rect':
+      case 'svg':
+      case 'switch':
+      case 'symbol':
+      case 'text':
+      case 'textPath':
+      case 'title':
+      case 'tref':
+      case 'tspan':
+      case 'use':
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  _UseViewportTransform? _resolveUseViewportTransform({
+    required SvgNode useNode,
+    required SvgNode referenceNode,
+  }) {
+    final viewBox = _parseViewBox(_getString(referenceNode, 'viewBox'));
+    final width = _getNumber(useNode, 'width');
+    final height = _getNumber(useNode, 'height');
+    if (viewBox == null ||
+        width == null ||
+        height == null ||
+        width <= 0 ||
+        height <= 0 ||
+        viewBox.width <= 0 ||
+        viewBox.height <= 0) {
+      return null;
+    }
+
+    final viewport = ui.Rect.fromLTWH(0, 0, width, height);
+    final layout = resolveSvgViewportLayout(
+      viewport: viewport,
+      sourceSize: viewBox.size,
+      preserveAspectRatio: _getString(referenceNode, 'preserveAspectRatio'),
+    );
+    final scaleX = layout.destinationRect.width / viewBox.width;
+    final scaleY = layout.destinationRect.height / viewBox.height;
+    final translateX = layout.destinationRect.left - viewBox.left * scaleX;
+    final translateY = layout.destinationRect.top - viewBox.top * scaleY;
+
+    final matrix = Matrix4.identity()
+      ..translateByDouble(translateX, translateY, 0, 1)
+      ..scaleByDouble(scaleX, scaleY, 1, 1);
+    return _UseViewportTransform(
+      matrix: matrix,
+      clipRect: layout.clipToViewport ? viewport : null,
+    );
+  }
+
   ui.Rect? _computeNodeLocalBounds(SvgNode node) {
     final path = _buildGeometryPath(node);
     if (path == null) {
@@ -611,6 +752,147 @@ class AnimatedSvgPainter extends CustomPainter {
       return null;
     }
     return bounds;
+  }
+
+  ui.Path? _buildMaskUnitsRegionPath({
+    required SvgNode maskedNode,
+    required SvgNode maskNode,
+  }) {
+    final units = (_getString(maskNode, 'maskUnits') ?? 'objectBoundingBox')
+        .trim()
+        .toLowerCase();
+    if (units == 'objectboundingbox') {
+      final targetBounds = _computeNodeLocalBounds(maskedNode);
+      if (targetBounds == null) {
+        return null;
+      }
+      final x = _parseObjectBoundingBoxValue(maskNode.getAttributeValue('x'));
+      final y = _parseObjectBoundingBoxValue(maskNode.getAttributeValue('y'));
+      final width = _parseObjectBoundingBoxValue(
+        maskNode.getAttributeValue('width'),
+      );
+      final height = _parseObjectBoundingBoxValue(
+        maskNode.getAttributeValue('height'),
+      );
+      final resolvedX = x ?? -0.1;
+      final resolvedY = y ?? -0.1;
+      final resolvedWidth = width ?? 1.2;
+      final resolvedHeight = height ?? 1.2;
+      if (resolvedWidth <= 0 || resolvedHeight <= 0) {
+        return null;
+      }
+      final rect = ui.Rect.fromLTWH(
+        targetBounds.left + resolvedX * targetBounds.width,
+        targetBounds.top + resolvedY * targetBounds.height,
+        targetBounds.width * resolvedWidth,
+        targetBounds.height * resolvedHeight,
+      );
+      return ui.Path()..addRect(rect);
+    }
+
+    final x = _resolveMaskUserSpaceLength(
+      maskNode: maskNode,
+      attributeName: 'x',
+      horizontal: true,
+      isSize: false,
+      defaultRaw: '-10%',
+    );
+    final y = _resolveMaskUserSpaceLength(
+      maskNode: maskNode,
+      attributeName: 'y',
+      horizontal: false,
+      isSize: false,
+      defaultRaw: '-10%',
+    );
+    final width = _resolveMaskUserSpaceLength(
+      maskNode: maskNode,
+      attributeName: 'width',
+      horizontal: true,
+      isSize: true,
+      defaultRaw: '120%',
+    );
+    final height = _resolveMaskUserSpaceLength(
+      maskNode: maskNode,
+      attributeName: 'height',
+      horizontal: false,
+      isSize: true,
+      defaultRaw: '120%',
+    );
+    if (x == null || y == null || width == null || height == null) {
+      return null;
+    }
+    if (width <= 0 || height <= 0) {
+      return null;
+    }
+    return ui.Path()..addRect(ui.Rect.fromLTWH(x, y, width, height));
+  }
+
+  double? _resolveMaskUserSpaceLength({
+    required SvgNode maskNode,
+    required String attributeName,
+    required bool horizontal,
+    required bool isSize,
+    required String defaultRaw,
+  }) {
+    final rawValue = maskNode.getAttributeValue(attributeName) ?? defaultRaw;
+    if (rawValue is num) {
+      return rawValue.toDouble();
+    }
+    final raw = rawValue.toString().trim();
+    if (raw.isEmpty) {
+      return null;
+    }
+    if (raw.endsWith('%')) {
+      final percent = double.tryParse(raw.substring(0, raw.length - 1));
+      final viewport = _resolveMaskUnitsViewportRect();
+      if (percent == null || viewport == null) {
+        return null;
+      }
+      final dimension = horizontal ? viewport.width : viewport.height;
+      final value = dimension * percent / 100.0;
+      if (isSize) {
+        return value;
+      }
+      final origin = horizontal ? viewport.left : viewport.top;
+      return origin + value;
+    }
+    final cleaned = raw.replaceAll(RegExp(r'[a-zA-Z]+$'), '');
+    return double.tryParse(cleaned);
+  }
+
+  ui.Rect? _resolveMaskUnitsViewportRect() {
+    final viewBox = document.viewBox;
+    if (viewBox != null && viewBox.width > 0 && viewBox.height > 0) {
+      return viewBox;
+    }
+    final root = document.root;
+    final width = _getNumber(root, 'width');
+    final height = _getNumber(root, 'height');
+    if (width == null || height == null || width <= 0 || height <= 0) {
+      return null;
+    }
+    return ui.Rect.fromLTWH(0, 0, width, height);
+  }
+
+  double? _parseObjectBoundingBoxValue(Object? rawValue) {
+    if (rawValue == null) {
+      return null;
+    }
+    if (rawValue is num) {
+      return rawValue.toDouble();
+    }
+    final raw = rawValue.toString().trim();
+    if (raw.isEmpty) {
+      return null;
+    }
+    if (raw.endsWith('%')) {
+      final percent = double.tryParse(raw.substring(0, raw.length - 1));
+      if (percent == null) {
+        return null;
+      }
+      return percent / 100.0;
+    }
+    return double.tryParse(raw);
   }
 
   /// Рисует <rect>
@@ -817,9 +1099,9 @@ class AnimatedSvgPainter extends CustomPainter {
       image.height.toDouble(),
     );
 
-    final layout = _resolveImageLayout(
+    final layout = resolveSvgViewportLayout(
       viewport: viewport,
-      imageSize: srcRect.size,
+      sourceSize: srcRect.size,
       preserveAspectRatio: _getString(node, 'preserveAspectRatio'),
     );
 
@@ -1638,13 +1920,13 @@ class AnimatedSvgPainter extends CustomPainter {
     ui.ColorFilter? colorFilter,
     ui.BlendMode? blendMode,
   }) {
-    final fillValue = node.getAttributeValue('fill');
+    final fillValue = _getInheritedAttributeValue(node, 'fill');
     if (_isPaintNone(fillValue)) {
       return null;
     }
 
-    final opacity = _getNumber(node, 'opacity') ?? 1.0;
-    final fillOpacity = _getNumber(node, 'fill-opacity') ?? 1.0;
+    final opacity = _getInheritedNumber(node, 'opacity') ?? 1.0;
+    final fillOpacity = _getInheritedNumber(node, 'fill-opacity') ?? 1.0;
     final finalOpacity = (opacity * fillOpacity).clamp(0.0, 1.0);
 
     final paint = ui.Paint()..style = ui.PaintingStyle.fill;
@@ -1696,14 +1978,14 @@ class AnimatedSvgPainter extends CustomPainter {
     ui.ColorFilter? colorFilter,
     ui.BlendMode? blendMode,
   }) {
-    final strokeValue = node.getAttributeValue('stroke');
+    final strokeValue = _getInheritedAttributeValue(node, 'stroke');
     if (strokeValue == null || _isPaintNone(strokeValue)) {
       return null;
     }
 
-    final strokeWidth = _getNumber(node, 'stroke-width') ?? 1.0;
-    final opacity = _getNumber(node, 'opacity') ?? 1.0;
-    final strokeOpacity = _getNumber(node, 'stroke-opacity') ?? 1.0;
+    final strokeWidth = _getInheritedNumber(node, 'stroke-width') ?? 1.0;
+    final opacity = _getInheritedNumber(node, 'opacity') ?? 1.0;
+    final strokeOpacity = _getInheritedNumber(node, 'stroke-opacity') ?? 1.0;
     final finalOpacity = (opacity * strokeOpacity).clamp(0.0, 1.0);
 
     final paint = ui.Paint()
@@ -1758,7 +2040,7 @@ class AnimatedSvgPainter extends CustomPainter {
     final totalDash = pattern.fold<double>(0.0, (s, d) => s + d);
     if (totalDash <= 0) return path;
 
-    final rawOffset = _getNumber(node, 'stroke-dashoffset') ?? 0.0;
+    final rawOffset = _getInheritedNumber(node, 'stroke-dashoffset') ?? 0.0;
     // Normalise offset into [0, totalDash). SVG offset shifts the pattern start.
     var phase = rawOffset % totalDash;
     if (phase < 0) phase += totalDash;
@@ -2140,61 +2422,10 @@ class AnimatedSvgPainter extends CustomPainter {
     return href.isEmpty ? null : href;
   }
 
-  _ImageLayout _resolveImageLayout({
-    required ui.Rect viewport,
-    required ui.Size imageSize,
-    String? preserveAspectRatio,
-  }) {
-    if (imageSize.width <= 0 || imageSize.height <= 0) {
-      return _ImageLayout(destinationRect: viewport, clipToViewport: false);
-    }
-
-    final tokens = (preserveAspectRatio ?? '')
-        .trim()
-        .split(RegExp(r'\s+'))
-        .where((token) => token.isNotEmpty)
-        .where((token) => token.toLowerCase() != 'defer')
-        .toList();
-
-    final alignToken = tokens.isEmpty ? 'xMidYMid' : tokens.first;
-    final fitToken = tokens.length > 1 ? tokens.last.toLowerCase() : 'meet';
-
-    if (alignToken.toLowerCase() == 'none') {
-      return _ImageLayout(destinationRect: viewport, clipToViewport: false);
-    }
-
-    final scaleX = viewport.width / imageSize.width;
-    final scaleY = viewport.height / imageSize.height;
-    final useSlice = fitToken == 'slice';
-    final scale = useSlice
-        ? math.max(scaleX, scaleY)
-        : math.min(scaleX, scaleY);
-
-    final drawWidth = imageSize.width * scale;
-    final drawHeight = imageSize.height * scale;
-
-    final alignLower = alignToken.toLowerCase();
-    final alignX = alignLower.contains('xmin')
-        ? 0.0
-        : alignLower.contains('xmax')
-        ? 1.0
-        : 0.5;
-    final alignY = alignLower.contains('ymin')
-        ? 0.0
-        : alignLower.contains('ymax')
-        ? 1.0
-        : 0.5;
-
-    final dx = viewport.left + (viewport.width - drawWidth) * alignX;
-    final dy = viewport.top + (viewport.height - drawHeight) * alignY;
-
-    return _ImageLayout(
-      destinationRect: ui.Rect.fromLTWH(dx, dy, drawWidth, drawHeight),
-      clipToViewport: useSlice,
-    );
-  }
-
   bool _isPaintNone(Object? value) {
+    if (value is ui.Color && value.a <= 0) {
+      return true;
+    }
     final str = value?.toString().trim().toLowerCase();
     return str == 'none';
   }
@@ -2441,8 +2672,13 @@ class AnimatedSvgPainter extends CustomPainter {
   }
 
   Object? _getInheritedAttributeValue(SvgNode node, String attributeName) {
+    final normalizedName = attributeName.trim().toLowerCase();
     SvgNode? current = node;
     while (current != null) {
+      final styleValue = _extractStyleValue(current, normalizedName);
+      if (styleValue != null) {
+        return styleValue;
+      }
       final value = current.getAttributeValue(attributeName);
       if (value != null) {
         return value;
@@ -2736,14 +2972,11 @@ class _GradientLength {
   final bool isPercent;
 }
 
-class _ImageLayout {
-  const _ImageLayout({
-    required this.destinationRect,
-    required this.clipToViewport,
-  });
+class _UseViewportTransform {
+  const _UseViewportTransform({required this.matrix, required this.clipRect});
 
-  final ui.Rect destinationRect;
-  final bool clipToViewport;
+  final Matrix4 matrix;
+  final ui.Rect? clipRect;
 }
 
 class _GradientStop {

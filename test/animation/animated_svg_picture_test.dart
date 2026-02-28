@@ -586,6 +586,231 @@ void main() {
       expect(analysis.pixelCount, lessThan(7000));
     });
 
+    testWidgets('renders symbol via use with preserveAspectRatio="none"', (
+      WidgetTester tester,
+    ) async {
+      const svgXml = '''
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <symbol id="badge" viewBox="0 0 10 20" preserveAspectRatio="none">
+              <rect x="0" y="0" width="10" height="20" fill="red"/>
+            </symbol>
+          </defs>
+          <use href="#badge" x="20" y="20" width="40" height="40"/>
+        </svg>
+      ''';
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+          ),
+        ),
+      );
+
+      await tester.pump();
+
+      final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+
+      // With preserveAspectRatio="none", 10x20 viewBox is stretched into 40x40.
+      expect(analysis.objectWidth, greaterThan(65));
+      expect(analysis.objectHeight, greaterThan(65));
+      expect(
+        (analysis.objectWidth - analysis.objectHeight).abs(),
+        lessThan(10),
+      );
+    });
+
+    testWidgets('renders nested svg via use with preserveAspectRatio="none"', (
+      WidgetTester tester,
+    ) async {
+      const svgXml = '''
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <svg id="badgeSvg" viewBox="0 0 10 20" preserveAspectRatio="none">
+              <rect x="0" y="0" width="10" height="20" fill="red"/>
+            </svg>
+          </defs>
+          <use href="#badgeSvg" x="20" y="20" width="40" height="40"/>
+        </svg>
+      ''';
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+          ),
+        ),
+      );
+
+      await tester.pump();
+
+      final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+
+      expect(analysis.objectWidth, greaterThan(65));
+      expect(analysis.objectHeight, greaterThan(65));
+      expect(
+        (analysis.objectWidth - analysis.objectHeight).abs(),
+        lessThan(10),
+      );
+    });
+
+    testWidgets('use inherits fill from use element into symbol subtree', (
+      WidgetTester tester,
+    ) async {
+      const svgXml = '''
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <symbol id="badge" viewBox="0 0 10 10">
+              <rect x="0" y="0" width="10" height="10"/>
+            </symbol>
+          </defs>
+          <use href="#badge" x="20" y="20" width="40" height="40" fill="red"/>
+        </svg>
+      ''';
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+          ),
+        ),
+      );
+
+      await tester.pump();
+
+      final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+
+      expect(analysis.pixelCount, greaterThan(3000));
+    });
+
+    testWidgets('use style fill overrides attribute on symbol subtree', (
+      WidgetTester tester,
+    ) async {
+      const svgXml = '''
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <symbol id="badge" viewBox="0 0 10 10">
+              <rect x="0" y="0" width="10" height="10"/>
+            </symbol>
+          </defs>
+          <use
+            href="#badge"
+            x="20"
+            y="20"
+            width="40"
+            height="40"
+            fill="blue"
+            style="fill:red"/>
+        </svg>
+      ''';
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+          ),
+        ),
+      );
+
+      await tester.pump();
+
+      final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final redPixels = _countPixels(
+        pixels,
+        (r, g, b, a) => r > 170 && g < 120 && b < 120 && a > 200,
+      );
+      final bluePixels = _countPixels(
+        pixels,
+        (r, g, b, a) => b > 170 && r < 120 && g < 120 && a > 200,
+      );
+
+      expect(redPixels, greaterThan(3000));
+      expect(bluePixels, lessThan(100));
+    });
+
+    testWidgets(
+      'switch renders only first matching child by requiredFeatures',
+      (WidgetTester tester) async {
+        const svgXml = '''
+        <svg viewBox="0 0 100 100">
+          <switch>
+            <rect
+              x="10"
+              y="10"
+              width="20"
+              height="20"
+              fill="blue"
+              requiredFeatures="http://example.invalid/feature"/>
+            <rect
+              x="60"
+              y="10"
+              width="20"
+              height="20"
+              fill="red"/>
+          </switch>
+        </svg>
+      ''';
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+            ),
+          ),
+        );
+
+        await tester.pump();
+
+        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final redPixels = _countPixels(
+          pixels,
+          (r, g, b, a) => r > 200 && g < 80 && b < 80 && a > 0,
+        );
+        final bluePixels = _countPixels(
+          pixels,
+          (r, g, b, a) => b > 200 && r < 80 && g < 80 && a > 0,
+        );
+
+        expect(redPixels, greaterThan(1200));
+        expect(bluePixels, lessThan(100));
+      },
+    );
+
+    testWidgets('use does not render disallowed foreignObject reference', (
+      WidgetTester tester,
+    ) async {
+      const svgXml = '''
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <foreignObject id="fo" x="0" y="0" width="30" height="30">
+              <rect x="0" y="0" width="30" height="30" fill="red"/>
+            </foreignObject>
+          </defs>
+          <use href="#fo" x="20" y="20"/>
+        </svg>
+      ''';
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+          ),
+        ),
+      );
+
+      await tester.pump();
+
+      final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+
+      // Blink-style use expansion disallows foreignObject references.
+      expect(analysis.pixelCount, lessThan(50));
+    });
+
     testWidgets('applies clipPath to painted geometry', (
       WidgetTester tester,
     ) async {
@@ -661,6 +886,88 @@ void main() {
       expect(analysis.pixelCount, greaterThan(3500));
       expect(analysis.pixelCount, lessThan(7000));
     });
+
+    testWidgets('applies maskUnits objectBoundingBox to painted geometry', (
+      WidgetTester tester,
+    ) async {
+      const svgXml = '''
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <mask id="maskHalf" maskUnits="objectBoundingBox" x="0" y="0" width="0.5" height="1">
+              <rect x="0" y="0" width="100" height="100" fill="white"/>
+            </mask>
+          </defs>
+          <rect
+            x="10"
+            y="10"
+            width="80"
+            height="80"
+            fill="red"
+            mask="url(#maskHalf)"/>
+        </svg>
+      ''';
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+          ),
+        ),
+      );
+
+      await tester.pump();
+
+      final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+
+      // ObjectBoundingBox mask units should constrain visibility to half width.
+      expect(analysis.pixelCount, greaterThan(2000));
+      expect(analysis.objectWidth, lessThan(analysis.objectHeight * 0.75));
+    });
+
+    testWidgets(
+      'applies maskUnits userSpaceOnUse percentage region to painted geometry',
+      (WidgetTester tester) async {
+        const svgXml = '''
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <mask
+              id="maskRightHalf"
+              maskUnits="userSpaceOnUse"
+              x="50%"
+              y="0%"
+              width="50%"
+              height="100%">
+              <rect x="0" y="0" width="100" height="100" fill="white"/>
+            </mask>
+          </defs>
+          <rect
+            x="10"
+            y="10"
+            width="80"
+            height="80"
+            fill="red"
+            mask="url(#maskRightHalf)"/>
+        </svg>
+      ''';
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+            ),
+          ),
+        );
+
+        await tester.pump();
+
+        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+
+        expect(analysis.pixelCount, greaterThan(2000));
+        expect(analysis.objectWidth, lessThan(analysis.objectHeight * 0.75));
+      },
+    );
 
     testWidgets('applies feFlood as solid color filter', (
       WidgetTester tester,
@@ -1370,6 +1677,595 @@ void main() {
       },
     );
 
+    testWidgets('switch hit-testing resolves only active branch', (
+      WidgetTester tester,
+    ) async {
+      const svgXml = '''
+        <svg viewBox="0 0 100 100">
+          <switch>
+            <rect
+              id="blocked"
+              x="10"
+              y="10"
+              width="20"
+              height="20"
+              fill="blue"
+              requiredFeatures="http://example.invalid/feature"/>
+            <rect
+              id="target"
+              x="60"
+              y="10"
+              width="20"
+              height="20"
+              fill="blue"/>
+          </switch>
+          <rect id="moving" x="10" y="70" width="20" height="20" fill="red">
+            <animate attributeName="x" from="10" to="70" dur="1s" begin="target.click" fill="freeze"/>
+          </rect>
+        </svg>
+      ''';
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: AnimatedSvgPicture.string(
+                svgXml,
+                width: 200,
+                height: 200,
+                autoPlay: true,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final beforePixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final beforeAnalysis = VisualTestUtils.analyzeRedPixels(
+        beforePixels,
+        800,
+        600,
+      );
+      final beforeCentroid = beforeAnalysis.centroid;
+
+      final pictureFinder = find.byType(AnimatedSvgPicture);
+      final topLeft = tester.getTopLeft(pictureFinder);
+
+      await tester.tapAt(topLeft + const Offset(40, 40));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final blockedPixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final blockedAnalysis = VisualTestUtils.analyzeRedPixels(
+        blockedPixels,
+        800,
+        600,
+      );
+      final blockedCentroid = blockedAnalysis.centroid;
+      expect((blockedCentroid.dx - beforeCentroid.dx).abs(), lessThan(3));
+
+      await tester.tapAt(topLeft + const Offset(140, 40));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final targetPixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final targetAnalysis = VisualTestUtils.analyzeRedPixels(
+        targetPixels,
+        800,
+        600,
+      );
+      final targetCentroid = targetAnalysis.centroid;
+      expect(targetCentroid.dx, greaterThan(blockedCentroid.dx + 5));
+    });
+
+    testWidgets('clipPath use geometry gates hit-testing', (
+      WidgetTester tester,
+    ) async {
+      const svgXml = '''
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <rect id="clipRect" x="10" y="10" width="20" height="20"/>
+            <clipPath id="clipFromUse">
+              <use href="#clipRect"/>
+            </clipPath>
+          </defs>
+          <rect
+            id="target"
+            x="10"
+            y="10"
+            width="40"
+            height="40"
+            fill="blue"
+            clip-path="url(#clipFromUse)"/>
+          <rect id="moving" x="10" y="70" width="20" height="20" fill="red">
+            <animate attributeName="x" from="10" to="70" dur="1s" begin="target.click" fill="freeze"/>
+          </rect>
+        </svg>
+      ''';
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: AnimatedSvgPicture.string(
+                svgXml,
+                width: 200,
+                height: 200,
+                autoPlay: true,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final beforePixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final beforeAnalysis = VisualTestUtils.analyzeRedPixels(
+        beforePixels,
+        800,
+        600,
+      );
+      final beforeCentroid = beforeAnalysis.centroid;
+
+      final pictureFinder = find.byType(AnimatedSvgPicture);
+      final topLeft = tester.getTopLeft(pictureFinder);
+
+      await tester.tapAt(topLeft + const Offset(80, 80));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final outsidePixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final outsideAnalysis = VisualTestUtils.analyzeRedPixels(
+        outsidePixels,
+        800,
+        600,
+      );
+      final outsideCentroid = outsideAnalysis.centroid;
+      expect((outsideCentroid.dx - beforeCentroid.dx).abs(), lessThan(3));
+
+      await tester.tapAt(topLeft + const Offset(40, 40));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final targetPixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final targetAnalysis = VisualTestUtils.analyzeRedPixels(
+        targetPixels,
+        800,
+        600,
+      );
+      final targetCentroid = targetAnalysis.centroid;
+      expect(targetCentroid.dx, greaterThan(outsideCentroid.dx + 5));
+    });
+
+    testWidgets('mask use geometry gates hit-testing', (
+      WidgetTester tester,
+    ) async {
+      const svgXml = '''
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <rect id="maskRect" x="10" y="10" width="20" height="20" fill="white"/>
+            <mask id="maskFromUse">
+              <use href="#maskRect"/>
+            </mask>
+          </defs>
+          <rect
+            id="target"
+            x="10"
+            y="10"
+            width="40"
+            height="40"
+            fill="blue"
+            mask="url(#maskFromUse)"/>
+          <rect id="moving" x="10" y="70" width="20" height="20" fill="red">
+            <animate attributeName="x" from="10" to="70" dur="1s" begin="target.click" fill="freeze"/>
+          </rect>
+        </svg>
+      ''';
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: AnimatedSvgPicture.string(
+                svgXml,
+                width: 200,
+                height: 200,
+                autoPlay: true,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final beforePixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final beforeAnalysis = VisualTestUtils.analyzeRedPixels(
+        beforePixels,
+        800,
+        600,
+      );
+      final beforeCentroid = beforeAnalysis.centroid;
+
+      final pictureFinder = find.byType(AnimatedSvgPicture);
+      final topLeft = tester.getTopLeft(pictureFinder);
+
+      await tester.tapAt(topLeft + const Offset(80, 80));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final outsidePixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final outsideAnalysis = VisualTestUtils.analyzeRedPixels(
+        outsidePixels,
+        800,
+        600,
+      );
+      final outsideCentroid = outsideAnalysis.centroid;
+      expect((outsideCentroid.dx - beforeCentroid.dx).abs(), lessThan(3));
+
+      await tester.tapAt(topLeft + const Offset(40, 40));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final targetPixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final targetAnalysis = VisualTestUtils.analyzeRedPixels(
+        targetPixels,
+        800,
+        600,
+      );
+      final targetCentroid = targetAnalysis.centroid;
+      expect(targetCentroid.dx, greaterThan(outsideCentroid.dx + 5));
+    });
+
+    testWidgets(
+      'use fill none disables hit-testing for inherited fill target',
+      (WidgetTester tester) async {
+        const svgXml = '''
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <symbol id="badge" viewBox="0 0 10 10">
+              <rect id="target" x="0" y="0" width="10" height="10"/>
+            </symbol>
+          </defs>
+          <use href="#badge" x="20" y="20" width="40" height="40" fill="none"/>
+          <rect id="moving" x="10" y="70" width="20" height="20" fill="red">
+            <animate attributeName="x" from="10" to="70" dur="1s" begin="target.click" fill="freeze"/>
+          </rect>
+        </svg>
+      ''';
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: Center(
+                child: AnimatedSvgPicture.string(
+                  svgXml,
+                  width: 200,
+                  height: 200,
+                  autoPlay: true,
+                ),
+              ),
+            ),
+          ),
+        );
+
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+
+        final beforePixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final beforeAnalysis = VisualTestUtils.analyzeRedPixels(
+          beforePixels,
+          800,
+          600,
+        );
+        final beforeCentroid = beforeAnalysis.centroid;
+
+        final pictureFinder = find.byType(AnimatedSvgPicture);
+        final topLeft = tester.getTopLeft(pictureFinder);
+
+        await tester.tapAt(topLeft + const Offset(80, 80));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+
+        final afterPixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final afterAnalysis = VisualTestUtils.analyzeRedPixels(
+          afterPixels,
+          800,
+          600,
+        );
+        final afterCentroid = afterAnalysis.centroid;
+
+        expect((afterCentroid.dx - beforeCentroid.dx).abs(), lessThan(3));
+      },
+    );
+
+    testWidgets(
+      'use style fill none disables hit-testing over attribute fill',
+      (WidgetTester tester) async {
+        const svgXml = '''
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <symbol id="badge" viewBox="0 0 10 10">
+              <rect id="target" x="0" y="0" width="10" height="10"/>
+            </symbol>
+          </defs>
+          <use
+            href="#badge"
+            x="20"
+            y="20"
+            width="40"
+            height="40"
+            fill="blue"
+            style="fill:none"/>
+          <rect id="moving" x="10" y="70" width="20" height="20" fill="red">
+            <animate attributeName="x" from="10" to="70" dur="1s" begin="target.click" fill="freeze"/>
+          </rect>
+        </svg>
+      ''';
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: Center(
+                child: AnimatedSvgPicture.string(
+                  svgXml,
+                  width: 200,
+                  height: 200,
+                  autoPlay: true,
+                ),
+              ),
+            ),
+          ),
+        );
+
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+
+        final beforePixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final beforeAnalysis = VisualTestUtils.analyzeRedPixels(
+          beforePixels,
+          800,
+          600,
+        );
+        final beforeCentroid = beforeAnalysis.centroid;
+
+        final pictureFinder = find.byType(AnimatedSvgPicture);
+        final topLeft = tester.getTopLeft(pictureFinder);
+
+        await tester.tapAt(topLeft + const Offset(80, 80));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+
+        final afterPixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final afterAnalysis = VisualTestUtils.analyzeRedPixels(
+          afterPixels,
+          800,
+          600,
+        );
+        final afterCentroid = afterAnalysis.centroid;
+
+        expect((afterCentroid.dx - beforeCentroid.dx).abs(), lessThan(3));
+      },
+    );
+
+    testWidgets('symbol use with slice clips hit-testing to use viewport', (
+      WidgetTester tester,
+    ) async {
+      const svgXml = '''
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <symbol id="badge" viewBox="0 0 10 20" preserveAspectRatio="xMidYMid slice">
+              <rect id="target" x="0" y="0" width="10" height="20" fill="blue"/>
+            </symbol>
+          </defs>
+          <use href="#badge" x="20" y="20" width="40" height="40"/>
+          <rect id="moving" x="10" y="70" width="20" height="20" fill="red">
+            <animate attributeName="x" from="10" to="70" dur="1s" begin="target.click" fill="freeze"/>
+          </rect>
+        </svg>
+      ''';
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: AnimatedSvgPicture.string(
+                svgXml,
+                width: 200,
+                height: 200,
+                autoPlay: true,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final beforePixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final beforeAnalysis = VisualTestUtils.analyzeRedPixels(
+        beforePixels,
+        800,
+        600,
+      );
+      final beforeCentroid = beforeAnalysis.centroid;
+
+      final pictureFinder = find.byType(AnimatedSvgPicture);
+      final topLeft = tester.getTopLeft(pictureFinder);
+
+      // Inside expanded symbol geometry but outside clipped <use> viewport.
+      await tester.tapAt(topLeft + const Offset(80, 20));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final outsidePixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final outsideAnalysis = VisualTestUtils.analyzeRedPixels(
+        outsidePixels,
+        800,
+        600,
+      );
+      final outsideCentroid = outsideAnalysis.centroid;
+      expect((outsideCentroid.dx - beforeCentroid.dx).abs(), lessThan(3));
+
+      // Inside clipped <use> viewport.
+      await tester.tapAt(topLeft + const Offset(80, 80));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final targetPixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final targetAnalysis = VisualTestUtils.analyzeRedPixels(
+        targetPixels,
+        800,
+        600,
+      );
+      final targetCentroid = targetAnalysis.centroid;
+
+      expect(targetCentroid.dx, greaterThan(outsideCentroid.dx + 5));
+    });
+
+    testWidgets('svg use with slice clips hit-testing to use viewport', (
+      WidgetTester tester,
+    ) async {
+      const svgXml = '''
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <svg id="badgeSvg" viewBox="0 0 10 20" preserveAspectRatio="xMidYMid slice">
+              <rect id="target" x="0" y="0" width="10" height="20" fill="blue"/>
+            </svg>
+          </defs>
+          <use href="#badgeSvg" x="20" y="20" width="40" height="40"/>
+          <rect id="moving" x="10" y="70" width="20" height="20" fill="red">
+            <animate attributeName="x" from="10" to="70" dur="1s" begin="target.click" fill="freeze"/>
+          </rect>
+        </svg>
+      ''';
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: AnimatedSvgPicture.string(
+                svgXml,
+                width: 200,
+                height: 200,
+                autoPlay: true,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final beforePixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final beforeAnalysis = VisualTestUtils.analyzeRedPixels(
+        beforePixels,
+        800,
+        600,
+      );
+      final beforeCentroid = beforeAnalysis.centroid;
+
+      final pictureFinder = find.byType(AnimatedSvgPicture);
+      final topLeft = tester.getTopLeft(pictureFinder);
+
+      await tester.tapAt(topLeft + const Offset(80, 20));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final outsidePixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final outsideAnalysis = VisualTestUtils.analyzeRedPixels(
+        outsidePixels,
+        800,
+        600,
+      );
+      final outsideCentroid = outsideAnalysis.centroid;
+      expect((outsideCentroid.dx - beforeCentroid.dx).abs(), lessThan(3));
+
+      await tester.tapAt(topLeft + const Offset(80, 80));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final targetPixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final targetAnalysis = VisualTestUtils.analyzeRedPixels(
+        targetPixels,
+        800,
+        600,
+      );
+      final targetCentroid = targetAnalysis.centroid;
+
+      expect(targetCentroid.dx, greaterThan(outsideCentroid.dx + 5));
+    });
+
+    testWidgets(
+      'use of foreignObject does not trigger target click animations',
+      (WidgetTester tester) async {
+        const svgXml = '''
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <foreignObject id="target" x="10" y="10" width="20" height="20">
+              <rect x="0" y="0" width="20" height="20" fill="blue"/>
+            </foreignObject>
+          </defs>
+          <use href="#target"/>
+          <rect id="moving" x="10" y="70" width="20" height="20" fill="red">
+            <animate attributeName="x" from="10" to="70" dur="1s" begin="target.click" fill="freeze"/>
+          </rect>
+        </svg>
+      ''';
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: Center(
+                child: AnimatedSvgPicture.string(
+                  svgXml,
+                  width: 200,
+                  height: 200,
+                  autoPlay: true,
+                ),
+              ),
+            ),
+          ),
+        );
+
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+
+        final beforePixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final beforeAnalysis = VisualTestUtils.analyzeRedPixels(
+          beforePixels,
+          800,
+          600,
+        );
+        final beforeCentroid = beforeAnalysis.centroid;
+
+        final pictureFinder = find.byType(AnimatedSvgPicture);
+        final topLeft = tester.getTopLeft(pictureFinder);
+
+        await tester.tapAt(topLeft + const Offset(40, 40));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+
+        final afterPixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final afterAnalysis = VisualTestUtils.analyzeRedPixels(
+          afterPixels,
+          800,
+          600,
+        );
+        final afterCentroid = afterAnalysis.centroid;
+
+        expect((afterCentroid.dx - beforeCentroid.dx).abs(), lessThan(3));
+      },
+    );
+
     testWidgets('clipPath-aware click respects clipped hit region', (
       WidgetTester tester,
     ) async {
@@ -1432,6 +2328,322 @@ void main() {
 
       // Inside clipped circle.
       await tester.tapAt(topLeft + const Offset(40, 40));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final targetPixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final targetAnalysis = VisualTestUtils.analyzeRedPixels(
+        targetPixels,
+        800,
+        600,
+      );
+      final targetCentroid = targetAnalysis.centroid;
+
+      expect(targetCentroid.dx, greaterThan(outsideCentroid.dx + 5));
+    });
+
+    testWidgets('clipPathUnits objectBoundingBox gates click hit region', (
+      WidgetTester tester,
+    ) async {
+      const svgXml = '''
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <clipPath id="clipHalf" clipPathUnits="objectBoundingBox">
+              <rect x="0" y="0" width="0.5" height="1"/>
+            </clipPath>
+          </defs>
+          <rect id="target" x="20" y="20" width="40" height="40" fill="blue" clip-path="url(#clipHalf)"/>
+          <rect id="moving" x="10" y="70" width="20" height="20" fill="red">
+            <animate attributeName="x" from="10" to="70" dur="1s" begin="target.click" fill="freeze"/>
+          </rect>
+        </svg>
+      ''';
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: AnimatedSvgPicture.string(
+                svgXml,
+                width: 200,
+                height: 200,
+                autoPlay: true,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final beforePixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final beforeAnalysis = VisualTestUtils.analyzeRedPixels(
+        beforePixels,
+        800,
+        600,
+      );
+      final beforeCentroid = beforeAnalysis.centroid;
+
+      final pictureFinder = find.byType(AnimatedSvgPicture);
+      final topLeft = tester.getTopLeft(pictureFinder);
+
+      // Right half of target rect, clipped out by objectBoundingBox clip.
+      await tester.tapAt(topLeft + const Offset(110, 80));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final outsidePixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final outsideAnalysis = VisualTestUtils.analyzeRedPixels(
+        outsidePixels,
+        800,
+        600,
+      );
+      final outsideCentroid = outsideAnalysis.centroid;
+      expect((outsideCentroid.dx - beforeCentroid.dx).abs(), lessThan(3));
+
+      // Left half of target rect, inside clipped area.
+      await tester.tapAt(topLeft + const Offset(60, 80));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final targetPixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final targetAnalysis = VisualTestUtils.analyzeRedPixels(
+        targetPixels,
+        800,
+        600,
+      );
+      final targetCentroid = targetAnalysis.centroid;
+
+      expect(targetCentroid.dx, greaterThan(outsideCentroid.dx + 5));
+    });
+
+    testWidgets('maskContentUnits objectBoundingBox gates click hit region', (
+      WidgetTester tester,
+    ) async {
+      const svgXml = '''
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <mask id="maskHalf" maskContentUnits="objectBoundingBox">
+              <rect x="0" y="0" width="0.5" height="1" fill="white"/>
+            </mask>
+          </defs>
+          <rect id="target" x="20" y="20" width="40" height="40" fill="blue" mask="url(#maskHalf)"/>
+          <rect id="moving" x="10" y="70" width="20" height="20" fill="red">
+            <animate attributeName="x" from="10" to="70" dur="1s" begin="target.click" fill="freeze"/>
+          </rect>
+        </svg>
+      ''';
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: AnimatedSvgPicture.string(
+                svgXml,
+                width: 200,
+                height: 200,
+                autoPlay: true,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final beforePixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final beforeAnalysis = VisualTestUtils.analyzeRedPixels(
+        beforePixels,
+        800,
+        600,
+      );
+      final beforeCentroid = beforeAnalysis.centroid;
+
+      final pictureFinder = find.byType(AnimatedSvgPicture);
+      final topLeft = tester.getTopLeft(pictureFinder);
+
+      // Right half of target rect, clipped out by objectBoundingBox mask.
+      await tester.tapAt(topLeft + const Offset(110, 80));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final outsidePixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final outsideAnalysis = VisualTestUtils.analyzeRedPixels(
+        outsidePixels,
+        800,
+        600,
+      );
+      final outsideCentroid = outsideAnalysis.centroid;
+      expect((outsideCentroid.dx - beforeCentroid.dx).abs(), lessThan(3));
+
+      // Left half of target rect, inside masked area.
+      await tester.tapAt(topLeft + const Offset(60, 80));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final targetPixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final targetAnalysis = VisualTestUtils.analyzeRedPixels(
+        targetPixels,
+        800,
+        600,
+      );
+      final targetCentroid = targetAnalysis.centroid;
+
+      expect(targetCentroid.dx, greaterThan(outsideCentroid.dx + 5));
+    });
+
+    testWidgets('maskUnits objectBoundingBox gates click hit region', (
+      WidgetTester tester,
+    ) async {
+      const svgXml = '''
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <mask
+              id="maskRegionHalf"
+              maskUnits="objectBoundingBox"
+              x="0"
+              y="0"
+              width="0.5"
+              height="1">
+              <rect x="0" y="0" width="100" height="100" fill="white"/>
+            </mask>
+          </defs>
+          <rect id="target" x="20" y="20" width="40" height="40" fill="blue" mask="url(#maskRegionHalf)"/>
+          <rect id="moving" x="10" y="70" width="20" height="20" fill="red">
+            <animate attributeName="x" from="10" to="70" dur="1s" begin="target.click" fill="freeze"/>
+          </rect>
+        </svg>
+      ''';
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: AnimatedSvgPicture.string(
+                svgXml,
+                width: 200,
+                height: 200,
+                autoPlay: true,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final beforePixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final beforeAnalysis = VisualTestUtils.analyzeRedPixels(
+        beforePixels,
+        800,
+        600,
+      );
+      final beforeCentroid = beforeAnalysis.centroid;
+
+      final pictureFinder = find.byType(AnimatedSvgPicture);
+      final topLeft = tester.getTopLeft(pictureFinder);
+
+      // Right half of target rect, outside maskUnits region.
+      await tester.tapAt(topLeft + const Offset(110, 80));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final outsidePixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final outsideAnalysis = VisualTestUtils.analyzeRedPixels(
+        outsidePixels,
+        800,
+        600,
+      );
+      final outsideCentroid = outsideAnalysis.centroid;
+      expect((outsideCentroid.dx - beforeCentroid.dx).abs(), lessThan(3));
+
+      // Left half of target rect, inside maskUnits region.
+      await tester.tapAt(topLeft + const Offset(60, 80));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final targetPixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final targetAnalysis = VisualTestUtils.analyzeRedPixels(
+        targetPixels,
+        800,
+        600,
+      );
+      final targetCentroid = targetAnalysis.centroid;
+
+      expect(targetCentroid.dx, greaterThan(outsideCentroid.dx + 5));
+    });
+
+    testWidgets('maskUnits userSpaceOnUse percentages gate click hit region', (
+      WidgetTester tester,
+    ) async {
+      const svgXml = '''
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <mask
+              id="maskRightHalfHit"
+              maskUnits="userSpaceOnUse"
+              x="50%"
+              y="0%"
+              width="50%"
+              height="100%">
+              <rect x="0" y="0" width="100" height="100" fill="white"/>
+            </mask>
+          </defs>
+          <rect id="target" x="20" y="20" width="40" height="40" fill="blue" mask="url(#maskRightHalfHit)"/>
+          <rect id="moving" x="10" y="70" width="20" height="20" fill="red">
+            <animate attributeName="x" from="10" to="70" dur="1s" begin="target.click" fill="freeze"/>
+          </rect>
+        </svg>
+      ''';
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: AnimatedSvgPicture.string(
+                svgXml,
+                width: 200,
+                height: 200,
+                autoPlay: true,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final beforePixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final beforeAnalysis = VisualTestUtils.analyzeRedPixels(
+        beforePixels,
+        800,
+        600,
+      );
+      final beforeCentroid = beforeAnalysis.centroid;
+
+      final pictureFinder = find.byType(AnimatedSvgPicture);
+      final topLeft = tester.getTopLeft(pictureFinder);
+
+      // Left part of target, outside x=50% mask region.
+      await tester.tapAt(topLeft + const Offset(70, 80));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final outsidePixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final outsideAnalysis = VisualTestUtils.analyzeRedPixels(
+        outsidePixels,
+        800,
+        600,
+      );
+      final outsideCentroid = outsideAnalysis.centroid;
+      expect((outsideCentroid.dx - beforeCentroid.dx).abs(), lessThan(3));
+
+      // Right part of target, inside x=50% mask region.
+      await tester.tapAt(topLeft + const Offset(110, 80));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
@@ -1656,6 +2868,180 @@ void main() {
 
       expect(targetCentroid.dx, greaterThan(outsideCentroid.dx + 5));
     });
+
+    testWidgets(
+      'tspan target click uses rendered cursor position from previous sibling',
+      (WidgetTester tester) async {
+        const svgXml = '''
+        <svg viewBox="0 0 100 100">
+          <text x="10" y="30" font-size="16" fill="blue">
+            <tspan>AAAA</tspan>
+            <tspan id="target">B</tspan>
+          </text>
+          <rect id="moving" x="10" y="70" width="20" height="20" fill="red">
+            <animate attributeName="x" from="10" to="70" dur="1s" begin="target.click" fill="freeze"/>
+          </rect>
+        </svg>
+      ''';
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: Center(
+                child: AnimatedSvgPicture.string(
+                  svgXml,
+                  width: 200,
+                  height: 200,
+                  autoPlay: true,
+                ),
+              ),
+            ),
+          ),
+        );
+
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+
+        final beforePixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final beforeAnalysis = VisualTestUtils.analyzeRedPixels(
+          beforePixels,
+          800,
+          600,
+        );
+        final beforeCentroid = beforeAnalysis.centroid;
+
+        final pictureFinder = find.byType(AnimatedSvgPicture);
+        final topLeft = tester.getTopLeft(pictureFinder);
+
+        final firstPainter = TextPainter(
+          text: const TextSpan(text: 'AAAA', style: TextStyle(fontSize: 16)),
+          textDirection: TextDirection.ltr,
+          maxLines: 1,
+        )..layout();
+        final secondPainter = TextPainter(
+          text: const TextSpan(text: 'B', style: TextStyle(fontSize: 16)),
+          textDirection: TextDirection.ltr,
+          maxLines: 1,
+        )..layout();
+        final baseline = firstPainter.computeDistanceToActualBaseline(
+          TextBaseline.alphabetic,
+        );
+        final localCenterY = 30.0 - baseline + firstPainter.height / 2;
+        final firstCenterLocalX = 10.0 + firstPainter.width / 2;
+        final secondCenterLocalX =
+            10.0 + firstPainter.width + secondPainter.width / 2;
+
+        // Click inside first tspan run: should not trigger target='B'.
+        await tester.tapAt(
+          topLeft + Offset(firstCenterLocalX * 2, localCenterY * 2),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+
+        final outsidePixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final outsideAnalysis = VisualTestUtils.analyzeRedPixels(
+          outsidePixels,
+          800,
+          600,
+        );
+        final outsideCentroid = outsideAnalysis.centroid;
+        expect((outsideCentroid.dx - beforeCentroid.dx).abs(), lessThan(3));
+
+        // Click second tspan glyph ('B'): should trigger.
+        await tester.tapAt(
+          topLeft + Offset(secondCenterLocalX * 2, localCenterY * 2),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+
+        final targetPixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final targetAnalysis = VisualTestUtils.analyzeRedPixels(
+          targetPixels,
+          800,
+          600,
+        );
+        final targetCentroid = targetAnalysis.centroid;
+
+        expect(targetCentroid.dx, greaterThan(outsideCentroid.dx + 5));
+      },
+    );
+
+    testWidgets(
+      'textPath startOffset gates hit-testing to rendered text segment',
+      (WidgetTester tester) async {
+        const svgXml = '''
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <path id="curve" d="M10,50 L90,50"/>
+          </defs>
+          <text font-size="16" fill="blue">
+            <textPath id="target" href="#curve" startOffset="75%">GO</textPath>
+          </text>
+          <rect id="moving" x="10" y="80" width="15" height="15" fill="red">
+            <animate attributeName="x" from="10" to="75" dur="1s" begin="target.click" fill="freeze"/>
+          </rect>
+        </svg>
+      ''';
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: Center(
+                child: AnimatedSvgPicture.string(
+                  svgXml,
+                  width: 200,
+                  height: 200,
+                  autoPlay: true,
+                ),
+              ),
+            ),
+          ),
+        );
+
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+
+        final beforePixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final beforeAnalysis = VisualTestUtils.analyzeRedPixels(
+          beforePixels,
+          800,
+          600,
+        );
+        final beforeCentroid = beforeAnalysis.centroid;
+
+        final pictureFinder = find.byType(AnimatedSvgPicture);
+        final topLeft = tester.getTopLeft(pictureFinder);
+
+        // Near path start but before rendered text startOffset segment.
+        await tester.tapAt(topLeft + const Offset(40, 100));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+
+        final outsidePixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final outsideAnalysis = VisualTestUtils.analyzeRedPixels(
+          outsidePixels,
+          800,
+          600,
+        );
+        final outsideCentroid = outsideAnalysis.centroid;
+        expect((outsideCentroid.dx - beforeCentroid.dx).abs(), lessThan(3));
+
+        // Inside rendered text segment near path end.
+        await tester.tapAt(topLeft + const Offset(160, 100));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+
+        final targetPixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final targetAnalysis = VisualTestUtils.analyzeRedPixels(
+          targetPixels,
+          800,
+          600,
+        );
+        final targetCentroid = targetAnalysis.centroid;
+
+        expect(targetCentroid.dx, greaterThan(outsideCentroid.dx + 5));
+      },
+    );
 
     testWidgets('textPath target click triggers targeted animation only', (
       WidgetTester tester,

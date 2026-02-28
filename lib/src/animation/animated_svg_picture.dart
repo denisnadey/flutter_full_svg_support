@@ -11,6 +11,8 @@ import 'animated_svg_painter.dart';
 import 'animation_detector.dart';
 import 'path_data.dart';
 import 'path_parser.dart';
+import 'preserve_aspect_ratio.dart';
+import 'switch_processing.dart';
 import 'smil/smil_parser.dart';
 import 'smil/smil_timeline.dart';
 import 'svg_dom.dart';
@@ -786,8 +788,8 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
         (size.height - viewBox.height * scale) / 2 - viewBox.top * scale;
 
     return Matrix4.identity()
-      ..translate(translateX, translateY)
-      ..scale(scale, scale);
+      ..translateByDouble(translateX, translateY, 0, 1)
+      ..scaleByDouble(scale, scale, 1, 1);
   }
 
   String? _hitTestNode(
@@ -810,6 +812,19 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
 
     final childTransform = Matrix4.copy(currentTransform);
     _applyForeignObjectChildTransform(childTransform, node);
+
+    if (node.tagName == 'switch') {
+      final activeChild = resolveActiveSwitchChild(node);
+      if (activeChild == null) {
+        return null;
+      }
+      return _hitTestNode(
+        activeChild,
+        documentPoint,
+        childTransform,
+        useStack: currentUseStack,
+      );
+    }
 
     // Идём с конца: последний нарисованный элемент визуально сверху
     for (int i = node.children.length - 1; i >= 0; i--) {
@@ -907,7 +922,18 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
     if (clipNode == null || clipNode.tagName != 'clipPath') {
       return true;
     }
-    final clipPath = _buildContainerGeometryPath(clipNode);
+    final rootTransform = _resolveContainerRootTransformForUnits(
+      targetNode: node,
+      unitsValue: clipNode.getAttributeValue('clipPathUnits')?.toString(),
+      defaultValue: 'userspaceonuse',
+    );
+    if (rootTransform == null) {
+      return true;
+    }
+    final clipPath = _buildContainerGeometryPath(
+      clipNode,
+      rootTransform: rootTransform,
+    );
     if (clipPath == null) {
       return true;
     }
@@ -923,11 +949,193 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
     if (maskNode == null || maskNode.tagName != 'mask') {
       return true;
     }
-    final maskPath = _buildContainerGeometryPath(maskNode);
+    final maskRegion = _resolveMaskRegionRectForNodeSpace(
+      targetNode: node,
+      maskNode: maskNode,
+    );
+    if (maskRegion != null && !maskRegion.contains(localPoint)) {
+      return false;
+    }
+    final rootTransform = _resolveContainerRootTransformForUnits(
+      targetNode: node,
+      unitsValue: maskNode.getAttributeValue('maskContentUnits')?.toString(),
+      defaultValue: 'userspaceonuse',
+    );
+    if (rootTransform == null) {
+      return true;
+    }
+    final maskPath = _buildContainerGeometryPath(
+      maskNode,
+      rootTransform: rootTransform,
+    );
     if (maskPath == null) {
       return true;
     }
     return maskPath.contains(localPoint);
+  }
+
+  Matrix4? _resolveContainerRootTransformForUnits({
+    required SvgNode targetNode,
+    required String? unitsValue,
+    required String defaultValue,
+  }) {
+    final normalized = (unitsValue ?? defaultValue).trim().toLowerCase();
+    if (normalized != 'objectboundingbox') {
+      return Matrix4.identity();
+    }
+    final localBounds = _computeNodeLocalBounds(targetNode);
+    if (localBounds == null ||
+        localBounds.width.abs() < 1e-6 ||
+        localBounds.height.abs() < 1e-6) {
+      return null;
+    }
+    return Matrix4.identity()
+      ..setEntry(0, 0, localBounds.width)
+      ..setEntry(1, 1, localBounds.height)
+      ..setEntry(0, 3, localBounds.left)
+      ..setEntry(1, 3, localBounds.top);
+  }
+
+  Rect? _resolveMaskRegionRectForNodeSpace({
+    required SvgNode targetNode,
+    required SvgNode maskNode,
+  }) {
+    final units =
+        (maskNode.getAttributeValue('maskUnits')?.toString() ??
+                'objectBoundingBox')
+            .trim()
+            .toLowerCase();
+    if (units == 'objectboundingbox') {
+      final targetBounds = _computeNodeLocalBounds(targetNode);
+      if (targetBounds == null) {
+        return null;
+      }
+      final x = _parseObjectBoundingBoxValue(maskNode.getAttributeValue('x'));
+      final y = _parseObjectBoundingBoxValue(maskNode.getAttributeValue('y'));
+      final width = _parseObjectBoundingBoxValue(
+        maskNode.getAttributeValue('width'),
+      );
+      final height = _parseObjectBoundingBoxValue(
+        maskNode.getAttributeValue('height'),
+      );
+      final resolvedX = x ?? -0.1;
+      final resolvedY = y ?? -0.1;
+      final resolvedWidth = width ?? 1.2;
+      final resolvedHeight = height ?? 1.2;
+      if (resolvedWidth <= 0 || resolvedHeight <= 0) {
+        return null;
+      }
+      return Rect.fromLTWH(
+        targetBounds.left + resolvedX * targetBounds.width,
+        targetBounds.top + resolvedY * targetBounds.height,
+        targetBounds.width * resolvedWidth,
+        targetBounds.height * resolvedHeight,
+      );
+    }
+
+    final x = _resolveMaskUserSpaceLength(
+      maskNode: maskNode,
+      attributeName: 'x',
+      horizontal: true,
+      isSize: false,
+      defaultRaw: '-10%',
+    );
+    final y = _resolveMaskUserSpaceLength(
+      maskNode: maskNode,
+      attributeName: 'y',
+      horizontal: false,
+      isSize: false,
+      defaultRaw: '-10%',
+    );
+    final width = _resolveMaskUserSpaceLength(
+      maskNode: maskNode,
+      attributeName: 'width',
+      horizontal: true,
+      isSize: true,
+      defaultRaw: '120%',
+    );
+    final height = _resolveMaskUserSpaceLength(
+      maskNode: maskNode,
+      attributeName: 'height',
+      horizontal: false,
+      isSize: true,
+      defaultRaw: '120%',
+    );
+    if (x == null || y == null || width == null || height == null) {
+      return null;
+    }
+    if (width <= 0 || height <= 0) {
+      return null;
+    }
+    return Rect.fromLTWH(x, y, width, height);
+  }
+
+  double? _resolveMaskUserSpaceLength({
+    required SvgNode maskNode,
+    required String attributeName,
+    required bool horizontal,
+    required bool isSize,
+    required String defaultRaw,
+  }) {
+    final rawValue = maskNode.getAttributeValue(attributeName) ?? defaultRaw;
+    if (rawValue is num) {
+      return rawValue.toDouble();
+    }
+    final raw = rawValue.toString().trim();
+    if (raw.isEmpty) {
+      return null;
+    }
+    if (raw.endsWith('%')) {
+      final percent = double.tryParse(raw.substring(0, raw.length - 1));
+      final viewport = _resolveMaskUnitsViewportRect();
+      if (percent == null || viewport == null) {
+        return null;
+      }
+      final dimension = horizontal ? viewport.width : viewport.height;
+      final value = dimension * percent / 100.0;
+      if (isSize) {
+        return value;
+      }
+      final origin = horizontal ? viewport.left : viewport.top;
+      return origin + value;
+    }
+    final cleaned = raw.replaceAll(RegExp(r'[a-zA-Z]+$'), '');
+    return double.tryParse(cleaned);
+  }
+
+  Rect? _resolveMaskUnitsViewportRect() {
+    final viewBox = _document.viewBox;
+    if (viewBox != null && viewBox.width > 0 && viewBox.height > 0) {
+      return viewBox;
+    }
+    final root = _document.root;
+    final width = _getNumber(root, 'width');
+    final height = _getNumber(root, 'height');
+    if (width == null || height == null || width <= 0 || height <= 0) {
+      return null;
+    }
+    return Rect.fromLTWH(0, 0, width, height);
+  }
+
+  double? _parseObjectBoundingBoxValue(Object? rawValue) {
+    if (rawValue == null) {
+      return null;
+    }
+    if (rawValue is num) {
+      return rawValue.toDouble();
+    }
+    final raw = rawValue.toString().trim();
+    if (raw.isEmpty) {
+      return null;
+    }
+    if (raw.endsWith('%')) {
+      final percent = double.tryParse(raw.substring(0, raw.length - 1));
+      if (percent == null) {
+        return null;
+      }
+      return percent / 100.0;
+    }
+    return double.tryParse(raw);
   }
 
   bool _isPointInsideForeignObjectViewport(SvgNode node, Offset localPoint) {
@@ -956,48 +1164,109 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
     }
 
     final referenced = _document.root.findById(hrefId);
-    if (referenced == null) {
+    if (referenced == null || !_isUseReferenceAllowedTag(referenced.tagName)) {
       return null;
     }
 
     final referenceTransform = Matrix4.copy(currentTransform)
-      ..translate(
+      ..translateByDouble(
         _getNumber(useNode, 'x') ?? 0.0,
         _getNumber(useNode, 'y') ?? 0.0,
+        0,
+        1,
       );
 
-    final nextUseStack = <String>{...useStack, hrefId};
-    if (referenced.tagName == 'symbol') {
-      final symbolTransform = Matrix4.copy(referenceTransform);
-      _applySymbolUseTransform(symbolTransform, useNode, referenced);
-      for (int i = referenced.children.length - 1; i >= 0; i--) {
-        final hitChild = _hitTestNode(
-          referenced.children[i],
+    final previousParent = referenced.parent;
+    referenced.parent = useNode;
+    try {
+      final nextUseStack = <String>{...useStack, hrefId};
+      if (_isUseViewportReferenceTag(referenced.tagName)) {
+        final useReferenceTransform = Matrix4.copy(referenceTransform);
+        final clippedViewport = _applyUseViewportTransform(
+          useReferenceTransform,
+          useNode,
+          referenced,
+        );
+        if (clippedViewport != null &&
+            !_isPointInsideTransformedRect(
+              documentPoint: documentPoint,
+              transform: referenceTransform,
+              localRect: clippedViewport,
+            )) {
+          return null;
+        }
+        if (referenced.tagName == 'symbol') {
+          for (int i = referenced.children.length - 1; i >= 0; i--) {
+            final hitChild = _hitTestNode(
+              referenced.children[i],
+              documentPoint,
+              useReferenceTransform,
+              useStack: nextUseStack,
+            );
+            if (hitChild != null) {
+              return hitChild;
+            }
+          }
+          return null;
+        }
+        return _hitTestNode(
+          referenced,
           documentPoint,
-          symbolTransform,
+          useReferenceTransform,
           useStack: nextUseStack,
         );
-        if (hitChild != null) {
-          return hitChild;
-        }
       }
-      return null;
-    }
 
-    return _hitTestNode(
-      referenced,
-      documentPoint,
-      referenceTransform,
-      useStack: nextUseStack,
-    );
+      return _hitTestNode(
+        referenced,
+        documentPoint,
+        referenceTransform,
+        useStack: nextUseStack,
+      );
+    } finally {
+      referenced.parent = previousParent;
+    }
   }
 
-  void _applySymbolUseTransform(
+  bool _isUseViewportReferenceTag(String tagName) {
+    return tagName == 'symbol' || tagName == 'svg';
+  }
+
+  bool _isUseReferenceAllowedTag(String tagName) {
+    switch (tagName) {
+      case 'a':
+      case 'circle':
+      case 'desc':
+      case 'ellipse':
+      case 'g':
+      case 'image':
+      case 'line':
+      case 'metadata':
+      case 'path':
+      case 'polygon':
+      case 'polyline':
+      case 'rect':
+      case 'svg':
+      case 'switch':
+      case 'symbol':
+      case 'text':
+      case 'textPath':
+      case 'title':
+      case 'tref':
+      case 'tspan':
+      case 'use':
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  Rect? _applyUseViewportTransform(
     Matrix4 matrix,
     SvgNode useNode,
-    SvgNode symbolNode,
+    SvgNode referencedNode,
   ) {
-    final viewBox = _parseViewBox(symbolNode.getAttributeValue('viewBox'));
+    final viewBox = _parseViewBox(referencedNode.getAttributeValue('viewBox'));
     final width = _getNumber(useNode, 'width');
     final height = _getNumber(useNode, 'height');
     if (viewBox == null ||
@@ -1007,19 +1276,38 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
         height <= 0 ||
         viewBox.width <= 0 ||
         viewBox.height <= 0) {
-      return;
+      return null;
     }
 
-    final scaleX = width / viewBox.width;
-    final scaleY = height / viewBox.height;
-    final scale = math.min(scaleX, scaleY);
-    final translateX =
-        (width - viewBox.width * scale) / 2 - viewBox.left * scale;
-    final translateY =
-        (height - viewBox.height * scale) / 2 - viewBox.top * scale;
+    final viewport = Rect.fromLTWH(0, 0, width, height);
+    final layout = resolveSvgViewportLayout(
+      viewport: viewport,
+      sourceSize: viewBox.size,
+      preserveAspectRatio: referencedNode
+          .getAttributeValue('preserveAspectRatio')
+          ?.toString(),
+    );
+    final scaleX = layout.destinationRect.width / viewBox.width;
+    final scaleY = layout.destinationRect.height / viewBox.height;
+    final translateX = layout.destinationRect.left - viewBox.left * scaleX;
+    final translateY = layout.destinationRect.top - viewBox.top * scaleY;
     matrix
-      ..translate(translateX, translateY)
-      ..scale(scale, scale);
+      ..translateByDouble(translateX, translateY, 0, 1)
+      ..scaleByDouble(scaleX, scaleY, 1, 1);
+    return layout.clipToViewport ? viewport : null;
+  }
+
+  bool _isPointInsideTransformedRect({
+    required Offset documentPoint,
+    required Matrix4 transform,
+    required Rect localRect,
+  }) {
+    final inverse = Matrix4.tryInvert(transform);
+    if (inverse == null) {
+      return false;
+    }
+    final localPoint = MatrixUtils.transformPoint(inverse, documentPoint);
+    return localRect.contains(localPoint);
   }
 
   Rect? _parseViewBox(Object? rawValue) {
@@ -1072,29 +1360,69 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
         final width = _getNumber(node, 'width') ?? 0.0;
         final height = _getNumber(node, 'height') ?? 0.0;
         if (width <= 0 || height <= 0) return false;
-        return Rect.fromLTWH(x, y, width, height).contains(point);
+        final rx = _getNumber(node, 'rx') ?? 0.0;
+        final ry = _getNumber(node, 'ry') ?? rx;
+        final rect = Rect.fromLTWH(x, y, width, height);
+        final rectPath = Path();
+        if (rx > 0 || ry > 0) {
+          rectPath.addRRect(RRect.fromRectXY(rect, rx, ry));
+        } else {
+          rectPath.addRect(rect);
+        }
+        if (_isFillEnabled(node) && rectPath.contains(point)) {
+          return true;
+        }
+        if (_hasStroke(node)) {
+          final tolerance = _strokeTolerance(node);
+          return _pathStrokeContains(rectPath, point, tolerance);
+        }
+        return false;
       case 'circle':
         final cx = _getNumber(node, 'cx') ?? 0.0;
         final cy = _getNumber(node, 'cy') ?? 0.0;
         final r = _getNumber(node, 'r') ?? 0.0;
         if (r <= 0) return false;
-        return (point - Offset(cx, cy)).distance <= r;
+        final circlePath = Path()
+          ..addOval(Rect.fromCircle(center: Offset(cx, cy), radius: r));
+        if (_isFillEnabled(node) && circlePath.contains(point)) {
+          return true;
+        }
+        if (_hasStroke(node)) {
+          final tolerance = _strokeTolerance(node);
+          return _pathStrokeContains(circlePath, point, tolerance);
+        }
+        return false;
       case 'ellipse':
         final cx = _getNumber(node, 'cx') ?? 0.0;
         final cy = _getNumber(node, 'cy') ?? 0.0;
         final rx = _getNumber(node, 'rx') ?? 0.0;
         final ry = _getNumber(node, 'ry') ?? 0.0;
         if (rx <= 0 || ry <= 0) return false;
-        final dx = (point.dx - cx) / rx;
-        final dy = (point.dy - cy) / ry;
-        return dx * dx + dy * dy <= 1.0;
+        final ellipsePath = Path()
+          ..addOval(
+            Rect.fromCenter(
+              center: Offset(cx, cy),
+              width: rx * 2,
+              height: ry * 2,
+            ),
+          );
+        if (_isFillEnabled(node) && ellipsePath.contains(point)) {
+          return true;
+        }
+        if (_hasStroke(node)) {
+          final tolerance = _strokeTolerance(node);
+          return _pathStrokeContains(ellipsePath, point, tolerance);
+        }
+        return false;
       case 'line':
+        if (!_hasStroke(node)) {
+          return false;
+        }
         final x1 = _getNumber(node, 'x1') ?? 0.0;
         final y1 = _getNumber(node, 'y1') ?? 0.0;
         final x2 = _getNumber(node, 'x2') ?? 0.0;
         final y2 = _getNumber(node, 'y2') ?? 0.0;
-        final strokeWidth = _getNumber(node, 'stroke-width') ?? 1.0;
-        final tolerance = (strokeWidth / 2).clamp(1.0, 8.0);
+        final tolerance = _strokeTolerance(node);
         final distance = _distanceToSegment(
           point,
           Offset(x1, y1),
@@ -1198,40 +1526,251 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
   }
 
   bool _textNodeContainsPoint(SvgNode node, Offset point) {
-    final textBounds = _computeTextBounds(node);
-    if (textBounds != null && textBounds.contains(point)) {
-      return true;
-    }
-
-    for (final child in node.children) {
-      if (child.tagName == 'tspan' && _textNodeContainsPoint(child, point)) {
-        return true;
-      }
-      if (child.tagName == 'textPath' && _textPathContainsPoint(child, point)) {
-        return true;
-      }
-    }
-
-    return false;
+    return _textRunsContainPoint(node, point);
   }
 
   bool _textPathContainsPoint(SvgNode textPathNode, Offset point) {
-    final path = _resolveTextPathGeometry(textPathNode);
-    if (path == null) {
-      return false;
-    }
-    final fontSize = (_getInheritedNumber(textPathNode, 'font-size') ?? 16.0)
-        .clamp(1.0, 4096.0);
-    final tolerance = (fontSize / 2).clamp(2.0, 32.0);
-    return _pathStrokeContains(path, point, tolerance);
+    return _textRunsContainPoint(textPathNode, point);
   }
 
-  Rect? _computeTextBounds(SvgNode node) {
+  bool _textRunsContainPoint(SvgNode node, Offset point) {
+    final textRoot = _findTextLayoutRoot(node);
+    if (textRoot == null) {
+      return false;
+    }
+    final runs = _buildTextHitRuns(textRoot);
+    for (final run in runs) {
+      if (!_isNodeOrDescendant(run.owner, node)) {
+        continue;
+      }
+      final bounds = run.bounds;
+      if (bounds != null) {
+        if (bounds.contains(point)) {
+          return true;
+        }
+        continue;
+      }
+      final path = run.path;
+      if (path != null && _pathStrokeContains(path, point, run.pathTolerance)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  SvgNode? _findTextLayoutRoot(SvgNode node) {
+    SvgNode? current = node;
+    while (current != null) {
+      if (current.tagName == 'text') {
+        return current;
+      }
+      current = current.parent;
+    }
+    return null;
+  }
+
+  bool _isNodeOrDescendant(SvgNode node, SvgNode ancestor) {
+    SvgNode? current = node;
+    while (current != null) {
+      if (identical(current, ancestor)) {
+        return true;
+      }
+      current = current.parent;
+    }
+    return false;
+  }
+
+  List<_TextHitRun> _buildTextHitRuns(SvgNode textRoot) {
+    if (textRoot.tagName != 'text') {
+      return const <_TextHitRun>[];
+    }
+    final startX = _getNumber(textRoot, 'x') ?? 0.0;
+    final startY = _getNumber(textRoot, 'y') ?? 0.0;
+    final cursor = _HitTextCursor(x: startX, y: startY);
+    final runs = <_TextHitRun>[];
+    _appendTextNodeHitRuns(textRoot, cursor, runs);
+    return runs;
+  }
+
+  void _appendTextNodeHitRuns(
+    SvgNode node,
+    _HitTextCursor cursor,
+    List<_TextHitRun> runs,
+  ) {
+    final x = _getNumber(node, 'x');
+    final y = _getNumber(node, 'y');
+    final dx = _getNumber(node, 'dx') ?? 0.0;
+    final dy = _getNumber(node, 'dy') ?? 0.0;
+
+    if (x != null) {
+      cursor.x = x;
+    }
+    if (y != null) {
+      cursor.y = y;
+    }
+    cursor
+      ..x += dx
+      ..y += dy;
+
     final text = _extractTextContent(node);
-    if (text == null || text.isEmpty) {
-      return null;
+    if (text != null && text.isNotEmpty) {
+      final metrics = _measureText(text, node);
+      var left = cursor.x;
+      switch (_resolveTextAnchor(node)) {
+        case _TextAnchor.middle:
+          left -= metrics.width / 2;
+          break;
+        case _TextAnchor.end:
+          left -= metrics.width;
+          break;
+        case _TextAnchor.start:
+          break;
+      }
+      final top = cursor.y - metrics.alphabeticBaseline;
+      runs.add(
+        _TextHitRun.bounds(
+          owner: node,
+          bounds: Rect.fromLTWH(left, top, metrics.width, metrics.height),
+        ),
+      );
+      cursor.x += metrics.width;
     }
 
+    for (final child in node.children) {
+      if (child.tagName == 'tspan') {
+        _appendTextNodeHitRuns(child, cursor, runs);
+      } else if (child.tagName == 'textPath') {
+        final consumed = _appendTextPathHitRuns(child, runs);
+        cursor.x += consumed;
+      }
+    }
+  }
+
+  double _appendTextPathHitRuns(SvgNode textPathNode, List<_TextHitRun> runs) {
+    final path = _resolveTextPathGeometry(textPathNode);
+    if (path == null) {
+      return 0.0;
+    }
+    final metricIterator = path.computeMetrics().iterator;
+    if (!metricIterator.moveNext()) {
+      return 0.0;
+    }
+    final metric = metricIterator.current;
+    if (metric.length <= 0) {
+      return 0.0;
+    }
+
+    double offset = _parseTextPathStartOffset(textPathNode, metric.length);
+    var consumed = 0.0;
+
+    final directText = _extractTextContent(textPathNode);
+    if (directText != null && directText.isNotEmpty) {
+      final textConsumed = _appendTextPathSegmentRuns(
+        owner: textPathNode,
+        styleNode: textPathNode,
+        text: directText,
+        metric: metric,
+        startOffset: offset,
+        runs: runs,
+      );
+      offset += textConsumed;
+      consumed += textConsumed;
+    }
+
+    for (final child in textPathNode.children) {
+      if (child.tagName != 'tspan') {
+        continue;
+      }
+      final childText = _extractTextContent(child);
+      if (childText == null || childText.isEmpty) {
+        continue;
+      }
+      final textConsumed = _appendTextPathSegmentRuns(
+        owner: child,
+        styleNode: child,
+        text: childText,
+        metric: metric,
+        startOffset: offset,
+        runs: runs,
+      );
+      offset += textConsumed;
+      consumed += textConsumed;
+    }
+
+    return consumed;
+  }
+
+  double _appendTextPathSegmentRuns({
+    required SvgNode owner,
+    required SvgNode styleNode,
+    required String text,
+    required ui.PathMetric metric,
+    required double startOffset,
+    required List<_TextHitRun> runs,
+  }) {
+    final glyphs = text.runes
+        .map((rune) => String.fromCharCode(rune))
+        .toList(growable: false);
+    if (glyphs.isEmpty) {
+      return 0.0;
+    }
+
+    final glyphMetrics = glyphs
+        .map((glyph) => _measureText(glyph, styleNode))
+        .toList(growable: false);
+    final widths = glyphMetrics
+        .map((metrics) => metrics.width)
+        .toList(growable: false);
+    final totalWidth = widths.fold<double>(0.0, (sum, width) => sum + width);
+
+    var drawOffset = startOffset;
+    switch (_resolveTextAnchor(styleNode)) {
+      case _TextAnchor.middle:
+        drawOffset -= totalWidth / 2;
+        break;
+      case _TextAnchor.end:
+        drawOffset -= totalWidth;
+        break;
+      case _TextAnchor.start:
+        break;
+    }
+
+    var consumed = 0.0;
+    var cursor = drawOffset;
+    final metricLength = metric.length;
+    final fontSize = (_getInheritedNumber(styleNode, 'font-size') ?? 16.0)
+        .clamp(1.0, 4096.0);
+    for (int i = 0; i < widths.length; i++) {
+      final glyphWidth = widths[i];
+      final start = cursor;
+      final end = cursor + glyphWidth;
+      final clampedStart = start.clamp(0.0, metricLength).toDouble();
+      final clampedEnd = end.clamp(0.0, metricLength).toDouble();
+      if (clampedEnd > clampedStart) {
+        final glyphPath = metric.extractPath(clampedStart, clampedEnd);
+        final glyphTolerance = (glyphMetrics[i].height / 2)
+            .clamp(fontSize / 3, fontSize)
+            .toDouble();
+        runs.add(
+          _TextHitRun.path(
+            owner: owner,
+            path: glyphPath,
+            pathTolerance: glyphTolerance,
+          ),
+        );
+      }
+
+      cursor += glyphWidth;
+      consumed += glyphWidth;
+      if (cursor > metricLength + fontSize) {
+        break;
+      }
+    }
+
+    return consumed;
+  }
+
+  _TextMeasure _measureText(String text, SvgNode node) {
     final fontSize = (_getInheritedNumber(node, 'font-size') ?? 16.0).clamp(
       1.0,
       4096.0,
@@ -1258,26 +1797,53 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
       maxLines: 1,
     )..layout();
 
-    final x =
-        (_getInheritedNumber(node, 'x') ?? 0.0) +
-        (_getNumber(node, 'dx') ?? 0.0);
-    final y =
-        (_getInheritedNumber(node, 'y') ?? 0.0) +
-        (_getNumber(node, 'dy') ?? 0.0);
-    final textAnchor = _getInheritedString(node, 'text-anchor')?.toLowerCase();
-
-    var left = x;
-    if (textAnchor == 'middle') {
-      left -= painter.width / 2;
-    } else if (textAnchor == 'end') {
-      left -= painter.width;
-    }
-
     final baseline = painter.computeDistanceToActualBaseline(
       TextBaseline.alphabetic,
     );
-    final top = y - baseline;
-    return Rect.fromLTWH(left, top, painter.width, painter.height);
+    return _TextMeasure(
+      width: painter.width,
+      height: painter.height,
+      alphabeticBaseline: baseline,
+    );
+  }
+
+  _TextAnchor _resolveTextAnchor(SvgNode node) {
+    final textAnchor = _getInheritedString(node, 'text-anchor')?.toLowerCase();
+    switch (textAnchor) {
+      case 'middle':
+        return _TextAnchor.middle;
+      case 'end':
+        return _TextAnchor.end;
+      case 'start':
+      default:
+        return _TextAnchor.start;
+    }
+  }
+
+  double _parseTextPathStartOffset(SvgNode textPathNode, double pathLength) {
+    final raw = textPathNode.getAttributeValue('startOffset');
+    if (raw == null) {
+      return 0.0;
+    }
+
+    if (raw is num) {
+      return raw.toDouble().clamp(0.0, pathLength);
+    }
+
+    final value = raw.toString().trim();
+    if (value.isEmpty) {
+      return 0.0;
+    }
+
+    if (value.endsWith('%')) {
+      final percent = double.tryParse(value.substring(0, value.length - 1));
+      if (percent == null) {
+        return 0.0;
+      }
+      return (pathLength * percent / 100.0).clamp(0.0, pathLength);
+    }
+
+    return (double.tryParse(value) ?? 0.0).clamp(0.0, pathLength);
   }
 
   Path? _buildPathGeometry(SvgNode node) {
@@ -1375,20 +1941,112 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
     }
   }
 
-  Path? _buildContainerGeometryPath(SvgNode containerNode) {
-    final path = Path();
-    var added = false;
-    for (final child in containerNode.children) {
-      final childGeometry = _buildGeometryPath(child);
-      if (childGeometry == null) {
-        continue;
-      }
-      final transform = Matrix4.identity();
-      _applyNodeTransform(transform, child);
-      path.addPath(childGeometry.transform(transform.storage), Offset.zero);
-      added = true;
+  Rect? _computeNodeLocalBounds(SvgNode node) {
+    final path = _buildGeometryPath(node);
+    if (path == null) {
+      return null;
     }
+    final bounds = path.getBounds();
+    if (bounds.width.abs() < 1e-6 || bounds.height.abs() < 1e-6) {
+      return null;
+    }
+    return bounds;
+  }
+
+  Path? _buildContainerGeometryPath(
+    SvgNode containerNode, {
+    Matrix4? rootTransform,
+  }) {
+    final path = Path();
+    final added = _appendContainerGeometry(
+      target: path,
+      node: containerNode,
+      currentTransform: rootTransform ?? Matrix4.identity(),
+      useStack: <String>{},
+    );
     return added ? path : null;
+  }
+
+  bool _appendContainerGeometry({
+    required Path target,
+    required SvgNode node,
+    required Matrix4 currentTransform,
+    required Set<String> useStack,
+  }) {
+    final matrix = Matrix4.copy(currentTransform);
+    _applyNodeTransform(matrix, node);
+
+    switch (node.tagName) {
+      case 'clipPath':
+      case 'mask':
+      case 'g':
+      case 'svg':
+      case 'symbol':
+        var added = false;
+        for (final child in node.children) {
+          if (_appendContainerGeometry(
+            target: target,
+            node: child,
+            currentTransform: matrix,
+            useStack: useStack,
+          )) {
+            added = true;
+          }
+        }
+        return added;
+      case 'switch':
+        final activeChild = resolveActiveSwitchChild(node);
+        if (activeChild == null) {
+          return false;
+        }
+        return _appendContainerGeometry(
+          target: target,
+          node: activeChild,
+          currentTransform: matrix,
+          useStack: useStack,
+        );
+      case 'use':
+        final hrefId = _extractHrefId(node);
+        if (hrefId == null || hrefId.isEmpty || useStack.contains(hrefId)) {
+          return false;
+        }
+        final referenced = _document.root.findById(hrefId);
+        if (referenced == null ||
+            !_isUseReferenceAllowedTag(referenced.tagName)) {
+          return false;
+        }
+        final translated = Matrix4.copy(matrix)
+          ..translateByDouble(
+            _getNumber(node, 'x') ?? 0.0,
+            _getNumber(node, 'y') ?? 0.0,
+            0,
+            1,
+          );
+        final nextUseStack = <String>{...useStack, hrefId};
+        if (_isUseViewportReferenceTag(referenced.tagName)) {
+          final useReferenceTransform = Matrix4.copy(translated);
+          _applyUseViewportTransform(useReferenceTransform, node, referenced);
+          return _appendContainerGeometry(
+            target: target,
+            node: referenced,
+            currentTransform: useReferenceTransform,
+            useStack: nextUseStack,
+          );
+        }
+        return _appendContainerGeometry(
+          target: target,
+          node: referenced,
+          currentTransform: translated,
+          useStack: nextUseStack,
+        );
+      default:
+        final geometry = _buildGeometryPath(node);
+        if (geometry == null) {
+          return false;
+        }
+        target.addPath(geometry.transform(matrix.storage), Offset.zero);
+        return true;
+    }
   }
 
   Path? _resolveTextPathGeometry(SvgNode textPathNode) {
@@ -1597,7 +2255,7 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
     }
     final x = _getNumber(node, 'x') ?? 0.0;
     final y = _getNumber(node, 'y') ?? 0.0;
-    matrix.translate(x, y);
+    matrix.translateByDouble(x, y, 0, 1);
   }
 
   void _applyNodeTransform(Matrix4 matrix, SvgNode node) {
@@ -1610,12 +2268,12 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
         case SvgTransformType.translate:
           final tx = transform.values.isNotEmpty ? transform.values[0] : 0.0;
           final ty = transform.values.length > 1 ? transform.values[1] : 0.0;
-          matrix.translate(tx, ty);
+          matrix.translateByDouble(tx, ty, 0, 1);
           break;
         case SvgTransformType.scale:
           final sx = transform.values.isNotEmpty ? transform.values[0] : 1.0;
           final sy = transform.values.length > 1 ? transform.values[1] : sx;
-          matrix.scale(sx, sy);
+          matrix.scaleByDouble(sx, sy, 1, 1);
           break;
         case SvgTransformType.rotate:
           final angle = transform.values.isNotEmpty ? transform.values[0] : 0.0;
@@ -1624,9 +2282,9 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
             final cx = transform.values[1];
             final cy = transform.values[2];
             matrix
-              ..translate(cx, cy)
+              ..translateByDouble(cx, cy, 0, 1)
               ..rotateZ(radians)
-              ..translate(-cx, -cy);
+              ..translateByDouble(-cx, -cy, 0, 1);
           } else {
             matrix.rotateZ(radians);
           }
@@ -1688,6 +2346,29 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
     return urlMatch?.group(1);
   }
 
+  String? _extractStyleValue(SvgNode node, String property) {
+    final style = node.getAttributeValue('style')?.toString();
+    if (style == null || style.trim().isEmpty) {
+      return null;
+    }
+
+    for (final declaration in style.split(';')) {
+      final parts = declaration.split(':');
+      if (parts.length < 2) {
+        continue;
+      }
+      final key = parts.first.trim().toLowerCase();
+      if (key != property) {
+        continue;
+      }
+      final value = parts.sublist(1).join(':').trim();
+      if (value.isNotEmpty) {
+        return value;
+      }
+    }
+    return null;
+  }
+
   double? _getNumber(SvgNode node, String attributeName) {
     final value = node.getAttributeValue(attributeName);
     if (value is num) {
@@ -1701,8 +2382,13 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
   }
 
   Object? _getInheritedAttributeValue(SvgNode node, String attributeName) {
+    final normalizedName = attributeName.trim().toLowerCase();
     SvgNode? current = node;
     while (current != null) {
+      final styleValue = _extractStyleValue(current, normalizedName);
+      if (styleValue != null) {
+        return styleValue;
+      }
       final value = current.getAttributeValue(attributeName);
       if (value != null) {
         return value;
@@ -1832,26 +2518,26 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
   }
 
   bool _isFillEnabled(SvgNode node) {
-    final fill = node
-        .getAttributeValue('fill')
-        ?.toString()
-        .trim()
-        .toLowerCase();
-    return fill == null || fill != 'none';
+    final fill = _getInheritedAttributeValue(node, 'fill');
+    return !_isPaintNone(fill);
   }
 
   bool _hasStroke(SvgNode node) {
-    final stroke = node
-        .getAttributeValue('stroke')
-        ?.toString()
-        .trim()
-        .toLowerCase();
-    return stroke != null && stroke != 'none';
+    final stroke = _getInheritedAttributeValue(node, 'stroke');
+    return stroke != null && !_isPaintNone(stroke);
   }
 
   double _strokeTolerance(SvgNode node) {
-    final strokeWidth = _getNumber(node, 'stroke-width') ?? 1.0;
+    final strokeWidth = _getInheritedNumber(node, 'stroke-width') ?? 1.0;
     return (strokeWidth / 2).clamp(1.0, 8.0);
+  }
+
+  bool _isPaintNone(Object? value) {
+    if (value is Color && value.a <= 0) {
+      return true;
+    }
+    final str = value?.toString().trim().toLowerCase();
+    return str == 'none';
   }
 
   void _trace({
@@ -1903,4 +2589,42 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
         time.inMicroseconds / _timeline!.totalDuration.inMicroseconds;
     _controller!.value = progress.clamp(0.0, 1.0);
   }
+}
+
+enum _TextAnchor { start, middle, end }
+
+class _HitTextCursor {
+  _HitTextCursor({required this.x, required this.y});
+
+  double x;
+  double y;
+}
+
+class _TextMeasure {
+  const _TextMeasure({
+    required this.width,
+    required this.height,
+    required this.alphabeticBaseline,
+  });
+
+  final double width;
+  final double height;
+  final double alphabeticBaseline;
+}
+
+class _TextHitRun {
+  const _TextHitRun.bounds({required this.owner, required Rect this.bounds})
+    : path = null,
+      pathTolerance = 0.0;
+
+  const _TextHitRun.path({
+    required this.owner,
+    required Path this.path,
+    required this.pathTolerance,
+  }) : bounds = null;
+
+  final SvgNode owner;
+  final Rect? bounds;
+  final Path? path;
+  final double pathTolerance;
 }
