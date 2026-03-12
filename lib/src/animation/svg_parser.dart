@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:xml/xml.dart';
 
 import 'css_animations.dart';
+import 'css_named_colors.dart';
 import 'svg_dom.dart';
 import 'svg_filters.dart';
 
@@ -88,6 +89,22 @@ class SvgParser {
     switch (tagName) {
       case 'feGaussianBlur':
         return _parseGaussianBlur(element, filterId);
+      case 'feMorphology':
+        return _parseMorphology(element, filterId);
+      case 'feDisplacementMap':
+        return _parseDisplacementMap(element, filterId);
+      case 'feImage':
+        return _parseFeImage(element, filterId);
+      case 'feConvolveMatrix':
+        return _parseConvolveMatrix(element, filterId);
+      case 'feTurbulence':
+        return _parseTurbulence(element, filterId);
+      case 'feComponentTransfer':
+        return _parseComponentTransfer(element, filterId);
+      case 'feDiffuseLighting':
+        return _parseDiffuseLighting(element, filterId);
+      case 'feSpecularLighting':
+        return _parseSpecularLighting(element, filterId);
       case 'feOffset':
         return _parseOffset(element, filterId);
       case 'feFlood':
@@ -98,6 +115,8 @@ class SvgParser {
         return _parseComposite(element, filterId);
       case 'feMerge':
         return _parseMerge(element, filterId);
+      case 'feTile':
+        return _parseTile(element, filterId);
       case 'feDropShadow':
         return _parseDropShadow(element, filterId);
       case 'feColorMatrix':
@@ -127,28 +146,397 @@ class SvgParser {
     );
   }
 
+  /// Парсит feMorphology элемент
+  static SvgMorphologyFilter _parseMorphology(
+    XmlElement element,
+    String filterId,
+  ) {
+    final operatorRaw = element.getAttribute('operator')?.trim().toLowerCase();
+    final operatorType = operatorRaw == 'dilate'
+        ? SvgMorphologyOperator.dilate
+        : SvgMorphologyOperator.erode;
+    final radiusRaw = element.getAttribute('radius') ?? '0';
+    final radius = _parseNumberOptionalNumber(radiusRaw);
+    final input = _normalizeFilterInput(element.getAttribute('in'));
+    final resultName = _normalizeFilterResult(element.getAttribute('result'));
+
+    return SvgMorphologyFilter(
+      id: filterId,
+      operatorType: operatorType,
+      radiusX: radius.$1,
+      radiusY: radius.$2,
+      input: input,
+      resultName: resultName,
+    );
+  }
+
+  /// Парсит feDisplacementMap элемент
+  static SvgDisplacementMapFilter _parseDisplacementMap(
+    XmlElement element,
+    String filterId,
+  ) {
+    final scale = _parseNumber(element.getAttribute('scale') ?? '0');
+    final xChannelSelector = _parseChannelSelector(
+      element.getAttribute('xChannelSelector') ?? 'A',
+    );
+    final yChannelSelector = _parseChannelSelector(
+      element.getAttribute('yChannelSelector') ?? 'A',
+    );
+
+    return SvgDisplacementMapFilter(
+      id: filterId,
+      scale: scale,
+      xChannelSelector: xChannelSelector,
+      yChannelSelector: yChannelSelector,
+      input: _normalizeFilterInput(element.getAttribute('in')),
+      input2: _normalizeFilterInput(element.getAttribute('in2')),
+      resultName: _normalizeFilterResult(element.getAttribute('result')),
+    );
+  }
+
+  /// Парсит feImage элемент
+  static SvgFeImageFilter _parseFeImage(XmlElement element, String filterId) {
+    final rawHref =
+        element.getAttribute('href') ?? element.getAttribute('xlink:href');
+    final href = rawHref?.trim();
+
+    return SvgFeImageFilter(
+      id: filterId,
+      href: (href == null || href.isEmpty) ? null : href,
+      x: _parseNumber(element.getAttribute('x') ?? '0'),
+      y: _parseNumber(element.getAttribute('y') ?? '0'),
+      width: _parseNumber(element.getAttribute('width') ?? '0'),
+      height: _parseNumber(element.getAttribute('height') ?? '0'),
+      preserveAspectRatio: _normalizeFilterResult(
+        element.getAttribute('preserveAspectRatio'),
+      ),
+      input: _normalizeFilterInput(element.getAttribute('in')),
+      resultName: _normalizeFilterResult(element.getAttribute('result')),
+    );
+  }
+
+  /// Парсит feConvolveMatrix элемент
+  static SvgConvolveMatrixFilter _parseConvolveMatrix(
+    XmlElement element,
+    String filterId,
+  ) {
+    final order = _parseNumberOptionalNumber(
+      element.getAttribute('order') ?? '3',
+    );
+    final orderX = order.$1.round().clamp(1, 64).toInt();
+    final orderY = order.$2.round().clamp(1, 64).toInt();
+
+    final kernelMatrix = (element.getAttribute('kernelMatrix') ?? '')
+        .split(RegExp(r'[\s,]+'))
+        .map((part) => double.tryParse(part.trim()))
+        .whereType<double>()
+        .toList(growable: false);
+
+    final divisorAttr = element.getAttribute('divisor');
+    double divisor;
+    if (divisorAttr == null || divisorAttr.trim().isEmpty) {
+      final kernelSum = kernelMatrix.fold<double>(
+        0.0,
+        (sum, value) => sum + value,
+      );
+      divisor = kernelSum == 0.0 ? 1.0 : kernelSum;
+    } else {
+      divisor = _parseNumber(divisorAttr);
+      if (divisor == 0.0) {
+        divisor = 1.0;
+      }
+    }
+
+    final bias = _parseNumber(element.getAttribute('bias') ?? '0');
+    final targetXDefault = orderX ~/ 2;
+    final targetYDefault = orderY ~/ 2;
+    final targetX = _parseIntWithDefault(
+      element.getAttribute('targetX'),
+      targetXDefault,
+    ).clamp(0, orderX - 1);
+    final targetY = _parseIntWithDefault(
+      element.getAttribute('targetY'),
+      targetYDefault,
+    ).clamp(0, orderY - 1);
+
+    final kernelUnitLengthRaw = element.getAttribute('kernelUnitLength');
+    double? kernelUnitLengthX;
+    double? kernelUnitLengthY;
+    if (kernelUnitLengthRaw != null && kernelUnitLengthRaw.trim().isNotEmpty) {
+      final kernelUnitLength = _parseNumberOptionalNumber(kernelUnitLengthRaw);
+      if (kernelUnitLength.$1 > 0 && kernelUnitLength.$2 > 0) {
+        kernelUnitLengthX = kernelUnitLength.$1;
+        kernelUnitLengthY = kernelUnitLength.$2;
+      }
+    }
+
+    return SvgConvolveMatrixFilter(
+      id: filterId,
+      orderX: orderX,
+      orderY: orderY,
+      kernelMatrix: kernelMatrix,
+      divisor: divisor,
+      bias: bias,
+      targetX: targetX.toInt(),
+      targetY: targetY.toInt(),
+      edgeMode: _parseConvolveEdgeMode(element.getAttribute('edgeMode')),
+      kernelUnitLengthX: kernelUnitLengthX,
+      kernelUnitLengthY: kernelUnitLengthY,
+      preserveAlpha: _parseSvgBoolean(element.getAttribute('preserveAlpha')),
+      input: _normalizeFilterInput(element.getAttribute('in')),
+      resultName: _normalizeFilterResult(element.getAttribute('result')),
+    );
+  }
+
+  /// Парсит feTurbulence элемент
+  static SvgTurbulenceFilter _parseTurbulence(
+    XmlElement element,
+    String filterId,
+  ) {
+    final baseFrequency = _parseNumberOptionalNumber(
+      element.getAttribute('baseFrequency') ?? '0',
+    );
+
+    return SvgTurbulenceFilter(
+      id: filterId,
+      baseFrequencyX: math.max(0.0, baseFrequency.$1),
+      baseFrequencyY: math.max(0.0, baseFrequency.$2),
+      numOctaves: _parseIntWithDefault(
+        element.getAttribute('numOctaves'),
+        1,
+      ).clamp(1, 64).toInt(),
+      seed: _parseNumber(element.getAttribute('seed') ?? '0'),
+      stitchTiles: _parseTurbulenceStitchTiles(
+        element.getAttribute('stitchTiles'),
+      ),
+      noiseType: _parseTurbulenceType(element.getAttribute('type')),
+      input: _normalizeFilterInput(element.getAttribute('in')),
+      resultName: _normalizeFilterResult(element.getAttribute('result')),
+    );
+  }
+
+  /// Парсит feComponentTransfer элемент
+  static SvgComponentTransferFilter _parseComponentTransfer(
+    XmlElement element,
+    String filterId,
+  ) {
+    SvgComponentTransferFunction? funcR;
+    SvgComponentTransferFunction? funcG;
+    SvgComponentTransferFunction? funcB;
+    SvgComponentTransferFunction? funcA;
+
+    for (final child in element.childElements) {
+      switch (child.name.local) {
+        case 'feFuncR':
+          funcR = _parseComponentTransferFunction(child);
+        case 'feFuncG':
+          funcG = _parseComponentTransferFunction(child);
+        case 'feFuncB':
+          funcB = _parseComponentTransferFunction(child);
+        case 'feFuncA':
+          funcA = _parseComponentTransferFunction(child);
+      }
+    }
+
+    return SvgComponentTransferFilter(
+      id: filterId,
+      funcR: funcR,
+      funcG: funcG,
+      funcB: funcB,
+      funcA: funcA,
+      input: _normalizeFilterInput(element.getAttribute('in')),
+      resultName: _normalizeFilterResult(element.getAttribute('result')),
+    );
+  }
+
+  static SvgComponentTransferFunction _parseComponentTransferFunction(
+    XmlElement element,
+  ) {
+    final tableValues = (element.getAttribute('tableValues') ?? '')
+        .split(RegExp(r'[\s,]+'))
+        .map((part) => double.tryParse(part.trim()))
+        .whereType<double>()
+        .toList(growable: false);
+
+    return SvgComponentTransferFunction(
+      type: _parseComponentTransferType(element.getAttribute('type')),
+      tableValues: tableValues,
+      slope: _parseNumber(element.getAttribute('slope') ?? '1'),
+      intercept: _parseNumber(element.getAttribute('intercept') ?? '0'),
+      amplitude: _parseNumber(element.getAttribute('amplitude') ?? '1'),
+      exponent: _parseNumber(element.getAttribute('exponent') ?? '1'),
+      offset: _parseNumber(element.getAttribute('offset') ?? '0'),
+    );
+  }
+
+  /// Парсит feDiffuseLighting элемент
+  static SvgDiffuseLightingFilter _parseDiffuseLighting(
+    XmlElement element,
+    String filterId,
+  ) {
+    final kernelUnitLength = _parseLightingKernelUnitLength(element);
+
+    return SvgDiffuseLightingFilter(
+      id: filterId,
+      x: _parseNumber(element.getAttribute('x') ?? '0'),
+      y: _parseNumber(element.getAttribute('y') ?? '0'),
+      width: _parseNumber(element.getAttribute('width') ?? '0'),
+      height: _parseNumber(element.getAttribute('height') ?? '0'),
+      surfaceScale: _parseNumber(element.getAttribute('surfaceScale') ?? '1'),
+      diffuseConstant: _parseNumber(
+        element.getAttribute('diffuseConstant') ?? '1',
+      ),
+      kernelUnitLengthX: kernelUnitLength.$1,
+      kernelUnitLengthY: kernelUnitLength.$2,
+      lightingColor: _parseLightingColor(element),
+      lightSource: _parseLightingLightSource(element),
+      input: _normalizeFilterInput(element.getAttribute('in')),
+      resultName: _normalizeFilterResult(element.getAttribute('result')),
+    );
+  }
+
+  /// Парсит feSpecularLighting элемент
+  static SvgSpecularLightingFilter _parseSpecularLighting(
+    XmlElement element,
+    String filterId,
+  ) {
+    final kernelUnitLength = _parseLightingKernelUnitLength(element);
+
+    return SvgSpecularLightingFilter(
+      id: filterId,
+      x: _parseNumber(element.getAttribute('x') ?? '0'),
+      y: _parseNumber(element.getAttribute('y') ?? '0'),
+      width: _parseNumber(element.getAttribute('width') ?? '0'),
+      height: _parseNumber(element.getAttribute('height') ?? '0'),
+      surfaceScale: _parseNumber(element.getAttribute('surfaceScale') ?? '1'),
+      specularConstant: _parseNumber(
+        element.getAttribute('specularConstant') ?? '1',
+      ),
+      specularExponent: _parseNumber(
+        element.getAttribute('specularExponent') ?? '1',
+      ).clamp(1.0, 128.0).toDouble(),
+      kernelUnitLengthX: kernelUnitLength.$1,
+      kernelUnitLengthY: kernelUnitLength.$2,
+      lightingColor: _parseLightingColor(element),
+      lightSource: _parseLightingLightSource(element),
+      input: _normalizeFilterInput(element.getAttribute('in')),
+      resultName: _normalizeFilterResult(element.getAttribute('result')),
+    );
+  }
+
+  static ui.Color _parseLightingColor(XmlElement element) {
+    final parsedLightingColor = _parseColor(
+      element.getAttribute('lighting-color') ??
+          element.getAttribute('lightingColor') ??
+          'white',
+    );
+    return parsedLightingColor is ui.Color
+        ? parsedLightingColor
+        : const ui.Color(0xFFFFFFFF);
+  }
+
+  static SvgLightSource? _parseLightingLightSource(XmlElement element) {
+    for (final child in element.childElements) {
+      switch (child.name.local) {
+        case 'feDistantLight':
+          return SvgDistantLightSource(
+            azimuth: _parseNumber(child.getAttribute('azimuth') ?? '0'),
+            elevation: _parseNumber(child.getAttribute('elevation') ?? '0'),
+          );
+        case 'fePointLight':
+          return SvgPointLightSource(
+            x: _parseNumber(child.getAttribute('x') ?? '0'),
+            y: _parseNumber(child.getAttribute('y') ?? '0'),
+            z: _parseNumber(child.getAttribute('z') ?? '0'),
+          );
+        case 'feSpotLight':
+          return SvgSpotLightSource(
+            x: _parseNumber(child.getAttribute('x') ?? '0'),
+            y: _parseNumber(child.getAttribute('y') ?? '0'),
+            z: _parseNumber(child.getAttribute('z') ?? '0'),
+            pointsAtX: _parseNumber(child.getAttribute('pointsAtX') ?? '0'),
+            pointsAtY: _parseNumber(child.getAttribute('pointsAtY') ?? '0'),
+            pointsAtZ: _parseNumber(child.getAttribute('pointsAtZ') ?? '0'),
+            specularExponent: _parseNumber(
+              child.getAttribute('specularExponent') ?? '1',
+            ).clamp(1.0, 128.0).toDouble(),
+            limitingConeAngle: _parseNumber(
+              child.getAttribute('limitingConeAngle') ?? '0',
+            ),
+          );
+      }
+    }
+    return null;
+  }
+
+  static (double?, double?) _parseLightingKernelUnitLength(XmlElement element) {
+    final raw = element.getAttribute('kernelUnitLength');
+    if (raw == null || raw.trim().isEmpty) {
+      return (null, null);
+    }
+    final parsed = _parseNumberOptionalNumber(raw);
+    if (parsed.$1 <= 0 || parsed.$2 <= 0) {
+      return (null, null);
+    }
+    return (parsed.$1, parsed.$2);
+  }
+
   /// Парсит feDropShadow элемент
   static SvgDropShadowFilter _parseDropShadow(
     XmlElement element,
     String filterId,
   ) {
-    final dx = _parseNumber(element.getAttribute('dx') ?? '2');
-    final dy = _parseNumber(element.getAttribute('dy') ?? '2');
-    final stdDeviationStr = element.getAttribute('stdDeviation') ?? '2';
+    final styleDeclarations = _parseInlineStyleDeclarations(
+      element.getAttribute('style'),
+    );
+    final dx = _parseNumber(
+      _getFilterPrimitiveAttributeOrStyleValue(
+            element,
+            attributeNames: const <String>['dx'],
+            styleNames: const <String>['dx'],
+            styleDeclarations: styleDeclarations,
+          ) ??
+          '2',
+    );
+    final dy = _parseNumber(
+      _getFilterPrimitiveAttributeOrStyleValue(
+            element,
+            attributeNames: const <String>['dy'],
+            styleNames: const <String>['dy'],
+            styleDeclarations: styleDeclarations,
+          ) ??
+          '2',
+    );
+    final stdDeviationStr =
+        _getFilterPrimitiveAttributeOrStyleValue(
+          element,
+          attributeNames: const <String>['stdDeviation'],
+          styleNames: const <String>['stddeviation', 'std-deviation'],
+          styleDeclarations: styleDeclarations,
+        ) ??
+        '2';
     final stdDeviation = _parseNumberOptionalNumber(stdDeviationStr);
     final input = _normalizeFilterInput(element.getAttribute('in'));
     final resultName = _normalizeFilterResult(element.getAttribute('result'));
 
     // Парсим flood-color
     final floodColorStr =
-        element.getAttribute('flood-color') ??
-        element.getAttribute('floodColor') ??
+        _getFilterPrimitiveAttributeOrStyleValue(
+          element,
+          attributeNames: const <String>['flood-color', 'floodColor'],
+          styleNames: const <String>['flood-color', 'floodcolor'],
+          styleDeclarations: styleDeclarations,
+        ) ??
         'black';
     final parsedColor = _parseColor(floodColorStr);
     final color = parsedColor is ui.Color ? parsedColor : null;
     final floodOpacity = _parseNumber(
-      element.getAttribute('flood-opacity') ??
-          element.getAttribute('floodOpacity') ??
+      _getFilterPrimitiveAttributeOrStyleValue(
+            element,
+            attributeNames: const <String>['flood-opacity', 'floodOpacity'],
+            styleNames: const <String>['flood-opacity', 'floodopacity'],
+            styleDeclarations: styleDeclarations,
+          ) ??
           '1',
     ).clamp(0.0, 1.0);
 
@@ -183,17 +571,28 @@ class SvgParser {
 
   /// Парсит feFlood элемент
   static SvgFloodFilter _parseFlood(XmlElement element, String filterId) {
+    final styleDeclarations = _parseInlineStyleDeclarations(
+      element.getAttribute('style'),
+    );
     final floodColorStr =
-        element.getAttribute('flood-color') ??
-        element.getAttribute('floodColor') ??
+        _getFilterPrimitiveAttributeOrStyleValue(
+          element,
+          attributeNames: const <String>['flood-color', 'floodColor'],
+          styleNames: const <String>['flood-color', 'floodcolor'],
+          styleDeclarations: styleDeclarations,
+        ) ??
         'black';
     final parsedColor = _parseColor(floodColorStr);
     final floodColor = parsedColor is ui.Color
         ? parsedColor
         : const ui.Color(0xFF000000);
     final floodOpacity = _parseNumber(
-      element.getAttribute('flood-opacity') ??
-          element.getAttribute('floodOpacity') ??
+      _getFilterPrimitiveAttributeOrStyleValue(
+            element,
+            attributeNames: const <String>['flood-opacity', 'floodOpacity'],
+            styleNames: const <String>['flood-opacity', 'floodopacity'],
+            styleDeclarations: styleDeclarations,
+          ) ??
           '1',
     );
 
@@ -304,6 +703,15 @@ class SvgParser {
     );
   }
 
+  /// Парсит feTile элемент.
+  static SvgTileFilter _parseTile(XmlElement element, String filterId) {
+    return SvgTileFilter(
+      id: filterId,
+      input: _normalizeFilterInput(element.getAttribute('in')),
+      resultName: _normalizeFilterResult(element.getAttribute('result')),
+    );
+  }
+
   static String? _normalizeFilterInput(String? raw) {
     final normalized = raw?.trim();
     if (normalized == null || normalized.isEmpty) {
@@ -318,6 +726,151 @@ class SvgParser {
       return null;
     }
     return normalized;
+  }
+
+  static String? _getFilterPrimitiveAttributeOrStyleValue(
+    XmlElement element, {
+    required List<String> attributeNames,
+    required List<String> styleNames,
+    required Map<String, String> styleDeclarations,
+  }) {
+    for (final styleName in styleNames) {
+      final styleValue = styleDeclarations[styleName.toLowerCase()]?.trim();
+      if (styleValue != null && styleValue.isNotEmpty) {
+        return styleValue;
+      }
+    }
+
+    for (final attributeName in attributeNames) {
+      final attributeValue = element.getAttribute(attributeName)?.trim();
+      if (attributeValue != null && attributeValue.isNotEmpty) {
+        return attributeValue;
+      }
+    }
+
+    return null;
+  }
+
+  static Map<String, String> _parseInlineStyleDeclarations(String? rawStyle) {
+    if (rawStyle == null || rawStyle.trim().isEmpty) {
+      return const <String, String>{};
+    }
+
+    final declarations = <String, String>{};
+    for (final entry in rawStyle.split(';')) {
+      final separator = entry.indexOf(':');
+      if (separator <= 0) {
+        continue;
+      }
+      final key = entry.substring(0, separator).trim().toLowerCase();
+      if (key.isEmpty) {
+        continue;
+      }
+      final value = _stripImportantSuffix(entry.substring(separator + 1));
+      if (value.isEmpty) {
+        continue;
+      }
+      declarations[key] = value;
+    }
+
+    return declarations;
+  }
+
+  static String _stripImportantSuffix(String rawValue) {
+    final trimmed = rawValue.trim();
+    final lowercase = trimmed.toLowerCase();
+    final importantIndex = lowercase.lastIndexOf('!important');
+    if (importantIndex < 0) {
+      return trimmed;
+    }
+    return trimmed.substring(0, importantIndex).trim();
+  }
+
+  static SvgChannelSelector _parseChannelSelector(String raw) {
+    switch (raw.trim().toUpperCase()) {
+      case 'R':
+        return SvgChannelSelector.r;
+      case 'G':
+        return SvgChannelSelector.g;
+      case 'B':
+        return SvgChannelSelector.b;
+      case 'A':
+      default:
+        return SvgChannelSelector.a;
+    }
+  }
+
+  static SvgConvolveEdgeMode _parseConvolveEdgeMode(String? raw) {
+    switch (raw?.trim().toLowerCase()) {
+      case 'wrap':
+        return SvgConvolveEdgeMode.wrap;
+      case 'none':
+        return SvgConvolveEdgeMode.none;
+      case 'duplicate':
+      default:
+        return SvgConvolveEdgeMode.duplicate;
+    }
+  }
+
+  static SvgTurbulenceType _parseTurbulenceType(String? raw) {
+    switch (raw?.trim().toLowerCase()) {
+      case 'fractalnoise':
+        return SvgTurbulenceType.fractalNoise;
+      case 'turbulence':
+      default:
+        return SvgTurbulenceType.turbulence;
+    }
+  }
+
+  static SvgTurbulenceStitchTiles _parseTurbulenceStitchTiles(String? raw) {
+    switch (raw?.trim().toLowerCase()) {
+      case 'stitch':
+        return SvgTurbulenceStitchTiles.stitch;
+      case 'nostitch':
+      default:
+        return SvgTurbulenceStitchTiles.noStitch;
+    }
+  }
+
+  static SvgComponentTransferType _parseComponentTransferType(String? raw) {
+    switch (raw?.trim().toLowerCase()) {
+      case 'table':
+        return SvgComponentTransferType.table;
+      case 'discrete':
+        return SvgComponentTransferType.discrete;
+      case 'linear':
+        return SvgComponentTransferType.linear;
+      case 'gamma':
+        return SvgComponentTransferType.gamma;
+      case 'identity':
+      default:
+        return SvgComponentTransferType.identity;
+    }
+  }
+
+  static bool _parseSvgBoolean(String? raw) {
+    if (raw == null) {
+      return false;
+    }
+    switch (raw.trim().toLowerCase()) {
+      case '1':
+      case 'true':
+      case 'yes':
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  static int _parseIntWithDefault(String? raw, int fallback) {
+    if (raw == null || raw.trim().isEmpty) {
+      return fallback;
+    }
+    final parsed = double.tryParse(raw.trim());
+    if (parsed == null) {
+      return fallback;
+    }
+    return parsed.round();
   }
 
   /// Парсит CSS <style> элементы и извлекает @keyframes
@@ -841,6 +1394,9 @@ class SvgParser {
     'stroke-miterlimit',
     'stroke-dashoffset',
     'font-size',
+    'letter-spacing',
+    'word-spacing',
+    'textLength',
     'offset',
   };
 
@@ -869,21 +1425,5 @@ class SvgParser {
     'filter',
   };
 
-  static const Map<String, ui.Color> _namedColors = {
-    'black': ui.Color(0xFF000000),
-    'white': ui.Color(0xFFFFFFFF),
-    'red': ui.Color(0xFFFF0000),
-    'green': ui.Color(0xFF008000),
-    'blue': ui.Color(0xFF0000FF),
-    'yellow': ui.Color(0xFFFFFF00),
-    'cyan': ui.Color(0xFF00FFFF),
-    'magenta': ui.Color(0xFFFF00FF),
-    'gray': ui.Color(0xFF808080),
-    'grey': ui.Color(0xFF808080),
-    'orange': ui.Color(0xFFFFA500),
-    'purple': ui.Color(0xFF800080),
-    'pink': ui.Color(0xFFFFC0CB),
-    'brown': ui.Color(0xFFA52A2A),
-    // TODO: добавить полный список CSS named colors
-  };
+  static const Map<String, ui.Color> _namedColors = cssNamedColors;
 }

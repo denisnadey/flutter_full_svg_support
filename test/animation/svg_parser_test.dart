@@ -121,6 +121,23 @@ void main() {
       expect(rect.getAttributeValue('height'), equals(40.0));
     });
 
+    test('parses text spacing attributes as numeric values', () {
+      const svgXml = '''
+        <svg>
+          <text id="label" x="10" y="20" font-size="16" letter-spacing="12" word-spacing="18" textLength="64">A A</text>
+        </svg>
+      ''';
+
+      final doc = SvgParser.parse(svgXml);
+      final text = doc.root.children[0];
+
+      expect(text.tagName, equals('text'));
+      expect(text.getAttributeValue('font-size'), equals(16.0));
+      expect(text.getAttributeValue('letter-spacing'), equals(12.0));
+      expect(text.getAttributeValue('word-spacing'), equals(18.0));
+      expect(text.getAttributeValue('textLength'), equals(64.0));
+    });
+
     test('parses circle element', () {
       const svgXml = '''
         <svg>
@@ -271,6 +288,31 @@ void main() {
       expect(
         doc.root.children[2].getAttributeValue('fill'),
         equals(const ui.Color(0xFF008000)),
+      );
+    });
+
+    test('parses extended CSS named colors', () {
+      const svgXml = '''
+        <svg>
+          <rect fill="rebeccapurple"/>
+          <circle fill="lightgoldenrodyellow"/>
+          <ellipse fill="darkslategray"/>
+        </svg>
+      ''';
+
+      final doc = SvgParser.parse(svgXml);
+
+      expect(
+        doc.root.children[0].getAttributeValue('fill'),
+        equals(const ui.Color(0xFF663399)),
+      );
+      expect(
+        doc.root.children[1].getAttributeValue('fill'),
+        equals(const ui.Color(0xFFFAFAD2)),
+      );
+      expect(
+        doc.root.children[2].getAttributeValue('fill'),
+        equals(const ui.Color(0xFF2F4F4F)),
       );
     });
 

@@ -7,6 +7,30 @@ enum SvgFilterType {
   /// Gaussian blur - размытие
   gaussianBlur,
 
+  /// Morphology - дилатация/эрозия альфа-маски
+  morphology,
+
+  /// Displacement map - смещение по карте каналов (baseline pass-through)
+  displacementMap,
+
+  /// Image - внешний источник изображения (baseline graph pass-through)
+  image,
+
+  /// Convolve matrix - свертка ядром (baseline graph pass-through)
+  convolveMatrix,
+
+  /// Turbulence - процедурный шум (baseline graph pass-through)
+  turbulence,
+
+  /// Component transfer - поканальная функция цвета (baseline graph pass-through)
+  componentTransfer,
+
+  /// Diffuse lighting - диффузное освещение (baseline graph pass-through)
+  diffuseLighting,
+
+  /// Specular lighting - зеркальное освещение (baseline graph pass-through)
+  specularLighting,
+
   /// Offset - смещение результата
   offset,
 
@@ -22,11 +46,86 @@ enum SvgFilterType {
   /// Merge - объединение нескольких входов (feMerge/feMergeNode)
   merge,
 
+  /// Tile - повторение входного изображения (baseline pass-through)
+  tile,
+
   /// Drop shadow - тень
   dropShadow,
 
   /// Color matrix - цветовые трансформации
   colorMatrix,
+}
+
+/// Оператор feMorphology
+enum SvgMorphologyOperator {
+  /// Эрозия (сужение)
+  erode,
+
+  /// Дилатация (расширение)
+  dilate,
+}
+
+/// Селектор канала для filter primitives с channel selector.
+enum SvgChannelSelector {
+  /// Red channel
+  r,
+
+  /// Green channel
+  g,
+
+  /// Blue channel
+  b,
+
+  /// Alpha channel
+  a,
+}
+
+/// Режим обработки краев для feConvolveMatrix.
+enum SvgConvolveEdgeMode {
+  /// duplicate
+  duplicate,
+
+  /// wrap
+  wrap,
+
+  /// none
+  none,
+}
+
+/// Тип генерации шума для feTurbulence.
+enum SvgTurbulenceType {
+  /// turbulence
+  turbulence,
+
+  /// fractalNoise
+  fractalNoise,
+}
+
+/// Режим тайлинга шума для feTurbulence.
+enum SvgTurbulenceStitchTiles {
+  /// noStitch
+  noStitch,
+
+  /// stitch
+  stitch,
+}
+
+/// Тип функции канала для feComponentTransfer.
+enum SvgComponentTransferType {
+  /// identity
+  identity,
+
+  /// table
+  table,
+
+  /// discrete
+  discrete,
+
+  /// linear
+  linear,
+
+  /// gamma
+  gamma,
 }
 
 /// Один проход отрисовки фильтра для source-графики.
@@ -39,6 +138,8 @@ class SvgFilterPaintPass {
     this.colorFilter,
     this.blendMode,
     this.offset = ui.Offset.zero,
+    this.paintFill = true,
+    this.paintStroke = true,
   });
 
   static const SvgFilterPaintPass identity = SvgFilterPaintPass();
@@ -47,20 +148,41 @@ class SvgFilterPaintPass {
   final ui.ColorFilter? colorFilter;
   final ui.BlendMode? blendMode;
   final ui.Offset offset;
+  final bool paintFill;
+  final bool paintStroke;
 
   SvgFilterPaintPass copyWith({
     ui.ImageFilter? imageFilter,
     ui.ColorFilter? colorFilter,
     ui.BlendMode? blendMode,
     ui.Offset? offset,
+    bool? paintFill,
+    bool? paintStroke,
   }) {
     return SvgFilterPaintPass(
       imageFilter: imageFilter ?? this.imageFilter,
       colorFilter: colorFilter ?? this.colorFilter,
       blendMode: blendMode ?? this.blendMode,
       offset: offset ?? this.offset,
+      paintFill: paintFill ?? this.paintFill,
+      paintStroke: paintStroke ?? this.paintStroke,
     );
   }
+}
+
+/// Optional context for built-in filter inputs tied to element paint.
+class SvgFilterSourceContext {
+  const SvgFilterSourceContext({
+    this.fillPaint,
+    this.strokePaint,
+    this.backgroundImage,
+    this.backgroundAlpha,
+  });
+
+  final List<SvgFilterPaintPass>? fillPaint;
+  final List<SvgFilterPaintPass>? strokePaint;
+  final List<SvgFilterPaintPass>? backgroundImage;
+  final List<SvgFilterPaintPass>? backgroundAlpha;
 }
 
 /// Offset фильтр
@@ -265,6 +387,18 @@ class SvgMergeFilter extends SvgFilter {
   ui.ImageFilter? apply() => null;
 }
 
+/// feTile: baseline-pass-through примитив.
+///
+/// В текущем пайплайне не выполняет растеризованное тайлинг-повторение, но
+/// сохраняет граф зависимостей `in/result` и передаёт вход дальше по цепочке.
+class SvgTileFilter extends SvgFilter {
+  SvgTileFilter({required super.id, super.input, super.resultName})
+    : super(type: SvgFilterType.tile);
+
+  @override
+  ui.ImageFilter? apply() => null;
+}
+
 /// Парсит feBlend mode в Flutter BlendMode.
 ui.BlendMode parseSvgBlendMode(String? rawMode) {
   switch ((rawMode ?? 'normal').trim().toLowerCase()) {
@@ -278,6 +412,26 @@ ui.BlendMode parseSvgBlendMode(String? rawMode) {
       return ui.BlendMode.lighten;
     case 'overlay':
       return ui.BlendMode.overlay;
+    case 'color-dodge':
+      return ui.BlendMode.colorDodge;
+    case 'color-burn':
+      return ui.BlendMode.colorBurn;
+    case 'hard-light':
+      return ui.BlendMode.hardLight;
+    case 'soft-light':
+      return ui.BlendMode.softLight;
+    case 'difference':
+      return ui.BlendMode.difference;
+    case 'exclusion':
+      return ui.BlendMode.exclusion;
+    case 'hue':
+      return ui.BlendMode.hue;
+    case 'saturation':
+      return ui.BlendMode.saturation;
+    case 'color':
+      return ui.BlendMode.color;
+    case 'luminosity':
+      return ui.BlendMode.luminosity;
     case 'normal':
     default:
       return ui.BlendMode.srcOver;
@@ -332,6 +486,361 @@ class SvgGaussianBlurFilter extends SvgFilter {
     // В SVG stdDeviation = sigma
     return ui.ImageFilter.blur(sigmaX: stdDeviationX, sigmaY: stdDeviationY);
   }
+}
+
+/// Morphology фильтр
+///
+/// Использует ImageFilter.erode/dilate для базовой SVG feMorphology-поддержки.
+class SvgMorphologyFilter extends SvgFilter {
+  /// Оператор morphology: erode или dilate.
+  final SvgMorphologyOperator operatorType;
+
+  /// Радиус по X.
+  final double radiusX;
+
+  /// Радиус по Y.
+  final double radiusY;
+
+  SvgMorphologyFilter({
+    required super.id,
+    required this.operatorType,
+    required this.radiusX,
+    required this.radiusY,
+    super.input,
+    super.resultName,
+  }) : super(type: SvgFilterType.morphology);
+
+  @override
+  ui.ImageFilter? apply() {
+    final clampedX = radiusX.clamp(0.0, 4096.0).toDouble();
+    final clampedY = radiusY.clamp(0.0, 4096.0).toDouble();
+    if (clampedX <= 0.0 && clampedY <= 0.0) {
+      return null;
+    }
+    switch (operatorType) {
+      case SvgMorphologyOperator.dilate:
+        return ui.ImageFilter.dilate(radiusX: clampedX, radiusY: clampedY);
+      case SvgMorphologyOperator.erode:
+        return ui.ImageFilter.erode(radiusX: clampedX, radiusY: clampedY);
+    }
+  }
+}
+
+/// Displacement map фильтр
+///
+/// Базовая поддержка хранит параметры и графовые входы (`in`/`in2`/`result`).
+/// В текущем пайплайне применяется как pass-through для `in`.
+class SvgDisplacementMapFilter extends SvgFilter {
+  /// Масштаб смещения.
+  final double scale;
+
+  /// Канал для X-компоненты смещения.
+  final SvgChannelSelector xChannelSelector;
+
+  /// Канал для Y-компоненты смещения.
+  final SvgChannelSelector yChannelSelector;
+
+  SvgDisplacementMapFilter({
+    required super.id,
+    required this.scale,
+    required this.xChannelSelector,
+    required this.yChannelSelector,
+    super.input,
+    super.input2,
+    super.resultName,
+  }) : super(type: SvgFilterType.displacementMap);
+
+  @override
+  ui.ImageFilter? apply() => null;
+}
+
+/// feImage primitive
+///
+/// Baseline-поддержка хранит параметры внешнего источника. В текущем пайплайне
+/// рендерится как graph pass-through до появления растеризации внешнего источника.
+class SvgFeImageFilter extends SvgFilter {
+  /// URL/IRI источника изображения.
+  final String? href;
+
+  /// Геометрия под-прямоугольника примитива.
+  final double x;
+  final double y;
+  final double width;
+  final double height;
+
+  /// Значение preserveAspectRatio у примитива.
+  final String? preserveAspectRatio;
+
+  SvgFeImageFilter({
+    required super.id,
+    this.href,
+    this.x = 0.0,
+    this.y = 0.0,
+    this.width = 0.0,
+    this.height = 0.0,
+    this.preserveAspectRatio,
+    super.input,
+    super.resultName,
+  }) : super(type: SvgFilterType.image);
+
+  @override
+  ui.ImageFilter? apply() => null;
+}
+
+/// feConvolveMatrix primitive
+///
+/// Baseline-поддержка хранит параметры свертки для parity-аудита и графа.
+/// До полноценной растерной реализации примитив ведет себя как pass-through.
+class SvgConvolveMatrixFilter extends SvgFilter {
+  /// Размер ядра свертки.
+  final int orderX;
+  final int orderY;
+
+  /// Матрица свертки.
+  final List<double> kernelMatrix;
+
+  /// Нормализация и смещение результата.
+  final double divisor;
+  final double bias;
+
+  /// Позиция целевого элемента ядра.
+  final int targetX;
+  final int targetY;
+
+  /// Поведение на границе.
+  final SvgConvolveEdgeMode edgeMode;
+
+  /// Размер единицы ядра в user space (опционально).
+  final double? kernelUnitLengthX;
+  final double? kernelUnitLengthY;
+
+  /// Сохранять альфу входа.
+  final bool preserveAlpha;
+
+  SvgConvolveMatrixFilter({
+    required super.id,
+    required this.orderX,
+    required this.orderY,
+    required this.kernelMatrix,
+    required this.divisor,
+    required this.bias,
+    required this.targetX,
+    required this.targetY,
+    required this.edgeMode,
+    this.kernelUnitLengthX,
+    this.kernelUnitLengthY,
+    this.preserveAlpha = false,
+    super.input,
+    super.resultName,
+  }) : super(type: SvgFilterType.convolveMatrix);
+
+  @override
+  ui.ImageFilter? apply() => null;
+}
+
+/// feTurbulence primitive
+///
+/// Baseline-поддержка хранит параметры генератора шума для parity-аудита.
+/// До полноценной растерной реализации примитив ведет себя как pass-through.
+class SvgTurbulenceFilter extends SvgFilter {
+  /// Базовая частота шума по X/Y.
+  final double baseFrequencyX;
+  final double baseFrequencyY;
+
+  /// Количество октав.
+  final int numOctaves;
+
+  /// Seed генератора шума.
+  final double seed;
+
+  /// Режим тайлинга.
+  final SvgTurbulenceStitchTiles stitchTiles;
+
+  /// Тип функции шума.
+  final SvgTurbulenceType noiseType;
+
+  SvgTurbulenceFilter({
+    required super.id,
+    required this.baseFrequencyX,
+    required this.baseFrequencyY,
+    required this.numOctaves,
+    required this.seed,
+    required this.stitchTiles,
+    required this.noiseType,
+    super.input,
+    super.resultName,
+  }) : super(type: SvgFilterType.turbulence);
+
+  @override
+  ui.ImageFilter? apply() => null;
+}
+
+/// Параметры одной channel-функции (`feFuncR/G/B/A`) для feComponentTransfer.
+class SvgComponentTransferFunction {
+  const SvgComponentTransferFunction({
+    required this.type,
+    this.tableValues = const <double>[],
+    this.slope = 1.0,
+    this.intercept = 0.0,
+    this.amplitude = 1.0,
+    this.exponent = 1.0,
+    this.offset = 0.0,
+  });
+
+  final SvgComponentTransferType type;
+  final List<double> tableValues;
+  final double slope;
+  final double intercept;
+  final double amplitude;
+  final double exponent;
+  final double offset;
+}
+
+/// feComponentTransfer primitive
+///
+/// Baseline-поддержка хранит структуру channel-функций для parity-аудита.
+/// До полноценного color-apply примитив ведет себя как pass-through.
+class SvgComponentTransferFilter extends SvgFilter {
+  final SvgComponentTransferFunction? funcR;
+  final SvgComponentTransferFunction? funcG;
+  final SvgComponentTransferFunction? funcB;
+  final SvgComponentTransferFunction? funcA;
+
+  SvgComponentTransferFilter({
+    required super.id,
+    this.funcR,
+    this.funcG,
+    this.funcB,
+    this.funcA,
+    super.input,
+    super.resultName,
+  }) : super(type: SvgFilterType.componentTransfer);
+
+  @override
+  ui.ImageFilter? apply() => null;
+}
+
+/// Базовый тип источника света для lighting-примитивов.
+abstract class SvgLightSource {
+  const SvgLightSource();
+}
+
+/// `feDistantLight`
+class SvgDistantLightSource extends SvgLightSource {
+  const SvgDistantLightSource({required this.azimuth, required this.elevation});
+
+  final double azimuth;
+  final double elevation;
+}
+
+/// `fePointLight`
+class SvgPointLightSource extends SvgLightSource {
+  const SvgPointLightSource({
+    required this.x,
+    required this.y,
+    required this.z,
+  });
+
+  final double x;
+  final double y;
+  final double z;
+}
+
+/// `feSpotLight`
+class SvgSpotLightSource extends SvgLightSource {
+  const SvgSpotLightSource({
+    required this.x,
+    required this.y,
+    required this.z,
+    required this.pointsAtX,
+    required this.pointsAtY,
+    required this.pointsAtZ,
+    required this.specularExponent,
+    required this.limitingConeAngle,
+  });
+
+  final double x;
+  final double y;
+  final double z;
+  final double pointsAtX;
+  final double pointsAtY;
+  final double pointsAtZ;
+  final double specularExponent;
+  final double limitingConeAngle;
+}
+
+/// `feDiffuseLighting` primitive
+///
+/// Baseline-поддержка хранит параметры освещения и источник света.
+/// До полноценного light shading примитив ведет себя как pass-through.
+class SvgDiffuseLightingFilter extends SvgFilter {
+  final double x;
+  final double y;
+  final double width;
+  final double height;
+  final double surfaceScale;
+  final double diffuseConstant;
+  final double? kernelUnitLengthX;
+  final double? kernelUnitLengthY;
+  final ui.Color lightingColor;
+  final SvgLightSource? lightSource;
+
+  SvgDiffuseLightingFilter({
+    required super.id,
+    this.x = 0.0,
+    this.y = 0.0,
+    this.width = 0.0,
+    this.height = 0.0,
+    required this.surfaceScale,
+    required this.diffuseConstant,
+    this.kernelUnitLengthX,
+    this.kernelUnitLengthY,
+    required this.lightingColor,
+    this.lightSource,
+    super.input,
+    super.resultName,
+  }) : super(type: SvgFilterType.diffuseLighting);
+
+  @override
+  ui.ImageFilter? apply() => null;
+}
+
+/// `feSpecularLighting` primitive
+///
+/// Baseline-поддержка хранит параметры освещения и источник света.
+/// До полноценного light shading примитив ведет себя как pass-through.
+class SvgSpecularLightingFilter extends SvgFilter {
+  final double x;
+  final double y;
+  final double width;
+  final double height;
+  final double surfaceScale;
+  final double specularConstant;
+  final double specularExponent;
+  final double? kernelUnitLengthX;
+  final double? kernelUnitLengthY;
+  final ui.Color lightingColor;
+  final SvgLightSource? lightSource;
+
+  SvgSpecularLightingFilter({
+    required super.id,
+    this.x = 0.0,
+    this.y = 0.0,
+    this.width = 0.0,
+    this.height = 0.0,
+    required this.surfaceScale,
+    required this.specularConstant,
+    required this.specularExponent,
+    this.kernelUnitLengthX,
+    this.kernelUnitLengthY,
+    required this.lightingColor,
+    this.lightSource,
+    super.input,
+    super.resultName,
+  }) : super(type: SvgFilterType.specularLighting);
+
+  @override
+  ui.ImageFilter? apply() => null;
 }
 
 /// Drop Shadow фильтр
@@ -538,6 +1047,10 @@ class SvgColorMatrixFilter extends SvgFilter {
 class SvgFilters {
   /// Карта ID фильтра -> список примитивов в порядке объявления.
   final Map<String, List<SvgFilter>> _filters = {};
+  List<SvgFilterPaintPass>? _activeFillPaint;
+  List<SvgFilterPaintPass>? _activeStrokePaint;
+  List<SvgFilterPaintPass>? _activeBackgroundImage;
+  List<SvgFilterPaintPass>? _activeBackgroundAlpha;
 
   /// Добавить фильтр
   void add(SvgFilter filter) {
@@ -572,194 +1085,507 @@ class SvgFilters {
   ///
   /// Для `feDropShadow` и `feMerge` возвращает multi-pass результат,
   /// чтобы painter мог рендерить исходник и производные результаты по отдельности.
-  List<SvgFilterPaintPass> resolvePaintPasses(String id) {
+  List<SvgFilterPaintPass> resolvePaintPasses(
+    String id, {
+    SvgFilterSourceContext? sourceContext,
+  }) {
     final list = _filters[id];
     if (list == null || list.isEmpty) {
       return const <SvgFilterPaintPass>[SvgFilterPaintPass.identity];
     }
 
-    const sourceGraphic = <SvgFilterPaintPass>[SvgFilterPaintPass.identity];
-    final sourceAlpha = <SvgFilterPaintPass>[
-      const SvgFilterPaintPass(
-        colorFilter: ui.ColorFilter.mode(
-          ui.Color(0xFFFFFFFF),
-          ui.BlendMode.srcIn,
+    final previousFillPaint = _activeFillPaint;
+    final previousStrokePaint = _activeStrokePaint;
+    final previousBackgroundImage = _activeBackgroundImage;
+    final previousBackgroundAlpha = _activeBackgroundAlpha;
+    _activeFillPaint = sourceContext?.fillPaint == null
+        ? null
+        : <SvgFilterPaintPass>[...sourceContext!.fillPaint!];
+    _activeStrokePaint = sourceContext?.strokePaint == null
+        ? null
+        : <SvgFilterPaintPass>[...sourceContext!.strokePaint!];
+    _activeBackgroundImage = sourceContext?.backgroundImage == null
+        ? null
+        : <SvgFilterPaintPass>[...sourceContext!.backgroundImage!];
+    _activeBackgroundAlpha = sourceContext?.backgroundAlpha == null
+        ? null
+        : <SvgFilterPaintPass>[...sourceContext!.backgroundAlpha!];
+
+    try {
+      const sourceGraphic = <SvgFilterPaintPass>[SvgFilterPaintPass.identity];
+      final sourceAlpha = <SvgFilterPaintPass>[
+        const SvgFilterPaintPass(
+          colorFilter: ui.ColorFilter.mode(
+            ui.Color(0xFFFFFFFF),
+            ui.BlendMode.srcIn,
+          ),
         ),
-      ),
-    ];
+      ];
 
-    final namedResults = <String, List<SvgFilterPaintPass>>{};
-    var previous = <SvgFilterPaintPass>[...sourceGraphic];
+      final namedResults = <String, List<SvgFilterPaintPass>>{};
+      var previous = <SvgFilterPaintPass>[...sourceGraphic];
 
-    for (final primitive in list) {
-      List<SvgFilterPaintPass> output;
-      switch (primitive.type) {
-        case SvgFilterType.gaussianBlur:
-          final blur = primitive as SvgGaussianBlurFilter;
-          final input = _resolveInputPasses(
-            requestedInput: blur.input,
-            previous: previous,
-            namedResults: namedResults,
-            sourceGraphic: sourceGraphic,
-            sourceAlpha: sourceAlpha,
-          );
-          final blurFilter = blur.apply();
-          output = input
-              .map(
-                (pass) => pass.copyWith(
-                  imageFilter: _composeImageFilter(
-                    blurFilter,
-                    pass.imageFilter,
-                  ),
-                ),
-              )
-              .toList(growable: false);
-
-        case SvgFilterType.offset:
-          final offset = primitive as SvgOffsetFilter;
-          final input = _resolveInputPasses(
-            requestedInput: offset.input,
-            previous: previous,
-            namedResults: namedResults,
-            sourceGraphic: sourceGraphic,
-            sourceAlpha: sourceAlpha,
-          );
-          output = input
-              .map(
-                (pass) => pass.copyWith(
-                  offset: pass.offset + ui.Offset(offset.dx, offset.dy),
-                ),
-              )
-              .toList(growable: false);
-
-        case SvgFilterType.flood:
-          final flood = primitive as SvgFloodFilter;
-          output = <SvgFilterPaintPass>[
-            SvgFilterPaintPass(
-              colorFilter: ui.ColorFilter.mode(
-                flood.effectiveColor,
-                ui.BlendMode.src,
-              ),
-            ),
-          ];
-
-        case SvgFilterType.blend:
-          final blend = primitive as SvgBlendFilter;
-          final input = _resolveInputPasses(
-            requestedInput: blend.input,
-            previous: previous,
-            namedResults: namedResults,
-            sourceGraphic: sourceGraphic,
-            sourceAlpha: sourceAlpha,
-          );
-          output = input
-              .map((pass) => pass.copyWith(blendMode: blend.mode))
-              .toList(growable: false);
-
-        case SvgFilterType.composite:
-          final composite = primitive as SvgCompositeFilter;
-          final input = _resolveInputPasses(
-            requestedInput: composite.input,
-            previous: previous,
-            namedResults: namedResults,
-            sourceGraphic: sourceGraphic,
-            sourceAlpha: sourceAlpha,
-          );
-          if (composite.mode == null) {
-            output = input;
-          } else {
+      for (final primitive in list) {
+        List<SvgFilterPaintPass> output;
+        switch (primitive.type) {
+          case SvgFilterType.gaussianBlur:
+            final blur = primitive as SvgGaussianBlurFilter;
+            final input = _resolveInputPasses(
+              requestedInput: blur.input,
+              previous: previous,
+              namedResults: namedResults,
+              sourceGraphic: sourceGraphic,
+              sourceAlpha: sourceAlpha,
+            );
+            final blurFilter = blur.apply();
             output = input
-                .map((pass) => pass.copyWith(blendMode: composite.mode))
+                .map(
+                  (pass) => pass.copyWith(
+                    imageFilter: _composeImageFilter(
+                      blurFilter,
+                      pass.imageFilter,
+                    ),
+                  ),
+                )
                 .toList(growable: false);
-          }
 
-        case SvgFilterType.merge:
-          final merge = primitive as SvgMergeFilter;
-          final merged = <SvgFilterPaintPass>[];
-          if (merge.nodeInputs.isEmpty) {
-            merged.addAll(previous);
-          } else {
-            for (final nodeInput in merge.nodeInputs) {
-              merged.addAll(
-                _resolveInputPasses(
-                  requestedInput: nodeInput,
+          case SvgFilterType.morphology:
+            final morphology = primitive as SvgMorphologyFilter;
+            final input = _resolveInputPasses(
+              requestedInput: morphology.input,
+              previous: previous,
+              namedResults: namedResults,
+              sourceGraphic: sourceGraphic,
+              sourceAlpha: sourceAlpha,
+            );
+            final morphologyFilter = morphology.apply();
+            if (morphologyFilter == null) {
+              output = input;
+            } else {
+              output = input
+                  .map(
+                    (pass) => pass.copyWith(
+                      imageFilter: _composeImageFilter(
+                        morphologyFilter,
+                        pass.imageFilter,
+                      ),
+                    ),
+                  )
+                  .toList(growable: false);
+            }
+
+          case SvgFilterType.displacementMap:
+            final displacement = primitive as SvgDisplacementMapFilter;
+            final input = _resolveInputPasses(
+              requestedInput: displacement.input,
+              previous: previous,
+              namedResults: namedResults,
+              sourceGraphic: sourceGraphic,
+              sourceAlpha: sourceAlpha,
+            );
+            final zeroScale = displacement.scale.abs() <= 0.000001;
+            final input2Ref = displacement.input2?.trim();
+            final input2IsNone = _isNoneInputReference(input2Ref);
+            if (!zeroScale &&
+                input2Ref != null &&
+                input2Ref.isNotEmpty &&
+                !input2IsNone) {
+              final input2 = _resolveInputPasses(
+                requestedInput: input2Ref,
+                previous: previous,
+                namedResults: namedResults,
+                sourceGraphic: sourceGraphic,
+                sourceAlpha: sourceAlpha,
+              );
+              // If explicit in2 cannot be resolved, this primitive produces no
+              // output instead of inheriting previous output.
+              output = input2.isEmpty ? const <SvgFilterPaintPass>[] : input;
+            } else {
+              // scale=0 is identity displacement and does not require map input.
+              output = input;
+            }
+
+          case SvgFilterType.image:
+            final imagePrimitive = primitive as SvgFeImageFilter;
+            final inputRef = imagePrimitive.input?.trim();
+            if (inputRef != null && inputRef.isNotEmpty) {
+              output = _resolveInputPasses(
+                requestedInput: inputRef,
+                previous: previous,
+                namedResults: namedResults,
+                sourceGraphic: sourceGraphic,
+                sourceAlpha: sourceAlpha,
+              );
+            } else if ((imagePrimitive.href ?? '').trim().isNotEmpty) {
+              // Non-source primitive semantics: feImage with href starts a new
+              // primitive output instead of inheriting previous chain state.
+              // Baseline renderer uses SourceGraphic as placeholder source.
+              output = <SvgFilterPaintPass>[...sourceGraphic];
+            } else {
+              output = previous.isEmpty
+                  ? <SvgFilterPaintPass>[...sourceGraphic]
+                  : previous;
+            }
+
+          case SvgFilterType.convolveMatrix:
+            final convolve = primitive as SvgConvolveMatrixFilter;
+            output = _resolveInputPasses(
+              requestedInput: convolve.input,
+              previous: previous,
+              namedResults: namedResults,
+              sourceGraphic: sourceGraphic,
+              sourceAlpha: sourceAlpha,
+            );
+
+          case SvgFilterType.turbulence:
+            final turbulence = primitive as SvgTurbulenceFilter;
+            output = _resolveInputPasses(
+              requestedInput: turbulence.input,
+              previous: previous,
+              namedResults: namedResults,
+              sourceGraphic: sourceGraphic,
+              sourceAlpha: sourceAlpha,
+            );
+
+          case SvgFilterType.componentTransfer:
+            final componentTransfer = primitive as SvgComponentTransferFilter;
+            output = _resolveInputPasses(
+              requestedInput: componentTransfer.input,
+              previous: previous,
+              namedResults: namedResults,
+              sourceGraphic: sourceGraphic,
+              sourceAlpha: sourceAlpha,
+            );
+
+          case SvgFilterType.diffuseLighting:
+            final diffuseLighting = primitive as SvgDiffuseLightingFilter;
+            output = _resolveInputPasses(
+              requestedInput: diffuseLighting.input,
+              previous: previous,
+              namedResults: namedResults,
+              sourceGraphic: sourceGraphic,
+              sourceAlpha: sourceAlpha,
+            );
+
+          case SvgFilterType.specularLighting:
+            final specularLighting = primitive as SvgSpecularLightingFilter;
+            output = _resolveInputPasses(
+              requestedInput: specularLighting.input,
+              previous: previous,
+              namedResults: namedResults,
+              sourceGraphic: sourceGraphic,
+              sourceAlpha: sourceAlpha,
+            );
+
+          case SvgFilterType.offset:
+            final offset = primitive as SvgOffsetFilter;
+            final input = _resolveInputPasses(
+              requestedInput: offset.input,
+              previous: previous,
+              namedResults: namedResults,
+              sourceGraphic: sourceGraphic,
+              sourceAlpha: sourceAlpha,
+            );
+            output = input
+                .map(
+                  (pass) => pass.copyWith(
+                    offset: pass.offset + ui.Offset(offset.dx, offset.dy),
+                  ),
+                )
+                .toList(growable: false);
+
+          case SvgFilterType.flood:
+            final flood = primitive as SvgFloodFilter;
+            output = <SvgFilterPaintPass>[
+              SvgFilterPaintPass(
+                colorFilter: ui.ColorFilter.mode(
+                  flood.effectiveColor,
+                  ui.BlendMode.src,
+                ),
+              ),
+            ];
+
+          case SvgFilterType.blend:
+            final blend = primitive as SvgBlendFilter;
+            final inputRef = blend.input?.trim();
+            final input = _resolveInputPasses(
+              requestedInput: inputRef,
+              previous: previous,
+              namedResults: namedResults,
+              sourceGraphic: sourceGraphic,
+              sourceAlpha: sourceAlpha,
+            );
+            if (inputRef != null && inputRef.isNotEmpty && input.isEmpty) {
+              output = const <SvgFilterPaintPass>[];
+              break;
+            }
+            final blendedTop = input
+                .map((pass) => pass.copyWith(blendMode: blend.mode))
+                .toList(growable: false);
+            final input2Ref = blend.input2?.trim();
+            final input2IsNone = _isNoneInputReference(input2Ref);
+            if (input2Ref == null || input2Ref.isEmpty || input2IsNone) {
+              output = blendedTop;
+            } else {
+              final input2 = _resolveInputPasses(
+                requestedInput: input2Ref,
+                previous: previous,
+                namedResults: namedResults,
+                sourceGraphic: sourceGraphic,
+                sourceAlpha: sourceAlpha,
+              );
+              if (input2.isEmpty) {
+                output = const <SvgFilterPaintPass>[];
+              } else {
+                output = <SvgFilterPaintPass>[...input2, ...blendedTop];
+              }
+            }
+
+          case SvgFilterType.composite:
+            final composite = primitive as SvgCompositeFilter;
+            final inputRef = composite.input?.trim();
+            final input = _resolveInputPasses(
+              requestedInput: inputRef,
+              previous: previous,
+              namedResults: namedResults,
+              sourceGraphic: sourceGraphic,
+              sourceAlpha: sourceAlpha,
+            );
+            if (inputRef != null && inputRef.isNotEmpty && input.isEmpty) {
+              output = const <SvgFilterPaintPass>[];
+              break;
+            }
+            if (composite.mode == null) {
+              output = _resolveArithmeticCompositePasses(
+                composite: composite,
+                input: input,
+                previous: previous,
+                namedResults: namedResults,
+                sourceGraphic: sourceGraphic,
+                sourceAlpha: sourceAlpha,
+              );
+            } else {
+              final compositedTop = input
+                  .map((pass) => pass.copyWith(blendMode: composite.mode))
+                  .toList(growable: false);
+              final input2Ref = composite.input2?.trim();
+              final input2IsNone = _isNoneInputReference(input2Ref);
+              if (input2Ref == null || input2Ref.isEmpty || input2IsNone) {
+                output = compositedTop;
+              } else {
+                final input2 = _resolveInputPasses(
+                  requestedInput: input2Ref,
                   previous: previous,
                   namedResults: namedResults,
                   sourceGraphic: sourceGraphic,
                   sourceAlpha: sourceAlpha,
-                ),
-              );
+                );
+                if (input2.isEmpty) {
+                  output = const <SvgFilterPaintPass>[];
+                } else {
+                  output = <SvgFilterPaintPass>[...input2, ...compositedTop];
+                }
+              }
             }
-          }
-          output = merged.isEmpty ? previous : merged;
 
-        case SvgFilterType.dropShadow:
-          final shadow = primitive as SvgDropShadowFilter;
-          final input = _resolveInputPasses(
-            requestedInput: shadow.input,
-            previous: previous,
-            namedResults: namedResults,
-            sourceGraphic: sourceGraphic,
-            sourceAlpha: sourceAlpha,
-          );
-          final shadowFilter = shadow.apply();
-          final shadowPasses = input
+          case SvgFilterType.merge:
+            final merge = primitive as SvgMergeFilter;
+            final merged = <SvgFilterPaintPass>[];
+            if (merge.nodeInputs.isEmpty) {
+              merged.addAll(previous);
+              output = merged.isEmpty ? previous : merged;
+            } else {
+              for (final nodeInput in merge.nodeInputs) {
+                merged.addAll(
+                  _resolveInputPasses(
+                    requestedInput: nodeInput,
+                    previous: previous,
+                    namedResults: namedResults,
+                    sourceGraphic: sourceGraphic,
+                    sourceAlpha: sourceAlpha,
+                    // Explicit unresolved merge-node inputs are treated as
+                    // empty inputs. Implicit node input (missing `in`) still
+                    // resolves via previous-chain semantics.
+                  ),
+                );
+              }
+              output = merged;
+            }
+
+          case SvgFilterType.tile:
+            final tile = primitive as SvgTileFilter;
+            output = _resolveInputPasses(
+              requestedInput: tile.input,
+              previous: previous,
+              namedResults: namedResults,
+              sourceGraphic: sourceGraphic,
+              sourceAlpha: sourceAlpha,
+            );
+
+          case SvgFilterType.dropShadow:
+            final shadow = primitive as SvgDropShadowFilter;
+            final input = _resolveInputPasses(
+              requestedInput: shadow.input,
+              previous: previous,
+              namedResults: namedResults,
+              sourceGraphic: sourceGraphic,
+              sourceAlpha: sourceAlpha,
+            );
+            final shadowFilter = shadow.apply();
+            final shadowPasses = input
+                .map(
+                  (pass) => SvgFilterPaintPass(
+                    imageFilter: _composeImageFilter(
+                      shadowFilter,
+                      pass.imageFilter,
+                    ),
+                    colorFilter: ui.ColorFilter.mode(
+                      shadow.effectiveShadowColor,
+                      ui.BlendMode.srcIn,
+                    ),
+                    blendMode: ui.BlendMode.srcOver,
+                    offset: pass.offset + shadow.offset,
+                    paintFill: pass.paintFill,
+                    paintStroke: pass.paintStroke,
+                  ),
+                )
+                .toList(growable: false);
+            output = <SvgFilterPaintPass>[...shadowPasses, ...input];
+
+          case SvgFilterType.colorMatrix:
+            final colorMatrix = primitive as SvgColorMatrixFilter;
+            final input = _resolveInputPasses(
+              requestedInput: colorMatrix.input,
+              previous: previous,
+              namedResults: namedResults,
+              sourceGraphic: sourceGraphic,
+              sourceAlpha: sourceAlpha,
+            );
+            final colorFilter = colorMatrix.colorFilter();
+            if (colorFilter == null) {
+              output = input;
+            } else {
+              output = input
+                  .map((pass) => pass.copyWith(colorFilter: colorFilter))
+                  .toList(growable: false);
+            }
+        }
+
+        previous = output;
+        final resultName = primitive.resultName?.trim();
+        if (resultName != null && resultName.isNotEmpty) {
+          namedResults[resultName] = output
               .map(
                 (pass) => SvgFilterPaintPass(
-                  imageFilter: _composeImageFilter(
-                    shadowFilter,
-                    pass.imageFilter,
-                  ),
-                  colorFilter: ui.ColorFilter.mode(
-                    shadow.effectiveShadowColor,
-                    ui.BlendMode.srcIn,
-                  ),
-                  blendMode: ui.BlendMode.srcOver,
-                  offset: pass.offset + shadow.offset,
+                  imageFilter: pass.imageFilter,
+                  colorFilter: pass.colorFilter,
+                  blendMode: pass.blendMode,
+                  offset: pass.offset,
+                  paintFill: pass.paintFill,
+                  paintStroke: pass.paintStroke,
                 ),
               )
               .toList(growable: false);
-          output = <SvgFilterPaintPass>[...shadowPasses, ...input];
-
-        case SvgFilterType.colorMatrix:
-          final colorMatrix = primitive as SvgColorMatrixFilter;
-          final input = _resolveInputPasses(
-            requestedInput: colorMatrix.input,
-            previous: previous,
-            namedResults: namedResults,
-            sourceGraphic: sourceGraphic,
-            sourceAlpha: sourceAlpha,
-          );
-          final colorFilter = colorMatrix.colorFilter();
-          if (colorFilter == null) {
-            output = input;
-          } else {
-            output = input
-                .map((pass) => pass.copyWith(colorFilter: colorFilter))
-                .toList(growable: false);
-          }
+        }
       }
 
-      previous = output;
-      final resultName = primitive.resultName?.trim();
-      if (resultName != null && resultName.isNotEmpty) {
-        namedResults[resultName] = output
-            .map(
-              (pass) => SvgFilterPaintPass(
-                imageFilter: pass.imageFilter,
-                colorFilter: pass.colorFilter,
-                blendMode: pass.blendMode,
-                offset: pass.offset,
-              ),
-            )
-            .toList(growable: false);
+      if (previous.isEmpty) {
+        return const <SvgFilterPaintPass>[SvgFilterPaintPass.identity];
       }
+      return previous;
+    } finally {
+      _activeFillPaint = previousFillPaint;
+      _activeStrokePaint = previousStrokePaint;
+      _activeBackgroundImage = previousBackgroundImage;
+      _activeBackgroundAlpha = previousBackgroundAlpha;
+    }
+  }
+
+  List<SvgFilterPaintPass> _resolveArithmeticCompositePasses({
+    required SvgCompositeFilter composite,
+    required List<SvgFilterPaintPass> input,
+    required List<SvgFilterPaintPass> previous,
+    required Map<String, List<SvgFilterPaintPass>> namedResults,
+    required List<SvgFilterPaintPass> sourceGraphic,
+    required List<SvgFilterPaintPass> sourceAlpha,
+  }) {
+    final k1 = composite.k1;
+    final k2 = composite.k2;
+    final k3 = composite.k3;
+    final k4 = composite.k4;
+
+    final k1Zero = _isApproximately(k1, 0.0);
+    final k2Zero = _isApproximately(k2, 0.0);
+    final k3Zero = _isApproximately(k3, 0.0);
+    final k4Zero = _isApproximately(k4, 0.0);
+    final k2One = _isApproximately(k2, 1.0);
+    final k3One = _isApproximately(k3, 1.0);
+
+    // arithmetic with all-zero coefficients produces transparent black.
+    if (k1Zero && k2Zero && k3Zero && k4Zero) {
+      return const <SvgFilterPaintPass>[];
     }
 
-    if (previous.isEmpty) {
-      return const <SvgFilterPaintPass>[SvgFilterPaintPass.identity];
+    // arithmetic(k2=1) degenerates to input image.
+    if (k1Zero && k3Zero && k4Zero && k2One) {
+      return input;
     }
-    return previous;
+
+    final input2Ref = composite.input2?.trim();
+    final input2IsNone = _isNoneInputReference(input2Ref);
+    List<SvgFilterPaintPass> resolveInput2() {
+      if (input2IsNone) {
+        return const <SvgFilterPaintPass>[];
+      }
+      return _resolveInputPasses(
+        requestedInput: input2Ref,
+        previous: previous,
+        namedResults: namedResults,
+        sourceGraphic: sourceGraphic,
+        sourceAlpha: sourceAlpha,
+      );
+    }
+
+    // arithmetic(k3=1) degenerates to in2.
+    if (k1Zero && k2Zero && k4Zero && k3One) {
+      if (input2Ref == null || input2Ref.isEmpty) {
+        return input;
+      }
+      final input2 = resolveInput2();
+      return input2.isEmpty ? const <SvgFilterPaintPass>[] : input2;
+    }
+
+    // arithmetic(k2=1,k3=1) approximates additive composition of in and in2.
+    if (k1Zero && k4Zero && k2One && k3One) {
+      if (input2Ref == null || input2Ref.isEmpty) {
+        return input;
+      }
+      final input2 = resolveInput2();
+      if (input2.isEmpty && !input2IsNone) {
+        return const <SvgFilterPaintPass>[];
+      }
+      final additiveTop = input
+          .map((pass) => pass.copyWith(blendMode: ui.BlendMode.plus))
+          .toList(growable: false);
+      return <SvgFilterPaintPass>[...input2, ...additiveTop];
+    }
+
+    return input;
+  }
+
+  bool _isNoneInputReference(String? inputRef) {
+    if (inputRef == null) {
+      return false;
+    }
+    return inputRef.trim().toLowerCase() == 'none';
+  }
+
+  bool _isApproximately(
+    double value,
+    double expected, [
+    double epsilon = 1e-6,
+  ]) {
+    return (value - expected).abs() <= epsilon;
   }
 
   List<SvgFilterPaintPass> _resolveInputPasses({
@@ -768,6 +1594,7 @@ class SvgFilters {
     required Map<String, List<SvgFilterPaintPass>> namedResults,
     required List<SvgFilterPaintPass> sourceGraphic,
     required List<SvgFilterPaintPass> sourceAlpha,
+    bool fallbackToPreviousOnUnknown = false,
   }) {
     final normalized = requestedInput?.trim();
     if (normalized == null || normalized.isEmpty) {
@@ -776,25 +1603,119 @@ class SvgFilters {
           : previous;
     }
 
-    switch (normalized) {
+    // `in="none"` explicitly requests transparent-black input.
+    // It should never fall back to previous output, including merge-node flow.
+    if (normalized.toLowerCase() == 'none') {
+      return const <SvgFilterPaintPass>[];
+    }
+
+    final builtIn = _resolveBuiltInInputPasses(
+      normalized,
+      sourceGraphic: sourceGraphic,
+      sourceAlpha: sourceAlpha,
+    );
+    if (builtIn != null) {
+      return builtIn;
+    }
+
+    final named = namedResults[normalized];
+    if (named != null && named.isNotEmpty) {
+      return <SvgFilterPaintPass>[...named];
+    }
+
+    // Built-in inputs are accepted case-insensitively for baseline parity.
+    final builtInCaseInsensitive = _resolveBuiltInInputPasses(
+      normalized.toLowerCase(),
+      sourceGraphic: sourceGraphic,
+      sourceAlpha: sourceAlpha,
+      isNormalizedLowerCase: true,
+    );
+    if (builtInCaseInsensitive != null) {
+      return builtInCaseInsensitive;
+    }
+
+    if (fallbackToPreviousOnUnknown) {
+      return previous.isEmpty
+          ? <SvgFilterPaintPass>[...sourceGraphic]
+          : previous;
+    }
+
+    // Explicit unresolved primitive inputs should not fall back to previous
+    // output when fallback is disabled (e.g. merge node semantics).
+    return const <SvgFilterPaintPass>[];
+  }
+
+  List<SvgFilterPaintPass>? _resolveBuiltInInputPasses(
+    String normalizedInput, {
+    required List<SvgFilterPaintPass> sourceGraphic,
+    required List<SvgFilterPaintPass> sourceAlpha,
+    bool isNormalizedLowerCase = false,
+  }) {
+    final fillPaint =
+        _activeFillPaint ??
+        _maskPaintSourcePasses(
+          sourceGraphic,
+          paintFill: true,
+          paintStroke: false,
+        );
+    final strokePaint =
+        _activeStrokePaint ??
+        _maskPaintSourcePasses(
+          sourceGraphic,
+          paintFill: false,
+          paintStroke: true,
+        );
+    final backgroundImage = _activeBackgroundImage ?? sourceGraphic;
+    final backgroundAlpha = _activeBackgroundAlpha ?? sourceAlpha;
+
+    switch (normalizedInput) {
       case 'SourceGraphic':
         return <SvgFilterPaintPass>[...sourceGraphic];
       case 'SourceAlpha':
         return <SvgFilterPaintPass>[...sourceAlpha];
       case 'BackgroundImage':
+        return <SvgFilterPaintPass>[...backgroundImage];
       case 'BackgroundAlpha':
+        return <SvgFilterPaintPass>[...backgroundAlpha];
       case 'FillPaint':
+        return <SvgFilterPaintPass>[...fillPaint];
       case 'StrokePaint':
-        return <SvgFilterPaintPass>[...sourceGraphic];
-      default:
-        final named = namedResults[normalized];
-        if (named != null && named.isNotEmpty) {
-          return <SvgFilterPaintPass>[...named];
-        }
-        return previous.isEmpty
-            ? <SvgFilterPaintPass>[...sourceGraphic]
-            : previous;
+        return <SvgFilterPaintPass>[...strokePaint];
     }
+
+    if (!isNormalizedLowerCase) {
+      return null;
+    }
+
+    switch (normalizedInput) {
+      case 'sourcegraphic':
+        return <SvgFilterPaintPass>[...sourceGraphic];
+      case 'sourcealpha':
+        return <SvgFilterPaintPass>[...sourceAlpha];
+      case 'backgroundimage':
+        return <SvgFilterPaintPass>[...backgroundImage];
+      case 'backgroundalpha':
+        return <SvgFilterPaintPass>[...backgroundAlpha];
+      case 'fillpaint':
+        return <SvgFilterPaintPass>[...fillPaint];
+      case 'strokepaint':
+        return <SvgFilterPaintPass>[...strokePaint];
+      default:
+        return null;
+    }
+  }
+
+  List<SvgFilterPaintPass> _maskPaintSourcePasses(
+    List<SvgFilterPaintPass> source, {
+    required bool paintFill,
+    required bool paintStroke,
+  }) {
+    return source
+        .map(
+          (pass) =>
+              pass.copyWith(paintFill: paintFill, paintStroke: paintStroke),
+        )
+        .toList(growable: false);
   }
 
   ui.ImageFilter? _composeImageFilter(

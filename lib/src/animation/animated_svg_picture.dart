@@ -801,6 +801,9 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
     if (_isDefinitionOnlyTag(node.tagName)) {
       return null;
     }
+    if (_isDisplayNone(node)) {
+      return null;
+    }
 
     final currentUseStack = useStack;
     final currentTransform = Matrix4.copy(parentTransform);
@@ -809,6 +812,7 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
     if (!_isPointVisibleForNode(node, documentPoint, currentTransform)) {
       return null;
     }
+    final pointerEventsNone = _isPointerEventsNone(node);
 
     final childTransform = Matrix4.copy(currentTransform);
     _applyForeignObjectChildTransform(childTransform, node);
@@ -851,7 +855,9 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
       }
     }
 
-    if (node.id == null || !_isHitTestableTag(node.tagName)) {
+    if (pointerEventsNone ||
+        node.id == null ||
+        !_isHitTestableTag(node.tagName)) {
       return null;
     }
 
@@ -914,7 +920,8 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
   }
 
   bool _isPointInsideClipPath(SvgNode node, Offset localPoint) {
-    final clipId = _extractUrlId(node.getAttributeValue('clip-path'));
+    final clipValue = _extractStyleValue(node, 'clip-path');
+    final clipId = _extractUrlId(clipValue ?? node.getAttributeValue('clip-path'));
     if (clipId == null || clipId.isEmpty) {
       return true;
     }
@@ -941,7 +948,8 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
   }
 
   bool _isPointInsideMask(SvgNode node, Offset localPoint) {
-    final maskId = _extractUrlId(node.getAttributeValue('mask'));
+    final maskValue = _extractStyleValue(node, 'mask');
+    final maskId = _extractUrlId(maskValue ?? node.getAttributeValue('mask'));
     if (maskId == null || maskId.isEmpty) {
       return true;
     }
@@ -1352,6 +1360,8 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
       return false;
     }
     final point = MatrixUtils.transformPoint(inverse, documentPoint);
+    final pointerEvents = _resolvePointerEventsMode(node);
+    final visibilityHidden = _isVisibilityHidden(node);
 
     switch (node.tagName) {
       case 'rect':
@@ -1360,6 +1370,9 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
         final width = _getNumber(node, 'width') ?? 0.0;
         final height = _getNumber(node, 'height') ?? 0.0;
         if (width <= 0 || height <= 0) return false;
+        if (pointerEvents == 'bounding-box') {
+          return Rect.fromLTWH(x, y, width, height).contains(point);
+        }
         final rx = _getNumber(node, 'rx') ?? 0.0;
         final ry = _getNumber(node, 'ry') ?? rx;
         final rect = Rect.fromLTWH(x, y, width, height);
@@ -1369,10 +1382,19 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
         } else {
           rectPath.addRect(rect);
         }
-        if (_isFillEnabled(node) && rectPath.contains(point)) {
+        if (_pointerEventsAllowsFill(
+              node,
+              pointerEvents,
+              visibilityHidden: visibilityHidden,
+            ) &&
+            rectPath.contains(point)) {
           return true;
         }
-        if (_hasStroke(node)) {
+        if (_pointerEventsAllowsStroke(
+          node,
+          pointerEvents,
+          visibilityHidden: visibilityHidden,
+        )) {
           final tolerance = _strokeTolerance(node);
           return _pathStrokeContains(rectPath, point, tolerance);
         }
@@ -1382,12 +1404,26 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
         final cy = _getNumber(node, 'cy') ?? 0.0;
         final r = _getNumber(node, 'r') ?? 0.0;
         if (r <= 0) return false;
+        if (pointerEvents == 'bounding-box') {
+          return Rect.fromCircle(center: Offset(cx, cy), radius: r).contains(
+            point,
+          );
+        }
         final circlePath = Path()
           ..addOval(Rect.fromCircle(center: Offset(cx, cy), radius: r));
-        if (_isFillEnabled(node) && circlePath.contains(point)) {
+        if (_pointerEventsAllowsFill(
+              node,
+              pointerEvents,
+              visibilityHidden: visibilityHidden,
+            ) &&
+            circlePath.contains(point)) {
           return true;
         }
-        if (_hasStroke(node)) {
+        if (_pointerEventsAllowsStroke(
+          node,
+          pointerEvents,
+          visibilityHidden: visibilityHidden,
+        )) {
           final tolerance = _strokeTolerance(node);
           return _pathStrokeContains(circlePath, point, tolerance);
         }
@@ -1398,6 +1434,13 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
         final rx = _getNumber(node, 'rx') ?? 0.0;
         final ry = _getNumber(node, 'ry') ?? 0.0;
         if (rx <= 0 || ry <= 0) return false;
+        if (pointerEvents == 'bounding-box') {
+          return Rect.fromCenter(
+            center: Offset(cx, cy),
+            width: rx * 2,
+            height: ry * 2,
+          ).contains(point);
+        }
         final ellipsePath = Path()
           ..addOval(
             Rect.fromCenter(
@@ -1406,22 +1449,47 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
               height: ry * 2,
             ),
           );
-        if (_isFillEnabled(node) && ellipsePath.contains(point)) {
+        if (_pointerEventsAllowsFill(
+              node,
+              pointerEvents,
+              visibilityHidden: visibilityHidden,
+            ) &&
+            ellipsePath.contains(point)) {
           return true;
         }
-        if (_hasStroke(node)) {
+        if (_pointerEventsAllowsStroke(
+          node,
+          pointerEvents,
+          visibilityHidden: visibilityHidden,
+        )) {
           final tolerance = _strokeTolerance(node);
           return _pathStrokeContains(ellipsePath, point, tolerance);
         }
         return false;
       case 'line':
-        if (!_hasStroke(node)) {
-          return false;
-        }
         final x1 = _getNumber(node, 'x1') ?? 0.0;
         final y1 = _getNumber(node, 'y1') ?? 0.0;
         final x2 = _getNumber(node, 'x2') ?? 0.0;
         final y2 = _getNumber(node, 'y2') ?? 0.0;
+        if (pointerEvents == 'bounding-box') {
+          final bounds = Rect.fromLTRB(
+            math.min(x1, x2),
+            math.min(y1, y2),
+            math.max(x1, x2),
+            math.max(y1, y2),
+          );
+          // Degenerate line bounds are inflated by stroke tolerance so
+          // vertical/horizontal lines remain hit-testable.
+          final tolerance = _strokeTolerance(node);
+          return bounds.inflate(tolerance).contains(point);
+        }
+        if (!_pointerEventsAllowsStroke(
+          node,
+          pointerEvents,
+          visibilityHidden: visibilityHidden,
+        )) {
+          return false;
+        }
         final tolerance = _strokeTolerance(node);
         final distance = _distanceToSegment(
           point,
@@ -1434,7 +1502,12 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
         final y = _getNumber(node, 'y') ?? 0.0;
         final width = _getNumber(node, 'width') ?? 0.0;
         final height = _getNumber(node, 'height') ?? 0.0;
-        if (width <= 0 || height <= 0) {
+        if (width <= 0 ||
+            height <= 0 ||
+            !_pointerEventsAllowsBoundingBox(
+              pointerEvents,
+              visibilityHidden: visibilityHidden,
+            )) {
           return false;
         }
         return Rect.fromLTWH(x, y, width, height).contains(point);
@@ -1443,7 +1516,12 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
         final y = _getNumber(node, 'y') ?? 0.0;
         final width = _getNumber(node, 'width') ?? 0.0;
         final height = _getNumber(node, 'height') ?? 0.0;
-        if (width <= 0 || height <= 0) {
+        if (width <= 0 ||
+            height <= 0 ||
+            !_pointerEventsAllowsBoundingBox(
+              pointerEvents,
+              visibilityHidden: visibilityHidden,
+            )) {
           return false;
         }
         return Rect.fromLTWH(x, y, width, height).contains(point);
@@ -1452,12 +1530,24 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
         if (path == null) {
           return false;
         }
+        if (pointerEvents == 'bounding-box') {
+          return path.getBounds().contains(point);
+        }
 
-        if (_isFillEnabled(node) && path.contains(point)) {
+        if (_pointerEventsAllowsFill(
+              node,
+              pointerEvents,
+              visibilityHidden: visibilityHidden,
+            ) &&
+            path.contains(point)) {
           return true;
         }
 
-        if (_hasStroke(node)) {
+        if (_pointerEventsAllowsStroke(
+          node,
+          pointerEvents,
+          visibilityHidden: visibilityHidden,
+        )) {
           final tolerance = _strokeTolerance(node);
           return _pathStrokeContains(path, point, tolerance);
         }
@@ -1472,12 +1562,24 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
           polygonPath.lineTo(polygonPoints[i].dx, polygonPoints[i].dy);
         }
         polygonPath.close();
+        if (pointerEvents == 'bounding-box') {
+          return polygonPath.getBounds().contains(point);
+        }
 
-        if (_isFillEnabled(node) && polygonPath.contains(point)) {
+        if (_pointerEventsAllowsFill(
+              node,
+              pointerEvents,
+              visibilityHidden: visibilityHidden,
+            ) &&
+            polygonPath.contains(point)) {
           return true;
         }
 
-        if (_hasStroke(node)) {
+        if (_pointerEventsAllowsStroke(
+          node,
+          pointerEvents,
+          visibilityHidden: visibilityHidden,
+        )) {
           final tolerance = _strokeTolerance(node);
           for (int i = 0; i < polygonPoints.length; i++) {
             final a = polygonPoints[i];
@@ -1491,8 +1593,20 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
       case 'polyline':
         final polylinePoints = _parsePoints(node);
         if (polylinePoints.length < 2) return false;
+        if (pointerEvents == 'bounding-box') {
+          final polylinePath = Path()
+            ..moveTo(polylinePoints.first.dx, polylinePoints.first.dy);
+          for (int i = 1; i < polylinePoints.length; i++) {
+            polylinePath.lineTo(polylinePoints[i].dx, polylinePoints[i].dy);
+          }
+          return polylinePath.getBounds().contains(point);
+        }
 
-        if (_hasStroke(node)) {
+        if (_pointerEventsAllowsStroke(
+          node,
+          pointerEvents,
+          visibilityHidden: visibilityHidden,
+        )) {
           final tolerance = _strokeTolerance(node);
           for (int i = 0; i < polylinePoints.length - 1; i++) {
             if (_distanceToSegment(
@@ -1506,7 +1620,11 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
           }
         }
 
-        if (_isFillEnabled(node)) {
+        if (_pointerEventsAllowsFill(
+          node,
+          pointerEvents,
+          visibilityHidden: visibilityHidden,
+        )) {
           final polylinePath = Path()
             ..moveTo(polylinePoints.first.dx, polylinePoints.first.dy);
           for (int i = 1; i < polylinePoints.length; i++) {
@@ -1517,43 +1635,139 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
         return false;
       case 'text':
       case 'tspan':
-        return _textNodeContainsPoint(node, point);
+        return _textNodeContainsPoint(
+          node,
+          point,
+          pointerEvents: pointerEvents,
+          visibilityHidden: visibilityHidden,
+        );
       case 'textPath':
-        return _textPathContainsPoint(node, point);
+        return _textPathContainsPoint(
+          node,
+          point,
+          pointerEvents: pointerEvents,
+          visibilityHidden: visibilityHidden,
+        );
       default:
         return false;
     }
   }
 
-  bool _textNodeContainsPoint(SvgNode node, Offset point) {
-    return _textRunsContainPoint(node, point);
+  bool _textNodeContainsPoint(
+    SvgNode node,
+    Offset point, {
+    required String pointerEvents,
+    required bool visibilityHidden,
+  }) {
+    return _textRunsContainPoint(
+      node,
+      point,
+      pointerEvents: pointerEvents,
+      visibilityHidden: visibilityHidden,
+    );
   }
 
-  bool _textPathContainsPoint(SvgNode textPathNode, Offset point) {
-    return _textRunsContainPoint(textPathNode, point);
+  bool _textPathContainsPoint(
+    SvgNode textPathNode,
+    Offset point, {
+    required String pointerEvents,
+    required bool visibilityHidden,
+  }) {
+    return _textRunsContainPoint(
+      textPathNode,
+      point,
+      pointerEvents: pointerEvents,
+      visibilityHidden: visibilityHidden,
+    );
   }
 
-  bool _textRunsContainPoint(SvgNode node, Offset point) {
+  bool _textRunsContainPoint(
+    SvgNode node,
+    Offset point, {
+    required String pointerEvents,
+    required bool visibilityHidden,
+  }) {
     final textRoot = _findTextLayoutRoot(node);
     if (textRoot == null) {
       return false;
     }
     final runs = _buildTextHitRuns(textRoot);
+    final allowBoundingBox = _pointerEventsAllowsBoundingBox(
+      pointerEvents,
+      visibilityHidden: visibilityHidden,
+    );
+    final allowFill = _pointerEventsAllowsFill(
+      node,
+      pointerEvents,
+      visibilityHidden: visibilityHidden,
+    );
+    final allowStroke = _pointerEventsAllowsStroke(
+      node,
+      pointerEvents,
+      visibilityHidden: visibilityHidden,
+    );
+    if (!allowBoundingBox && !allowFill && !allowStroke) {
+      return false;
+    }
+
     for (final run in runs) {
       if (!_isNodeOrDescendant(run.owner, node)) {
         continue;
       }
-      final bounds = run.bounds;
-      if (bounds != null) {
-        if (bounds.contains(point)) {
-          return true;
-        }
-        continue;
-      }
-      final path = run.path;
-      if (path != null && _pathStrokeContains(path, point, run.pathTolerance)) {
+      if (allowBoundingBox && _textRunBoundingBoxContainsPoint(run, point)) {
         return true;
       }
+      final containsForFill = _textRunContainsPoint(run, point);
+      if (allowFill && containsForFill) {
+        return true;
+      }
+      if (allowStroke && _textRunStrokeContainsPoint(run, point, node)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool _textRunBoundingBoxContainsPoint(_TextHitRun run, Offset point) {
+    final bounds = run.bounds;
+    if (bounds != null) {
+      return bounds.contains(point);
+    }
+    final path = run.path;
+    if (path != null) {
+      return path.getBounds().contains(point);
+    }
+    return false;
+  }
+
+  bool _textRunContainsPoint(_TextHitRun run, Offset point) {
+    final bounds = run.bounds;
+    if (bounds != null) {
+      return bounds.contains(point);
+    }
+    final path = run.path;
+    if (path != null) {
+      // TextPath hit-runs are represented as path segments; use tolerance-based
+      // containment for baseline parity in fill/bounding-box modes.
+      return _pathStrokeContains(path, point, run.pathTolerance);
+    }
+    return false;
+  }
+
+  bool _textRunStrokeContainsPoint(
+    _TextHitRun run,
+    Offset point,
+    SvgNode styleNode,
+  ) {
+    final bounds = run.bounds;
+    if (bounds != null) {
+      final boundsPath = Path()..addRect(bounds);
+      return _pathStrokeContains(boundsPath, point, _strokeTolerance(styleNode));
+    }
+    final path = run.path;
+    if (path != null) {
+      final tolerance = math.max(_strokeTolerance(styleNode), run.pathTolerance);
+      return _pathStrokeContains(path, point, tolerance);
     }
     return false;
   }
@@ -1614,7 +1828,23 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
 
     final text = _extractTextContent(node);
     if (text != null && text.isNotEmpty) {
-      final metrics = _measureText(text, node);
+      var metrics = _measureText(text, node);
+      final targetLength = _resolveTextLength(node);
+      final lengthAdjust = _resolveTextLengthAdjust(node);
+      final glyphCount = text.runes.length;
+      if (targetLength != null && targetLength > 0 && metrics.width > 0) {
+        if (lengthAdjust == _TextLengthAdjust.spacing && glyphCount > 1) {
+          final extraSpacing =
+              (targetLength - metrics.width) / (glyphCount - 1);
+          metrics = _measureText(
+            text,
+            node,
+            additionalLetterSpacing: extraSpacing,
+          );
+        } else {
+          metrics = metrics.copyWith(width: targetLength);
+        }
+      }
       var left = cursor.x;
       switch (_resolveTextAnchor(node)) {
         case _TextAnchor.middle:
@@ -1626,7 +1856,11 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
         case _TextAnchor.start:
           break;
       }
-      final top = cursor.y - metrics.alphabeticBaseline;
+      final top = _resolveTextTopFromBaseline(
+        node: node,
+        baselineY: cursor.y,
+        metrics: metrics,
+      );
       runs.add(
         _TextHitRun.bounds(
           owner: node,
@@ -1721,7 +1955,49 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
     final widths = glyphMetrics
         .map((metrics) => metrics.width)
         .toList(growable: false);
-    final totalWidth = widths.fold<double>(0.0, (sum, width) => sum + width);
+    final letterSpacing =
+        (_getInheritedNumber(styleNode, 'letter-spacing') ?? 0.0).clamp(
+          -1024.0,
+          1024.0,
+        );
+    final wordSpacing = (_getInheritedNumber(styleNode, 'word-spacing') ?? 0.0)
+        .clamp(-1024.0, 1024.0);
+    final advances = <double>[];
+    for (int i = 0; i < glyphs.length; i++) {
+      final spacing = _spacingAfterGlyphForHit(
+        glyph: glyphs[i],
+        isLast: i == glyphs.length - 1,
+        letterSpacing: letterSpacing,
+        wordSpacing: wordSpacing,
+      );
+      advances.add(widths[i] + spacing);
+    }
+    final displayWidths = List<double>.from(widths);
+    final displayAdvances = List<double>.from(advances);
+    var totalWidth = displayAdvances.fold<double>(
+      0.0,
+      (sum, width) => sum + width,
+    );
+    final targetLength = _resolveTextLength(styleNode);
+    final lengthAdjust = _resolveTextLengthAdjust(styleNode);
+    if (targetLength != null && targetLength > 0 && totalWidth > 0) {
+      if (lengthAdjust == _TextLengthAdjust.spacing && glyphs.length > 1) {
+        final extraSpacing = (targetLength - totalWidth) / (glyphs.length - 1);
+        for (int i = 0; i < displayAdvances.length - 1; i++) {
+          displayAdvances[i] += extraSpacing;
+        }
+      } else {
+        final scaleX = targetLength / totalWidth;
+        for (int i = 0; i < displayWidths.length; i++) {
+          displayWidths[i] *= scaleX;
+          displayAdvances[i] *= scaleX;
+        }
+      }
+      totalWidth = displayAdvances.fold<double>(
+        0.0,
+        (sum, width) => sum + width,
+      );
+    }
 
     var drawOffset = startOffset;
     switch (_resolveTextAnchor(styleNode)) {
@@ -1741,13 +2017,32 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
     final fontSize = (_getInheritedNumber(styleNode, 'font-size') ?? 16.0)
         .clamp(1.0, 4096.0);
     for (int i = 0; i < widths.length; i++) {
-      final glyphWidth = widths[i];
+      final glyphWidth = displayWidths[i];
+      final glyphAdvance = displayAdvances[i];
       final start = cursor;
       final end = cursor + glyphWidth;
       final clampedStart = start.clamp(0.0, metricLength).toDouble();
       final clampedEnd = end.clamp(0.0, metricLength).toDouble();
       if (clampedEnd > clampedStart) {
-        final glyphPath = metric.extractPath(clampedStart, clampedEnd);
+        var glyphPath = metric.extractPath(clampedStart, clampedEnd);
+        final tangent = metric.getTangentForOffset(
+          ((clampedStart + clampedEnd) / 2).clamp(0.0, metricLength),
+        );
+        if (tangent != null) {
+          final centerOffset = _resolveTextPathCenterOffset(
+            node: styleNode,
+            metrics: glyphMetrics[i],
+          );
+          if (centerOffset != 0.0) {
+            final normal = Offset(
+              -math.sin(tangent.angle),
+              math.cos(tangent.angle),
+            );
+            glyphPath = glyphPath.shift(
+              Offset(normal.dx * centerOffset, normal.dy * centerOffset),
+            );
+          }
+        }
         final glyphTolerance = (glyphMetrics[i].height / 2)
             .clamp(fontSize / 3, fontSize)
             .toDouble();
@@ -1760,8 +2055,8 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
         );
       }
 
-      cursor += glyphWidth;
-      consumed += glyphWidth;
+      cursor += glyphAdvance;
+      consumed += glyphAdvance;
       if (cursor > metricLength + fontSize) {
         break;
       }
@@ -1770,7 +2065,11 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
     return consumed;
   }
 
-  _TextMeasure _measureText(String text, SvgNode node) {
+  _TextMeasure _measureText(
+    String text,
+    SvgNode node, {
+    double additionalLetterSpacing = 0.0,
+  }) {
     final fontSize = (_getInheritedNumber(node, 'font-size') ?? 16.0).clamp(
       1.0,
       4096.0,
@@ -1782,6 +2081,12 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
     final fontStyle = _resolveFontStyle(
       _getInheritedString(node, 'font-style'),
     );
+    final letterSpacing =
+        ((_getInheritedNumber(node, 'letter-spacing') ?? 0.0) +
+                additionalLetterSpacing)
+            .clamp(-1024.0, 1024.0);
+    final wordSpacing = (_getInheritedNumber(node, 'word-spacing') ?? 0.0)
+        .clamp(-1024.0, 1024.0);
 
     final painter = TextPainter(
       text: TextSpan(
@@ -1791,6 +2096,8 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
           fontFamily: fontFamily,
           fontWeight: fontWeight,
           fontStyle: fontStyle,
+          letterSpacing: letterSpacing,
+          wordSpacing: wordSpacing,
         ),
       ),
       textDirection: TextDirection.ltr,
@@ -1804,7 +2111,154 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
       width: painter.width,
       height: painter.height,
       alphabeticBaseline: baseline,
+      fontSize: fontSize,
     );
+  }
+
+  double? _resolveTextLength(SvgNode node) {
+    final value = node.getAttributeValue('textLength');
+    if (value == null) {
+      return null;
+    }
+    if (value is num) {
+      final length = value.toDouble();
+      return length > 0 ? length : null;
+    }
+    final raw = value.toString().trim();
+    if (raw.isEmpty) {
+      return null;
+    }
+    final cleaned = raw.replaceAll(RegExp(r'[a-zA-Z%]+$'), '');
+    final parsed = double.tryParse(cleaned);
+    if (parsed == null || parsed <= 0) {
+      return null;
+    }
+    return parsed;
+  }
+
+  _TextLengthAdjust _resolveTextLengthAdjust(SvgNode node) {
+    final raw = node.getAttributeValue('lengthAdjust')?.toString().trim();
+    if (raw == null || raw.isEmpty) {
+      return _TextLengthAdjust.spacing;
+    }
+    return raw.toLowerCase() == 'spacingandglyphs'
+        ? _TextLengthAdjust.spacingAndGlyphs
+        : _TextLengthAdjust.spacing;
+  }
+
+  double _resolveTextTopFromBaseline({
+    required SvgNode node,
+    required double baselineY,
+    required _TextMeasure metrics,
+  }) {
+    final dominantBaseline = _resolveDominantBaseline(
+      _getInheritedString(node, 'dominant-baseline') ??
+          _getInheritedString(node, 'alignment-baseline'),
+    );
+    final baselineShift = _resolveBaselineShift(
+      _getInheritedAttributeValue(node, 'baseline-shift'),
+      metrics.fontSize,
+    );
+    final baselineRef = _resolveBaselineReference(
+      dominantBaseline: dominantBaseline,
+      metrics: metrics,
+    );
+    final shiftedBaselineY = baselineY - baselineShift;
+    return shiftedBaselineY - baselineRef;
+  }
+
+  double _resolveTextPathCenterOffset({
+    required SvgNode node,
+    required _TextMeasure metrics,
+  }) {
+    final dominantBaseline = _resolveDominantBaseline(
+      _getInheritedString(node, 'dominant-baseline') ??
+          _getInheritedString(node, 'alignment-baseline'),
+    );
+    final baselineShift = _resolveBaselineShift(
+      _getInheritedAttributeValue(node, 'baseline-shift'),
+      metrics.fontSize,
+    );
+    final baselineRef = _resolveBaselineReference(
+      dominantBaseline: dominantBaseline,
+      metrics: metrics,
+    );
+    return -baselineRef - baselineShift + metrics.height / 2;
+  }
+
+  _TextDominantBaseline _resolveDominantBaseline(String? rawValue) {
+    switch (rawValue?.trim().toLowerCase()) {
+      case 'middle':
+      case 'central':
+        return _TextDominantBaseline.central;
+      case 'text-before-edge':
+      case 'before-edge':
+      case 'hanging':
+        return _TextDominantBaseline.textBeforeEdge;
+      case 'text-after-edge':
+      case 'after-edge':
+      case 'ideographic':
+        return _TextDominantBaseline.textAfterEdge;
+      case 'alphabetic':
+      default:
+        return _TextDominantBaseline.alphabetic;
+    }
+  }
+
+  double _resolveBaselineReference({
+    required _TextDominantBaseline dominantBaseline,
+    required _TextMeasure metrics,
+  }) {
+    return switch (dominantBaseline) {
+      _TextDominantBaseline.alphabetic => metrics.alphabeticBaseline,
+      _TextDominantBaseline.central => metrics.height / 2,
+      _TextDominantBaseline.textBeforeEdge => 0.0,
+      _TextDominantBaseline.textAfterEdge => metrics.height,
+    };
+  }
+
+  double _resolveBaselineShift(Object? rawValue, double fontSize) {
+    if (rawValue == null) {
+      return 0.0;
+    }
+    if (rawValue is num) {
+      return rawValue.toDouble().clamp(-4096.0, 4096.0);
+    }
+    final value = rawValue.toString().trim().toLowerCase();
+    if (value.isEmpty || value == 'baseline') {
+      return 0.0;
+    }
+    if (value == 'sub') {
+      return -fontSize * 0.6;
+    }
+    if (value == 'super') {
+      return fontSize * 0.6;
+    }
+    if (value.endsWith('%')) {
+      final percent = double.tryParse(value.substring(0, value.length - 1));
+      if (percent == null) {
+        return 0.0;
+      }
+      return (fontSize * percent / 100.0).clamp(-4096.0, 4096.0);
+    }
+    final numeric = double.tryParse(value.replaceAll(RegExp(r'[a-z]+$'), ''));
+    return (numeric ?? 0.0).clamp(-4096.0, 4096.0);
+  }
+
+  double _spacingAfterGlyphForHit({
+    required String glyph,
+    required bool isLast,
+    required double letterSpacing,
+    required double wordSpacing,
+  }) {
+    if (isLast) {
+      return 0.0;
+    }
+    var spacing = letterSpacing;
+    if (glyph == ' ' || glyph == '\u00A0') {
+      spacing += wordSpacing;
+    }
+    return spacing;
   }
 
   _TextAnchor _resolveTextAnchor(SvgNode node) {
@@ -2362,8 +2816,14 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
         continue;
       }
       final value = parts.sublist(1).join(':').trim();
-      if (value.isNotEmpty) {
-        return value;
+      final normalizedValue = value
+          .replaceFirst(
+            RegExp(r'\s*!important\s*$', caseSensitive: false),
+            '',
+          )
+          .trim();
+      if (normalizedValue.isNotEmpty) {
+        return normalizedValue;
       }
     }
     return null;
@@ -2540,6 +3000,141 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
     return str == 'none';
   }
 
+  bool _isPointerEventsNone(SvgNode node) {
+    return _resolvePointerEventsMode(node) == 'none';
+  }
+
+  bool _isVisibilityHidden(SvgNode node) {
+    final visibility = _getInheritedString(node, 'visibility')?.toLowerCase();
+    return visibility == 'hidden' || visibility == 'collapse';
+  }
+
+  bool _isDisplayNone(SvgNode node) {
+    final styleValue = _extractStyleValue(node, 'display');
+    final rawValue = styleValue ?? node.getAttributeValue('display');
+    final display = rawValue?.toString().trim().toLowerCase();
+    return display == 'none';
+  }
+
+  String _resolvePointerEventsMode(SvgNode node) {
+    final raw = _resolveInheritedPointerEvents(node);
+    if (raw == null || raw.isEmpty || raw == 'auto') {
+      return 'visiblepainted';
+    }
+    switch (raw) {
+      case 'none':
+      case 'visiblepainted':
+      case 'visiblefill':
+      case 'visiblestroke':
+      case 'visible':
+      case 'painted':
+      case 'fill':
+      case 'stroke':
+      case 'all':
+      case 'bounding-box':
+        return raw;
+      default:
+        return 'visiblepainted';
+    }
+  }
+
+  bool _pointerEventsAllowsFill(
+    SvgNode node,
+    String pointerEvents, {
+    required bool visibilityHidden,
+  }) {
+    switch (pointerEvents) {
+      case 'visiblepainted':
+        if (visibilityHidden) {
+          return false;
+        }
+        return _isFillEnabled(node);
+      case 'visiblefill':
+      case 'visible':
+        return !visibilityHidden;
+      case 'visiblestroke':
+        return false;
+      case 'painted':
+        return _isFillEnabled(node);
+      case 'fill':
+      case 'all':
+      case 'bounding-box':
+        return true;
+      case 'none':
+      case 'stroke':
+        return false;
+      default:
+        return _isFillEnabled(node);
+    }
+  }
+
+  bool _pointerEventsAllowsStroke(
+    SvgNode node,
+    String pointerEvents, {
+    required bool visibilityHidden,
+  }) {
+    switch (pointerEvents) {
+      case 'visiblepainted':
+        if (visibilityHidden) {
+          return false;
+        }
+        return _hasStroke(node);
+      case 'visiblestroke':
+      case 'visible':
+        return !visibilityHidden;
+      case 'visiblefill':
+        return false;
+      case 'painted':
+        return _hasStroke(node);
+      case 'stroke':
+      case 'all':
+      case 'bounding-box':
+        return true;
+      case 'none':
+      case 'fill':
+        return false;
+      default:
+        return _hasStroke(node);
+    }
+  }
+
+  bool _pointerEventsAllowsBoundingBox(
+    String pointerEvents, {
+    required bool visibilityHidden,
+  }) {
+    switch (pointerEvents) {
+      case 'none':
+      case 'stroke':
+      case 'visiblestroke':
+        return false;
+      case 'visible':
+      case 'visiblepainted':
+      case 'visiblefill':
+        return !visibilityHidden;
+      default:
+        return true;
+    }
+  }
+
+  String? _resolveInheritedPointerEvents(SvgNode node) {
+    SvgNode? current = node;
+    while (current != null) {
+      final styleValue = _extractStyleValue(current, 'pointer-events');
+      final raw = styleValue ?? current.getAttributeValue('pointer-events');
+      final normalized = raw?.toString().trim().toLowerCase();
+      if (normalized == null || normalized.isEmpty) {
+        current = current.parent;
+        continue;
+      }
+      if (normalized == 'inherit') {
+        current = current.parent;
+        continue;
+      }
+      return normalized;
+    }
+    return null;
+  }
+
   void _trace({
     required String category,
     required String message,
@@ -2593,6 +3188,8 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
 
 enum _TextAnchor { start, middle, end }
 
+enum _TextLengthAdjust { spacing, spacingAndGlyphs }
+
 class _HitTextCursor {
   _HitTextCursor({required this.x, required this.y});
 
@@ -2605,11 +3202,34 @@ class _TextMeasure {
     required this.width,
     required this.height,
     required this.alphabeticBaseline,
+    required this.fontSize,
   });
 
   final double width;
   final double height;
   final double alphabeticBaseline;
+  final double fontSize;
+
+  _TextMeasure copyWith({
+    double? width,
+    double? height,
+    double? alphabeticBaseline,
+    double? fontSize,
+  }) {
+    return _TextMeasure(
+      width: width ?? this.width,
+      height: height ?? this.height,
+      alphabeticBaseline: alphabeticBaseline ?? this.alphabeticBaseline,
+      fontSize: fontSize ?? this.fontSize,
+    );
+  }
+}
+
+enum _TextDominantBaseline {
+  alphabetic,
+  central,
+  textBeforeEdge,
+  textAfterEdge,
 }
 
 class _TextHitRun {

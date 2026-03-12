@@ -1,6 +1,7 @@
 import 'dart:ui' as ui;
 
 import '../svg_dom.dart';
+import '../css_named_colors.dart';
 import '../svg_transform.dart';
 import '../path_data.dart';
 import '../path_parser.dart';
@@ -64,10 +65,26 @@ class Interpolators {
     }
 
     // Интерполяция в RGB пространстве
-    final r = _lerpInt(fromColor.red, toColor.red, t);
-    final g = _lerpInt(fromColor.green, toColor.green, t);
-    final b = _lerpInt(fromColor.blue, toColor.blue, t);
-    final a = _lerpInt(fromColor.alpha, toColor.alpha, t);
+    final r = _lerpInt(
+      _colorChannelToInt(fromColor.r),
+      _colorChannelToInt(toColor.r),
+      t,
+    );
+    final g = _lerpInt(
+      _colorChannelToInt(fromColor.g),
+      _colorChannelToInt(toColor.g),
+      t,
+    );
+    final b = _lerpInt(
+      _colorChannelToInt(fromColor.b),
+      _colorChannelToInt(toColor.b),
+      t,
+    );
+    final a = _lerpInt(
+      _colorChannelToInt(fromColor.a),
+      _colorChannelToInt(toColor.a),
+      t,
+    );
 
     return ui.Color.fromARGB(a, r, g, b);
   }
@@ -336,6 +353,10 @@ class Interpolators {
     return (a + (b - a) * t).round().clamp(0, 255);
   }
 
+  static int _colorChannelToInt(double channel) {
+    return (channel * 255.0).round().clamp(0, 255);
+  }
+
   /// Упрощённый парсер цветов
   static ui.Color? _parseColorString(String value) {
     final trimmed = value.trim().toLowerCase();
@@ -409,40 +430,5 @@ class Interpolators {
     return null;
   }
 
-  // Базовые именованные цвета (расширенный список)
-  static const Map<String, ui.Color> _namedColors = {
-    // Основные
-    'black': ui.Color(0xFF000000),
-    'white': ui.Color(0xFFFFFFFF),
-    'red': ui.Color(0xFFFF0000),
-    'green': ui.Color(0xFF008000),
-    'blue': ui.Color(0xFF0000FF),
-    'yellow': ui.Color(0xFFFFFF00),
-    'cyan': ui.Color(0xFF00FFFF),
-    'magenta': ui.Color(0xFFFF00FF),
-    'gray': ui.Color(0xFF808080),
-    'grey': ui.Color(0xFF808080),
-    'orange': ui.Color(0xFFFFA500),
-    'purple': ui.Color(0xFF800080),
-    'pink': ui.Color(0xFFFFC0CB),
-    'brown': ui.Color(0xFFA52A2A),
-
-    // Дополнительные популярные
-    'lime': ui.Color(0xFF00FF00),
-    'navy': ui.Color(0xFF000080),
-    'olive': ui.Color(0xFF808000),
-    'maroon': ui.Color(0xFF800000),
-    'teal': ui.Color(0xFF008080),
-    'aqua': ui.Color(0xFF00FFFF),
-    'fuchsia': ui.Color(0xFFFF00FF),
-    'silver': ui.Color(0xFFC0C0C0),
-
-    // Оттенки серого
-    'darkgray': ui.Color(0xFFA9A9A9),
-    'darkgrey': ui.Color(0xFFA9A9A9),
-    'lightgray': ui.Color(0xFFD3D3D3),
-    'lightgrey': ui.Color(0xFFD3D3D3),
-    'dimgray': ui.Color(0xFF696969),
-    'dimgrey': ui.Color(0xFF696969),
-  };
+  static const Map<String, ui.Color> _namedColors = cssNamedColors;
 }

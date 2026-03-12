@@ -777,6 +777,7 @@ class SmilParser {
     'font-size',
     'letter-spacing',
     'word-spacing',
+    'textLength',
     'offset',
   };
 

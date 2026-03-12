@@ -110,6 +110,42 @@ void main() {
       expect(decomp.scaleY, 3.0);
     });
 
+    test('creates decomposition from matrix translate', () {
+      final transforms = SvgTransform.parse('matrix(1, 0, 0, 1, 10, 20)');
+      final decomp = TransformDecomposition.fromTransforms(transforms);
+
+      expect(decomp.translateX, closeTo(10.0, 0.001));
+      expect(decomp.translateY, closeTo(20.0, 0.001));
+      expect(decomp.rotation, closeTo(0.0, 0.001));
+      expect(decomp.scaleX, closeTo(1.0, 0.001));
+      expect(decomp.scaleY, closeTo(1.0, 0.001));
+      expect(decomp.skewX, closeTo(0.0, 0.001));
+    });
+
+    test('creates decomposition from matrix rotate', () {
+      final transforms = SvgTransform.parse('matrix(0, 1, -1, 0, 0, 0)');
+      final decomp = TransformDecomposition.fromTransforms(transforms);
+
+      expect(decomp.translateX, closeTo(0.0, 0.001));
+      expect(decomp.translateY, closeTo(0.0, 0.001));
+      expect(decomp.rotation, closeTo(1.5708, 0.001)); // pi / 2
+      expect(decomp.scaleX, closeTo(1.0, 0.001));
+      expect(decomp.scaleY, closeTo(1.0, 0.001));
+      expect(decomp.skewX, closeTo(0.0, 0.001));
+    });
+
+    test('creates decomposition from matrix skewX', () {
+      final transforms = SvgTransform.parse('matrix(1, 0, 1, 1, 0, 0)');
+      final decomp = TransformDecomposition.fromTransforms(transforms);
+
+      expect(decomp.translateX, closeTo(0.0, 0.001));
+      expect(decomp.translateY, closeTo(0.0, 0.001));
+      expect(decomp.rotation, closeTo(0.0, 0.001));
+      expect(decomp.scaleX, closeTo(1.0, 0.001));
+      expect(decomp.scaleY, closeTo(1.0, 0.001));
+      expect(decomp.skewX, closeTo(0.7854, 0.001)); // 45deg
+    });
+
     test('interpolates between two decompositions', () {
       final from = TransformDecomposition.fromTransforms(
         SvgTransform.parse('translate(0, 0) scale(1)'),
@@ -252,6 +288,22 @@ void main() {
       expect(result, contains('45')); // rotate midpoint
       expect(result, contains('scale'));
       expect(result, contains('1.5')); // scale midpoint
+    });
+
+    test('interpolates matrix to translate via decomposition', () {
+      final result = Interpolators.interpolateTransform(
+        'matrix(1, 0, 0, 1, 10, 20)',
+        'translate(30, 40)',
+        0.5,
+      );
+
+      final transforms = SvgTransform.parse(result);
+      final translate = transforms.firstWhere(
+        (transform) => transform.type == SvgTransformType.translate,
+      );
+
+      expect(translate.values[0], closeTo(20.0, 0.001));
+      expect(translate.values[1], closeTo(30.0, 0.001));
     });
   });
 }

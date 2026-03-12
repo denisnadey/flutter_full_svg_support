@@ -173,8 +173,18 @@ class TransformDecomposition {
               ? transform.values[0] * math.pi / 180.0
               : 0.0;
         case SvgTransformType.skewY:
+          // Пока поддерживаем только skewX в декомпозиции.
+          break;
         case SvgTransformType.matrix:
-          // TODO: реализовать для matrix
+          if (transform.values.length >= 6) {
+            final matrixDecomposition = _decomposeMatrix(transform.values);
+            tx += matrixDecomposition.translateX;
+            ty += matrixDecomposition.translateY;
+            rotation += matrixDecomposition.rotation;
+            sx *= matrixDecomposition.scaleX;
+            sy *= matrixDecomposition.scaleY;
+            skewX += matrixDecomposition.skewX;
+          }
           break;
       }
     }
@@ -248,5 +258,74 @@ class TransformDecomposition {
         'rotation: ${rotation * 180 / math.pi}°, '
         'scale: ($scaleX, $scaleY), '
         'skewX: ${skewX * 180 / math.pi}°)';
+  }
+
+  static TransformDecomposition _decomposeMatrix(List<double> values) {
+    final a0 = values[0];
+    final b0 = values[1];
+    final c0 = values[2];
+    final d0 = values[3];
+    final tx = values[4];
+    final ty = values[5];
+    const epsilon = 1e-12;
+
+    var a = a0;
+    var b = b0;
+    var c = c0;
+    var d = d0;
+
+    final scaleXRaw = math.sqrt(a * a + b * b);
+    if (scaleXRaw <= epsilon) {
+      final scaleYFallback = math.sqrt(c * c + d * d);
+      final rotationFallback = scaleYFallback <= epsilon
+          ? 0.0
+          : math.atan2(-c, d);
+      return TransformDecomposition(
+        translateX: tx,
+        translateY: ty,
+        rotation: rotationFallback,
+        scaleX: 0.0,
+        scaleY: scaleYFallback,
+        skewX: 0.0,
+      );
+    }
+
+    var scaleX = scaleXRaw;
+    a /= scaleX;
+    b /= scaleX;
+
+    var skew = a * c + b * d;
+    c -= a * skew;
+    d -= b * skew;
+
+    var scaleY = math.sqrt(c * c + d * d);
+    if (scaleY > epsilon) {
+      c /= scaleY;
+      d /= scaleY;
+      skew /= scaleY;
+    } else {
+      scaleY = 0.0;
+      skew = 0.0;
+    }
+
+    final determinant = a * d - b * c;
+    if (determinant < 0) {
+      scaleX = -scaleX;
+      skew = -skew;
+      a = -a;
+      b = -b;
+    }
+
+    final rotation = math.atan2(b, a);
+    final skewX = math.atan(skew);
+
+    return TransformDecomposition(
+      translateX: tx,
+      translateY: ty,
+      rotation: rotation,
+      scaleX: scaleX,
+      scaleY: scaleY,
+      skewX: skewX,
+    );
   }
 }

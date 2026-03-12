@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/rendering.dart';
 
+import 'css_named_colors.dart';
 import 'path_data.dart';
 import 'path_parser.dart';
 import 'preserve_aspect_ratio.dart';
@@ -38,6 +39,8 @@ class AnimatedSvgPainter extends CustomPainter {
 
   final Map<String, _ResolvedGradientDefinition?> _gradientCache =
       <String, _ResolvedGradientDefinition?>{};
+  bool _currentPassPaintFill = true;
+  bool _currentPassPaintStroke = true;
 
   @override
   void paint(ui.Canvas canvas, ui.Size size) {
@@ -88,11 +91,14 @@ class AnimatedSvgPainter extends CustomPainter {
 
   /// Рисует узел и его детей
   void _paintNode(ui.Canvas canvas, SvgNode node, {Set<String>? useStack}) {
-    final display = node.getAttributeValue('display') as String?;
-    if (display == 'none') return;
+    final display =
+        _getStyleOrAttributeValue(node, 'display')?.toString().trim();
+    if (display?.toLowerCase() == 'none') return;
 
-    final visibility = node.getAttributeValue('visibility') as String?;
-    final isHidden = visibility == 'hidden' || visibility == 'collapse';
+    final visibility = _getInheritedString(node, 'visibility');
+    final normalizedVisibility = visibility?.toLowerCase();
+    final isHidden =
+        normalizedVisibility == 'hidden' || normalizedVisibility == 'collapse';
 
     final currentUseStack = useStack ?? <String>{};
     canvas.save();
@@ -269,11 +275,68 @@ class AnimatedSvgPainter extends CustomPainter {
     if (filterId == null || document.filters == null) {
       return const <SvgFilterPaintPass>[SvgFilterPaintPass.identity];
     }
-    final passes = document.filters!.resolvePaintPasses(filterId);
+    final passes = document.filters!.resolvePaintPasses(
+      filterId,
+      sourceContext: _buildFilterSourceContext(node),
+    );
     if (passes.isEmpty) {
       return const <SvgFilterPaintPass>[SvgFilterPaintPass.identity];
     }
     return passes;
+  }
+
+  SvgFilterSourceContext _buildFilterSourceContext(SvgNode node) {
+    return SvgFilterSourceContext(
+      fillPaint: _resolveFilterPaintSourcePasses(
+        node,
+        paintAttribute: 'fill',
+        paintOpacityAttribute: 'fill-opacity',
+      ),
+      strokePaint: _resolveFilterPaintSourcePasses(
+        node,
+        paintAttribute: 'stroke',
+        paintOpacityAttribute: 'stroke-opacity',
+      ),
+    );
+  }
+
+  List<SvgFilterPaintPass>? _resolveFilterPaintSourcePasses(
+    SvgNode node, {
+    required String paintAttribute,
+    required String paintOpacityAttribute,
+  }) {
+    final paintValue = _getInheritedAttributeValue(node, paintAttribute);
+    if (paintValue == null) {
+      return null;
+    }
+    if (_isPaintNone(paintValue)) {
+      return const <SvgFilterPaintPass>[];
+    }
+    if (_extractPaintServerId(paintValue) != null) {
+      return null;
+    }
+
+    final color = _resolveColorValue(paintValue);
+    if (color == null) {
+      return null;
+    }
+
+    final opacity = (_getInheritedNumber(node, 'opacity') ?? 1.0).clamp(
+      0.0,
+      1.0,
+    );
+    final paintOpacity = (_getInheritedNumber(node, paintOpacityAttribute) ??
+            1.0)
+        .clamp(0.0, 1.0);
+    final effectiveColor = _applyOpacity(color, opacity * paintOpacity);
+    final isFillContext = paintAttribute.toLowerCase() == 'fill';
+    return <SvgFilterPaintPass>[
+      SvgFilterPaintPass(
+        colorFilter: ui.ColorFilter.mode(effectiveColor, ui.BlendMode.srcIn),
+        paintFill: isFillContext,
+        paintStroke: !isFillContext,
+      ),
+    ];
   }
 
   void _paintWithFilterPasses(
@@ -286,14 +349,20 @@ class AnimatedSvgPainter extends CustomPainter {
     )
     paint,
   ) {
+    final previousFillFlag = _currentPassPaintFill;
+    final previousStrokeFlag = _currentPassPaintStroke;
     for (final pass in passes) {
       canvas.save();
+      _currentPassPaintFill = pass.paintFill;
+      _currentPassPaintStroke = pass.paintStroke;
       if (pass.offset != ui.Offset.zero) {
         canvas.translate(pass.offset.dx, pass.offset.dy);
       }
       paint(pass.imageFilter, pass.colorFilter, pass.blendMode);
       canvas.restore();
     }
+    _currentPassPaintFill = previousFillFlag;
+    _currentPassPaintStroke = previousStrokeFlag;
   }
 
   void _applyForeignObjectViewport(ui.Canvas canvas, SvgNode node) {
@@ -448,7 +517,9 @@ class AnimatedSvgPainter extends CustomPainter {
     SvgNode node, {
     required Set<String> useStack,
   }) {
-    final clipId = _extractPaintServerId(node.getAttributeValue('clip-path'));
+    final clipId = _extractPaintServerId(
+      _getStyleOrAttributeValue(node, 'clip-path'),
+    );
     if (clipId == null || clipId.isEmpty) {
       return;
     }
@@ -475,7 +546,7 @@ class AnimatedSvgPainter extends CustomPainter {
     SvgNode node, {
     required Set<String> useStack,
   }) {
-    final maskId = _extractPaintServerId(node.getAttributeValue('mask'));
+    final maskId = _extractPaintServerId(_getStyleOrAttributeValue(node, 'mask'));
     if (maskId == null || maskId.isEmpty) {
       return;
     }
@@ -1309,6 +1380,7 @@ class AnimatedSvgPainter extends CustomPainter {
     if (text != null && text.isNotEmpty) {
       final consumed = _paintPlainText(
         canvas,
+        node: node,
         text: text,
         style: style,
         x: cursor.x,
@@ -1371,6 +1443,7 @@ class AnimatedSvgPainter extends CustomPainter {
       final style = _resolveTextStyle(textPathNode);
       final textConsumed = _paintTextAlongPath(
         canvas,
+        layoutNode: textPathNode,
         text: directText,
         style: style,
         metric: metric,
@@ -1394,6 +1467,7 @@ class AnimatedSvgPainter extends CustomPainter {
       final style = _resolveTextStyle(child);
       final textConsumed = _paintTextAlongPath(
         canvas,
+        layoutNode: child,
         text: childText,
         style: style,
         metric: metric,
@@ -1411,6 +1485,7 @@ class AnimatedSvgPainter extends CustomPainter {
 
   double _paintPlainText(
     ui.Canvas canvas, {
+    required SvgNode node,
     required String text,
     required _ResolvedTextStyle style,
     required double x,
@@ -1419,10 +1494,29 @@ class AnimatedSvgPainter extends CustomPainter {
     ui.ColorFilter? colorFilter,
     ui.BlendMode? blendMode,
   }) {
-    final paragraph = _buildTextParagraph(text, style);
-    final width = paragraph.maxIntrinsicWidth;
+    var effectiveStyle = style;
+    var paragraph = _buildTextParagraph(text, effectiveStyle);
+    var width = paragraph.maxIntrinsicWidth;
+    var scaleX = 1.0;
+    final targetLength = _resolveTextLength(node);
+    if (targetLength != null && targetLength > 0 && width > 0) {
+      final lengthAdjust = _resolveLengthAdjust(node);
+      final glyphCount = text.runes.length;
+      if (lengthAdjust == _SvgTextLengthAdjust.spacing && glyphCount > 1) {
+        final extraSpacing = (targetLength - width) / (glyphCount - 1);
+        effectiveStyle = effectiveStyle.copyWith(
+          letterSpacing: effectiveStyle.letterSpacing + extraSpacing,
+        );
+        paragraph = _buildTextParagraph(text, effectiveStyle);
+        width = paragraph.maxIntrinsicWidth;
+      } else {
+        scaleX = targetLength / width;
+        width = targetLength;
+      }
+    }
+
     var drawX = x;
-    switch (style.textAnchor) {
+    switch (effectiveStyle.textAnchor) {
       case _SvgTextAnchor.start:
         break;
       case _SvgTextAnchor.middle:
@@ -1432,22 +1526,43 @@ class AnimatedSvgPainter extends CustomPainter {
         drawX -= width;
         break;
     }
-    final drawY = baselineY - paragraph.alphabeticBaseline;
-
-    _drawParagraphWithEffects(
-      canvas,
+    final drawY = _resolveTextTopFromBaseline(
       paragraph: paragraph,
-      x: drawX,
-      y: drawY,
-      imageFilter: imageFilter,
-      colorFilter: colorFilter,
-      blendMode: blendMode,
+      style: effectiveStyle,
+      baselineY: baselineY,
     );
+
+    if ((scaleX - 1.0).abs() > 1e-6) {
+      canvas.save();
+      canvas.translate(drawX, 0.0);
+      canvas.scale(scaleX, 1.0);
+      _drawParagraphWithEffects(
+        canvas,
+        paragraph: paragraph,
+        x: 0.0,
+        y: drawY,
+        imageFilter: imageFilter,
+        colorFilter: colorFilter,
+        blendMode: blendMode,
+      );
+      canvas.restore();
+    } else {
+      _drawParagraphWithEffects(
+        canvas,
+        paragraph: paragraph,
+        x: drawX,
+        y: drawY,
+        imageFilter: imageFilter,
+        colorFilter: colorFilter,
+        blendMode: blendMode,
+      );
+    }
     return width;
   }
 
   double _paintTextAlongPath(
     ui.Canvas canvas, {
+    required SvgNode layoutNode,
     required String text,
     required _ResolvedTextStyle style,
     required ui.PathMetric metric,
@@ -1469,7 +1584,36 @@ class AnimatedSvgPainter extends CustomPainter {
     final widths = paragraphs
         .map((paragraph) => paragraph.maxIntrinsicWidth)
         .toList(growable: false);
-    final totalWidth = widths.fold<double>(0.0, (sum, w) => sum + w);
+    final advances = <double>[];
+    for (int i = 0; i < glyphs.length; i++) {
+      final spacing = _textPathSpacingAfterGlyph(
+        glyph: glyphs[i],
+        isLast: i == glyphs.length - 1,
+        style: style,
+      );
+      advances.add(widths[i] + spacing);
+    }
+    final displayWidths = List<double>.from(widths);
+    final displayAdvances = List<double>.from(advances);
+    var totalWidth = displayAdvances.fold<double>(0.0, (sum, w) => sum + w);
+    var glyphScaleX = 1.0;
+    final targetLength = _resolveTextLength(layoutNode);
+    if (targetLength != null && targetLength > 0 && totalWidth > 0) {
+      final lengthAdjust = _resolveLengthAdjust(layoutNode);
+      if (lengthAdjust == _SvgTextLengthAdjust.spacing && glyphs.length > 1) {
+        final extraSpacing = (targetLength - totalWidth) / (glyphs.length - 1);
+        for (int i = 0; i < displayAdvances.length - 1; i++) {
+          displayAdvances[i] += extraSpacing;
+        }
+      } else {
+        glyphScaleX = targetLength / totalWidth;
+        for (int i = 0; i < displayWidths.length; i++) {
+          displayWidths[i] *= glyphScaleX;
+          displayAdvances[i] *= glyphScaleX;
+        }
+      }
+      totalWidth = displayAdvances.fold<double>(0.0, (sum, w) => sum + w);
+    }
 
     var drawOffset = startOffset;
     switch (style.textAnchor) {
@@ -1508,25 +1652,34 @@ class AnimatedSvgPainter extends CustomPainter {
     for (int i = 0; i < paragraphs.length; i++) {
       final paragraph = paragraphs[i];
       final glyphWidth = widths[i];
-      final center = (cursor + glyphWidth / 2).clamp(0.0, metric.length);
+      final displayWidth = displayWidths[i];
+      final glyphAdvance = displayAdvances[i];
+      final center = (cursor + displayWidth / 2).clamp(0.0, metric.length);
       final tangent = metric.getTangentForOffset(center);
       if (tangent == null) {
-        cursor += glyphWidth;
-        consumed += glyphWidth;
+        cursor += glyphAdvance;
+        consumed += glyphAdvance;
         continue;
       }
 
+      final baselineRef = _resolveBaselineReference(
+        paragraph: paragraph,
+        dominantBaseline: style.dominantBaseline,
+      );
       canvas.save();
       canvas.translate(tangent.position.dx, tangent.position.dy);
       canvas.rotate(tangent.angle);
+      if ((glyphScaleX - 1.0).abs() > 1e-6) {
+        canvas.scale(glyphScaleX, 1.0);
+      }
       canvas.drawParagraph(
         paragraph,
-        ui.Offset(-glyphWidth / 2, -paragraph.alphabeticBaseline),
+        ui.Offset(-glyphWidth / 2, -baselineRef - style.baselineShift),
       );
       canvas.restore();
 
-      cursor += glyphWidth;
-      consumed += glyphWidth;
+      cursor += glyphAdvance;
+      consumed += glyphAdvance;
       if (cursor > metric.length + style.fontSize) {
         break;
       }
@@ -1563,6 +1716,18 @@ class AnimatedSvgPainter extends CustomPainter {
     final textAnchor = _resolveTextAnchor(
       _getInheritedString(node, 'text-anchor'),
     );
+    final dominantBaseline = _resolveDominantBaseline(
+      _getInheritedString(node, 'dominant-baseline') ??
+          _getInheritedString(node, 'alignment-baseline'),
+    );
+    final baselineShift = _resolveBaselineShift(
+      _getInheritedAttributeValue(node, 'baseline-shift'),
+      fontSize,
+    );
+    final letterSpacing = (_getInheritedNumber(node, 'letter-spacing') ?? 0.0)
+        .clamp(-1024.0, 1024.0);
+    final wordSpacing = (_getInheritedNumber(node, 'word-spacing') ?? 0.0)
+        .clamp(-1024.0, 1024.0);
 
     return _ResolvedTextStyle(
       color: color,
@@ -1571,6 +1736,10 @@ class AnimatedSvgPainter extends CustomPainter {
       fontWeight: fontWeight,
       fontStyle: fontStyle,
       textAnchor: textAnchor,
+      dominantBaseline: dominantBaseline,
+      baselineShift: baselineShift,
+      letterSpacing: letterSpacing,
+      wordSpacing: wordSpacing,
     );
   }
 
@@ -1590,6 +1759,8 @@ class AnimatedSvgPainter extends CustomPainter {
         fontFamily: style.fontFamily,
         fontWeight: style.fontWeight,
         fontStyle: style.fontStyle,
+        letterSpacing: style.letterSpacing,
+        wordSpacing: style.wordSpacing,
       ),
     );
     paragraphBuilder.addText(text);
@@ -1631,6 +1802,124 @@ class AnimatedSvgPainter extends CustomPainter {
     canvas.saveLayer(bounds, layerPaint);
     canvas.drawParagraph(paragraph, ui.Offset(x, y));
     canvas.restore();
+  }
+
+  double _textPathSpacingAfterGlyph({
+    required String glyph,
+    required bool isLast,
+    required _ResolvedTextStyle style,
+  }) {
+    if (isLast) {
+      return 0.0;
+    }
+    var spacing = style.letterSpacing;
+    if (glyph == ' ' || glyph == '\u00A0') {
+      spacing += style.wordSpacing;
+    }
+    return spacing;
+  }
+
+  double _resolveTextTopFromBaseline({
+    required ui.Paragraph paragraph,
+    required _ResolvedTextStyle style,
+    required double baselineY,
+  }) {
+    final baselineRef = _resolveBaselineReference(
+      paragraph: paragraph,
+      dominantBaseline: style.dominantBaseline,
+    );
+    final shiftedBaselineY = baselineY - style.baselineShift;
+    return shiftedBaselineY - baselineRef;
+  }
+
+  double _resolveBaselineReference({
+    required ui.Paragraph paragraph,
+    required _SvgDominantBaseline dominantBaseline,
+  }) {
+    return switch (dominantBaseline) {
+      _SvgDominantBaseline.alphabetic => paragraph.alphabeticBaseline,
+      _SvgDominantBaseline.central => paragraph.height / 2,
+      _SvgDominantBaseline.textBeforeEdge => 0.0,
+      _SvgDominantBaseline.textAfterEdge => paragraph.height,
+    };
+  }
+
+  _SvgDominantBaseline _resolveDominantBaseline(String? rawValue) {
+    switch (rawValue?.trim().toLowerCase()) {
+      case 'middle':
+      case 'central':
+        return _SvgDominantBaseline.central;
+      case 'text-before-edge':
+      case 'before-edge':
+      case 'hanging':
+        return _SvgDominantBaseline.textBeforeEdge;
+      case 'text-after-edge':
+      case 'after-edge':
+      case 'ideographic':
+        return _SvgDominantBaseline.textAfterEdge;
+      case 'alphabetic':
+      default:
+        return _SvgDominantBaseline.alphabetic;
+    }
+  }
+
+  double _resolveBaselineShift(Object? rawValue, double fontSize) {
+    if (rawValue == null) {
+      return 0.0;
+    }
+    if (rawValue is num) {
+      return rawValue.toDouble().clamp(-4096.0, 4096.0);
+    }
+    final value = rawValue.toString().trim().toLowerCase();
+    if (value.isEmpty || value == 'baseline') {
+      return 0.0;
+    }
+    if (value == 'sub') {
+      return -fontSize * 0.6;
+    }
+    if (value == 'super') {
+      return fontSize * 0.6;
+    }
+    if (value.endsWith('%')) {
+      final percent = double.tryParse(value.substring(0, value.length - 1));
+      if (percent == null) {
+        return 0.0;
+      }
+      return (fontSize * percent / 100.0).clamp(-4096.0, 4096.0);
+    }
+    final numeric = double.tryParse(value.replaceAll(RegExp(r'[a-z]+$'), ''));
+    return (numeric ?? 0.0).clamp(-4096.0, 4096.0);
+  }
+
+  double? _resolveTextLength(SvgNode node) {
+    final value = node.getAttributeValue('textLength');
+    if (value == null) {
+      return null;
+    }
+    if (value is num) {
+      final length = value.toDouble();
+      return length > 0 ? length : null;
+    }
+    final raw = value.toString().trim();
+    if (raw.isEmpty) {
+      return null;
+    }
+    final cleaned = raw.replaceAll(RegExp(r'[a-zA-Z%]+$'), '');
+    final parsed = double.tryParse(cleaned);
+    if (parsed == null || parsed <= 0) {
+      return null;
+    }
+    return parsed;
+  }
+
+  _SvgTextLengthAdjust _resolveLengthAdjust(SvgNode node) {
+    final raw = node.getAttributeValue('lengthAdjust')?.toString().trim();
+    if (raw == null || raw.isEmpty) {
+      return _SvgTextLengthAdjust.spacing;
+    }
+    return raw.toLowerCase() == 'spacingandglyphs'
+        ? _SvgTextLengthAdjust.spacingAndGlyphs
+        : _SvgTextLengthAdjust.spacing;
   }
 
   ui.Path? _resolveTextPathGeometry(SvgNode textPathNode) {
@@ -1920,6 +2209,9 @@ class AnimatedSvgPainter extends CustomPainter {
     ui.ColorFilter? colorFilter,
     ui.BlendMode? blendMode,
   }) {
+    if (!_currentPassPaintFill) {
+      return null;
+    }
     final fillValue = _getInheritedAttributeValue(node, 'fill');
     if (_isPaintNone(fillValue)) {
       return null;
@@ -1955,19 +2247,31 @@ class AnimatedSvgPainter extends CustomPainter {
   /// Получить ID фильтра из атрибута filter
   /// Поддерживает формат url(#filterId) или просто filterId
   String? _getFilterId(SvgNode node) {
-    final filterAttr = _getString(node, 'filter');
-    if (filterAttr == null || filterAttr.isEmpty) {
+    final filterAttr = _getStyleOrAttributeValue(node, 'filter')?.toString();
+    if (filterAttr == null || filterAttr.trim().isEmpty) {
       return null;
     }
 
-    // Парсим url(#filterId) формат
-    final urlMatch = RegExp(r'url\(#([^)]+)\)').firstMatch(filterAttr);
-    if (urlMatch != null) {
-      return urlMatch.group(1);
+    final paintServerId = _extractPaintServerId(filterAttr);
+    if (paintServerId != null && paintServerId.isNotEmpty) {
+      return paintServerId;
+    }
+
+    final normalized = filterAttr.trim();
+    if (normalized.toLowerCase() == 'none') {
+      return null;
     }
 
     // Или просто ID если нет url()
-    return filterAttr.trim();
+    return normalized;
+  }
+
+  Object? _getStyleOrAttributeValue(SvgNode node, String attributeName) {
+    final styleValue = _extractStyleValue(node, attributeName.toLowerCase());
+    if (styleValue != null) {
+      return styleValue;
+    }
+    return node.getAttributeValue(attributeName);
   }
 
   /// Создаёт Paint для stroke (или null если нет stroke).
@@ -1978,6 +2282,9 @@ class AnimatedSvgPainter extends CustomPainter {
     ui.ColorFilter? colorFilter,
     ui.BlendMode? blendMode,
   }) {
+    if (!_currentPassPaintStroke) {
+      return null;
+    }
     final strokeValue = _getInheritedAttributeValue(node, 'stroke');
     if (strokeValue == null || _isPaintNone(strokeValue)) {
       return null;
@@ -2370,8 +2677,14 @@ class AnimatedSvgPainter extends CustomPainter {
         continue;
       }
       final value = parts.sublist(1).join(':').trim();
-      if (value.isNotEmpty) {
-        return value;
+      final normalizedValue = value
+          .replaceFirst(
+            RegExp(r'\s*!important\s*$', caseSensitive: false),
+            '',
+          )
+          .trim();
+      if (normalizedValue.isNotEmpty) {
+        return normalizedValue;
       }
     }
     return null;
@@ -2847,21 +3160,7 @@ class AnimatedSvgPainter extends CustomPainter {
       }
     }
 
-    // Named colors (базовые)
-    const namedColors = {
-      'black': ui.Color(0xFF000000),
-      'white': ui.Color(0xFFFFFFFF),
-      'red': ui.Color(0xFFFF0000),
-      'green': ui.Color(0xFF008000),
-      'blue': ui.Color(0xFF0000FF),
-      'yellow': ui.Color(0xFFFFFF00),
-      'cyan': ui.Color(0xFF00FFFF),
-      'magenta': ui.Color(0xFFFF00FF),
-      'gray': ui.Color(0xFF808080),
-      'grey': ui.Color(0xFF808080),
-    };
-
-    return namedColors[str];
+    return cssNamedColors[str];
   }
 
   /// Применяет transform к canvas если атрибут задан
@@ -3007,6 +3306,10 @@ class _TextCursor {
 
 enum _SvgTextAnchor { start, middle, end }
 
+enum _SvgDominantBaseline { alphabetic, central, textBeforeEdge, textAfterEdge }
+
+enum _SvgTextLengthAdjust { spacing, spacingAndGlyphs }
+
 class _ResolvedTextStyle {
   const _ResolvedTextStyle({
     required this.color,
@@ -3015,6 +3318,10 @@ class _ResolvedTextStyle {
     required this.fontWeight,
     required this.fontStyle,
     required this.textAnchor,
+    required this.dominantBaseline,
+    required this.baselineShift,
+    required this.letterSpacing,
+    required this.wordSpacing,
   });
 
   final ui.Color color;
@@ -3023,4 +3330,34 @@ class _ResolvedTextStyle {
   final ui.FontWeight fontWeight;
   final ui.FontStyle fontStyle;
   final _SvgTextAnchor textAnchor;
+  final _SvgDominantBaseline dominantBaseline;
+  final double baselineShift;
+  final double letterSpacing;
+  final double wordSpacing;
+
+  _ResolvedTextStyle copyWith({
+    ui.Color? color,
+    double? fontSize,
+    String? fontFamily,
+    ui.FontWeight? fontWeight,
+    ui.FontStyle? fontStyle,
+    _SvgTextAnchor? textAnchor,
+    _SvgDominantBaseline? dominantBaseline,
+    double? baselineShift,
+    double? letterSpacing,
+    double? wordSpacing,
+  }) {
+    return _ResolvedTextStyle(
+      color: color ?? this.color,
+      fontSize: fontSize ?? this.fontSize,
+      fontFamily: fontFamily ?? this.fontFamily,
+      fontWeight: fontWeight ?? this.fontWeight,
+      fontStyle: fontStyle ?? this.fontStyle,
+      textAnchor: textAnchor ?? this.textAnchor,
+      dominantBaseline: dominantBaseline ?? this.dominantBaseline,
+      baselineShift: baselineShift ?? this.baselineShift,
+      letterSpacing: letterSpacing ?? this.letterSpacing,
+      wordSpacing: wordSpacing ?? this.wordSpacing,
+    );
+  }
 }

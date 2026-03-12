@@ -8,6 +8,10 @@ import 'package:flutter_svg/src/animation/smil/smil_timeline.dart';
 import 'package:flutter_svg/src/animation/svg_dom.dart';
 import 'package:flutter_svg/src/animation/svg_parser.dart';
 
+int _colorChannelToInt(double channel) {
+  return (channel * 255.0).round().clamp(0, 255);
+}
+
 void main() {
   group('Interpolators', () {
     test('interpolates numbers linearly', () {
@@ -22,24 +26,34 @@ void main() {
 
       final mid = Interpolators.interpolateColor(red, blue, 0.5);
 
-      expect(mid.red, closeTo(127, 1));
-      expect(mid.green, equals(0));
-      expect(mid.blue, closeTo(127, 1));
+      expect(_colorChannelToInt(mid.r), closeTo(127, 1));
+      expect(_colorChannelToInt(mid.g), equals(0));
+      expect(_colorChannelToInt(mid.b), closeTo(127, 1));
     });
 
     test('parses hex colors', () {
       final color = Interpolators.interpolateColor('#FF0000', '#00FF00', 0.5);
 
-      expect(color.red, closeTo(127, 1));
-      expect(color.green, closeTo(127, 1));
-      expect(color.blue, equals(0));
+      expect(_colorChannelToInt(color.r), closeTo(127, 1));
+      expect(_colorChannelToInt(color.g), closeTo(127, 1));
+      expect(_colorChannelToInt(color.b), equals(0));
     });
 
     test('parses named colors', () {
       final color = Interpolators.interpolateColor('red', 'blue', 0.5);
 
-      expect(color.red, closeTo(127, 1));
-      expect(color.blue, closeTo(127, 1));
+      expect(_colorChannelToInt(color.r), closeTo(127, 1));
+      expect(_colorChannelToInt(color.b), closeTo(127, 1));
+    });
+
+    test('parses extended CSS named colors', () {
+      final color = Interpolators.interpolateColor(
+        'rebeccapurple',
+        'rebeccapurple',
+        0.5,
+      );
+
+      expect(color, equals(const ui.Color(0xFF663399)));
     });
 
     test('parses rgb() colors', () {
@@ -49,8 +63,8 @@ void main() {
         0.5,
       );
 
-      expect(color.red, closeTo(127, 1));
-      expect(color.blue, closeTo(127, 1));
+      expect(_colorChannelToInt(color.r), closeTo(127, 1));
+      expect(_colorChannelToInt(color.b), closeTo(127, 1));
     });
 
     test('interpolates lists of numbers', () {
@@ -378,6 +392,25 @@ void main() {
       expect(animations[0].from, equals(0.0));
       expect(animations[0].to, equals(100.0));
       expect(animations[0].dur, equals(const Duration(seconds: 2)));
+    });
+
+    test('infers textLength animation as numeric attribute', () {
+      const svgXml = '''
+        <svg>
+          <text id="label" textLength="20">AB
+            <animate attributeName="textLength" from="20" to="80" dur="2s"/>
+          </text>
+        </svg>
+      ''';
+
+      final doc = SvgParser.parse(svgXml);
+      final animations = SmilParser.parseAnimations(doc);
+
+      expect(animations.length, equals(1));
+      expect(animations[0].attributeName, equals('textLength'));
+      expect(animations[0].attributeType, equals(SvgAttributeType.number));
+      expect(animations[0].from, equals(20.0));
+      expect(animations[0].to, equals(80.0));
     });
 
     test('parses values and keyTimes', () {
