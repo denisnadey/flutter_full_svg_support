@@ -2,12 +2,14 @@
 
 Organized documentation for package users and contributors.
 
+**Last Updated:** March 16, 2026
+
 ## 📚 For Package Users
 
 Start here if you're using flutter_svg in your app:
 
 - **[README.md](../README.md)** - Package overview, installation, basic usage
-- **[ANIMATION.md](../ANIMATION.md)** - SMIL animation guide with examples
+- **[ANIMATION.md](../ANIMATION.md)** - SMIL & CSS animation guide with examples
 - **[CHANGELOG.md](../CHANGELOG.md)** - Version history and breaking changes
 
 ## 🛠️ For Contributors
@@ -35,12 +37,12 @@ Optimized instructions for GitHub Copilot and other AI tools:
 
 ## 📦 Archive
 
-Historical implementation documents (Stages 1-6):
+Historical implementation documents (Stages 1-8):
 
 - **[archive/](archive/)** - Detailed stage reports and original architectural plan
   - `ANIMATION_ARCHITECTURE.md` - Original 11-stage plan
-  - `STAGE_5_*.md` - Transform animations implementation
-  - `STAGE_6_*.md` - Path animations & motion implementation
+  - `STAGE_*.md` - Stage completion reports
+  - `SESSION_*.md` - Development session logs
   - See [archive/README.md](archive/README.md) for full index
 
 ## Quick Navigation
@@ -83,9 +85,13 @@ cd example && ../.fvm/flutter_sdk/bin/flutter run
 ```
 flutter_svg/
 ├── README.md                          # Package overview
-├── ANIMATION.md                       # User guide (SMIL)
+├── ANIMATION.md                       # User guide (SMIL & CSS)
 ├── ARCHITECTURE.md                    # Design rationale
-├── CURRENT_STATUS.md                  # Latest status
+├── CURRENT_STATUS.md                  # Latest status (single source of truth)
+├── TODO.md                            # Active work queue
+├── NEXT_STEPS.md                      # Execution order
+├── ROADMAP.md                         # Living roadmap
+├── DOCUMENTATION_INDEX.md             # Navigation hub
 ├── VISUAL_TESTING_GUIDELINES.md       # Testing patterns
 ├── CHANGELOG.md                       # Version history
 │
@@ -96,11 +102,8 @@ flutter_svg/
     ├── README.md                      # This file
     ├── DEVELOPMENT.md                 # Complete dev guide
     ├── BLINK_PARITY_AUDIT.md          # Blink gap matrix
+    ├── RESOLVED_ISSUES.md             # Closed issues registry
     └── archive/                       # Historical docs
-        ├── README.md
-        ├── ANIMATION_ARCHITECTURE.md
-        ├── STAGE_5_*.md
-        └── STAGE_6_*.md
 ```
 
 ## Contributing

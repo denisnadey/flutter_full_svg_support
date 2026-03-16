@@ -1,6 +1,6 @@
 # Documentation Index
 
-**Updated:** March 13, 2026
+**Updated:** March 16, 2026
 
 This is the central navigation page for project docs.
 
@@ -17,7 +17,6 @@ This is the central navigation page for project docs.
 - [ARCHITECTURE.md](ARCHITECTURE.md) - architecture and pipeline rationale
 - [VISUAL_TESTING_GUIDELINES.md](VISUAL_TESTING_GUIDELINES.md) - testing patterns for animation behavior
 - [docs/BLINK_PARITY_AUDIT.md](docs/BLINK_PARITY_AUDIT.md) - gap matrix vs Blink
-- [CSS_ANIMATIONS_FILTERS.md](CSS_ANIMATIONS_FILTERS.md) - CSS/filter parity notes
 
 ## User Docs
 
@@ -32,7 +31,6 @@ This is the central navigation page for project docs.
 - [NEXT_STEPS.md](NEXT_STEPS.md)
 - [ROADMAP.md](ROADMAP.md)
 - [ROADMAP_VISUAL.md](ROADMAP_VISUAL.md)
-- [PLAN_SUMMARY.md](PLAN_SUMMARY.md)
 - [docs/RESOLVED_ISSUES.md](docs/RESOLVED_ISSUES.md)
 
 ## Historical / Archived

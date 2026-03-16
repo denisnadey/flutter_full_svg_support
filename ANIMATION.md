@@ -51,12 +51,18 @@ AnimatedSvgPicture.string(
 - `rotate` - "auto", "auto-reverse", or fixed angle
 - `keyPoints` - Variable speed control
 
-### 🚧 Coming Soon
+### ✅ CSS Animation Support
 
-- CSS Animations (@keyframes)
-- CSS Transitions
-- Advanced optimizations
-- Production readiness
+**Implemented:**
+- `@keyframes` parsing
+- `animation` / `animation-*` property parsing
+- Conversion to SMIL animation objects
+- Timing: `cubic-bezier()`, `ease*` functions
+- Direction: `reverse`, `alternate`, `alternate-reverse`
+- CSS transform normalization
+
+**Remaining gaps:**
+- Advanced edge-case CSS shorthand/transform semantics
 
 ## Examples
 
