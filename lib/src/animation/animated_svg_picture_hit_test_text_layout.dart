@@ -83,6 +83,18 @@ extension _AnimatedSvgPictureStateHitTestTextLayoutExtension
         : _TextLengthAdjust.spacing;
   }
 
+  /// Resolves the textPath spacing attribute.
+  /// Default is `exact` per SVG spec.
+  _TextPathSpacing _resolveTextPathSpacing(SvgNode node) {
+    final raw = node.getAttributeValue('spacing')?.toString().trim();
+    if (raw == null || raw.isEmpty) {
+      return _TextPathSpacing.exact;
+    }
+    return raw.toLowerCase() == 'auto'
+        ? _TextPathSpacing.auto
+        : _TextPathSpacing.exact;
+  }
+
   double _resolveTextTopFromBaseline({
     required SvgNode node,
     required double baselineY,

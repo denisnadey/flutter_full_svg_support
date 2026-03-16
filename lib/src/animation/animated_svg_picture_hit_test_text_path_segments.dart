@@ -9,6 +9,7 @@ extension _AnimatedSvgPictureStateHitTestTextPathSegmentsExtension
     required ui.PathMetric metric,
     required double startOffset,
     required List<_TextHitRun> runs,
+    required _TextPathSpacing spacing,
   }) {
     final glyphs = text.runes
         .map((rune) => String.fromCharCode(rune))
@@ -23,22 +24,27 @@ extension _AnimatedSvgPictureStateHitTestTextPathSegmentsExtension
     final widths = glyphMetrics
         .map((metrics) => metrics.width)
         .toList(growable: false);
-    final letterSpacing =
-        (_getInheritedNumber(styleNode, 'letter-spacing') ?? 0.0).clamp(
-          -1024.0,
-          1024.0,
-        );
-    final wordSpacing = (_getInheritedNumber(styleNode, 'word-spacing') ?? 0.0)
-        .clamp(-1024.0, 1024.0);
+    // For spacing="exact", don't apply letter-spacing/word-spacing
+    // For spacing="auto", apply style spacing
+    final letterSpacing = spacing == _TextPathSpacing.auto
+        ? (_getInheritedNumber(styleNode, 'letter-spacing') ?? 0.0).clamp(
+            -1024.0,
+            1024.0,
+          )
+        : 0.0;
+    final wordSpacing = spacing == _TextPathSpacing.auto
+        ? (_getInheritedNumber(styleNode, 'word-spacing') ?? 0.0)
+            .clamp(-1024.0, 1024.0)
+        : 0.0;
     final advances = <double>[];
     for (int i = 0; i < glyphs.length; i++) {
-      final spacing = _spacingAfterGlyphForHit(
+      final glyphSpacing = _spacingAfterGlyphForHit(
         glyph: glyphs[i],
         isLast: i == glyphs.length - 1,
         letterSpacing: letterSpacing,
         wordSpacing: wordSpacing,
       );
-      advances.add(widths[i] + spacing);
+      advances.add(widths[i] + glyphSpacing);
     }
     final displayWidths = List<double>.from(widths);
     final displayAdvances = List<double>.from(advances);

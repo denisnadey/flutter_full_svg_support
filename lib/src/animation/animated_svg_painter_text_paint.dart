@@ -29,32 +29,54 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
     ui.ImageFilter? imageFilter,
     ui.ColorFilter? colorFilter,
     ui.BlendMode? blendMode,
+    List<double> parentXList = const <double>[],
+    List<double> parentYList = const <double>[],
+    List<double> parentDxList = const <double>[],
+    List<double> parentDyList = const <double>[],
+    List<double> parentRotateList = const <double>[],
   }) {
-    final x = _getNumber(node, 'x');
-    final y = _getNumber(node, 'y');
-    final dx = _getNumber(node, 'dx') ?? 0.0;
-    final dy = _getNumber(node, 'dy') ?? 0.0;
+    // Parse position lists from this node
+    final nodeXList = _getNumberList(node, 'x');
+    final nodeYList = _getNumberList(node, 'y');
+    final nodeDxList = _getNumberList(node, 'dx');
+    final nodeDyList = _getNumberList(node, 'dy');
+    final nodeRotateList = _getNumberList(node, 'rotate');
 
-    if (x != null) {
-      cursor.x = x;
+    // Merge with parent lists - node lists take precedence
+    final xList = nodeXList.isNotEmpty ? nodeXList : parentXList;
+    final yList = nodeYList.isNotEmpty ? nodeYList : parentYList;
+    final dxList = nodeDxList.isNotEmpty ? nodeDxList : parentDxList;
+    final dyList = nodeDyList.isNotEmpty ? nodeDyList : parentDyList;
+    final rotateList = nodeRotateList.isNotEmpty ? nodeRotateList : parentRotateList;
+
+    // Apply first values for backward compatibility (single-value case)
+    if (xList.isNotEmpty && cursor.charIndex < xList.length) {
+      cursor.x = xList[cursor.charIndex];
     }
-    if (y != null) {
-      cursor.y = y;
+    if (yList.isNotEmpty && cursor.charIndex < yList.length) {
+      cursor.y = yList[cursor.charIndex];
     }
-    cursor
-      ..x += dx
-      ..y += dy;
+    if (dxList.isNotEmpty && cursor.charIndex < dxList.length) {
+      cursor.x += dxList[cursor.charIndex];
+    }
+    if (dyList.isNotEmpty && cursor.charIndex < dyList.length) {
+      cursor.y += dyList[cursor.charIndex];
+    }
 
     final style = _resolveTextStyle(node);
     final text = _extractTextContent(node);
     if (text != null && text.isNotEmpty) {
-      final consumed = _paintPlainText(
+      final consumed = _paintPlainTextWithPositions(
         canvas,
         node: node,
         text: text,
         style: style,
-        x: cursor.x,
-        baselineY: cursor.y,
+        cursor: cursor,
+        xList: xList,
+        yList: yList,
+        dxList: dxList,
+        dyList: dyList,
+        rotateList: rotateList,
         imageFilter: imageFilter,
         colorFilter: colorFilter,
         blendMode: blendMode,
@@ -71,6 +93,11 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
           imageFilter: imageFilter,
           colorFilter: colorFilter,
           blendMode: blendMode,
+          parentXList: xList,
+          parentYList: yList,
+          parentDxList: dxList,
+          parentDyList: dyList,
+          parentRotateList: rotateList,
         );
       } else if (child.tagName == 'textPath') {
         final consumed = _paintTextPathNode(
@@ -105,6 +132,9 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
       return 0.0;
     }
 
+    // Parse textPath-specific attributes
+    final spacing = _resolveTextPathSpacing(textPathNode);
+
     double offset = _parseTextPathStartOffset(textPathNode, metric.length);
     var consumed = 0.0;
 
@@ -118,6 +148,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
         style: style,
         metric: metric,
         startOffset: offset,
+        spacing: spacing,
         imageFilter: imageFilter,
         colorFilter: colorFilter,
         blendMode: blendMode,
@@ -142,6 +173,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
         style: style,
         metric: metric,
         startOffset: offset,
+        spacing: spacing,
         imageFilter: imageFilter,
         colorFilter: colorFilter,
         blendMode: blendMode,
@@ -151,6 +183,127 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
     }
 
     return consumed;
+  }
+
+  /// Paints text with per-character positioning from x/y/dx/dy/rotate lists.
+  /// Falls back to simple rendering when no multi-position lists are provided.
+  double _paintPlainTextWithPositions(
+    ui.Canvas canvas, {
+    required SvgNode node,
+    required String text,
+    required _ResolvedTextStyle style,
+    required _TextCursor cursor,
+    required List<double> xList,
+    required List<double> yList,
+    required List<double> dxList,
+    required List<double> dyList,
+    List<double> rotateList = const <double>[],
+    ui.ImageFilter? imageFilter,
+    ui.ColorFilter? colorFilter,
+    ui.BlendMode? blendMode,
+  }) {
+    final glyphs = text.runes.map((r) => String.fromCharCode(r)).toList();
+    final hasMultiPositions = xList.length > 1 ||
+        yList.length > 1 ||
+        dxList.length > 1 ||
+        dyList.length > 1 ||
+        rotateList.isNotEmpty;
+
+    // Fast path: no multi-position attributes, use simple rendering
+    if (!hasMultiPositions) {
+      return _paintPlainText(
+        canvas,
+        node: node,
+        text: text,
+        style: style,
+        x: cursor.x,
+        baselineY: cursor.y,
+        imageFilter: imageFilter,
+        colorFilter: colorFilter,
+        blendMode: blendMode,
+      );
+    }
+
+    // Per-character rendering with position lists
+    var totalWidth = 0.0;
+    for (int i = 0; i < glyphs.length; i++) {
+      final charIdx = cursor.charIndex + i;
+
+      // Apply position from lists for this character
+      if (charIdx < xList.length) {
+        cursor.x = xList[charIdx];
+      }
+      if (charIdx < yList.length) {
+        cursor.y = yList[charIdx];
+      }
+      if (charIdx < dxList.length) {
+        cursor.x += dxList[charIdx];
+      }
+      if (charIdx < dyList.length) {
+        cursor.y += dyList[charIdx];
+      }
+
+      // Get rotation for this character (last value repeats for remaining chars)
+      final rotation = rotateList.isNotEmpty
+          ? rotateList[charIdx.clamp(0, rotateList.length - 1)]
+          : 0.0;
+
+      final glyph = glyphs[i];
+      final paragraph = _buildTextParagraph(glyph, style);
+      final glyphWidth = paragraph.maxIntrinsicWidth;
+
+      var drawX = cursor.x;
+      // Text-anchor only applies to first character in positioned sequence
+      if (i == 0) {
+        // Measure total width for anchor calculation
+        final fullParagraph = _buildTextParagraph(text, style);
+        final fullWidth = fullParagraph.maxIntrinsicWidth;
+        switch (style.textAnchor) {
+          case _SvgTextAnchor.start:
+            break;
+          case _SvgTextAnchor.middle:
+            drawX -= fullWidth / 2;
+            break;
+          case _SvgTextAnchor.end:
+            drawX -= fullWidth;
+            break;
+        }
+      }
+
+      final drawY = _resolveTextTopFromBaseline(
+        paragraph: paragraph,
+        style: style,
+        baselineY: cursor.y,
+      );
+
+      // Apply rotation around the character's baseline position
+      if (rotation != 0.0) {
+        canvas.save();
+        canvas.translate(drawX, cursor.y);
+        canvas.rotate(rotation * 3.1415926535897932 / 180.0);
+        canvas.translate(-drawX, -cursor.y);
+      }
+
+      _drawParagraphWithEffects(
+        canvas,
+        paragraph: paragraph,
+        x: drawX,
+        y: drawY,
+        imageFilter: imageFilter,
+        colorFilter: colorFilter,
+        blendMode: blendMode,
+      );
+
+      if (rotation != 0.0) {
+        canvas.restore();
+      }
+
+      cursor.x += glyphWidth + style.letterSpacing;
+      totalWidth += glyphWidth + style.letterSpacing;
+    }
+
+    cursor.charIndex += glyphs.length;
+    return totalWidth;
   }
 
   double _paintPlainText(
@@ -237,6 +390,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
     required _ResolvedTextStyle style,
     required ui.PathMetric metric,
     required double startOffset,
+    required _SvgTextPathSpacing spacing,
     ui.ImageFilter? imageFilter,
     ui.ColorFilter? colorFilter,
     ui.BlendMode? blendMode,
@@ -256,12 +410,16 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
         .toList(growable: false);
     final advances = <double>[];
     for (int i = 0; i < glyphs.length; i++) {
-      final spacing = _textPathSpacingAfterGlyph(
-        glyph: glyphs[i],
-        isLast: i == glyphs.length - 1,
-        style: style,
-      );
-      advances.add(widths[i] + spacing);
+      // For spacing="exact", don't apply letter-spacing/word-spacing
+      // For spacing="auto", apply style spacing
+      final glyphSpacing = spacing == _SvgTextPathSpacing.auto
+          ? _textPathSpacingAfterGlyph(
+              glyph: glyphs[i],
+              isLast: i == glyphs.length - 1,
+              style: style,
+            )
+          : 0.0;
+      advances.add(widths[i] + glyphSpacing);
     }
     final displayWidths = List<double>.from(widths);
     final displayAdvances = List<double>.from(advances);

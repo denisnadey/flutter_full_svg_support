@@ -9,7 +9,7 @@
 - Flutter SDK: `3.38.1` (via `./.fvm/flutter_sdk/bin/flutter`)
 - Dart SDK: `3.10.0`
 
-## Verified Health (March 13, 2026)
+## Verified Health (March 16, 2026)
 
 Commands run in `/Users/denisnadey/apps/flutter_full_svg_support`:
 
@@ -19,7 +19,7 @@ Commands run in `/Users/denisnadey/apps/flutter_full_svg_support`:
 ```
 
 Result:
-- `flutter test`: **All tests passed** (`+691 ~1`)
+- `flutter test`: **All tests passed** (`+709 ~1`)
 - `flutter analyze`: **26 info**, **0 errors**, **0 warnings** (deprecations/minor lint only)
 
 ## Documentation Cleanup (March 16, 2026)
@@ -122,6 +122,7 @@ Implemented primitives / baseline semantics:
 
 ### Geometry / Text / Reuse / External Content
 - Painted: `rect`, `circle`, `ellipse`, `line`, `path`, `polygon`, `polyline`, `image`, `text`, `tspan`, `textPath` (baseline)
+- Text multi-position attributes: `x`, `y`, `dx`, `dy` as space/comma-separated lists for per-character positioning
 - `<use href="#...">`, `<symbol>` via `<use>` (baseline)
 - `<defs>` as definitions-only
 - `<image>` with data URI + network/bundle best-effort loading (baseline)

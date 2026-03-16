@@ -5,6 +5,7 @@ import 'dart:ui' as ui;
 part 'svg_filters_types.dart';
 part 'svg_filters_base.dart';
 part 'svg_filters_primitives.dart';
+part 'svg_filters_primitives_blur.dart';
 part 'svg_filters_primitives_component_transfer.dart';
 part 'svg_filters_primitives_lighting.dart';
 part 'svg_filters_color_matrix.dart';

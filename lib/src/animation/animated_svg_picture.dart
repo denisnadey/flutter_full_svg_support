@@ -24,6 +24,9 @@ part 'animated_svg_picture_lifecycle.dart';
 part 'animated_svg_picture_images.dart';
 part 'animated_svg_picture_events.dart';
 part 'animated_svg_picture_utils.dart';
+part 'animated_svg_picture_utils_transform.dart';
+part 'animated_svg_picture_utils_attrs.dart';
+part 'animated_svg_picture_utils_style.dart';
 part 'animated_svg_picture_hit_test_traversal.dart';
 part 'animated_svg_picture_hit_test_visibility.dart';
 part 'animated_svg_picture_hit_test_use.dart';
@@ -298,11 +301,16 @@ enum _TextAnchor { start, middle, end }
 
 enum _TextLengthAdjust { spacing, spacingAndGlyphs }
 
+/// SVG textPath spacing attribute values for hit-testing.
+enum _TextPathSpacing { auto, exact }
+
 class _HitTextCursor {
   _HitTextCursor({required this.x, required this.y});
 
   double x;
   double y;
+  /// Character index for consuming multi-position attribute lists.
+  int charIndex = 0;
 }
 
 class _TextMeasure {
@@ -341,18 +349,28 @@ enum _TextDominantBaseline {
 }
 
 class _TextHitRun {
-  const _TextHitRun.bounds({required this.owner, required Rect this.bounds})
-    : path = null,
-      pathTolerance = 0.0;
+  const _TextHitRun.bounds({
+    required this.owner,
+    required Rect this.bounds,
+    this.rotation = 0.0,
+    this.rotationCenter = Offset.zero,
+  }) : path = null,
+       pathTolerance = 0.0;
 
   const _TextHitRun.path({
     required this.owner,
     required Path this.path,
     required this.pathTolerance,
-  }) : bounds = null;
+  }) : bounds = null,
+       rotation = 0.0,
+       rotationCenter = Offset.zero;
 
   final SvgNode owner;
   final Rect? bounds;
   final Path? path;
   final double pathTolerance;
+  /// Rotation angle in degrees (for per-character rotation).
+  final double rotation;
+  /// Center point for rotation (baseline position).
+  final Offset rotationCenter;
 }

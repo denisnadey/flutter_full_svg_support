@@ -1,6 +1,21 @@
 part of 'animated_svg_painter.dart';
 
 extension AnimatedSvgPainterValuesExtension on AnimatedSvgPainter {
+  /// Parses a space/comma-separated list of numbers from an attribute.
+  /// Returns empty list if attribute is missing or empty.
+  List<double> _getNumberList(SvgNode node, String attributeName) {
+    final value = node.getAttributeValue(attributeName)?.toString();
+    if (value == null || value.trim().isEmpty) {
+      return const <double>[];
+    }
+    return value
+        .trim()
+        .split(RegExp(r'[\s,]+'))
+        .map((s) => double.tryParse(s))
+        .whereType<double>()
+        .toList();
+  }
+
   double? _getNumber(SvgNode node, String attributeName) {
     final value = node.getAttributeValue(attributeName);
     if (value == null) return null;
@@ -193,5 +208,18 @@ extension AnimatedSvgPainterValuesExtension on AnimatedSvgPainter {
     }
 
     return cssNamedColors[str];
+  }
+
+  /// Resolves the textPath spacing attribute.
+  /// Default is `exact` per SVG spec.
+  _SvgTextPathSpacing _resolveTextPathSpacing(SvgNode node) {
+    final value = _getString(node, 'spacing')?.trim().toLowerCase();
+    switch (value) {
+      case 'auto':
+        return _SvgTextPathSpacing.auto;
+      case 'exact':
+      default:
+        return _SvgTextPathSpacing.exact;
+    }
   }
 }

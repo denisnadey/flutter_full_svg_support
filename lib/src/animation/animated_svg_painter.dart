@@ -19,6 +19,7 @@ part 'animated_svg_painter_clip_mask.dart';
 part 'animated_svg_painter_clip_mask_geometry.dart';
 part 'animated_svg_painter_clip_mask_units.dart';
 part 'animated_svg_painter_shapes.dart';
+part 'animated_svg_painter_shapes_rect.dart';
 part 'animated_svg_painter_shapes_image.dart';
 part 'animated_svg_painter_shapes_paths.dart';
 part 'animated_svg_painter_text_paint.dart';
@@ -165,6 +166,8 @@ class _TextCursor {
 
   double x;
   double y;
+  /// Character index for consuming multi-position attribute lists.
+  int charIndex = 0;
 }
 
 enum _SvgTextAnchor { start, middle, end }
@@ -172,6 +175,9 @@ enum _SvgTextAnchor { start, middle, end }
 enum _SvgDominantBaseline { alphabetic, central, textBeforeEdge, textAfterEdge }
 
 enum _SvgTextLengthAdjust { spacing, spacingAndGlyphs }
+
+/// SVG textPath spacing attribute values.
+enum _SvgTextPathSpacing { auto, exact }
 
 class _ResolvedTextStyle {
   const _ResolvedTextStyle({

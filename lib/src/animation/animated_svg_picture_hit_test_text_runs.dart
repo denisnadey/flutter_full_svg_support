@@ -50,27 +50,35 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
   }
 
   bool _textRunBoundingBoxContainsPoint(_TextHitRun run, Offset point) {
+    // Transform point inversely if rotation is applied
+    final testPoint = run.rotation != 0.0
+        ? _inverseRotatePoint(point, run.rotationCenter, run.rotation)
+        : point;
     final bounds = run.bounds;
     if (bounds != null) {
-      return bounds.contains(point);
+      return bounds.contains(testPoint);
     }
     final path = run.path;
     if (path != null) {
-      return path.getBounds().contains(point);
+      return path.getBounds().contains(testPoint);
     }
     return false;
   }
 
   bool _textRunContainsPoint(_TextHitRun run, Offset point) {
+    // Transform point inversely if rotation is applied
+    final testPoint = run.rotation != 0.0
+        ? _inverseRotatePoint(point, run.rotationCenter, run.rotation)
+        : point;
     final bounds = run.bounds;
     if (bounds != null) {
-      return bounds.contains(point);
+      return bounds.contains(testPoint);
     }
     final path = run.path;
     if (path != null) {
       // TextPath hit-runs are represented as path segments; use tolerance-based
       // containment for baseline parity in fill/bounding-box modes.
-      return _pathStrokeContains(path, point, run.pathTolerance);
+      return _pathStrokeContains(path, testPoint, run.pathTolerance);
     }
     return false;
   }
@@ -80,12 +88,16 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
     Offset point,
     SvgNode styleNode,
   ) {
+    // Transform point inversely if rotation is applied
+    final testPoint = run.rotation != 0.0
+        ? _inverseRotatePoint(point, run.rotationCenter, run.rotation)
+        : point;
     final bounds = run.bounds;
     if (bounds != null) {
       final boundsPath = Path()..addRect(bounds);
       return _pathStrokeContains(
         boundsPath,
-        point,
+        testPoint,
         _strokeTolerance(styleNode),
       );
     }
@@ -95,9 +107,22 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
         _strokeTolerance(styleNode),
         run.pathTolerance,
       );
-      return _pathStrokeContains(path, point, tolerance);
+      return _pathStrokeContains(path, testPoint, tolerance);
     }
     return false;
+  }
+
+  /// Inversely rotates a point around a center by the given angle (in degrees).
+  Offset _inverseRotatePoint(Offset point, Offset center, double angleDegrees) {
+    final radians = -angleDegrees * 3.1415926535897932 / 180.0;
+    final cos = math.cos(radians);
+    final sin = math.sin(radians);
+    final dx = point.dx - center.dx;
+    final dy = point.dy - center.dy;
+    return Offset(
+      center.dx + dx * cos - dy * sin,
+      center.dy + dx * sin + dy * cos,
+    );
   }
 
   SvgNode? _findTextLayoutRoot(SvgNode node) {
@@ -126,33 +151,62 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
     if (textRoot.tagName != 'text') {
       return const <_TextHitRun>[];
     }
-    final startX = _getNumber(textRoot, 'x') ?? 0.0;
-    final startY = _getNumber(textRoot, 'y') ?? 0.0;
+    final xList = _getNumberList(textRoot, 'x');
+    final yList = _getNumberList(textRoot, 'y');
+    final startX = xList.isNotEmpty ? xList[0] : 0.0;
+    final startY = yList.isNotEmpty ? yList[0] : 0.0;
     final cursor = _HitTextCursor(x: startX, y: startY);
     final runs = <_TextHitRun>[];
-    _appendTextNodeHitRuns(textRoot, cursor, runs);
+    _appendTextNodeHitRuns(
+      textRoot,
+      cursor,
+      runs,
+      parentXList: xList,
+      parentYList: yList,
+      parentDxList: _getNumberList(textRoot, 'dx'),
+      parentDyList: _getNumberList(textRoot, 'dy'),
+      parentRotateList: _getNumberList(textRoot, 'rotate'),
+    );
     return runs;
   }
 
   void _appendTextNodeHitRuns(
     SvgNode node,
     _HitTextCursor cursor,
-    List<_TextHitRun> runs,
-  ) {
-    final x = _getNumber(node, 'x');
-    final y = _getNumber(node, 'y');
-    final dx = _getNumber(node, 'dx') ?? 0.0;
-    final dy = _getNumber(node, 'dy') ?? 0.0;
+    List<_TextHitRun> runs, {
+    List<double> parentXList = const <double>[],
+    List<double> parentYList = const <double>[],
+    List<double> parentDxList = const <double>[],
+    List<double> parentDyList = const <double>[],
+    List<double> parentRotateList = const <double>[],
+  }) {
+    // Parse position lists from this node
+    final nodeXList = _getNumberList(node, 'x');
+    final nodeYList = _getNumberList(node, 'y');
+    final nodeDxList = _getNumberList(node, 'dx');
+    final nodeDyList = _getNumberList(node, 'dy');
+    final nodeRotateList = _getNumberList(node, 'rotate');
 
-    if (x != null) {
-      cursor.x = x;
+    // Merge with parent lists - node lists take precedence
+    final xList = nodeXList.isNotEmpty ? nodeXList : parentXList;
+    final yList = nodeYList.isNotEmpty ? nodeYList : parentYList;
+    final dxList = nodeDxList.isNotEmpty ? nodeDxList : parentDxList;
+    final dyList = nodeDyList.isNotEmpty ? nodeDyList : parentDyList;
+    final rotateList = nodeRotateList.isNotEmpty ? nodeRotateList : parentRotateList;
+
+    // Apply first values for backward compatibility (single-value case)
+    if (xList.isNotEmpty && cursor.charIndex < xList.length) {
+      cursor.x = xList[cursor.charIndex];
     }
-    if (y != null) {
-      cursor.y = y;
+    if (yList.isNotEmpty && cursor.charIndex < yList.length) {
+      cursor.y = yList[cursor.charIndex];
     }
-    cursor
-      ..x += dx
-      ..y += dy;
+    if (dxList.isNotEmpty && cursor.charIndex < dxList.length) {
+      cursor.x += dxList[cursor.charIndex];
+    }
+    if (dyList.isNotEmpty && cursor.charIndex < dyList.length) {
+      cursor.y += dyList[cursor.charIndex];
+    }
 
     final text = _extractTextContent(node);
     if (text != null && text.isNotEmpty) {
@@ -189,18 +243,32 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
         baselineY: cursor.y,
         metrics: metrics,
       );
+      // Get rotation for hit region (use first value for entire run)
+      final rotation = rotateList.isNotEmpty ? rotateList[0] : 0.0;
       runs.add(
         _TextHitRun.bounds(
           owner: node,
           bounds: Rect.fromLTWH(left, top, metrics.width, metrics.height),
+          rotation: rotation,
+          rotationCenter: Offset(left, cursor.y),
         ),
       );
       cursor.x += metrics.width;
+      cursor.charIndex += text.runes.length;
     }
 
     for (final child in node.children) {
       if (child.tagName == 'tspan') {
-        _appendTextNodeHitRuns(child, cursor, runs);
+        _appendTextNodeHitRuns(
+          child,
+          cursor,
+          runs,
+          parentXList: xList,
+          parentYList: yList,
+          parentDxList: dxList,
+          parentDyList: dyList,
+          parentRotateList: rotateList,
+        );
       } else if (child.tagName == 'textPath') {
         final consumed = _appendTextPathHitRuns(child, runs);
         cursor.x += consumed;
@@ -222,6 +290,9 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
       return 0.0;
     }
 
+    // Parse textPath-specific attributes
+    final spacing = _resolveTextPathSpacing(textPathNode);
+
     double offset = _parseTextPathStartOffset(textPathNode, metric.length);
     var consumed = 0.0;
 
@@ -234,6 +305,7 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
         metric: metric,
         startOffset: offset,
         runs: runs,
+        spacing: spacing,
       );
       offset += textConsumed;
       consumed += textConsumed;
@@ -254,6 +326,7 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
         metric: metric,
         startOffset: offset,
         runs: runs,
+        spacing: spacing,
       );
       offset += textConsumed;
       consumed += textConsumed;

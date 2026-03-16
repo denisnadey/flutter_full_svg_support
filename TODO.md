@@ -86,6 +86,9 @@ For factual project status, use `CURRENT_STATUS.md` only.
 - [x] Inline `style` normalization increment: trailing `!important` is respected for `filter`/`clip-path`/`mask`/`display` paths in paint + hit-testing
 - [x] `feBlend` mode parsing parity increment: extended SVG2 blend modes (`color-dodge`/`color-burn`/`hard-light`/`soft-light`/`difference`/`exclusion`/`hue`/`saturation`/`color`/`luminosity`)
 - [x] Painting parity increment: inherited `visibility` semantics for descendants (`visibility:hidden` on ancestor suppresses paint unless child overrides)
+- [x] Text multi-position attributes: `x`, `y`, `dx`, `dy` as space/comma-separated lists for per-character positioning in paint + hit-testing
+- [x] Text `rotate` attribute: per-character rotation support (single value or list) in paint + hit-testing
+- [x] textPath `spacing` attribute: `exact` (default) vs `auto` for character spacing control in paint + hit-testing
 
 ## P0 - Blink Parity Foundations
 
