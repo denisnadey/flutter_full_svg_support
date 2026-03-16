@@ -1,5 +1,8 @@
 # Architecture Overview
 
+> Note: feature-completion status and active priorities are maintained in
+> `CURRENT_STATUS.md` and `NEXT_STEPS.md`. This document focuses on design/structure.
+
 ## Dual Pipeline Design
 
 flutter_svg uses **two completely separate rendering pipelines**:
@@ -236,23 +239,45 @@ Compiled format throws this away for performance.
 lib/src/animation/
 ├── Core
 │   ├── animated_svg_picture.dart    # Public widget
-│   ├── animated_svg_painter.dart    # CustomPainter
+│   ├── animated_svg_painter.dart    # CustomPainter orchestrator (+ split parts)
+│   ├── animated_svg_painter_tree.dart # Node traversal/filter pass helpers
+│   ├── animated_svg_painter_gradients.dart # Gradient paint orchestration (+ split parts)
+│   ├── animated_svg_painter_clip_mask.dart # Clip/mask orchestration (+ split parts)
 │   ├── svg_parser.dart              # XML → DOM
+│   ├── css_animations.dart          # CSS animation parser (+ split parts)
+│   ├── css_to_smil_converter.dart   # CSS->SMIL conversion facade (+ split parts)
+│   ├── css_to_smil_converter_transforms_decompose.dart # Compound transform decomposition
+│   ├── css_to_smil_converter_transforms_values.dart # Transform value normalization/parsing
 │   └── svg_dom.dart                 # DOM model
 ├── SMIL
-│   ├── smil_animation.dart          # Animation classes
-│   ├── smil_parser.dart             # Extract from DOM
-│   ├── smil_timeline.dart           # Time management
-│   ├── interpolators.dart           # Value interpolation
+│   ├── smil_animation.dart          # Animation API (+ split parts)
+│   ├── smil_parser.dart             # Extract from DOM (+ split parts)
+│   ├── smil_timeline.dart           # Time management (+ split parts)
+│   ├── interpolators.dart           # Value interpolation facade (+ split parts)
+│   ├── interpolators_path.dart      # Path interpolation helpers
+│   ├── interpolators_transform.dart # Transform interpolation helpers
+│   ├── interpolators_color_parsing.dart # Color/number/list parsing helpers
 │   ├── motion_path.dart             # AnimateMotion
 │   └── timing.dart                  # Duration parsing
+├── Filters Parser
+│   ├── svg_parser_filters.dart      # Filter node dispatch
+│   ├── svg_parser_filters_primitives.dart # Primitive parsers (+ split parts)
+│   └── svg_parser_filters_lighting.dart  # Lighting helpers
+├── Filters Runtime
+│   ├── svg_filters.dart             # Runtime filter model/pipeline (+ split parts)
+│   ├── svg_filters_registry_pipeline.dart # Pipeline orchestration
+│   ├── svg_filters_registry_pipeline_primitives.dart # Primitive pass resolution
+│   ├── svg_filters_registry_pipeline_primitives_effects.dart # Primitive effect steps
+│   ├── svg_filters_registry_pipeline_primitives_paint.dart # Primitive paint/pass helpers
+│   └── svg_filters_registry_pipeline_compositing.dart # Blend/composite/merge
 ├── Utilities
-│   ├── path_parser.dart             # SVG path → PathData
-│   ├── path_normalizer.dart         # Normalize for morphing
-│   ├── path_interpolation.dart      # Path morphing
+│   ├── path_data.dart               # Path command API (+ split parts)
+│   ├── path_parser.dart             # SVG path parser API (+ split parts)
+│   ├── path_normalizer.dart         # Normalize for morphing (+ split parts)
+│   ├── path_interpolation.dart      # Path morphing (+ split parts)
 │   └── svg_transform.dart           # Transform parsing
 └── Future (Stage 8-9)
-    └── css/                          # CSS animations
+    └── css/                          # Advanced CSS animation parity work
 ```
 
 ## Design Principles

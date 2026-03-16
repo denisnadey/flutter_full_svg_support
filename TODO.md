@@ -1,13 +1,33 @@
 # TODO - Animation Work Queue
 
-**Last Updated:** March 12, 2026  
+**Last Updated:** March 13, 2026  
 **Status Source:** `/Users/denisnadey/apps/flutter_full_svg_support/CURRENT_STATUS.md`
+**Closed Issues Registry:** `/Users/denisnadey/apps/flutter_full_svg_support/docs/RESOLVED_ISSUES.md`
 
 This file tracks actionable implementation tasks.
 For factual project status, use `CURRENT_STATUS.md` only.
 
 ## Completed Recently
 
+- [x] `calcMode="paced"` distance support completed for `path` and `transform` + regression coverage
+- [x] Refactor milestone: split `smil_animation.dart` into focused part files (API preserved)
+- [x] Refactor milestone: split `smil_parser.dart` into focused part files (API preserved)
+- [x] Refactor milestone: split `smil_timeline.dart` into focused part files (API preserved)
+- [x] Refactor milestone: split `css_to_smil_converter.dart` into focused part files (API preserved)
+- [x] Refactor milestone: split `path_data.dart` into focused part files (API preserved)
+- [x] Refactor milestone: split `path_parser.dart` into focused part files (API preserved)
+- [x] Refactor milestone: split `path_normalizer.dart` into focused part files (API preserved)
+- [x] Refactor milestone: split `path_interpolation.dart` into focused part files (API preserved)
+- [x] Refactor milestone: split `css_animations.dart` into focused part files (API preserved)
+- [x] Refactor milestone: split `svg_parser_filters_primitives.dart` into focused part files (API preserved)
+- [x] Refactor milestone: split `svg_filters_registry_pipeline.dart` into focused part files (API preserved)
+- [x] Refactor milestone: further split `svg_filters_registry_pipeline_primitives.dart` into focused part files (API preserved)
+- [x] Refactor milestone: split `animated_svg_painter.dart` tree/filter traversal into focused part files (API preserved)
+- [x] Refactor milestone: split `animated_svg_painter_gradients.dart` into focused part files (API preserved)
+- [x] Refactor milestone: split `animated_svg_painter_clip_mask.dart` into focused part files (API preserved)
+- [x] Refactor milestone: split `smil/interpolators.dart` into focused part files (API preserved)
+- [x] Refactor milestone: further split `css_to_smil_converter_transforms.dart` into focused part files (API preserved)
+- [x] Full regression run after refactor milestones (`flutter test`, `flutter analyze`)
 - [x] Element-level hit-testing for event timing (`click/mouseover/mouseout`) on `rect/circle/ellipse/line`
 - [x] Target-specific event parser support (`id.click`)
 - [x] SVG Playground with runtime traces/logs/problems/checklist
@@ -122,3 +142,5 @@ For factual project status, use `CURRENT_STATUS.md` only.
 
 - Full Blink parity reference and scope are documented in:  
   `/Users/denisnadey/apps/flutter_full_svg_support/docs/BLINK_PARITY_AUDIT.md`
+- Closed bugs and closed milestones must be recorded in:
+  `/Users/denisnadey/apps/flutter_full_svg_support/docs/RESOLVED_ISSUES.md`

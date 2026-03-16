@@ -5,6 +5,8 @@ library;
 
 import 'dart:ui' show Path, lerpDouble;
 import 'path_data.dart';
+part 'path_interpolation_helpers.dart';
+part 'path_interpolation_morpher.dart';
 
 /// Interpolates between two normalized SVG paths.
 ///
@@ -62,35 +64,6 @@ class PathInterpolator {
     return path;
   }
 
-  /// Interpolate a MoveTo command.
-  void _interpolateMoveTo(
-    Path path,
-    MoveToCommand from,
-    MoveToCommand to,
-    double t,
-  ) {
-    final x = lerpDouble(from.x, to.x, t)!;
-    final y = lerpDouble(from.y, to.y, t)!;
-    path.moveTo(x, y);
-  }
-
-  /// Interpolate a CubicBezier command.
-  void _interpolateCubicBezier(
-    Path path,
-    CubicBezierCommand from,
-    CubicBezierCommand to,
-    double t,
-  ) {
-    final x1 = lerpDouble(from.x1, to.x1, t)!;
-    final y1 = lerpDouble(from.y1, to.y1, t)!;
-    final x2 = lerpDouble(from.x2, to.x2, t)!;
-    final y2 = lerpDouble(from.y2, to.y2, t)!;
-    final x = lerpDouble(from.x, to.x, t)!;
-    final y = lerpDouble(from.y, to.y, t)!;
-
-    path.cubicTo(x1, y1, x2, y2, x, y);
-  }
-
   /// Interpolate between two path data strings.
   ///
   /// This is a convenience method that handles parsing and normalization.
@@ -118,56 +91,5 @@ class PathInterpolator {
     }
 
     return interpolate(normalized.from, normalized.to, t);
-  }
-}
-
-/// Helper class to manage path morphing animations.
-///
-/// Caches normalized paths for efficient repeated interpolation.
-class PathMorpher {
-  PathMorpher({
-    required List<PathCommand> fromCommands,
-    required List<PathCommand> toCommands,
-  }) : _fromCommands = fromCommands,
-       _toCommands = toCommands {
-    if (fromCommands.length != toCommands.length) {
-      throw ArgumentError(
-        'Paths must have the same length. '
-        'Use PathNormalizer.normalize() first.',
-      );
-    }
-  }
-
-  final List<PathCommand> _fromCommands;
-  final List<PathCommand> _toCommands;
-  final PathInterpolator _interpolator = const PathInterpolator();
-
-  /// Get the interpolated path at time t (0.0 to 1.0).
-  Path getPathAt(double t) {
-    return _interpolator.interpolate(_fromCommands, _toCommands, t);
-  }
-
-  /// Get the from path (t = 0.0).
-  Path get fromPath => getPathAt(0.0);
-
-  /// Get the to path (t = 1.0).
-  Path get toPath => getPathAt(1.0);
-
-  /// Get a path at a specific percentage (0 to 100).
-  Path getPathAtPercent(double percent) {
-    return getPathAt(percent / 100.0);
-  }
-}
-
-/// Extension methods for easier path interpolation.
-extension PathCommandListInterpolation on List<PathCommand> {
-  /// Interpolate this path to another path.
-  Path interpolateTo(List<PathCommand> other, double t) {
-    return const PathInterpolator().interpolate(this, other, t);
-  }
-
-  /// Create a PathMorpher for animating between this path and another.
-  PathMorpher morphTo(List<PathCommand> other) {
-    return PathMorpher(fromCommands: this, toCommands: other);
   }
 }

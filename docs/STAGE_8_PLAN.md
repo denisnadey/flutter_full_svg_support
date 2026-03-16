@@ -1,5 +1,11 @@
 # Stage 8: Advanced SMIL Features - Plan
 
+> Historical planning document (January 2026 context).  
+> For current execution order and status, use:
+> - `/Users/denisnadey/apps/flutter_full_svg_support/CURRENT_STATUS.md`
+> - `/Users/denisnadey/apps/flutter_full_svg_support/NEXT_STEPS.md`
+> - `/Users/denisnadey/apps/flutter_full_svg_support/TODO.md`
+
 **Estimated Duration:** 2-3 weeks  
 **Priority:** Medium  
 **Prerequisites:** Stage 7 (Syncbase Timing) ✅

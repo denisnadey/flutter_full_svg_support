@@ -1,0 +1,133 @@
+part of 'animated_svg_painter.dart';
+
+extension AnimatedSvgPainterShapesPathExtension on AnimatedSvgPainter {
+  /// Рисует <path>
+  void _paintPath(
+    ui.Canvas canvas,
+    SvgNode node, {
+    ui.ImageFilter? imageFilter,
+    ui.ColorFilter? colorFilter,
+    ui.BlendMode? blendMode,
+  }) {
+    final pathData = _getString(node, 'd');
+    if (pathData == null || pathData.isEmpty) return;
+
+    final path = _buildPath(pathData);
+    if (path == null) return;
+
+    final fillRule = _getString(node, 'fill-rule')?.toLowerCase();
+    path.fillType = fillRule == 'evenodd'
+        ? ui.PathFillType.evenOdd
+        : ui.PathFillType.nonZero;
+
+    final paintBounds = path.getBounds();
+    final fillPaint = _createFillPaint(
+      node,
+      paintBounds: paintBounds,
+      imageFilter: imageFilter,
+      colorFilter: colorFilter,
+      blendMode: blendMode,
+    );
+    if (fillPaint != null) {
+      canvas.drawPath(path, fillPaint);
+    }
+
+    final strokePaint = _createStrokePaint(
+      node,
+      paintBounds: paintBounds,
+      imageFilter: imageFilter,
+      colorFilter: colorFilter,
+      blendMode: blendMode,
+    );
+    if (strokePaint != null) {
+      final dashedPath = _buildDashedPath(path, node);
+      canvas.drawPath(dashedPath, strokePaint);
+    }
+  }
+
+  void _paintPolygon(
+    ui.Canvas canvas,
+    SvgNode node, {
+    ui.ImageFilter? imageFilter,
+    ui.ColorFilter? colorFilter,
+    ui.BlendMode? blendMode,
+  }) {
+    final points = _parsePoints(node);
+    if (points.length < 3) return;
+
+    final path = ui.Path()..moveTo(points.first.dx, points.first.dy);
+    for (int i = 1; i < points.length; i++) {
+      path.lineTo(points[i].dx, points[i].dy);
+    }
+    path.close();
+
+    final fillRule = _getString(node, 'fill-rule')?.toLowerCase();
+    path.fillType = fillRule == 'evenodd'
+        ? ui.PathFillType.evenOdd
+        : ui.PathFillType.nonZero;
+
+    final paintBounds = path.getBounds();
+    final fillPaint = _createFillPaint(
+      node,
+      paintBounds: paintBounds,
+      imageFilter: imageFilter,
+      colorFilter: colorFilter,
+      blendMode: blendMode,
+    );
+    if (fillPaint != null) {
+      canvas.drawPath(path, fillPaint);
+    }
+
+    final strokePaint = _createStrokePaint(
+      node,
+      paintBounds: paintBounds,
+      imageFilter: imageFilter,
+      colorFilter: colorFilter,
+      blendMode: blendMode,
+    );
+    if (strokePaint != null) {
+      final dashedPath = _buildDashedPath(path, node);
+      canvas.drawPath(dashedPath, strokePaint);
+    }
+  }
+
+  void _paintPolyline(
+    ui.Canvas canvas,
+    SvgNode node, {
+    ui.ImageFilter? imageFilter,
+    ui.ColorFilter? colorFilter,
+    ui.BlendMode? blendMode,
+  }) {
+    final points = _parsePoints(node);
+    if (points.length < 2) return;
+
+    final path = ui.Path()..moveTo(points.first.dx, points.first.dy);
+    for (int i = 1; i < points.length; i++) {
+      path.lineTo(points[i].dx, points[i].dy);
+    }
+
+    final paintBounds = path.getBounds();
+    final fillPaint = _createFillPaint(
+      node,
+      paintBounds: paintBounds,
+      imageFilter: imageFilter,
+      colorFilter: colorFilter,
+      blendMode: blendMode,
+    );
+    if (fillPaint != null) {
+      canvas.drawPath(path, fillPaint);
+    }
+
+    final strokePaint = _createStrokePaint(
+      node,
+      paintBounds: paintBounds,
+      imageFilter: imageFilter,
+      colorFilter: colorFilter,
+      blendMode: blendMode,
+    );
+    if (strokePaint != null) {
+      final dashedPath = _buildDashedPath(path, node);
+      canvas.drawPath(dashedPath, strokePaint);
+    }
+  }
+}

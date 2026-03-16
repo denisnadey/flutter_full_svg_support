@@ -1,0 +1,77 @@
+part of 'svg_parser.dart';
+
+/// Парсит фильтры из <defs><filter> элементов
+SvgFilters _parseFilters(XmlElement svgElement) {
+  final filters = SvgFilters();
+
+  // Ищем <defs> элемент
+  final defsElements = svgElement.findElements('defs');
+  if (defsElements.isEmpty) {
+    return filters;
+  }
+
+  final defs = defsElements.first;
+
+  // Ищем все <filter> элементы
+  for (final filterElement in defs.findElements('filter')) {
+    final filterId = filterElement.getAttribute('id');
+    if (filterId == null || filterId.isEmpty) {
+      continue; // Фильтр без ID не может быть использован
+    }
+
+    // Парсим примитивы фильтра (feGaussianBlur, feDropShadow, etc.)
+    for (final child in filterElement.childElements) {
+      final filter = _parseFilterPrimitive(child, filterId);
+      if (filter != null) {
+        filters.add(filter);
+      }
+    }
+  }
+
+  return filters;
+}
+
+/// Парсит примитив фильтра (feGaussianBlur, feDropShadow, feColorMatrix)
+SvgFilter? _parseFilterPrimitive(XmlElement element, String filterId) {
+  final tagName = element.name.local;
+
+  switch (tagName) {
+    case 'feGaussianBlur':
+      return _parseGaussianBlur(element, filterId);
+    case 'feMorphology':
+      return _parseMorphology(element, filterId);
+    case 'feDisplacementMap':
+      return _parseDisplacementMap(element, filterId);
+    case 'feImage':
+      return _parseFeImage(element, filterId);
+    case 'feConvolveMatrix':
+      return _parseConvolveMatrix(element, filterId);
+    case 'feTurbulence':
+      return _parseTurbulence(element, filterId);
+    case 'feComponentTransfer':
+      return _parseComponentTransfer(element, filterId);
+    case 'feDiffuseLighting':
+      return _parseDiffuseLighting(element, filterId);
+    case 'feSpecularLighting':
+      return _parseSpecularLighting(element, filterId);
+    case 'feOffset':
+      return _parseOffset(element, filterId);
+    case 'feFlood':
+      return _parseFlood(element, filterId);
+    case 'feBlend':
+      return _parseBlend(element, filterId);
+    case 'feComposite':
+      return _parseComposite(element, filterId);
+    case 'feMerge':
+      return _parseMerge(element, filterId);
+    case 'feTile':
+      return _parseTile(element, filterId);
+    case 'feDropShadow':
+      return _parseDropShadow(element, filterId);
+    case 'feColorMatrix':
+      return _parseColorMatrix(element, filterId);
+    default:
+      // Другие фильтры пока не поддерживаются
+      return null;
+  }
+}

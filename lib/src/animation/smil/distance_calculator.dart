@@ -2,6 +2,8 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import '../svg_dom.dart';
+import '../svg_transform.dart';
+import 'motion_path.dart';
 
 /// Абстрактный класс для вычисления расстояния между значениями
 /// Используется для calcMode="paced" для генерации keyTimes
@@ -106,12 +108,41 @@ class LengthDistanceCalculator extends DistanceCalculator {
 class PathDistanceCalculator extends DistanceCalculator {
   @override
   double distance(Object? from, Object? to) {
-    if (from == null || to == null) return -1.0;
+    final fromPath = _toPath(from);
+    final toPath = _toPath(to);
+    if (fromPath == null || toPath == null) {
+      return -1.0;
+    }
 
-    // Для путей нужно парсить и сравнивать длины
-    // Это сложнее, пока возвращаем -1 (не поддерживается)
-    // В Blink SVGAnimatedPathAnimator тоже возвращает -1 с FIXME
-    return -1.0;
+    // Оцениваем расстояние как сумму:
+    // 1) |длина(from) - длина(to)|
+    // 2) среднее смещение соответствующих точек вдоль пути.
+    // Это даёт стабильную метрику для paced keyTimes без тяжёлой геометрии.
+    final lengthDelta = (fromPath.totalLength - toPath.totalLength).abs();
+    const sampleCount = 24;
+    var sampledDelta = 0.0;
+    for (int i = 0; i <= sampleCount; i++) {
+      final t = i / sampleCount;
+      final p1 = fromPath.getPointAtTime(t).position;
+      final p2 = toPath.getPointAtTime(t).position;
+      sampledDelta += (p2 - p1).distance;
+    }
+    return lengthDelta + sampledDelta / (sampleCount + 1);
+  }
+
+  MotionPath? _toPath(Object? value) {
+    if (value == null) {
+      return null;
+    }
+    final raw = value.toString().trim();
+    if (raw.isEmpty) {
+      return null;
+    }
+    try {
+      return MotionPath(raw);
+    } catch (_) {
+      return null;
+    }
   }
 }
 
@@ -120,12 +151,55 @@ class PathDistanceCalculator extends DistanceCalculator {
 class TransformDistanceCalculator extends DistanceCalculator {
   @override
   double distance(Object? from, Object? to) {
-    if (from == null || to == null) return -1.0;
+    final fromDecomp = _toDecomposition(from);
+    final toDecomp = _toDecomposition(to);
+    if (fromDecomp == null || toDecomp == null) {
+      return -1.0;
+    }
 
-    // Для transform это сложно, так как нужно разбирать разные типы
-    // (translate, rotate, scale, skew)
-    // Пока возвращаем -1, как в некоторых случаях в Blink
-    return -1.0;
+    // Нормализованная евклидова метрика по компонентам декомпозиции.
+    // Углы переводим в градусы, масштаб усиливаем коэффициентом,
+    // чтобы вклад scale/rotate не терялся относительно translate.
+    final dTranslateX = toDecomp.translateX - fromDecomp.translateX;
+    final dTranslateY = toDecomp.translateY - fromDecomp.translateY;
+    final dRotationDeg =
+        (toDecomp.rotation - fromDecomp.rotation).abs() * 180.0 / math.pi;
+    final dSkewDeg =
+        (toDecomp.skewX - fromDecomp.skewX).abs() * 180.0 / math.pi;
+    final dScaleX = (toDecomp.scaleX - fromDecomp.scaleX) * 100.0;
+    final dScaleY = (toDecomp.scaleY - fromDecomp.scaleY) * 100.0;
+
+    return math.sqrt(
+      dTranslateX * dTranslateX +
+          dTranslateY * dTranslateY +
+          dRotationDeg * dRotationDeg +
+          dSkewDeg * dSkewDeg +
+          dScaleX * dScaleX +
+          dScaleY * dScaleY,
+    );
+  }
+
+  TransformDecomposition? _toDecomposition(Object? value) {
+    if (value == null) {
+      return null;
+    }
+    final raw = value.toString().trim();
+    if (raw.isEmpty) {
+      return const TransformDecomposition(
+        translateX: 0.0,
+        translateY: 0.0,
+        rotation: 0.0,
+        scaleX: 1.0,
+        scaleY: 1.0,
+        skewX: 0.0,
+      );
+    }
+    try {
+      final transforms = SvgTransform.parse(raw);
+      return TransformDecomposition.fromTransforms(transforms);
+    } catch (_) {
+      return null;
+    }
   }
 }
 

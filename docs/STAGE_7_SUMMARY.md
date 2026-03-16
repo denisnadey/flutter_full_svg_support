@@ -1,5 +1,11 @@
 # Stage 7: Syncbase Timing - Summary
 
+> Historical stage summary.  
+> For current status and active plans, use:
+> - `/Users/denisnadey/apps/flutter_full_svg_support/CURRENT_STATUS.md`
+> - `/Users/denisnadey/apps/flutter_full_svg_support/NEXT_STEPS.md`
+> - `/Users/denisnadey/apps/flutter_full_svg_support/TODO.md`
+
 **Completion Date:** January 9, 2026  
 **Duration:** ~1 hour (infrastructure was already in place)  
 **Tests:** 369 total (40 new tests for syncbase)  

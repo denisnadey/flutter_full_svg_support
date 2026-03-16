@@ -64,23 +64,23 @@ expect(analysis.boundingBox.width, closeTo(20, 2));
 
 ## Critical Findings & Gotchas
 
-### 1. ⚠️ `autoPlay: false` Bug
+### 1. ✅ `autoPlay: false` Is Fixed
 
-**Problem:** When `autoPlay: false`, SVG doesn't render AT ALL (0 pixels found)
+`autoPlay: false` now renders correctly and is regression-tested.
 
-**Workaround:** Use `autoPlay: true` and pump to specific time:
+Use whichever setup gives the most deterministic test:
+
 ```dart
 await tester.pumpWidget(AnimatedSvgPicture.string(
   svgData,
-  autoPlay: true,  // ← Must be true!
+  autoPlay: false,
+  initialTime: const Duration(milliseconds: 500),
 ));
-
-await tester.pump(); // Initial build
-await tester.pump(); // Let animation initialize
-await tester.pump(Duration(milliseconds: 500)); // Seek to 500ms
+await tester.pump(); // Build + paint target frame
 ```
 
-**Status:** Bug to be investigated separately
+Alternative:
+- `autoPlay: true` + explicit `pump(Duration(...))` progression.
 
 ### 2. ⚠️ pumpAndSettle Hangs on Infinite Animations
 
@@ -236,9 +236,9 @@ double diffPercent = VisualTestUtils.computePixelDifference(pixels1, pixels2);
    - Verify centroid/bbox/angle changes
    - Log actual vs expected values
 
-3. ✅ **Test with `autoPlay: true`**
-   - `autoPlay: false` has known rendering bug
-   - Use `pump(duration)` to seek to specific times
+3. ✅ **Use deterministic timeline setup**
+   - Prefer `autoPlay: false` + `initialTime` for fixed-frame assertions
+   - Or use `autoPlay: true` + explicit `pump(duration)` for progression checks
 
 4. ✅ **Never use `pumpAndSettle` with animations**
    - Infinite animations hang forever
@@ -278,10 +278,9 @@ See `test/animation/detailed_rotation_test.dart` for full implementation:
 ### No pixels found (pixelCount = 0)
 
 **Possible causes:**
-1. `autoPlay: false` bug - switch to `autoPlay: true`
-2. Missing `pump()` calls - add initial build pumps
-3. Wrong element color - verify SVG has `fill="red"`
-4. Wrong dimensions - check logged image size vs analysis size
+1. Missing `pump()` calls - add initial build pumps
+2. Wrong element color - verify SVG has `fill="red"`
+3. Wrong dimensions - check logged image size vs analysis size
 
 **Debug steps:**
 ```dart
@@ -308,11 +307,10 @@ if (analysis.pixelCount == 0) {
 
 ## Future Improvements
 
-1. **Fix `autoPlay: false` rendering** - Investigate why SVG doesn't render when autoPlay=false
-2. **Add widget-size capture** - Capture only widget bounds, not full screen
-3. **Color-agnostic analysis** - Support any fill color, not just red
-4. **Animation timeline verification** - Verify timeline.currentTime matches expected
-5. **Platform-specific golden tests** - Separate baselines for macOS/Linux if needed
+1. **Add widget-size capture** - Capture only widget bounds, not full screen
+2. **Color-agnostic analysis** - Support any fill color, not just red
+3. **Animation timeline verification** - Verify timeline.currentTime matches expected
+4. **Platform-specific golden tests** - Separate baselines for macOS/Linux if needed
 
 ## Summary
 
@@ -320,7 +318,7 @@ if (analysis.pixelCount == 0) {
 
 - Use **pixel analysis** for geometric verification
 - Use **golden tests** for regression/smoke testing
-- Always test with `autoPlay: true` + `pump(duration)`
+- Use deterministic timeline setup (`autoPlay: false` + `initialTime`) or explicit progression pumps
 - Never use `pumpAndSettle` with infinite animations
 - Verify `pixelCount > 0` before analyzing geometry
 - Print detailed reports for debugging

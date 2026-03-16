@@ -52,6 +52,31 @@ void main() {
       expect(calculator.distance(50.0, 75.0), equals(25.0));
     });
 
+    test(
+      'PathDistanceCalculator computes positive distance for different paths',
+      () {
+        final calculator = PathDistanceCalculator();
+
+        const pathA = 'M0 0 L10 0';
+        const pathB = 'M0 0 L30 0';
+
+        expect(calculator.distance(pathA, pathA), equals(0.0));
+        expect(calculator.distance(pathA, pathB), greaterThan(0.0));
+        expect(calculator.distance(null, pathB), equals(-1.0));
+      },
+    );
+
+    test('TransformDistanceCalculator reflects larger transform deltas', () {
+      final calculator = TransformDistanceCalculator();
+
+      final small = calculator.distance('translate(0 0)', 'translate(10 0)');
+      final big = calculator.distance('translate(0 0)', 'translate(100 0)');
+
+      expect(small, greaterThan(0.0));
+      expect(big, greaterThan(small));
+      expect(calculator.distance(null, 'translate(10 0)'), equals(-1.0));
+    });
+
     test('DistanceCalculatorFactory creates correct calculator', () {
       expect(
         DistanceCalculatorFactory.create(SvgAttributeType.number),
@@ -64,6 +89,14 @@ void main() {
       expect(
         DistanceCalculatorFactory.create(SvgAttributeType.length),
         isA<NumericDistanceCalculator>(),
+      );
+      expect(
+        DistanceCalculatorFactory.create(SvgAttributeType.path),
+        isA<PathDistanceCalculator>(),
+      );
+      expect(
+        DistanceCalculatorFactory.create(SvgAttributeType.transform),
+        isA<TransformDistanceCalculator>(),
       );
     });
   });

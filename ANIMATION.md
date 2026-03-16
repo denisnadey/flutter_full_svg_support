@@ -165,10 +165,11 @@ AnimatedSvgPicture.string(
 
 ## Performance
 
-Current benchmarks (313 tests, all passing):
+Latest baseline:
 - Path interpolation: <1ms for typical paths
 - AnimateMotion: 60 position updates in <100ms
 - Target: 60 FPS for simple animations, 30+ FPS for complex
+- Full validation status is tracked in `CURRENT_STATUS.md`.
 
 ## Demo App
 
@@ -176,7 +177,7 @@ Run the example app to see all supported animations:
 
 ```bash
 cd example
-flutter run
+../.fvm/flutter_sdk/bin/flutter run
 ```
 
 Features:
@@ -199,10 +200,11 @@ This package uses **two separate pipelines**:
 
 ## Known Limitations
 
-- `autoPlay: false` has rendering bug - use `autoPlay: true` as workaround
 - Path morphing requires compatible path structures (normalized automatically)
-- CSS animations not yet supported (Stage 8)
-- Some advanced SMIL features pending (Stage 7)
+- Advanced Blink-level parity is still in progress for text/filter/hit-testing edge semantics
+- CSS animation interoperability is implemented at baseline level; advanced shorthand edge cases are still pending
+
+> Note: `autoPlay: false` rendering issue is closed and covered by tests.
 
 ## Development
 
@@ -215,6 +217,6 @@ See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for:
 ## Resources
 
 - [VISUAL_TESTING_GUIDELINES.md](VISUAL_TESTING_GUIDELINES.md) - Visual testing patterns
-- [ANIMATION_ARCHITECTURE.md](ANIMATION_ARCHITECTURE.md) - Original architectural plan
+- [docs/archive/ANIMATION_ARCHITECTURE.md](docs/archive/ANIMATION_ARCHITECTURE.md) - Original architectural plan
 - [Example App](example/) - Interactive demos
-- [Tests](test/animation/) - 313 tests covering all features
+- [Tests](test/animation/) - Animation test suite

@@ -1,6 +1,6 @@
 # Blink Parity Audit (Animated Pipeline)
 
-**Date:** February 21, 2026  
+**Date:** March 13, 2026  
 **Scope:** `AnimatedSvgPicture` pipeline only (`lib/src/animation/**`)  
 **Reference baseline:** `blink-b87d44f-Source-core-svg/svgtags.in`
 
@@ -8,9 +8,9 @@
 
 `flutter_svg` has two pipelines:
 1. static production pipeline (`SvgPicture` + vector_graphics)
-2. experimental animated pipeline (`AnimatedSvgPicture` + custom DOM/painter)
+2. animated pipeline (`AnimatedSvgPicture` + custom DOM/painter)
 
-This audit targets the second pipeline and tracks what is still missing versus Blink SVG behavior.
+This audit tracks the second pipeline versus Blink SVG behavior.
 
 ## Method Used
 
@@ -20,7 +20,7 @@ This audit targets the second pipeline and tracks what is still missing versus B
   - `lib/src/animation/animated_svg_picture.dart`
   - `lib/src/animation/svg_parser.dart`
   - `lib/src/animation/smil/*.dart`
-  - `lib/src/animation/css_to_smil_converter.dart`
+  - `lib/src/animation/css_to_smil_converter*.dart`
 
 ## Quantitative Snapshot
 
@@ -28,7 +28,7 @@ This audit targets the second pipeline and tracks what is still missing versus B
 - Tags currently recognized in animated painter switch: **15** (`svg`, `g`, `rect`, `circle`, `ellipse`, `line`, `path`, `polygon`, `polyline`, `image`, `foreignObject`, `text`, `tspan`, `textPath`, `use`)
 - Tags currently painted as visible geometry: **10** (`rect`, `circle`, `ellipse`, `line`, `path`, `polygon`, `polyline`, `image`, `text`, `textPath` via text flow)
 - Blink FE primitives in baseline: **25** (`fe*`)
-- FE primitives currently implemented: **8** (`feGaussianBlur`, `feOffset`, `feFlood`, `feBlend`, `feComposite`, `feMerge` baseline, `feDropShadow` simplified, `feColorMatrix`)
+- FE primitives with baseline implementation in animated pipeline: **17**
 
 ## Current Coverage Matrix
 
@@ -46,16 +46,16 @@ Missing:
 Partial:
 - `svg`, `g`, `defs` are parsed into DOM
 - baseline `<use href="#id">` rendering
-- baseline `<symbol>` rendering via `<use>` (`viewBox` with `use width/height` scaling)
+- baseline `<symbol>` rendering via `<use>` (`viewBox` + `use width/height` scaling)
 
 Missing:
 - advanced `<symbol>` semantics and advanced `<use>` inheritance behavior
-- complete semantics for `switch`, conditional processing
+- complete semantics for `switch` and conditional processing
 
 ### 3) Paint Servers
 
 Implemented:
-- `linearGradient`, `radialGradient`, `stop` for fill/stroke paint server resolution
+- `linearGradient`, `radialGradient`, `stop`
 
 Missing:
 - `pattern`
@@ -63,8 +63,8 @@ Missing:
 ### 4) Clipping / Masking
 
 Implemented:
-- baseline `clipPath` rendering via `clip-path="url(#...)"` references
-- baseline `mask` rendering via `mask="url(#...)"` geometry clipping
+- baseline `clipPath` rendering via `clip-path="url(#... )"`
+- baseline `mask` rendering via `mask="url(#... )"` geometry clipping
 
 Missing:
 - advanced mask composition semantics
@@ -73,19 +73,18 @@ Missing:
 ### 5) Text & Typography
 
 Partial:
-- baseline `text` rendering
-- baseline `tspan` rendering (`dx`/`dy`)
-- baseline `textPath` rendering (`href`/`xlink:href`, `startOffset`)
+- baseline `text`, `tspan`, `textPath`
+- spacing and baseline-related baseline semantics (`letter-spacing`, `word-spacing`, `dominant-baseline`, `baseline-shift`)
+- `textLength` / `lengthAdjust` baseline support
 
 Missing:
-- advanced text positioning/typography semantics
+- advanced text positioning/typography parity
 
 ### 6) External Content
 
 Partial:
-- baseline `image` rendering (`href` / `xlink:href`)
-- source resolution for `data:` URI, network (`http/https`), and bundle-path loading
-- baseline `foreignObject` container viewport behavior (`x/y` offset + rectangular clip for children)
+- baseline `image` rendering (`href`/`xlink:href`, data/network/bundle sources)
+- baseline `foreignObject` viewport/container behavior
 
 Missing:
 - advanced image semantics parity
@@ -93,91 +92,92 @@ Missing:
 
 ### 7) Filter Effects
 
-Implemented:
+Implemented baseline primitives:
 - `feGaussianBlur`
+- `feMorphology`
+- `feDisplacementMap`
+- `feImage`
+- `feConvolveMatrix`
+- `feTurbulence`
+- `feComponentTransfer`
+- `feDiffuseLighting`
+- `feSpecularLighting`
 - `feOffset`
-- `feFlood` (baseline color replacement approximation)
-- `feBlend` (baseline blend-mode approximation)
-- `feComposite` (baseline operator-to-blend-mode approximation)
-- `feMerge` / `feMergeNode` (baseline multi-pass resolution with named primitive results)
+- `feFlood`
+- `feBlend`
+- `feComposite`
+- `feMerge` / `feMergeNode`
+- `feTile`
+- `feDropShadow`
 - `feColorMatrix`
-- `feDropShadow` (baseline source+shadow multi-pass composition with blur/offset/flood color/opacity)
 
-Missing high-priority FE primitives:
-- full advanced input-graph semantics across non-source inputs (`BackgroundImage`, `BackgroundAlpha`, etc.)
-
-Missing advanced FE primitives:
-- `feConvolveMatrix`, `feMorphology`, `feDisplacementMap`, lighting family, `feTurbulence`, `feImage`, etc.
+Missing high-priority semantics:
+- advanced non-source input-graph behavior and composition parity for complex chains
+- advanced `feDropShadow` / `feMerge` behavior beyond baseline semantics
 
 ### 8) SMIL Animation
 
 Implemented:
 - `animate`, `animateTransform`, `animateMotion`, `set`, `animateColor`
-- timing: offset/syncbase/event-based, including `id.click`
-- `calcMode`: linear/discrete/spline/paced
-- additive/accumulate
+- timing: offset/syncbase/event-based (`id.click` etc.)
+- `calcMode`: `linear` / `discrete` / `spline` / `paced`
+- additive / accumulate
+- paced distance calculators include `number`/`length`/`color`/`path`/`transform`
 
 Partial:
-- `animateMotion` supports inline `path`, `<mpath href="#...">`, `keyPoints`, `rotate`
-- paced distance for path/transform remains fallback-limited
+- `animateMotion` supports inline path and `<mpath>` references with baseline `keyPoints`/`rotate`, but not full Blink parity
 
 ### 9) Interaction & Event Dispatch
 
 Implemented:
 - document-level click/mouseover/mouseout
-- element-level click/mouseover/mouseout for `rect/circle/ellipse/line/path/polygon/polyline/image/foreignObject/text/tspan/textPath`
-- baseline use-referenced hit-testing (`<use href="#...">` targets are clickable by referenced element id)
-- baseline `clip-path` / `mask` visibility gating in hit-testing
+- element-level click/mouseover/mouseout for main painted elements
+- baseline use-referenced hit-testing
+- baseline clip/mask-aware visibility gating
 
 Missing:
-- advanced hit-testing semantics (`clipPath`/`mask`/`use`-aware regions and full text parity)
+- advanced hit-testing semantics (`clipPath`/`mask`/`use` regions and full text parity)
 - broader DOM event parity
 
 ### 10) CSS Animation Interop
 
 Implemented:
-- `@keyframes` extraction from `<style>`
-- `animation` / `animation-*` parsing
-- conversion into SMIL objects
-- baseline CSS transform-function normalization in converter (`deg/rad/turn`, length unit stripping, function alias normalization)
-- `cubic-bezier(...)` and `ease*` mapping into SMIL `keySplines`
-- CSS direction runtime behavior: `reverse`, `alternate`, `alternate-reverse`
+- `@keyframes` extraction and `animation` / `animation-*` parsing
+- CSS→SMIL conversion
+- baseline transform normalization
+- `cubic-bezier(...)` + `ease*` mapping to SMIL `keySplines`
+- runtime direction parity: `reverse`, `alternate`, `alternate-reverse`
 
 Missing:
-- advanced transform-function/units fidelity and CSS edge semantics
+- advanced CSS shorthand edge cases and high-fidelity transform semantics
 
 ## Prioritized Backlog (Execution)
 
-### P0: Foundation (do first)
-
-1. Improve `<use>`/`symbol` inheritance semantics.
-2. Expand hit-testing semantics for complex painted geometry (`clipPath`/`mask`/`use`, text).
-3. Expand advanced non-source input graph semantics for `feDropShadow` and `feMerge`/`feMergeNode`.
+### P0: Foundation
+1. Improve advanced `<use>` / `<symbol>` inheritance semantics.
+2. Expand hit-testing semantics for complex painted geometry.
+3. Expand advanced filter input-graph semantics.
 
 ### P1: Core Feature Expansion
-
-1. Complete advanced text parity (typography/positioning semantics beyond baseline `text/tspan/textPath`).
-2. Expand `foreignObject` beyond baseline viewport behavior and close advanced `image` semantics.
-3. Extend `animateMotion` behavior parity beyond baseline path-reference support.
+1. Complete advanced text parity.
+2. Expand advanced `foreignObject` and `image` semantics.
+3. Extend `animateMotion` beyond baseline path-reference support.
 
 ### P2: Filter Parity
-
-1. Upgrade `feDropShadow` to full composition behavior.
-2. Upgrade `feMerge`/`feMergeNode` from baseline parsing to full graph semantics.
+1. Upgrade `feDropShadow` to advanced composition behavior.
+2. Upgrade `feMerge`/`feMergeNode` to advanced graph semantics.
 3. Add remaining FE primitives by impact.
 
 ### P3: CSS/Timing Parity
-
-1. Expand CSS transform-function fidelity and unit semantics beyond baseline normalization.
-2. Add regression fixtures for CSS edge semantics (complex shorthand and transform corner cases).
+1. Expand CSS transform/unit fidelity beyond baseline normalization.
+2. Add regression fixtures for CSS edge semantics.
 
 ### P4: Validation/Quality
-
 1. Add Blink-style fixture test pack (parse + render + animation).
 2. Expand playground diagnostics for unsupported-tag warnings.
 3. Performance baselines for each newly added feature cluster.
 
-## Definition of Done for "Blink Gap Closed" Milestones
+## Definition of Done for "Blink Gap Closed"
 
 For each feature cluster:
 - parser support exists,

@@ -45,19 +45,21 @@ single source of truth for:
 
 ```
 lib/src/animation/
-├── animated_svg_picture.dart    # Main widget
-├── animated_svg_painter.dart    # CustomPainter renderer
-├── svg_parser.dart              # XML → DOM
+├── animated_svg_picture*.dart   # Main widget + feature modules
+├── animated_svg_painter*.dart   # CustomPainter renderer + feature modules
+├── svg_parser*.dart             # XML → DOM parser modules
 ├── svg_dom.dart                 # DOM model
 ├── svg_transform.dart           # Transform handling
 ├── path_*.dart                  # Path parsing/interpolation
+├── css_to_smil_converter*.dart  # CSS -> SMIL conversion modules
 └── smil/
-    ├── smil_animation.dart      # Animation engine
-    ├── smil_parser.dart         # Extract animations from DOM
-    ├── smil_timeline.dart       # Time management
+    ├── smil_animation*.dart     # Animation engine modules
+    ├── smil_parser*.dart        # Extract animations from DOM modules
+    ├── smil_timeline*.dart      # Time management modules
     ├── interpolators.dart       # Value interpolation
     ├── motion_path.dart         # AnimateMotion
-    └── timing.dart              # Duration/timing logic
+    ├── timing_condition.dart    # Timing condition model
+    └── timing_parser.dart       # begin/end timing parser
 ```
 
 ## Testing Strategy
@@ -127,7 +129,7 @@ if (element.name.local == 'animateNewType') {
 
 2. **Interpolate** in `smil/smil_animation.dart`:
 ```dart
-dynamic _computeValue(double t) {
+dynamic computeValue(double t) {
   return Interpolators.interpolateNewType(from, to, t);
 }
 ```
@@ -135,7 +137,7 @@ dynamic _computeValue(double t) {
 3. **Render** in `animated_svg_painter.dart`:
 ```dart
 void _applyAnimations(Canvas canvas, SvgNode node) {
-  final value = animation.getValue(time);
+  final value = animation.computeValue(time);
   // Apply to canvas
 }
 ```
@@ -157,7 +159,7 @@ Check in order:
 1. `AnimationDetector.hasAnimations()` returns true?
 2. Animations parsed in `SmilParser.parseAnimations()`?
 3. Timeline ticking in `SvgTimeline.tick()`?
-4. Values interpolating in `SmilAnimation.getValue()`?
+4. Values interpolating in `SmilAnimation.computeValue()`?
 5. Painter applying in `AnimatedSvgPainter.paint()`?
 
 ### Enable Logging
@@ -165,7 +167,7 @@ Check in order:
 ```dart
 print('Animations: ${timeline.animations.length}');
 print('Time: ${timeline.currentTime}');
-print('Value at t=$t: ${animation.getValue(t)}');
+print('Value at t=$t: ${animation.computeValue(t)}');
 ```
 
 ## Performance Targets
@@ -193,5 +195,5 @@ From production testing:
 
 - `.github/copilot-instructions.md` - AI agent guide
 - `VISUAL_TESTING_GUIDELINES.md` - Testing details
-- `ANIMATION_ARCHITECTURE.md` - Original architectural plan
+- `docs/archive/ANIMATION_ARCHITECTURE.md` - Original architectural plan
 - `docs/archive/STAGE_*` - Completed stage reports

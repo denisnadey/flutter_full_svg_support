@@ -4,6 +4,12 @@ import '../svg_dom.dart';
 import 'smil_animation.dart';
 import 'timing_condition.dart';
 
+part 'smil_timeline_info.dart';
+part 'smil_timeline_runtime.dart';
+part 'smil_timeline_syncbase.dart';
+
+const Duration _kTimelineInfinity = Duration(days: 365 * 100);
+
 /// Таймлайн для управления SMIL анимациями
 ///
 /// Отвечает за:
@@ -15,7 +21,7 @@ class SvgTimeline {
   /// Создаёт таймлайн с заданными анимациями
   SvgTimeline({required this.animations, required this.rootNode}) {
     _buildDependencyGraph();
-    _initializeEventBasedAnimations(); // Initialize event-based animations
+    _initializeEventBasedAnimations();
     _resolveTimingConditions();
     _totalDuration = _computeTotalDuration(
       animations,
@@ -105,7 +111,7 @@ class SvgTimeline {
       );
       if (hasEventConditions) {
         anim.setResolvedBeginTime(
-          const Duration(days: 365 * 100),
+          _kTimelineInfinity,
         ); // "Infinity" - never start
       }
     }
@@ -151,291 +157,45 @@ class SvgTimeline {
     _updateAnimations(_currentTime);
   }
 
-  /// Активировать анимацию по событию
   void _activateAnimationByEvent(
     SmilAnimation anim,
     String eventType,
     String? elementId,
     Duration eventTime,
   ) {
-    // Найти соответствующее EventCondition в begin условиях
-    EventCondition? matchingCondition;
-    for (final condition in anim.beginConditions) {
-      if (condition is EventCondition) {
-        if (condition.eventType == eventType &&
-            (condition.targetId == null || condition.targetId == elementId)) {
-          matchingCondition = condition;
-          break;
-        }
-      }
-    }
-
-    if (matchingCondition == null) {
-      return;
-    }
-
-    // Вычисляем время начала с учётом offset
-    final startTime = eventTime + matchingCondition.offset;
-
-    // Обновляем resolved begin time в карте И в анимации
-    _resolvedBeginTimes[anim] = startTime;
-    anim.setResolvedBeginTime(startTime);
-
-    // Обновляем анимацию с новым временем начала
-    anim.updateForTime(_currentTime);
+    _activateAnimationByEventImpl(this, anim, eventType, elementId, eventTime);
   }
 
-  /// Получить ключ события для карты
   String _getEventKey(String? elementId, String eventType) {
-    return elementId != null ? '$elementId:$eventType' : ':$eventType';
+    return _getEventKeyImpl(elementId, eventType);
   }
 
-  /// Обновить все анимации для текущего времени
   void _updateAnimations(Duration time) {
-    // Отслеживаем предыдущие состояния анимаций для определения переходов
-    final previousStates = <SmilAnimation, bool>{};
-    for (final animation in animations) {
-      previousStates[animation] = animation.isActive;
-    }
-
-    // Обновляем все анимации
-    for (final animation in animations) {
-      animation.updateForTime(time);
-    }
-
-    // Проверяем, не закончились ли анимации, чтобы триггерить syncbase события
-    for (final animation in animations) {
-      final wasActive = previousStates[animation] ?? false;
-      final isActive = animation.isActive;
-
-      // Если анимация закончилась (была активна, теперь неактивна)
-      if (wasActive && !isActive && time >= animation.getEffectiveEndTime()) {
-        _triggerSyncbaseEvent(animation, 'end', time);
-      }
-
-      // Если анимация началась (не была активна, теперь активна)
-      if (!wasActive && isActive) {
-        _triggerSyncbaseEvent(animation, 'begin', time);
-      }
-    }
+    _updateAnimationsImpl(this, time);
   }
 
-  /// Триггерить syncbase событие (begin или end) для зависимых анимаций
   void _triggerSyncbaseEvent(
     SmilAnimation sourceAnim,
     String eventType,
     Duration time,
   ) {
-    // Найти все анимации, зависящие от этого события
-    final dependents = _dependents[sourceAnim];
-    if (dependents == null || dependents.isEmpty) {
-      return;
-    }
-
-    // Преобразовать строку в SyncbaseType
-    SyncbaseType? syncType;
-    if (eventType == 'begin') {
-      syncType = SyncbaseType.begin;
-    } else if (eventType == 'end') {
-      syncType = SyncbaseType.end;
-    } else if (eventType == 'repeat') {
-      syncType = SyncbaseType.repeat;
-    }
-
-    if (syncType == null) {
-      return;
-    }
-
-    for (final dependent in dependents) {
-      // Проверить, есть ли у зависимой анимации syncbase условие на это событие
-      for (final condition in dependent.beginConditions) {
-        if (condition is SyncbaseCondition) {
-          if (condition.animationId == sourceAnim.id &&
-              condition.type == syncType) {
-            // Вычислить время начала с учётом offset
-            final resolvedTime = time + condition.offset;
-            dependent.setResolvedBeginTime(resolvedTime);
-
-            // Сразу обновить зависимую анимацию с текущим временем
-            dependent.updateForTime(_currentTime);
-          }
-        }
-      }
-    }
+    _triggerSyncbaseEventImpl(this, sourceAnim, eventType, time);
   }
 
-  /// Построить граф зависимостей для syncbase timing и event-based timing
   void _buildDependencyGraph() {
-    // Создать карту ID -> анимация
-    for (final anim in animations) {
-      if (anim.id != null) {
-        _animationById[anim.id!] = anim;
-      }
-    }
-
-    // Найти все syncbase зависимости и event listeners
-    for (final anim in animations) {
-      // Обработать syncbase conditions
-      for (final condition in anim.beginConditions) {
-        if (condition is SyncbaseCondition) {
-          final sourceAnim = _animationById[condition.animationId];
-          if (sourceAnim != null) {
-            _dependents.putIfAbsent(sourceAnim, () => []).add(anim);
-          }
-        } else if (condition is EventCondition) {
-          // Регистрируем event listener
-          final eventKey = _getEventKey(
-            condition.targetId,
-            condition.eventType,
-          );
-          _eventListeners.putIfAbsent(eventKey, () => []).add(anim);
-        }
-      }
-
-      for (final condition in anim.endConditions) {
-        if (condition is SyncbaseCondition) {
-          final sourceAnim = _animationById[condition.animationId];
-          if (sourceAnim != null) {
-            _dependents.putIfAbsent(sourceAnim, () => []).add(anim);
-          }
-        }
-        // Note: end conditions with events are less common, but could be supported
-      }
-    }
+    _buildDependencyGraphImpl(this);
   }
 
-  /// Инициализировать event-based анимации
-  /// Устанавливает их begin time в "infinity", чтобы они не начинались автоматически
   void _initializeEventBasedAnimations() {
-    for (final anim in animations) {
-      // Проверяем, есть ли ТОЛЬКО event conditions в begin
-      final hasOnlyEventConditions =
-          anim.beginConditions.isNotEmpty &&
-          anim.beginConditions.every(
-            (c) => c is EventCondition || c is IndefiniteCondition,
-          );
-
-      if (hasOnlyEventConditions) {
-        // Устанавливаем begin time в "infinity"
-        anim.setResolvedBeginTime(const Duration(days: 365 * 100));
-      }
-    }
+    _initializeEventBasedAnimationsImpl(this);
   }
 
-  /// Разрешить syncbase условия для анимации
   Duration? _resolveSyncbaseCondition(SyncbaseCondition condition) {
-    final sourceAnim = _animationById[condition.animationId];
-    if (sourceAnim == null) {
-      return null; // Referenced animation not found
-    }
-
-    Duration? baseTime;
-
-    switch (condition.type) {
-      case SyncbaseType.begin:
-        // Используем resolved begin time если есть, иначе простой begin
-        baseTime = _resolvedBeginTimes[sourceAnim] ?? sourceAnim.begin;
-        break;
-
-      case SyncbaseType.end:
-        // begin + duration * repeatCount
-        final beginTime = _resolvedBeginTimes[sourceAnim] ?? sourceAnim.begin;
-        final duration = sourceAnim.dur;
-        final repeats = sourceAnim.repeatCount.isInfinite
-            ? 1
-            : sourceAnim.repeatCount;
-        baseTime = beginTime + (duration * repeats);
-        break;
-
-      case SyncbaseType.repeat:
-        // begin + duration * repeatIndex
-        if (condition.repeatIndex != null) {
-          final beginTime = _resolvedBeginTimes[sourceAnim] ?? sourceAnim.begin;
-          final duration = sourceAnim.dur;
-          baseTime = beginTime + (duration * condition.repeatIndex!);
-        } else {
-          // repeat without index - trigger on every repeat
-          // For now, use first repeat
-          final beginTime = _resolvedBeginTimes[sourceAnim] ?? sourceAnim.begin;
-          baseTime = beginTime + sourceAnim.dur;
-        }
-        break;
-    }
-    return baseTime + condition.offset;
+    return _resolveSyncbaseConditionImpl(this, condition);
   }
 
-  /// Разрешить все timing условия и вычислить эффективные begin times
   void _resolveTimingConditions() {
-    // Проход по всем анимациям для разрешения syncbase dependencies
-    // Используем топологическую сортировку для правильного порядка
-    final resolved = <SmilAnimation>{};
-    final processing = <SmilAnimation>{};
-
-    void resolveAnimation(SmilAnimation anim) {
-      if (resolved.contains(anim)) return;
-      if (processing.contains(anim)) {
-        // Circular dependency detected - use simple begin
-        _resolvedBeginTimes[anim] = anim.begin;
-        return;
-      }
-
-      processing.add(anim);
-
-      // Find earliest resolved time from all begin conditions
-      Duration? earliestTime;
-
-      for (final condition in anim.beginConditions) {
-        Duration? conditionTime;
-
-        if (condition is OffsetCondition) {
-          conditionTime = condition.offset;
-        } else if (condition is SyncbaseCondition) {
-          // Resolve dependency first
-          final sourceAnim = _animationById[condition.animationId];
-          if (sourceAnim != null) {
-            resolveAnimation(sourceAnim);
-          }
-          conditionTime = _resolveSyncbaseCondition(condition);
-        }
-
-        if (conditionTime != null) {
-          if (earliestTime == null || conditionTime < earliestTime) {
-            earliestTime = conditionTime;
-          }
-        }
-      }
-
-      // Use resolved time or fallback to simple begin
-      // НО: не перезаписываем infinity begin times для event-based анимаций
-      final hasOnlyEventConditions =
-          anim.beginConditions.isNotEmpty &&
-          anim.beginConditions.every(
-            (c) => c is EventCondition || c is IndefiniteCondition,
-          );
-
-      if (hasOnlyEventConditions) {
-        // Оставляем infinity begin time, установленный в _initializeEventBasedAnimations
-        _resolvedBeginTimes[anim] = const Duration(days: 365 * 100);
-      } else {
-        _resolvedBeginTimes[anim] = earliestTime ?? anim.begin;
-      }
-
-      processing.remove(anim);
-      resolved.add(anim);
-    }
-
-    // Resolve all animations
-    for (final anim in animations) {
-      resolveAnimation(anim);
-    }
-
-    // Apply resolved times to animations
-    for (final anim in animations) {
-      final resolvedTime = _resolvedBeginTimes[anim];
-      if (resolvedTime != null) {
-        anim.setResolvedBeginTime(resolvedTime);
-      }
-    }
+    _resolveTimingConditionsImpl(this);
   }
 
   /// Получить список активных анимаций в текущий момент
@@ -458,7 +218,7 @@ class SvgTimeline {
 
     for (final anim in animations) {
       final end = anim.getEffectiveEndTime();
-      if (!end.isNegative && end != const Duration(days: 365 * 100)) {
+      if (!end.isNegative && end != _kTimelineInfinity) {
         // Игнорируем "бесконечные" анимации
         if (end > max) {
           max = end;
@@ -490,51 +250,6 @@ class SvgTimeline {
         'time: ${info.currentTime.inMilliseconds}ms / ${info.totalDuration.inMilliseconds}ms, '
         'active: ${info.activeAnimations}/${info.totalAnimations}, '
         'rate: ${info.playbackRate}x'
-        ')';
-  }
-}
-
-/// Информация о состоянии таймлайна
-@immutable
-class TimelineInfo {
-  /// Создаёт информацию о таймлайне
-  const TimelineInfo({
-    required this.currentTime,
-    required this.totalDuration,
-    required this.totalAnimations,
-    required this.activeAnimations,
-    required this.playbackRate,
-  });
-
-  /// Текущее время
-  final Duration currentTime;
-
-  /// Общая длительность
-  final Duration totalDuration;
-
-  /// Общее количество анимаций
-  final int totalAnimations;
-
-  /// Количество активных анимаций
-  final int activeAnimations;
-
-  /// Скорость воспроизведения
-  final double playbackRate;
-
-  /// Прогресс воспроизведения (0.0 - 1.0)
-  double get progress {
-    if (totalDuration == Duration.zero) return 0.0;
-    return (currentTime.inMicroseconds / totalDuration.inMicroseconds).clamp(
-      0.0,
-      1.0,
-    );
-  }
-
-  @override
-  String toString() {
-    return 'TimelineInfo('
-        'progress: ${(progress * 100).toStringAsFixed(1)}%, '
-        'active: $activeAnimations/$totalAnimations'
         ')';
   }
 }
