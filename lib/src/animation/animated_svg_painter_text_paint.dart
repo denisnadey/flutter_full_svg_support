@@ -47,7 +47,9 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
     final yList = nodeYList.isNotEmpty ? nodeYList : parentYList;
     final dxList = nodeDxList.isNotEmpty ? nodeDxList : parentDxList;
     final dyList = nodeDyList.isNotEmpty ? nodeDyList : parentDyList;
-    final rotateList = nodeRotateList.isNotEmpty ? nodeRotateList : parentRotateList;
+    final rotateList = nodeRotateList.isNotEmpty
+        ? nodeRotateList
+        : parentRotateList;
 
     // Apply first values for backward compatibility (single-value case)
     if (xList.isNotEmpty && cursor.charIndex < xList.length) {
@@ -203,7 +205,8 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
     ui.BlendMode? blendMode,
   }) {
     final glyphs = text.runes.map((r) => String.fromCharCode(r)).toList();
-    final hasMultiPositions = xList.length > 1 ||
+    final hasMultiPositions =
+        xList.length > 1 ||
         yList.length > 1 ||
         dxList.length > 1 ||
         dyList.length > 1 ||

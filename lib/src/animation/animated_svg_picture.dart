@@ -309,6 +309,7 @@ class _HitTextCursor {
 
   double x;
   double y;
+
   /// Character index for consuming multi-position attribute lists.
   int charIndex = 0;
 }
@@ -369,8 +370,10 @@ class _TextHitRun {
   final Rect? bounds;
   final Path? path;
   final double pathTolerance;
+
   /// Rotation angle in degrees (for per-character rotation).
   final double rotation;
+
   /// Center point for rotation (baseline position).
   final Offset rotationCenter;
 }

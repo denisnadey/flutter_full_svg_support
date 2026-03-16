@@ -166,6 +166,7 @@ class _TextCursor {
 
   double x;
   double y;
+
   /// Character index for consuming multi-position attribute lists.
   int charIndex = 0;
 }

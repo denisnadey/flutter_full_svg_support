@@ -33,8 +33,10 @@ extension _AnimatedSvgPictureStateHitTestTextPathSegmentsExtension
           )
         : 0.0;
     final wordSpacing = spacing == _TextPathSpacing.auto
-        ? (_getInheritedNumber(styleNode, 'word-spacing') ?? 0.0)
-            .clamp(-1024.0, 1024.0)
+        ? (_getInheritedNumber(styleNode, 'word-spacing') ?? 0.0).clamp(
+            -1024.0,
+            1024.0,
+          )
         : 0.0;
     final advances = <double>[];
     for (int i = 0; i < glyphs.length; i++) {

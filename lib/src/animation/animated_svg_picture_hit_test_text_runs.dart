@@ -192,7 +192,9 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
     final yList = nodeYList.isNotEmpty ? nodeYList : parentYList;
     final dxList = nodeDxList.isNotEmpty ? nodeDxList : parentDxList;
     final dyList = nodeDyList.isNotEmpty ? nodeDyList : parentDyList;
-    final rotateList = nodeRotateList.isNotEmpty ? nodeRotateList : parentRotateList;
+    final rotateList = nodeRotateList.isNotEmpty
+        ? nodeRotateList
+        : parentRotateList;
 
     // Apply first values for backward compatibility (single-value case)
     if (xList.isNotEmpty && cursor.charIndex < xList.length) {
