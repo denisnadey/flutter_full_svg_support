@@ -40,7 +40,8 @@ void _paintNodeImplWithUseContext(
     _currentUseContext = useContext;
     // Set up CSS custom property lookup through use context.
     // This enables var(--custom-property) to resolve from <use> elements.
-    useContextCustomPropertyLookup = (name) => useContext.getCustomProperty(name);
+    useContextCustomPropertyLookup = (name) =>
+        useContext.getCustomProperty(name);
   }
   final display = painter
       ._getStyleOrAttributeValue(node, 'display')

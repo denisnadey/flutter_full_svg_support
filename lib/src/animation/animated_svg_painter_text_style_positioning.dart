@@ -10,7 +10,8 @@ part of 'animated_svg_painter.dart';
 ///
 /// Note: _resolveTextAnchor is defined in animated_svg_painter_values.dart
 /// and shared across extensions.
-extension AnimatedSvgPainterTextStylePositioningExtension on AnimatedSvgPainter {
+extension AnimatedSvgPainterTextStylePositioningExtension
+    on AnimatedSvgPainter {
   /// Resolves writing-mode CSS property.
   _SvgWritingMode _resolveWritingMode(String? value) {
     if (value == null || value.trim().isEmpty) {

@@ -137,8 +137,9 @@ extension SvgFiltersPipelineCompositingExtension on SvgFilters {
       // Per SVG spec: when `in` is omitted (null/empty), use the previous
       // primitive's result. For feMergeNode specifically, if `in` is null,
       // it inherits from the implicit previous chain.
-      final effectiveInput =
-          (nodeInput == null || nodeInput.trim().isEmpty) ? null : nodeInput;
+      final effectiveInput = (nodeInput == null || nodeInput.trim().isEmpty)
+          ? null
+          : nodeInput;
 
       final nodePasses = _resolveInputPasses(
         requestedInput: effectiveInput,

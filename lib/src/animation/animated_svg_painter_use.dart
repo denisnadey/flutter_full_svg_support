@@ -164,7 +164,10 @@ class _UseInheritanceContext {
     // CSS custom properties are inherited, so they cascade through the DOM.
     SvgNode? ancestor = useNode.parent;
     while (ancestor != null) {
-      final ancestorValue = _extractStyleValueFromNode(ancestor, normalizedName);
+      final ancestorValue = _extractStyleValueFromNode(
+        ancestor,
+        normalizedName,
+      );
       if (ancestorValue != null) {
         return ancestorValue;
       }

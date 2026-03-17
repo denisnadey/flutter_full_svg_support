@@ -51,7 +51,7 @@ Map<String, Map<double, String>> _collectTransformFunctionsByOffset(
       final argsStart = m.end;
       final argsString = _extractFunctionArgs(rawTransform, argsStart);
       if (argsString == null) continue;
-      
+
       final args = _parseTransformArgs(argsString);
 
       String? normalized;

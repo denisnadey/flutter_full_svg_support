@@ -1058,13 +1058,13 @@ void main() {
     });
 
     group('CSS Custom Properties Through Use Boundaries', () {
-      testWidgets('CSS variable defined on use cascades to referenced content', (
-        WidgetTester tester,
-      ) async {
-        // CSS custom properties are always inherited and should cascade
-        // through <use> boundaries. Uses inline style (not CSS class rules)
-        // since the renderer resolves inline styles during painting.
-        const svgXml = '''
+      testWidgets(
+        'CSS variable defined on use cascades to referenced content',
+        (WidgetTester tester) async {
+          // CSS custom properties are always inherited and should cascade
+          // through <use> boundaries. Uses inline style (not CSS class rules)
+          // since the renderer resolves inline styles during painting.
+          const svgXml = '''
           <svg viewBox="0 0 100 100">
             <defs>
               <rect id="myRect" x="10" y="10" width="80" height="80"
@@ -1074,28 +1074,33 @@ void main() {
           </svg>
         ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+          await tester.pumpWidget(
+            const MaterialApp(
+              home: Scaffold(
+                body: AnimatedSvgPicture.string(
+                  svgXml,
+                  width: 200,
+                  height: 200,
+                ),
+              ),
             ),
-          ),
-        );
+          );
 
-        await tester.pump();
+          await tester.pump();
 
-        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
-        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+          final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+          final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
 
-        // The CSS variable --my-color: red should cascade through use,
-        // so the rect should be red
-        expect(analysis.pixelCount, greaterThan(1000));
-      });
+          // The CSS variable --my-color: red should cascade through use,
+          // so the rect should be red
+          expect(analysis.pixelCount, greaterThan(1000));
+        },
+      );
 
-      testWidgets('CSS variable on parent of use cascades to referenced content', (
-        WidgetTester tester,
-      ) async {
-        const svgXml = '''
+      testWidgets(
+        'CSS variable on parent of use cascades to referenced content',
+        (WidgetTester tester) async {
+          const svgXml = '''
           <svg viewBox="0 0 100 100">
             <defs>
               <rect id="myRect" x="10" y="10" width="80" height="80"
@@ -1107,22 +1112,27 @@ void main() {
           </svg>
         ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+          await tester.pumpWidget(
+            const MaterialApp(
+              home: Scaffold(
+                body: AnimatedSvgPicture.string(
+                  svgXml,
+                  width: 200,
+                  height: 200,
+                ),
+              ),
             ),
-          ),
-        );
+          );
 
-        await tester.pump();
+          await tester.pump();
 
-        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
-        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+          final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+          final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
 
-        // The CSS variable from parent <g> should be available to referenced content
-        expect(analysis.pixelCount, greaterThan(1000));
-      });
+          // The CSS variable from parent <g> should be available to referenced content
+          expect(analysis.pixelCount, greaterThan(1000));
+        },
+      );
 
       testWidgets('CSS variable fallback is used when variable not defined', (
         WidgetTester tester,

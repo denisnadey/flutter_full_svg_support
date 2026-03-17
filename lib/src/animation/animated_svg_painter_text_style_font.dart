@@ -10,7 +10,6 @@ part of 'animated_svg_painter.dart';
 /// Note: _resolveFontWeight and _resolveFontStyle are defined in
 /// animated_svg_painter_values.dart and shared across extensions.
 extension AnimatedSvgPainterTextStyleFontExtension on AnimatedSvgPainter {
-
   /// Resolves font-variant CSS property to Flutter FontFeatures.
   /// Supports: normal, small-caps, all-small-caps, petite-caps, all-petite-caps,
   /// unicase, titling-caps

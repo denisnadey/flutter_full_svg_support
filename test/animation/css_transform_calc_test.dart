@@ -333,7 +333,9 @@ void main() {
     });
 
     test('handles zero values', () {
-      final transforms = SvgTransform.parse('translate(0, 0) rotate(0) scale(1)');
+      final transforms = SvgTransform.parse(
+        'translate(0, 0) rotate(0) scale(1)',
+      );
       expect(transforms.length, 3);
       expect(transforms[0].values[0], closeTo(0.0, 0.001));
       expect(transforms[0].values[1], closeTo(0.0, 0.001));

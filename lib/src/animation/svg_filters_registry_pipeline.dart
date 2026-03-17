@@ -121,7 +121,8 @@ extension SvgFiltersPipelineExtension on SvgFilters {
         // Detect circular references by checking if we're re-entering
         // a primitive that's currently being resolved.
         final resultName = primitive.resultName?.trim();
-        final isCircular = resultName != null &&
+        final isCircular =
+            resultName != null &&
             resultName.isNotEmpty &&
             context.wouldCauseCircular(resultName);
 

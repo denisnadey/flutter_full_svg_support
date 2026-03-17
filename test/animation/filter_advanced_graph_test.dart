@@ -1114,9 +1114,10 @@ void main() {
         }
       });
 
-      test('feMerge at start of filter uses SourceGraphic as implicit input',
-          () {
-        final svgString = '''
+      test(
+        'feMerge at start of filter uses SourceGraphic as implicit input',
+        () {
+          final svgString = '''
 <svg viewBox="0 0 100 100">
   <defs>
     <filter id="firstMergeFx">
@@ -1130,14 +1131,21 @@ void main() {
 </svg>
 ''';
 
-        final document = SvgParser.parse(svgString);
-        final passes = document.filters!.resolvePaintPasses('firstMergeFx');
+          final document = SvgParser.parse(svgString);
+          final passes = document.filters!.resolvePaintPasses('firstMergeFx');
 
-        // First implicit node should use SourceGraphic, second is SourceAlpha
-        expect(passes, hasLength(2));
-        expect(passes[0].colorFilter, isNull); // SourceGraphic (no color filter)
-        expect(passes[1].colorFilter, isNotNull); // SourceAlpha (has color filter)
-      });
+          // First implicit node should use SourceGraphic, second is SourceAlpha
+          expect(passes, hasLength(2));
+          expect(
+            passes[0].colorFilter,
+            isNull,
+          ); // SourceGraphic (no color filter)
+          expect(
+            passes[1].colorFilter,
+            isNotNull,
+          ); // SourceAlpha (has color filter)
+        },
+      );
     });
 
     // =========================================================================

@@ -26,10 +26,10 @@ List<String> _parseTransformArgs(String argsString) {
   final args = <String>[];
   final buffer = StringBuffer();
   var depth = 0;
-  
+
   for (var i = 0; i < argsString.length; i++) {
     final char = argsString[i];
-    
+
     if (char == '(') {
       depth++;
       buffer.write(char);
@@ -49,7 +49,7 @@ List<String> _parseTransformArgs(String argsString) {
       buffer.write(char);
     }
   }
-  
+
   // Add final argument
   if (buffer.isNotEmpty) {
     final trimmed = buffer.toString().trim();
@@ -57,7 +57,7 @@ List<String> _parseTransformArgs(String argsString) {
       args.add(trimmed);
     }
   }
-  
+
   return args;
 }
 
@@ -73,13 +73,13 @@ String _normalizeCssTransformInternal(String value) {
   }
 
   final normalizedParts = <String>[];
-  
+
   for (final match in _cssTransformFunctionRegex.allMatches(input)) {
     final functionName = match.group(1)!.toLowerCase();
     final argsStart = match.end; // Position after '('
     final argsString = _extractFunctionArgs(input, argsStart);
     if (argsString == null) continue;
-    
+
     final args = _parseTransformArgs(argsString);
 
     String? normalized;
@@ -210,9 +210,13 @@ String? _normalizeMatrix(List<String> args) {
 /// Parses a CSS length value to pixels, including calc() expressions.
 /// Supports: px, em, rem, %, vw, vh, vmin, vmax, cm, mm, in, pt, pc, bare numbers.
 /// Also handles calc() expressions.
-double _parseLength(String value, {double? containerSize, double fontSize = 16.0}) {
+double _parseLength(
+  String value, {
+  double? containerSize,
+  double fontSize = 16.0,
+}) {
   final trimmed = value.trim();
-  
+
   // Handle calc() expressions
   if (trimmed.toLowerCase().startsWith('calc(')) {
     final result = CssCalcEvaluator.evaluate(
@@ -271,17 +275,14 @@ double _parseLength(String value, {double? containerSize, double fontSize = 16.0
 /// Parses a CSS angle value to degrees, including calc() expressions.
 double _parseAngleToDegrees(String value, {double fontSize = 16.0}) {
   final trimmed = value.trim();
-  
+
   // Handle calc() expressions in angles
   if (trimmed.toLowerCase().startsWith('calc(')) {
-    final result = CssCalcEvaluator.evaluate(
-      trimmed,
-      fontSize: fontSize,
-    );
+    final result = CssCalcEvaluator.evaluate(trimmed, fontSize: fontSize);
     // Assume calc result is in default unit (degrees)
     return result ?? 0.0;
   }
-  
+
   final match = RegExp(
     r'^([+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?)\s*(deg|rad|turn|grad)?$',
     caseSensitive: false,
@@ -363,13 +364,13 @@ String? _normalizeScaleZ(List<String> args) {
 
 String? _normalizePerspective(List<String> args) {
   if (args.isEmpty) return 'perspective(0)';
-  
+
   final arg = args[0].toLowerCase();
   // Handle 'none' keyword for perspective
   if (arg == 'none') {
     return 'perspective(0)'; // none means no perspective effect
   }
-  
+
   final distance = _parseLength(args[0]);
   return 'perspective(${_formatDouble(distance)})';
 }
