@@ -59,6 +59,51 @@ class SvgParser {
       cssSelectorRules: selectorRules,
     );
 
+    // Parse and register <view> elements
+    _parseViewElements(svgElement, svgDocument);
+
     return svgDocument;
+  }
+
+  /// Parse <view> elements and register them with the document.
+  static void _parseViewElements(XmlElement svgElement, SvgDocument document) {
+    // Find all <view> elements in the document
+    final viewElements = svgElement.findAllElements('view');
+    for (final viewElement in viewElements) {
+      final id = viewElement.getAttribute('id');
+      final viewBoxAttr = viewElement.getAttribute('viewBox');
+      final preserveAspectRatio = viewElement.getAttribute('preserveAspectRatio');
+
+      if (id != null && id.isNotEmpty) {
+        final viewBox = _parseViewBox(viewBoxAttr);
+        final view = SvgViewElement(
+          id: id,
+          viewBox: viewBox,
+          preserveAspectRatio: preserveAspectRatio,
+        );
+        document.registerView(view);
+      }
+    }
+
+    // Also check <defs> for <view> elements
+    final defsElements = svgElement.findAllElements('defs');
+    for (final defs in defsElements) {
+      final viewElements = defs.findAllElements('view');
+      for (final viewElement in viewElements) {
+        final id = viewElement.getAttribute('id');
+        final viewBoxAttr = viewElement.getAttribute('viewBox');
+        final preserveAspectRatio = viewElement.getAttribute('preserveAspectRatio');
+
+        if (id != null && id.isNotEmpty) {
+          final viewBox = _parseViewBox(viewBoxAttr);
+          final view = SvgViewElement(
+            id: id,
+            viewBox: viewBox,
+            preserveAspectRatio: preserveAspectRatio,
+          );
+          document.registerView(view);
+        }
+      }
+    }
   }
 }

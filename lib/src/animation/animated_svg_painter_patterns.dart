@@ -132,43 +132,58 @@ extension AnimatedSvgPainterPatternsExtension on AnimatedSvgPainter {
       return null;
     }
 
-    // Render pattern content to a Picture
-    final recorder = ui.PictureRecorder();
-    final canvas = ui.Canvas(recorder);
+    final tileWidthInt = tileWidth.ceil().clamp(1, 2048);
+    final tileHeightInt = tileHeight.ceil().clamp(1, 2048);
 
-    // Apply content units transformation
-    if (pattern.patternContentUnits == _SvgPatternUnits.objectBoundingBox) {
-      canvas.scale(targetBounds.width, targetBounds.height);
-    }
-
-    // Apply viewBox transformation if present
-    if (pattern.viewBox != null) {
-      final vb = pattern.viewBox!;
-      if (vb.width > 0 && vb.height > 0) {
-        final scaleX = tileWidth / vb.width;
-        final scaleY = tileHeight / vb.height;
-        canvas.translate(-vb.left * scaleX, -vb.top * scaleY);
-        canvas.scale(scaleX, scaleY);
-      }
-    }
-
-    // Paint pattern children
-    for (final child in pattern.node.children) {
-      _paintNode(canvas, child);
-    }
-
-    final picture = recorder.endRecording();
-
-    // Convert Picture to Image for shader
-    // Note: This is synchronous but may be slow for complex patterns
-    final image = picture.toImageSync(
-      tileWidth.ceil().clamp(1, 2048),
-      tileHeight.ceil().clamp(1, 2048),
+    // Generate cache key for pattern image
+    final cacheKey = _RenderCache.patternKey(
+      patternId,
+      targetBounds,
+      tileWidthInt,
+      tileHeightInt,
     );
+
+    // Try to get cached image
+    ui.Image? image = _renderCache.patternImages[cacheKey];
+
+    if (image == null) {
+      // Render pattern content to a Picture
+      final recorder = ui.PictureRecorder();
+      final canvas = ui.Canvas(recorder);
+
+      // Apply content units transformation
+      if (pattern.patternContentUnits == _SvgPatternUnits.objectBoundingBox) {
+        canvas.scale(targetBounds.width, targetBounds.height);
+      }
+
+      // Apply viewBox transformation if present
+      if (pattern.viewBox != null) {
+        final vb = pattern.viewBox!;
+        if (vb.width > 0 && vb.height > 0) {
+          final scaleX = tileWidth / vb.width;
+          final scaleY = tileHeight / vb.height;
+          canvas.translate(-vb.left * scaleX, -vb.top * scaleY);
+          canvas.scale(scaleX, scaleY);
+        }
+      }
+
+      // Paint pattern children
+      for (final child in pattern.node.children) {
+        _paintNode(canvas, child);
+      }
+
+      final picture = recorder.endRecording();
+
+      // Convert Picture to Image for shader
+      image = picture.toImageSync(tileWidthInt, tileHeightInt);
+
+      // Cache the generated image
+      _renderCache.patternImages[cacheKey] = image;
+    }
 
     // Create transform matrix for the shader
     final matrix = Matrix4.identity();
-    matrix.translate(tileX, tileY);
+    matrix.translateByDouble(tileX, tileY, 0, 1);
     if (pattern.patternTransform != null) {
       matrix.multiply(pattern.patternTransform!);
     }

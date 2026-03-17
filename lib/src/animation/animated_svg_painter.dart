@@ -38,6 +38,95 @@ part 'animated_svg_painter_markers.dart';
 part 'animated_svg_painter_patterns.dart';
 part 'animated_svg_painter_paint_order.dart';
 
+/// Performance cache for render-time computed values.
+///
+/// This cache stores expensive-to-compute values that can be reused between
+/// frames when the underlying SVG elements haven't changed. Cache keys include
+/// element ID and a hash of relevant attributes to ensure proper invalidation.
+class _RenderCache {
+  /// Cached gradient shaders keyed by gradient ID + paint bounds hash.
+  final Map<String, ui.Shader> gradientShaders = <String, ui.Shader>{};
+
+  /// Cached pattern images keyed by pattern ID + target bounds hash.
+  final Map<String, ui.Image> patternImages = <String, ui.Image>{};
+
+  /// Cached text paragraphs keyed by text content + style hash.
+  final Map<String, ui.Paragraph> textParagraphs = <String, ui.Paragraph>{};
+
+  /// Cached hit-test paths keyed by element ID + geometry hash.
+  final Map<String, ui.Path> hitTestPaths = <String, ui.Path>{};
+
+  /// Last animation time when cache was valid.
+  double? _lastAnimationTime;
+
+  /// Initialize or update cache state for new frame.
+  void prepareFrame(double? animationTime, bool hasAnimations) {
+    // If animation time changed, invalidate caches that depend on animated values
+    if (_lastAnimationTime != animationTime && hasAnimations) {
+      gradientShaders.clear();
+      patternImages.clear();
+      textParagraphs.clear();
+      hitTestPaths.clear();
+    }
+    _lastAnimationTime = animationTime;
+  }
+
+  /// Clears all caches.
+  void clear() {
+    gradientShaders.clear();
+    patternImages.clear();
+    textParagraphs.clear();
+    hitTestPaths.clear();
+    _lastAnimationTime = null;
+  }
+
+  /// Generate a cache key for gradient shader.
+  static String gradientKey(
+    String gradientId,
+    ui.Rect bounds,
+    Map<String, Object?> attributes,
+  ) {
+    final boundsHash = '${bounds.left.toStringAsFixed(2)}_'
+        '${bounds.top.toStringAsFixed(2)}_'
+        '${bounds.width.toStringAsFixed(2)}_'
+        '${bounds.height.toStringAsFixed(2)}';
+    final attrHash = attributes.entries
+        .map((e) => '${e.key}:${e.value}')
+        .join('|');
+    return 'g:$gradientId|b:$boundsHash|a:${attrHash.hashCode}';
+  }
+
+  /// Generate a cache key for pattern image.
+  static String patternKey(
+    String patternId,
+    ui.Rect bounds,
+    int tileWidth,
+    int tileHeight,
+  ) {
+    final boundsHash = '${bounds.left.toStringAsFixed(2)}_'
+        '${bounds.top.toStringAsFixed(2)}_'
+        '${bounds.width.toStringAsFixed(2)}_'
+        '${bounds.height.toStringAsFixed(2)}';
+    return 'p:$patternId|b:$boundsHash|tw:$tileWidth|th:$tileHeight';
+  }
+
+  /// Generate a cache key for text paragraph.
+  static String textKey(
+    String text,
+    double fontSize,
+    String? fontFamily,
+    int fontWeightIndex,
+    int fontStyleIndex,
+    double letterSpacing,
+    int colorValue,
+  ) {
+    return 't:${text.hashCode}|fs:${fontSize.toStringAsFixed(1)}|'
+        'ff:${fontFamily ?? "def"}|fw:$fontWeightIndex|'
+        'fst:$fontStyleIndex|ls:${letterSpacing.toStringAsFixed(2)}|'
+        'c:$colorValue';
+  }
+}
+
 /// CustomPainter для отрисовки анимированного SVG
 ///
 /// Использует SvgDocument с уже применёнными анимированными значениями
@@ -51,7 +140,10 @@ class AnimatedSvgPainter extends CustomPainter {
     required this.document,
     this.backgroundColor,
     this.imagesByHref = const <String, ui.Image>{},
-  });
+    this.animationTime,
+    this.hasAnimations = false,
+    _RenderCache? renderCache,
+  }) : _renderCache = renderCache ?? _RenderCache();
 
   /// SVG документ с актуальными (анимированными) значениями атрибутов
   final SvgDocument document;
@@ -61,6 +153,15 @@ class AnimatedSvgPainter extends CustomPainter {
 
   /// Decoded raster images keyed by raw `href`/`xlink:href` value.
   final Map<String, ui.Image> imagesByHref;
+
+  /// Current animation time in seconds (for cache invalidation).
+  final double? animationTime;
+
+  /// Whether the document has animations.
+  final bool hasAnimations;
+
+  /// Performance cache for computed render values.
+  final _RenderCache _renderCache;
 
   final Map<String, _ResolvedGradientDefinition?> _gradientCache =
       <String, _ResolvedGradientDefinition?>{};
@@ -73,6 +174,9 @@ class AnimatedSvgPainter extends CustomPainter {
 
   @override
   void paint(ui.Canvas canvas, ui.Size size) {
+    // Prepare cache for this frame
+    _renderCache.prepareFrame(animationTime, hasAnimations);
+
     // Применяем фон если указан
     if (backgroundColor != null) {
       canvas.drawRect(
@@ -95,7 +199,8 @@ class AnimatedSvgPainter extends CustomPainter {
 
   /// Вычисляет матрицу трансформации для viewBox
   Matrix4 _computeViewBoxTransform(ui.Size size) {
-    final viewBox = document.viewBox;
+    // Use active viewBox (from <view> element if selected, otherwise root viewBox)
+    final viewBox = document.activeViewBox;
 
     if (viewBox == null) {
       // Без viewBox используем 1:1 масштаб

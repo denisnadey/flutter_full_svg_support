@@ -44,7 +44,7 @@ extension _AnimatedSvgPictureStateAttrsExtension on _AnimatedSvgPictureState {
       }
       var value = parts.sublist(1).join(':').trim();
       value = value
-          .replaceFirst(RegExp(r'\s*!important\s*\$', caseSensitive: false), '')
+          .replaceFirst(RegExp(r'\s*!important\s*$', caseSensitive: false), '')
           .trim();
       if (value.isEmpty) {
         return null;

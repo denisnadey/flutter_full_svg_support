@@ -149,6 +149,7 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
     _applyNodeTransform(matrix, node);
 
     switch (node.tagName) {
+      case 'a':
       case 'mask':
       case 'g':
       case 'svg':

@@ -93,6 +93,25 @@ class SvgTraceEvent {
 /// Callback used for receiving [SvgTraceEvent] updates.
 typedef SvgTraceCallback = void Function(SvgTraceEvent event);
 
+/// Information about an SVG anchor (link) element.
+@immutable
+class SvgLinkInfo {
+  /// Creates link info.
+  const SvgLinkInfo({
+    required this.href,
+    this.target,
+  });
+
+  /// The link URL (from href or xlink:href attribute).
+  final String href;
+
+  /// The link target (e.g., '_blank', '_self'). May be null.
+  final String? target;
+}
+
+/// Callback used for handling link taps in SVG anchor elements.
+typedef SvgLinkTapCallback = void Function(SvgLinkInfo linkInfo);
+
 /// Виджет для отображения анимированного SVG
 ///
 /// API схож с SvgPicture, но поддерживает SMIL анимации.
@@ -126,6 +145,7 @@ class AnimatedSvgPicture extends StatefulWidget {
     this.controller,
     this.onTrace,
     this.traceFrameTicks = false,
+    this.onLinkTap,
   }) : _svgString = svgString;
 
   /// XML строка SVG
@@ -164,6 +184,10 @@ class AnimatedSvgPicture extends StatefulWidget {
   /// Emit per-frame tick trace events. Disabled by default due to volume.
   final bool traceFrameTicks;
 
+  /// Callback invoked when a link (<a> element) is tapped.
+  /// The callback receives [SvgLinkInfo] with href and target attributes.
+  final SvgLinkTapCallback? onLinkTap;
+
   @override
   State<AnimatedSvgPicture> createState() => _AnimatedSvgPictureState();
 }
@@ -176,9 +200,16 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
   bool _hasAnimations = false;
   bool _isReversed = false;
   String? _hoveredElementId;
+  SvgLinkInfo? _hoveredAnchorInfo;
   final Map<String, ui.Image> _imagesByHref = <String, ui.Image>{};
   final Set<String> _pendingImageHrefs = <String>{};
   int _imageLoadGeneration = 0;
+
+  /// Cached hit-test paths keyed by element ID + path data hash.
+  final Map<String, Path> _hitTestPathCache = <String, Path>{};
+
+  /// Last animation time when hit-test cache was valid.
+  double? _hitTestCacheTime;
 
   @override
   void initState() {
@@ -248,11 +279,18 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
       size: Size.infinite,
     );
 
-    // Wrap with gesture detection for event-based animations
-    if (_hasAnimations && _timeline != null) {
+    // Wrap with gesture detection for event-based animations or link handling
+    final needsGestureDetection = (_hasAnimations && _timeline != null) ||
+        widget.onLinkTap != null;
+    if (needsGestureDetection) {
       svgWidget = GestureDetector(
         onTapDown: (details) => _handleTapDown(details),
+        onTapUp: (_) => _handleTapUp(),
+        onTapCancel: () => _handleTapUp(),
         child: MouseRegion(
+          cursor: _hoveredAnchorInfo != null
+              ? SystemMouseCursors.click
+              : MouseCursor.defer,
           onEnter: (event) => _handleMouseEnter(event.localPosition),
           onExit: (_) => _handleMouseExit(),
           onHover: (event) => _handleMouseHover(event.localPosition),
@@ -266,6 +304,23 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
       svgWidget = SizedBox(
         width: widget.width,
         height: widget.height,
+        child: svgWidget,
+      );
+    }
+
+    // Wrap with Semantics for accessibility
+    final accessibleName = _document.accessibleName;
+    final accessibleDescription = _document.accessibleDescription;
+    final accessibleRole = _document.accessibleRole;
+
+    if (accessibleName != null || accessibleDescription != null) {
+      svgWidget = Semantics(
+        label: accessibleName,
+        hint: accessibleDescription,
+        image: accessibleRole == 'img',
+        button: accessibleRole == 'button',
+        link: accessibleRole == 'link',
+        excludeSemantics: false,
         child: svgWidget,
       );
     }

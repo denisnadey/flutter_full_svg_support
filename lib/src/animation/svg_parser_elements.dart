@@ -1,6 +1,6 @@
 part of 'svg_parser.dart';
 
-/// Парсит XML элемент в SvgNode
+/// Parses XML element into SvgNode
 SvgNode _parseElement(XmlElement element) {
   final tagName = element.name.local;
   final id = element.getAttribute('id');
@@ -8,13 +8,22 @@ SvgNode _parseElement(XmlElement element) {
 
   final node = SvgNode(tagName: tagName, id: id, className: className);
 
+  // Parse ARIA attributes for accessibility
+  node.ariaLabel = element.getAttribute('aria-label');
+  node.ariaDescribedby = element.getAttribute('aria-describedby');
+  node.ariaRole = element.getAttribute('role');
+
   // Парсим атрибуты
   for (final attr in element.attributes) {
     final attrName = attr.name.local;
     final attrValue = attr.value;
 
     // Пропускаем специальные атрибуты, которые уже обработаны
-    if (attrName == 'id' || attrName == 'class') {
+    if (attrName == 'id' ||
+        attrName == 'class' ||
+        attrName == 'aria-label' ||
+        attrName == 'aria-describedby' ||
+        attrName == 'role') {
       continue;
     }
 
@@ -42,15 +51,67 @@ SvgNode _parseElement(XmlElement element) {
 
   // Рекурсивно парсим дочерние элементы
   for (final child in element.childElements) {
+    final childTagName = child.name.local;
+
     // Пропускаем <style> элементы - они обрабатываются отдельно
-    if (child.name.local == 'style') {
+    if (childTagName == 'style') {
       continue; // CSS parsing будет позже
     }
+
+    // Extract <title> text content and store on parent (use first only)
+    if (childTagName == 'title') {
+      if (node.titleText == null) {
+        final titleText = _extractElementText(child);
+        if (titleText != null && titleText.isNotEmpty) {
+          node.titleText = titleText;
+        }
+      }
+      // Still add title as child node for DOM completeness
+      final childNode = _parseElement(child);
+      node.addChild(childNode);
+      continue;
+    }
+
+    // Extract <desc> text content and store on parent (use first only)
+    if (childTagName == 'desc') {
+      if (node.descText == null) {
+        final descText = _extractElementText(child);
+        if (descText != null && descText.isNotEmpty) {
+          node.descText = descText;
+        }
+      }
+      // Still add desc as child node for DOM completeness
+      final childNode = _parseElement(child);
+      node.addChild(childNode);
+      continue;
+    }
+
     final childNode = _parseElement(child);
     node.addChild(childNode);
   }
 
   return node;
+}
+
+/// Extracts all text content from an element (for title/desc)
+String? _extractElementText(XmlElement element) {
+  final buffer = StringBuffer();
+  _collectTextContent(element, buffer);
+  final text = buffer.toString().trim();
+  if (text.isEmpty) return null;
+  // Normalize whitespace
+  return text.replaceAll(RegExp(r'\s+'), ' ');
+}
+
+/// Recursively collects text content from element and its children
+void _collectTextContent(XmlElement element, StringBuffer buffer) {
+  for (final child in element.children) {
+    if (child is XmlText) {
+      buffer.write(child.value);
+    } else if (child is XmlElement) {
+      _collectTextContent(child, buffer);
+    }
+  }
 }
 
 String? _extractDirectText(XmlElement element) {

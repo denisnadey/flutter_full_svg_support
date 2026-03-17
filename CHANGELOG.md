@@ -1,6 +1,47 @@
 ## NEXT
 
 * Updates minimum supported SDK version to Flutter 3.32/Dart 3.8.
+* **SVG `<a>` anchor element support** (NEW):
+  * Parse `<a>` element as container (renders children like `<g>`).
+  * Support `href`, `xlink:href`, and `target` attributes.
+  * New `onLinkTap` callback on `AnimatedSvgPicture` receives `SvgLinkInfo` with href and target.
+  * Pointer cursor automatically shown for elements inside `<a>`.
+  * Nested `<a>` support: inner anchor takes precedence over outer.
+* **CSS pseudo-class selectors** (NEW):
+  * `:hover` - styles applied when element is hovered by pointer.
+  * `:active` - styles applied when element is pressed.
+  * `:focus` - styles applied when element has focus (via tap).
+  * `:not(selector)` - negation pseudo-class for excluding matching elements.
+  * Structural pseudo-classes: `:first-child`, `:last-child`, `:only-child`, `:empty`, `:root`.
+  * Dynamic CSS rule re-evaluation when pseudo-class state changes.
+* **SVG `<view>` element support** (NEW):
+  * Parse `<view>` elements with `viewBox` and `preserveAspectRatio` attributes.
+  * Fragment identifier support for switching to named views.
+  * Programmatic view switching via `AnimatedSvgController.switchToView(viewId)`.
+  * `document.activeViewBox` returns the currently active view's viewBox.
+  * `document.viewIds` lists all available view IDs.
+* **Performance caching**: Critical render-time optimizations for better frame rates:
+  * Gradient shader caching: Reuses shader objects when gradient parameters haven't changed.
+  * Pattern image caching: Caches generated pattern tile images to avoid repeated `toImageSync()` calls.
+  * Text paragraph caching: Reuses text layout/measurement results when text content and style match.
+  * Hit-test path geometry caching: Caches path objects for efficient pointer event handling.
+  * Smart cache invalidation: Automatically clears caches when animation time changes for animated SVGs.
+* SVG accessibility support:
+  * `<title>` element text content exposed as accessible name (Semantics label).
+  * `<desc>` element text content exposed as accessible description (Semantics hint).
+  * ARIA attributes: `aria-label`, `aria-describedby`, `role` parsed and integrated with Flutter Semantics.
+  * AnimatedSvgPicture automatically wraps with Semantics widget when title/desc/ARIA info is present.
+  * Role-based Semantics flags: `role="img"` sets image flag, `role="button"` sets button flag.
+* `feConvolveMatrix` actual kernel convolution: pixel-level NxN matrix convolution with `duplicate`, `wrap`, `none` edge modes, `preserveAlpha` support, configurable `divisor`/`bias`/`targetX`/`targetY`, and identity kernel optimization.
+* `feDiffuseLighting` actual Lambertian lighting calculation: surface normal computation, feDistantLight/fePointLight/feSpotLight direction calculations, diffuseConstant * N·L * lightColor formula, surfaceScale attribute support.
+* `feSpecularLighting` actual Blinn-Phong specular calculation: half-vector computation H=normalize(L+eye), specularConstant * (N·H)^specularExponent * lightColor formula, alpha = max(r,g,b), all three light source types supported.
+* Gradient/pattern coordinate units support:
+  * `gradientUnits="objectBoundingBox"`: gradient coordinates (0-1) scaled relative to element bounding box.
+  * `gradientUnits="userSpaceOnUse"`: coordinates in current user coordinate system.
+  * `patternContentUnits="objectBoundingBox"`: pattern content scaled relative to element bounds.
+  * Radial gradient focal point: proper handling when `fx`/`fy` differ from `cx`/`cy`.
+  * Gradient stop offset animation: support animating `offset` on `<stop>` elements via SMIL `<animate>`.
+  * Pattern edge cases: width=0 or height=0 gracefully returns no render, negative values treated as 0.
 * CSS combinator selectors: descendant (space), child (`>`), adjacent sibling (`+`), general sibling (`~`) for advanced style rule matching.
 * CSS attribute selectors: `[attr]`, `[attr=value]`, `[attr~=value]`, `[attr|=value]`, `[attr^=value]`, `[attr$=value]`, `[attr*=value]` with case-insensitive flag support.
 * Compound selectors with combinators: `g.container > rect[fill=red].item` and similar complex patterns.

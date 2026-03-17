@@ -1,5 +1,71 @@
 part of 'css_animations.dart';
 
+/// CSS Pseudo-class types
+enum CssPseudoClass {
+  /// :hover - element is being hovered by pointer
+  hover,
+
+  /// :active - element is being activated (pressed)
+  active,
+
+  /// :focus - element has focus
+  focus,
+
+  /// :visited - link has been visited (not typically applicable to SVG)
+  visited,
+
+  /// :link - unvisited link (not typically applicable to SVG)
+  link,
+
+  /// :first-child - element is the first child of its parent
+  firstChild,
+
+  /// :last-child - element is the last child of its parent
+  lastChild,
+
+  /// :only-child - element is the only child of its parent
+  onlyChild,
+
+  /// :empty - element has no children
+  empty,
+
+  /// :root - element is the root of the document
+  root,
+}
+
+/// Context for CSS selector matching that includes element state.
+class CssSelectorMatchContext {
+  const CssSelectorMatchContext({
+    this.hoveredElementIds = const {},
+    this.activeElementIds = const {},
+    this.focusedElementId,
+  });
+
+  /// Set of element IDs currently being hovered.
+  final Set<String> hoveredElementIds;
+
+  /// Set of element IDs currently active (pressed).
+  final Set<String> activeElementIds;
+
+  /// The ID of the currently focused element.
+  final String? focusedElementId;
+
+  /// Check if an element has a specific pseudo-class state.
+  bool hasState(String? elementId, CssPseudoClass pseudoClass) {
+    if (elementId == null) return false;
+    switch (pseudoClass) {
+      case CssPseudoClass.hover:
+        return hoveredElementIds.contains(elementId);
+      case CssPseudoClass.active:
+        return activeElementIds.contains(elementId);
+      case CssPseudoClass.focus:
+        return focusedElementId == elementId;
+      default:
+        return false;
+    }
+  }
+}
+
 /// CSS Combinator types
 enum CssCombinator {
   /// No combinator (simple selector sequence)
@@ -110,13 +176,15 @@ class CssAttributeSelector {
   }
 }
 
-/// A simple selector component (tag, class, id, or attribute)
+/// A simple selector component (tag, class, id, attribute, or pseudo-class)
 class CssSimpleSelector {
   const CssSimpleSelector({
     this.tagName,
     this.id,
     this.classes = const [],
     this.attributes = const [],
+    this.pseudoClasses = const [],
+    this.notSelectors = const [],
   });
 
   /// Tag name (null for universal selector *)
@@ -131,10 +199,20 @@ class CssSimpleSelector {
   /// Attribute selectors
   final List<CssAttributeSelector> attributes;
 
+  /// Pseudo-classes (:hover, :active, :focus, etc.)
+  final List<CssPseudoClass> pseudoClasses;
+
+  /// Selectors inside :not() - elements matching these are excluded
+  final List<CssSimpleSelector> notSelectors;
+
   /// Whether this is a universal selector
   bool get isUniversal =>
       tagName == '*' ||
-      (tagName == null && id == null && classes.isEmpty && attributes.isEmpty);
+      (tagName == null && id == null && classes.isEmpty && attributes.isEmpty &&
+          pseudoClasses.isEmpty && notSelectors.isEmpty);
+
+  /// Whether this selector has any pseudo-class requirements
+  bool get hasPseudoClasses => pseudoClasses.isNotEmpty || notSelectors.isNotEmpty;
 
   @override
   String toString() {
@@ -147,7 +225,39 @@ class CssSimpleSelector {
     for (final a in attributes) {
       buf.write(a);
     }
+    for (final pc in pseudoClasses) {
+      buf.write(':${_pseudoClassToString(pc)}');
+    }
+    for (final notSel in notSelectors) {
+      buf.write(':not($notSel)');
+    }
     return buf.isEmpty ? '*' : buf.toString();
+  }
+}
+
+/// Convert pseudo-class enum to CSS string
+String _pseudoClassToString(CssPseudoClass pc) {
+  switch (pc) {
+    case CssPseudoClass.hover:
+      return 'hover';
+    case CssPseudoClass.active:
+      return 'active';
+    case CssPseudoClass.focus:
+      return 'focus';
+    case CssPseudoClass.visited:
+      return 'visited';
+    case CssPseudoClass.link:
+      return 'link';
+    case CssPseudoClass.firstChild:
+      return 'first-child';
+    case CssPseudoClass.lastChild:
+      return 'last-child';
+    case CssPseudoClass.onlyChild:
+      return 'only-child';
+    case CssPseudoClass.empty:
+      return 'empty';
+    case CssPseudoClass.root:
+      return 'root';
   }
 }
 
@@ -266,6 +376,8 @@ int _skipWhitespace(String str, int pos) {
   String? id;
   final classes = <String>[];
   final attributes = <CssAttributeSelector>[];
+  final pseudoClasses = <CssPseudoClass>[];
+  final notSelectors = <CssSimpleSelector>[];
 
   // Parse tag name or universal selector
   if (pos < str.length) {
@@ -280,7 +392,7 @@ int _skipWhitespace(String str, int pos) {
     }
   }
 
-  // Parse additional components: #id, .class, [attr]
+  // Parse additional components: #id, .class, [attr], :pseudo
   while (pos < str.length) {
     final c = str[pos];
 
@@ -308,19 +420,51 @@ int _skipWhitespace(String str, int pos) {
       }
       pos = newPos;
     } else if (c == ':') {
-      // Pseudo-class/element — skip for now
+      // Pseudo-class or pseudo-element
       pos++;
-      if (pos < str.length && str[pos] == ':') pos++; // ::pseudo-element
-      final (_, newPos) = _parseIdent(str, pos);
-      pos = newPos;
-      // Skip function arguments like :nth-child(2n+1)
-      if (pos < str.length && str[pos] == '(') {
-        var depth = 1;
+      if (pos < str.length && str[pos] == ':') {
+        // ::pseudo-element - skip for now
         pos++;
-        while (pos < str.length && depth > 0) {
-          if (str[pos] == '(') depth++;
-          if (str[pos] == ')') depth--;
+        final (_, newPos) = _parseIdent(str, pos);
+        pos = newPos;
+      } else {
+        // :pseudo-class - parse it
+        final (pseudoName, newPos) = _parseIdent(str, pos);
+        pos = newPos;
+        final lowerPseudo = pseudoName.toLowerCase();
+        
+        // Handle :not() pseudo-class
+        if (lowerPseudo == 'not' && pos < str.length && str[pos] == '(') {
+          pos++; // skip (
+          pos = _skipWhitespace(str, pos);
+          
+          // Parse the inner selector(s)
+          final (innerSelector, innerEndPos) = _parseSimpleSelector(str, pos);
+          if (innerSelector != null) {
+            notSelectors.add(innerSelector);
+          }
+          pos = innerEndPos;
+          pos = _skipWhitespace(str, pos);
+          
+          // Skip to closing )
+          if (pos < str.length && str[pos] == ')') {
+            pos++;
+          }
+        } else if (pos < str.length && str[pos] == '(') {
+          // Other functional pseudo-classes like :nth-child(2n+1) - skip content
+          var depth = 1;
           pos++;
+          while (pos < str.length && depth > 0) {
+            if (str[pos] == '(') depth++;
+            if (str[pos] == ')') depth--;
+            pos++;
+          }
+        } else {
+          // Simple pseudo-classes
+          final parsedPseudo = _parsePseudoClass(lowerPseudo);
+          if (parsedPseudo != null) {
+            pseudoClasses.add(parsedPseudo);
+          }
         }
       }
     } else {
@@ -329,7 +473,8 @@ int _skipWhitespace(String str, int pos) {
     }
   }
 
-  if (tagName == null && id == null && classes.isEmpty && attributes.isEmpty) {
+  if (tagName == null && id == null && classes.isEmpty && attributes.isEmpty &&
+      pseudoClasses.isEmpty && notSelectors.isEmpty) {
     return (null, startPos);
   }
 
@@ -339,9 +484,39 @@ int _skipWhitespace(String str, int pos) {
       id: id,
       classes: classes,
       attributes: attributes,
+      pseudoClasses: pseudoClasses,
+      notSelectors: notSelectors,
     ),
     pos,
   );
+}
+
+/// Parse a pseudo-class name into enum value
+CssPseudoClass? _parsePseudoClass(String name) {
+  switch (name) {
+    case 'hover':
+      return CssPseudoClass.hover;
+    case 'active':
+      return CssPseudoClass.active;
+    case 'focus':
+      return CssPseudoClass.focus;
+    case 'visited':
+      return CssPseudoClass.visited;
+    case 'link':
+      return CssPseudoClass.link;
+    case 'first-child':
+      return CssPseudoClass.firstChild;
+    case 'last-child':
+      return CssPseudoClass.lastChild;
+    case 'only-child':
+      return CssPseudoClass.onlyChild;
+    case 'empty':
+      return CssPseudoClass.empty;
+    case 'root':
+      return CssPseudoClass.root;
+    default:
+      return null;
+  }
 }
 
 (CssAttributeSelector?, int) _parseAttributeSelector(String str, int startPos) {

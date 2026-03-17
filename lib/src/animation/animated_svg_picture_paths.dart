@@ -1,10 +1,28 @@
 part of 'animated_svg_picture.dart';
 
 extension _AnimatedSvgPictureStatePathsExtension on _AnimatedSvgPictureState {
+  /// Invalidate hit-test path cache when animation time changes.
+  void _prepareHitTestCache(double? animationTime) {
+    if (_hasAnimations && _hitTestCacheTime != animationTime) {
+      _hitTestPathCache.clear();
+      _hitTestCacheTime = animationTime;
+    }
+  }
+
   Path? _buildPathGeometry(SvgNode node) {
     final pathData = node.getAttributeValue('d')?.toString();
     if (pathData == null || pathData.isEmpty) {
       return null;
+    }
+
+    // Generate cache key from node ID (or fallback to pathData hash)
+    final nodeId = node.id ?? '';
+    final cacheKey = 'p:$nodeId|h:${pathData.hashCode}';
+
+    // Check cache first
+    final cached = _hitTestPathCache[cacheKey];
+    if (cached != null) {
+      return cached;
     }
 
     final path = _buildPath(pathData);
@@ -13,6 +31,10 @@ extension _AnimatedSvgPictureStatePathsExtension on _AnimatedSvgPictureState {
     }
 
     _applyPathFillType(path, node);
+
+    // Cache the result
+    _hitTestPathCache[cacheKey] = path;
+
     return path;
   }
 
@@ -132,6 +154,7 @@ extension _AnimatedSvgPictureStatePathsExtension on _AnimatedSvgPictureState {
     _applyNodeTransform(matrix, node);
 
     switch (node.tagName) {
+      case 'a':
       case 'clipPath':
       case 'mask':
       case 'g':

@@ -19,7 +19,7 @@ Commands run in `/Users/denisnadey/apps/flutter_full_svg_support`:
 ```
 
 Result:
-- `flutter test`: **All tests passed** (`+1262`)
+- `flutter test`: **All tests passed** (`+1322`)
 - `flutter analyze`: **0 errors**, **0 warnings**
 
 ## Documentation Cleanup (March 16, 2026)
@@ -67,6 +67,14 @@ See: `/Users/denisnadey/apps/flutter_full_svg_support/docs/RESOLVED_ISSUES.md`
 
 ## What Is Implemented
 
+### Performance Optimizations
+- **Render-time caching**: Critical performance caching to match Blink optimization behavior
+  - Gradient shader caching: Shader objects cached by gradient ID + paint bounds + attributes
+  - Pattern image caching: Pattern tile images cached and reused across frames
+  - Text paragraph caching: Paragraph objects cached by text content + style properties
+  - Hit-test path geometry caching: Path objects cached for repeated hit-testing
+  - Smart cache invalidation: Caches cleared when animation time changes for animated SVGs
+
 ### SMIL Engine
 - `<animate>`, `<animateTransform>`, `<animateMotion>`, `<set>`, `<animateColor>` parsing
 - `animateMotion`: inline `path` and `<mpath href="#...">` / `<mpath xlink:href="#...">` references
@@ -98,6 +106,14 @@ See: `/Users/denisnadey/apps/flutter_full_svg_support/docs/RESOLVED_ISSUES.md`
     - `[attr$=value]` — ends with
     - `[attr*=value]` — contains substring
     - Case-insensitive flag (`i`): `[attr=value i]`
+  - **Pseudo-class selectors** (NEW):
+    - `:hover` — element is being hovered by pointer
+    - `:active` — element is being pressed
+    - `:focus` — element has focus
+    - `:not(selector)` — negation pseudo-class
+    - `:first-child`, `:last-child`, `:only-child` — structural pseudo-classes
+    - `:empty` — element has no children
+    - `:root` — root element
 - **Multiple Animations Per Element**:
   - Comma-separated `animation` shorthand parsing (e.g., `animation: fadeIn 1s, slideUp 2s 0.5s`)
   - Generates multiple SMIL animation elements per CSS rule
@@ -153,12 +169,25 @@ See: `/Users/denisnadey/apps/flutter_full_svg_support/docs/RESOLVED_ISSUES.md`
 ### Interaction & Events
 - Document-level events: click/mouseover/mouseout dispatch
 - Element-level hit-testing and dispatch for `rect/circle/ellipse/line/path/polygon/polyline/image/foreignObject/text/tspan/textPath`
+- **SVG `<a>` anchor element** (NEW):
+  - Parse `<a>` as container element (like `<g>`)
+  - Support `href`, `xlink:href`, and `target` attributes
+  - `onLinkTap` callback on `AnimatedSvgPicture` receives `SvgLinkInfo` (href, target)
+  - Pointer cursor for elements inside `<a>`
+  - Nested `<a>` support (inner takes precedence)
 - Baseline `pointer-events` semantics including inherited `none`, geometry modes, and text-aware modes
 - Baseline `<use>`-referenced hit-testing
 - Advanced `clip-path` / `mask` hit-testing with geometric intersection and alpha-based visibility
 - Stroke-width expansion for accurate hit regions with `stroke-linecap` and `stroke-linejoin` support
 - Per-character text hit-testing for improved precision
 - Inline `style` with trailing `!important` normalization in visibility/hit-testing paths
+
+### Accessibility
+- `<title>` element: text content exposed as accessible name via `Semantics.label`
+- `<desc>` element: text content exposed as accessible description via `Semantics.hint`
+- ARIA attributes: `aria-label`, `aria-describedby`, `role` parsed and integrated with Flutter Semantics
+- AnimatedSvgPicture wraps with Semantics widget when accessibility info is present
+- Role-based Semantics flags: `role="img"` sets image flag, `role="button"` sets button flag, `role="link"` sets link flag
 
 ### Runtime Diagnostics / Playground
 - Structured trace API in `AnimatedSvgPicture`: `SvgTraceEvent`, `SvgTraceLevel`, `onTrace`
@@ -171,11 +200,11 @@ Implemented primitives / baseline semantics:
 - `feMorphology` (baseline)
 - `feDisplacementMap` (baseline + `scale=0` and `in2="none"` handling)
 - `feImage` (baseline graph semantics)
-- `feConvolveMatrix` (baseline)
+- `feConvolveMatrix` (actual kernel convolution with edge modes)
 - `feTurbulence` (baseline)
 - `feComponentTransfer` (baseline)
-- `feDiffuseLighting` (baseline)
-- `feSpecularLighting` (baseline)
+- `feDiffuseLighting` (actual Lambertian diffuse calculation)
+- `feSpecularLighting` (actual Blinn-Phong specular calculation)
 - `feOffset`
 - `feFlood`
 - `feBlend` (baseline + extended SVG2 mode mapping)
@@ -200,6 +229,11 @@ Implemented primitives / baseline semantics:
   - Transform propagation through foreignObject
   - Hit-testing through foreignObject children
 - `clipPath` and `mask` baseline support
+- **`<view>` element support** (NEW):
+  - Parse `<view>` elements with `viewBox` and `preserveAspectRatio` attributes
+  - Support fragment identifiers to switch views dynamically
+  - Programmatic view switching via `AnimatedSvgController.switchToView()`
+  - `document.activeViewBox` returns current view's viewBox
 
 ## Known Gaps (Blink Parity, Animated Pipeline)
 

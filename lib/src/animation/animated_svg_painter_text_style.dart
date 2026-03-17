@@ -1742,6 +1742,24 @@ extension AnimatedSvgPainterTextStyleExtension on AnimatedSvgPainter {
   }
 
   ui.Paragraph _buildTextParagraph(String text, _ResolvedTextStyle style) {
+    // Generate cache key for text paragraph
+    final cacheKey = _RenderCache.textKey(
+      text,
+      style.fontSize,
+      style.fontFamily,
+      style.fontWeight.index,
+      style.fontStyle.index,
+      style.letterSpacing,
+      style.color.toARGB32(),
+    );
+
+    // Check cache first
+    final cached = _renderCache.textParagraphs[cacheKey];
+    if (cached != null) {
+      return cached;
+    }
+
+    // Build the paragraph
     final paragraphBuilder = ui.ParagraphBuilder(
       ui.ParagraphStyle(
         fontSize: style.fontSize,
@@ -1769,6 +1787,10 @@ extension AnimatedSvgPainterTextStyleExtension on AnimatedSvgPainter {
     paragraphBuilder.addText(text);
     final paragraph = paragraphBuilder.build();
     paragraph.layout(const ui.ParagraphConstraints(width: 1000000));
+
+    // Cache the result
+    _renderCache.textParagraphs[cacheKey] = paragraph;
+
     return paragraph;
   }
 

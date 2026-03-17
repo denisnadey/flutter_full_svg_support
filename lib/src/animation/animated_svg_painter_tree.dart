@@ -180,6 +180,7 @@ void _paintNodeImpl(
       case 'use':
         painter._paintUse(canvas, node, useStack: currentUseStack);
         break;
+      case 'a':
       case 'g':
       case 'svg':
       case 'foreignObject':

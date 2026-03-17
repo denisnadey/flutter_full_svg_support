@@ -31,8 +31,15 @@ extension _AnimatedSvgPictureStateLifecycleExtension
           'rootTag': _document.root.tagName,
           'rootChildren': _document.root.children.length,
           'viewBox': _document.viewBox?.toString(),
+          'viewCount': _document.viewIds.length,
         },
       );
+      
+      // Populate available views on controller
+      if (widget.controller != null) {
+        widget.controller!.availableViews = _document.viewIds.toList();
+      }
+      
       _scheduleImagePreload();
 
       if (_hasAnimations) {
@@ -260,6 +267,28 @@ extension _AnimatedSvgPictureStateLifecycleExtension
       );
       _markNeedsRepaint();
     }
+
+    // Handle view switching
+    if (controller.pendingViewId != null || controller.currentViewId != _document.activeViewId) {
+      final viewId = controller.pendingViewId ?? controller.currentViewId;
+      final success = _document.switchToView(viewId);
+      if (success) {
+        _trace(
+          category: 'controller',
+          message: 'View switched',
+          data: <String, Object?>{'viewId': viewId},
+        );
+      } else {
+        _trace(
+          category: 'controller',
+          level: SvgTraceLevel.warning,
+          message: 'View not found',
+          data: <String, Object?>{'viewId': viewId},
+        );
+      }
+      controller.clearPendingViewChange();
+      _markNeedsRepaint();
+    }
   }
 
   void _dispose() {
@@ -272,5 +301,6 @@ extension _AnimatedSvgPictureStateLifecycleExtension
     _controller = null;
     _timeline = null;
     _hoveredElementId = null;
+    _hoveredAnchorInfo = null;
   }
 }

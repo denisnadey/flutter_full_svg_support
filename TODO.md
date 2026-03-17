@@ -9,6 +9,17 @@ For factual project status, use `CURRENT_STATUS.md` only.
 
 ## Completed Recently
 
+- [x] **SVG `<a>` anchor element**: Parse as container (like `<g>`), support `href`/`xlink:href`/`target` attributes, `onLinkTap` callback on widget with `SvgLinkInfo`, pointer cursor, nested anchor support (inner takes precedence)
+- [x] **CSS pseudo-class selectors**: `:hover`, `:active`, `:focus` state tracking with dynamic CSS rule re-evaluation
+- [x] **CSS `:not()` pseudo-class**: Selector negation support with compound selectors inside :not()
+- [x] **CSS structural pseudo-classes**: `:first-child`, `:last-child`, `:only-child`, `:empty`, `:root`
+- [x] **SVG `<view>` element**: Parse view elements with viewBox/preserveAspectRatio, fragment identifier support, programmatic view switching via controller
+- [x] **Performance caching** for render-time optimizations:
+  - Gradient shader caching with proper cache key generation
+  - Pattern image caching to avoid repeated `toImageSync()` calls
+  - Text paragraph caching for efficient text rendering
+  - Hit-test path geometry caching for faster pointer event handling
+  - Smart cache invalidation when animation time changes
 - [x] CSS combinator selectors: descendant (space), child (`>`), adjacent sibling (`+`), general sibling (`~`)
 - [x] CSS attribute selectors: `[attr]`, `[attr=value]`, `[attr~=value]`, `[attr|=value]`, `[attr^=value]`, `[attr$=value]`, `[attr*=value]`, case-insensitive flag
 - [x] Compound selectors with combinators: `g.container > rect[fill=red].item`
@@ -96,6 +107,7 @@ For factual project status, use `CURRENT_STATUS.md` only.
 - [x] `writing-mode` attribute: `horizontal-tb`, `vertical-rl`, `vertical-lr` (+ legacy `tb`/`tb-rl`) for vertical text rendering
 - [x] `<marker>` element support: `marker-start`, `marker-mid`, `marker-end` attributes with `orient`, `markerUnits`, `viewBox` support
 - [x] `<pattern>` paint server: fill/stroke patterns with `patternUnits`, `patternContentUnits`, `viewBox`, `patternTransform`, and inheritance
+- [x] Gradient/pattern coordinate units: `gradientUnits="objectBoundingBox"`, `gradientUnits="userSpaceOnUse"`, `patternContentUnits="objectBoundingBox"`, radial gradient focal point, gradient stop offset animation via SMIL, pattern edge cases (width/height=0, negative values)
 - [x] Group `opacity` compositing: proper `saveLayer` handling for `<g>`, `<svg>`, `<foreignObject>` with `opacity < 1`
 - [x] `paint-order` attribute: control fill/stroke/markers paint order (`stroke fill`, `markers stroke fill`, etc.)
 - [x] `vector-effect: non-scaling-stroke`: stroke width remains constant regardless of transform scale
@@ -131,6 +143,7 @@ For factual project status, use `CURRENT_STATUS.md` only.
 - [x] CSS transitions support: transition shorthand parsing, transition-property/duration/timing-function/delay, multiple transitions
 - [x] @media queries in SVG style blocks: prefers-color-scheme (dark/light), viewport queries (min-width/max-width/min-height/max-height)
 - [x] CSS custom properties (variables) and calc() support: `var(--name)`, `var(--name, fallback)`, calc() arithmetic with units, nested calc(), var() inside calc()
+- [x] SVG accessibility: `<title>` and `<desc>` elements exposed as Semantics label/hint, ARIA attributes (`aria-label`, `aria-describedby`, `role`) integrated with Flutter Semantics
 
 ## P0 - Blink Parity Foundations
 
@@ -155,11 +168,11 @@ For factual project status, use `CURRENT_STATUS.md` only.
 - [x] Implement `feMorphology` (`erode`/`dilate` baseline).
 - [x] Implement `feDisplacementMap` (baseline graph pass-through).
 - [x] Implement `feImage` (baseline graph pass-through + source attribute parsing).
-- [x] Implement `feConvolveMatrix` (baseline graph pass-through + kernel attribute parsing).
+- [x] Implement `feConvolveMatrix` (actual kernel convolution with edge modes).
 - [x] Implement `feTurbulence` (baseline graph pass-through + noise attribute parsing).
 - [x] Implement `feComponentTransfer` (baseline graph pass-through + channel-function parsing).
-- [x] Implement `feDiffuseLighting` (baseline graph pass-through + light-source parsing).
-- [x] Implement `feSpecularLighting` (baseline graph pass-through + light-source parsing).
+- [x] Implement `feDiffuseLighting` (actual Lambertian diffuse lighting calculation with light sources).
+- [x] Implement `feSpecularLighting` (actual Blinn-Phong specular lighting calculation with light sources).
 - [x] Implement `feBlend`.
 - [x] Implement `feComposite`.
 - [x] Implement `feFlood`.

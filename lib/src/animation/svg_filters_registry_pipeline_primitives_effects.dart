@@ -121,4 +121,103 @@ extension SvgFiltersPipelinePrimitiveEffectsExtension on SvgFilters {
 
     return previous.isEmpty ? <SvgFilterPaintPass>[...sourceGraphic] : previous;
   }
+
+  List<SvgFilterPaintPass> _resolveDiffuseLightingOutput({
+    required SvgDiffuseLightingFilter lighting,
+    required List<SvgFilterPaintPass> previous,
+    required Map<String, List<SvgFilterPaintPass>> namedResults,
+    required List<SvgFilterPaintPass> sourceGraphic,
+    required List<SvgFilterPaintPass> sourceAlpha,
+  }) {
+    final input = _resolvePrimitiveInput(
+      requestedInput: lighting.input,
+      previous: previous,
+      namedResults: namedResults,
+      sourceGraphic: sourceGraphic,
+      sourceAlpha: sourceAlpha,
+    );
+
+    final colorFilter = lighting.colorFilter();
+    if (colorFilter == null) {
+      // No light source or zero intensity - pass through input
+      return input;
+    }
+
+    return input
+        .map((pass) => pass.copyWith(colorFilter: colorFilter))
+        .toList(growable: false);
+  }
+
+  List<SvgFilterPaintPass> _resolveSpecularLightingOutput({
+    required SvgSpecularLightingFilter lighting,
+    required List<SvgFilterPaintPass> previous,
+    required Map<String, List<SvgFilterPaintPass>> namedResults,
+    required List<SvgFilterPaintPass> sourceGraphic,
+    required List<SvgFilterPaintPass> sourceAlpha,
+  }) {
+    final input = _resolvePrimitiveInput(
+      requestedInput: lighting.input,
+      previous: previous,
+      namedResults: namedResults,
+      sourceGraphic: sourceGraphic,
+      sourceAlpha: sourceAlpha,
+    );
+
+    final colorFilter = lighting.colorFilter();
+    if (colorFilter == null) {
+      // No light source or zero intensity - pass through input
+      return input;
+    }
+
+    return input
+        .map((pass) => pass.copyWith(colorFilter: colorFilter))
+        .toList(growable: false);
+  }
+
+  List<SvgFilterPaintPass> _resolveConvolveMatrixOutput({
+    required SvgConvolveMatrixFilter convolve,
+    required List<SvgFilterPaintPass> previous,
+    required Map<String, List<SvgFilterPaintPass>> namedResults,
+    required List<SvgFilterPaintPass> sourceGraphic,
+    required List<SvgFilterPaintPass> sourceAlpha,
+  }) {
+    final input = _resolvePrimitiveInput(
+      requestedInput: convolve.input,
+      previous: previous,
+      namedResults: namedResults,
+      sourceGraphic: sourceGraphic,
+      sourceAlpha: sourceAlpha,
+    );
+
+    // Check if kernel is an identity kernel (no-op)
+    final isIdentity = ConvolveMatrixProcessor.isIdentityKernel(
+      kernel: convolve.kernelMatrix,
+      orderX: convolve.orderX,
+      orderY: convolve.orderY,
+      targetX: convolve.targetX,
+      targetY: convolve.targetY,
+      divisor: convolve.divisor,
+      bias: convolve.bias,
+    );
+
+    if (isIdentity) {
+      // Identity kernel - pass through without convolution
+      return input;
+    }
+
+    // Create convolution paint passes that wrap input passes
+    return input
+        .map(
+          (pass) => SvgConvolveMatrixPaintPass(
+            imageFilter: pass.imageFilter,
+            colorFilter: pass.colorFilter,
+            blendMode: pass.blendMode,
+            offset: pass.offset,
+            paintFill: pass.paintFill,
+            paintStroke: pass.paintStroke,
+            convolveFilter: convolve,
+          ),
+        )
+        .toList(growable: false);
+  }
 }

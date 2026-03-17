@@ -46,8 +46,8 @@ extension SvgFiltersPipelinePrimitiveResolverExtension on SvgFilters {
         );
 
       case SvgFilterType.convolveMatrix:
-        return _resolvePassthroughOutput(
-          requestedInput: (primitive as SvgConvolveMatrixFilter).input,
+        return _resolveConvolveMatrixOutput(
+          convolve: primitive as SvgConvolveMatrixFilter,
           previous: previous,
           namedResults: namedResults,
           sourceGraphic: sourceGraphic,
@@ -73,8 +73,8 @@ extension SvgFiltersPipelinePrimitiveResolverExtension on SvgFilters {
         );
 
       case SvgFilterType.diffuseLighting:
-        return _resolvePassthroughOutput(
-          requestedInput: (primitive as SvgDiffuseLightingFilter).input,
+        return _resolveDiffuseLightingOutput(
+          lighting: primitive as SvgDiffuseLightingFilter,
           previous: previous,
           namedResults: namedResults,
           sourceGraphic: sourceGraphic,
@@ -82,8 +82,8 @@ extension SvgFiltersPipelinePrimitiveResolverExtension on SvgFilters {
         );
 
       case SvgFilterType.specularLighting:
-        return _resolvePassthroughOutput(
-          requestedInput: (primitive as SvgSpecularLightingFilter).input,
+        return _resolveSpecularLightingOutput(
+          lighting: primitive as SvgSpecularLightingFilter,
           previous: previous,
           namedResults: namedResults,
           sourceGraphic: sourceGraphic,

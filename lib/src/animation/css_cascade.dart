@@ -284,6 +284,14 @@ class CssCascadeResolver {
   /// Cache of matching rules per node ID/class combination.
   final Map<String, List<_MatchedRule>> _ruleCache;
 
+  /// Pseudo-class state for dynamic matching.
+  SvgPseudoClassState? pseudoClassState;
+
+  /// Clear the rule cache (call when pseudo-class state changes).
+  void clearCache() {
+    _ruleCache.clear();
+  }
+
   /// Resolves a CSS property value for a node with full cascade support.
   ///
   /// Resolution order (highest to lowest priority):
@@ -394,11 +402,14 @@ class CssCascadeResolver {
 
   /// Gets all matching CSS rules for a node.
   List<_MatchedRule> _getMatchingRules(SvgNode node) {
-    // Build cache key from node's identifying attributes
+    // Build cache key from node's identifying attributes and pseudo-state
     final id = node.getAttributeValue('id')?.toString();
     final className = node.getAttributeValue('class')?.toString();
     final tagName = node.tagName;
-    final cacheKey = '$tagName|${id ?? ''}|${className ?? ''}';
+    
+    // Include pseudo-class state in cache key
+    final pseudoKey = _buildPseudoStateKey(id);
+    final cacheKey = '$tagName|${id ?? ''}|${className ?? ''}|$pseudoKey';
 
     if (_ruleCache.containsKey(cacheKey)) {
       return _ruleCache[cacheKey]!;
@@ -411,7 +422,7 @@ class CssCascadeResolver {
         .toSet();
 
     for (final rule in cssRules) {
-      if (_selectorMatches(rule.selector, tagName, id, nodeClasses)) {
+      if (_selectorMatchesWithPseudo(rule, node, tagName, id, nodeClasses)) {
         matched.add(
           _MatchedRule(
             rule: rule,
@@ -423,6 +434,148 @@ class CssCascadeResolver {
 
     _ruleCache[cacheKey] = matched;
     return matched;
+  }
+
+  /// Build a key representing the current pseudo-class state for an element.
+  String _buildPseudoStateKey(String? id) {
+    if (id == null || pseudoClassState == null) return '';
+    final parts = <String>[];
+    if (pseudoClassState!.isHovered(id)) parts.add('h');
+    if (pseudoClassState!.isActive(id)) parts.add('a');
+    if (pseudoClassState!.isFocused(id)) parts.add('f');
+    return parts.join();
+  }
+
+  /// Checks if a selector matches a node, including pseudo-class state.
+  bool _selectorMatchesWithPseudo(
+    CssSelectorRule rule,
+    SvgNode node,
+    String tagName,
+    String? id,
+    Set<String> classes,
+  ) {
+    final parsed = rule.parsedSelector;
+    if (parsed == null) {
+      // Fall back to basic matching
+      return _selectorMatches(rule.selector, tagName, id, classes);
+    }
+
+    // For simple selectors (no combinators), just match the subject
+    if (parsed.isSimple) {
+      return _matchSimpleSelector(parsed.subject.selector, node, tagName, id, classes);
+    }
+
+    // For complex selectors with combinators, we need to traverse the DOM
+    // For now, use basic matching for the subject part
+    return _matchSimpleSelector(parsed.subject.selector, node, tagName, id, classes);
+  }
+
+  /// Match a simple selector against a node, including pseudo-classes.
+  bool _matchSimpleSelector(
+    CssSimpleSelector selector,
+    SvgNode node,
+    String tagName,
+    String? id,
+    Set<String> classes,
+  ) {
+    // Check tag name
+    if (selector.tagName != null && selector.tagName != '*') {
+      if (selector.tagName!.toLowerCase() != tagName.toLowerCase()) {
+        return false;
+      }
+    }
+
+    // Check ID
+    if (selector.id != null && selector.id != id) {
+      return false;
+    }
+
+    // Check classes
+    for (final requiredClass in selector.classes) {
+      if (!classes.contains(requiredClass)) {
+        return false;
+      }
+    }
+
+    // Check attributes
+    for (final attrSel in selector.attributes) {
+      final attrValue = node.getRawAttributeValue(attrSel.attribute);
+      if (!attrSel.matches(attrValue)) {
+        return false;
+      }
+    }
+
+    // Check pseudo-classes
+    for (final pseudo in selector.pseudoClasses) {
+      if (!_matchPseudoClass(pseudo, node, id)) {
+        return false;
+      }
+    }
+
+    // Check :not() selectors
+    for (final notSelector in selector.notSelectors) {
+      // If the not selector matches, the overall selector doesn't match
+      if (_matchSimpleSelector(notSelector, node, tagName, id, classes)) {
+        return false;
+      }
+    }
+
+    // Must have at least one positive constraint to match
+    return selector.tagName != null ||
+        selector.id != null ||
+        selector.classes.isNotEmpty ||
+        selector.attributes.isNotEmpty ||
+        selector.pseudoClasses.isNotEmpty ||
+        selector.notSelectors.isNotEmpty;
+  }
+
+  /// Check if a pseudo-class matches an element's current state.
+  bool _matchPseudoClass(CssPseudoClass pseudo, SvgNode node, String? id) {
+    if (pseudoClassState == null || id == null) {
+      // No state tracking available - pseudo-classes don't match
+      return false;
+    }
+
+    switch (pseudo) {
+      case CssPseudoClass.hover:
+        return pseudoClassState!.isHovered(id);
+      case CssPseudoClass.active:
+        return pseudoClassState!.isActive(id);
+      case CssPseudoClass.focus:
+        return pseudoClassState!.isFocused(id);
+      case CssPseudoClass.root:
+        return node.parent == null || node.parent?.tagName == 'svg';
+      case CssPseudoClass.empty:
+        return node.children.isEmpty;
+      case CssPseudoClass.firstChild:
+        return _isFirstChild(node);
+      case CssPseudoClass.lastChild:
+        return _isLastChild(node);
+      case CssPseudoClass.onlyChild:
+        return _isOnlyChild(node);
+      case CssPseudoClass.visited:
+      case CssPseudoClass.link:
+        // Not typically applicable to SVG elements
+        return false;
+    }
+  }
+
+  bool _isFirstChild(SvgNode node) {
+    final parent = node.parent;
+    if (parent == null) return true;
+    return parent.children.isNotEmpty && parent.children.first == node;
+  }
+
+  bool _isLastChild(SvgNode node) {
+    final parent = node.parent;
+    if (parent == null) return true;
+    return parent.children.isNotEmpty && parent.children.last == node;
+  }
+
+  bool _isOnlyChild(SvgNode node) {
+    final parent = node.parent;
+    if (parent == null) return true;
+    return parent.children.length == 1 && parent.children.first == node;
   }
 
   /// Checks if a selector matches a node.

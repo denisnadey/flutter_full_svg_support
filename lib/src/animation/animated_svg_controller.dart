@@ -27,6 +27,8 @@ class AnimatedSvgController extends ChangeNotifier {
   double _playbackRate = 1.0;
   Duration? _seekTarget;
   bool _isReversed = false;
+  String? _viewId;
+  bool _viewChangeRequested = false;
 
   /// Анимация на паузе?
   bool get isPaused => _isPaused;
@@ -39,6 +41,12 @@ class AnimatedSvgController extends ChangeNotifier {
 
   /// Есть ли pending seek operation?
   Duration? get pendingSeek => _seekTarget;
+
+  /// Get the pending view ID to switch to.
+  String? get pendingViewId => _viewChangeRequested ? _viewId : null;
+
+  /// Current requested view ID (null for default view).
+  String? get currentViewId => _viewId;
 
   /// Поставить анимацию на паузу
   void pause() {
@@ -127,4 +135,25 @@ class AnimatedSvgController extends ChangeNotifier {
   void clearPendingSeek() {
     _seekTarget = null;
   }
+
+  /// Switch to a specific view by ID.
+  ///
+  /// Pass null to switch back to the default view (the root SVG's viewBox).
+  /// The view must be defined via a <view> element in the SVG.
+  void switchToView(String? viewId) {
+    _viewId = viewId;
+    _viewChangeRequested = true;
+    notifyListeners();
+  }
+
+  /// Clear the pending view change (called by widget after processing).
+  ///
+  /// @nodoc - internal use only
+  void clearPendingViewChange() {
+    _viewChangeRequested = false;
+  }
+
+  /// Get available view IDs from the document.
+  /// This must be populated by the widget after parsing.
+  List<String> availableViews = [];
 }

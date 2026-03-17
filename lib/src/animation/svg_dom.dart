@@ -134,6 +134,25 @@ class SvgNode {
        children = children ?? [],
        _rawAttributes = {};
 
+  // === Accessibility Properties ===
+
+  /// Title text from child <title> element (for tooltips/accessibility).
+  String? titleText;
+
+  /// Description text from child <desc> element (for accessibility).
+  String? descText;
+
+  /// ARIA label attribute value (aria-label).
+  String? ariaLabel;
+
+  /// ARIA describedby attribute value (aria-describedby).
+  String? ariaDescribedby;
+
+  /// ARIA role attribute value (role).
+  String? ariaRole;
+
+  // === Core Properties ===
+
   /// Тег элемента: 'svg', 'g', 'rect', 'circle', 'path', 'text', etc.
   final String tagName;
 
@@ -277,6 +296,103 @@ class SvgNode {
       'SvgNode($tagName${id != null ? '#$id' : ''}${className != null ? '.$className' : ''})';
 }
 
+/// Manages CSS pseudo-class state for SVG elements.
+///
+/// Tracks which elements are in :hover, :active, and :focus states.
+class SvgPseudoClassState {
+  /// Set of element IDs currently being hovered.
+  final Set<String> _hoveredIds = {};
+
+  /// Set of element IDs currently active (pressed).
+  final Set<String> _activeIds = {};
+
+  /// The ID of the currently focused element.
+  String? _focusedId;
+
+  /// Get set of hovered element IDs.
+  Set<String> get hoveredIds => Set.unmodifiable(_hoveredIds);
+
+  /// Get set of active element IDs.
+  Set<String> get activeIds => Set.unmodifiable(_activeIds);
+
+  /// Get the focused element ID.
+  String? get focusedId => _focusedId;
+
+  /// Set hover state for an element.
+  void setHovered(String id, bool isHovered) {
+    if (isHovered) {
+      _hoveredIds.add(id);
+    } else {
+      _hoveredIds.remove(id);
+    }
+  }
+
+  /// Set active (pressed) state for an element.
+  void setActive(String id, bool isActive) {
+    if (isActive) {
+      _activeIds.add(id);
+    } else {
+      _activeIds.remove(id);
+    }
+  }
+
+  /// Set focus to an element (clears focus from any other).
+  void setFocus(String? id) {
+    _focusedId = id;
+  }
+
+  /// Check if an element has hover state.
+  bool isHovered(String id) => _hoveredIds.contains(id);
+
+  /// Check if an element has active state.
+  bool isActive(String id) => _activeIds.contains(id);
+
+  /// Check if an element has focus state.
+  bool isFocused(String id) => _focusedId == id;
+
+  /// Clear all states.
+  void clear() {
+    _hoveredIds.clear();
+    _activeIds.clear();
+    _focusedId = null;
+  }
+
+  /// Clear hover state from all elements.
+  void clearHover() {
+    _hoveredIds.clear();
+  }
+
+  /// Clear active state from all elements.
+  void clearActive() {
+    _activeIds.clear();
+  }
+}
+
+/// Represents an SVG <view> element.
+///
+/// A <view> element defines an alternate view of an SVG document,
+/// with its own viewBox and preserveAspectRatio.
+class SvgViewElement {
+  const SvgViewElement({
+    this.id,
+    this.viewBox,
+    this.preserveAspectRatio,
+  });
+
+  /// ID of the view element (used in fragment identifiers).
+  final String? id;
+
+  /// The viewBox for this view.
+  final ui.Rect? viewBox;
+
+  /// The preserveAspectRatio for this view.
+  final String? preserveAspectRatio;
+
+  @override
+  String toString() =>
+      'SvgViewElement(id: $id, viewBox: $viewBox, preserveAspectRatio: $preserveAspectRatio)';
+}
+
 /// Корневой документ SVG
 class SvgDocument {
   /// Создаёт SVG документ
@@ -288,7 +404,8 @@ class SvgDocument {
     this.filters,
     this.cssKeyframes,
     this.cssSelectorRules,
-  });
+  }) : _pseudoClassState = SvgPseudoClassState(),
+       _views = {};
 
   /// Корневой <svg> узел
   final SvgNode root;
@@ -310,6 +427,84 @@ class SvgDocument {
 
   /// CSS selector rules (#id, .class)
   final List<CssSelectorRule>? cssSelectorRules;
+
+  /// Pseudo-class state manager for CSS :hover, :active, :focus
+  final SvgPseudoClassState _pseudoClassState;
+
+  /// Parsed <view> elements by ID
+  final Map<String, SvgViewElement> _views;
+
+  /// Current active view ID (from fragment identifier or programmatic switch)
+  String? _activeViewId;
+
+  /// Get the current pseudo-class state manager.
+  SvgPseudoClassState get pseudoClassState => _pseudoClassState;
+
+  /// Get the currently active viewBox (considering active view)
+  ui.Rect? get activeViewBox {
+    if (_activeViewId != null) {
+      final view = _views[_activeViewId];
+      if (view != null) {
+        return view.viewBox;
+      }
+    }
+    return viewBox;
+  }
+
+  /// Get the currently active preserveAspectRatio (considering active view)
+  String? get activePreserveAspectRatio {
+    if (_activeViewId != null) {
+      final view = _views[_activeViewId];
+      if (view != null) {
+        return view.preserveAspectRatio;
+      }
+    }
+    return root.getAttributeValue('preserveAspectRatio')?.toString();
+  }
+
+  /// Register a <view> element
+  void registerView(SvgViewElement view) {
+    if (view.id != null) {
+      _views[view.id!] = view;
+    }
+  }
+
+  /// Get a view by ID
+  SvgViewElement? getView(String id) => _views[id];
+
+  /// Get all registered view IDs
+  Iterable<String> get viewIds => _views.keys;
+
+  /// Switch to a specific view by ID
+  /// Returns true if the view was found and activated.
+  bool switchToView(String? viewId) {
+    if (viewId == null) {
+      _activeViewId = null;
+      return true;
+    }
+    if (_views.containsKey(viewId)) {
+      _activeViewId = viewId;
+      return true;
+    }
+    return false;
+  }
+
+  /// Get the currently active view ID
+  String? get activeViewId => _activeViewId;
+
+  // === Accessibility Properties ===
+
+  /// The accessible name for the entire SVG widget.
+  /// Returns aria-label if present, otherwise the root <title> text.
+  String? get accessibleName => root.ariaLabel ?? root.titleText;
+
+  /// The accessible description for the entire SVG widget.
+  /// Returns aria-describedby if present, otherwise the root <desc> text.
+  String? get accessibleDescription => root.ariaDescribedby ?? root.descText;
+
+  /// The ARIA role for the SVG widget.
+  /// Defaults to 'img' if not specified (per SVG accessibility guidelines).
+  String get accessibleRole => root.ariaRole ?? 'img';
 
   /// Найти узел по ID во всём документе
   SvgNode? getElementById(String id) => root.findById(id);

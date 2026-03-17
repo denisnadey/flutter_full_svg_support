@@ -51,8 +51,9 @@ class SvgSpotLightSource extends SvgLightSource {
 
 /// `feDiffuseLighting` primitive
 ///
-/// Baseline-поддержка хранит параметры освещения и источник света.
-/// До полноценного light shading примитив ведет себя как pass-through.
+/// Implements Lambertian diffuse lighting model.
+/// result.rgb = diffuseConstant * max(0, N·L) * lightColor
+/// result.a = 1.0
 class SvgDiffuseLightingFilter extends SvgFilter {
   final double x;
   final double y;
@@ -83,12 +84,48 @@ class SvgDiffuseLightingFilter extends SvgFilter {
 
   @override
   ui.ImageFilter? apply() => null;
+
+  /// Compute the diffuse lighting color filter based on light source.
+  ///
+  /// Uses average intensity approximation for ColorFilter-based rendering.
+  @override
+  ui.ColorFilter? colorFilter() {
+    final source = lightSource;
+    if (source == null) {
+      // No light source - return identity (no color modification)
+      return null;
+    }
+
+    // Get primary light direction from light source
+    final lightDir = source.getPrimaryDirection();
+    final lightIntensity = source.getAverageIntensity();
+
+    // Calculate diffuse intensity using default normal (0, 0, 1)
+    final calculator = _DiffuseLightingCalculator(
+      diffuseConstant: diffuseConstant,
+      lightingColor: lightingColor,
+    );
+    final intensity = calculator.getAverageIntensity(lightDir) * lightIntensity;
+
+    // Create modulated color
+    final effectiveColor = ui.Color.fromARGB(
+      255, // Diffuse always has alpha = 1.0
+      (lightingColor.r * 255.0 * intensity).round().clamp(0, 255),
+      (lightingColor.g * 255.0 * intensity).round().clamp(0, 255),
+      (lightingColor.b * 255.0 * intensity).round().clamp(0, 255),
+    );
+
+    // Use srcIn blend mode to apply lighting color to input alpha shape
+    return ui.ColorFilter.mode(effectiveColor, ui.BlendMode.srcIn);
+  }
 }
 
 /// `feSpecularLighting` primitive
 ///
-/// Baseline-поддержка хранит параметры освещения и источник света.
-/// До полноценного light shading примитив ведет себя как pass-through.
+/// Implements Blinn-Phong specular lighting model.
+/// H = normalize(L + (0, 0, 1))
+/// result.rgb = specularConstant * max(0, N·H)^specularExponent * lightColor
+/// result.a = max(result.r, result.g, result.b)
 class SvgSpecularLightingFilter extends SvgFilter {
   final double x;
   final double y;
@@ -121,4 +158,40 @@ class SvgSpecularLightingFilter extends SvgFilter {
 
   @override
   ui.ImageFilter? apply() => null;
+
+  /// Compute the specular lighting color filter based on light source.
+  ///
+  /// Uses average intensity approximation for ColorFilter-based rendering.
+  @override
+  ui.ColorFilter? colorFilter() {
+    final source = lightSource;
+    if (source == null) {
+      // No light source - return identity (no color modification)
+      return null;
+    }
+
+    // Get primary light direction from light source
+    final lightDir = source.getPrimaryDirection();
+    final lightIntensity = source.getAverageIntensity();
+
+    // Calculate specular intensity using default normal (0, 0, 1)
+    final calculator = _SpecularLightingCalculator(
+      specularConstant: specularConstant,
+      specularExponent: specularExponent,
+      lightingColor: lightingColor,
+    );
+    final intensity = calculator.getAverageIntensity(lightDir) * lightIntensity;
+
+    // Create modulated color
+    // For specular, alpha = max(r, g, b) / 255
+    final r = (lightingColor.r * 255.0 * intensity).round().clamp(0, 255);
+    final g = (lightingColor.g * 255.0 * intensity).round().clamp(0, 255);
+    final b = (lightingColor.b * 255.0 * intensity).round().clamp(0, 255);
+    final a = math.max(r, math.max(g, b));
+
+    final effectiveColor = ui.Color.fromARGB(a, r, g, b);
+
+    // Use srcIn blend mode to apply lighting color to input alpha shape
+    return ui.ColorFilter.mode(effectiveColor, ui.BlendMode.srcIn);
+  }
 }

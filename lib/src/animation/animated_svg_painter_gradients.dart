@@ -13,7 +13,7 @@ extension AnimatedSvgPainterGradientsExtension on AnimatedSvgPainter {
     // Try gradient first
     final gradient = _resolveGradientDefinition(serverId);
     if (gradient != null && gradient.stops.isNotEmpty) {
-      return _createGradientShader(gradient, paintBounds);
+      return _createGradientShaderCached(serverId, gradient, paintBounds);
     }
 
     // Try pattern
@@ -26,6 +26,36 @@ extension AnimatedSvgPainterGradientsExtension on AnimatedSvgPainter {
     }
 
     return null;
+  }
+
+  /// Creates a gradient shader with caching support.
+  ui.Shader? _createGradientShaderCached(
+    String gradientId,
+    _ResolvedGradientDefinition gradient,
+    ui.Rect paintBounds,
+  ) {
+    // Generate cache key including all gradient parameters
+    final cacheKey = _RenderCache.gradientKey(
+      gradientId,
+      paintBounds,
+      gradient.attributes,
+    );
+
+    // Check cache first
+    final cached = _renderCache.gradientShaders[cacheKey];
+    if (cached != null) {
+      return cached;
+    }
+
+    // Create the shader
+    final shader = _createGradientShader(gradient, paintBounds);
+
+    // Cache the result if valid
+    if (shader != null) {
+      _renderCache.gradientShaders[cacheKey] = shader;
+    }
+
+    return shader;
   }
 
   ui.Shader? _createGradientShader(
