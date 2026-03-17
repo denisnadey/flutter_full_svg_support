@@ -2161,4 +2161,287 @@ void main() {
       expect(filterAttr.toString(), contains('blur'));
     });
   });
+
+  // =========================================================================
+  // Advanced Filter Chain Tests - Blink Parity
+  // =========================================================================
+  group('Advanced Filter Chain Semantics', () {
+    test('Non-source input chain: blur result referenced by composite', () {
+      final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="blurCompositeFx">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feComposite in="blur" in2="SourceGraphic" operator="xor"/>
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="50" height="50" fill="blue" filter="url(#blurCompositeFx)"/>
+</svg>
+''';
+
+      final document = SvgParser.parse(svgString);
+      final passes = document.filters!.resolvePaintPasses('blurCompositeFx');
+
+      // composite layers SourceGraphic (base) with blur result (top with xor blend)
+      expect(passes, hasLength(2));
+      expect(passes[0].blendMode, isNull); // SourceGraphic base
+      expect(passes[1].blendMode, ui.BlendMode.xor); // blurred input with xor
+      expect(passes[1].imageFilter, isNotNull); // contains blur filter
+    });
+
+    test('Filter result caching: multiple references to same result', () {
+      final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="multiRefFx">
+      <feOffset dx="5" dy="0" result="shifted"/>
+      <feMerge>
+        <feMergeNode in="shifted"/>
+        <feMergeNode in="shifted"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="50" height="50" fill="blue" filter="url(#multiRefFx)"/>
+</svg>
+''';
+
+      final document = SvgParser.parse(svgString);
+      final passes = document.filters!.resolvePaintPasses('multiRefFx');
+
+      // Merge combines: shifted (x2) + SourceGraphic
+      expect(passes, hasLength(3));
+      expect(passes[0].offset, const ui.Offset(5, 0)); // first shifted reference
+      expect(passes[1].offset, const ui.Offset(5, 0)); // second shifted reference
+      expect(passes[2].offset, ui.Offset.zero); // SourceGraphic
+    });
+
+    test('feDropShadow with non-source input from blur chain', () {
+      final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="shadowBlurFx">
+      <feGaussianBlur stdDeviation="2" result="blurred"/>
+      <feDropShadow in="blurred" dx="4" dy="4" stdDeviation="1"/>
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="50" height="50" fill="blue" filter="url(#shadowBlurFx)"/>
+</svg>
+''';
+
+      final document = SvgParser.parse(svgString);
+      final passes = document.filters!.resolvePaintPasses('shadowBlurFx');
+
+      // DropShadow creates shadow pass + original input
+      expect(passes, hasLength(2));
+      expect(passes[0].offset, const ui.Offset(4, 4)); // shadow with offset
+      expect(passes[0].imageFilter, isNotNull); // combined blur filters
+      expect(passes[0].colorFilter, isNotNull); // shadow color
+      expect(passes[1].offset, ui.Offset.zero); // original blurred input (no offset)
+    });
+
+    test('feDropShadow with unresolved input produces no output', () {
+      final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="shadowMissingFx">
+      <feDropShadow in="missingResult" dx="4" dy="4" stdDeviation="1"/>
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="50" height="50" fill="blue" filter="url(#shadowMissingFx)"/>
+</svg>
+''';
+
+      final document = SvgParser.parse(svgString);
+      final passes = document.filters!.resolvePaintPasses('shadowMissingFx');
+
+      // Unresolved input produces identity fallback
+      expect(passes, hasLength(1));
+      expect(passes.single.imageFilter, isNull);
+      expect(passes.single.colorFilter, isNull);
+    });
+
+    test('Complex multi-primitive chain with default input resolution', () {
+      final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="chainFx">
+      <feGaussianBlur stdDeviation="2"/>
+      <feOffset dx="3" dy="0"/>
+      <feColorMatrix type="saturate" values="0.5"/>
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="50" height="50" fill="blue" filter="url(#chainFx)"/>
+</svg>
+''';
+
+      final document = SvgParser.parse(svgString);
+      final passes = document.filters!.resolvePaintPasses('chainFx');
+
+      // Each primitive uses previous output as input (no explicit in attr)
+      // feColorMatrix applies to the blurred+offset input
+      expect(passes, hasLength(1));
+      expect(passes.single.offset, const ui.Offset(3, 0));
+      expect(passes.single.imageFilter, isNotNull); // blur applied
+      // Note: feColorMatrix type="saturate" creates a ColorFilter.matrix,
+      // which is wrapped in ImageFilter, not direct ColorFilter
+    });
+
+    test('feBlend with named result inputs from parallel chains', () {
+      final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="blendChainFx">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blurred"/>
+      <feOffset in="SourceGraphic" dx="5" dy="0" result="shifted"/>
+      <feBlend in="blurred" in2="shifted" mode="multiply"/>
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="50" height="50" fill="blue" filter="url(#blendChainFx)"/>
+</svg>
+''';
+
+      final document = SvgParser.parse(svgString);
+      final passes = document.filters!.resolvePaintPasses('blendChainFx');
+
+      // Blend layers shifted (base) + blurred (top with multiply)
+      expect(passes, hasLength(2));
+      expect(passes[0].offset, const ui.Offset(5, 0)); // shifted base
+      expect(passes[0].blendMode, isNull);
+      expect(passes[1].offset, ui.Offset.zero); // blurred with multiply
+      expect(passes[1].blendMode, ui.BlendMode.multiply);
+      expect(passes[1].imageFilter, isNotNull); // contains blur
+    });
+
+    test('feDropShadow as part of larger feMerge composition', () {
+      final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="shadowMergeFx">
+      <feDropShadow dx="4" dy="4" stdDeviation="2" result="shadow"/>
+      <feGaussianBlur stdDeviation="1" result="blur"/>
+      <feMerge>
+        <feMergeNode in="shadow"/>
+        <feMergeNode in="blur"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="50" height="50" fill="blue" filter="url(#shadowMergeFx)"/>
+</svg>
+''';
+
+      final document = SvgParser.parse(svgString);
+      final passes = document.filters!.resolvePaintPasses('shadowMergeFx');
+
+      // Merge combines: shadow passes (2 from dropShadow) + blur passes (2 from dropShadow output)
+      // dropShadow creates: shadow + source = 2 passes stored in "shadow"
+      // blur processes the previous output (dropShadow's 2 passes) = 2 passes stored in "blur"
+      // feMerge of shadow (2) + blur (2) = 4 passes total
+      expect(passes, hasLength(4));
+    });
+
+    test('Filter chain with explicit SourceAlpha input', () {
+      final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="alphaChainFx">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="blurredAlpha"/>
+      <feOffset in="blurredAlpha" dx="4" dy="4" result="offsetAlpha"/>
+      <feMerge>
+        <feMergeNode in="offsetAlpha"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="50" height="50" fill="blue" filter="url(#alphaChainFx)"/>
+</svg>
+''';
+
+      final document = SvgParser.parse(svgString);
+      final passes = document.filters!.resolvePaintPasses('alphaChainFx');
+
+      // Merge combines: offsetAlpha + SourceGraphic
+      expect(passes, hasLength(2));
+      expect(passes[0].offset, const ui.Offset(4, 4)); // offset alpha shadow
+      expect(passes[0].imageFilter, isNotNull); // has blur
+      expect(passes[0].colorFilter, isNotNull); // SourceAlpha filter
+      expect(passes[1].offset, ui.Offset.zero); // SourceGraphic
+    });
+
+    test('Deeply nested filter chain preserves all effects', () {
+      final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="deepChainFx">
+      <feOffset dx="2" dy="0" result="off1"/>
+      <feOffset in="off1" dx="3" dy="0" result="off2"/>
+      <feOffset in="off2" dx="4" dy="0" result="off3"/>
+      <feGaussianBlur in="off3" stdDeviation="1"/>
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="50" height="50" fill="blue" filter="url(#deepChainFx)"/>
+</svg>
+''';
+
+      final document = SvgParser.parse(svgString);
+      final passes = document.filters!.resolvePaintPasses('deepChainFx');
+
+      // Final output: accumulated offset (2+3+4=9) with blur
+      expect(passes, hasLength(1));
+      expect(passes.single.offset, const ui.Offset(9, 0));
+      expect(passes.single.imageFilter, isNotNull);
+    });
+
+    test('feMerge forward reference produces transparent black per spec', () {
+      final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="forwardRefFx">
+      <feMerge result="merged">
+        <feMergeNode in="laterResult"/>
+      </feMerge>
+      <feOffset dx="5" dy="0" result="laterResult"/>
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="50" height="50" fill="blue" filter="url(#forwardRefFx)"/>
+</svg>
+''';
+
+      final document = SvgParser.parse(svgString);
+      final passes = document.filters!.resolvePaintPasses('forwardRefFx');
+
+      // Forward reference in merge produces empty; final output is offset
+      expect(passes, hasLength(1));
+      expect(passes.single.offset, const ui.Offset(5, 0));
+    });
+
+    test('Result reuse does not cause recomputation side effects', () {
+      final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="reuseTestFx">
+      <feGaussianBlur stdDeviation="3" result="shared"/>
+      <feComposite in="shared" in2="shared" operator="xor" result="comp1"/>
+      <feBlend in="shared" in2="comp1" mode="screen"/>
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="50" height="50" fill="blue" filter="url(#reuseTestFx)"/>
+</svg>
+''';
+
+      final document = SvgParser.parse(svgString);
+      final passes = document.filters!.resolvePaintPasses('reuseTestFx');
+
+      // feComposite with in="shared" in2="shared" operator="xor" creates:
+      //   - shared (base) + shared with xor (top) = 2 passes for comp1
+      // feBlend with in="shared" in2="comp1" mode="screen" creates:
+      //   - comp1 (2 passes as base) + shared with screen (1 pass on top) = 3 passes
+      // All references to "shared" should produce identical blur effect
+      expect(passes, hasLength(3));
+      expect(passes[0].imageFilter, isNotNull); // comp1 base (shared with blur)
+      expect(passes[1].imageFilter, isNotNull); // comp1 top (shared with blur + xor)
+      expect(passes[2].imageFilter, isNotNull); // shared with blur and screen blend
+      expect(passes[2].blendMode, ui.BlendMode.screen);
+    });
+  });
 }

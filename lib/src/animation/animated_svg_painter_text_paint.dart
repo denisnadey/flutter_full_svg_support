@@ -19,6 +19,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
       imageFilter: imageFilter,
       colorFilter: colorFilter,
       blendMode: blendMode,
+      isRootText: true,
     );
   }
 
@@ -34,6 +35,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
     List<double> parentDxList = const <double>[],
     List<double> parentDyList = const <double>[],
     List<double> parentRotateList = const <double>[],
+    bool isRootText = false,
   }) {
     // Parse position lists from this node
     final nodeXList = _getNumberList(node, 'x');
@@ -41,6 +43,17 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
     final nodeDxList = _getNumberList(node, 'dx');
     final nodeDyList = _getNumberList(node, 'dy');
     final nodeRotateList = _getNumberList(node, 'rotate');
+
+    // Check if this tspan creates a new text chunk (has absolute positioning)
+    // A new chunk is created when tspan specifies its own x or y position
+    final hasAbsoluteX = nodeXList.isNotEmpty;
+    final hasAbsoluteY = nodeYList.isNotEmpty;
+    final startsNewChunk = !isRootText && (hasAbsoluteX || hasAbsoluteY);
+
+    // If this tspan starts a new chunk, reset charIndex for text-anchor calculation
+    if (startsNewChunk) {
+      cursor.chunkCharIndex = 0;
+    }
 
     // Merge with parent lists - node lists take precedence
     final xList = nodeXList.isNotEmpty ? nodeXList : parentXList;
@@ -51,13 +64,14 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
         ? nodeRotateList
         : parentRotateList;
 
-    // Apply first values for backward compatibility (single-value case)
-    if (xList.isNotEmpty && cursor.charIndex < xList.length) {
-      cursor.x = xList[cursor.charIndex];
+    // Apply first values - reset cursor position for absolute positioning
+    if (hasAbsoluteX && nodeXList.isNotEmpty) {
+      cursor.x = nodeXList[0];
     }
-    if (yList.isNotEmpty && cursor.charIndex < yList.length) {
-      cursor.y = yList[cursor.charIndex];
+    if (hasAbsoluteY && nodeYList.isNotEmpty) {
+      cursor.y = nodeYList[0];
     }
+    // Apply dx/dy as relative adjustments
     if (dxList.isNotEmpty && cursor.charIndex < dxList.length) {
       cursor.x += dxList[cursor.charIndex];
     }
@@ -79,6 +93,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
         dxList: dxList,
         dyList: dyList,
         rotateList: rotateList,
+        startsNewChunk: startsNewChunk || isRootText,
         imageFilter: imageFilter,
         colorFilter: colorFilter,
         blendMode: blendMode,
@@ -200,6 +215,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
     required List<double> dxList,
     required List<double> dyList,
     List<double> rotateList = const <double>[],
+    bool startsNewChunk = false,
     ui.ImageFilter? imageFilter,
     ui.ColorFilter? colorFilter,
     ui.BlendMode? blendMode,
@@ -212,6 +228,10 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
         dyList.length > 1 ||
         rotateList.isNotEmpty;
 
+    // Check if textLength should be ignored due to explicit positions
+    // Per SVG spec, textLength is ignored for characters with explicit positions
+    final hasExplicitPositions = xList.length > 1 || yList.length > 1;
+
     // Fast path: no multi-position attributes, use simple rendering
     if (!hasMultiPositions) {
       return _paintPlainText(
@@ -221,6 +241,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
         style: style,
         x: cursor.x,
         baselineY: cursor.y,
+        ignoreTextLength: hasExplicitPositions,
         imageFilter: imageFilter,
         colorFilter: colorFilter,
         blendMode: blendMode,
@@ -229,6 +250,26 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
 
     // Per-character rendering with position lists
     var totalWidth = 0.0;
+
+    // Calculate text-anchor offset for this chunk
+    double anchorOffset = 0.0;
+    if (startsNewChunk || cursor.chunkCharIndex == 0) {
+      // Measure the width of the entire chunk for text-anchor calculation
+      final chunkParagraph = _buildTextParagraph(text, style);
+      final chunkWidth = chunkParagraph.maxIntrinsicWidth;
+      switch (style.textAnchor) {
+        case _SvgTextAnchor.start:
+          anchorOffset = 0.0;
+          break;
+        case _SvgTextAnchor.middle:
+          anchorOffset = -chunkWidth / 2;
+          break;
+        case _SvgTextAnchor.end:
+          anchorOffset = -chunkWidth;
+          break;
+      }
+    }
+
     for (int i = 0; i < glyphs.length; i++) {
       final charIdx = cursor.charIndex + i;
 
@@ -255,23 +296,8 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
       final paragraph = _buildTextParagraph(glyph, style);
       final glyphWidth = paragraph.maxIntrinsicWidth;
 
-      var drawX = cursor.x;
-      // Text-anchor only applies to first character in positioned sequence
-      if (i == 0) {
-        // Measure total width for anchor calculation
-        final fullParagraph = _buildTextParagraph(text, style);
-        final fullWidth = fullParagraph.maxIntrinsicWidth;
-        switch (style.textAnchor) {
-          case _SvgTextAnchor.start:
-            break;
-          case _SvgTextAnchor.middle:
-            drawX -= fullWidth / 2;
-            break;
-          case _SvgTextAnchor.end:
-            drawX -= fullWidth;
-            break;
-        }
-      }
+      // Apply anchor offset only to the first character
+      var drawX = cursor.x + (i == 0 ? anchorOffset : 0.0);
 
       final drawY = _resolveTextTopFromBaseline(
         paragraph: paragraph,
@@ -306,6 +332,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
     }
 
     cursor.charIndex += glyphs.length;
+    cursor.chunkCharIndex += glyphs.length;
     return totalWidth;
   }
 
@@ -316,6 +343,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
     required _ResolvedTextStyle style,
     required double x,
     required double baselineY,
+    bool ignoreTextLength = false,
     ui.ImageFilter? imageFilter,
     ui.ColorFilter? colorFilter,
     ui.BlendMode? blendMode,
@@ -340,7 +368,8 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
     var paragraph = _buildTextParagraph(text, effectiveStyle);
     var width = paragraph.maxIntrinsicWidth;
     var scaleX = 1.0;
-    final targetLength = _resolveTextLength(node);
+    // Only apply textLength if not ignored (e.g., when explicit positions are used)
+    final targetLength = ignoreTextLength ? null : _resolveTextLength(node);
     if (targetLength != null && targetLength > 0 && width > 0) {
       final lengthAdjust = _resolveLengthAdjust(node);
       final glyphCount = text.runes.length;

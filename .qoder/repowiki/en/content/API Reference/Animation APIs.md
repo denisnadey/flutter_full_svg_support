@@ -15,15 +15,20 @@
 - [controller_test.dart](file://test/animation/controller_test.dart)
 - [css_animations_test.dart](file://test/animation/css_animations_test.dart)
 - [stroke_dash_stop_color_test.dart](file://test/animation/stroke_dash_stop_color_test.dart)
+- [text_decoration_thickness_test.dart](file://test/animation/text_decoration_thickness_test.dart)
+- [text_underline_position_test.dart](file://test/animation/text_underline_position_test.dart)
+- [text_emphasis_test.dart](file://test/animation/text_emphasis_test.dart)
+- [ruby_align_test.dart](file://test/animation/ruby_align_test.dart)
+- [font_variation_settings_test.dart](file://test/animation/font_variation_settings_test.dart)
 - [animation.dart](file://lib/src/animation.dart)
 </cite>
 
 ## Update Summary
 **Changes Made**
 - Enhanced AnimatedSvgPainterTextStyleExtension with comprehensive CSS property resolution methods
-- Added support for 53 CSS text styling properties with advanced unit conversions
-- Implemented inheritance patterns and fallback mechanisms for text styling
-- Expanded text rendering capabilities with advanced typography features
+- Added support for 53 CSS text styling properties including text-decoration-thickness, text-underline-position, text-emphasis, ruby-align, font-variation-settings, and comprehensive typography features
+- Implemented extensive unit conversion support (px, em, %, rem) with inheritance patterns and fallback mechanisms
+- Expanded text rendering capabilities with advanced typography features and internationalization support
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -40,7 +45,7 @@
 ## Introduction
 This document describes the animation APIs for Flutter SVG, focusing on the AnimatedSvgController, timeline management, and animation control methods. It covers controller methods for play, pause, stop, seek, and loop control; timeline properties such as duration, position, status, and playback rate; animation state management and event callbacks; and integration with Flutter animation widgets. It also documents SMIL animation parsing, CSS animation conversion, and animation composition, with examples of programmatic control, synchronization, and custom behaviors. Finally, it addresses performance optimization, memory management, and debugging techniques.
 
-**Updated** Enhanced text styling system now supports comprehensive CSS property resolution with advanced unit conversions and inheritance patterns.
+**Updated** Enhanced text styling system now supports comprehensive CSS property resolution with advanced unit conversions and inheritance patterns, covering 53 advanced text styling properties including typography, internationalization, and accessibility features.
 
 ## Project Structure
 The animation system is organized around:
@@ -49,7 +54,7 @@ The animation system is organized around:
 - SvgTimeline: Central timeline orchestrating SMIL animations, timing, and event triggers.
 - SmilAnimation: Individual SMIL animation definitions and runtime evaluation.
 - SmilParser and CssToSmilConverter: Parsers that extract and normalize SMIL and CSS animations into a unified runtime model.
-- AnimatedSvgPainterTextStyleExtension: Comprehensive CSS text styling resolution with 53 properties.
+- AnimatedSvgPainterTextStyleExtension: Comprehensive CSS text styling resolution with 53 properties and advanced unit conversions.
 - Tests and examples: Demonstrate controller usage, CSS-to-SMIL conversion, and synchronization.
 
 ```mermaid
@@ -196,12 +201,21 @@ Usage highlights:
   - Inheritance patterns: Resolves properties from parent nodes when not explicitly set.
   - Fallback mechanisms: Provides sensible defaults for missing or invalid values.
   - Advanced typography: Supports font features, text decorations, and complex layout properties.
-
-**Updated** Enhanced with comprehensive CSS property resolution supporting 53 text styling properties including advanced unit conversions, inheritance patterns, and fallback mechanisms.
+- **Updated** Comprehensive coverage of advanced CSS properties including:
+  - Text decoration enhancements: text-decoration-thickness, text-underline-position, text-decoration-skip-ink, text-decoration-skip
+  - Typography features: font-variation-settings for variable fonts, font-variant-numeric, font-variant-ligatures, font-variant-caps
+  - Internationalization: ruby-align, ruby-position, text-emphasis, text-emphasis-position, text-emphasis-color, text-emphasis-style
+  - Accessibility and rendering: forced-color-adjust, print-color-adjust, will-change, content-visibility, contain-intrinsic-size
+  - Advanced layout: text-wrap, text-spacing, hyphenate-character, mix-blend-mode
 
 **Section sources**
 - [animated_svg_painter_text_style.dart:3-325](file://lib/src/animation/animated_svg_painter_text_style.dart#L3-L325)
 - [animated_svg_painter.dart:258-700](file://lib/src/animation/animated_svg_painter.dart#L258-L700)
+- [text_decoration_thickness_test.dart:1-102](file://test/animation/text_decoration_thickness_test.dart#L1-L102)
+- [text_underline_position_test.dart:1-100](file://test/animation/text_underline_position_test.dart#L1-L100)
+- [text_emphasis_test.dart:1-51](file://test/animation/text_emphasis_test.dart#L1-L51)
+- [ruby_align_test.dart:1-51](file://test/animation/ruby_align_test.dart#L1-L51)
+- [font_variation_settings_test.dart:1-40](file://test/animation/font_variation_settings_test.dart#L1-L40)
 
 ### SMIL Animation Model (SmilAnimation)
 - Types:
@@ -398,6 +412,7 @@ SvgTimeline --> SmilAnimation : "updates"
 - Use traceFrameTicks and onTrace for targeted profiling during development.
 - **Updated** Text styling resolution is optimized with caching and efficient unit conversion algorithms.
 - **Updated** The 53 CSS properties are resolved incrementally to minimize computational overhead.
+- **Updated** Advanced typography features utilize efficient font feature application and variable font axis handling.
 
 ## Troubleshooting Guide
 - Invalid playback rate:
@@ -415,6 +430,9 @@ SvgTimeline --> SmilAnimation : "updates"
   - Check inheritance patterns for missing property values.
   - Ensure unit conversions are appropriate for the current context.
   - Validate fallback mechanisms are working correctly.
+  - **Updated** For advanced properties like font-variation-settings, ensure variable font support is available.
+  - **Updated** For ruby and text-emphasis properties, verify proper Unicode support and font availability.
+  - **Updated** For internationalization features, ensure locale-specific font fallbacks are configured.
 
 **Section sources**
 - [animated_svg_controller.dart:83-91](file://lib/src/animation/animated_svg_controller.dart#L83-L91)
@@ -424,7 +442,7 @@ SvgTimeline --> SmilAnimation : "updates"
 - [animated_svg_painter_text_style.dart:3-325](file://lib/src/animation/animated_svg_painter_text_style.dart#L3-L325)
 
 ## Conclusion
-The Flutter SVG animation system provides a robust, SMIL-compatible pipeline with a clear separation of concerns: AnimatedSvgController for programmatic control, AnimatedSvgPicture for widget lifecycle and rendering, and SvgTimeline for orchestration and timing. CSS animations are seamlessly converted to SMIL, enabling consistent behavior across animation types. The enhanced text styling system now supports comprehensive CSS property resolution with advanced unit conversions, inheritance patterns, and fallback mechanisms for 53 text styling properties. With precise control over playback, direction, seeking, and event-driven triggers, developers can implement sophisticated synchronization and custom animation behaviors while maintaining strong performance and debuggability.
+The Flutter SVG animation system provides a robust, SMIL-compatible pipeline with a clear separation of concerns: AnimatedSvgController for programmatic control, AnimatedSvgPicture for widget lifecycle and rendering, and SvgTimeline for orchestration and timing. CSS animations are seamlessly converted to SMIL, enabling consistent behavior across animation types. The enhanced text styling system now supports comprehensive CSS property resolution with advanced unit conversions, inheritance patterns, and fallback mechanisms for 53 text styling properties. This includes advanced typography features like font-variation-settings for variable fonts, comprehensive text decoration controls, internationalization support with ruby annotations and text emphasis, and accessibility features for forced color adjustments and content visibility optimization. With precise control over playback, direction, seeking, and event-driven triggers, developers can implement sophisticated synchronization and custom animation behaviors while maintaining strong performance and debuggability.
 
 ## Appendices
 

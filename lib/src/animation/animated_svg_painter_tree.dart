@@ -5,6 +5,7 @@ void _paintNodeImpl(
   ui.Canvas canvas,
   SvgNode node, {
   Set<String>? useStack,
+  SvgNode? foreignObjectParent,
 }) {
   final display = painter
       ._getStyleOrAttributeValue(node, 'display')
@@ -25,6 +26,13 @@ void _paintNodeImpl(
 
   // Baseline foreignObject viewport: смещение + clip children областью.
   painter._applyForeignObjectViewport(canvas, node);
+
+  // Apply nested SVG viewport transform within foreignObject
+  painter._applyNestedSvgViewportInForeignObject(
+    canvas,
+    node,
+    foreignObjectParent,
+  );
 
   // Применяем clipPath если есть.
   painter._applyClipPath(canvas, node, useStack: currentUseStack);
@@ -175,9 +183,21 @@ void _paintNodeImpl(
       case 'g':
       case 'svg':
       case 'foreignObject':
+        // Check requiredExtensions for foreignObject - skip if not supported
+        if (node.tagName == 'foreignObject' &&
+            !painter._shouldRenderForeignObject(node)) {
+          canvas.restore();
+          return;
+        }
         // Groups apply saveLayer for opacity compositing if needed.
         // Returns true if children were painted in the layer.
-        if (_paintGroupWithOpacity(painter, canvas, node, currentUseStack)) {
+        if (_paintGroupWithOpacity(
+          painter,
+          canvas,
+          node,
+          currentUseStack,
+          foreignObjectParent: node.tagName == 'foreignObject' ? node : null,
+        )) {
           // Children already painted in opacity layer, skip normal recursion
           canvas.restore();
           return;
@@ -194,8 +214,16 @@ void _paintNodeImpl(
 
   // Рекурсивно рисуем детей.
   if (painter._shouldPaintChildren(node)) {
+    // Determine if this node establishes a foreignObject context for children
+    final foParent = node.tagName == 'foreignObject' ? node : null;
     for (final child in node.children) {
-      _paintNodeImpl(painter, canvas, child, useStack: currentUseStack);
+      _paintNodeImpl(
+        painter,
+        canvas,
+        child,
+        useStack: currentUseStack,
+        foreignObjectParent: foParent,
+      );
     }
   }
 
@@ -210,8 +238,9 @@ bool _paintGroupWithOpacity(
   AnimatedSvgPainter painter,
   ui.Canvas canvas,
   SvgNode node,
-  Set<String> useStack,
-) {
+  Set<String> useStack, {
+  SvgNode? foreignObjectParent,
+}) {
   // Check for group-level opacity (not inherited)
   final opacityValue = node.getAttributeValue('opacity');
   final opacity = opacityValue != null
@@ -233,8 +262,18 @@ bool _paintGroupWithOpacity(
 
   // Paint children into the layer
   if (painter._shouldPaintChildren(node)) {
+    // Determine if this node establishes a foreignObject context for children
+    final foParent = node.tagName == 'foreignObject'
+        ? node
+        : foreignObjectParent;
     for (final child in node.children) {
-      _paintNodeImpl(painter, canvas, child, useStack: useStack);
+      _paintNodeImpl(
+        painter,
+        canvas,
+        child,
+        useStack: useStack,
+        foreignObjectParent: foParent,
+      );
     }
   }
 
@@ -264,6 +303,17 @@ SvgFilterSourceContext _buildFilterSourceContextImpl(
   AnimatedSvgPainter painter,
   SvgNode node,
 ) {
+  // Build source context with fill and stroke paint passes.
+  // BackgroundImage and BackgroundAlpha represent the content behind the
+  // filtered element. For proper Blink-parity, these need to capture the
+  // rendered content of elements that appear behind this node in the
+  // stacking context.
+  //
+  // Current implementation:
+  // - When no explicit background context is available, fallback to
+  //   SourceGraphic/SourceAlpha placeholders (baseline behavior).
+  // - External callers can provide backgroundImage/backgroundAlpha via
+  //   SvgFilterSourceContext for advanced use cases.
   return SvgFilterSourceContext(
     fillPaint: _resolveFilterPaintSourcePassesImpl(
       painter,
@@ -277,6 +327,10 @@ SvgFilterSourceContext _buildFilterSourceContextImpl(
       paintAttribute: 'stroke',
       paintOpacityAttribute: 'stroke-opacity',
     ),
+    // Background inputs are resolved from external context when available.
+    // Default fallback to source placeholders handled in filter pipeline.
+    backgroundImage: null,
+    backgroundAlpha: null,
   );
 }
 

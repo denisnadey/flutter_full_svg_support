@@ -61,7 +61,7 @@ void main() {
           'eventConditionCount': 0,
           'missingEventTargets': const <String>[],
           'usedTags': const <String>['svg'],
-          'unsupportedTags': const <String>['switch'],
+          'unsupportedTags': const <String>['pattern'],
           'unsupportedFilterPrimitives': const <String>[],
           'brokenReferences': const <String>['shape|fill|missingGradient'],
           'issues': <Map<String, Object?>>[
@@ -78,7 +78,7 @@ void main() {
               'severity': 'warning',
               'category': 'parity',
               'title': 'Tag is outside current animated-pipeline support',
-              'details': '<switch> is not fully supported in this pipeline.',
+              'details': '<pattern> is not fully supported in this pipeline.',
             },
             const <String, Object?>{
               'code': 'refs.missing_target',

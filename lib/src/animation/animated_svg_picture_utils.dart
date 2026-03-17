@@ -14,7 +14,24 @@ extension _AnimatedSvgPictureStateCoreUtilsExtension
 
   double _strokeTolerance(SvgNode node) {
     final strokeWidth = _getInheritedNumber(node, 'stroke-width') ?? 1.0;
-    return (strokeWidth / 2).clamp(1.0, 8.0);
+    // Use actual stroke-width/2 for hit tolerance without artificial clamping.
+    // Minimum 0.5 ensures hairline strokes remain hittable.
+    return math.max(strokeWidth / 2, 0.5);
+  }
+
+  /// Returns extra hit tolerance at line endpoints based on stroke-linecap.
+  /// - butt: no extra (returns 0)
+  /// - round: adds strokeWidth/2 radius at endpoints
+  /// - square: adds strokeWidth/2 extension at endpoints
+  double _strokeLinecapTolerance(SvgNode node) {
+    final linecap =
+        _getInheritedString(node, 'stroke-linecap')?.toLowerCase() ?? 'butt';
+    if (linecap == 'butt') {
+      return 0.0;
+    }
+    // Both round and square add strokeWidth/2 extension at endpoints
+    final strokeWidth = _getInheritedNumber(node, 'stroke-width') ?? 1.0;
+    return strokeWidth / 2;
   }
 
   bool _isPaintNone(Object? value) {

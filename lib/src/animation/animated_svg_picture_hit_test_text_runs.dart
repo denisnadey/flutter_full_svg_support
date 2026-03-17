@@ -166,6 +166,7 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
       parentDxList: _getNumberList(textRoot, 'dx'),
       parentDyList: _getNumberList(textRoot, 'dy'),
       parentRotateList: _getNumberList(textRoot, 'rotate'),
+      isRootText: true,
     );
     return runs;
   }
@@ -179,6 +180,7 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
     List<double> parentDxList = const <double>[],
     List<double> parentDyList = const <double>[],
     List<double> parentRotateList = const <double>[],
+    bool isRootText = false,
   }) {
     // Parse position lists from this node
     final nodeXList = _getNumberList(node, 'x');
@@ -186,6 +188,10 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
     final nodeDxList = _getNumberList(node, 'dx');
     final nodeDyList = _getNumberList(node, 'dy');
     final nodeRotateList = _getNumberList(node, 'rotate');
+
+    // Check if this tspan creates a new text chunk (has absolute positioning)
+    final hasAbsoluteX = nodeXList.isNotEmpty;
+    final hasAbsoluteY = nodeYList.isNotEmpty;
 
     // Merge with parent lists - node lists take precedence
     final xList = nodeXList.isNotEmpty ? nodeXList : parentXList;
@@ -196,13 +202,14 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
         ? nodeRotateList
         : parentRotateList;
 
-    // Apply first values for backward compatibility (single-value case)
-    if (xList.isNotEmpty && cursor.charIndex < xList.length) {
-      cursor.x = xList[cursor.charIndex];
+    // Apply first values - reset cursor position for absolute positioning
+    if (hasAbsoluteX && nodeXList.isNotEmpty) {
+      cursor.x = nodeXList[0];
     }
-    if (yList.isNotEmpty && cursor.charIndex < yList.length) {
-      cursor.y = yList[cursor.charIndex];
+    if (hasAbsoluteY && nodeYList.isNotEmpty) {
+      cursor.y = nodeYList[0];
     }
+    // Apply dx/dy as relative adjustments
     if (dxList.isNotEmpty && cursor.charIndex < dxList.length) {
       cursor.x += dxList[cursor.charIndex];
     }
@@ -212,51 +219,41 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
 
     final text = _extractTextContent(node);
     if (text != null && text.isNotEmpty) {
-      var metrics = _measureText(text, node);
-      final targetLength = _resolveTextLength(node);
-      final lengthAdjust = _resolveTextLengthAdjust(node);
       final glyphCount = text.runes.length;
-      if (targetLength != null && targetLength > 0 && metrics.width > 0) {
-        if (lengthAdjust == _TextLengthAdjust.spacing && glyphCount > 1) {
-          final extraSpacing =
-              (targetLength - metrics.width) / (glyphCount - 1);
-          metrics = _measureText(
-            text,
-            node,
-            additionalLetterSpacing: extraSpacing,
-          );
-        } else {
-          metrics = metrics.copyWith(width: targetLength);
-        }
-      }
-      var left = cursor.x;
-      switch (_resolveTextAnchor(node)) {
-        case _TextAnchor.middle:
-          left -= metrics.width / 2;
-          break;
-        case _TextAnchor.end:
-          left -= metrics.width;
-          break;
-        case _TextAnchor.start:
-          break;
-      }
-      final top = _resolveTextTopFromBaseline(
-        node: node,
-        baselineY: cursor.y,
-        metrics: metrics,
+
+      // Determine if we should use per-character hit-testing
+      // Use it when any position list has more values than the first character
+      final usePerCharHit = _shouldUsePerCharacterHitTesting(
+        glyphCount,
+        xList: xList,
+        yList: yList,
+        dxList: dxList,
+        dyList: dyList,
+        rotateList: rotateList,
       );
-      // Get rotation for hit region (use first value for entire run)
-      final rotation = rotateList.isNotEmpty ? rotateList[0] : 0.0;
-      runs.add(
-        _TextHitRun.bounds(
-          owner: node,
-          bounds: Rect.fromLTWH(left, top, metrics.width, metrics.height),
-          rotation: rotation,
-          rotationCenter: Offset(left, cursor.y),
-        ),
-      );
-      cursor.x += metrics.width;
-      cursor.charIndex += text.runes.length;
+
+      if (usePerCharHit) {
+        _appendPerCharacterHitRuns(
+          node: node,
+          text: text,
+          cursor: cursor,
+          runs: runs,
+          xList: xList,
+          yList: yList,
+          dxList: dxList,
+          dyList: dyList,
+          rotateList: rotateList,
+        );
+      } else {
+        // Use single bounding box for the entire text run
+        _appendSingleTextRunHit(
+          node: node,
+          text: text,
+          cursor: cursor,
+          runs: runs,
+          rotateList: rotateList,
+        );
+      }
     }
 
     for (final child in node.children) {
@@ -276,6 +273,188 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
         cursor.x += consumed;
       }
     }
+  }
+
+  /// Checks if per-character hit-testing should be used based on position lists.
+  /// Returns true if any list has multiple values that would position characters individually.
+  bool _shouldUsePerCharacterHitTesting(
+    int glyphCount, {
+    required List<double> xList,
+    required List<double> yList,
+    required List<double> dxList,
+    required List<double> dyList,
+    required List<double> rotateList,
+  }) {
+    // Use per-char hit testing when position lists have > 1 value
+    // or when they provide positioning for multiple characters
+    return xList.length > 1 ||
+        yList.length > 1 ||
+        dxList.length > 1 ||
+        dyList.length > 1 ||
+        (rotateList.length > 1 && rotateList.length <= glyphCount);
+  }
+
+  /// Appends hit runs for each individual character in the text.
+  void _appendPerCharacterHitRuns({
+    required SvgNode node,
+    required String text,
+    required _HitTextCursor cursor,
+    required List<_TextHitRun> runs,
+    required List<double> xList,
+    required List<double> yList,
+    required List<double> dxList,
+    required List<double> dyList,
+    required List<double> rotateList,
+  }) {
+    final runes = text.runes.toList();
+    final textAnchor = _resolveTextAnchor(node);
+    final letterSpacing = _getInheritedNumber(node, 'letter-spacing') ?? 0.0;
+    final wordSpacing = _getInheritedNumber(node, 'word-spacing') ?? 0.0;
+
+    // Pre-calculate total width for text-anchor middle/end
+    double totalWidth = 0.0;
+    if (textAnchor != _TextAnchor.start) {
+      for (int i = 0; i < runes.length; i++) {
+        final char = String.fromCharCode(runes[i]);
+        final charMetrics = _measureText(char, node);
+        totalWidth += charMetrics.width;
+        if (i < runes.length - 1) {
+          totalWidth += _spacingAfterGlyphForHit(
+            glyph: char,
+            isLast: false,
+            letterSpacing: letterSpacing,
+            wordSpacing: wordSpacing,
+          );
+        }
+      }
+    }
+
+    // Calculate initial position offset based on text-anchor
+    double anchorOffset = 0.0;
+    switch (textAnchor) {
+      case _TextAnchor.middle:
+        anchorOffset = -totalWidth / 2;
+        break;
+      case _TextAnchor.end:
+        anchorOffset = -totalWidth;
+        break;
+      case _TextAnchor.start:
+        break;
+    }
+
+    double charX = cursor.x + anchorOffset;
+    double charY = cursor.y;
+    int listIdx = cursor.charIndex;
+
+    for (int i = 0; i < runes.length; i++) {
+      final char = String.fromCharCode(runes[i]);
+
+      // Apply per-character positioning from lists
+      if (listIdx < xList.length) {
+        charX = xList[listIdx] + anchorOffset;
+      }
+      if (listIdx < yList.length) {
+        charY = yList[listIdx];
+      }
+      if (listIdx < dxList.length) {
+        charX += dxList[listIdx];
+      }
+      if (listIdx < dyList.length) {
+        charY += dyList[listIdx];
+      }
+
+      // Get rotation for this character
+      double rotation = 0.0;
+      if (rotateList.isNotEmpty) {
+        rotation = listIdx < rotateList.length
+            ? rotateList[listIdx]
+            : rotateList.last;
+      }
+
+      final charMetrics = _measureText(char, node);
+      final top = _resolveTextTopFromBaseline(
+        node: node,
+        baselineY: charY,
+        metrics: charMetrics,
+      );
+
+      runs.add(
+        _TextHitRun.bounds(
+          owner: node,
+          bounds: Rect.fromLTWH(charX, top, charMetrics.width, charMetrics.height),
+          rotation: rotation,
+          rotationCenter: Offset(charX, charY),
+        ),
+      );
+
+      // Advance for next character
+      charX += charMetrics.width;
+      charX += _spacingAfterGlyphForHit(
+        glyph: char,
+        isLast: i == runes.length - 1,
+        letterSpacing: letterSpacing,
+        wordSpacing: wordSpacing,
+      );
+      listIdx++;
+    }
+
+    cursor.x = charX - anchorOffset;
+    cursor.charIndex += runes.length;
+  }
+
+  /// Appends a single hit run for the entire text (original behavior).
+  void _appendSingleTextRunHit({
+    required SvgNode node,
+    required String text,
+    required _HitTextCursor cursor,
+    required List<_TextHitRun> runs,
+    required List<double> rotateList,
+  }) {
+    var metrics = _measureText(text, node);
+    final targetLength = _resolveTextLength(node);
+    final lengthAdjust = _resolveTextLengthAdjust(node);
+    final glyphCount = text.runes.length;
+    if (targetLength != null && targetLength > 0 && metrics.width > 0) {
+      if (lengthAdjust == _TextLengthAdjust.spacing && glyphCount > 1) {
+        final extraSpacing =
+            (targetLength - metrics.width) / (glyphCount - 1);
+        metrics = _measureText(
+          text,
+          node,
+          additionalLetterSpacing: extraSpacing,
+        );
+      } else {
+        metrics = metrics.copyWith(width: targetLength);
+      }
+    }
+    var left = cursor.x;
+    switch (_resolveTextAnchor(node)) {
+      case _TextAnchor.middle:
+        left -= metrics.width / 2;
+        break;
+      case _TextAnchor.end:
+        left -= metrics.width;
+        break;
+      case _TextAnchor.start:
+        break;
+    }
+    final top = _resolveTextTopFromBaseline(
+      node: node,
+      baselineY: cursor.y,
+      metrics: metrics,
+    );
+    // Get rotation for hit region (use first value for entire run)
+    final rotation = rotateList.isNotEmpty ? rotateList[0] : 0.0;
+    runs.add(
+      _TextHitRun.bounds(
+        owner: node,
+        bounds: Rect.fromLTWH(left, top, metrics.width, metrics.height),
+        rotation: rotation,
+        rotationCenter: Offset(left, cursor.y),
+      ),
+    );
+    cursor.x += metrics.width;
+    cursor.charIndex += text.runes.length;
   }
 
   double _appendTextPathHitRuns(SvgNode textPathNode, List<_TextHitRun> runs) {

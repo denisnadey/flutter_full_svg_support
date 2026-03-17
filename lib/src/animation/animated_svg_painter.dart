@@ -178,6 +178,9 @@ class _TextCursor {
 
   /// Character index for consuming multi-position attribute lists.
   int charIndex = 0;
+
+  /// Character index within the current text chunk (for text-anchor calculation).
+  int chunkCharIndex = 0;
 }
 
 enum _SvgTextAnchor { start, middle, end }

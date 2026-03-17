@@ -1,6 +1,11 @@
 ## NEXT
 
 * Updates minimum supported SDK version to Flutter 3.32/Dart 3.8.
+* Advanced hit-testing for complex geometry: clip-path geometric intersection, mask alpha-based visibility, stroke-width expansion with linecap/linejoin support, per-character text hit-testing.
+* Advanced text typography: tspan absolute positioning creates new text chunks with proper cursor reset.
+* Advanced text typography: text-anchor applies independently per text chunk.
+* textLength conflict resolution: ignored when explicit per-character positions exist (per SVG spec).
+* Advanced `<foreignObject>` semantics: requiredExtensions fallback for switch patterns, nested SVG context switching with viewBox/preserveAspectRatio, overflow handling, transform propagation, hit-testing through foreignObject children.
 
 ## 2.2.2
 

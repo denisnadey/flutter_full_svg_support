@@ -9,10 +9,18 @@
 - [default_theme.dart](file://lib/src/default_theme.dart)
 - [animated_svg_picture.dart](file://lib/src/animation/animated_svg_picture.dart)
 - [animated_svg_painter.dart](file://lib/src/animation/animated_svg_painter.dart)
+- [animated_svg_painter_patterns.dart](file://lib/src/animation/animated_svg_painter_patterns.dart)
 - [svg_parser.dart](file://lib/src/animation/svg_parser.dart)
 - [ARCHITECTURE.md](file://ARCHITECTURE.md)
 - [ANIMATION_ARCHITECTURE.md](file://docs/archive/ANIMATION_ARCHITECTURE.md)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Added documentation for the removed pattern tile caching optimization
+- Updated pattern rendering performance section to reflect current implementation
+- Added troubleshooting guidance for pattern performance issues
+- Enhanced performance considerations section with pattern-specific recommendations
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -289,6 +297,63 @@ AnimatedSvgPicture --> AnimatedSvgPainter : "uses"
 - [animated_svg_picture.dart:108-164](file://lib/src/animation/animated_svg_picture.dart#L108-L164)
 - [animated_svg_painter.dart:42-126](file://lib/src/animation/animated_svg_painter.dart#L42-L126)
 
+### Pattern Rendering Performance Optimization
+
+**Updated** The pattern tile caching optimization has been removed from the AnimatedSvgPainter class. The current implementation uses a simpler pattern caching strategy that only caches resolved pattern definitions without intermediate tile images.
+
+#### Current Pattern Caching Implementation
+The AnimatedSvgPainter now implements a straightforward pattern caching mechanism:
+
+- **Pattern Definition Cache**: `_patternCache` stores resolved `_ResolvedPatternDefinition` objects keyed by pattern ID
+- **Simple Resolution**: Pattern definitions are resolved once per paint operation and cached for subsequent use
+- **Direct Rendering**: Pattern content is rendered directly to images during shader creation
+
+#### Pattern Shader Creation Process
+The `_createPatternShader` method handles pattern rendering:
+
+1. **Pattern Resolution**: Retrieves pattern definition from cache or resolves new pattern
+2. **Tile Calculation**: Computes tile dimensions based on pattern units and target bounds
+3. **Content Rendering**: Renders pattern content to a Picture using a PictureRecorder
+4. **Image Generation**: Converts Picture to Image using `toImageSync()` with clamped dimensions
+5. **Shader Creation**: Creates ImageShader with repeated tiling mode
+
+```mermaid
+flowchart TD
+Start(["_createPatternShader(patternId, targetBounds)"]) --> Resolve["Resolve pattern from cache"]
+Resolve --> CheckValid{"Pattern valid?<br/>width>0 && height>0"}
+CheckValid --> |No| ReturnNull["Return null"]
+CheckValid --> |Yes| CalcTile["Calculate tile dimensions"]
+CalcTile --> RenderContent["Render pattern content<br/>to PictureRecorder"]
+RenderContent --> GenerateImage["Generate Image<br/>using toImageSync()"]
+GenerateImage --> CreateShader["Create ImageShader<br/>with TileMode.repeated"]
+CreateShader --> ReturnShader["Return shader"]
+ReturnNull --> End(["End"])
+ReturnShader --> End
+```
+
+**Diagram sources**
+- [animated_svg_painter_patterns.dart:105-182](file://lib/src/animation/animated_svg_painter_patterns.dart#L105-L182)
+
+#### Performance Implications of Removed Optimization
+The removal of pattern tile caching introduces several performance considerations:
+
+- **Memory Usage**: Each pattern render creates a new Image, potentially increasing memory consumption for complex patterns
+- **CPU Overhead**: Synchronous image generation (`toImageSync`) blocks the UI thread for complex patterns
+- **Resolution Limits**: Images are clamped to maximum 2048x2048 pixels, which may affect quality for large patterns
+- **Re-render Frequency**: Patterns are re-rendered each time they're used, rather than reusing cached tile images
+
+#### Optimization Recommendations
+For applications with complex patterns:
+
+1. **Reduce Pattern Complexity**: Simplify pattern geometry and reduce tile sizes
+2. **Limit Pattern Usage**: Reuse patterns across multiple shapes to maximize cache effectiveness
+3. **Consider Alternative Approaches**: For frequently used patterns, consider pre-rendering to textures
+4. **Monitor Memory Usage**: Track memory consumption when using complex patterns extensively
+
+**Section sources**
+- [animated_svg_painter.dart:63-68](file://lib/src/animation/animated_svg_painter.dart#L63-L68)
+- [animated_svg_painter_patterns.dart:1-184](file://lib/src/animation/animated_svg_painter_patterns.dart#L1-L184)
+
 ## Dependency Analysis
 - Public API depends on cache and loaders for decoding and rendering.
 - Loaders depend on vector_graphics compiler and compute utilities.
@@ -334,6 +399,12 @@ Loaders --> Theme["default_theme.dart"]
 - In animations, minimize overdraw by leveraging shouldRepaint and targeted invalidations; avoid excessive nested groups.
 - On constrained devices, prefer lower-resolution assets or fewer simultaneous animations; adjust playback rate and disable non-essential effects.
 
+**Updated** Pattern rendering performance considerations:
+- Complex patterns with high-resolution tiles consume significant memory and CPU resources
+- The synchronous `toImageSync` operation can block the UI thread for complex patterns
+- Consider simplifying pattern geometry and reducing tile sizes to improve performance
+- Monitor memory usage when using multiple complex patterns simultaneously
+
 [No sources needed since this section provides general guidance]
 
 ## Troubleshooting Guide
@@ -366,6 +437,12 @@ Loaders --> Theme["default_theme.dart"]
     - [ANIMATION_ARCHITECTURE.md:32-44](file://docs/archive/ANIMATION_ARCHITECTURE.md#L32-L44)
     - [ARCHITECTURE.md:224-234](file://ARCHITECTURE.md#L224-L234)
 
+- Symptom: Slow pattern rendering performance
+  - Cause: Complex patterns with high-resolution tiles
+  - Fix: Simplify pattern geometry, reduce tile sizes, or consider alternative rendering approaches
+  - Related references:
+    - [animated_svg_painter_patterns.dart:105-182](file://lib/src/animation/animated_svg_painter_patterns.dart#L105-L182)
+
 **Section sources**
 - [compute.dart:1-26](file://lib/src/utilities/compute.dart#L1-L26)
 - [loaders.dart:156-180](file://lib/src/loaders.dart#L156-L180)
@@ -375,8 +452,11 @@ Loaders --> Theme["default_theme.dart"]
 - [default_theme.dart:1-36](file://lib/src/default_theme.dart#L1-L36)
 - [ANIMATION_ARCHITECTURE.md:32-44](file://docs/archive/ANIMATION_ARCHITECTURE.md#L32-L44)
 - [ARCHITECTURE.md:224-234](file://ARCHITECTURE.md#L224-L234)
+- [animated_svg_painter_patterns.dart:105-182](file://lib/src/animation/animated_svg_painter_patterns.dart#L105-L182)
 
 ## Conclusion
 The codebase achieves strong performance by separating static and animated rendering paths, caching decoded binaries, and delegating heavy work to isolates. For large or animated SVGs, careful tuning of cache sizes, compute usage, and rendering strategies yields significant improvements. Preserve DOM only when necessary for animations; otherwise, leverage the vector_graphics binary pipeline for memory and speed. Apply targeted cleanup and lifecycle management to prevent leaks and maintain responsiveness across diverse device capabilities.
+
+**Updated** The removal of pattern tile caching optimization simplifies the pattern rendering pipeline but requires careful consideration of performance implications for complex patterns. Developers should monitor memory usage and consider pattern optimization strategies when working with intricate SVG patterns.
 
 [No sources needed since this section summarizes without analyzing specific files]

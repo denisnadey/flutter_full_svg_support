@@ -1,5 +1,9 @@
 part of 'animated_svg_picture.dart';
 
+/// Maximum recursion depth for nested <use> elements (matching Blink).
+/// This prevents infinite loops and excessive resource usage.
+const int _kMaxUseRecursionDepthHitTest = 10;
+
 extension _AnimatedSvgPictureStateHitTestUseExtension
     on _AnimatedSvgPictureState {
   String? _hitTestUseReference({
@@ -10,6 +14,11 @@ extension _AnimatedSvgPictureStateHitTestUseExtension
   }) {
     final hrefId = _extractHrefId(useNode);
     if (hrefId == null || hrefId.isEmpty || useStack.contains(hrefId)) {
+      return null;
+    }
+
+    // Limit recursion depth for nested <use> elements (Blink limits to ~10).
+    if (useStack.length >= _kMaxUseRecursionDepthHitTest) {
       return null;
     }
 
@@ -52,6 +61,7 @@ extension _AnimatedSvgPictureStateHitTestUseExtension
               documentPoint,
               useReferenceTransform,
               useStack: nextUseStack,
+              foreignObjectParent: null,
             );
             if (hitChild != null) {
               return hitChild;
@@ -64,6 +74,7 @@ extension _AnimatedSvgPictureStateHitTestUseExtension
           documentPoint,
           useReferenceTransform,
           useStack: nextUseStack,
+          foreignObjectParent: null,
         );
       }
 
@@ -72,6 +83,7 @@ extension _AnimatedSvgPictureStateHitTestUseExtension
         documentPoint,
         referenceTransform,
         useStack: nextUseStack,
+        foreignObjectParent: null,
       );
     } finally {
       referenced.parent = previousParent;

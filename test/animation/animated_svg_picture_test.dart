@@ -780,6 +780,202 @@ void main() {
       },
     );
 
+    testWidgets(
+      'switch renders first child when supported feature is specified',
+      (WidgetTester tester) async {
+        const svgXml = '''
+        <svg viewBox="0 0 100 100">
+          <switch>
+            <rect
+              x="10"
+              y="10"
+              width="20"
+              height="20"
+              fill="blue"
+              requiredFeatures="http://www.w3.org/TR/SVG11/feature#BasicStructure"/>
+            <rect
+              x="60"
+              y="10"
+              width="20"
+              height="20"
+              fill="red"/>
+          </switch>
+        </svg>
+      ''';
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+            ),
+          ),
+        );
+
+        await tester.pump();
+
+        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final bluePixels = _countPixels(
+          pixels,
+          (r, g, b, a) => b > 200 && r < 80 && g < 80 && a > 0,
+        );
+        final redPixels = _countPixels(
+          pixels,
+          (r, g, b, a) => r > 200 && g < 80 && b < 80 && a > 0,
+        );
+
+        // First child should match, so blue rect is rendered
+        expect(bluePixels, greaterThan(1200));
+        expect(redPixels, lessThan(100));
+      },
+    );
+
+    testWidgets(
+      'switch skips child with requiredExtensions',
+      (WidgetTester tester) async {
+        const svgXml = '''
+        <svg viewBox="0 0 100 100">
+          <switch>
+            <rect
+              x="10"
+              y="10"
+              width="20"
+              height="20"
+              fill="blue"
+              requiredExtensions="http://example.com/ext"/>
+            <rect
+              x="60"
+              y="10"
+              width="20"
+              height="20"
+              fill="red"/>
+          </switch>
+        </svg>
+      ''';
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+            ),
+          ),
+        );
+
+        await tester.pump();
+
+        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final bluePixels = _countPixels(
+          pixels,
+          (r, g, b, a) => b > 200 && r < 80 && g < 80 && a > 0,
+        );
+        final redPixels = _countPixels(
+          pixels,
+          (r, g, b, a) => r > 200 && g < 80 && b < 80 && a > 0,
+        );
+
+        // requiredExtensions always fails, so fallback red rect renders
+        expect(redPixels, greaterThan(1200));
+        expect(bluePixels, lessThan(100));
+      },
+    );
+
+    testWidgets(
+      'switch renders nothing when no children match',
+      (WidgetTester tester) async {
+        const svgXml = '''
+        <svg viewBox="0 0 100 100">
+          <switch>
+            <rect
+              x="10"
+              y="10"
+              width="20"
+              height="20"
+              fill="blue"
+              requiredFeatures="http://example.invalid/feature"/>
+            <rect
+              x="60"
+              y="10"
+              width="20"
+              height="20"
+              fill="red"
+              requiredExtensions="http://example.com/ext"/>
+          </switch>
+        </svg>
+      ''';
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+            ),
+          ),
+        );
+
+        await tester.pump();
+
+        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final bluePixels = _countPixels(
+          pixels,
+          (r, g, b, a) => b > 200 && r < 80 && g < 80 && a > 0,
+        );
+        final redPixels = _countPixels(
+          pixels,
+          (r, g, b, a) => r > 200 && g < 80 && b < 80 && a > 0,
+        );
+
+        // Neither child matches, nothing rendered
+        expect(bluePixels, lessThan(100));
+        expect(redPixels, lessThan(100));
+      },
+    );
+
+    testWidgets(
+      'switch child without conditions always matches',
+      (WidgetTester tester) async {
+        const svgXml = '''
+        <svg viewBox="0 0 100 100">
+          <switch>
+            <rect
+              x="10"
+              y="10"
+              width="20"
+              height="20"
+              fill="blue"/>
+            <rect
+              x="60"
+              y="10"
+              width="20"
+              height="20"
+              fill="red"/>
+          </switch>
+        </svg>
+      ''';
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+            ),
+          ),
+        );
+
+        await tester.pump();
+
+        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final bluePixels = _countPixels(
+          pixels,
+          (r, g, b, a) => b > 200 && r < 80 && g < 80 && a > 0,
+        );
+        final redPixels = _countPixels(
+          pixels,
+          (r, g, b, a) => r > 200 && g < 80 && b < 80 && a > 0,
+        );
+
+        // First child has no conditions, so it matches
+        expect(bluePixels, greaterThan(1200));
+        expect(redPixels, lessThan(100));
+      },
+    );
+
     testWidgets('use does not render disallowed foreignObject reference', (
       WidgetTester tester,
     ) async {

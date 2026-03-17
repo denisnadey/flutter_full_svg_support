@@ -20,6 +20,7 @@ extension _AnimatedSvgPictureStateHitTestTraversalExtension
       documentPoint,
       Matrix4.identity(),
       useStack: const <String>{},
+      foreignObjectParent: null,
     );
   }
 
@@ -56,12 +57,22 @@ extension _AnimatedSvgPictureStateHitTestTraversalExtension
     Offset documentPoint,
     Matrix4 parentTransform, {
     required Set<String> useStack,
+    required SvgNode? foreignObjectParent,
   }) {
     if (_isDefinitionOnlyTag(node.tagName)) {
       return null;
     }
     if (_isDisplayNone(node)) {
       return null;
+    }
+
+    // Check requiredExtensions for foreignObject
+    if (node.tagName == 'foreignObject') {
+      final requiredExtensions = node.getAttributeValue('requiredExtensions');
+      if (requiredExtensions != null &&
+          requiredExtensions.toString().trim().isNotEmpty) {
+        return null;
+      }
     }
 
     final currentUseStack = useStack;
@@ -76,6 +87,15 @@ extension _AnimatedSvgPictureStateHitTestTraversalExtension
     final childTransform = Matrix4.copy(currentTransform);
     _applyForeignObjectChildTransform(childTransform, node);
 
+    // Apply nested SVG transform within foreignObject
+    if (node.tagName == 'svg' && foreignObjectParent != null) {
+      _applyNestedSvgTransformInForeignObject(
+        childTransform,
+        node,
+        foreignObjectParent,
+      );
+    }
+
     if (node.tagName == 'switch') {
       final activeChild = resolveActiveSwitchChild(node);
       if (activeChild == null) {
@@ -86,8 +106,12 @@ extension _AnimatedSvgPictureStateHitTestTraversalExtension
         documentPoint,
         childTransform,
         useStack: currentUseStack,
+        foreignObjectParent: foreignObjectParent,
       );
     }
+
+    // Determine if this node establishes a foreignObject context for children
+    final foParent = node.tagName == 'foreignObject' ? node : foreignObjectParent;
 
     // Идём с конца: последний нарисованный элемент визуально сверху
     for (int i = node.children.length - 1; i >= 0; i--) {
@@ -96,6 +120,7 @@ extension _AnimatedSvgPictureStateHitTestTraversalExtension
         documentPoint,
         childTransform,
         useStack: currentUseStack,
+        foreignObjectParent: foParent,
       );
       if (hitChild != null) {
         return hitChild;

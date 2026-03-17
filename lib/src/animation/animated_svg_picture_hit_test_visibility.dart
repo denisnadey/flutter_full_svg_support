@@ -40,6 +40,15 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
     if (clipNode == null || clipNode.tagName != 'clipPath') {
       return true;
     }
+
+    // Apply clipPath's own transform attribute if present
+    var clipPathTransform = Matrix4.identity();
+    final clipTransformStr = clipNode.getAttributeValue('transform');
+    if (clipTransformStr != null &&
+        clipTransformStr.toString().trim().isNotEmpty) {
+      _applyNodeTransform(clipPathTransform, clipNode);
+    }
+
     final rootTransform = _resolveContainerRootTransformForUnits(
       targetNode: node,
       unitsValue: clipNode.getAttributeValue('clipPathUnits')?.toString(),
@@ -48,9 +57,13 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
     if (rootTransform == null) {
       return true;
     }
+
+    // Combine clipPath transform with units transform
+    clipPathTransform.multiply(rootTransform);
+
     final clipPath = _buildContainerGeometryPath(
       clipNode,
-      rootTransform: rootTransform,
+      rootTransform: clipPathTransform,
     );
     if (clipPath == null) {
       return true;
@@ -75,6 +88,15 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
     if (maskRegion != null && !maskRegion.contains(localPoint)) {
       return false;
     }
+
+    // Apply mask's own transform attribute if present
+    var maskTransform = Matrix4.identity();
+    final maskTransformStr = maskNode.getAttributeValue('transform');
+    if (maskTransformStr != null &&
+        maskTransformStr.toString().trim().isNotEmpty) {
+      _applyNodeTransform(maskTransform, maskNode);
+    }
+
     final rootTransform = _resolveContainerRootTransformForUnits(
       targetNode: node,
       unitsValue: maskNode.getAttributeValue('maskContentUnits')?.toString(),
@@ -83,14 +105,149 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
     if (rootTransform == null) {
       return true;
     }
-    final maskPath = _buildContainerGeometryPath(
+
+    // Combine mask transform with units transform
+    maskTransform.multiply(rootTransform);
+
+    // Build path only from mask content that has visible paint
+    // (shapes with fill:none and stroke:none should not contribute to hit area)
+    final maskPath = _buildVisibleMaskGeometryPath(
       maskNode,
-      rootTransform: rootTransform,
+      rootTransform: maskTransform,
     );
     if (maskPath == null) {
+      // No visible mask content - allow hit
       return true;
     }
     return maskPath.contains(localPoint);
+  }
+
+  /// Builds a geometry path from mask content that has visible paint.
+  /// Excludes shapes with both fill:none and stroke:none, since they
+  /// contribute nothing to the mask's visual output (zero alpha/luminance).
+  Path? _buildVisibleMaskGeometryPath(
+    SvgNode containerNode, {
+    Matrix4? rootTransform,
+  }) {
+    final path = Path();
+    final added = _appendVisibleMaskGeometry(
+      target: path,
+      node: containerNode,
+      currentTransform: rootTransform ?? Matrix4.identity(),
+      useStack: <String>{},
+    );
+    return added ? path : null;
+  }
+
+  bool _appendVisibleMaskGeometry({
+    required Path target,
+    required SvgNode node,
+    required Matrix4 currentTransform,
+    required Set<String> useStack,
+  }) {
+    final matrix = Matrix4.copy(currentTransform);
+    _applyNodeTransform(matrix, node);
+
+    switch (node.tagName) {
+      case 'mask':
+      case 'g':
+      case 'svg':
+      case 'symbol':
+        var added = false;
+        for (final child in node.children) {
+          if (_appendVisibleMaskGeometry(
+            target: target,
+            node: child,
+            currentTransform: matrix,
+            useStack: useStack,
+          )) {
+            added = true;
+          }
+        }
+        return added;
+      case 'switch':
+        final activeChild = resolveActiveSwitchChild(node);
+        if (activeChild == null) {
+          return false;
+        }
+        return _appendVisibleMaskGeometry(
+          target: target,
+          node: activeChild,
+          currentTransform: matrix,
+          useStack: useStack,
+        );
+      case 'use':
+        final hrefId = _extractHrefId(node);
+        if (hrefId == null || hrefId.isEmpty || useStack.contains(hrefId)) {
+          return false;
+        }
+        final referenced = _document.root.findById(hrefId);
+        if (referenced == null ||
+            !_isUseReferenceAllowedTag(referenced.tagName)) {
+          return false;
+        }
+        final translated = Matrix4.copy(matrix)
+          ..translateByDouble(
+            _getNumber(node, 'x') ?? 0.0,
+            _getNumber(node, 'y') ?? 0.0,
+            0,
+            1,
+          );
+        final nextUseStack = <String>{...useStack, hrefId};
+        if (_isUseViewportReferenceTag(referenced.tagName)) {
+          final useReferenceTransform = Matrix4.copy(translated);
+          _applyUseViewportTransform(useReferenceTransform, node, referenced);
+          return _appendVisibleMaskGeometry(
+            target: target,
+            node: referenced,
+            currentTransform: useReferenceTransform,
+            useStack: nextUseStack,
+          );
+        }
+        return _appendVisibleMaskGeometry(
+          target: target,
+          node: referenced,
+          currentTransform: translated,
+          useStack: nextUseStack,
+        );
+      default:
+        // Check if this element has any visible paint contribution
+        // For masks, elements with fill:none and stroke:none contribute zero alpha
+        if (!_hasMaskVisiblePaint(node)) {
+          return false;
+        }
+        final geometry = _buildGeometryPath(node);
+        if (geometry == null) {
+          return false;
+        }
+        target.addPath(geometry.transform(matrix.storage), Offset.zero);
+        return true;
+    }
+  }
+
+  /// Checks if a mask content element has any visible paint that would
+  /// contribute to the mask's alpha/luminance output.
+  bool _hasMaskVisiblePaint(SvgNode node) {
+    // Check fill - default is black which contributes to mask
+    final fillValue = _getInheritedAttributeValue(node, 'fill');
+    final hasFill = !_isPaintNone(fillValue);
+
+    // Check stroke
+    final strokeValue = _getInheritedAttributeValue(node, 'stroke');
+    final hasStroke = strokeValue != null && !_isPaintNone(strokeValue);
+
+    // Check opacity - fully transparent elements don't contribute
+    final opacity = _getInheritedNumber(node, 'opacity') ?? 1.0;
+    if (opacity <= 0) {
+      return false;
+    }
+
+    // Check fill-opacity and stroke-opacity
+    final fillOpacity = _getInheritedNumber(node, 'fill-opacity') ?? 1.0;
+    final strokeOpacity = _getInheritedNumber(node, 'stroke-opacity') ?? 1.0;
+
+    // Element is visible in mask if it has non-transparent fill or stroke
+    return (hasFill && fillOpacity > 0) || (hasStroke && strokeOpacity > 0);
   }
 
   Matrix4? _resolveContainerRootTransformForUnits({
@@ -261,6 +418,14 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
     if (node.tagName != 'foreignObject') {
       return true;
     }
+
+    // Check requiredExtensions - if specified, foreignObject doesn't render
+    final requiredExtensions = node.getAttributeValue('requiredExtensions');
+    if (requiredExtensions != null &&
+        requiredExtensions.toString().trim().isNotEmpty) {
+      return false;
+    }
+
     final x = _getNumber(node, 'x') ?? 0.0;
     final y = _getNumber(node, 'y') ?? 0.0;
     final width = _getNumber(node, 'width') ?? 0.0;
@@ -268,6 +433,14 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
     if (width <= 0 || height <= 0) {
       return false;
     }
+
+    // Check overflow attribute - default for foreignObject is hidden
+    final overflow = _getInheritedString(node, 'overflow')?.toLowerCase();
+    if (overflow == 'visible') {
+      // With overflow:visible, no clipping is applied
+      return true;
+    }
+
     return Rect.fromLTWH(x, y, width, height).contains(localPoint);
   }
 

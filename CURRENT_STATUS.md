@@ -92,7 +92,9 @@ See: `/Users/denisnadey/apps/flutter_full_svg_support/docs/RESOLVED_ISSUES.md`
 - Element-level hit-testing and dispatch for `rect/circle/ellipse/line/path/polygon/polyline/image/foreignObject/text/tspan/textPath`
 - Baseline `pointer-events` semantics including inherited `none`, geometry modes, and text-aware modes
 - Baseline `<use>`-referenced hit-testing
-- Baseline `clip-path` / `mask` visibility gating in hit-testing
+- Advanced `clip-path` / `mask` hit-testing with geometric intersection and alpha-based visibility
+- Stroke-width expansion for accurate hit regions with `stroke-linecap` and `stroke-linejoin` support
+- Per-character text hit-testing for improved precision
 - Inline `style` with trailing `!important` normalization in visibility/hit-testing paths
 
 ### Runtime Diagnostics / Playground
@@ -123,10 +125,17 @@ Implemented primitives / baseline semantics:
 ### Geometry / Text / Reuse / External Content
 - Painted: `rect`, `circle`, `ellipse`, `line`, `path`, `polygon`, `polyline`, `image`, `text`, `tspan`, `textPath` (baseline)
 - Text multi-position attributes: `x`, `y`, `dx`, `dy` as space/comma-separated lists for per-character positioning
+- Text advanced typography: tspan absolute positioning creates new text chunks, text-anchor applies per-chunk
+- textLength conflict resolution: ignored when explicit per-character positions exist
 - `<use href="#...">`, `<symbol>` via `<use>` (baseline)
 - `<defs>` as definitions-only
 - `<image>` with data URI + network/bundle best-effort loading (baseline)
-- `<foreignObject>` viewport container behavior (baseline)
+- `<foreignObject>` viewport container behavior with advanced semantics:
+  - `requiredExtensions` fallback for `<switch>` patterns
+  - Nested SVG context switching with viewBox/preserveAspectRatio
+  - Overflow handling (hidden/visible)
+  - Transform propagation through foreignObject
+  - Hit-testing through foreignObject children
 - `clipPath` and `mask` baseline support
 
 ## Known Gaps (Blink Parity, Animated Pipeline)
@@ -135,10 +144,9 @@ Detailed audit: `/Users/denisnadey/apps/flutter_full_svg_support/docs/BLINK_PARI
 
 High-impact gaps:
 1. No full animated-pipeline text parity (advanced typography semantics beyond baseline).
-2. Hit-testing still misses full painted-geometry parity (advanced clip/mask/use/text semantics).
-3. Filter parity is partial: baseline support exists for many primitives, but advanced non-source graph semantics remain limited.
-4. CSS animation conversion remains partial for advanced/edge CSS shorthand/transform semantics.
-5. `animateMotion` still lacks broader Blink-level semantics beyond current baseline support.
+2. Filter parity is partial: baseline support exists for many primitives, but advanced non-source graph semantics remain limited.
+3. CSS animation conversion remains partial for advanced/edge CSS shorthand/transform semantics.
+4. `animateMotion` still lacks broader Blink-level semantics beyond current baseline support.
 
 ## Documentation Policy
 

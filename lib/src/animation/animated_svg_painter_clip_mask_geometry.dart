@@ -47,6 +47,10 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
         if (hrefId == null || hrefId.isEmpty || useStack.contains(hrefId)) {
           return;
         }
+        // Limit recursion depth for nested <use> elements (Blink limits to ~10).
+        if (useStack.length >= _kMaxUseRecursionDepth) {
+          return;
+        }
         final referenced = document.root.findById(hrefId);
         if (referenced == null ||
             !_isUseReferenceAllowedTag(referenced.tagName)) {

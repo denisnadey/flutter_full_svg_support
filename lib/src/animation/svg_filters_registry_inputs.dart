@@ -1,6 +1,14 @@
 part of 'svg_filters.dart';
 
 extension SvgFiltersInputResolverExtension on SvgFilters {
+  /// Resolves input passes for a filter primitive.
+  ///
+  /// This method handles the full SVG filter input resolution semantics:
+  /// - Built-in inputs: SourceGraphic, SourceAlpha, BackgroundImage,
+  ///   BackgroundAlpha, FillPaint, StrokePaint
+  /// - Named results from previous primitives via `result` attribute
+  /// - Default input resolution (previous output or SourceGraphic)
+  /// - Forward reference handling (produces transparent black per spec)
   List<SvgFilterPaintPass> _resolveInputPasses({
     required String? requestedInput,
     required List<SvgFilterPaintPass> previous,
@@ -11,6 +19,8 @@ extension SvgFiltersInputResolverExtension on SvgFilters {
   }) {
     final normalized = requestedInput?.trim();
     if (normalized == null || normalized.isEmpty) {
+      // Per SVG spec: when `in` is omitted, use the result of the previous
+      // primitive, or SourceGraphic for the first primitive.
       return previous.isEmpty
           ? <SvgFilterPaintPass>[...sourceGraphic]
           : previous;
@@ -22,6 +32,7 @@ extension SvgFiltersInputResolverExtension on SvgFilters {
       return const <SvgFilterPaintPass>[];
     }
 
+    // Try built-in inputs first (case-sensitive per spec).
     final builtIn = _resolveBuiltInInputPasses(
       normalized,
       sourceGraphic: sourceGraphic,
@@ -31,8 +42,11 @@ extension SvgFiltersInputResolverExtension on SvgFilters {
       return builtIn;
     }
 
+    // Try named results from previous primitives.
+    // This enables filter chains like: blur result="blurred" -> composite in="blurred"
     final named = namedResults[normalized];
     if (named != null && named.isNotEmpty) {
+      // Return a copy to prevent accidental mutation of cached results.
       return <SvgFilterPaintPass>[...named];
     }
 
@@ -47,14 +61,15 @@ extension SvgFiltersInputResolverExtension on SvgFilters {
       return builtInCaseInsensitive;
     }
 
+    // Handle fallback for unknown references.
     if (fallbackToPreviousOnUnknown) {
       return previous.isEmpty
           ? <SvgFilterPaintPass>[...sourceGraphic]
           : previous;
     }
 
-    // Explicit unresolved primitive inputs should not fall back to previous
-    // output when fallback is disabled (e.g. merge node semantics).
+    // Explicit unresolved primitive inputs (including forward references)
+    // should produce transparent black per SVG spec.
     return const <SvgFilterPaintPass>[];
   }
 

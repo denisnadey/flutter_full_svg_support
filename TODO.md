@@ -118,6 +118,9 @@ For factual project status, use `CURRENT_STATUS.md` only.
 - [x] `white-space`: CSS whitespace handling (`normal`, `pre`, `pre-wrap`, `nowrap`, `pre-line`, `break-spaces`)
 - [x] `cursor`: CSS cursor style (`default`, `pointer`, `text`, `move`, `crosshair`, `grab`, etc.)
 - [x] `font-size-adjust`: maintain x-height consistency across fallback fonts
+- [x] Advanced text typography: tspan absolute positioning creates new text chunks with proper cursor reset
+- [x] Advanced text typography: text-anchor applies independently per text chunk (when tspan has absolute x/y)
+- [x] textLength conflict resolution: ignored when explicit per-character x/y positions exist (per SVG spec)
 
 ## P0 - Blink Parity Foundations
 
@@ -131,9 +134,9 @@ For factual project status, use `CURRENT_STATUS.md` only.
 ## P1 - Core Feature Gaps
 
 - [ ] Complete text pipeline parity (`<text>`, `<tspan>`, `<textPath>` advanced semantics).
-- [ ] Extend `<foreignObject>` parity beyond baseline viewport/container semantics.
+- [x] Extend `<foreignObject>` parity beyond baseline viewport/container semantics (requiredExtensions, nested SVG, overflow, transform propagation, hit-testing).
 - [x] Add `animateMotion` support for `<mpath xlink:href="...">` references.
-- [ ] Expand element hit-testing to advanced semantics (`clipPath`/`mask`/`use`/text-aware hit regions).
+- [x] Expand element hit-testing to advanced semantics (`clipPath`/`mask`/`use`/text-aware hit regions).
 
 ## P2 - Filters (Blink FE coverage)
 

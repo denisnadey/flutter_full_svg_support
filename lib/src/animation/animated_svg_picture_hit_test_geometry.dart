@@ -144,11 +144,23 @@ extension _AnimatedSvgPictureStateHitTestGeometryExtension
           return false;
         }
         final tolerance = _strokeTolerance(node);
-        final distance = _distanceToSegment(
-          point,
-          Offset(x1, y1),
-          Offset(x2, y2),
-        );
+        final linecapTolerance = _strokeLinecapTolerance(node);
+        final startPoint = Offset(x1, y1);
+        final endPoint = Offset(x2, y2);
+
+        // Check distance to endpoints with linecap consideration
+        // For round/square linecap, endpoints have extra hit area
+        if (linecapTolerance > 0) {
+          final startDist = (point - startPoint).distance;
+          final endDist = (point - endPoint).distance;
+          if (startDist <= tolerance + linecapTolerance ||
+              endDist <= tolerance + linecapTolerance) {
+            return true;
+          }
+        }
+
+        // Check distance to line segment
+        final distance = _distanceToSegment(point, startPoint, endPoint);
         return distance <= tolerance;
       case 'image':
         final x = _getNumber(node, 'x') ?? 0.0;
@@ -261,6 +273,19 @@ extension _AnimatedSvgPictureStateHitTestGeometryExtension
           visibilityHidden: visibilityHidden,
         )) {
           final tolerance = _strokeTolerance(node);
+          final linecapTolerance = _strokeLinecapTolerance(node);
+
+          // Check endpoints with linecap
+          if (linecapTolerance > 0) {
+            final startDist = (point - polylinePoints.first).distance;
+            final endDist = (point - polylinePoints.last).distance;
+            if (startDist <= tolerance + linecapTolerance ||
+                endDist <= tolerance + linecapTolerance) {
+              return true;
+            }
+          }
+
+          // Check each segment
           for (int i = 0; i < polylinePoints.length - 1; i++) {
             if (_distanceToSegment(
                   point,
