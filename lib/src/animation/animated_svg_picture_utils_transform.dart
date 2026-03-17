@@ -63,8 +63,9 @@ extension _AnimatedSvgPictureStateTransformExtension
         final layout = resolveSvgViewportLayout(
           viewport: Rect.fromLTWH(0, 0, svgWidth, svgHeight),
           sourceSize: Size(viewBox.width, viewBox.height),
-          preserveAspectRatio:
-              svgNode.getAttributeValue('preserveAspectRatio')?.toString(),
+          preserveAspectRatio: svgNode
+              .getAttributeValue('preserveAspectRatio')
+              ?.toString(),
         );
 
         // Compute viewBox to viewport transform
@@ -174,7 +175,9 @@ extension _AnimatedSvgPictureStateTransformExtension
           break;
         case SvgTransformType.rotateX:
           // X rotation produces perspective effect - extract 2D projection
-          final angleX = transform.values.isNotEmpty ? transform.values[0] : 0.0;
+          final angleX = transform.values.isNotEmpty
+              ? transform.values[0]
+              : 0.0;
           final radiansX = angleX * math.pi / 180.0;
           final matrix3dX = Matrix4x4.rotationX(radiansX);
           final extracted2dX = matrix3dX.extract2DMatrix();
@@ -189,7 +192,9 @@ extension _AnimatedSvgPictureStateTransformExtension
           break;
         case SvgTransformType.rotateY:
           // Y rotation produces perspective effect - extract 2D projection
-          final angleY = transform.values.isNotEmpty ? transform.values[0] : 0.0;
+          final angleY = transform.values.isNotEmpty
+              ? transform.values[0]
+              : 0.0;
           final radiansY = angleY * math.pi / 180.0;
           final matrix3dY = Matrix4x4.rotationY(radiansY);
           final extracted2dY = matrix3dY.extract2DMatrix();
@@ -204,7 +209,9 @@ extension _AnimatedSvgPictureStateTransformExtension
           break;
         case SvgTransformType.rotateZ:
           // Same as regular rotate
-          final angleZ = transform.values.isNotEmpty ? transform.values[0] : 0.0;
+          final angleZ = transform.values.isNotEmpty
+              ? transform.values[0]
+              : 0.0;
           final radiansZ = angleZ * math.pi / 180.0;
           matrix.rotateZ(radiansZ);
           break;

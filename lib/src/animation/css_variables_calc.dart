@@ -16,10 +16,7 @@ final RegExp _varFunctionRegex = RegExp(
 );
 
 /// Regex to match calc() function calls (including nested)
-final RegExp _calcFunctionRegex = RegExp(
-  r'calc\(',
-  caseSensitive: false,
-);
+final RegExp _calcFunctionRegex = RegExp(r'calc\(', caseSensitive: false);
 
 /// Unit conversion factors to pixels (base unit)
 const Map<String, double> _unitToPixels = {
@@ -39,7 +36,7 @@ const double _defaultFontSize = 16.0;
 /// Custom properties are inheritable by default.
 class CssCustomProperties {
   CssCustomProperties([Map<String, String>? initial])
-      : _properties = initial ?? {};
+    : _properties = initial ?? {};
 
   final Map<String, String> _properties;
 
@@ -160,7 +157,7 @@ class CssVariableResolver {
 class CssCalcEvaluator {
   /// Evaluate a calc() expression to a numeric value.
   /// Returns null if evaluation fails.
-  /// 
+  ///
   /// [value] - The string potentially containing calc()
   /// [fontSize] - Current font size for em/rem units
   /// [containerSize] - Container size for percentage calculations (optional)
@@ -174,7 +171,11 @@ class CssCalcEvaluator {
     // Check if it's a calc() expression
     if (!trimmed.toLowerCase().startsWith('calc(')) {
       // Try to parse as a simple numeric value with units
-      return _parseNumericValue(trimmed, fontSize: fontSize, containerSize: containerSize);
+      return _parseNumericValue(
+        trimmed,
+        fontSize: fontSize,
+        containerSize: containerSize,
+      );
     }
 
     // Extract the calc() content
@@ -279,7 +280,8 @@ class CssCalcEvaluator {
         return null;
       }
 
-      result = result.substring(0, start) + '$nestedValue' + result.substring(end);
+      result =
+          result.substring(0, start) + '$nestedValue' + result.substring(end);
       iterations++;
     }
 
@@ -308,7 +310,10 @@ class CssCalcEvaluator {
       if (token == '+' || token == '-' || token == '*' || token == '/') {
         // Handle negative numbers at start or after operator
         if (token == '-' &&
-            (values.isEmpty || (operators.isNotEmpty && i > 0 && ['+', '-', '*', '/'].contains(tokens[i - 1])))) {
+            (values.isEmpty ||
+                (operators.isNotEmpty &&
+                    i > 0 &&
+                    ['+', '-', '*', '/'].contains(tokens[i - 1])))) {
           // This is a negative sign, combine with next token
           if (i + 1 < tokens.length) {
             final nextValue = _parseNumericValue(
@@ -347,7 +352,9 @@ class CssCalcEvaluator {
       if (operators[i] == '*' || operators[i] == '/') {
         final left = values[i];
         final right = values[i + 1];
-        final result = operators[i] == '*' ? left * right : (right != 0 ? left / right : 0.0);
+        final result = operators[i] == '*'
+            ? left * right
+            : (right != 0 ? left / right : 0.0);
         values[i] = result;
         values.removeAt(i + 1);
         operators.removeAt(i);

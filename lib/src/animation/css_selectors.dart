@@ -82,8 +82,7 @@ class CssAttributeSelector {
       case CssAttributeMatch.includes:
         return testValue.split(RegExp(r'\s+')).contains(matchValue);
       case CssAttributeMatch.dashPrefix:
-        return testValue == matchValue ||
-            testValue.startsWith('$matchValue-');
+        return testValue == matchValue || testValue.startsWith('$matchValue-');
       case CssAttributeMatch.prefix:
         return testValue.startsWith(matchValue);
       case CssAttributeMatch.suffix:
@@ -133,7 +132,9 @@ class CssSimpleSelector {
   final List<CssAttributeSelector> attributes;
 
   /// Whether this is a universal selector
-  bool get isUniversal => tagName == '*' || (tagName == null && id == null && classes.isEmpty && attributes.isEmpty);
+  bool get isUniversal =>
+      tagName == '*' ||
+      (tagName == null && id == null && classes.isEmpty && attributes.isEmpty);
 
   @override
   String toString() {
@@ -152,10 +153,7 @@ class CssSimpleSelector {
 
 /// A compound selector with combinator (e.g., `g > rect`)
 class CssSelectorPart {
-  const CssSelectorPart({
-    required this.selector,
-    required this.combinator,
-  });
+  const CssSelectorPart({required this.selector, required this.combinator});
 
   /// The simple selector
   final CssSimpleSelector selector;
@@ -240,10 +238,9 @@ CssSelector? _parseCssSelector(String selectorStr) {
     final (simpleSelector, newPos) = _parseSimpleSelector(str, pos);
     if (simpleSelector == null) break;
 
-    parts.add(CssSelectorPart(
-      selector: simpleSelector,
-      combinator: nextCombinator,
-    ));
+    parts.add(
+      CssSelectorPart(selector: simpleSelector, combinator: nextCombinator),
+    );
 
     pos = newPos;
     nextCombinator = CssCombinator.none;
@@ -253,7 +250,11 @@ CssSelector? _parseCssSelector(String selectorStr) {
 }
 
 int _skipWhitespace(String str, int pos) {
-  while (pos < str.length && (str[pos] == ' ' || str[pos] == '\t' || str[pos] == '\n' || str[pos] == '\r')) {
+  while (pos < str.length &&
+      (str[pos] == ' ' ||
+          str[pos] == '\t' ||
+          str[pos] == '\n' ||
+          str[pos] == '\r')) {
     pos++;
   }
   return pos;
@@ -332,12 +333,15 @@ int _skipWhitespace(String str, int pos) {
     return (null, startPos);
   }
 
-  return (CssSimpleSelector(
-    tagName: tagName,
-    id: id,
-    classes: classes,
-    attributes: attributes,
-  ), pos);
+  return (
+    CssSimpleSelector(
+      tagName: tagName,
+      id: id,
+      classes: classes,
+      attributes: attributes,
+    ),
+    pos,
+  );
 }
 
 (CssAttributeSelector?, int) _parseAttributeSelector(String str, int startPos) {
@@ -362,10 +366,13 @@ int _skipWhitespace(String str, int pos) {
   // Check for ] (existence check)
   if (pos >= str.length || str[pos] == ']') {
     if (pos < str.length) pos++;
-    return (CssAttributeSelector(
-      attribute: attrName,
-      matchType: CssAttributeMatch.exists,
-    ), pos);
+    return (
+      CssAttributeSelector(
+        attribute: attrName,
+        matchType: CssAttributeMatch.exists,
+      ),
+      pos,
+    );
   }
 
   // Parse operator
@@ -425,12 +432,15 @@ int _skipWhitespace(String str, int pos) {
   while (pos < str.length && str[pos] != ']') pos++;
   if (pos < str.length) pos++;
 
-  return (CssAttributeSelector(
-    attribute: attrName,
-    matchType: matchType,
-    value: value,
-    caseInsensitive: caseInsensitive,
-  ), pos);
+  return (
+    CssAttributeSelector(
+      attribute: attrName,
+      matchType: matchType,
+      value: value,
+      caseInsensitive: caseInsensitive,
+    ),
+    pos,
+  );
 }
 
 (String, int) _parseIdent(String str, int startPos) {

@@ -170,7 +170,10 @@ class CssSpecificityCalculator {
   /// Splits a selector by combinators while preserving each simple selector.
   static List<String> _splitByCombinators(String selector) {
     // Split by whitespace, >, +, ~ (CSS combinators)
-    return selector.split(RegExp(r'\s*[>\+~\s]\s*')).where((s) => s.isNotEmpty).toList();
+    return selector
+        .split(RegExp(r'\s*[>\+~\s]\s*'))
+        .where((s) => s.isNotEmpty)
+        .toList();
   }
 }
 
@@ -178,7 +181,7 @@ class CssSpecificityCalculator {
 const Set<String> cssInheritableProperties = {
   // Color properties
   'color',
-  
+
   // Font properties
   'font',
   'font-family',
@@ -193,7 +196,7 @@ const Set<String> cssInheritableProperties = {
   'font-weight',
   'font-feature-settings',
   'font-variation-settings',
-  
+
   // Text properties
   'letter-spacing',
   'line-height',
@@ -211,7 +214,7 @@ const Set<String> cssInheritableProperties = {
   'dominant-baseline',
   'alignment-baseline',
   'baseline-shift',
-  
+
   // SVG specific inheritable properties
   'fill',
   'fill-opacity',
@@ -235,34 +238,34 @@ const Set<String> cssInheritableProperties = {
   'shape-rendering',
   'text-rendering',
   'image-rendering',
-  
+
   // Visibility
   'visibility',
   'pointer-events',
   'cursor',
-  
+
   // Text decoration (partially inheritable)
   'text-decoration',
   'text-decoration-line',
   'text-decoration-style',
   'text-decoration-color',
-  
+
   // Text emphasis
   'text-emphasis',
   'text-emphasis-color',
   'text-emphasis-position',
   'text-emphasis-style',
-  
+
   // Ruby
   'ruby-align',
   'ruby-position',
-  
+
   // List styles
   'list-style',
   'list-style-image',
   'list-style-position',
   'list-style-type',
-  
+
   // Misc
   'quotes',
   'tab-size',
@@ -273,9 +276,7 @@ const Set<String> cssInheritableProperties = {
 
 /// Resolves CSS styles for an SVG node using proper cascade rules.
 class CssCascadeResolver {
-  CssCascadeResolver({
-    required this.cssRules,
-  }) : _ruleCache = {};
+  CssCascadeResolver({required this.cssRules}) : _ruleCache = {};
 
   /// All CSS rules from <style> elements.
   final List<CssSelectorRule> cssRules;
@@ -296,7 +297,7 @@ class CssCascadeResolver {
     bool checkInheritance = true,
   }) {
     final normalizedProperty = property.trim().toLowerCase();
-    
+
     // Build list of candidate values with their specificity
     final candidates = <CssResolvedValue>[];
     var order = 0;
@@ -304,16 +305,19 @@ class CssCascadeResolver {
     // 1. Check inline style attribute (highest priority except !important)
     final inlineValue = _extractInlineStyleValue(node, normalizedProperty);
     if (inlineValue != null) {
-      final isImportant = inlineValue.endsWith('!important') ||
+      final isImportant =
+          inlineValue.endsWith('!important') ||
           inlineValue.contains('!important');
       final cleanValue = _stripImportant(inlineValue);
       if (cleanValue.isNotEmpty) {
-        candidates.add(CssResolvedValue(
-          value: cleanValue,
-          specificity: CssSpecificity.inline,
-          order: 1000000, // Inline always has highest order
-          isImportant: isImportant,
-        ));
+        candidates.add(
+          CssResolvedValue(
+            value: cleanValue,
+            specificity: CssSpecificity.inline,
+            order: 1000000, // Inline always has highest order
+            isImportant: isImportant,
+          ),
+        );
       }
     }
 
@@ -322,16 +326,19 @@ class CssCascadeResolver {
     for (final matched in matchingRules) {
       final declaration = matched.rule.declarations[normalizedProperty];
       if (declaration != null) {
-        final isImportant = declaration.endsWith('!important') ||
+        final isImportant =
+            declaration.endsWith('!important') ||
             declaration.contains('!important');
         final cleanValue = _stripImportant(declaration);
         if (cleanValue.isNotEmpty) {
-          candidates.add(CssResolvedValue(
-            value: cleanValue,
-            specificity: matched.specificity,
-            order: order++,
-            isImportant: isImportant,
-          ));
+          candidates.add(
+            CssResolvedValue(
+              value: cleanValue,
+              specificity: matched.specificity,
+              order: order++,
+              isImportant: isImportant,
+            ),
+          );
         }
       }
     }
@@ -339,12 +346,14 @@ class CssCascadeResolver {
     // 3. Check presentation attribute (lowest specificity)
     final attrValue = node.getAttributeValue(normalizedProperty)?.toString();
     if (attrValue != null && attrValue.trim().isNotEmpty) {
-      candidates.add(CssResolvedValue(
-        value: attrValue.trim(),
-        specificity: CssSpecificity.zero,
-        order: -1, // Presentation attributes come before CSS rules
-        isImportant: false,
-      ));
+      candidates.add(
+        CssResolvedValue(
+          value: attrValue.trim(),
+          specificity: CssSpecificity.zero,
+          order: -1, // Presentation attributes come before CSS rules
+          isImportant: false,
+        ),
+      );
     }
 
     // Find winning value from candidates
@@ -365,9 +374,11 @@ class CssCascadeResolver {
     // 4. Handle inheritance
     if (checkInheritance) {
       // If value is explicitly 'inherit' or property is inheritable and no value set
-      final shouldInherit = winner?.value == 'inherit' ||
-          (winner == null && cssInheritableProperties.contains(normalizedProperty));
-      
+      final shouldInherit =
+          winner?.value == 'inherit' ||
+          (winner == null &&
+              cssInheritableProperties.contains(normalizedProperty));
+
       if (shouldInherit && node.parent != null) {
         return resolveProperty(node.parent!, property, checkInheritance: true);
       }
@@ -401,10 +412,12 @@ class CssCascadeResolver {
 
     for (final rule in cssRules) {
       if (_selectorMatches(rule.selector, tagName, id, nodeClasses)) {
-        matched.add(_MatchedRule(
-          rule: rule,
-          specificity: CssSpecificityCalculator.calculate(rule.selector),
-        ));
+        matched.add(
+          _MatchedRule(
+            rule: rule,
+            specificity: CssSpecificityCalculator.calculate(rule.selector),
+          ),
+        );
       }
     }
 
@@ -421,7 +434,7 @@ class CssCascadeResolver {
   ) {
     // Handle compound selectors (e.g., "rect.myClass#myId")
     final sel = selector.trim();
-    
+
     // Check ID selector
     final idMatch = RegExp(r'#([\w-]+)').firstMatch(sel);
     if (idMatch != null && idMatch.group(1) != id) {
@@ -442,7 +455,9 @@ class CssCascadeResolver {
     if (elementMatch != null) {
       final requiredElement = elementMatch.group(1)!;
       // Skip if starts with special character
-      if (!sel.startsWith('.') && !sel.startsWith('#') && !sel.startsWith(':')) {
+      if (!sel.startsWith('.') &&
+          !sel.startsWith('#') &&
+          !sel.startsWith(':')) {
         if (requiredElement.toLowerCase() != tagName.toLowerCase()) {
           return false;
         }
@@ -453,7 +468,9 @@ class CssCascadeResolver {
     // Also handle universal selector '*' and selectors that only have class/id
     return idMatch != null ||
         classMatches.isNotEmpty ||
-        (elementMatch != null && !sel.startsWith('.') && !sel.startsWith('#')) ||
+        (elementMatch != null &&
+            !sel.startsWith('.') &&
+            !sel.startsWith('#')) ||
         sel == '*';
   }
 
@@ -467,10 +484,10 @@ class CssCascadeResolver {
     for (final declaration in style.split(';')) {
       final parts = declaration.split(':');
       if (parts.length < 2) continue;
-      
+
       final key = parts.first.trim().toLowerCase();
       if (key != property) continue;
-      
+
       return parts.sublist(1).join(':').trim();
     }
     return null;

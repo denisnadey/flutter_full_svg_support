@@ -128,10 +128,22 @@ void main() {
     test('fromMatrix3d creates correct matrix', () {
       // Identity matrix3d
       final values = [
-        1.0, 0.0, 0.0, 0.0,
-        0.0, 1.0, 0.0, 0.0,
-        0.0, 0.0, 1.0, 0.0,
-        0.0, 0.0, 0.0, 1.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
       ];
       final matrix = Matrix4x4.fromMatrix3d(values);
 
@@ -165,7 +177,11 @@ void main() {
 
     test('transform2D with perspective', () {
       final perspective = Matrix4x4.perspective(1000);
-      final translate = Matrix4x4.translation(0, 0, 500); // Move halfway to perspective
+      final translate = Matrix4x4.translation(
+        0,
+        0,
+        500,
+      ); // Move halfway to perspective
 
       final combined = perspective * translate;
       final point = combined.transform2D(100, 100, 0);

@@ -18,7 +18,8 @@ extension AnimatedSvgPainterCanvasTransformExtension on AnimatedSvgPainter {
     final hasPerspective = perspectiveValue != null && perspectiveValue > 0;
 
     // Check for backface-visibility
-    final hideBackface = _getBackfaceVisibility(node) == BackfaceVisibility.hidden;
+    final hideBackface =
+        _getBackfaceVisibility(node) == BackfaceVisibility.hidden;
 
     // Apply origin offset before transform
     if (hasOrigin) {
@@ -189,7 +190,9 @@ extension AnimatedSvgPainterCanvasTransformExtension on AnimatedSvgPainter {
         return Matrix4x4.identity();
 
       case SvgTransformType.perspective:
-        final distance = transform.values.isNotEmpty ? transform.values[0] : 0.0;
+        final distance = transform.values.isNotEmpty
+            ? transform.values[0]
+            : 0.0;
         if (distance > 0) {
           return Matrix4x4.perspective(distance);
         }

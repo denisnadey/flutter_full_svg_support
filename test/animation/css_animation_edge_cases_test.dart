@@ -13,10 +13,10 @@ void main() {
       );
 
       expect(animations, hasLength(2));
-      
+
       expect(animations[0].name, equals('fadeIn'));
       expect(animations[0].duration, equals(const Duration(seconds: 1)));
-      
+
       expect(animations[1].name, equals('slideUp'));
       expect(animations[1].duration, equals(const Duration(seconds: 2)));
       expect(animations[1].delay, equals(const Duration(milliseconds: 500)));
@@ -30,9 +30,12 @@ void main() {
 
       expect(animations, hasLength(2));
       expect(animations[0].name, equals('spin'));
-      expect(animations[0].timingFunction, equals('cubic-bezier(0.4, 0, 0.2, 1)'));
+      expect(
+        animations[0].timingFunction,
+        equals('cubic-bezier(0.4, 0, 0.2, 1)'),
+      );
       expect(animations[0].iterationCount, equals(double.infinity));
-      
+
       expect(animations[1].name, equals('fade'));
       expect(animations[1].timingFunction, equals('linear'));
     });
@@ -59,12 +62,12 @@ void main() {
 
       // Should have 2 animations on the rect
       expect(animations, hasLength(2));
-      
+
       final opacityAnim = animations.firstWhere(
         (a) => a.attributeName == 'opacity',
       );
       expect(opacityAnim.dur, equals(const Duration(seconds: 1)));
-      
+
       final transformAnim = animations.firstWhere(
         (a) => a.attributeName == 'transform',
       );
@@ -144,7 +147,7 @@ void main() {
 
       final document = SvgParser.parse(svgString);
       final animations = SmilParser.parseAnimations(document);
-      
+
       expect(animations, hasLength(1));
       expect(animations.first.isPaused, isTrue);
 
@@ -221,7 +224,8 @@ void main() {
 
       // After animation ends
       fadeAnim.updateForTime(const Duration(seconds: 2));
-      final opacity = fadeAnim.targetNode.getAttributeValue('opacity') as double;
+      final opacity =
+          fadeAnim.targetNode.getAttributeValue('opacity') as double;
       expect(opacity, closeTo(1.0, 0.01));
     });
 
@@ -246,7 +250,8 @@ void main() {
 
       // During the 1s delay, backwards fill should show initial value (opacity: 0)
       fadeAnim.updateForTime(const Duration(milliseconds: 500));
-      final opacity = fadeAnim.targetNode.getAttributeValue('opacity') as double;
+      final opacity =
+          fadeAnim.targetNode.getAttributeValue('opacity') as double;
       expect(opacity, closeTo(0.0, 0.01));
     });
 

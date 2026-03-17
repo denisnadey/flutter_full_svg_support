@@ -70,7 +70,9 @@ void _extractCssSelectorAnimations(
             .join('; ');
 
         // Parse multiple animations from the style
-        final cssAnimations = CssParser.parseMultipleAnimationsFromStyle(styleStr);
+        final cssAnimations = CssParser.parseMultipleAnimationsFromStyle(
+          styleStr,
+        );
         for (final cssAnimation in cssAnimations) {
           final keyframesList = document.cssKeyframes!
               .where((kf) => kf.name == cssAnimation.name)
@@ -144,7 +146,11 @@ bool _matchesSelector(SvgNode node, CssSelector selector) {
 }
 
 /// Match the combinator chain from a given part index backwards
-bool _matchCombinatorChain(SvgNode node, List<CssSelectorPart> parts, int partIndex) {
+bool _matchCombinatorChain(
+  SvgNode node,
+  List<CssSelectorPart> parts,
+  int partIndex,
+) {
   if (partIndex < 0) return true;
 
   final part = parts[partIndex + 1]; // The part after the one we're matching
@@ -162,7 +168,8 @@ bool _matchCombinatorChain(SvgNode node, List<CssSelectorPart> parts, int partIn
       while (ancestor != null) {
         if (_matchesSimpleSelector(ancestor, selectorToMatch)) {
           if (partIndex == 0) return true;
-          if (_matchCombinatorChain(ancestor, parts, partIndex - 1)) return true;
+          if (_matchCombinatorChain(ancestor, parts, partIndex - 1))
+            return true;
         }
         ancestor = ancestor.parent;
       }

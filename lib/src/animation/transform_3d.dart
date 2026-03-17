@@ -25,68 +25,80 @@ class Matrix4x4 {
 
   /// Creates an identity 4x4 matrix.
   factory Matrix4x4.identity() {
-    return Matrix4x4(Float64List.fromList([
-      1, 0, 0, 0, // column 0
-      0, 1, 0, 0, // column 1
-      0, 0, 1, 0, // column 2
-      0, 0, 0, 1, // column 3
-    ]));
+    return Matrix4x4(
+      Float64List.fromList([
+        1, 0, 0, 0, // column 0
+        0, 1, 0, 0, // column 1
+        0, 0, 1, 0, // column 2
+        0, 0, 0, 1, // column 3
+      ]),
+    );
   }
 
   /// Creates a translation matrix.
   factory Matrix4x4.translation(double x, double y, double z) {
-    return Matrix4x4(Float64List.fromList([
-      1, 0, 0, 0, // column 0
-      0, 1, 0, 0, // column 1
-      0, 0, 1, 0, // column 2
-      x, y, z, 1, // column 3
-    ]));
+    return Matrix4x4(
+      Float64List.fromList([
+        1, 0, 0, 0, // column 0
+        0, 1, 0, 0, // column 1
+        0, 0, 1, 0, // column 2
+        x, y, z, 1, // column 3
+      ]),
+    );
   }
 
   /// Creates a scale matrix.
   factory Matrix4x4.scale(double x, double y, double z) {
-    return Matrix4x4(Float64List.fromList([
-      x, 0, 0, 0, // column 0
-      0, y, 0, 0, // column 1
-      0, 0, z, 0, // column 2
-      0, 0, 0, 1, // column 3
-    ]));
+    return Matrix4x4(
+      Float64List.fromList([
+        x, 0, 0, 0, // column 0
+        0, y, 0, 0, // column 1
+        0, 0, z, 0, // column 2
+        0, 0, 0, 1, // column 3
+      ]),
+    );
   }
 
   /// Creates a rotation matrix around the X axis.
   factory Matrix4x4.rotationX(double radians) {
     final c = math.cos(radians);
     final s = math.sin(radians);
-    return Matrix4x4(Float64List.fromList([
-      1, 0, 0, 0, // column 0
-      0, c, s, 0, // column 1
-      0, -s, c, 0, // column 2
-      0, 0, 0, 1, // column 3
-    ]));
+    return Matrix4x4(
+      Float64List.fromList([
+        1, 0, 0, 0, // column 0
+        0, c, s, 0, // column 1
+        0, -s, c, 0, // column 2
+        0, 0, 0, 1, // column 3
+      ]),
+    );
   }
 
   /// Creates a rotation matrix around the Y axis.
   factory Matrix4x4.rotationY(double radians) {
     final c = math.cos(radians);
     final s = math.sin(radians);
-    return Matrix4x4(Float64List.fromList([
-      c, 0, -s, 0, // column 0
-      0, 1, 0, 0, // column 1
-      s, 0, c, 0, // column 2
-      0, 0, 0, 1, // column 3
-    ]));
+    return Matrix4x4(
+      Float64List.fromList([
+        c, 0, -s, 0, // column 0
+        0, 1, 0, 0, // column 1
+        s, 0, c, 0, // column 2
+        0, 0, 0, 1, // column 3
+      ]),
+    );
   }
 
   /// Creates a rotation matrix around the Z axis (equivalent to 2D rotate).
   factory Matrix4x4.rotationZ(double radians) {
     final c = math.cos(radians);
     final s = math.sin(radians);
-    return Matrix4x4(Float64List.fromList([
-      c, s, 0, 0, // column 0
-      -s, c, 0, 0, // column 1
-      0, 0, 1, 0, // column 2
-      0, 0, 0, 1, // column 3
-    ]));
+    return Matrix4x4(
+      Float64List.fromList([
+        c, s, 0, 0, // column 0
+        -s, c, 0, 0, // column 1
+        0, 0, 1, 0, // column 2
+        0, 0, 0, 1, // column 3
+      ]),
+    );
   }
 
   /// Creates a rotation matrix around an arbitrary axis.
@@ -106,24 +118,26 @@ class Matrix4x4 {
     final s = math.sin(radians);
     final omc = 1 - c; // one minus cosine
 
-    return Matrix4x4(Float64List.fromList([
-      nx * nx * omc + c,
-      ny * nx * omc + nz * s,
-      nz * nx * omc - ny * s,
-      0,
-      nx * ny * omc - nz * s,
-      ny * ny * omc + c,
-      nz * ny * omc + nx * s,
-      0,
-      nx * nz * omc + ny * s,
-      ny * nz * omc - nx * s,
-      nz * nz * omc + c,
-      0,
-      0,
-      0,
-      0,
-      1,
-    ]));
+    return Matrix4x4(
+      Float64List.fromList([
+        nx * nx * omc + c,
+        ny * nx * omc + nz * s,
+        nz * nx * omc - ny * s,
+        0,
+        nx * ny * omc - nz * s,
+        ny * ny * omc + c,
+        nz * ny * omc + nx * s,
+        0,
+        nx * nz * omc + ny * s,
+        ny * nz * omc - nx * s,
+        nz * nz * omc + c,
+        0,
+        0,
+        0,
+        0,
+        1,
+      ]),
+    );
   }
 
   /// Creates a perspective projection matrix.
@@ -141,12 +155,14 @@ class Matrix4x4 {
     // | 0  1  0  0          |
     // | 0  0  1  0          |
     // | 0  0  -1/d  1       |
-    return Matrix4x4(Float64List.fromList([
-      1, 0, 0, 0, // column 0
-      0, 1, 0, 0, // column 1
-      0, 0, 1, -1 / distance, // column 2
-      0, 0, 0, 1, // column 3
-    ]));
+    return Matrix4x4(
+      Float64List.fromList([
+        1, 0, 0, 0, // column 0
+        0, 1, 0, 0, // column 1
+        0, 0, 1, -1 / distance, // column 2
+        0, 0, 0, 1, // column 3
+      ]),
+    );
   }
 
   /// Creates a 4x4 matrix from CSS matrix3d() values.
@@ -159,12 +175,14 @@ class Matrix4x4 {
       return Matrix4x4.identity();
     }
     // CSS matrix3d is already in column-major order, same as our storage
-    return Matrix4x4(Float64List.fromList([
-      values[0], values[1], values[2], values[3], // column 0
-      values[4], values[5], values[6], values[7], // column 1
-      values[8], values[9], values[10], values[11], // column 2
-      values[12], values[13], values[14], values[15], // column 3
-    ]));
+    return Matrix4x4(
+      Float64List.fromList([
+        values[0], values[1], values[2], values[3], // column 0
+        values[4], values[5], values[6], values[7], // column 1
+        values[8], values[9], values[10], values[11], // column 2
+        values[12], values[13], values[14], values[15], // column 3
+      ]),
+    );
   }
 
   /// Creates a 4x4 matrix from a 2D CSS matrix() (6 values).
@@ -177,12 +195,14 @@ class Matrix4x4 {
     // | b  d  0  f |
     // | 0  0  1  0 |
     // | 0  0  0  1 |
-    return Matrix4x4(Float64List.fromList([
-      values[0], values[1], 0, 0, // column 0
-      values[2], values[3], 0, 0, // column 1
-      0, 0, 1, 0, // column 2
-      values[4], values[5], 0, 1, // column 3
-    ]));
+    return Matrix4x4(
+      Float64List.fromList([
+        values[0], values[1], 0, 0, // column 0
+        values[2], values[3], 0, 0, // column 1
+        0, 0, 1, 0, // column 2
+        values[4], values[5], 0, 1, // column 3
+      ]),
+    );
   }
 
   final Float64List _storage;

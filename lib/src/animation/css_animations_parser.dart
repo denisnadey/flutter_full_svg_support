@@ -88,7 +88,9 @@ class CssParser {
   /// Expands all shorthand properties in a map of declarations.
   ///
   /// Explicit longhand properties take precedence over expanded values.
-  static Map<String, String> expandAllShorthands(Map<String, String> properties) {
+  static Map<String, String> expandAllShorthands(
+    Map<String, String> properties,
+  ) {
     return CssShorthandExpander.expandAll(properties);
   }
 }

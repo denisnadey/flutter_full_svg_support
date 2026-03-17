@@ -148,13 +148,16 @@ class SvgTransform {
     if (trimmed.endsWith('deg')) {
       return double.tryParse(trimmed.substring(0, trimmed.length - 3)) ?? 0.0;
     } else if (trimmed.endsWith('rad')) {
-      final rad = double.tryParse(trimmed.substring(0, trimmed.length - 3)) ?? 0.0;
+      final rad =
+          double.tryParse(trimmed.substring(0, trimmed.length - 3)) ?? 0.0;
       return rad * 180.0 / math.pi; // Convert to degrees
     } else if (trimmed.endsWith('turn')) {
-      final turn = double.tryParse(trimmed.substring(0, trimmed.length - 4)) ?? 0.0;
+      final turn =
+          double.tryParse(trimmed.substring(0, trimmed.length - 4)) ?? 0.0;
       return turn * 360.0; // Convert to degrees
     } else if (trimmed.endsWith('grad')) {
-      final grad = double.tryParse(trimmed.substring(0, trimmed.length - 4)) ?? 0.0;
+      final grad =
+          double.tryParse(trimmed.substring(0, trimmed.length - 4)) ?? 0.0;
       return grad * 0.9; // Convert to degrees
     } else if (trimmed.endsWith('px')) {
       return double.tryParse(trimmed.substring(0, trimmed.length - 2)) ?? 0.0;

@@ -24,7 +24,12 @@ SvgNode _parseElement(XmlElement element) {
     final attributeType = _inferAttributeType(attrName, isAnimationElement);
     final parsedValue = _parseAttributeValue(attrValue, attributeType);
 
-    node.setAttribute(attrName, parsedValue, type: attributeType, rawValue: attrValue);
+    node.setAttribute(
+      attrName,
+      parsedValue,
+      type: attributeType,
+      rawValue: attrValue,
+    );
   }
 
   // Сохраняем прямой текстовый контент для текстовых узлов.
@@ -49,10 +54,7 @@ SvgNode _parseElement(XmlElement element) {
 }
 
 String? _extractDirectText(XmlElement element) {
-  final raw = element.children
-      .whereType<XmlText>()
-      .map((n) => n.value)
-      .join();
+  final raw = element.children.whereType<XmlText>().map((n) => n.value).join();
   if (raw.trim().isEmpty) {
     return null;
   }

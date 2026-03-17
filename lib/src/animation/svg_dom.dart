@@ -216,7 +216,8 @@ class SvgNode {
       type: type,
     );
     // Store raw value if provided, otherwise use string representation
-    _rawAttributes[name] = rawValue ?? (value is String ? value : value.toString());
+    _rawAttributes[name] =
+        rawValue ?? (value is String ? value : value.toString());
   }
 
   /// Найти узел по ID в поддереве

@@ -104,7 +104,8 @@ class CssSelectorRule {
 
 /// CSS Transition property
 class CssTransition {
-  final String property; // property name to transition (e.g., 'opacity', 'transform', 'all')
+  final String
+  property; // property name to transition (e.g., 'opacity', 'transform', 'all')
   final Duration duration;
   final String timingFunction;
   final Duration delay;
@@ -119,15 +120,12 @@ class CssTransition {
 
 /// CSS @media rule
 class CssMediaRule {
-  final String query; // raw media query string (e.g., '(prefers-color-scheme: dark)')
+  final String
+  query; // raw media query string (e.g., '(prefers-color-scheme: dark)')
   final List<CssSelectorRule> rules; // CSS rules within this @media block
   final CssMediaCondition? condition; // parsed condition for evaluation
 
-  CssMediaRule({
-    required this.query,
-    required this.rules,
-    this.condition,
-  });
+  CssMediaRule({required this.query, required this.rules, this.condition});
 }
 
 /// Parsed media query condition for evaluation

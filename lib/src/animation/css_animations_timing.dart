@@ -168,14 +168,14 @@ CssAnimation? _parseAnimationFromStyle(String styleText) {
 List<CssAnimation> _parseMultipleAnimations(String animationValue) {
   final animations = <CssAnimation>[];
   final rawAnimations = _splitAnimationValues(animationValue);
-  
+
   for (final raw in rawAnimations) {
     final animation = _parseAnimation(raw.trim());
     if (animation != null) {
       animations.add(animation);
     }
   }
-  
+
   return animations;
 }
 
@@ -184,7 +184,7 @@ List<String> _splitAnimationValues(String value) {
   final result = <String>[];
   final buffer = StringBuffer();
   int parenDepth = 0;
-  
+
   for (int i = 0; i < value.length; i++) {
     final char = value[i];
     if (char == '(') {
@@ -203,12 +203,12 @@ List<String> _splitAnimationValues(String value) {
       buffer.write(char);
     }
   }
-  
+
   final remaining = buffer.toString().trim();
   if (remaining.isNotEmpty) {
     result.add(remaining);
   }
-  
+
   return result;
 }
 
@@ -220,7 +220,8 @@ Duration? _parseDurationString(String durationStr) {
     if (ms != null) return Duration(microseconds: (ms * 1000).toInt());
   } else if (str.endsWith('s')) {
     final seconds = double.tryParse(str.replaceAll('s', ''));
-    if (seconds != null) return Duration(microseconds: (seconds * 1000000).toInt());
+    if (seconds != null)
+      return Duration(microseconds: (seconds * 1000000).toInt());
   }
   return null;
 }
@@ -289,11 +290,11 @@ List<String> _tokenizeAnimationShorthand(String input) {
 List<CssAnimation> _parseMultipleAnimationsFromStyle(String styleText) {
   final properties = _parseProperties(styleText);
   final animationValue = properties['animation'];
-  
+
   if (animationValue != null) {
     return _parseMultipleAnimations(animationValue);
   }
-  
+
   // Fall back to single animation from individual properties
   final single = _parseAnimationFromStyle(styleText);
   return single != null ? [single] : [];
@@ -303,13 +304,13 @@ List<CssAnimation> _parseMultipleAnimationsFromStyle(String styleText) {
 CssTransition? _parseTransition(String transitionValue) {
   final parts = _tokenizeAnimationShorthand(transitionValue.trim());
   if (parts.isEmpty) return null;
-  
+
   String property = 'all';
   Duration duration = Duration.zero;
   String timingFunction = 'ease';
   Duration delay = Duration.zero;
   bool durationFound = false;
-  
+
   for (final part in parts) {
     final parsedTime = _parseTimeToken(part);
     if (parsedTime != null && !durationFound) {
@@ -317,25 +318,26 @@ CssTransition? _parseTransition(String transitionValue) {
       durationFound = true;
       continue;
     }
-    
+
     if (parsedTime != null) {
       delay = parsedTime;
       continue;
     }
-    
+
     if (_isTimingFunction(part)) {
       timingFunction = part;
       continue;
     }
-    
+
     // Property name (first non-time, non-timing-function value)
-    if (!['all', 'none'].contains(part.toLowerCase()) && !_isTimingFunction(part)) {
+    if (!['all', 'none'].contains(part.toLowerCase()) &&
+        !_isTimingFunction(part)) {
       property = part;
     } else if (part.toLowerCase() == 'all' || part.toLowerCase() == 'none') {
       property = part.toLowerCase();
     }
   }
-  
+
   return CssTransition(
     property: property,
     duration: duration,
@@ -348,11 +350,11 @@ CssTransition? _parseTransition(String transitionValue) {
 List<CssTransition> _parseTransitionsFromStyle(String styleText) {
   final properties = _parseProperties(styleText);
   final transitionValue = properties['transition'];
-  
+
   if (transitionValue != null) {
     final transitions = <CssTransition>[];
     final rawTransitions = _splitAnimationValues(transitionValue);
-    
+
     for (final raw in rawTransitions) {
       final transition = _parseTransition(raw.trim());
       if (transition != null) {
@@ -361,53 +363,71 @@ List<CssTransition> _parseTransitionsFromStyle(String styleText) {
     }
     return transitions;
   }
-  
+
   // Fall back to individual transition-* properties
   final transitionProperty = properties['transition-property'];
   if (transitionProperty == null) return [];
-  
+
   final durationStr = properties['transition-duration'] ?? '0s';
   final timingStr = properties['transition-timing-function'] ?? 'ease';
   final delayStr = properties['transition-delay'] ?? '0s';
-  
+
   final props = transitionProperty.split(',').map((p) => p.trim()).toList();
-  final durations = durationStr.split(',').map((d) => _parseDurationString(d.trim())).toList();
+  final durations = durationStr
+      .split(',')
+      .map((d) => _parseDurationString(d.trim()))
+      .toList();
   final timings = timingStr.split(',').map((t) => t.trim()).toList();
-  final delays = delayStr.split(',').map((d) => _parseDurationString(d.trim())).toList();
-  
+  final delays = delayStr
+      .split(',')
+      .map((d) => _parseDurationString(d.trim()))
+      .toList();
+
   final transitions = <CssTransition>[];
   for (int i = 0; i < props.length; i++) {
-    transitions.add(CssTransition(
-      property: props[i],
-      duration: durations.length > i ? (durations[i] ?? Duration.zero) : (durations.isNotEmpty ? (durations.last ?? Duration.zero) : Duration.zero),
-      timingFunction: timings.length > i ? timings[i] : (timings.isNotEmpty ? timings.last : 'ease'),
-      delay: delays.length > i ? (delays[i] ?? Duration.zero) : (delays.isNotEmpty ? (delays.last ?? Duration.zero) : Duration.zero),
-    ));
+    transitions.add(
+      CssTransition(
+        property: props[i],
+        duration: durations.length > i
+            ? (durations[i] ?? Duration.zero)
+            : (durations.isNotEmpty
+                  ? (durations.last ?? Duration.zero)
+                  : Duration.zero),
+        timingFunction: timings.length > i
+            ? timings[i]
+            : (timings.isNotEmpty ? timings.last : 'ease'),
+        delay: delays.length > i
+            ? (delays[i] ?? Duration.zero)
+            : (delays.isNotEmpty
+                  ? (delays.last ?? Duration.zero)
+                  : Duration.zero),
+      ),
+    );
   }
-  
+
   return transitions;
 }
 
 /// Parse @media rules from CSS text
 List<CssMediaRule> _parseMediaRules(String cssText) {
   final mediaRules = <CssMediaRule>[];
-  
+
   final mediaRegex = RegExp(
     r'@media\s+([^{]+)\s*\{',
     multiLine: true,
     caseSensitive: false,
   );
-  
+
   int pos = 0;
   while (pos < cssText.length) {
     final remainingText = cssText.substring(pos);
     final match = mediaRegex.firstMatch(remainingText);
     if (match == null) break;
-    
+
     final query = match.group(1)!.trim();
     final relativeStart = match.end;
     final start = pos + relativeStart;
-    
+
     // Find closing brace, accounting for nesting
     int depth = 1;
     int end = start;
@@ -416,29 +436,27 @@ List<CssMediaRule> _parseMediaRules(String cssText) {
       if (cssText[end] == '}') depth--;
       end++;
     }
-    
+
     if (depth == 0) {
       final body = cssText.substring(start, end - 1);
       final rules = _parseSelectorRules(body);
       final condition = _parseMediaCondition(query);
-      
-      mediaRules.add(CssMediaRule(
-        query: query,
-        rules: rules,
-        condition: condition,
-      ));
+
+      mediaRules.add(
+        CssMediaRule(query: query, rules: rules, condition: condition),
+      );
     }
-    
+
     pos = end;
   }
-  
+
   return mediaRules;
 }
 
 /// Parse a media query condition
 CssMediaCondition? _parseMediaCondition(String query) {
   final normalized = query.toLowerCase().trim();
-  
+
   // prefers-color-scheme
   final colorSchemeMatch = RegExp(
     r'\(\s*prefers-color-scheme\s*:\s*(dark|light)\s*\)',
@@ -449,7 +467,7 @@ CssMediaCondition? _parseMediaCondition(String query) {
       value: colorSchemeMatch.group(1),
     );
   }
-  
+
   // min-width / max-width / min-height / max-height
   final sizeMatch = RegExp(
     r'\(\s*(min-width|max-width|min-height|max-height)\s*:\s*([\d.]+)(px|em|rem|vw|vh)?\s*\)',
@@ -458,7 +476,7 @@ CssMediaCondition? _parseMediaCondition(String query) {
     final featureName = sizeMatch.group(1)!;
     final numValue = double.tryParse(sizeMatch.group(2) ?? '');
     final unit = sizeMatch.group(3) ?? 'px';
-    
+
     final feature = switch (featureName) {
       'min-width' => CssMediaFeature.minWidth,
       'max-width' => CssMediaFeature.maxWidth,
@@ -466,13 +484,13 @@ CssMediaCondition? _parseMediaCondition(String query) {
       'max-height' => CssMediaFeature.maxHeight,
       _ => CssMediaFeature.unknown,
     };
-    
+
     return CssMediaCondition(
       feature: feature,
       numericValue: numValue,
       unit: unit,
     );
   }
-  
+
   return null;
 }

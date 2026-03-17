@@ -12,7 +12,10 @@ void main() {
       });
 
       test('expands font with style and weight', () {
-        final result = CssParser.expandShorthand('font', 'italic bold 16px Arial');
+        final result = CssParser.expandShorthand(
+          'font',
+          'italic bold 16px Arial',
+        );
 
         expect(result['font-style'], equals('italic'));
         expect(result['font-weight'], equals('bold'));
@@ -86,7 +89,10 @@ void main() {
       });
 
       test('expands animation with timing function', () {
-        final result = CssParser.expandShorthand('animation', 'fade 2s ease-in');
+        final result = CssParser.expandShorthand(
+          'animation',
+          'fade 2s ease-in',
+        );
 
         expect(result['animation-name'], equals('fade'));
         expect(result['animation-duration'], equals('2s'));
@@ -102,7 +108,10 @@ void main() {
       });
 
       test('expands animation with iteration count', () {
-        final result = CssParser.expandShorthand('animation', 'pulse 1s infinite');
+        final result = CssParser.expandShorthand(
+          'animation',
+          'pulse 1s infinite',
+        );
 
         expect(result['animation-name'], equals('pulse'));
         expect(result['animation-duration'], equals('1s'));
@@ -110,7 +119,10 @@ void main() {
       });
 
       test('expands animation with direction', () {
-        final result = CssParser.expandShorthand('animation', 'bounce 1s alternate');
+        final result = CssParser.expandShorthand(
+          'animation',
+          'bounce 1s alternate',
+        );
 
         expect(result['animation-name'], equals('bounce'));
         expect(result['animation-duration'], equals('1s'));
@@ -118,7 +130,10 @@ void main() {
       });
 
       test('expands animation with fill mode', () {
-        final result = CssParser.expandShorthand('animation', 'grow 1s forwards');
+        final result = CssParser.expandShorthand(
+          'animation',
+          'grow 1s forwards',
+        );
 
         expect(result['animation-name'], equals('grow'));
         expect(result['animation-duration'], equals('1s'));
@@ -148,7 +163,10 @@ void main() {
 
         expect(result['animation-name'], equals('move'));
         expect(result['animation-duration'], equals('1s'));
-        expect(result['animation-timing-function'], equals('cubic-bezier(0.4, 0, 0.2, 1)'));
+        expect(
+          result['animation-timing-function'],
+          equals('cubic-bezier(0.4, 0, 0.2, 1)'),
+        );
       });
 
       test('expands multiple animations', () {
@@ -185,7 +203,10 @@ void main() {
       });
 
       test('expands transition with timing function', () {
-        final result = CssParser.expandShorthand('transition', 'all 0.5s ease-out');
+        final result = CssParser.expandShorthand(
+          'transition',
+          'all 0.5s ease-out',
+        );
 
         expect(result['transition-property'], equals('all'));
         expect(result['transition-duration'], equals('0.5s'));
@@ -193,7 +214,10 @@ void main() {
       });
 
       test('expands transition with delay', () {
-        final result = CssParser.expandShorthand('transition', 'transform 1s 200ms');
+        final result = CssParser.expandShorthand(
+          'transition',
+          'transform 1s 200ms',
+        );
 
         expect(result['transition-property'], equals('transform'));
         expect(result['transition-duration'], equals('1s'));
@@ -220,7 +244,10 @@ void main() {
 
         expect(result['transition-property'], equals('opacity, transform'));
         expect(result['transition-duration'], equals('0.3s, 0.5s'));
-        expect(result['transition-timing-function'], equals('ease, ease-in-out'));
+        expect(
+          result['transition-timing-function'],
+          equals('ease, ease-in-out'),
+        );
       });
 
       test('handles transition none', () {
@@ -259,7 +286,10 @@ void main() {
       });
 
       test('expands four value margin', () {
-        final result = CssParser.expandShorthand('margin', '10px 20px 30px 40px');
+        final result = CssParser.expandShorthand(
+          'margin',
+          '10px 20px 30px 40px',
+        );
 
         expect(result['margin-top'], equals('10px'));
         expect(result['margin-right'], equals('20px'));
@@ -315,7 +345,10 @@ void main() {
       });
 
       test('expands four value padding', () {
-        final result = CssParser.expandShorthand('padding', '5px 10px 15px 20px');
+        final result = CssParser.expandShorthand(
+          'padding',
+          '5px 10px 15px 20px',
+        );
 
         expect(result['padding-top'], equals('5px'));
         expect(result['padding-right'], equals('10px'));
@@ -369,7 +402,10 @@ void main() {
       });
 
       test('expands border-width shorthand', () {
-        final result = CssParser.expandShorthand('border-width', '1px 2px 3px 4px');
+        final result = CssParser.expandShorthand(
+          'border-width',
+          '1px 2px 3px 4px',
+        );
 
         expect(result['border-top-width'], equals('1px'));
         expect(result['border-right-width'], equals('2px'));
@@ -378,7 +414,10 @@ void main() {
       });
 
       test('expands border-style shorthand', () {
-        final result = CssParser.expandShorthand('border-style', 'solid dashed');
+        final result = CssParser.expandShorthand(
+          'border-style',
+          'solid dashed',
+        );
 
         expect(result['border-top-style'], equals('solid'));
         expect(result['border-right-style'], equals('dashed'));
@@ -387,7 +426,10 @@ void main() {
       });
 
       test('expands border-color shorthand', () {
-        final result = CssParser.expandShorthand('border-color', 'red blue green');
+        final result = CssParser.expandShorthand(
+          'border-color',
+          'red blue green',
+        );
 
         expect(result['border-top-color'], equals('red'));
         expect(result['border-right-color'], equals('blue'));
@@ -405,7 +447,10 @@ void main() {
       });
 
       test('expands border-radius with horizontal/vertical syntax', () {
-        final result = CssParser.expandShorthand('border-radius', '10px 20px / 5px 10px');
+        final result = CssParser.expandShorthand(
+          'border-radius',
+          '10px 20px / 5px 10px',
+        );
 
         expect(result['border-top-left-radius'], equals('10px 5px'));
         expect(result['border-top-right-radius'], equals('20px 10px'));
@@ -442,7 +487,10 @@ void main() {
       });
 
       test('handles background with url', () {
-        final result = CssParser.expandShorthand('background', 'url(image.png)');
+        final result = CssParser.expandShorthand(
+          'background',
+          'url(image.png)',
+        );
 
         expect(result['background-image'], equals('url(image.png)'));
       });
@@ -474,10 +522,7 @@ void main() {
       });
 
       test('explicit longhands take precedence over expanded', () {
-        final properties = {
-          'margin': '10px',
-          'margin-top': '20px',
-        };
+        final properties = {'margin': '10px', 'margin-top': '20px'};
 
         final result = CssParser.expandAllShorthands(properties);
 

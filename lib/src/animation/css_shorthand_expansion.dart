@@ -134,7 +134,9 @@ class CssShorthandExpander {
     // Parse required font-size (possibly with line-height)
     if (tokenIndex < tokens.length) {
       final sizeToken = tokens[tokenIndex];
-      final sizeLineHeightMatch = RegExp(r'^([^\s/]+)/([^\s]+)$').firstMatch(sizeToken);
+      final sizeLineHeightMatch = RegExp(
+        r'^([^\s/]+)/([^\s]+)$',
+      ).firstMatch(sizeToken);
 
       if (sizeLineHeightMatch != null) {
         result['font-size'] = sizeLineHeightMatch.group(1)!;
@@ -199,12 +201,7 @@ class CssShorthandExpander {
   }
 
   static bool _isFontWeight(String value) {
-    const keywords = {
-      'normal',
-      'bold',
-      'bolder',
-      'lighter',
-    };
+    const keywords = {'normal', 'bold', 'bolder', 'lighter'};
     final lower = value.toLowerCase();
     if (keywords.contains(lower)) return true;
 
@@ -234,8 +231,10 @@ class CssShorthandExpander {
     }
 
     // Length or percentage value
-    return RegExp(r'^[+-]?(\d+\.?\d*|\.\d+)(px|em|rem|pt|pc|in|cm|mm|ex|ch|vw|vh|vmin|vmax|%)?$', caseSensitive: false)
-        .hasMatch(value);
+    return RegExp(
+      r'^[+-]?(\d+\.?\d*|\.\d+)(px|em|rem|pt|pc|in|cm|mm|ex|ch|vw|vh|vmin|vmax|%)?$',
+      caseSensitive: false,
+    ).hasMatch(value);
   }
 
   static List<String> _tokenizeFontShorthand(String input) {
@@ -409,9 +408,11 @@ class CssShorthandExpander {
     final result = <String, String>{};
     if (name != null) result['animation-name'] = name;
     if (duration != null) result['animation-duration'] = duration;
-    if (timingFunction != null) result['animation-timing-function'] = timingFunction;
+    if (timingFunction != null)
+      result['animation-timing-function'] = timingFunction;
     if (delay != null) result['animation-delay'] = delay;
-    if (iterationCount != null) result['animation-iteration-count'] = iterationCount;
+    if (iterationCount != null)
+      result['animation-iteration-count'] = iterationCount;
     if (direction != null) result['animation-direction'] = direction;
     if (fillMode != null) result['animation-fill-mode'] = fillMode;
     if (playState != null) result['animation-play-state'] = playState;
@@ -420,7 +421,10 @@ class CssShorthandExpander {
   }
 
   static bool _isTimeValue(String value) {
-    return RegExp(r'^[+-]?(\d+\.?\d*|\.\d+)(ms|s)$', caseSensitive: false).hasMatch(value.trim());
+    return RegExp(
+      r'^[+-]?(\d+\.?\d*|\.\d+)(ms|s)$',
+      caseSensitive: false,
+    ).hasMatch(value.trim());
   }
 
   static bool _isAnimationDirection(String value) {
@@ -519,7 +523,10 @@ class CssShorthandExpander {
   static Map<String, String> _parseSingleTransitionToComponents(String value) {
     // Handle 'none' or 'inherit'
     final lower = value.toLowerCase().trim();
-    if (lower == 'none' || lower == 'inherit' || lower == 'initial' || lower == 'unset') {
+    if (lower == 'none' ||
+        lower == 'inherit' ||
+        lower == 'initial' ||
+        lower == 'unset') {
       return {'transition-property': lower};
     }
 
@@ -562,7 +569,8 @@ class CssShorthandExpander {
     final result = <String, String>{};
     if (property != null) result['transition-property'] = property;
     if (duration != null) result['transition-duration'] = duration;
-    if (timingFunction != null) result['transition-timing-function'] = timingFunction;
+    if (timingFunction != null)
+      result['transition-timing-function'] = timingFunction;
     if (delay != null) result['transition-delay'] = delay;
 
     return result.isNotEmpty ? result : {'transition': value};
@@ -579,7 +587,10 @@ class CssShorthandExpander {
   /// - 3 values: top | horizontal | bottom
   /// - 4 values: top | right | bottom | left
   static Map<String, String> _expandBoxModel(String property, String value) {
-    final values = value.split(RegExp(r'\s+')).where((v) => v.isNotEmpty).toList();
+    final values = value
+        .split(RegExp(r'\s+'))
+        .where((v) => v.isNotEmpty)
+        .toList();
 
     if (values.isEmpty) {
       return {property: value};
@@ -641,7 +652,10 @@ class CssShorthandExpander {
   ///
   /// Format: border: width style color
   static Map<String, String> _expandBorder(String value) {
-    final tokens = value.split(RegExp(r'\s+')).where((v) => v.isNotEmpty).toList();
+    final tokens = value
+        .split(RegExp(r'\s+'))
+        .where((v) => v.isNotEmpty)
+        .toList();
 
     String? width;
     String? style;
@@ -700,12 +714,18 @@ class CssShorthandExpander {
   static bool _isBorderWidth(String value) {
     const keywords = {'thin', 'medium', 'thick'};
     if (keywords.contains(value.toLowerCase())) return true;
-    return RegExp(r'^[+-]?(\d+\.?\d*|\.\d+)(px|em|rem|pt)?$', caseSensitive: false).hasMatch(value);
+    return RegExp(
+      r'^[+-]?(\d+\.?\d*|\.\d+)(px|em|rem|pt)?$',
+      caseSensitive: false,
+    ).hasMatch(value);
   }
 
   /// Expands border-width shorthand (1-4 values).
   static Map<String, String> _expandBorderWidth(String value) {
-    final values = value.split(RegExp(r'\s+')).where((v) => v.isNotEmpty).toList();
+    final values = value
+        .split(RegExp(r'\s+'))
+        .where((v) => v.isNotEmpty)
+        .toList();
 
     if (values.isEmpty) {
       return {'border-width': value};
@@ -745,7 +765,10 @@ class CssShorthandExpander {
 
   /// Expands border-style shorthand (1-4 values).
   static Map<String, String> _expandBorderStyle(String value) {
-    final values = value.split(RegExp(r'\s+')).where((v) => v.isNotEmpty).toList();
+    final values = value
+        .split(RegExp(r'\s+'))
+        .where((v) => v.isNotEmpty)
+        .toList();
 
     if (values.isEmpty) {
       return {'border-style': value};
@@ -785,7 +808,10 @@ class CssShorthandExpander {
 
   /// Expands border-color shorthand (1-4 values).
   static Map<String, String> _expandBorderColor(String value) {
-    final values = value.split(RegExp(r'\s+')).where((v) => v.isNotEmpty).toList();
+    final values = value
+        .split(RegExp(r'\s+'))
+        .where((v) => v.isNotEmpty)
+        .toList();
 
     if (values.isEmpty) {
       return {'border-color': value};
@@ -848,7 +874,10 @@ class CssShorthandExpander {
   }
 
   static List<String> _parseBorderRadiusValues(String value) {
-    final values = value.split(RegExp(r'\s+')).where((v) => v.isNotEmpty).toList();
+    final values = value
+        .split(RegExp(r'\s+'))
+        .where((v) => v.isNotEmpty)
+        .toList();
 
     if (values.isEmpty) {
       return ['0', '0', '0', '0'];
@@ -863,7 +892,12 @@ class CssShorthandExpander {
         return [values[0], values[1], values[2], values[1]];
       case 4:
       default:
-        return [values[0], values[1], values[2], values.length > 3 ? values[3] : values[1]];
+        return [
+          values[0],
+          values[1],
+          values[2],
+          values.length > 3 ? values[3] : values[1],
+        ];
     }
   }
 
@@ -878,7 +912,10 @@ class CssShorthandExpander {
     final lower = value.toLowerCase().trim();
 
     // Handle keywords
-    if (lower == 'none' || lower == 'inherit' || lower == 'initial' || lower == 'unset') {
+    if (lower == 'none' ||
+        lower == 'inherit' ||
+        lower == 'initial' ||
+        lower == 'unset') {
       return {'background-color': 'transparent', 'background-image': lower};
     }
 

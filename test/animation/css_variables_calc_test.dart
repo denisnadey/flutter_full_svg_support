@@ -51,16 +51,20 @@ void main() {
     test('Resolve var() with fallback when variable is missing', () {
       final node = SvgNode(tagName: 'rect');
 
-      final resolved =
-          CssVariableResolver.resolveValue('var(--undefined, red)', node);
+      final resolved = CssVariableResolver.resolveValue(
+        'var(--undefined, red)',
+        node,
+      );
       expect(resolved, equals('red'));
     });
 
     test('Resolve var() without fallback returns empty when missing', () {
       final node = SvgNode(tagName: 'rect');
 
-      final resolved =
-          CssVariableResolver.resolveValue('var(--undefined)', node);
+      final resolved = CssVariableResolver.resolveValue(
+        'var(--undefined)',
+        node,
+      );
       expect(resolved, equals(''));
     });
 
@@ -69,8 +73,7 @@ void main() {
       node.cssCustomProperties.set('--inner', 'green');
       node.cssCustomProperties.set('--outer', 'var(--inner)');
 
-      final resolved =
-          CssVariableResolver.resolveValue('var(--outer)', node);
+      final resolved = CssVariableResolver.resolveValue('var(--outer)', node);
       expect(resolved, equals('green'));
     });
 
@@ -158,7 +161,10 @@ void main() {
     });
 
     test('calc() with em units', () {
-      final result = CssCalcEvaluator.evaluate('calc(2em + 1em)', fontSize: 16.0);
+      final result = CssCalcEvaluator.evaluate(
+        'calc(2em + 1em)',
+        fontSize: 16.0,
+      );
       expect(result, equals(48.0)); // 3em * 16px = 48px
     });
 
@@ -168,7 +174,10 @@ void main() {
     });
 
     test('calc() with percentage', () {
-      final result = CssCalcEvaluator.evaluate('calc(50%)', containerSize: 200.0);
+      final result = CssCalcEvaluator.evaluate(
+        'calc(50%)',
+        containerSize: 200.0,
+      );
       expect(result, equals(100.0));
     });
 
@@ -213,10 +222,7 @@ void main() {
       final node = SvgNode(tagName: 'rect');
       node.cssCustomProperties.set('--size', '50');
 
-      final resolved = CssValueResolver.resolve(
-        'calc(var(--size) * 2)',
-        node,
-      );
+      final resolved = CssValueResolver.resolve('calc(var(--size) * 2)', node);
       expect(resolved, equals('calc(50 * 2)'));
 
       final numeric = CssValueResolver.resolveToNumber(
@@ -338,8 +344,10 @@ void main() {
   group('Edge Cases', () {
     test('Empty var() fallback', () {
       final node = SvgNode(tagName: 'rect');
-      final resolved =
-          CssVariableResolver.resolveValue('var(--missing, )', node);
+      final resolved = CssVariableResolver.resolveValue(
+        'var(--missing, )',
+        node,
+      );
       expect(resolved, equals(''));
     });
 

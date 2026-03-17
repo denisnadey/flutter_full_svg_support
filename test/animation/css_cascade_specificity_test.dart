@@ -220,21 +220,14 @@ void main() {
     }
 
     test('resolves inline style value', () {
-      final node = createNode(
-        tag: 'rect',
-        style: 'fill: red',
-      );
+      final node = createNode(tag: 'rect', style: 'fill: red');
 
       final resolver = CssCascadeResolver(cssRules: []);
       expect(resolver.resolveProperty(node, 'fill'), equals('red'));
     });
 
     test('inline style beats CSS rule', () {
-      final node = createNode(
-        tag: 'rect',
-        id: 'myRect',
-        style: 'fill: red',
-      );
+      final node = createNode(tag: 'rect', id: 'myRect', style: 'fill: red');
 
       final cssRules = [
         CssSelectorRule(selector: '#myRect', declarations: {'fill': 'blue'}),
@@ -260,11 +253,7 @@ void main() {
     });
 
     test('ID selector beats class selector', () {
-      final node = createNode(
-        tag: 'rect',
-        id: 'myRect',
-        className: 'box',
-      );
+      final node = createNode(tag: 'rect', id: 'myRect', className: 'box');
 
       final cssRules = [
         CssSelectorRule(selector: '.box', declarations: {'fill': 'red'}),
@@ -276,10 +265,7 @@ void main() {
     });
 
     test('class selector beats element selector', () {
-      final node = createNode(
-        tag: 'rect',
-        className: 'box',
-      );
+      final node = createNode(tag: 'rect', className: 'box');
 
       final cssRules = [
         CssSelectorRule(selector: 'rect', declarations: {'fill': 'red'}),
@@ -291,10 +277,7 @@ void main() {
     });
 
     test('later rule wins when specificity is equal', () {
-      final node = createNode(
-        tag: 'rect',
-        className: 'box',
-      );
+      final node = createNode(tag: 'rect', className: 'box');
 
       final cssRules = [
         CssSelectorRule(selector: '.box', declarations: {'fill': 'red'}),
@@ -314,7 +297,9 @@ void main() {
 
       final cssRules = [
         CssSelectorRule(
-            selector: '.box', declarations: {'fill': 'blue !important'}),
+          selector: '.box',
+          declarations: {'fill': 'blue !important'},
+        ),
       ];
 
       final resolver = CssCascadeResolver(cssRules: cssRules);
@@ -330,7 +315,9 @@ void main() {
 
       final cssRules = [
         CssSelectorRule(
-            selector: '.box', declarations: {'fill': 'blue !important'}),
+          selector: '.box',
+          declarations: {'fill': 'blue !important'},
+        ),
       ];
 
       final resolver = CssCascadeResolver(cssRules: cssRules);
@@ -338,15 +325,9 @@ void main() {
     });
 
     test('inheritable property cascades from parent', () {
-      final parent = createNode(
-        tag: 'g',
-        attributes: {'fill': 'red'},
-      );
+      final parent = createNode(tag: 'g', attributes: {'fill': 'red'});
 
-      final child = createNode(
-        tag: 'rect',
-        parent: parent,
-      );
+      final child = createNode(tag: 'rect', parent: parent);
 
       parent.addChild(child);
 
@@ -355,10 +336,7 @@ void main() {
     });
 
     test('child value overrides inherited value', () {
-      final parent = createNode(
-        tag: 'g',
-        attributes: {'fill': 'red'},
-      );
+      final parent = createNode(tag: 'g', attributes: {'fill': 'red'});
 
       final child = createNode(
         tag: 'rect',
@@ -373,15 +351,9 @@ void main() {
     });
 
     test('non-inheritable property does not cascade', () {
-      final parent = createNode(
-        tag: 'g',
-        attributes: {'opacity': '0.5'},
-      );
+      final parent = createNode(tag: 'g', attributes: {'opacity': '0.5'});
 
-      final child = createNode(
-        tag: 'rect',
-        parent: parent,
-      );
+      final child = createNode(tag: 'rect', parent: parent);
 
       parent.addChild(child);
 
@@ -391,10 +363,7 @@ void main() {
     });
 
     test('explicit inherit keyword inherits from parent', () {
-      final parent = createNode(
-        tag: 'g',
-        attributes: {'opacity': '0.5'},
-      );
+      final parent = createNode(tag: 'g', attributes: {'opacity': '0.5'});
 
       final child = createNode(
         tag: 'rect',
@@ -410,15 +379,13 @@ void main() {
     });
 
     test('multiple matching rules with different properties', () {
-      final node = createNode(
-        tag: 'rect',
-        id: 'myRect',
-        className: 'box',
-      );
+      final node = createNode(tag: 'rect', id: 'myRect', className: 'box');
 
       final cssRules = [
         CssSelectorRule(
-            selector: '.box', declarations: {'fill': 'red', 'stroke': 'blue'}),
+          selector: '.box',
+          declarations: {'fill': 'red', 'stroke': 'blue'},
+        ),
         CssSelectorRule(selector: '#myRect', declarations: {'fill': 'green'}),
       ];
 
@@ -445,15 +412,9 @@ void main() {
     });
 
     test('resolveOwnProperty does not inherit', () {
-      final parent = createNode(
-        tag: 'g',
-        attributes: {'fill': 'red'},
-      );
+      final parent = createNode(tag: 'g', attributes: {'fill': 'red'});
 
-      final child = createNode(
-        tag: 'rect',
-        parent: parent,
-      );
+      final child = createNode(tag: 'rect', parent: parent);
 
       parent.addChild(child);
 
@@ -462,21 +423,12 @@ void main() {
     });
 
     test('deep inheritance chain', () {
-      final grandparent = createNode(
-        tag: 'svg',
-        attributes: {'fill': 'red'},
-      );
+      final grandparent = createNode(tag: 'svg', attributes: {'fill': 'red'});
 
-      final parent = createNode(
-        tag: 'g',
-        parent: grandparent,
-      );
+      final parent = createNode(tag: 'g', parent: grandparent);
       grandparent.addChild(parent);
 
-      final child = createNode(
-        tag: 'rect',
-        parent: parent,
-      );
+      final child = createNode(tag: 'rect', parent: parent);
       parent.addChild(child);
 
       final resolver = CssCascadeResolver(cssRules: []);
@@ -489,10 +441,7 @@ void main() {
         attributes: {'font-family': 'Arial', 'font-size': '16'},
       );
 
-      final child = createNode(
-        tag: 'tspan',
-        parent: parent,
-      );
+      final child = createNode(tag: 'tspan', parent: parent);
       parent.addChild(child);
 
       final resolver = CssCascadeResolver(cssRules: []);
@@ -510,16 +459,16 @@ void main() {
         },
       );
 
-      final child = createNode(
-        tag: 'path',
-        parent: parent,
-      );
+      final child = createNode(tag: 'path', parent: parent);
       parent.addChild(child);
 
       final resolver = CssCascadeResolver(cssRules: []);
       expect(resolver.resolveProperty(child, 'stroke'), equals('black'));
       expect(resolver.resolveProperty(child, 'stroke-width'), equals('2'));
-      expect(resolver.resolveProperty(child, 'stroke-linecap'), equals('round'));
+      expect(
+        resolver.resolveProperty(child, 'stroke-linecap'),
+        equals('round'),
+      );
     });
 
     test('element type selector matches correctly', () {
@@ -537,10 +486,7 @@ void main() {
     });
 
     test('case insensitive property names', () {
-      final node = createNode(
-        tag: 'rect',
-        style: 'FILL: red; Stroke: blue',
-      );
+      final node = createNode(tag: 'rect', style: 'FILL: red; Stroke: blue');
 
       final resolver = CssCascadeResolver(cssRules: []);
       expect(resolver.resolveProperty(node, 'fill'), equals('red'));
@@ -565,7 +511,9 @@ void main() {
 
     test('empty selector returns zero specificity', () {
       expect(
-          CssSpecificityCalculator.calculate(''), equals(CssSpecificity.zero));
+        CssSpecificityCalculator.calculate(''),
+        equals(CssSpecificity.zero),
+      );
     });
 
     test('empty CSS rules', () {
@@ -609,9 +557,14 @@ void main() {
 
       final cssRules = [
         CssSelectorRule(selector: '.primary', declarations: {'fill': 'red'}),
-        CssSelectorRule(selector: '.secondary', declarations: {'stroke': 'blue'}),
         CssSelectorRule(
-            selector: '.highlight', declarations: {'opacity': '0.5'}),
+          selector: '.secondary',
+          declarations: {'stroke': 'blue'},
+        ),
+        CssSelectorRule(
+          selector: '.highlight',
+          declarations: {'opacity': '0.5'},
+        ),
       ];
 
       final resolver = CssCascadeResolver(cssRules: cssRules);

@@ -13,25 +13,36 @@ void main() {
         expect(rules.first.selector, equals('rect'));
         expect(rules.first.parsedSelector, isNotNull);
         expect(rules.first.parsedSelector!.parts, hasLength(1));
-        expect(rules.first.parsedSelector!.parts.first.selector.tagName, equals('rect'));
+        expect(
+          rules.first.parsedSelector!.parts.first.selector.tagName,
+          equals('rect'),
+        );
       });
 
       test('parses id selector', () {
         final rules = CssParser.parseSelectorRules('#myId { fill: red; }');
         expect(rules, hasLength(1));
         expect(rules.first.isIdSelector, isTrue);
-        expect(rules.first.parsedSelector!.parts.first.selector.id, equals('myId'));
+        expect(
+          rules.first.parsedSelector!.parts.first.selector.id,
+          equals('myId'),
+        );
       });
 
       test('parses class selector', () {
         final rules = CssParser.parseSelectorRules('.myClass { fill: red; }');
         expect(rules, hasLength(1));
         expect(rules.first.isClassSelector, isTrue);
-        expect(rules.first.parsedSelector!.parts.first.selector.classes, contains('myClass'));
+        expect(
+          rules.first.parsedSelector!.parts.first.selector.classes,
+          contains('myClass'),
+        );
       });
 
       test('parses compound selector (tag.class#id)', () {
-        final rules = CssParser.parseSelectorRules('rect.myClass#myId { fill: red; }');
+        final rules = CssParser.parseSelectorRules(
+          'rect.myClass#myId { fill: red; }',
+        );
         expect(rules, hasLength(1));
         final sel = rules.first.parsedSelector!.parts.first.selector;
         expect(sel.tagName, equals('rect'));
@@ -40,7 +51,9 @@ void main() {
       });
 
       test('parses multiple classes', () {
-        final rules = CssParser.parseSelectorRules('.class1.class2.class3 { fill: red; }');
+        final rules = CssParser.parseSelectorRules(
+          '.class1.class2.class3 { fill: red; }',
+        );
         expect(rules, hasLength(1));
         final sel = rules.first.parsedSelector!.parts.first.selector;
         expect(sel.classes, containsAll(['class1', 'class2', 'class3']));
@@ -49,77 +62,105 @@ void main() {
 
     group('Attribute selectors', () {
       test('parses [attr] existence', () {
-        final rules = CssParser.parseSelectorRules('[data-test] { fill: red; }');
+        final rules = CssParser.parseSelectorRules(
+          '[data-test] { fill: red; }',
+        );
         expect(rules, hasLength(1));
-        final attrs = rules.first.parsedSelector!.parts.first.selector.attributes;
+        final attrs =
+            rules.first.parsedSelector!.parts.first.selector.attributes;
         expect(attrs, hasLength(1));
         expect(attrs.first.attribute, equals('data-test'));
         expect(attrs.first.matchType, equals(CssAttributeMatch.exists));
       });
 
       test('parses [attr=value] exact match', () {
-        final rules = CssParser.parseSelectorRules('[fill=red] { stroke: blue; }');
+        final rules = CssParser.parseSelectorRules(
+          '[fill=red] { stroke: blue; }',
+        );
         expect(rules, hasLength(1));
-        final attr = rules.first.parsedSelector!.parts.first.selector.attributes.first;
+        final attr =
+            rules.first.parsedSelector!.parts.first.selector.attributes.first;
         expect(attr.attribute, equals('fill'));
         expect(attr.matchType, equals(CssAttributeMatch.exact));
         expect(attr.value, equals('red'));
       });
 
       test('parses [attr="quoted value"]', () {
-        final rules = CssParser.parseSelectorRules('[title="hello world"] { fill: red; }');
+        final rules = CssParser.parseSelectorRules(
+          '[title="hello world"] { fill: red; }',
+        );
         expect(rules, hasLength(1));
-        final attr = rules.first.parsedSelector!.parts.first.selector.attributes.first;
+        final attr =
+            rules.first.parsedSelector!.parts.first.selector.attributes.first;
         expect(attr.value, equals('hello world'));
       });
 
       test('parses [attr~=value] includes', () {
-        final rules = CssParser.parseSelectorRules('[class~=active] { fill: red; }');
+        final rules = CssParser.parseSelectorRules(
+          '[class~=active] { fill: red; }',
+        );
         expect(rules, hasLength(1));
-        final attr = rules.first.parsedSelector!.parts.first.selector.attributes.first;
+        final attr =
+            rules.first.parsedSelector!.parts.first.selector.attributes.first;
         expect(attr.matchType, equals(CssAttributeMatch.includes));
       });
 
       test('parses [attr|=value] dash prefix', () {
         final rules = CssParser.parseSelectorRules('[lang|=en] { fill: red; }');
         expect(rules, hasLength(1));
-        final attr = rules.first.parsedSelector!.parts.first.selector.attributes.first;
+        final attr =
+            rules.first.parsedSelector!.parts.first.selector.attributes.first;
         expect(attr.matchType, equals(CssAttributeMatch.dashPrefix));
       });
 
       test('parses [attr^=value] prefix', () {
-        final rules = CssParser.parseSelectorRules('[href^=https] { fill: red; }');
+        final rules = CssParser.parseSelectorRules(
+          '[href^=https] { fill: red; }',
+        );
         expect(rules, hasLength(1));
-        final attr = rules.first.parsedSelector!.parts.first.selector.attributes.first;
+        final attr =
+            rules.first.parsedSelector!.parts.first.selector.attributes.first;
         expect(attr.matchType, equals(CssAttributeMatch.prefix));
       });
 
       test(r'parses [attr$=value] suffix', () {
-        final rules = CssParser.parseSelectorRules(r'[href$=".pdf"] { fill: red; }');
+        final rules = CssParser.parseSelectorRules(
+          r'[href$=".pdf"] { fill: red; }',
+        );
         expect(rules, hasLength(1));
-        final attr = rules.first.parsedSelector!.parts.first.selector.attributes.first;
+        final attr =
+            rules.first.parsedSelector!.parts.first.selector.attributes.first;
         expect(attr.matchType, equals(CssAttributeMatch.suffix));
         expect(attr.value, equals('.pdf'));
       });
 
       test('parses [attr*=value] substring', () {
-        final rules = CssParser.parseSelectorRules('[title*=example] { fill: red; }');
+        final rules = CssParser.parseSelectorRules(
+          '[title*=example] { fill: red; }',
+        );
         expect(rules, hasLength(1));
-        final attr = rules.first.parsedSelector!.parts.first.selector.attributes.first;
+        final attr =
+            rules.first.parsedSelector!.parts.first.selector.attributes.first;
         expect(attr.matchType, equals(CssAttributeMatch.substring));
       });
 
       test('parses case-insensitive [attr=value i]', () {
-        final rules = CssParser.parseSelectorRules('[type=TEXT i] { fill: red; }');
+        final rules = CssParser.parseSelectorRules(
+          '[type=TEXT i] { fill: red; }',
+        );
         expect(rules, hasLength(1));
-        final attr = rules.first.parsedSelector!.parts.first.selector.attributes.first;
+        final attr =
+            rules.first.parsedSelector!.parts.first.selector.attributes.first;
         expect(attr.caseInsensitive, isTrue);
       });
 
       test('parses multiple attributes', () {
-        final rules = CssParser.parseSelectorRules('[data-x][data-y=5] { fill: red; }');
+        final rules = CssParser.parseSelectorRules(
+          '[data-x][data-y=5] { fill: red; }',
+        );
         expect(rules, hasLength(1));
-        final attrs = rules.first.parsedSelector!.parts.first.selector.attributes;
+        final attrs =
+            rules.first.parsedSelector!.parts.first.selector.attributes;
         expect(attrs, hasLength(2));
         expect(attrs[0].attribute, equals('data-x'));
         expect(attrs[1].attribute, equals('data-y'));
@@ -148,7 +189,9 @@ void main() {
       });
 
       test('parses adjacent sibling combinator (+)', () {
-        final rules = CssParser.parseSelectorRules('rect + circle { fill: red; }');
+        final rules = CssParser.parseSelectorRules(
+          'rect + circle { fill: red; }',
+        );
         expect(rules, hasLength(1));
         final parts = rules.first.parsedSelector!.parts;
         expect(parts, hasLength(2));
@@ -158,7 +201,9 @@ void main() {
       });
 
       test('parses general sibling combinator (~)', () {
-        final rules = CssParser.parseSelectorRules('rect ~ circle { fill: red; }');
+        final rules = CssParser.parseSelectorRules(
+          'rect ~ circle { fill: red; }',
+        );
         expect(rules, hasLength(1));
         final parts = rules.first.parsedSelector!.parts;
         expect(parts, hasLength(2));
@@ -166,7 +211,9 @@ void main() {
       });
 
       test('parses chained combinators', () {
-        final rules = CssParser.parseSelectorRules('svg > g rect { fill: red; }');
+        final rules = CssParser.parseSelectorRules(
+          'svg > g rect { fill: red; }',
+        );
         expect(rules, hasLength(1));
         final parts = rules.first.parsedSelector!.parts;
         expect(parts, hasLength(3));
@@ -180,7 +227,9 @@ void main() {
 
     group('Compound selectors with combinators', () {
       test('parses g.container > rect.item', () {
-        final rules = CssParser.parseSelectorRules('g.container > rect.item { fill: red; }');
+        final rules = CssParser.parseSelectorRules(
+          'g.container > rect.item { fill: red; }',
+        );
         expect(rules, hasLength(1));
         final parts = rules.first.parsedSelector!.parts;
         expect(parts, hasLength(2));
@@ -192,7 +241,9 @@ void main() {
       });
 
       test('parses #parent .child[data-x]', () {
-        final rules = CssParser.parseSelectorRules('#parent .child[data-x] { fill: red; }');
+        final rules = CssParser.parseSelectorRules(
+          '#parent .child[data-x] { fill: red; }',
+        );
         expect(rules, hasLength(1));
         final parts = rules.first.parsedSelector!.parts;
         expect(parts, hasLength(2));
@@ -319,7 +370,7 @@ void main() {
         // rect1 and rect2 should match (inside g)
         // rect3 should NOT match (not inside g)
         expect(animations, hasLength(2));
-        
+
         final animatedIds = animations.map((a) => a.targetNode.id).toSet();
         expect(animatedIds, contains('rect1'));
         expect(animatedIds, contains('rect2'));
@@ -350,7 +401,7 @@ void main() {
         // rect1 should match (direct child of g)
         // rect2 should also match (direct child of group2 which is g)
         expect(animations, hasLength(2));
-        
+
         final animatedIds = animations.map((a) => a.targetNode.id).toSet();
         expect(animatedIds, contains('rect1'));
         expect(animatedIds, contains('rect2'));
@@ -449,7 +500,7 @@ void main() {
         // circle1 and circle2 should match (after rect)
         // circle0 should NOT match (before rect)
         expect(animations, hasLength(2));
-        
+
         final animatedIds = animations.map((a) => a.targetNode.id).toSet();
         expect(animatedIds, contains('circle1'));
         expect(animatedIds, contains('circle2'));
@@ -475,7 +526,7 @@ void main() {
         final animations = SmilParser.parseAnimations(document);
 
         expect(animations, hasLength(2));
-        
+
         final animatedIds = animations.map((a) => a.targetNode.id).toSet();
         expect(animatedIds, contains('rect1'));
         expect(animatedIds, contains('circle1'));
@@ -518,7 +569,7 @@ void main() {
         final animations = SmilParser.parseAnimations(document);
 
         expect(animations, hasLength(2));
-        
+
         final animatedIds = animations.map((a) => a.targetNode.id).toSet();
         expect(animatedIds, contains('item1'));
         expect(animatedIds, contains('item2'));
@@ -601,7 +652,7 @@ void main() {
         // rect1 and rect2 match (inside g.container which is direct child of svg)
         // rect3 does NOT match (g.container is not direct child of svg)
         expect(animations, hasLength(2));
-        
+
         final animatedIds = animations.map((a) => a.targetNode.id).toSet();
         expect(animatedIds, contains('rect1'));
         expect(animatedIds, contains('rect2'));
@@ -676,10 +727,7 @@ void main() {
       final animations = SmilParser.parseAnimations(document);
 
       expect(animations, hasLength(2));
-      expect(
-        animations.every((a) => a.targetNode.tagName == 'circle'),
-        isTrue,
-      );
+      expect(animations.every((a) => a.targetNode.tagName == 'circle'), isTrue);
     });
   });
 }
