@@ -107,5 +107,4 @@ extension SvgFiltersPipelineExtension on SvgFilters {
     // results by downstream consumers.
     return List<SvgFilterPaintPass>.unmodifiable(passes);
   }
-
 }

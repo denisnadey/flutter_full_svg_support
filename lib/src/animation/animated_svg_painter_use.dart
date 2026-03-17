@@ -95,8 +95,9 @@ extension AnimatedSvgPainterUseExtension on AnimatedSvgPainter {
         final layout = resolveSvgViewportLayout(
           viewport: ui.Rect.fromLTWH(0, 0, svgWidth, svgHeight),
           sourceSize: ui.Size(viewBox.width, viewBox.height),
-          preserveAspectRatio:
-              svgNode.getAttributeValue('preserveAspectRatio')?.toString(),
+          preserveAspectRatio: svgNode
+              .getAttributeValue('preserveAspectRatio')
+              ?.toString(),
         );
 
         // Compute viewBox to viewport transform
@@ -111,8 +112,10 @@ extension AnimatedSvgPainterUseExtension on AnimatedSvgPainter {
         canvas.transform(transform.storage);
 
         // Clip if slice mode or overflow hidden
-        final overflow =
-            svgNode.getAttributeValue('overflow')?.toString().toLowerCase();
+        final overflow = svgNode
+            .getAttributeValue('overflow')
+            ?.toString()
+            .toLowerCase();
         if (layout.clipToViewport || overflow != 'visible') {
           canvas.clipRect(
             ui.Rect.fromLTWH(
@@ -127,8 +130,10 @@ extension AnimatedSvgPainterUseExtension on AnimatedSvgPainter {
       }
     } else {
       // No viewBox - clip to SVG dimensions if overflow is hidden
-      final overflow =
-          svgNode.getAttributeValue('overflow')?.toString().toLowerCase();
+      final overflow = svgNode
+          .getAttributeValue('overflow')
+          ?.toString()
+          .toLowerCase();
       if (overflow != 'visible') {
         canvas.clipRect(
           ui.Rect.fromLTWH(0, 0, svgWidth, svgHeight),

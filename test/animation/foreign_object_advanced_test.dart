@@ -525,10 +525,10 @@ void main() {
     });
 
     group('CSS cascade through viewport boundary', () {
-      testWidgets('presentation attributes cascade into foreignObject children', (
-        WidgetTester tester,
-      ) async {
-        const svgXml = '''
+      testWidgets(
+        'presentation attributes cascade into foreignObject children',
+        (WidgetTester tester) async {
+          const svgXml = '''
           <svg viewBox="0 0 100 100" fill="blue">
             <foreignObject x="10" y="10" width="80" height="80">
               <svg viewBox="0 0 80 80">
@@ -538,25 +538,26 @@ void main() {
           </svg>
         ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: Center(
-                child: AnimatedSvgPicture.string(
-                  svgXml,
-                  width: 200,
-                  height: 200,
+          await tester.pumpWidget(
+            const MaterialApp(
+              home: Scaffold(
+                body: Center(
+                  child: AnimatedSvgPicture.string(
+                    svgXml,
+                    width: 200,
+                    height: 200,
+                  ),
                 ),
               ),
             ),
-          ),
-        );
+          );
 
-        await tester.pump();
+          await tester.pump();
 
-        // Fill attribute from outer SVG should cascade to rect
-        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-      });
+          // Fill attribute from outer SVG should cascade to rect
+          expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+        },
+      );
     });
   });
 
@@ -600,7 +601,10 @@ void main() {
       final fo = document.root.findById('fo');
 
       expect(fo, isNotNull);
-      expect(fo!.getAttributeValue('requiredExtensions'), 'http://example.com/ext');
+      expect(
+        fo!.getAttributeValue('requiredExtensions'),
+        'http://example.com/ext',
+      );
     });
 
     test('parses nested SVG within foreignObject', () {

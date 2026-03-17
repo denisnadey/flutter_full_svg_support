@@ -138,7 +138,11 @@ void main() {
           await tester.pumpWidget(
             const MaterialApp(
               home: Scaffold(
-                body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+                body: AnimatedSvgPicture.string(
+                  svgXml,
+                  width: 200,
+                  height: 200,
+                ),
               ),
             ),
           );
@@ -588,8 +592,9 @@ void main() {
         );
 
         // Check either href or xlink:href is available
-        final href = useNode.getAttributeValue('href') ?? 
-                     useNode.getAttributeValue('xlink:href');
+        final href =
+            useNode.getAttributeValue('href') ??
+            useNode.getAttributeValue('xlink:href');
         expect(href, '#target');
       });
 

@@ -68,10 +68,10 @@ void main() {
         expect((afterCentroid.dx - beforeCentroid.dx).abs(), greaterThan(5));
       });
 
-      testWidgets('stroke-linecap:butt does not expand hit region at endpoints', (
-        WidgetTester tester,
-      ) async {
-        const svgXml = '''
+      testWidgets(
+        'stroke-linecap:butt does not expand hit region at endpoints',
+        (WidgetTester tester) async {
+          const svgXml = '''
           <svg viewBox="0 0 100 100">
             <line id="target" x1="20" y1="50" x2="80" y2="50" 
                   stroke="blue" stroke-width="10" stroke-linecap="butt"/>
@@ -81,51 +81,54 @@ void main() {
           </svg>
         ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: Center(
-                child: AnimatedSvgPicture.string(
-                  svgXml,
-                  width: 200,
-                  height: 200,
-                  autoPlay: true,
+          await tester.pumpWidget(
+            const MaterialApp(
+              home: Scaffold(
+                body: Center(
+                  child: AnimatedSvgPicture.string(
+                    svgXml,
+                    width: 200,
+                    height: 200,
+                    autoPlay: true,
+                  ),
                 ),
               ),
             ),
-          ),
-        );
+          );
 
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 100));
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 100));
 
-        final beforePixels = await VisualTestUtils.captureWidgetPixels(tester);
-        final beforeAnalysis = VisualTestUtils.analyzeRedPixels(
-          beforePixels,
-          800,
-          600,
-        );
-        final beforeCentroid = beforeAnalysis.centroid;
+          final beforePixels = await VisualTestUtils.captureWidgetPixels(
+            tester,
+          );
+          final beforeAnalysis = VisualTestUtils.analyzeRedPixels(
+            beforePixels,
+            800,
+            600,
+          );
+          final beforeCentroid = beforeAnalysis.centroid;
 
-        final pictureFinder = find.byType(AnimatedSvgPicture);
-        final topLeft = tester.getTopLeft(pictureFinder);
+          final pictureFinder = find.byType(AnimatedSvgPicture);
+          final topLeft = tester.getTopLeft(pictureFinder);
 
-        // Click beyond line endpoint with butt cap - should NOT hit
-        await tester.tapAt(topLeft + const Offset(10, 100));
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 500));
+          // Click beyond line endpoint with butt cap - should NOT hit
+          await tester.tapAt(topLeft + const Offset(10, 100));
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 500));
 
-        final afterPixels = await VisualTestUtils.captureWidgetPixels(tester);
-        final afterAnalysis = VisualTestUtils.analyzeRedPixels(
-          afterPixels,
-          800,
-          600,
-        );
-        final afterCentroid = afterAnalysis.centroid;
+          final afterPixels = await VisualTestUtils.captureWidgetPixels(tester);
+          final afterAnalysis = VisualTestUtils.analyzeRedPixels(
+            afterPixels,
+            800,
+            600,
+          );
+          final afterCentroid = afterAnalysis.centroid;
 
-        // Animation should NOT have started
-        expect((afterCentroid.dx - beforeCentroid.dx).abs(), lessThan(5));
-      });
+          // Animation should NOT have started
+          expect((afterCentroid.dx - beforeCentroid.dx).abs(), lessThan(5));
+        },
+      );
     });
 
     group('stroke-width expansion', () {
@@ -353,10 +356,10 @@ void main() {
     });
 
     group('pointer-events edge cases', () {
-      testWidgets('visibility:hidden with pointer-events:painted is not hittable', (
-        WidgetTester tester,
-      ) async {
-        const svgXml = '''
+      testWidgets(
+        'visibility:hidden with pointer-events:painted is not hittable',
+        (WidgetTester tester) async {
+          const svgXml = '''
           <svg viewBox="0 0 100 100">
             <rect id="target" x="10" y="10" width="40" height="40" 
                   fill="blue" visibility="hidden" pointer-events="painted"/>
@@ -366,57 +369,60 @@ void main() {
           </svg>
         ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: Center(
-                child: AnimatedSvgPicture.string(
-                  svgXml,
-                  width: 200,
-                  height: 200,
-                  autoPlay: true,
+          await tester.pumpWidget(
+            const MaterialApp(
+              home: Scaffold(
+                body: Center(
+                  child: AnimatedSvgPicture.string(
+                    svgXml,
+                    width: 200,
+                    height: 200,
+                    autoPlay: true,
+                  ),
                 ),
               ),
             ),
-          ),
-        );
+          );
 
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 100));
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 100));
 
-        final beforePixels = await VisualTestUtils.captureWidgetPixels(tester);
-        final beforeAnalysis = VisualTestUtils.analyzeRedPixels(
-          beforePixels,
-          800,
-          600,
-        );
-        final beforeCentroid = beforeAnalysis.centroid;
+          final beforePixels = await VisualTestUtils.captureWidgetPixels(
+            tester,
+          );
+          final beforeAnalysis = VisualTestUtils.analyzeRedPixels(
+            beforePixels,
+            800,
+            600,
+          );
+          final beforeCentroid = beforeAnalysis.centroid;
 
-        final pictureFinder = find.byType(AnimatedSvgPicture);
-        final topLeft = tester.getTopLeft(pictureFinder);
+          final pictureFinder = find.byType(AnimatedSvgPicture);
+          final topLeft = tester.getTopLeft(pictureFinder);
 
-        // Click on hidden element with pointer-events:painted
-        await tester.tapAt(topLeft + const Offset(60, 60));
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 500));
+          // Click on hidden element with pointer-events:painted
+          await tester.tapAt(topLeft + const Offset(60, 60));
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 500));
 
-        final afterPixels = await VisualTestUtils.captureWidgetPixels(tester);
-        final afterAnalysis = VisualTestUtils.analyzeRedPixels(
-          afterPixels,
-          800,
-          600,
-        );
-        final afterCentroid = afterAnalysis.centroid;
+          final afterPixels = await VisualTestUtils.captureWidgetPixels(tester);
+          final afterAnalysis = VisualTestUtils.analyzeRedPixels(
+            afterPixels,
+            800,
+            600,
+          );
+          final afterCentroid = afterAnalysis.centroid;
 
-        // Should still hit because painted mode ignores visibility for paint checking
-        // (if element has fill, it's hittable regardless of visibility)
-        expect((afterCentroid.dx - beforeCentroid.dx).abs(), greaterThan(5));
-      });
+          // Should still hit because painted mode ignores visibility for paint checking
+          // (if element has fill, it's hittable regardless of visibility)
+          expect((afterCentroid.dx - beforeCentroid.dx).abs(), greaterThan(5));
+        },
+      );
 
-      testWidgets('visibility:hidden with pointer-events:visible is not hittable', (
-        WidgetTester tester,
-      ) async {
-        const svgXml = '''
+      testWidgets(
+        'visibility:hidden with pointer-events:visible is not hittable',
+        (WidgetTester tester) async {
+          const svgXml = '''
           <svg viewBox="0 0 100 100">
             <rect id="target" x="10" y="10" width="40" height="40" 
                   fill="blue" visibility="hidden" pointer-events="visible"/>
@@ -426,56 +432,59 @@ void main() {
           </svg>
         ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: Center(
-                child: AnimatedSvgPicture.string(
-                  svgXml,
-                  width: 200,
-                  height: 200,
-                  autoPlay: true,
+          await tester.pumpWidget(
+            const MaterialApp(
+              home: Scaffold(
+                body: Center(
+                  child: AnimatedSvgPicture.string(
+                    svgXml,
+                    width: 200,
+                    height: 200,
+                    autoPlay: true,
+                  ),
                 ),
               ),
             ),
-          ),
-        );
+          );
 
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 100));
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 100));
 
-        final beforePixels = await VisualTestUtils.captureWidgetPixels(tester);
-        final beforeAnalysis = VisualTestUtils.analyzeRedPixels(
-          beforePixels,
-          800,
-          600,
-        );
-        final beforeCentroid = beforeAnalysis.centroid;
+          final beforePixels = await VisualTestUtils.captureWidgetPixels(
+            tester,
+          );
+          final beforeAnalysis = VisualTestUtils.analyzeRedPixels(
+            beforePixels,
+            800,
+            600,
+          );
+          final beforeCentroid = beforeAnalysis.centroid;
 
-        final pictureFinder = find.byType(AnimatedSvgPicture);
-        final topLeft = tester.getTopLeft(pictureFinder);
+          final pictureFinder = find.byType(AnimatedSvgPicture);
+          final topLeft = tester.getTopLeft(pictureFinder);
 
-        // Click on hidden element with pointer-events:visible
-        await tester.tapAt(topLeft + const Offset(60, 60));
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 500));
+          // Click on hidden element with pointer-events:visible
+          await tester.tapAt(topLeft + const Offset(60, 60));
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 500));
 
-        final afterPixels = await VisualTestUtils.captureWidgetPixels(tester);
-        final afterAnalysis = VisualTestUtils.analyzeRedPixels(
-          afterPixels,
-          800,
-          600,
-        );
-        final afterCentroid = afterAnalysis.centroid;
+          final afterPixels = await VisualTestUtils.captureWidgetPixels(tester);
+          final afterAnalysis = VisualTestUtils.analyzeRedPixels(
+            afterPixels,
+            800,
+            600,
+          );
+          final afterCentroid = afterAnalysis.centroid;
 
-        // Should NOT hit because visible mode requires visibility
-        expect((afterCentroid.dx - beforeCentroid.dx).abs(), lessThan(5));
-      });
+          // Should NOT hit because visible mode requires visibility
+          expect((afterCentroid.dx - beforeCentroid.dx).abs(), lessThan(5));
+        },
+      );
 
-      testWidgets('display:none is never hittable regardless of pointer-events', (
-        WidgetTester tester,
-      ) async {
-        const svgXml = '''
+      testWidgets(
+        'display:none is never hittable regardless of pointer-events',
+        (WidgetTester tester) async {
+          const svgXml = '''
           <svg viewBox="0 0 100 100">
             <rect id="target" x="10" y="10" width="40" height="40" 
                   fill="blue" display="none" pointer-events="all"/>
@@ -485,58 +494,61 @@ void main() {
           </svg>
         ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: Center(
-                child: AnimatedSvgPicture.string(
-                  svgXml,
-                  width: 200,
-                  height: 200,
-                  autoPlay: true,
+          await tester.pumpWidget(
+            const MaterialApp(
+              home: Scaffold(
+                body: Center(
+                  child: AnimatedSvgPicture.string(
+                    svgXml,
+                    width: 200,
+                    height: 200,
+                    autoPlay: true,
+                  ),
                 ),
               ),
             ),
-          ),
-        );
+          );
 
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 100));
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 100));
 
-        final beforePixels = await VisualTestUtils.captureWidgetPixels(tester);
-        final beforeAnalysis = VisualTestUtils.analyzeRedPixels(
-          beforePixels,
-          800,
-          600,
-        );
-        final beforeCentroid = beforeAnalysis.centroid;
+          final beforePixels = await VisualTestUtils.captureWidgetPixels(
+            tester,
+          );
+          final beforeAnalysis = VisualTestUtils.analyzeRedPixels(
+            beforePixels,
+            800,
+            600,
+          );
+          final beforeCentroid = beforeAnalysis.centroid;
 
-        final pictureFinder = find.byType(AnimatedSvgPicture);
-        final topLeft = tester.getTopLeft(pictureFinder);
+          final pictureFinder = find.byType(AnimatedSvgPicture);
+          final topLeft = tester.getTopLeft(pictureFinder);
 
-        // Click on display:none element
-        await tester.tapAt(topLeft + const Offset(60, 60));
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 500));
+          // Click on display:none element
+          await tester.tapAt(topLeft + const Offset(60, 60));
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 500));
 
-        final afterPixels = await VisualTestUtils.captureWidgetPixels(tester);
-        final afterAnalysis = VisualTestUtils.analyzeRedPixels(
-          afterPixels,
-          800,
-          600,
-        );
-        final afterCentroid = afterAnalysis.centroid;
+          final afterPixels = await VisualTestUtils.captureWidgetPixels(tester);
+          final afterAnalysis = VisualTestUtils.analyzeRedPixels(
+            afterPixels,
+            800,
+            600,
+          );
+          final afterCentroid = afterAnalysis.centroid;
 
-        // Should NOT hit - display:none always excludes from hit testing
-        expect((afterCentroid.dx - beforeCentroid.dx).abs(), lessThan(5));
-      });
+          // Should NOT hit - display:none always excludes from hit testing
+          expect((afterCentroid.dx - beforeCentroid.dx).abs(), lessThan(5));
+        },
+      );
     });
 
     group('polyline hit-testing', () {
-      testWidgets('polyline stroke with round linecap is hittable at endpoints', (
-        WidgetTester tester,
-      ) async {
-        const svgXml = '''
+      testWidgets(
+        'polyline stroke with round linecap is hittable at endpoints',
+        (WidgetTester tester) async {
+          const svgXml = '''
           <svg viewBox="0 0 100 100">
             <polyline id="target" points="20,50 50,20 80,50" 
                       fill="none" stroke="blue" stroke-width="10" stroke-linecap="round"/>
@@ -546,51 +558,54 @@ void main() {
           </svg>
         ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: Center(
-                child: AnimatedSvgPicture.string(
-                  svgXml,
-                  width: 200,
-                  height: 200,
-                  autoPlay: true,
+          await tester.pumpWidget(
+            const MaterialApp(
+              home: Scaffold(
+                body: Center(
+                  child: AnimatedSvgPicture.string(
+                    svgXml,
+                    width: 200,
+                    height: 200,
+                    autoPlay: true,
+                  ),
                 ),
               ),
             ),
-          ),
-        );
+          );
 
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 100));
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 100));
 
-        final beforePixels = await VisualTestUtils.captureWidgetPixels(tester);
-        final beforeAnalysis = VisualTestUtils.analyzeRedPixels(
-          beforePixels,
-          800,
-          600,
-        );
-        final beforeCentroid = beforeAnalysis.centroid;
+          final beforePixels = await VisualTestUtils.captureWidgetPixels(
+            tester,
+          );
+          final beforeAnalysis = VisualTestUtils.analyzeRedPixels(
+            beforePixels,
+            800,
+            600,
+          );
+          final beforeCentroid = beforeAnalysis.centroid;
 
-        final pictureFinder = find.byType(AnimatedSvgPicture);
-        final topLeft = tester.getTopLeft(pictureFinder);
+          final pictureFinder = find.byType(AnimatedSvgPicture);
+          final topLeft = tester.getTopLeft(pictureFinder);
 
-        // Click at polyline endpoint
-        await tester.tapAt(topLeft + const Offset(168, 100));
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 500));
+          // Click at polyline endpoint
+          await tester.tapAt(topLeft + const Offset(168, 100));
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 500));
 
-        final afterPixels = await VisualTestUtils.captureWidgetPixels(tester);
-        final afterAnalysis = VisualTestUtils.analyzeRedPixels(
-          afterPixels,
-          800,
-          600,
-        );
-        final afterCentroid = afterAnalysis.centroid;
+          final afterPixels = await VisualTestUtils.captureWidgetPixels(tester);
+          final afterAnalysis = VisualTestUtils.analyzeRedPixels(
+            afterPixels,
+            800,
+            600,
+          );
+          final afterCentroid = afterAnalysis.centroid;
 
-        // Animation should have started
-        expect((afterCentroid.dx - beforeCentroid.dx).abs(), greaterThan(5));
-      });
+          // Animation should have started
+          expect((afterCentroid.dx - beforeCentroid.dx).abs(), greaterThan(5));
+        },
+      );
     });
 
     group('text hit-testing', () {

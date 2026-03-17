@@ -381,7 +381,12 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
       runs.add(
         _TextHitRun.bounds(
           owner: node,
-          bounds: Rect.fromLTWH(charX, top, charMetrics.width, charMetrics.height),
+          bounds: Rect.fromLTWH(
+            charX,
+            top,
+            charMetrics.width,
+            charMetrics.height,
+          ),
           rotation: rotation,
           rotationCenter: Offset(charX, charY),
         ),
@@ -416,8 +421,7 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
     final glyphCount = text.runes.length;
     if (targetLength != null && targetLength > 0 && metrics.width > 0) {
       if (lengthAdjust == _TextLengthAdjust.spacing && glyphCount > 1) {
-        final extraSpacing =
-            (targetLength - metrics.width) / (glyphCount - 1);
+        final extraSpacing = (targetLength - metrics.width) / (glyphCount - 1);
         metrics = _measureText(
           text,
           node,
