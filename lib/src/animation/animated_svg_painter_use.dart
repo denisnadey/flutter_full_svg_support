@@ -15,7 +15,12 @@ extension AnimatedSvgPainterUseExtension on AnimatedSvgPainter {
     }
 
     canvas.translate(x, y);
-    canvas.clipRect(ui.Rect.fromLTWH(0, 0, width, height), doAntiAlias: true);
+
+    // Check overflow attribute - default for foreignObject is hidden
+    final overflow = _getInheritedString(node, 'overflow')?.toLowerCase();
+    if (overflow != 'visible') {
+      canvas.clipRect(ui.Rect.fromLTWH(0, 0, width, height), doAntiAlias: true);
+    }
   }
 
   void _paintUse(
@@ -132,6 +137,7 @@ extension AnimatedSvgPainterUseExtension on AnimatedSvgPainter {
       case 'mask':
       case 'pattern':
       case 'filter':
+      case 'marker':
       case 'use':
       case 'text':
       case 'tspan':

@@ -43,6 +43,7 @@ extension AnimatedSvgPainterShapesImageExtension on AnimatedSvgPainter {
     final paint = ui.Paint();
     final opacity = (_getNumber(node, 'opacity') ?? 1.0).clamp(0.0, 1.0);
     paint.color = const ui.Color(0xFFFFFFFF).withValues(alpha: opacity);
+    paint.filterQuality = _resolveImageRendering(node);
 
     if (imageFilter != null) {
       paint.imageFilter = imageFilter;

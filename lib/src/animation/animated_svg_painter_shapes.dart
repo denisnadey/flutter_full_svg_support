@@ -24,11 +24,6 @@ extension AnimatedSvgPainterShapesExtension on AnimatedSvgPainter {
       colorFilter: colorFilter,
       blendMode: blendMode,
     );
-
-    if (fillPaint != null) {
-      canvas.drawCircle(center, r, fillPaint);
-    }
-
     final strokePaint = _createStrokePaint(
       node,
       paintBounds: bounds,
@@ -36,11 +31,22 @@ extension AnimatedSvgPainterShapesExtension on AnimatedSvgPainter {
       colorFilter: colorFilter,
       blendMode: blendMode,
     );
-    if (strokePaint != null) {
-      final circlePath = ui.Path()..addOval(bounds);
-      final dashedPath = _buildDashedPath(circlePath, node);
-      canvas.drawPath(dashedPath, strokePaint);
-    }
+
+    _paintWithOrder(
+      node,
+      () {
+        if (fillPaint != null) {
+          canvas.drawCircle(center, r, fillPaint);
+        }
+      },
+      () {
+        if (strokePaint != null) {
+          final circlePath = ui.Path()..addOval(bounds);
+          final dashedPath = _buildDashedPath(circlePath, node);
+          canvas.drawPath(dashedPath, strokePaint);
+        }
+      },
+    );
   }
 
   /// Рисует <ellipse>
@@ -70,11 +76,6 @@ extension AnimatedSvgPainterShapesExtension on AnimatedSvgPainter {
       colorFilter: colorFilter,
       blendMode: blendMode,
     );
-
-    if (fillPaint != null) {
-      canvas.drawOval(rect, fillPaint);
-    }
-
     final strokePaint = _createStrokePaint(
       node,
       paintBounds: rect,
@@ -82,11 +83,22 @@ extension AnimatedSvgPainterShapesExtension on AnimatedSvgPainter {
       colorFilter: colorFilter,
       blendMode: blendMode,
     );
-    if (strokePaint != null) {
-      final ellipsePath = ui.Path()..addOval(rect);
-      final dashedPath = _buildDashedPath(ellipsePath, node);
-      canvas.drawPath(dashedPath, strokePaint);
-    }
+
+    _paintWithOrder(
+      node,
+      () {
+        if (fillPaint != null) {
+          canvas.drawOval(rect, fillPaint);
+        }
+      },
+      () {
+        if (strokePaint != null) {
+          final ellipsePath = ui.Path()..addOval(rect);
+          final dashedPath = _buildDashedPath(ellipsePath, node);
+          canvas.drawPath(dashedPath, strokePaint);
+        }
+      },
+    );
   }
 
   /// Рисует <line>
@@ -110,12 +122,34 @@ extension AnimatedSvgPainterShapesExtension on AnimatedSvgPainter {
       colorFilter: colorFilter,
       blendMode: blendMode,
     );
-    if (strokePaint != null) {
-      final linePath = ui.Path()
-        ..moveTo(x1, y1)
-        ..lineTo(x2, y2);
-      final dashedPath = _buildDashedPath(linePath, node);
-      canvas.drawPath(dashedPath, strokePaint);
-    }
+    final linePath = ui.Path()
+      ..moveTo(x1, y1)
+      ..lineTo(x2, y2);
+
+    _paintWithOrder(
+      node,
+      () {
+        // Line has no fill
+      },
+      () {
+        if (strokePaint != null) {
+          final dashedPath = _buildDashedPath(linePath, node);
+          canvas.drawPath(dashedPath, strokePaint);
+        }
+      },
+      paintMarkers: () {
+        // Paint markers at endpoints
+        if (strokePaint != null) {
+          _paintMarkers(
+            canvas,
+            node,
+            linePath,
+            imageFilter: imageFilter,
+            colorFilter: colorFilter,
+            blendMode: blendMode,
+          );
+        }
+      },
+    );
   }
 }

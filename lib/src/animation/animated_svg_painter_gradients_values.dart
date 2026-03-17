@@ -83,6 +83,30 @@ extension AnimatedSvgPainterGradientValuesExtension on AnimatedSvgPainter {
     return _parseColor(value.toString());
   }
 
+  /// Resolves a color value for a node, supporting the 'currentColor' keyword.
+  /// currentColor refers to the inherited 'color' CSS property value.
+  ui.Color? _resolveColorForNode(Object? value, SvgNode node) {
+    if (value == null) {
+      return null;
+    }
+    if (value is ui.Color) {
+      return value;
+    }
+
+    final strValue = value.toString().trim().toLowerCase();
+    if (strValue == 'currentcolor') {
+      // Resolve the inherited 'color' property
+      final colorProperty = _getInheritedString(node, 'color');
+      if (colorProperty != null && colorProperty.isNotEmpty) {
+        return _parseColor(colorProperty);
+      }
+      // Default to black if no color property is set
+      return const ui.Color(0xFF000000);
+    }
+
+    return _parseColor(value.toString());
+  }
+
   ui.Color _applyOpacity(ui.Color color, double opacity) {
     final alpha = (color.a * opacity).clamp(0.0, 1.0);
     return color.withValues(alpha: alpha);
@@ -192,5 +216,88 @@ extension AnimatedSvgPainterGradientValuesExtension on AnimatedSvgPainter {
     }
 
     return double.tryParse(raw);
+  }
+
+  /// Creates interpolated gradient stops for linearRGB color space.
+  /// This approximates linear RGB interpolation by adding intermediate stops.
+  List<_GradientStop> _createLinearRGBInterpolatedStops(
+    List<_GradientStop> stops,
+  ) {
+    if (stops.length < 2) return stops;
+
+    final result = <_GradientStop>[];
+    const stepsPerSegment = 8; // Intermediate steps for smooth interpolation
+
+    for (int i = 0; i < stops.length - 1; i++) {
+      final start = stops[i];
+      final end = stops[i + 1];
+
+      // Convert start and end colors to linear RGB
+      final startLinear = _srgbToLinear(start.color);
+      final endLinear = _srgbToLinear(end.color);
+
+      // Add start stop
+      result.add(start);
+
+      // Add intermediate stops interpolated in linear RGB space
+      for (int step = 1; step < stepsPerSegment; step++) {
+        final t = step / stepsPerSegment;
+        final offset = start.offset + (end.offset - start.offset) * t;
+
+        // Interpolate in linear RGB
+        final linearR = startLinear[0] + (endLinear[0] - startLinear[0]) * t;
+        final linearG = startLinear[1] + (endLinear[1] - startLinear[1]) * t;
+        final linearB = startLinear[2] + (endLinear[2] - startLinear[2]) * t;
+        final alpha = start.color.a + (end.color.a - start.color.a) * t;
+
+        // Convert back to sRGB
+        final color = _linearToSrgb(linearR, linearG, linearB, alpha);
+        result.add(_GradientStop(offset: offset, color: color));
+      }
+    }
+
+    // Add final stop
+    result.add(stops.last);
+    return result;
+  }
+
+  /// Converts sRGB color to linear RGB components.
+  List<double> _srgbToLinear(ui.Color color) {
+    return [
+      _srgbChannelToLinear(color.r),
+      _srgbChannelToLinear(color.g),
+      _srgbChannelToLinear(color.b),
+    ];
+  }
+
+  /// Converts a single sRGB channel value (0-1) to linear.
+  double _srgbChannelToLinear(double value) {
+    if (value <= 0.04045) {
+      return value / 12.92;
+    }
+    return math.pow((value + 0.055) / 1.055, 2.4).toDouble();
+  }
+
+  /// Converts linear RGB back to sRGB color.
+  ui.Color _linearToSrgb(
+    double linearR,
+    double linearG,
+    double linearB,
+    double alpha,
+  ) {
+    return ui.Color.from(
+      alpha: alpha.clamp(0.0, 1.0),
+      red: _linearChannelToSrgb(linearR),
+      green: _linearChannelToSrgb(linearG),
+      blue: _linearChannelToSrgb(linearB),
+    );
+  }
+
+  /// Converts a single linear channel value to sRGB.
+  double _linearChannelToSrgb(double value) {
+    if (value <= 0.0031308) {
+      return (12.92 * value).clamp(0.0, 1.0);
+    }
+    return (1.055 * math.pow(value, 1.0 / 2.4) - 0.055).clamp(0.0, 1.0);
   }
 }

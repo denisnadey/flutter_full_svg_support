@@ -89,6 +89,35 @@ For factual project status, use `CURRENT_STATUS.md` only.
 - [x] Text multi-position attributes: `x`, `y`, `dx`, `dy` as space/comma-separated lists for per-character positioning in paint + hit-testing
 - [x] Text `rotate` attribute: per-character rotation support (single value or list) in paint + hit-testing
 - [x] textPath `spacing` attribute: `exact` (default) vs `auto` for character spacing control in paint + hit-testing
+- [x] `text-decoration` attribute: `underline`, `overline`, `line-through` support with inheritance and color
+- [x] `writing-mode` attribute: `horizontal-tb`, `vertical-rl`, `vertical-lr` (+ legacy `tb`/`tb-rl`) for vertical text rendering
+- [x] `<marker>` element support: `marker-start`, `marker-mid`, `marker-end` attributes with `orient`, `markerUnits`, `viewBox` support
+- [x] `<pattern>` paint server: fill/stroke patterns with `patternUnits`, `patternContentUnits`, `viewBox`, `patternTransform`, and inheritance
+- [x] Group `opacity` compositing: proper `saveLayer` handling for `<g>`, `<svg>`, `<foreignObject>` with `opacity < 1`
+- [x] `paint-order` attribute: control fill/stroke/markers paint order (`stroke fill`, `markers stroke fill`, etc.)
+- [x] `vector-effect: non-scaling-stroke`: stroke width remains constant regardless of transform scale
+- [x] `stroke-linecap`: line cap styling (`butt`, `round`, `square`)
+- [x] `stroke-linejoin`: line join styling (`miter`, `round`, `bevel`)
+- [x] `stroke-miterlimit`: miter limit for sharp corners
+- [x] `shape-rendering`: anti-aliasing control (`auto`, `optimizeSpeed`, `crispEdges`, `geometricPrecision`)
+- [x] `overflow`: viewport clipping control (`visible`, `hidden`, `auto`, `scroll`)
+- [x] `image-rendering`: image scaling quality (`auto`, `pixelated`, `optimizeSpeed`, `optimizeQuality`, `smooth`)
+- [x] `mix-blend-mode`: CSS blend modes for elements (`multiply`, `screen`, `overlay`, `darken`, `lighten`, etc.)
+- [x] `currentColor`: keyword support for fill/stroke referencing inherited `color` property
+- [x] `transform-origin`: CSS property for setting the origin point of transformations
+- [x] `color-interpolation`: gradient color space control (`sRGB`, `linearRGB`)
+- [x] `font-variant`: text styling with OpenType features (`small-caps`, `oldstyle-nums`, `tabular-nums`, etc.)
+- [x] `xml:space`: whitespace handling (`default`, `preserve`) for text content
+- [x] `direction`: text direction for RTL/LTR support (`ltr`, `rtl`)
+- [x] `text-rendering`: text quality hints (`auto`, `optimizeSpeed`, `optimizeLegibility`, `geometricPrecision`)
+- [x] `pathLength`: scales stroke-dasharray/dashoffset proportionally on shapes
+- [x] `color-rendering`: gradient/color interpolation quality hints (`auto`, `optimizeSpeed`, `optimizeQuality`)
+- [x] `glyph-orientation-vertical`: vertical text glyph rotation (`auto`, `0deg`, `90deg`, etc.)
+- [x] `unicode-bidi`: bidirectional text handling (`normal`, `embed`, `isolate`, `bidi-override`, etc.)
+- [x] `font-stretch`: text width control (`ultra-condensed` to `ultra-expanded`, percentages)
+- [x] `white-space`: CSS whitespace handling (`normal`, `pre`, `pre-wrap`, `nowrap`, `pre-line`, `break-spaces`)
+- [x] `cursor`: CSS cursor style (`default`, `pointer`, `text`, `move`, `crosshair`, `grab`, etc.)
+- [x] `font-size-adjust`: maintain x-height consistency across fallback fonts
 
 ## P0 - Blink Parity Foundations
 

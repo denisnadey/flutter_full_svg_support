@@ -149,6 +149,7 @@ extension _AnimatedSvgPictureStateHitTestTraversalExtension
         tagName == 'clipPath' ||
         tagName == 'mask' ||
         tagName == 'pattern' ||
-        tagName == 'filter';
+        tagName == 'filter' ||
+        tagName == 'marker';
   }
 }

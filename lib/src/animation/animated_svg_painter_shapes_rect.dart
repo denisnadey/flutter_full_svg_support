@@ -26,17 +26,6 @@ extension AnimatedSvgPainterShapesRectExtension on AnimatedSvgPainter {
       colorFilter: colorFilter,
       blendMode: blendMode,
     );
-
-    if (fillPaint != null) {
-      if (rx > 0 || ry > 0) {
-        final rrect = ui.RRect.fromRectXY(rect, rx, ry);
-        canvas.drawRRect(rrect, fillPaint);
-      } else {
-        canvas.drawRect(rect, fillPaint);
-      }
-    }
-
-    // Stroke если указан.
     final strokePaint = _createStrokePaint(
       node,
       paintBounds: rect,
@@ -44,13 +33,29 @@ extension AnimatedSvgPainterShapesRectExtension on AnimatedSvgPainter {
       colorFilter: colorFilter,
       blendMode: blendMode,
     );
-    if (strokePaint != null) {
-      // Convert to path for dasharray/dashoffset support.
-      final strokePath = (rx > 0 || ry > 0)
-          ? (ui.Path()..addRRect(ui.RRect.fromRectXY(rect, rx, ry)))
-          : (ui.Path()..addRect(rect));
-      final dashedPath = _buildDashedPath(strokePath, node);
-      canvas.drawPath(dashedPath, strokePaint);
-    }
+
+    _paintWithOrder(
+      node,
+      () {
+        if (fillPaint != null) {
+          if (rx > 0 || ry > 0) {
+            final rrect = ui.RRect.fromRectXY(rect, rx, ry);
+            canvas.drawRRect(rrect, fillPaint);
+          } else {
+            canvas.drawRect(rect, fillPaint);
+          }
+        }
+      },
+      () {
+        if (strokePaint != null) {
+          // Convert to path for dasharray/dashoffset support.
+          final strokePath = (rx > 0 || ry > 0)
+              ? (ui.Path()..addRRect(ui.RRect.fromRectXY(rect, rx, ry)))
+              : (ui.Path()..addRect(rect));
+          final dashedPath = _buildDashedPath(strokePath, node);
+          canvas.drawPath(dashedPath, strokePaint);
+        }
+      },
+    );
   }
 }

@@ -20,14 +20,16 @@ extension AnimatedSvgPainterPaintsExtension on AnimatedSvgPainter {
     final fillOpacity = _getInheritedNumber(node, 'fill-opacity') ?? 1.0;
     final finalOpacity = (opacity * fillOpacity).clamp(0.0, 1.0);
 
-    final paint = ui.Paint()..style = ui.PaintingStyle.fill;
+    final paint = ui.Paint()
+      ..style = ui.PaintingStyle.fill
+      ..isAntiAlias = _resolveShapeRendering(node);
     final shader = _resolvePaintServerShader(fillValue, paintBounds);
     if (shader != null) {
       paint
         ..shader = shader
         ..color = const ui.Color(0xFFFFFFFF).withValues(alpha: finalOpacity);
     } else {
-      final color = _resolveColorValue(fillValue) ?? const ui.Color(0xFF000000);
+      final color = _resolveColorForNode(fillValue, node) ?? const ui.Color(0xFF000000);
       paint.color = _applyOpacity(color, finalOpacity);
     }
 
@@ -39,6 +41,12 @@ extension AnimatedSvgPainterPaintsExtension on AnimatedSvgPainter {
     }
     if (blendMode != null) {
       paint.blendMode = blendMode;
+    } else {
+      // Check for mix-blend-mode CSS property
+      final mixBlendMode = _resolveMixBlendMode(node);
+      if (mixBlendMode != null) {
+        paint.blendMode = mixBlendMode;
+      }
     }
     return paint;
   }
@@ -89,14 +97,28 @@ extension AnimatedSvgPainterPaintsExtension on AnimatedSvgPainter {
       return null;
     }
 
-    final strokeWidth = _getInheritedNumber(node, 'stroke-width') ?? 1.0;
+    var strokeWidth = _getInheritedNumber(node, 'stroke-width') ?? 1.0;
     final opacity = _getInheritedNumber(node, 'opacity') ?? 1.0;
     final strokeOpacity = _getInheritedNumber(node, 'stroke-opacity') ?? 1.0;
     final finalOpacity = (opacity * strokeOpacity).clamp(0.0, 1.0);
 
+    // Check for vector-effect: non-scaling-stroke
+    final vectorEffect = _getInheritedString(node, 'vector-effect');
+    if (vectorEffect != null &&
+        vectorEffect.trim().toLowerCase() == 'non-scaling-stroke') {
+      final scale = _computeAccumulatedScale(node);
+      if (scale > 0 && scale != 1.0) {
+        strokeWidth = strokeWidth / scale;
+      }
+    }
+
     final paint = ui.Paint()
       ..style = ui.PaintingStyle.stroke
-      ..strokeWidth = strokeWidth;
+      ..strokeWidth = strokeWidth
+      ..strokeCap = _resolveStrokeLinecap(node)
+      ..strokeJoin = _resolveStrokeLinejoin(node)
+      ..strokeMiterLimit = _getInheritedNumber(node, 'stroke-miterlimit') ?? 4.0
+      ..isAntiAlias = _resolveShapeRendering(node);
 
     final shader = _resolvePaintServerShader(strokeValue, paintBounds);
     if (shader != null) {
@@ -104,7 +126,7 @@ extension AnimatedSvgPainterPaintsExtension on AnimatedSvgPainter {
         ..shader = shader
         ..color = const ui.Color(0xFFFFFFFF).withValues(alpha: finalOpacity);
     } else {
-      final strokeColor = _resolveColorValue(strokeValue);
+      final strokeColor = _resolveColorForNode(strokeValue, node);
       if (strokeColor == null) {
         return null;
       }
@@ -119,6 +141,12 @@ extension AnimatedSvgPainterPaintsExtension on AnimatedSvgPainter {
     }
     if (blendMode != null) {
       paint.blendMode = blendMode;
+    } else {
+      // Check for mix-blend-mode CSS property
+      final mixBlendMode = _resolveMixBlendMode(node);
+      if (mixBlendMode != null) {
+        paint.blendMode = mixBlendMode;
+      }
     }
     return paint;
   }
@@ -127,6 +155,10 @@ extension AnimatedSvgPainterPaintsExtension on AnimatedSvgPainter {
   ///
   /// If stroke-dasharray is not set or is 'none', returns [path] unchanged.
   /// Otherwise walks the path's PathMetrics and builds a new dashed path.
+  /// 
+  /// Supports pathLength attribute for scaling dasharray/dashoffset values.
+  /// When pathLength is specified, all dash values are scaled by the ratio
+  /// of actual path length to pathLength.
   ui.Path _buildDashedPath(ui.Path path, SvgNode node) {
     final dashArrayRaw = _getInheritedString(node, 'stroke-dasharray')?.trim();
     if (dashArrayRaw == null ||
@@ -141,12 +173,31 @@ extension AnimatedSvgPainterPaintsExtension on AnimatedSvgPainter {
     }
 
     // SVG spec: odd-length dasharray is doubled.
-    final pattern = dashes.length.isOdd ? [...dashes, ...dashes] : dashes;
+    var pattern = dashes.length.isOdd ? [...dashes, ...dashes] : [...dashes];
+
+    // pathLength attribute support: scale dasharray and dashoffset values
+    final declaredPathLength = _getNumber(node, 'pathLength');
+    double? scaleFactor;
+    if (declaredPathLength != null && declaredPathLength > 0) {
+      // Calculate actual path length once
+      var actualLength = 0.0;
+      for (final metric in path.computeMetrics()) {
+        actualLength += metric.length;
+      }
+      if (actualLength > 0) {
+        scaleFactor = actualLength / declaredPathLength;
+        pattern = pattern.map((d) => d * scaleFactor!).toList();
+      }
+    }
 
     final totalDash = pattern.fold<double>(0.0, (s, d) => s + d);
     if (totalDash <= 0) return path;
 
-    final rawOffset = _getInheritedNumber(node, 'stroke-dashoffset') ?? 0.0;
+    var rawOffset = _getInheritedNumber(node, 'stroke-dashoffset') ?? 0.0;
+    // Scale dashoffset by same factor if pathLength is specified
+    if (scaleFactor != null) {
+      rawOffset = rawOffset * scaleFactor;
+    }
     // Normalise offset into [0, totalDash). SVG offset shifts the pattern start.
     var phase = rawOffset % totalDash;
     if (phase < 0) phase += totalDash;

@@ -222,4 +222,188 @@ extension AnimatedSvgPainterValuesExtension on AnimatedSvgPainter {
         return _SvgTextPathSpacing.exact;
     }
   }
+
+  /// Computes the accumulated scale factor from the transform chain.
+  /// Used for vector-effect: non-scaling-stroke.
+  /// Returns the geometric mean of sx and sy scale factors.
+  double _computeAccumulatedScale(SvgNode node) {
+    var accumulatedMatrix = Matrix4.identity();
+
+    // Walk up from current node to root, collecting transforms
+    final transformStack = <Matrix4>[];
+    SvgNode? current = node;
+    while (current != null) {
+      final transformStr = _getString(current, 'transform');
+      if (transformStr != null && transformStr.isNotEmpty) {
+        final nodeMatrix = _buildTransformMatrixFromValue(transformStr);
+        if (nodeMatrix != null) {
+          transformStack.add(nodeMatrix);
+        }
+      }
+      current = current.parent;
+    }
+
+    // Apply transforms in reverse order (root to current)
+    for (int i = transformStack.length - 1; i >= 0; i--) {
+      accumulatedMatrix = accumulatedMatrix.multiplied(transformStack[i]);
+    }
+
+    // Extract scale from the accumulated matrix
+    // Use the geometric mean of x and y scales
+    final sx = math.sqrt(
+      accumulatedMatrix.entry(0, 0) * accumulatedMatrix.entry(0, 0) +
+          accumulatedMatrix.entry(1, 0) * accumulatedMatrix.entry(1, 0),
+    );
+    final sy = math.sqrt(
+      accumulatedMatrix.entry(0, 1) * accumulatedMatrix.entry(0, 1) +
+          accumulatedMatrix.entry(1, 1) * accumulatedMatrix.entry(1, 1),
+    );
+
+    // Return geometric mean of scales
+    final scale = math.sqrt(sx * sy);
+    return scale > 0 ? scale : 1.0;
+  }
+
+  /// Resolves stroke-linecap attribute to Flutter StrokeCap.
+  /// Default is butt per SVG spec.
+  ui.StrokeCap _resolveStrokeLinecap(SvgNode node) {
+    final value = _getInheritedString(node, 'stroke-linecap')?.toLowerCase();
+    switch (value) {
+      case 'round':
+        return ui.StrokeCap.round;
+      case 'square':
+        return ui.StrokeCap.square;
+      case 'butt':
+      default:
+        return ui.StrokeCap.butt;
+    }
+  }
+
+  /// Resolves stroke-linejoin attribute to Flutter StrokeJoin.
+  /// Default is miter per SVG spec.
+  ui.StrokeJoin _resolveStrokeLinejoin(SvgNode node) {
+    final value = _getInheritedString(node, 'stroke-linejoin')?.toLowerCase();
+    switch (value) {
+      case 'round':
+        return ui.StrokeJoin.round;
+      case 'bevel':
+        return ui.StrokeJoin.bevel;
+      case 'miter':
+      default:
+        return ui.StrokeJoin.miter;
+    }
+  }
+
+  /// Resolves shape-rendering attribute to anti-alias flag.
+  /// Default is true (anti-alias enabled).
+  /// - auto, geometricPrecision: anti-alias enabled (true)
+  /// - optimizeSpeed, crispEdges: anti-alias disabled (false)
+  bool _resolveShapeRendering(SvgNode node) {
+    final value = _getInheritedString(node, 'shape-rendering')?.toLowerCase();
+    switch (value) {
+      case 'optimizespeed':
+      case 'crispedges':
+        return false;
+      case 'auto':
+      case 'geometricprecision':
+      default:
+        return true;
+    }
+  }
+
+  /// Resolves color-rendering attribute to FilterQuality.
+  /// Affects gradient and color interpolation quality.
+  /// - auto: default quality (medium)
+  /// - optimizeSpeed: lower quality, faster (low)
+  /// - optimizeQuality: higher quality, slower (high)
+  ui.FilterQuality _resolveColorRenderingQuality(SvgNode node) {
+    final value = _getInheritedString(node, 'color-rendering')?.toLowerCase();
+    switch (value) {
+      case 'optimizespeed':
+        return ui.FilterQuality.low;
+      case 'optimizequality':
+        return ui.FilterQuality.high;
+      case 'auto':
+      default:
+        return ui.FilterQuality.medium;
+    }
+  }
+
+  /// Resolves image-rendering attribute to Flutter FilterQuality.
+  /// Default is medium.
+  /// - auto: medium quality
+  /// - optimizeSpeed, pixelated: no filtering (none)
+  /// - optimizeQuality, smooth, high-quality: high quality
+  ui.FilterQuality _resolveImageRendering(SvgNode node) {
+    final value = _getInheritedString(node, 'image-rendering')?.toLowerCase();
+    switch (value) {
+      case 'optimizespeed':
+      case 'pixelated':
+        return ui.FilterQuality.none;
+      case 'optimizequality':
+      case 'smooth':
+      case 'high-quality':
+        return ui.FilterQuality.high;
+      case 'auto':
+      default:
+        return ui.FilterQuality.medium;
+    }
+  }
+
+  /// Resolves mix-blend-mode CSS property to Flutter BlendMode.
+  /// Default is srcOver (normal).
+  ui.BlendMode? _resolveMixBlendMode(SvgNode node) {
+    final value = _getInheritedString(node, 'mix-blend-mode')?.toLowerCase();
+    if (value == null || value == 'normal') {
+      return null; // Use default srcOver
+    }
+    switch (value) {
+      case 'multiply':
+        return ui.BlendMode.multiply;
+      case 'screen':
+        return ui.BlendMode.screen;
+      case 'overlay':
+        return ui.BlendMode.overlay;
+      case 'darken':
+        return ui.BlendMode.darken;
+      case 'lighten':
+        return ui.BlendMode.lighten;
+      case 'color-dodge':
+        return ui.BlendMode.colorDodge;
+      case 'color-burn':
+        return ui.BlendMode.colorBurn;
+      case 'hard-light':
+        return ui.BlendMode.hardLight;
+      case 'soft-light':
+        return ui.BlendMode.softLight;
+      case 'difference':
+        return ui.BlendMode.difference;
+      case 'exclusion':
+        return ui.BlendMode.exclusion;
+      case 'hue':
+        return ui.BlendMode.hue;
+      case 'saturation':
+        return ui.BlendMode.saturation;
+      case 'color':
+        return ui.BlendMode.color;
+      case 'luminosity':
+        return ui.BlendMode.luminosity;
+      case 'plus-lighter':
+        return ui.BlendMode.plus;
+      default:
+        return null;
+    }
+  }
+
+  /// Resolves cursor CSS property to Flutter MouseCursor name.
+  /// Returns the cursor keyword for use with SystemMouseCursors.
+  /// Common values: default, pointer, text, move, crosshair, etc.
+  String? _resolveCursor(SvgNode node) {
+    final value = _getInheritedString(node, 'cursor')?.toLowerCase()?.trim();
+    if (value == null || value.isEmpty || value == 'auto') {
+      return null;
+    }
+    // Return the cursor keyword - actual cursor mapping is done at widget level
+    return value;
+  }
 }

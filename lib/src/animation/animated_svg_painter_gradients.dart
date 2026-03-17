@@ -5,16 +5,33 @@ extension AnimatedSvgPainterGradientsExtension on AnimatedSvgPainter {
     Object? paintValue,
     ui.Rect paintBounds,
   ) {
-    final gradientId = _extractPaintServerId(paintValue);
-    if (gradientId == null) {
+    final serverId = _extractPaintServerId(paintValue);
+    if (serverId == null) {
       return null;
     }
 
-    final gradient = _resolveGradientDefinition(gradientId);
-    if (gradient == null || gradient.stops.isEmpty) {
-      return null;
+    // Try gradient first
+    final gradient = _resolveGradientDefinition(serverId);
+    if (gradient != null && gradient.stops.isNotEmpty) {
+      return _createGradientShader(gradient, paintBounds);
     }
 
+    // Try pattern
+    final patternShader = _createPatternShader(
+      serverId,
+      targetBounds: paintBounds,
+    );
+    if (patternShader != null) {
+      return patternShader;
+    }
+
+    return null;
+  }
+
+  ui.Shader? _createGradientShader(
+    _ResolvedGradientDefinition gradient,
+    ui.Rect paintBounds,
+  ) {
     final bounds = _normalizePaintBounds(paintBounds);
     final gradientUnits = gradient.attributes['gradientUnits']
         ?.toString()
@@ -25,8 +42,18 @@ extension AnimatedSvgPainterGradientsExtension on AnimatedSvgPainter {
     final matrix4 = _parseGradientTransformMatrix(
       gradient.attributes['gradientTransform'],
     );
-    final colors = gradient.stops.map((s) => s.color).toList(growable: false);
-    final offsets = gradient.stops.map((s) => s.offset).toList(growable: false);
+
+    // Apply linearRGB color interpolation if specified
+    final List<ui.Color> colors;
+    final List<double> offsets;
+    if (gradient.useLinearRGB && gradient.stops.length >= 2) {
+      final linearStops = _createLinearRGBInterpolatedStops(gradient.stops);
+      colors = linearStops.map((s) => s.color).toList(growable: false);
+      offsets = linearStops.map((s) => s.offset).toList(growable: false);
+    } else {
+      colors = gradient.stops.map((s) => s.color).toList(growable: false);
+      offsets = gradient.stops.map((s) => s.offset).toList(growable: false);
+    }
 
     if (gradient.type == 'linearGradient') {
       final x1 = _resolveGradientCoordinate(

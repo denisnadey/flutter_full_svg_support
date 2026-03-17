@@ -28,10 +28,6 @@ extension AnimatedSvgPainterShapesPathExtension on AnimatedSvgPainter {
       colorFilter: colorFilter,
       blendMode: blendMode,
     );
-    if (fillPaint != null) {
-      canvas.drawPath(path, fillPaint);
-    }
-
     final strokePaint = _createStrokePaint(
       node,
       paintBounds: paintBounds,
@@ -39,10 +35,32 @@ extension AnimatedSvgPainterShapesPathExtension on AnimatedSvgPainter {
       colorFilter: colorFilter,
       blendMode: blendMode,
     );
-    if (strokePaint != null) {
-      final dashedPath = _buildDashedPath(path, node);
-      canvas.drawPath(dashedPath, strokePaint);
-    }
+
+    _paintWithOrder(
+      node,
+      () {
+        if (fillPaint != null) {
+          canvas.drawPath(path, fillPaint);
+        }
+      },
+      () {
+        if (strokePaint != null) {
+          final dashedPath = _buildDashedPath(path, node);
+          canvas.drawPath(dashedPath, strokePaint);
+        }
+      },
+      paintMarkers: () {
+        // Paint markers at vertices
+        _paintMarkers(
+          canvas,
+          node,
+          path,
+          imageFilter: imageFilter,
+          colorFilter: colorFilter,
+          blendMode: blendMode,
+        );
+      },
+    );
   }
 
   void _paintPolygon(
@@ -74,10 +92,6 @@ extension AnimatedSvgPainterShapesPathExtension on AnimatedSvgPainter {
       colorFilter: colorFilter,
       blendMode: blendMode,
     );
-    if (fillPaint != null) {
-      canvas.drawPath(path, fillPaint);
-    }
-
     final strokePaint = _createStrokePaint(
       node,
       paintBounds: paintBounds,
@@ -85,10 +99,32 @@ extension AnimatedSvgPainterShapesPathExtension on AnimatedSvgPainter {
       colorFilter: colorFilter,
       blendMode: blendMode,
     );
-    if (strokePaint != null) {
-      final dashedPath = _buildDashedPath(path, node);
-      canvas.drawPath(dashedPath, strokePaint);
-    }
+
+    _paintWithOrder(
+      node,
+      () {
+        if (fillPaint != null) {
+          canvas.drawPath(path, fillPaint);
+        }
+      },
+      () {
+        if (strokePaint != null) {
+          final dashedPath = _buildDashedPath(path, node);
+          canvas.drawPath(dashedPath, strokePaint);
+        }
+      },
+      paintMarkers: () {
+        // Paint markers at vertices
+        _paintMarkers(
+          canvas,
+          node,
+          path,
+          imageFilter: imageFilter,
+          colorFilter: colorFilter,
+          blendMode: blendMode,
+        );
+      },
+    );
   }
 
   void _paintPolyline(
@@ -114,10 +150,6 @@ extension AnimatedSvgPainterShapesPathExtension on AnimatedSvgPainter {
       colorFilter: colorFilter,
       blendMode: blendMode,
     );
-    if (fillPaint != null) {
-      canvas.drawPath(path, fillPaint);
-    }
-
     final strokePaint = _createStrokePaint(
       node,
       paintBounds: paintBounds,
@@ -125,9 +157,31 @@ extension AnimatedSvgPainterShapesPathExtension on AnimatedSvgPainter {
       colorFilter: colorFilter,
       blendMode: blendMode,
     );
-    if (strokePaint != null) {
-      final dashedPath = _buildDashedPath(path, node);
-      canvas.drawPath(dashedPath, strokePaint);
-    }
+
+    _paintWithOrder(
+      node,
+      () {
+        if (fillPaint != null) {
+          canvas.drawPath(path, fillPaint);
+        }
+      },
+      () {
+        if (strokePaint != null) {
+          final dashedPath = _buildDashedPath(path, node);
+          canvas.drawPath(dashedPath, strokePaint);
+        }
+      },
+      paintMarkers: () {
+        // Paint markers at vertices
+        _paintMarkers(
+          canvas,
+          node,
+          path,
+          imageFilter: imageFilter,
+          colorFilter: colorFilter,
+          blendMode: blendMode,
+        );
+      },
+    );
   }
 }

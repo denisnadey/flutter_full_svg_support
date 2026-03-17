@@ -320,6 +320,22 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
     ui.ColorFilter? colorFilter,
     ui.BlendMode? blendMode,
   }) {
+    // Handle vertical writing modes by rotating the text
+    final isVertical = style.writingMode != _SvgWritingMode.horizontalTb;
+    if (isVertical) {
+      return _paintPlainTextVertical(
+        canvas,
+        node: node,
+        text: text,
+        style: style,
+        x: x,
+        baselineY: baselineY,
+        imageFilter: imageFilter,
+        colorFilter: colorFilter,
+        blendMode: blendMode,
+      );
+    }
+
     var effectiveStyle = style;
     var paragraph = _buildTextParagraph(text, effectiveStyle);
     var width = paragraph.maxIntrinsicWidth;
@@ -384,6 +400,59 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
       );
     }
     return width;
+  }
+
+  /// Paints text vertically (for writing-mode: vertical-rl or vertical-lr).
+  /// Each character is rendered top-to-bottom.
+  double _paintPlainTextVertical(
+    ui.Canvas canvas, {
+    required SvgNode node,
+    required String text,
+    required _ResolvedTextStyle style,
+    required double x,
+    required double baselineY,
+    ui.ImageFilter? imageFilter,
+    ui.ColorFilter? colorFilter,
+    ui.BlendMode? blendMode,
+  }) {
+    final glyphs = text.runes.map((r) => String.fromCharCode(r)).toList();
+    if (glyphs.isEmpty) {
+      return 0.0;
+    }
+
+    var totalHeight = 0.0;
+    var cursorY = baselineY;
+
+    // For vertical text, rotate each character 90 degrees clockwise
+    // and stack them vertically
+    for (int i = 0; i < glyphs.length; i++) {
+      final glyph = glyphs[i];
+      final paragraph = _buildTextParagraph(glyph, style);
+      final glyphWidth = paragraph.maxIntrinsicWidth;
+      final glyphHeight = style.fontSize;
+
+      canvas.save();
+      // Position at current y, rotate 90 degrees for vertical
+      canvas.translate(x, cursorY);
+      // Rotate 90 degrees clockwise for vertical text
+      canvas.rotate(math.pi / 2);
+
+      _drawParagraphWithEffects(
+        canvas,
+        paragraph: paragraph,
+        x: 0.0,
+        y: -glyphWidth / 2,
+        imageFilter: imageFilter,
+        colorFilter: colorFilter,
+        blendMode: blendMode,
+      );
+      canvas.restore();
+
+      cursorY += glyphHeight + style.letterSpacing;
+      totalHeight += glyphHeight + style.letterSpacing;
+    }
+
+    return totalHeight;
   }
 
   double _paintTextAlongPath(

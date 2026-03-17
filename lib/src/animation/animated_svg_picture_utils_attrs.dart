@@ -125,6 +125,16 @@ extension _AnimatedSvgPictureStateAttrsExtension on _AnimatedSvgPictureState {
     if (raw == null) {
       return null;
     }
+
+    // Check xml:space attribute for whitespace handling
+    final xmlSpace = _getInheritedString(node, 'xml:space')?.toLowerCase();
+    if (xmlSpace == 'preserve') {
+      // Preserve whitespace as-is (only convert newlines to spaces)
+      final preserved = raw.replaceAll('\n', ' ').replaceAll('\r', ' ');
+      return preserved.isEmpty ? null : preserved;
+    }
+
+    // Default: collapse whitespace
     final normalized = raw.replaceAll(RegExp(r'\s+'), ' ').trim();
     return normalized.isEmpty ? null : normalized;
   }

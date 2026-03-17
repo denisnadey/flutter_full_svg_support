@@ -175,7 +175,13 @@ void _paintNodeImpl(
       case 'g':
       case 'svg':
       case 'foreignObject':
-        // Группы не рисуются, только применяют атрибуты к детям.
+        // Groups apply saveLayer for opacity compositing if needed.
+        // Returns true if children were painted in the layer.
+        if (_paintGroupWithOpacity(painter, canvas, node, currentUseStack)) {
+          // Children already painted in opacity layer, skip normal recursion
+          canvas.restore();
+          return;
+        }
         break;
       case 'switch':
         painter._paintSwitch(canvas, node, useStack: currentUseStack);
@@ -194,6 +200,50 @@ void _paintNodeImpl(
   }
 
   canvas.restore();
+}
+
+/// Paints group children with proper opacity compositing.
+/// If the group has opacity < 1, uses saveLayer to composite children
+/// before applying opacity to the whole group.
+/// Returns true if children were painted (caller should skip normal recursion).
+bool _paintGroupWithOpacity(
+  AnimatedSvgPainter painter,
+  ui.Canvas canvas,
+  SvgNode node,
+  Set<String> useStack,
+) {
+  // Check for group-level opacity (not inherited)
+  final opacityValue = node.getAttributeValue('opacity');
+  final opacity = opacityValue != null
+      ? (double.tryParse(opacityValue.toString()) ?? 1.0).clamp(0.0, 1.0)
+      : 1.0;
+
+  // If opacity is 1.0, no special handling needed - children painted normally
+  // by the recursive call after this switch statement
+  if (opacity >= 1.0) {
+    return false;
+  }
+
+  // Use saveLayer for opacity compositing
+  // Using null bounds lets Flutter determine the layer size
+  final layerPaint = ui.Paint()..color = ui.Color.fromARGB(
+    (opacity * 255).round(),
+    255,
+    255,
+    255,
+  );
+
+  canvas.saveLayer(null, layerPaint);
+
+  // Paint children into the layer
+  if (painter._shouldPaintChildren(node)) {
+    for (final child in node.children) {
+      _paintNodeImpl(painter, canvas, child, useStack: useStack);
+    }
+  }
+
+  canvas.restore();
+  return true;
 }
 
 List<SvgFilterPaintPass> _resolveFilterPassesImpl(
@@ -251,7 +301,7 @@ List<SvgFilterPaintPass>? _resolveFilterPaintSourcePassesImpl(
     return null;
   }
 
-  final color = painter._resolveColorValue(paintValue);
+  final color = painter._resolveColorForNode(paintValue, node);
   if (color == null) {
     return null;
   }
