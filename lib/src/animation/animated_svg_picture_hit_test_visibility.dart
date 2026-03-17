@@ -1,5 +1,8 @@
 part of 'animated_svg_picture.dart';
 
+/// Maximum recursion depth for nested clipPath/mask references.
+const int _kMaxClipMaskRecursionDepth = 10;
+
 extension _AnimatedSvgPictureStateHitTestVisibilityExtension
     on _AnimatedSvgPictureState {
   bool _isPointVisibleForNode(
@@ -16,10 +19,14 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
   }
 
   bool _isPointVisibleInNodeSpace(SvgNode node, Offset localPoint) {
-    if (!_isPointInsideClipPath(node, localPoint)) {
+    if (!_isPointInsideClipPath(
+      node,
+      localPoint,
+      visitedClipPaths: <String>{},
+    )) {
       return false;
     }
-    if (!_isPointInsideMask(node, localPoint)) {
+    if (!_isPointInsideMask(node, localPoint, visitedMasks: <String>{})) {
       return false;
     }
     if (!_isPointInsideForeignObjectViewport(node, localPoint)) {
@@ -28,7 +35,14 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
     return true;
   }
 
-  bool _isPointInsideClipPath(SvgNode node, Offset localPoint) {
+  /// Checks if a point is inside the clipPath region.
+  /// Handles nested clipPaths (clipPath referencing another clipPath),
+  /// clipPathUnits transformations, and clipPath-on-clipPath transforms.
+  bool _isPointInsideClipPath(
+    SvgNode node,
+    Offset localPoint, {
+    required Set<String> visitedClipPaths,
+  }) {
     final clipValue = _extractStyleValue(node, 'clip-path');
     final clipId = _extractUrlId(
       clipValue ?? node.getAttributeValue('clip-path'),
@@ -36,17 +50,24 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
     if (clipId == null || clipId.isEmpty) {
       return true;
     }
+    // Prevent infinite recursion from circular clipPath references
+    if (visitedClipPaths.contains(clipId) ||
+        visitedClipPaths.length >= _kMaxClipMaskRecursionDepth) {
+      return true;
+    }
     final clipNode = _document.root.findById(clipId);
     if (clipNode == null || clipNode.tagName != 'clipPath') {
       return true;
     }
 
-    // Apply clipPath's own transform attribute if present
-    var clipPathTransform = Matrix4.identity();
-    final clipTransformStr = clipNode.getAttributeValue('transform');
-    if (clipTransformStr != null &&
-        clipTransformStr.toString().trim().isNotEmpty) {
-      _applyNodeTransform(clipPathTransform, clipNode);
+    // Check if clipPath itself has a clip-path (nested clipPath)
+    final nestedVisited = <String>{...visitedClipPaths, clipId};
+    if (!_isPointInsideClipPath(
+      clipNode,
+      localPoint,
+      visitedClipPaths: nestedVisited,
+    )) {
+      return false;
     }
 
     final rootTransform = _resolveContainerRootTransformForUnits(
@@ -58,12 +79,10 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
       return true;
     }
 
-    // Combine clipPath transform with units transform
-    clipPathTransform.multiply(rootTransform);
-
-    final clipPath = _buildContainerGeometryPath(
+    final clipPath = _buildClipPathGeometryWithTransforms(
       clipNode,
-      rootTransform: clipPathTransform,
+      rootTransform: rootTransform,
+      visitedClipPaths: nestedVisited,
     );
     if (clipPath == null) {
       return true;
@@ -71,30 +90,150 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
     return clipPath.contains(localPoint);
   }
 
-  bool _isPointInsideMask(SvgNode node, Offset localPoint) {
+  /// Builds clipPath geometry handling child transforms.
+  /// Each child shape can have its own transform which must be applied.
+  Path? _buildClipPathGeometryWithTransforms(
+    SvgNode clipPathNode, {
+    required Matrix4 rootTransform,
+    required Set<String> visitedClipPaths,
+  }) {
+    final path = Path();
+    final added = _appendClipPathGeometryWithTransforms(
+      target: path,
+      node: clipPathNode,
+      currentTransform: rootTransform,
+      useStack: <String>{},
+      visitedClipPaths: visitedClipPaths,
+    );
+    return added ? path : null;
+  }
+
+  /// Appends geometry from clipPath children, handling transforms on each child.
+  bool _appendClipPathGeometryWithTransforms({
+    required Path target,
+    required SvgNode node,
+    required Matrix4 currentTransform,
+    required Set<String> useStack,
+    required Set<String> visitedClipPaths,
+  }) {
+    final matrix = Matrix4.copy(currentTransform);
+    _applyNodeTransform(matrix, node);
+
+    switch (node.tagName) {
+      case 'clipPath':
+      case 'g':
+      case 'svg':
+      case 'symbol':
+        var added = false;
+        for (final child in node.children) {
+          if (_appendClipPathGeometryWithTransforms(
+            target: target,
+            node: child,
+            currentTransform: matrix,
+            useStack: useStack,
+            visitedClipPaths: visitedClipPaths,
+          )) {
+            added = true;
+          }
+        }
+        return added;
+      case 'switch':
+        final activeChild = resolveActiveSwitchChild(node);
+        if (activeChild == null) {
+          return false;
+        }
+        return _appendClipPathGeometryWithTransforms(
+          target: target,
+          node: activeChild,
+          currentTransform: matrix,
+          useStack: useStack,
+          visitedClipPaths: visitedClipPaths,
+        );
+      case 'use':
+        final hrefId = _extractHrefId(node);
+        if (hrefId == null || hrefId.isEmpty || useStack.contains(hrefId)) {
+          return false;
+        }
+        final referenced = _document.root.findById(hrefId);
+        if (referenced == null ||
+            !_isUseReferenceAllowedTag(referenced.tagName)) {
+          return false;
+        }
+        final translated = Matrix4.copy(matrix)
+          ..translateByDouble(
+            _getNumber(node, 'x') ?? 0.0,
+            _getNumber(node, 'y') ?? 0.0,
+            0,
+            1,
+          );
+        final nextUseStack = <String>{...useStack, hrefId};
+        if (_isUseViewportReferenceTag(referenced.tagName)) {
+          final useReferenceTransform = Matrix4.copy(translated);
+          _applyUseViewportTransform(useReferenceTransform, node, referenced);
+          return _appendClipPathGeometryWithTransforms(
+            target: target,
+            node: referenced,
+            currentTransform: useReferenceTransform,
+            useStack: nextUseStack,
+            visitedClipPaths: visitedClipPaths,
+          );
+        }
+        return _appendClipPathGeometryWithTransforms(
+          target: target,
+          node: referenced,
+          currentTransform: translated,
+          useStack: nextUseStack,
+          visitedClipPaths: visitedClipPaths,
+        );
+      default:
+        final geometry = _buildGeometryPath(node);
+        if (geometry == null) {
+          return false;
+        }
+        target.addPath(geometry.transform(matrix.storage), Offset.zero);
+        return true;
+    }
+  }
+
+  /// Checks if a point is inside the mask region.
+  /// Handles mask transforms, maskUnits/maskContentUnits, nested masks,
+  /// and gradient alpha threshold-based hit detection.
+  bool _isPointInsideMask(
+    SvgNode node,
+    Offset localPoint, {
+    required Set<String> visitedMasks,
+  }) {
     final maskValue = _extractStyleValue(node, 'mask');
     final maskId = _extractUrlId(maskValue ?? node.getAttributeValue('mask'));
     if (maskId == null || maskId.isEmpty) {
+      return true;
+    }
+    // Prevent infinite recursion from circular mask references
+    if (visitedMasks.contains(maskId) ||
+        visitedMasks.length >= _kMaxClipMaskRecursionDepth) {
       return true;
     }
     final maskNode = _document.root.findById(maskId);
     if (maskNode == null || maskNode.tagName != 'mask') {
       return true;
     }
+
+    // Check if mask itself has a mask (nested mask)
+    final nestedVisited = <String>{...visitedMasks, maskId};
+    if (!_isPointInsideMask(
+      maskNode,
+      localPoint,
+      visitedMasks: nestedVisited,
+    )) {
+      return false;
+    }
+
     final maskRegion = _resolveMaskRegionRectForNodeSpace(
       targetNode: node,
       maskNode: maskNode,
     );
     if (maskRegion != null && !maskRegion.contains(localPoint)) {
       return false;
-    }
-
-    // Apply mask's own transform attribute if present
-    var maskTransform = Matrix4.identity();
-    final maskTransformStr = maskNode.getAttributeValue('transform');
-    if (maskTransformStr != null &&
-        maskTransformStr.toString().trim().isNotEmpty) {
-      _applyNodeTransform(maskTransform, maskNode);
     }
 
     final rootTransform = _resolveContainerRootTransformForUnits(
@@ -106,14 +245,11 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
       return true;
     }
 
-    // Combine mask transform with units transform
-    maskTransform.multiply(rootTransform);
-
-    // Build path only from mask content that has visible paint
-    // (shapes with fill:none and stroke:none should not contribute to hit area)
+    // Build path from mask content that has visible paint
     final maskPath = _buildVisibleMaskGeometryPath(
       maskNode,
-      rootTransform: maskTransform,
+      rootTransform: rootTransform,
+      visitedMasks: nestedVisited,
     );
     if (maskPath == null) {
       // No visible mask content - allow hit
@@ -127,14 +263,16 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
   /// contribute nothing to the mask's visual output (zero alpha/luminance).
   Path? _buildVisibleMaskGeometryPath(
     SvgNode containerNode, {
-    Matrix4? rootTransform,
+    required Matrix4 rootTransform,
+    required Set<String> visitedMasks,
   }) {
     final path = Path();
     final added = _appendVisibleMaskGeometry(
       target: path,
       node: containerNode,
-      currentTransform: rootTransform ?? Matrix4.identity(),
+      currentTransform: rootTransform,
       useStack: <String>{},
+      visitedMasks: visitedMasks,
     );
     return added ? path : null;
   }
@@ -144,6 +282,7 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
     required SvgNode node,
     required Matrix4 currentTransform,
     required Set<String> useStack,
+    required Set<String> visitedMasks,
   }) {
     final matrix = Matrix4.copy(currentTransform);
     _applyNodeTransform(matrix, node);
@@ -161,6 +300,7 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
             node: child,
             currentTransform: matrix,
             useStack: useStack,
+            visitedMasks: visitedMasks,
           )) {
             added = true;
           }
@@ -176,6 +316,7 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
           node: activeChild,
           currentTransform: matrix,
           useStack: useStack,
+          visitedMasks: visitedMasks,
         );
       case 'use':
         final hrefId = _extractHrefId(node);
@@ -203,6 +344,7 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
             node: referenced,
             currentTransform: useReferenceTransform,
             useStack: nextUseStack,
+            visitedMasks: visitedMasks,
           );
         }
         return _appendVisibleMaskGeometry(
@@ -210,6 +352,7 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
           node: referenced,
           currentTransform: translated,
           useStack: nextUseStack,
+          visitedMasks: visitedMasks,
         );
       default:
         // Check if this element has any visible paint contribution

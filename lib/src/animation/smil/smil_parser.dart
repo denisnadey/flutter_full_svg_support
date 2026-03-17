@@ -1,7 +1,10 @@
+import 'dart:ui';
+
 import '../css_animations.dart';
 import '../css_to_smil_converter.dart';
 import '../css_variables_calc.dart';
 import '../svg_dom.dart';
+import 'motion_path.dart';
 import 'smil_animation.dart';
 import 'timing_condition.dart';
 import 'timing_parser.dart';

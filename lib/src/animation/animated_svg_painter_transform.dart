@@ -2,8 +2,19 @@ part of 'animated_svg_painter.dart';
 
 extension AnimatedSvgPainterCanvasTransformExtension on AnimatedSvgPainter {
   void _applyTransform(ui.Canvas canvas, SvgNode node) {
-    final transformStr = _getString(node, 'transform');
-    if (transformStr == null || transformStr.isEmpty) return;
+    // Get both SVG transform attribute and CSS transform property
+    // CSS transform property takes precedence over SVG transform attribute per spec
+    final svgTransformStr = _getString(node, 'transform');
+    final cssTransformStr = _getStyleOrAttributeValue(node, 'transform')?.toString();
+
+    // Use CSS transform if available, otherwise fall back to SVG attribute
+    // Note: In Blink, CSS transform overrides SVG transform completely
+    final transformStr = cssTransformStr ?? svgTransformStr;
+    if (transformStr == null ||
+        transformStr.isEmpty ||
+        transformStr.toLowerCase() == 'none') {
+      return;
+    }
 
     // Парсим трансформации
     final transforms = SvgTransform.parse(transformStr);
@@ -353,7 +364,8 @@ extension AnimatedSvgPainterCanvasTransformExtension on AnimatedSvgPainter {
   }
 
   /// Parses the transform-origin CSS property.
-  /// Supports keywords (center, left, right, top, bottom), percentages, and absolute values.
+  /// Supports keywords (center, left, right, top, bottom), percentages, absolute values,
+  /// and three-value syntax (x y z) for 3D transforms.
   /// Returns null if not set.
   ui.Offset? _parseTransformOrigin(SvgNode node) {
     final originObj = _getStyleOrAttributeValue(node, 'transform-origin');
@@ -364,43 +376,133 @@ extension AnimatedSvgPainterCanvasTransformExtension on AnimatedSvgPainter {
     final parts = originValue.trim().split(RegExp(r'\s+'));
     if (parts.isEmpty) return null;
 
-    // Get element bounds for percentage calculations
-    final bounds = _getNodeBounds(node);
+    // Get reference box based on transform-box property
+    final bounds = _getTransformReferenceBox(node);
 
-    double parseOriginValue(String value, double size, bool isX) {
+    double parseOriginValue(
+      String value,
+      double size,
+      double offset,
+      bool isHorizontal,
+    ) {
       final lower = value.toLowerCase();
       // Handle keywords
       switch (lower) {
         case 'left':
-          return 0.0;
+          return offset;
         case 'center':
-          return size / 2;
+          return offset + size / 2;
         case 'right':
-          return size;
+          return offset + size;
         case 'top':
-          return 0.0;
+          return offset;
         case 'bottom':
-          return size;
+          return offset + size;
       }
       // Handle percentage
       if (lower.endsWith('%')) {
         final percent = double.tryParse(lower.substring(0, lower.length - 1));
         if (percent != null) {
-          return (percent / 100.0) * size;
+          return offset + (percent / 100.0) * size;
         }
       }
-      // Handle px or bare number
-      final numValue = lower.replaceAll('px', '');
-      return double.tryParse(numValue) ?? (size / 2);
+      // Handle various length units
+      return _parseLengthToPixels(lower, size, isHorizontal) + offset;
     }
 
-    final xValue = parts[0];
-    final yValue = parts.length > 1 ? parts[1] : 'center';
+    // Handle keyword swapping (e.g., "top left" vs "left top")
+    var xPart = parts[0];
+    var yPart = parts.length > 1 ? parts[1] : 'center';
 
-    final x = parseOriginValue(xValue, bounds.width, true) + bounds.left;
-    final y = parseOriginValue(yValue, bounds.height, false) + bounds.top;
+    // Check if first part is a vertical keyword and second is horizontal
+    if (_isVerticalKeyword(xPart) && parts.length > 1 && _isHorizontalKeyword(yPart)) {
+      final temp = xPart;
+      xPart = yPart;
+      yPart = temp;
+    }
+
+    final x = parseOriginValue(xPart, bounds.width, bounds.left, true);
+    final y = parseOriginValue(yPart, bounds.height, bounds.top, false);
+    // Third value (z) is ignored for 2D rendering but we parse it for completeness
+    // final z = parts.length > 2 ? _parseLengthToPixels(parts[2], 0, false) : 0.0;
 
     return ui.Offset(x, y);
+  }
+
+  /// Checks if a keyword is a vertical position keyword.
+  bool _isVerticalKeyword(String keyword) {
+    final lower = keyword.toLowerCase();
+    return lower == 'top' || lower == 'bottom';
+  }
+
+  /// Checks if a keyword is a horizontal position keyword.
+  bool _isHorizontalKeyword(String keyword) {
+    final lower = keyword.toLowerCase();
+    return lower == 'left' || lower == 'right';
+  }
+
+  /// Parses a CSS length value to pixels.
+  /// Supports: px, em, rem, %, vw, vh, bare numbers.
+  double _parseLengthToPixels(String value, double referenceSize, bool isWidth) {
+    final lower = value.toLowerCase().trim();
+
+    if (lower.endsWith('px')) {
+      return double.tryParse(lower.substring(0, lower.length - 2)) ?? 0.0;
+    }
+    if (lower.endsWith('em') || lower.endsWith('rem')) {
+      // Default font size is typically 16px
+      final unitLen = lower.endsWith('rem') ? 3 : 2;
+      final num = double.tryParse(lower.substring(0, lower.length - unitLen)) ?? 0.0;
+      return num * 16.0;
+    }
+    if (lower.endsWith('%')) {
+      final percent = double.tryParse(lower.substring(0, lower.length - 1)) ?? 0.0;
+      return (percent / 100.0) * referenceSize;
+    }
+    if (lower.endsWith('vw')) {
+      // Viewport width - use reference or a default
+      final vw = double.tryParse(lower.substring(0, lower.length - 2)) ?? 0.0;
+      return vw * (referenceSize / 100.0);
+    }
+    if (lower.endsWith('vh')) {
+      // Viewport height
+      final vh = double.tryParse(lower.substring(0, lower.length - 2)) ?? 0.0;
+      return vh * (referenceSize / 100.0);
+    }
+    // Bare number
+    return double.tryParse(lower) ?? 0.0;
+  }
+
+  /// Gets the reference box for transform-origin based on transform-box property.
+  /// Supports: fill-box (default for SVG), view-box, content-box, border-box.
+  ui.Rect _getTransformReferenceBox(SvgNode node) {
+    final transformBox = _getStyleOrAttributeValue(node, 'transform-box');
+    final boxType = transformBox?.toString().toLowerCase().trim() ?? 'fill-box';
+
+    switch (boxType) {
+      case 'view-box':
+        // Use the nearest viewBox as reference
+        return _getNearestViewBox(node) ?? _getNodeBounds(node);
+      case 'fill-box':
+      case 'content-box':
+      case 'border-box':
+      default:
+        // For SVG, fill-box is the object bounding box
+        return _getNodeBounds(node);
+    }
+  }
+
+  /// Gets the nearest ancestor viewBox or the root viewBox.
+  ui.Rect? _getNearestViewBox(SvgNode node) {
+    var current = node;
+    while (true) {
+      final viewBox = _getViewBox(current);
+      if (viewBox != null) return viewBox;
+      final parent = current.parent;
+      if (parent == null) break;
+      current = parent;
+    }
+    return null;
   }
 
   /// Gets the bounding box of a node for transform-origin calculations.

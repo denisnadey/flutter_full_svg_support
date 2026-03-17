@@ -1,5 +1,9 @@
 part of 'animated_svg_painter.dart';
 
+/// Internal use context being passed during rendering.
+/// Used to track CSS inheritance across <use> boundaries.
+_UseInheritanceContext? _currentUseContext;
+
 void _paintNodeImpl(
   AnimatedSvgPainter painter,
   ui.Canvas canvas,
@@ -7,6 +11,32 @@ void _paintNodeImpl(
   Set<String>? useStack,
   SvgNode? foreignObjectParent,
 }) {
+  _paintNodeImplWithUseContext(
+    painter,
+    canvas,
+    node,
+    useStack: useStack,
+    foreignObjectParent: foreignObjectParent,
+    useContext: null,
+  );
+}
+
+/// Paints a node with use inheritance context for proper CSS cascade.
+/// This is the core rendering function that handles CSS property inheritance
+/// from <use> elements to their referenced content.
+void _paintNodeImplWithUseContext(
+  AnimatedSvgPainter painter,
+  ui.Canvas canvas,
+  SvgNode node, {
+  Set<String>? useStack,
+  SvgNode? foreignObjectParent,
+  _UseInheritanceContext? useContext,
+}) {
+  // Store use context for attribute resolution
+  final previousUseContext = _currentUseContext;
+  if (useContext != null) {
+    _currentUseContext = useContext;
+  }
   final display = painter
       ._getStyleOrAttributeValue(node, 'display')
       ?.toString()
@@ -178,7 +208,12 @@ void _paintNodeImpl(
         // Рендерится из родительского <text> прохода.
         break;
       case 'use':
-        painter._paintUse(canvas, node, useStack: currentUseStack);
+        painter._paintUse(
+          canvas,
+          node,
+          useStack: currentUseStack,
+          useContext: useContext,
+        );
         break;
       case 'a':
       case 'g':
@@ -198,8 +233,11 @@ void _paintNodeImpl(
           node,
           currentUseStack,
           foreignObjectParent: node.tagName == 'foreignObject' ? node : null,
+          useContext: useContext,
         )) {
           // Children already painted in opacity layer, skip normal recursion
+          // Restore previous use context
+          _currentUseContext = previousUseContext;
           canvas.restore();
           return;
         }
@@ -218,15 +256,19 @@ void _paintNodeImpl(
     // Determine if this node establishes a foreignObject context for children
     final foParent = node.tagName == 'foreignObject' ? node : null;
     for (final child in node.children) {
-      _paintNodeImpl(
+      _paintNodeImplWithUseContext(
         painter,
         canvas,
         child,
         useStack: currentUseStack,
         foreignObjectParent: foParent,
+        useContext: useContext,
       );
     }
   }
+
+  // Restore previous use context
+  _currentUseContext = previousUseContext;
 
   canvas.restore();
 }
@@ -241,6 +283,7 @@ bool _paintGroupWithOpacity(
   SvgNode node,
   Set<String> useStack, {
   SvgNode? foreignObjectParent,
+  _UseInheritanceContext? useContext,
 }) {
   // Check for group-level opacity (not inherited)
   final opacityValue = node.getAttributeValue('opacity');
@@ -268,12 +311,13 @@ bool _paintGroupWithOpacity(
         ? node
         : foreignObjectParent;
     for (final child in node.children) {
-      _paintNodeImpl(
+      _paintNodeImplWithUseContext(
         painter,
         canvas,
         child,
         useStack: useStack,
         foreignObjectParent: foParent,
+        useContext: useContext,
       );
     }
   }

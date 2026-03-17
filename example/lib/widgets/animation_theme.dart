@@ -57,7 +57,7 @@ class AnimationTheme {
         ),
       ),
       sliderTheme: const SliderThemeData(
-        showValueIndicator: ShowValueIndicator.always,
+        showValueIndicator: ShowValueIndicator.onDrag,
         thumbShape: RoundSliderThumbShape(enabledThumbRadius: 8),
         trackHeight: 4,
       ),
@@ -90,7 +90,7 @@ class AnimationTheme {
         ),
       ),
       sliderTheme: const SliderThemeData(
-        showValueIndicator: ShowValueIndicator.always,
+        showValueIndicator: ShowValueIndicator.onDrag,
         thumbShape: RoundSliderThumbShape(enabledThumbRadius: 8),
         trackHeight: 4,
       ),

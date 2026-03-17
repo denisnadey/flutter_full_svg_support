@@ -10,10 +10,78 @@ SmilAnimation? _parseAnimateMotion(
     // Парсим ID анимации (для syncbase timing)
     final id = animNode.id;
 
-    // Получаем path из inline path или <mpath href="#...">.
-    final pathData = _resolveAnimateMotionPathData(animNode, document);
+    // Determine the animation mode: path, values with coordinates, or from/to/by
+    // Priority: path/mpath > values (coordinates) > from/to/by
+    String? pathData;
+    String? fromCoordinate;
+    String? toCoordinate;
+    String? byCoordinate;
+
+    // Try to get path data first
+    pathData = _resolveAnimateMotionPathData(animNode, document);
+
+    // If no path, check for values attribute with coordinate pairs
     if (pathData == null || pathData.trim().isEmpty) {
-      return null; // animateMotion без path невалидна
+      final valuesStr = animNode.getAttributeValue('values') as String?;
+      if (valuesStr != null && valuesStr.trim().isNotEmpty) {
+        // Parse values as coordinate pairs (e.g., "0,0;100,100;200,50")
+        final coords = MotionPath.parseCoordinatePairs(valuesStr);
+        if (coords.isNotEmpty) {
+          // Create implicit path from coordinates
+          if (coords.length >= 2) {
+            final buffer = StringBuffer('M${coords[0].dx},${coords[0].dy}');
+            for (int i = 1; i < coords.length; i++) {
+              buffer.write(' L${coords[i].dx},${coords[i].dy}');
+            }
+            pathData = buffer.toString();
+          } else if (coords.length == 1) {
+            pathData = 'M${coords[0].dx},${coords[0].dy}';
+          }
+        }
+      }
+    }
+
+    // If still no path, check for from/to/by coordinates
+    if (pathData == null || pathData.trim().isEmpty) {
+      fromCoordinate = animNode.getAttributeValue('from')?.toString();
+      toCoordinate = animNode.getAttributeValue('to')?.toString();
+      byCoordinate = animNode.getAttributeValue('by')?.toString();
+
+      final fromOffset = fromCoordinate != null
+          ? MotionPath.parseCoordinatePair(fromCoordinate)
+          : null;
+      final toOffset = toCoordinate != null
+          ? MotionPath.parseCoordinatePair(toCoordinate)
+          : null;
+      final byOffset = byCoordinate != null
+          ? MotionPath.parseCoordinatePair(byCoordinate)
+          : null;
+
+      // Construct path from from/to/by
+      if (fromOffset != null || toOffset != null || byOffset != null) {
+        final startPoint = fromOffset ?? Offset.zero;
+        Offset endPoint;
+
+        if (toOffset != null) {
+          endPoint = toOffset;
+        } else if (byOffset != null) {
+          endPoint = Offset(
+            startPoint.dx + byOffset.dx,
+            startPoint.dy + byOffset.dy,
+          );
+        } else {
+          // Only from specified, use from as start and stay there
+          endPoint = startPoint;
+        }
+
+        pathData =
+            'M${startPoint.dx},${startPoint.dy} L${endPoint.dx},${endPoint.dy}';
+      }
+    }
+
+    // If still no valid path, animation is invalid
+    if (pathData == null || pathData.trim().isEmpty) {
+      return null;
     }
 
     // Парсим тайминг
@@ -67,6 +135,10 @@ SmilAnimation? _parseAnimateMotion(
       animNode.getAttributeValue('calcMode')?.toString(),
     );
 
+    // Parse accumulate (for motion this affects position accumulation)
+    final accumulate =
+        animNode.getAttributeValue('accumulate')?.toString() == 'sum';
+
     // Парсим rotate атрибут
     final rotateStr = animNode.getAttributeValue('rotate')?.toString();
     String? rotateMode;
@@ -89,6 +161,19 @@ SmilAnimation? _parseAnimateMotion(
       keyTimes = _parseKeyTimes(keyTimesStr);
     }
 
+    // Parse keySplines for spline calcMode
+    List<CubicBezier>? keySplines;
+    final keySplinesStr = animNode.getAttributeValue('keySplines') as String?;
+    if (keySplinesStr != null && calcMode == SmilCalcMode.spline) {
+      keySplines = _parseKeySplines(keySplinesStr);
+    }
+
+    // For paced calcMode, keyPoints and keyTimes should be ignored (per SVG spec)
+    if (calcMode == SmilCalcMode.paced) {
+      keyPoints = null;
+      keyTimes = null;
+    }
+
     // Создаём SmilAnimation для animateMotion
     // Используем специальное значение для from/to - сам path
     return SmilAnimation(
@@ -101,6 +186,7 @@ SmilAnimation? _parseAnimateMotion(
       to: rotateMode, // Rotate mode хранится в to
       values: keyPoints?.map((kp) => kp as Object).toList(),
       keyTimes: keyTimes,
+      keySplines: keySplines,
       dur: dur,
       begin: begin,
       end: end,
@@ -111,7 +197,7 @@ SmilAnimation? _parseAnimateMotion(
       fillMode: fillMode,
       calcMode: calcMode,
       additive: SmilAdditiveMode.sum, // Motion всегда аддитивен
-      accumulate: false,
+      accumulate: accumulate,
     );
   } catch (_) {
     return null;

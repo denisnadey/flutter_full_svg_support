@@ -98,10 +98,10 @@ class _PerformanceMetricsState extends State<PerformanceMetrics> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.7),
+              color: Colors.black.withValues(alpha: 0.7),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: _getFpsColor(_fps).withOpacity(0.5),
+                color: _getFpsColor(_fps).withValues(alpha: 0.5),
                 width: 2,
               ),
             ),
@@ -117,7 +117,7 @@ class _PerformanceMetricsState extends State<PerformanceMetrics> {
                     Text(
                       'FPS',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
+                        color: Colors.white.withValues(alpha: 0.7),
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                       ),
@@ -138,7 +138,7 @@ class _PerformanceMetricsState extends State<PerformanceMetrics> {
                 Text(
                   '${_frameTime.toStringAsFixed(2)} ms',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.7),
+                    color: Colors.white.withValues(alpha: 0.7),
                     fontSize: 11,
                     fontFeatures: const [ui.FontFeature.tabularFigures()],
                   ),
@@ -146,7 +146,7 @@ class _PerformanceMetricsState extends State<PerformanceMetrics> {
                 Text(
                   'Frames: $_frameCount',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.5),
+                    color: Colors.white.withValues(alpha: 0.5),
                     fontSize: 10,
                     fontFeatures: const [ui.FontFeature.tabularFigures()],
                   ),

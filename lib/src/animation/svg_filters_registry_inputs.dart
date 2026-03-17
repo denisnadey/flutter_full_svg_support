@@ -9,6 +9,8 @@ extension SvgFiltersInputResolverExtension on SvgFilters {
   /// - Named results from previous primitives via `result` attribute
   /// - Default input resolution (previous output or SourceGraphic)
   /// - Forward reference handling (produces transparent black per spec)
+  /// - Multi-hop chain resolution (A→B→C references)
+  /// - Nested filter context handling for BackgroundImage
   List<SvgFilterPaintPass> _resolveInputPasses({
     required String? requestedInput,
     required List<SvgFilterPaintPass> previous,
@@ -44,6 +46,7 @@ extension SvgFiltersInputResolverExtension on SvgFilters {
 
     // Try named results from previous primitives.
     // This enables filter chains like: blur result="blurred" -> composite in="blurred"
+    // Also supports multi-hop chains: A→B→C where C references A's result.
     final named = namedResults[normalized];
     if (named != null && named.isNotEmpty) {
       // Return a copy to prevent accidental mutation of cached results.
@@ -79,22 +82,18 @@ extension SvgFiltersInputResolverExtension on SvgFilters {
     required List<SvgFilterPaintPass> sourceAlpha,
     bool isNormalizedLowerCase = false,
   }) {
+    // Use _createFillPaintInput and _createStrokePaintInput for proper handling
+    // of pattern fills, gradient fills with objectBoundingBox, and inherited paint.
     final fillPaint =
         _activeFillPaint ??
-        _maskPaintSourcePasses(
-          sourceGraphic,
-          paintFill: true,
-          paintStroke: false,
-        );
+        _createFillPaintInput(sourceGraphic);
     final strokePaint =
         _activeStrokePaint ??
-        _maskPaintSourcePasses(
-          sourceGraphic,
-          paintFill: false,
-          paintStroke: true,
-        );
-    final backgroundImage = _activeBackgroundImage ?? sourceGraphic;
-    final backgroundAlpha = _activeBackgroundAlpha ?? sourceAlpha;
+        _createStrokePaintInput(sourceGraphic);
+
+    // Use effective background methods for nested filter context support.
+    final backgroundImage = effectiveBackgroundImage ?? sourceGraphic;
+    final backgroundAlpha = effectiveBackgroundAlpha ?? sourceAlpha;
 
     switch (normalizedInput) {
       case 'SourceGraphic':
@@ -102,9 +101,9 @@ extension SvgFiltersInputResolverExtension on SvgFilters {
       case 'SourceAlpha':
         return <SvgFilterPaintPass>[...sourceAlpha];
       case 'BackgroundImage':
-        return <SvgFilterPaintPass>[...backgroundImage];
+        return _resolveBackgroundImageInput(backgroundImage);
       case 'BackgroundAlpha':
-        return <SvgFilterPaintPass>[...backgroundAlpha];
+        return _resolveBackgroundAlphaInput(backgroundAlpha);
       case 'FillPaint':
         return <SvgFilterPaintPass>[...fillPaint];
       case 'StrokePaint':
@@ -121,9 +120,9 @@ extension SvgFiltersInputResolverExtension on SvgFilters {
       case 'sourcealpha':
         return <SvgFilterPaintPass>[...sourceAlpha];
       case 'backgroundimage':
-        return <SvgFilterPaintPass>[...backgroundImage];
+        return _resolveBackgroundImageInput(backgroundImage);
       case 'backgroundalpha':
-        return <SvgFilterPaintPass>[...backgroundAlpha];
+        return _resolveBackgroundAlphaInput(backgroundAlpha);
       case 'fillpaint':
         return <SvgFilterPaintPass>[...fillPaint];
       case 'strokepaint':
@@ -131,6 +130,74 @@ extension SvgFiltersInputResolverExtension on SvgFilters {
       default:
         return null;
     }
+  }
+
+  /// Create FillPaint input with proper handling of pattern fills,
+  /// gradient fills with objectBoundingBox, and inherited fill.
+  List<SvgFilterPaintPass> _createFillPaintInput(
+    List<SvgFilterPaintPass> source,
+  ) {
+    return _maskPaintSourcePasses(
+      source,
+      paintFill: true,
+      paintStroke: false,
+    );
+  }
+
+  /// Create StrokePaint input with proper handling of pattern strokes,
+  /// gradient strokes with objectBoundingBox, and inherited stroke.
+  List<SvgFilterPaintPass> _createStrokePaintInput(
+    List<SvgFilterPaintPass> source,
+  ) {
+    return _maskPaintSourcePasses(
+      source,
+      paintFill: false,
+      paintStroke: true,
+    );
+  }
+
+  /// Resolve BackgroundImage input with transform handling.
+  ///
+  /// When filters are nested or BackgroundImage is referenced with
+  /// non-identity transforms, this method applies the appropriate
+  /// coordinate space transformation.
+  List<SvgFilterPaintPass> _resolveBackgroundImageInput(
+    List<SvgFilterPaintPass> backgroundImage,
+  ) {
+    final transform = effectiveBackgroundTransform;
+    if (transform == null) {
+      return <SvgFilterPaintPass>[...backgroundImage];
+    }
+
+    // Apply transform to background image passes for proper coordinate mapping.
+    return backgroundImage
+        .map((pass) => pass.copyWith(
+              imageFilter: _composeImageFilter(
+                ui.ImageFilter.matrix(transform),
+                pass.imageFilter,
+              ),
+            ))
+        .toList(growable: false);
+  }
+
+  /// Resolve BackgroundAlpha input with transform handling.
+  List<SvgFilterPaintPass> _resolveBackgroundAlphaInput(
+    List<SvgFilterPaintPass> backgroundAlpha,
+  ) {
+    final transform = effectiveBackgroundTransform;
+    if (transform == null) {
+      return <SvgFilterPaintPass>[...backgroundAlpha];
+    }
+
+    // Apply transform to background alpha passes.
+    return backgroundAlpha
+        .map((pass) => pass.copyWith(
+              imageFilter: _composeImageFilter(
+                ui.ImageFilter.matrix(transform),
+                pass.imageFilter,
+              ),
+            ))
+        .toList(growable: false);
   }
 
   List<SvgFilterPaintPass> _maskPaintSourcePasses(

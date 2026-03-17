@@ -220,7 +220,7 @@ class ParametersPanel extends StatelessWidget {
         Text(label, style: const TextStyle(fontSize: 12)),
         const SizedBox(height: 4),
         DropdownButtonFormField<T>(
-          value: value,
+          initialValue: value,
           decoration: const InputDecoration(
             border: OutlineInputBorder(),
             contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),

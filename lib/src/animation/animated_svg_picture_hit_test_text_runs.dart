@@ -1,5 +1,12 @@
 part of 'animated_svg_picture.dart';
 
+/// Writing modes for text layout.
+enum _WritingMode {
+  horizontalTb,
+  verticalRl,
+  verticalLr,
+}
+
 extension _AnimatedSvgPictureStateHitTestTextRunsExtension
     on _AnimatedSvgPictureState {
   bool _textRunsContainPoint(
@@ -125,6 +132,24 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
     );
   }
 
+  /// Resolves writing-mode for a text node.
+  _WritingMode _resolveWritingMode(SvgNode node) {
+    final value = _getInheritedString(node, 'writing-mode')?.toLowerCase();
+    switch (value) {
+      case 'vertical-rl':
+      case 'tb-rl':
+      case 'tb':
+        return _WritingMode.verticalRl;
+      case 'vertical-lr':
+        return _WritingMode.verticalLr;
+      case 'horizontal-tb':
+      case 'lr':
+      case 'lr-tb':
+      default:
+        return _WritingMode.horizontalTb;
+    }
+  }
+
   SvgNode? _findTextLayoutRoot(SvgNode node) {
     SvgNode? current = node;
     while (current != null) {
@@ -157,6 +182,7 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
     final startY = yList.isNotEmpty ? yList[0] : 0.0;
     final cursor = _HitTextCursor(x: startX, y: startY);
     final runs = <_TextHitRun>[];
+    final writingMode = _resolveWritingMode(textRoot);
     _appendTextNodeHitRuns(
       textRoot,
       cursor,
@@ -167,6 +193,7 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
       parentDyList: _getNumberList(textRoot, 'dy'),
       parentRotateList: _getNumberList(textRoot, 'rotate'),
       isRootText: true,
+      writingMode: writingMode,
     );
     return runs;
   }
@@ -181,6 +208,7 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
     List<double> parentDyList = const <double>[],
     List<double> parentRotateList = const <double>[],
     bool isRootText = false,
+    _WritingMode writingMode = _WritingMode.horizontalTb,
   }) {
     // Parse position lists from this node
     final nodeXList = _getNumberList(node, 'x');
@@ -243,6 +271,7 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
           dxList: dxList,
           dyList: dyList,
           rotateList: rotateList,
+          writingMode: writingMode,
         );
       } else {
         // Use single bounding box for the entire text run
@@ -252,6 +281,7 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
           cursor: cursor,
           runs: runs,
           rotateList: rotateList,
+          writingMode: writingMode,
         );
       }
     }
@@ -267,6 +297,7 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
           parentDxList: dxList,
           parentDyList: dyList,
           parentRotateList: rotateList,
+          writingMode: writingMode,
         );
       } else if (child.tagName == 'textPath') {
         final consumed = _appendTextPathHitRuns(child, runs);
@@ -305,21 +336,24 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
     required List<double> dxList,
     required List<double> dyList,
     required List<double> rotateList,
+    _WritingMode writingMode = _WritingMode.horizontalTb,
   }) {
     final runes = text.runes.toList();
     final textAnchor = _resolveTextAnchor(node);
     final letterSpacing = _getInheritedNumber(node, 'letter-spacing') ?? 0.0;
     final wordSpacing = _getInheritedNumber(node, 'word-spacing') ?? 0.0;
+    final isVertical = writingMode != _WritingMode.horizontalTb;
 
-    // Pre-calculate total width for text-anchor middle/end
-    double totalWidth = 0.0;
+    // Pre-calculate total dimension for text-anchor middle/end
+    double totalDimension = 0.0;
     if (textAnchor != _TextAnchor.start) {
       for (int i = 0; i < runes.length; i++) {
         final char = String.fromCharCode(runes[i]);
         final charMetrics = _measureText(char, node);
-        totalWidth += charMetrics.width;
+        // For vertical text, use height; for horizontal, use width
+        totalDimension += isVertical ? charMetrics.height : charMetrics.width;
         if (i < runes.length - 1) {
-          totalWidth += _spacingAfterGlyphForHit(
+          totalDimension += _spacingAfterGlyphForHit(
             glyph: char,
             isLast: false,
             letterSpacing: letterSpacing,
@@ -333,17 +367,17 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
     double anchorOffset = 0.0;
     switch (textAnchor) {
       case _TextAnchor.middle:
-        anchorOffset = -totalWidth / 2;
+        anchorOffset = -totalDimension / 2;
         break;
       case _TextAnchor.end:
-        anchorOffset = -totalWidth;
+        anchorOffset = -totalDimension;
         break;
       case _TextAnchor.start:
         break;
     }
 
-    double charX = cursor.x + anchorOffset;
-    double charY = cursor.y;
+    double charX = isVertical ? cursor.x : cursor.x + anchorOffset;
+    double charY = isVertical ? cursor.y + anchorOffset : cursor.y;
     int listIdx = cursor.charIndex;
 
     for (int i = 0; i < runes.length; i++) {
@@ -351,10 +385,10 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
 
       // Apply per-character positioning from lists
       if (listIdx < xList.length) {
-        charX = xList[listIdx] + anchorOffset;
+        charX = isVertical ? xList[listIdx] : xList[listIdx] + anchorOffset;
       }
       if (listIdx < yList.length) {
-        charY = yList[listIdx];
+        charY = isVertical ? yList[listIdx] + anchorOffset : yList[listIdx];
       }
       if (listIdx < dxList.length) {
         charX += dxList[listIdx];
@@ -378,32 +412,57 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
         metrics: charMetrics,
       );
 
+      // For vertical text, rotate character 90 degrees and swap dimensions
+      Rect charBounds;
+      if (isVertical) {
+        // In vertical mode, characters are rotated and stacked vertically
+        // The hit region uses height as the inline dimension
+        charBounds = Rect.fromLTWH(
+          charX - charMetrics.height / 2,
+          charY,
+          charMetrics.height,
+          charMetrics.width,
+        );
+      } else {
+        charBounds = Rect.fromLTWH(
+          charX,
+          top,
+          charMetrics.width,
+          charMetrics.height,
+        );
+      }
+
       runs.add(
         _TextHitRun.bounds(
           owner: node,
-          bounds: Rect.fromLTWH(
-            charX,
-            top,
-            charMetrics.width,
-            charMetrics.height,
-          ),
-          rotation: rotation,
+          bounds: charBounds,
+          rotation: isVertical ? 90.0 + rotation : rotation,
           rotationCenter: Offset(charX, charY),
         ),
       );
 
       // Advance for next character
-      charX += charMetrics.width;
-      charX += _spacingAfterGlyphForHit(
+      final charAdvance = isVertical ? charMetrics.height : charMetrics.width;
+      final spacingAdvance = _spacingAfterGlyphForHit(
         glyph: char,
         isLast: i == runes.length - 1,
         letterSpacing: letterSpacing,
         wordSpacing: wordSpacing,
       );
+
+      if (isVertical) {
+        charY += charAdvance + spacingAdvance;
+      } else {
+        charX += charAdvance + spacingAdvance;
+      }
       listIdx++;
     }
 
-    cursor.x = charX - anchorOffset;
+    if (isVertical) {
+      cursor.y = charY - anchorOffset;
+    } else {
+      cursor.x = charX - anchorOffset;
+    }
     cursor.charIndex += runes.length;
   }
 
@@ -414,11 +473,14 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
     required _HitTextCursor cursor,
     required List<_TextHitRun> runs,
     required List<double> rotateList,
+    _WritingMode writingMode = _WritingMode.horizontalTb,
   }) {
     var metrics = _measureText(text, node);
     final targetLength = _resolveTextLength(node);
     final lengthAdjust = _resolveTextLengthAdjust(node);
     final glyphCount = text.runes.length;
+    final isVertical = writingMode != _WritingMode.horizontalTb;
+
     if (targetLength != null && targetLength > 0 && metrics.width > 0) {
       if (lengthAdjust == _TextLengthAdjust.spacing && glyphCount > 1) {
         final extraSpacing = (targetLength - metrics.width) / (glyphCount - 1);
@@ -431,33 +493,71 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
         metrics = metrics.copyWith(width: targetLength);
       }
     }
-    var left = cursor.x;
-    switch (_resolveTextAnchor(node)) {
-      case _TextAnchor.middle:
-        left -= metrics.width / 2;
-        break;
-      case _TextAnchor.end:
-        left -= metrics.width;
-        break;
-      case _TextAnchor.start:
-        break;
+
+    // Calculate position based on text-anchor and writing-mode
+    double left = cursor.x;
+    double top;
+
+    if (isVertical) {
+      // For vertical text, swap the anchor behavior
+      top = cursor.y;
+      switch (_resolveTextAnchor(node)) {
+        case _TextAnchor.middle:
+          top -= metrics.width / 2; // Use width as inline dimension
+          break;
+        case _TextAnchor.end:
+          top -= metrics.width;
+          break;
+        case _TextAnchor.start:
+          break;
+      }
+      // Adjust left for vertical centering
+      left -= metrics.height / 2;
+    } else {
+      switch (_resolveTextAnchor(node)) {
+        case _TextAnchor.middle:
+          left -= metrics.width / 2;
+          break;
+        case _TextAnchor.end:
+          left -= metrics.width;
+          break;
+        case _TextAnchor.start:
+          break;
+      }
+      top = _resolveTextTopFromBaseline(
+        node: node,
+        baselineY: cursor.y,
+        metrics: metrics,
+      );
     }
-    final top = _resolveTextTopFromBaseline(
-      node: node,
-      baselineY: cursor.y,
-      metrics: metrics,
-    );
+
     // Get rotation for hit region (use first value for entire run)
     final rotation = rotateList.isNotEmpty ? rotateList[0] : 0.0;
+
+    // Create bounds with proper dimensions for writing mode
+    Rect bounds;
+    if (isVertical) {
+      // For vertical text, swap width and height
+      bounds = Rect.fromLTWH(left, top, metrics.height, metrics.width);
+    } else {
+      bounds = Rect.fromLTWH(left, top, metrics.width, metrics.height);
+    }
+
     runs.add(
       _TextHitRun.bounds(
         owner: node,
-        bounds: Rect.fromLTWH(left, top, metrics.width, metrics.height),
-        rotation: rotation,
+        bounds: bounds,
+        rotation: isVertical ? 90.0 + rotation : rotation,
         rotationCenter: Offset(left, cursor.y),
       ),
     );
-    cursor.x += metrics.width;
+
+    // Advance cursor based on writing mode
+    if (isVertical) {
+      cursor.y += metrics.width;
+    } else {
+      cursor.x += metrics.width;
+    }
     cursor.charIndex += text.runes.length;
   }
 

@@ -53,16 +53,22 @@ extension SvgFiltersPipelinePrimitivePaintExtension on SvgFilters {
 
   /// Resolves feDropShadow output for complex filter chains.
   ///
-  /// feDropShadow is a convenience primitive that combines:
-  /// 1. feGaussianBlur - blur the input
+  /// feDropShadow is a convenience primitive that expands to the following
+  /// filter primitive sub-graph per SVG spec:
+  /// 1. feGaussianBlur - blur the input with stdDeviation
   /// 2. feOffset - offset by dx/dy
-  /// 3. feFlood - fill with shadow color
+  /// 3. feFlood - fill with shadow color (flood-color * flood-opacity)
   /// 4. feComposite in="flood" in2="blur" operator="in" - cut flood to blur shape
-  /// 5. feMerge - combine shadow with original input
+  /// 5. feMerge - combine shadow with original input (shadow behind, input on top)
   ///
   /// When used with non-source inputs (e.g., in="blurred") or as part of a
   /// larger filter chain (e.g., feDropShadow -> feComposite), the composition
   /// must correctly preserve the input chain state.
+  ///
+  /// Chaining considerations:
+  /// - If feDropShadow has a result name, downstream primitives can reference it
+  /// - The result contains both shadow passes and source passes (merged)
+  /// - When chained, subsequent primitives process all output passes
   List<SvgFilterPaintPass> _resolveDropShadowOutput({
     required SvgDropShadowFilter shadow,
     required List<SvgFilterPaintPass> previous,
@@ -84,27 +90,40 @@ extension SvgFiltersPipelinePrimitivePaintExtension on SvgFilters {
       return const <SvgFilterPaintPass>[];
     }
 
+    // Get the blur filter (stdDeviation-based gaussian blur).
     final shadowFilter = shadow.apply();
 
+    // Check for zero blur (optimization: skip blur composition).
+    final hasBlur = shadow.stdDeviationX > 0 || shadow.stdDeviationY > 0;
+
     // Create shadow passes from input, applying blur + offset + color.
+    // This implements the expanded sub-graph: blur -> offset -> flood/composite.
     final shadowPasses = input
         .map(
           (pass) => SvgFilterPaintPass(
-            imageFilter: _composeImageFilter(shadowFilter, pass.imageFilter),
+            // Compose blur filter with any existing filter on the input pass.
+            imageFilter: hasBlur
+                ? _composeImageFilter(shadowFilter, pass.imageFilter)
+                : pass.imageFilter,
+            // Apply shadow color using srcIn to cut flood to input shape.
             colorFilter: ui.ColorFilter.mode(
               shadow.effectiveShadowColor,
               ui.BlendMode.srcIn,
             ),
+            // Shadow renders with srcOver to blend behind the input.
             blendMode: ui.BlendMode.srcOver,
+            // Apply the offset (dx/dy) to position the shadow.
             offset: pass.offset + shadow.offset,
+            // Preserve paint channel scope from input.
             paintFill: pass.paintFill,
             paintStroke: pass.paintStroke,
           ),
         )
         .toList(growable: false);
 
-    // Merge shadow passes (first) with original input (on top).
+    // Merge shadow passes (first/bottom) with original input (last/top).
     // This matches the SVG spec behavior where the shadow appears behind.
+    // The resulting list is: [shadow_pass_0, ..., shadow_pass_n, input_0, ..., input_n]
     return <SvgFilterPaintPass>[...shadowPasses, ...input];
   }
 

@@ -321,7 +321,7 @@ class _SMILSyncbaseWidgetState extends State<SMILSyncbaseWidget> {
                 decoration: BoxDecoration(
                   color: isDark
                       ? Colors.grey[850]
-                      : AnimationTheme.primaryColor.withOpacity(0.1),
+                      : AnimationTheme.primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(
                     AnimationTheme.radiusSmall,
                   ),
@@ -349,7 +349,7 @@ class _SMILSyncbaseWidgetState extends State<SMILSyncbaseWidget> {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: AnimationTheme.accentColor.withOpacity(0.15),
+                        color: AnimationTheme.accentColor.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -376,7 +376,7 @@ class _SMILSyncbaseWidgetState extends State<SMILSyncbaseWidget> {
             vertical: AnimationTheme.spacingSmall,
           ),
           decoration: BoxDecoration(
-            color: theme.cardColor.withOpacity(0.5),
+            color: theme.cardColor.withValues(alpha: 0.5),
             border: Border(
               bottom: BorderSide(color: theme.dividerColor, width: 1),
             ),

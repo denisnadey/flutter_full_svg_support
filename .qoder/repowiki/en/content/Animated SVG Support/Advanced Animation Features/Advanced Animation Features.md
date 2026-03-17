@@ -20,6 +20,7 @@
 - [lib/src/animation/css_variables_calc.dart](file://lib/src/animation/css_variables_calc.dart)
 - [lib/src/animation/css_shorthand_expansion.dart](file://lib/src/animation/css_shorthand_expansion.dart)
 - [lib/src/animation/transform_3d.dart](file://lib/src/animation/transform_3d.dart)
+- [lib/src/animation/svg_dom.dart](file://lib/src/animation/svg_dom.dart)
 - [example/lib/advanced_path_morphing.dart](file://example/lib/advanced_path_morphing.dart)
 - [example/lib/path_morphing_example.dart](file://example/lib/path_morphing_example.dart)
 - [test/animation/path_morphing_test.dart](file://test/animation/path_morphing_test.dart)
@@ -28,6 +29,7 @@
 - [test/animation/css_variables_calc_test.dart](file://test/animation/css_variables_calc_test.dart)
 - [test/animation/css_shorthand_expansion_test.dart](file://test/animation/css_shorthand_expansion_test.dart)
 - [test/animation/css_3d_transforms_test.dart](file://test/animation/css_3d_transforms_test.dart)
+- [test/animation/css_pseudo_classes_view_test.dart](file://test/animation/css_pseudo_classes_view_test.dart)
 - [test/animation/font_variant_test.dart](file://test/animation/font_variant_test.dart)
 - [test/animation/text_orientation_test.dart](file://test/animation/text_orientation_test.dart)
 - [test/animation/text_underline_position_test.dart](file://test/animation/text_underline_position_test.dart)
@@ -39,14 +41,12 @@
 
 ## Update Summary
 **Changes Made**
-- Added comprehensive CSS cascade system documentation with specificity calculation
-- Added CSS selector parsing with advanced combinators (descendant, child, sibling)
-- Added CSS shorthand property expansion system
-- Added custom properties with calc() function support
-- Added full 3D transform capabilities including Matrix4x4 operations
-- Updated architecture to reflect new CSS processing pipeline
+- Added comprehensive CSS pseudo-class support system with :hover, :active, :focus, :first-child, :last-child, :only-child, :empty, :root pseudo-classes
+- Enhanced 3D transform capabilities with full Matrix4x4 operations and perspective projections
+- Implemented new rendering cache system for performance optimization
+- Updated architecture to reflect new CSS processing pipeline with pseudo-class state tracking
 - Enhanced text styling system with advanced typography features
-- Added performance considerations for new CSS features
+- Added performance considerations for new CSS features and rendering optimizations
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -56,22 +56,26 @@
 5. [Detailed Component Analysis](#detailed-component-analysis)
 6. [CSS Cascade and Specificity System](#css-cascade-and-specificity-system)
 7. [CSS Selector Parsing and Advanced Combinators](#css-selector-parsing-and-advanced-combinators)
-8. [CSS Shorthand Property Expansion](#css-shorthand-property-expansion)
-9. [Custom Properties and Calc() Function Support](#custom-properties-and-calcc-function-support)
-10. [3D Transform Capabilities](#3d-transform-capabilities)
-11. [Text Styling and Typography Features](#text-styling-and-typography-features)
-12. [Dependency Analysis](#dependency-analysis)
-13. [Performance Considerations](#performance-considerations)
-14. [Troubleshooting Guide](#troubleshooting-guide)
-15. [Conclusion](#conclusion)
-16. [Appendices](#appendices)
+8. [CSS Pseudo-Class State Management](#css-pseudo-class-state-management)
+9. [CSS Shorthand Property Expansion](#css-shorthand-property-expansion)
+10. [Custom Properties and Calc() Function Support](#custom-properties-and-calcc-function-support)
+11. [3D Transform Capabilities](#3d-transform-capabilities)
+12. [Performance Optimization Through Rendering Cache](#performance-optimization-through-rendering-cache)
+13. [Text Styling and Typography Features](#text-styling-and-typography-features)
+14. [Dependency Analysis](#dependency-analysis)
+15. [Performance Considerations](#performance-considerations)
+16. [Troubleshooting Guide](#troubleshooting-guide)
+17. [Conclusion](#conclusion)
+18. [Appendices](#appendices)
 
 ## Introduction
 This document explains advanced animation features implemented in the codebase, focusing on:
 - Comprehensive CSS cascade system with specificity calculation and advanced selector parsing
+- CSS pseudo-class support system including :hover, :active, :focus, :first-child, :last-child, :only-child, :empty, :root pseudo-classes
 - CSS shorthand property expansion for efficient styling
 - Custom properties with calc() function support for dynamic styling
 - Full 3D transform capabilities including Matrix4x4 operations
+- Enhanced rendering cache system for performance optimization
 - SVG filter animation support and runtime composition
 - Color matrix transformations and blur effects
 - Lighting primitives and their current baseline behavior
@@ -80,7 +84,7 @@ This document explains advanced animation features implemented in the codebase, 
 - Advanced animation combinations, performance optimization strategies, and debugging approaches
 - Known limitations, workarounds, and best practices
 
-The implementation targets Flutter via a dedicated animated pipeline that preserves DOM structure and supports SMIL/CSS animations, plus a specialized path morphing and filter system with comprehensive text styling capabilities and advanced CSS processing.
+The implementation targets Flutter via a dedicated animated pipeline that preserves DOM structure and supports SMIL/CSS animations, plus a specialized path morphing and filter system with comprehensive text styling capabilities, advanced CSS processing, and performance optimizations.
 
 ## Project Structure
 The animation system is organized into:
@@ -88,8 +92,9 @@ The animation system is organized into:
 - SMIL engine for time management, parsing, and interpolation
 - Path morphing utilities for shape interpolation
 - Filter runtime for color matrix, blur, and lighting primitives
-- Advanced CSS processing pipeline with cascade system, selectors, and variables
+- Advanced CSS processing pipeline with cascade system, selectors, pseudo-classes, and variables
 - 3D transform system with Matrix4x4 operations
+- Rendering cache system for performance optimization
 - Advanced text styling and typography system with CSS property support
 - Example apps and tests demonstrating advanced scenarios
 
@@ -116,31 +121,36 @@ I["css_cascade.dart"]
 J["css_selectors.dart"]
 K["css_variables_calc.dart"]
 L["css_shorthand_expansion.dart"]
+M["svg_dom.dart (SvgPseudoClassState)"]
 end
 subgraph "3D Transforms"
-M["transform_3d.dart"]
+N["transform_3d.dart"]
+end
+subgraph "Rendering Cache"
+O["animated_svg_painter.dart (_RenderCache)"]
 end
 subgraph "Text Styling System"
-N["animated_svg_painter_text_style.dart"]
-O["animated_svg_painter_text_paint.dart"]
-P["_ResolvedTextStyle"]
+P["animated_svg_painter_text_style.dart"]
+Q["animated_svg_painter_text_paint.dart"]
+R["_ResolvedTextStyle"]
 end
 subgraph "Examples & Tests"
-Q["example/lib/path_morphing_example.dart"]
-R["example/lib/advanced_path_morphing.dart"]
-S["test/animation/path_morphing_test.dart"]
-T["test/animation/css_cascade_specificity_test.dart"]
-U["test/animation/css_selectors_combinators_test.dart"]
-V["test/animation/css_variables_calc_test.dart"]
-W["test/animation/css_shorthand_expansion_test.dart"]
-X["test/animation/css_3d_transforms_test.dart"]
-Y["test/animation/font_variant_test.dart"]
-Z["test/animation/text_orientation_test.dart"]
-AA["test/animation/text_underline_position_test.dart"]
-BB["test/animation/text_decoration_thickness_test.dart"]
-CC["test/animation/text_decoration_style_test.dart"]
-DD["test/animation/text_decoration_skip_test.dart"]
-EE["test/animation/text_decoration_skip_ink_test.dart"]
+S["example/lib/path_morphing_example.dart"]
+T["example/lib/advanced_path_morphing.dart"]
+U["test/animation/path_morphing_test.dart"]
+V["test/animation/css_cascade_specificity_test.dart"]
+W["test/animation/css_selectors_combinators_test.dart"]
+X["test/animation/css_variables_calc_test.dart"]
+Y["test/animation/css_shorthand_expansion_test.dart"]
+Z["test/animation/css_3d_transforms_test.dart"]
+AA["test/animation/css_pseudo_classes_view_test.dart"]
+BB["test/animation/font_variant_test.dart"]
+CC["test/animation/text_orientation_test.dart"]
+DD["test/animation/text_underline_position_test.dart"]
+EE["test/animation/text_decoration_thickness_test.dart"]
+FF["test/animation/text_decoration_style_test.dart"]
+GG["test/animation/text_decoration_skip_test.dart"]
+HH["test/animation/text_decoration_skip_ink_test.dart"]
 end
 A --> B
 B --> C
@@ -153,25 +163,28 @@ B --> I
 I --> J
 I --> K
 I --> L
-B --> M
+I --> M
 B --> N
-N --> O
-N --> P
-Q --> F
-R --> F
+B --> O
+B --> P
+P --> Q
+P --> R
 S --> F
-T --> I
-U --> J
-V --> K
-W --> L
-X --> M
-Y --> N
+T --> F
+U --> F
+V --> I
+W --> J
+X --> K
+Y --> L
 Z --> N
-AA --> N
-BB --> N
-CC --> N
-DD --> N
-EE --> N
+AA --> M
+BB --> P
+CC --> P
+DD --> P
+EE --> P
+FF --> P
+GG --> P
+HH --> P
 ```
 
 **Diagram sources**
@@ -188,6 +201,8 @@ EE --> N
 - [lib/src/animation/css_variables_calc.dart:1-576](file://lib/src/animation/css_variables_calc.dart#L1-L576)
 - [lib/src/animation/css_shorthand_expansion.dart:1-69](file://lib/src/animation/css_shorthand_expansion.dart#L1-L69)
 - [lib/src/animation/transform_3d.dart:1-400](file://lib/src/animation/transform_3d.dart#L1-L400)
+- [lib/src/animation/svg_dom.dart:300-369](file://lib/src/animation/svg_dom.dart#L300-L369)
+- [lib/src/animation/animated_svg_painter.dart:41-130](file://lib/src/animation/animated_svg_painter.dart#L41-L130)
 - [lib/src/animation/animated_svg_painter_text_style.dart:1-1046](file://lib/src/animation/animated_svg_painter_text_style.dart#L1-L1046)
 - [lib/src/animation/animated_svg_painter_text_paint.dart:1-594](file://lib/src/animation/animated_svg_painter_text_paint.dart#L1-L594)
 - [lib/src/animation/animated_svg_painter.dart:258-460](file://lib/src/animation/animated_svg_painter.dart#L258-L460)
@@ -199,6 +214,7 @@ EE --> N
 - [test/animation/css_variables_calc_test.dart:1-402](file://test/animation/css_variables_calc_test.dart#L1-L402)
 - [test/animation/css_shorthand_expansion_test.dart:1-619](file://test/animation/css_shorthand_expansion_test.dart#L1-L619)
 - [test/animation/css_3d_transforms_test.dart:1-167](file://test/animation/css_3d_transforms_test.dart#L1-L167)
+- [test/animation/css_pseudo_classes_view_test.dart:1-460](file://test/animation/css_pseudo_classes_view_test.dart#L1-L460)
 - [test/animation/font_variant_test.dart:1-196](file://test/animation/font_variant_test.dart#L1-L196)
 - [test/animation/text_orientation_test.dart:1-85](file://test/animation/text_orientation_test.dart#L1-L85)
 - [test/animation/text_underline_position_test.dart:1-100](file://test/animation/text_underline_position_test.dart#L1-L100)
@@ -218,8 +234,10 @@ EE --> N
 - Interpolators: Provides typed interpolation for numbers, colors, transforms, paths, and lists.
 - PathInterpolator: Smoothly interpolates between normalized SVG path command sequences.
 - Filter runtime: Supports color matrix, blur, and lighting primitives with baseline behavior.
-- CSS Cascade System: Comprehensive CSS processing with specificity calculation, selector parsing, and property resolution.
+- CSS Cascade System: Comprehensive CSS processing with specificity calculation, selector parsing, pseudo-class state tracking, and property resolution.
+- CSS Pseudo-Class State Manager: Tracks :hover, :active, :focus states and structural pseudo-classes (:first-child, :last-child, :only-child, :empty, :root).
 - 3D Transform System: Full Matrix4x4 support for 3D rotations, translations, scaling, and perspective projections.
+- Rendering Cache System: Performance optimization through intelligent caching of computed values.
 - Text styling system: Comprehensive CSS text property support including underline, overline, line-through, writing-mode, font variants, and advanced typography features.
 
 **Section sources**
@@ -231,11 +249,13 @@ EE --> N
 - [lib/src/animation/svg_filters_color_matrix.dart:56-202](file://lib/src/animation/svg_filters_color_matrix.dart#L56-L202)
 - [lib/src/animation/svg_filters_primitives_lighting.dart:52-125](file://lib/src/animation/svg_filters_primitives_lighting.dart#L52-L125)
 - [lib/src/animation/css_cascade.dart:18-663](file://lib/src/animation/css_cascade.dart#L18-L663)
+- [lib/src/animation/svg_dom.dart:300-369](file://lib/src/animation/svg_dom.dart#L300-L369)
 - [lib/src/animation/transform_3d.dart:22-400](file://lib/src/animation/transform_3d.dart#L22-L400)
+- [lib/src/animation/animated_svg_painter.dart:41-130](file://lib/src/animation/animated_svg_painter.dart#L41-L130)
 - [lib/src/animation/animated_svg_painter_text_style.dart:1-1046](file://lib/src/animation/animated_svg_painter_text_style.dart#L1-L1046)
 
 ## Architecture Overview
-The animated pipeline separates concerns across parsing, CSS processing, animation extraction, timeline management, and rendering. It preserves DOM for SMIL support and provides a CustomPainter-based renderer with comprehensive text styling capabilities and advanced CSS processing.
+The animated pipeline separates concerns across parsing, CSS processing, animation extraction, timeline management, and rendering. It preserves DOM for SMIL support and provides a CustomPainter-based renderer with comprehensive text styling capabilities, advanced CSS processing, and performance optimizations through intelligent caching.
 
 ```mermaid
 sequenceDiagram
@@ -243,6 +263,7 @@ participant App as "Flutter App"
 participant Picture as "AnimatedSvgPicture"
 participant Parser as "SvgParser"
 participant CssProcessor as "CSS Processor"
+participant PseudoState as "SvgPseudoClassState"
 participant Timeline as "SvgTimeline"
 participant Anim as "SmilAnimation"
 participant TextStyle as "TextStyleResolver"
@@ -252,7 +273,8 @@ participant Renderer as "AnimatedSvgPainter"
 App->>Picture : Build widget
 Picture->>Parser : Parse SVG to DOM
 Parser-->>Picture : SvgDocument
-Picture->>CssProcessor : Process CSS cascade, selectors, variables
+Picture->>CssProcessor : Process CSS cascade, selectors, pseudo-classes, variables
+CssProcessor->>PseudoState : Track : hover, : active, : focus states
 CssProcessor-->>Picture : Resolved styles with specificity
 Picture->>Timeline : Initialize with animations
 Picture->>TextStyle : Resolve text styles
@@ -264,6 +286,7 @@ Anim->>Interp : interpolate(...)
 Interp-->>Anim : computed value
 Anim-->>Timeline : apply value to attribute
 Timeline-->>Renderer : Effective values
+Renderer->>Renderer : _RenderCache.prepareFrame(animationTime, hasAnimations)
 Renderer->>TextPaint : Render styled text
 TextPaint-->>Renderer : Drawn text
 Renderer-->>App : Draw Canvas
@@ -277,6 +300,7 @@ end
 - [lib/src/animation/smil/interpolators.dart:18-42](file://lib/src/animation/smil/interpolators.dart#L18-L42)
 - [lib/src/animation/animated_svg_painter_text_style.dart:4-171](file://lib/src/animation/animated_svg_painter_text_style.dart#L4-L171)
 - [lib/src/animation/animated_svg_painter_text_paint.dart:407-456](file://lib/src/animation/animated_svg_painter_text_paint.dart#L407-L456)
+- [lib/src/animation/animated_svg_painter.dart:177-200](file://lib/src/animation/animated_svg_painter.dart#L177-L200)
 
 **Section sources**
 - [ARCHITECTURE.md:146-193](file://ARCHITECTURE.md#L146-L193)
@@ -606,6 +630,86 @@ The system supports all major CSS combinators:
 - [lib/src/animation/css_selectors.dart:69-302](file://lib/src/animation/css_selectors.dart#L69-L302)
 - [test/animation/css_selectors_combinators_test.dart:170-226](file://test/animation/css_selectors_combinators_test.dart#L170-L226)
 
+## CSS Pseudo-Class State Management
+
+### Comprehensive Pseudo-Class Support System
+The CSS pseudo-class system provides full support for interactive and structural pseudo-classes with state tracking and resolution.
+
+```mermaid
+classDiagram
+class SvgPseudoClassState {
++Set~String~ _hoveredIds
++Set~String~ _activeIds
++String? _focusedId
++hoveredIds : Set~String~
++activeIds : Set~String~
++focusedId : String?
++setHovered(id, isHovered)
++setActive(id, isActive)
++setFocus(id)
++isHovered(id) : bool
++isActive(id) : bool
++isFocused(id) : bool
++clear()
++clearHover()
++clearActive()
+}
+class CssPseudoClass {
+<<enumeration>>
++hover
++active
++focus
++visited
++link
++firstChild
++lastChild
++onlyChild
++empty
++root
+}
+class CssSelectorMatchContext {
++Set~String~ hoveredElementIds
++Set~String~ activeElementIds
++String? focusedElementId
+}
+SvgPseudoClassState --> CssPseudoClass : "manages"
+CssPseudoClassState --> CssSelectorMatchContext : "provides"
+```
+
+**Diagram sources**
+- [lib/src/animation/svg_dom.dart:300-369](file://lib/src/animation/svg_dom.dart#L300-L369)
+- [lib/src/animation/css_selectors.dart:3-34](file://lib/src/animation/css_selectors.dart#L3-L34)
+- [lib/src/animation/css_selectors.dart:36-51](file://lib/src/animation/css_selectors.dart#L36-L51)
+
+### Supported Pseudo-Classes
+The system supports comprehensive pseudo-class functionality:
+
+#### Interactive Pseudo-Classes
+- **:hover** - Element is being hovered by pointer
+- **:active** - Element is being activated (pressed)
+- **:focus** - Element has focus
+- **:visited** - Link has been visited (not typically applicable to SVG)
+- **:link** - Unvisited link (not typically applicable to SVG)
+
+#### Structural Pseudo-Classes
+- **:first-child** - Element is the first child of its parent
+- **:last-child** - Element is the last child of its parent
+- **:only-child** - Element is the only child of its parent
+- **:empty** - Element has no children
+- **:root** - Element is the root of the document
+
+#### State Management Features
+- **Hover Tracking**: `setHovered(id, true/false)` with automatic cleanup
+- **Active State**: `setActive(id, true/false)` for pressed states
+- **Focus Management**: `setFocus(id)` with single focus tracking
+- **Bulk Operations**: `clear()`, `clearHover()`, `clearActive()` for state cleanup
+- **Query Methods**: `isHovered(id)`, `isActive(id)`, `isFocused(id)` for state checking
+
+**Section sources**
+- [lib/src/animation/svg_dom.dart:300-369](file://lib/src/animation/svg_dom.dart#L300-L369)
+- [lib/src/animation/css_selectors.dart:3-34](file://lib/src/animation/css_selectors.dart#L3-L34)
+- [test/animation/css_pseudo_classes_view_test.dart:114-191](file://test/animation/css_pseudo_classes_view_test.dart#L114-L191)
+
 ## CSS Shorthand Property Expansion
 
 ### Comprehensive Shorthand Expansion System
@@ -771,6 +875,70 @@ The system supports:
 - [lib/src/animation/transform_3d.dart:22-400](file://lib/src/animation/transform_3d.dart#L22-L400)
 - [test/animation/css_3d_transforms_test.dart:48-167](file://test/animation/css_3d_transforms_test.dart#L48-L167)
 
+## Performance Optimization Through Rendering Cache
+
+### Intelligent Rendering Cache System
+The rendering cache system provides comprehensive performance optimization through intelligent caching of computed values.
+
+```mermaid
+classDiagram
+class _RenderCache {
++Map~String,Shader~ gradientShaders
++Map~String,Image~ patternImages
++Map~String,Paragraph~ textParagraphs
++Map~String,Path~ hitTestPaths
++double? _lastAnimationTime
++prepareFrame(animationTime, hasAnimations)
++clear()
++gradientKey(gradientId, bounds, attributes) : String
++patternKey(patternId, bounds, tileWidth, tileHeight) : String
++textKey(text, fontSize, fontFamily, fontWeightIndex, fontStyleIndex, letterSpacing, colorValue) : String
+}
+class AnimatedSvgPainter {
++SvgDocument document
++Color? backgroundColor
++Map~String,Image~ imagesByHref
++double? animationTime
++bool hasAnimations
++_RenderCache _renderCache
++paint(Canvas, Size)
++shouldRepaint(oldDelegate) : bool
++shouldRebuildSemantics(oldDelegate) : bool
+}
+_RenderCache --> AnimatedSvgPainter : "used by"
+```
+
+**Diagram sources**
+- [lib/src/animation/animated_svg_painter.dart:41-130](file://lib/src/animation/animated_svg_painter.dart#L41-L130)
+- [lib/src/animation/animated_svg_painter.dart:139-243](file://lib/src/animation/animated_svg_painter.dart#L139-L243)
+
+### Cache Categories and Invalidation
+The system provides four main cache categories with intelligent invalidation:
+
+#### Gradient Shader Cache
+- **Purpose**: Cache computed gradient shaders by gradient ID, paint bounds, and attributes
+- **Invalidation**: Cleared when animation time changes for animated SVGs
+- **Key Generation**: Combines gradient ID, bounds hash, and attribute hash for uniqueness
+
+#### Pattern Image Cache
+- **Purpose**: Cache pattern tile images for reuse across frames
+- **Invalidation**: Cleared on animation time changes for animated content
+- **Key Generation**: Includes pattern ID, bounds, and tile dimensions
+
+#### Text Paragraph Cache
+- **Purpose**: Cache Paragraph objects by text content and style properties
+- **Invalidation**: Cleared when animation time changes for animated text
+- **Key Generation**: Hash-based combination of text content, font properties, and styling
+
+#### Hit-Test Path Cache
+- **Purpose**: Cache path geometry for efficient hit-testing operations
+- **Invalidation**: Cleared on animation time changes for animated paths
+- **Key Generation**: Element ID combined with geometric hash
+
+**Section sources**
+- [lib/src/animation/animated_svg_painter.dart:41-130](file://lib/src/animation/animated_svg_painter.dart#L41-L130)
+- [CURRENT_STATUS.md:70-77](file://CURRENT_STATUS.md#L70-L77)
+
 ## Text Styling and Typography Features
 
 ### Comprehensive CSS Text Property Support
@@ -881,12 +1049,13 @@ Painter-->>Node : Rendered text
 - [lib/src/animation/animated_svg_painter.dart:193-460](file://lib/src/animation/animated_svg_painter.dart#L193-L460)
 
 ## Dependency Analysis
-- AnimatedSvgPicture depends on SvgParser, SmilParser, SvgTimeline, CssCascadeResolver, and AnimatedSvgPainter
+- AnimatedSvgPicture depends on SvgParser, SmilParser, SvgTimeline, CssCascadeResolver, SvgPseudoClassState, and AnimatedSvgPainter
 - SmilAnimation relies on Interpolators and DistanceCalculator for paced mode
 - Path morphing depends on PathParser, PathNormalizer, and PathInterpolator
 - Filters depend on Flutter's ui.ImageFilter and color matrices
-- CSS processing depends on CssCascadeResolver, CssSelectorParser, CssVariableResolver, and CssCalcEvaluator
+- CSS processing depends on CssCascadeResolver, CssSelectorParser, CssVariableResolver, CssCalcEvaluator, and SvgPseudoClassState
 - 3D transforms depend on Matrix4x4 and Transform3DContext
+- Rendering cache depends on _RenderCache and AnimatedSvgPainter
 - Text styling system depends on Flutter's ui.TextDirection, ui.FontFeature, and ui.ParagraphBuilder
 
 ```mermaid
@@ -897,6 +1066,7 @@ Picture --> CssCascade["CssCascadeResolver"]
 CssCascade --> CssSelectors["CssSelectorParser"]
 CssCascade --> CssVars["CssVariableResolver"]
 CssCascade --> CssCalc["CssCalcEvaluator"]
+CssCascade --> PseudoState["SvgPseudoClassState"]
 Timeline --> Anim["SmilAnimation"]
 Anim --> Interp["Interpolators"]
 Picture --> Morph["PathMorpher"]
@@ -907,6 +1077,8 @@ Filters --> Blur["Blur"]
 Filters --> Light["Lighting Primitives"]
 Picture --> Transform3D["Transform3DContext"]
 Transform3D --> Matrix4x4["Matrix4x4"]
+Picture --> RenderCache["_RenderCache"]
+RenderCache --> Painter["AnimatedSvgPainter"]
 Picture --> TextStyle["TextStyleResolver"]
 TextStyle --> TextPaint["TextPainter"]
 TextStyle --> ResolvedStyle["_ResolvedTextStyle"]
@@ -923,6 +1095,8 @@ TextStyle --> ResolvedStyle["_ResolvedTextStyle"]
 - [lib/src/animation/css_selectors.dart:1-645](file://lib/src/animation/css_selectors.dart#L1-L645)
 - [lib/src/animation/css_variables_calc.dart:1-576](file://lib/src/animation/css_variables_calc.dart#L1-L576)
 - [lib/src/animation/transform_3d.dart:1-400](file://lib/src/animation/transform_3d.dart#L1-L400)
+- [lib/src/animation/svg_dom.dart:300-369](file://lib/src/animation/svg_dom.dart#L300-L369)
+- [lib/src/animation/animated_svg_painter.dart:41-130](file://lib/src/animation/animated_svg_painter.dart#L41-L130)
 - [lib/src/animation/animated_svg_painter_text_style.dart:1-1046](file://lib/src/animation/animated_svg_painter_text_style.dart#L1-L1046)
 - [lib/src/animation/animated_svg_painter_text_paint.dart:1-594](file://lib/src/animation/animated_svg_painter_text_paint.dart#L1-L594)
 - [lib/src/animation/animated_svg_painter.dart:258-460](file://lib/src/animation/animated_svg_painter.dart#L258-L460)
@@ -940,10 +1114,17 @@ TextStyle --> ResolvedStyle["_ResolvedTextStyle"]
   - Selector parsing with efficient combinator handling
   - Variable resolution with iteration limits
   - Shorthand expansion with lazy evaluation
+  - Pseudo-class state tracking with minimal overhead
 - 3D transform optimization:
   - Matrix reuse and cloning
   - Perspective matrix caching
   - Backface culling for performance
+- **New Rendering Cache Optimization**:
+  - Gradient shader caching: Shader objects cached by gradient ID + paint bounds + attributes
+  - Pattern image caching: Pattern tile images cached and reused across frames
+  - Text paragraph caching: Paragraph objects cached by text content + style properties
+  - Hit-test path geometry caching: Path objects cached for repeated hit-testing
+  - Smart cache invalidation: Caches cleared when animation time changes for animated SVGs
 - Future optimizations: layer caching, GPU-accelerated morphing, reduced allocations
 
 Practical tips:
@@ -955,9 +1136,12 @@ Practical tips:
 - Leverage CSS cascade specificity for efficient property resolution
 - Use calc() expressions judiciously to avoid excessive recalculation
 - Implement proper 3D transform ordering for optimal performance
+- **Utilize rendering cache**: Enable caching for static content, clear caches on animation changes
+- **Monitor pseudo-class state**: Efficient state tracking minimizes CSS cascade overhead
 
 **Section sources**
 - [ARCHITECTURE.md:174-193](file://ARCHITECTURE.md#L174-L193)
+- [CURRENT_STATUS.md:70-77](file://CURRENT_STATUS.md#L70-L77)
 
 ## Troubleshooting Guide
 Common issues and resolutions:
@@ -977,9 +1161,11 @@ Common issues and resolutions:
   - Verify selector specificity calculations
   - Check CSS rule ordering and !important declarations
   - Ensure proper inheritance for inheritable properties
+  - **Pseudo-class state tracking**: Verify SvgPseudoClassState is properly initialized and updated
 - CSS selector matching problems
   - Test selectors with simple patterns first
   - Verify combinator precedence and matching logic
+  - **Pseudo-class validation**: Check that pseudo-classes are supported and properly formatted
 - Custom property resolution errors
   - Check variable name syntax (--name)
   - Verify fallback values for missing variables
@@ -988,6 +1174,10 @@ Common issues and resolutions:
   - Verify matrix dimensionality and operations
   - Check perspective distance and origin settings
   - Ensure proper transform order for expected results
+- **Rendering cache issues**
+  - Verify cache invalidation on animation changes
+  - Check cache key generation for uniqueness
+  - Monitor cache hit rates for performance optimization
 - Text styling issues
   - Verify CSS property syntax and supported values
   - Check font feature availability in the selected font
@@ -997,8 +1187,10 @@ Common issues and resolutions:
 Diagnostic utilities:
 - AnimatedSvgPicture exposes trace callbacks and frame tick logging for detailed runtime insights
 - Use test suites to validate normalization and interpolation correctness
-- CSS processing tests provide comprehensive coverage of selector parsing and cascade resolution
+- CSS processing tests provide comprehensive coverage of selector parsing, cascade resolution, and pseudo-class matching
 - 3D transform tests validate matrix operations and perspective calculations
+- **Pseudo-class state tests**: Validate hover, active, and focus state tracking
+- **Rendering cache tests**: Monitor cache effectiveness and invalidation behavior
 - Text styling tests provide comprehensive coverage of CSS property implementations
 
 **Section sources**
@@ -1009,6 +1201,7 @@ Diagnostic utilities:
 - [test/animation/css_selectors_combinators_test.dart:348-510](file://test/animation/css_selectors_combinators_test.dart#L348-L510)
 - [test/animation/css_variables_calc_test.dart:344-400](file://test/animation/css_variables_calc_test.dart#L344-L400)
 - [test/animation/css_3d_transforms_test.dart:114-126](file://test/animation/css_3d_transforms_test.dart#L114-L126)
+- [test/animation/css_pseudo_classes_view_test.dart:193-298](file://test/animation/css_pseudo_classes_view_test.dart#L193-L298)
 - [test/animation/font_variant_test.dart:1-196](file://test/animation/font_variant_test.dart#L1-L196)
 - [test/animation/text_orientation_test.dart:1-85](file://test/animation/text_orientation_test.dart#L1-L85)
 
@@ -1018,26 +1211,29 @@ The codebase delivers a robust animated SVG pipeline with comprehensive advanced
 - Advanced interpolation for numbers, colors, transforms, paths, and lists
 - Practical path morphing with normalization and morphers
 - Filter runtime covering color matrix, blur, and lighting primitives
-- Comprehensive CSS cascade system with specificity calculation and advanced selector parsing
+- Comprehensive CSS cascade system with specificity calculation, selector parsing, pseudo-class state tracking, and property resolution
 - CSS shorthand property expansion for efficient styling
 - Custom properties with calc() function support for dynamic styling
 - Full 3D transform capabilities with Matrix4x4 operations
+- **Enhanced rendering cache system** for significant performance improvements
 - Comprehensive text styling system with extensive CSS property support
 - Advanced typography features including underline, overline, line-through, writing-mode, font variants, and text decoration controls
 - Strong performance strategies and extensible architecture
 
-Adopt the examples and tests as references for building complex, performant animations while adhering to normalization and interpolation constraints. The enhanced CSS processing capabilities provide professional-grade styling support with modern CSS features, while the 3D transform system enables sophisticated 3D animations and effects. The comprehensive text styling capabilities provide professional-grade typography support for international text rendering and advanced text effects.
+The addition of comprehensive CSS pseudo-class support enables sophisticated interactive animations with :hover, :active, :focus, and structural pseudo-classes. The enhanced 3D transform system provides professional-grade 3D animation capabilities. The new rendering cache system delivers substantial performance improvements for static content while maintaining proper invalidation for animated elements. Adopt the examples and tests as references for building complex, performant animations while adhering to normalization and interpolation constraints.
 
 ## Appendices
 
 ### Feature Summary and Status
 - SMIL elements: animate, animateTransform, animateMotion, set, animateColor
 - CSS animations: parsing and conversion to SMIL with timing and direction
-- CSS cascade system: specificity calculation, selector parsing, property resolution
+- CSS cascade system: specificity calculation, selector parsing, pseudo-class state tracking, property resolution
+- **CSS pseudo-classes**: :hover, :active, :focus, :first-child, :last-child, :only-child, :empty, :root support
 - CSS shorthand expansion: comprehensive property expansion support
 - Custom properties: var() resolution with inheritance and fallback
 - Calc() functions: mathematical expression evaluation with unit conversion
 - 3D transforms: Matrix4x4 operations, perspective projection, backface culling
+- **Rendering cache**: Intelligent caching of gradients, patterns, text, and hit-test geometry
 - Path morphing: normalized cubic Bezier interpolation
 - Filters: color matrix, blur, lighting primitives (baseline pass-through)
 - Text styling: comprehensive CSS text property support including underline, overline, line-through, writing-mode, font variants, and advanced typography features
@@ -1049,6 +1245,9 @@ Adopt the examples and tests as references for building complex, performant anim
 - [lib/src/animation/css_variables_calc.dart:1-576](file://lib/src/animation/css_variables_calc.dart#L1-L576)
 - [lib/src/animation/css_shorthand_expansion.dart:1-69](file://lib/src/animation/css_shorthand_expansion.dart#L1-L69)
 - [lib/src/animation/transform_3d.dart:1-400](file://lib/src/animation/transform_3d.dart#L1-L400)
+- [lib/src/animation/svg_dom.dart:300-369](file://lib/src/animation/svg_dom.dart#L300-L369)
+- [lib/src/animation/animated_svg_painter.dart:41-130](file://lib/src/animation/animated_svg_painter.dart#L41-L130)
 - [lib/src/animation/animated_svg_painter_text_style.dart:1-1046](file://lib/src/animation/animated_svg_painter_text_style.dart#L1-L1046)
 - [lib/src/animation/animated_svg_painter_text_paint.dart:400-594](file://lib/src/animation/animated_svg_painter_text_paint.dart#L400-L594)
 - [lib/src/animation/animated_svg_painter.dart:193-460](file://lib/src/animation/animated_svg_painter.dart#L193-L460)
+- [CURRENT_STATUS.md:70-77](file://CURRENT_STATUS.md#L70-L77)

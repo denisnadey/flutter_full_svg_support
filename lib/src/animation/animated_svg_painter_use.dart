@@ -4,6 +4,78 @@ part of 'animated_svg_painter.dart';
 /// This prevents infinite loops and excessive resource usage.
 const int _kMaxUseRecursionDepth = 10;
 
+/// Context for tracking inherited CSS properties across <use> element boundaries.
+///
+/// Per SVG spec, presentation attributes and inherited CSS properties on a
+/// <use> element should be visible to the referenced content. This context
+/// captures those inherited values and makes them available during rendering
+/// of the referenced subtree.
+///
+/// Specificity rules:
+/// - Referenced element's own styles > use element's inherited styles
+/// - style attribute on use > presentation attributes on use > inherited from parent
+class _UseInheritanceContext {
+  const _UseInheritanceContext({
+    required this.useNode,
+    this.parentContext,
+  });
+
+  /// The <use> element providing inherited properties.
+  final SvgNode useNode;
+
+  /// Parent inheritance context for nested <use> chains.
+  final _UseInheritanceContext? parentContext;
+
+  /// Gets the inherited value for a property, checking the use chain.
+  /// Returns null if the property is not set on any use element in the chain.
+  Object? getInheritedValue(String property) {
+    final normalizedProp = property.trim().toLowerCase();
+
+    // Check style attribute first (highest specificity)
+    final styleValue = _extractStyleValueFromNode(useNode, normalizedProp);
+    if (styleValue != null) {
+      return styleValue;
+    }
+
+    // Check presentation attribute
+    final attrValue = useNode.getAttributeValue(property);
+    if (attrValue != null) {
+      return attrValue;
+    }
+
+    // Check parent context (for nested use chains)
+    return parentContext?.getInheritedValue(property);
+  }
+
+  /// Extracts a property value from an inline style attribute.
+  static String? _extractStyleValueFromNode(SvgNode node, String property) {
+    final style = node.getAttributeValue('style')?.toString();
+    if (style == null || style.trim().isEmpty) {
+      return null;
+    }
+
+    for (final declaration in style.split(';')) {
+      final parts = declaration.split(':');
+      if (parts.length < 2) {
+        continue;
+      }
+      final key = parts.first.trim().toLowerCase();
+      if (key != property) {
+        continue;
+      }
+      var value = parts.sublist(1).join(':').trim();
+      value = value
+          .replaceFirst(RegExp(r'\s*!important\s*$', caseSensitive: false), '')
+          .trim();
+      if (value.isEmpty) {
+        continue;
+      }
+      return value;
+    }
+    return null;
+  }
+}
+
 extension AnimatedSvgPainterUseExtension on AnimatedSvgPainter {
   /// Checks if foreignObject should be rendered based on requiredExtensions.
   /// Per SVG spec, if requiredExtensions is specified and not supported,
@@ -160,6 +232,7 @@ extension AnimatedSvgPainterUseExtension on AnimatedSvgPainter {
     ui.Canvas canvas,
     SvgNode node, {
     required Set<String> useStack,
+    _UseInheritanceContext? useContext,
   }) {
     final hrefId = _extractHrefId(node);
     if (hrefId == null || hrefId.isEmpty || useStack.contains(hrefId)) {
@@ -182,6 +255,13 @@ extension AnimatedSvgPainterUseExtension on AnimatedSvgPainter {
     canvas.save();
     canvas.translate(x, y);
 
+    // Create inheritance context for this use boundary.
+    // This allows CSS properties set on <use> to be inherited by referenced content.
+    final currentUseContext = _UseInheritanceContext(
+      useNode: node,
+      parentContext: useContext,
+    );
+
     final previousParent = referenced.parent;
     referenced.parent = node;
     try {
@@ -192,6 +272,7 @@ extension AnimatedSvgPainterUseExtension on AnimatedSvgPainter {
           useNode: node,
           symbolNode: referenced,
           useStack: nextUseStack,
+          useContext: currentUseContext,
         );
       } else if (referenced.tagName == 'svg') {
         _paintSvgUseReference(
@@ -199,9 +280,15 @@ extension AnimatedSvgPainterUseExtension on AnimatedSvgPainter {
           useNode: node,
           svgNode: referenced,
           useStack: nextUseStack,
+          useContext: currentUseContext,
         );
       } else {
-        _paintNode(canvas, referenced, useStack: nextUseStack);
+        _paintNodeWithUseContext(
+          canvas,
+          referenced,
+          useStack: nextUseStack,
+          useContext: currentUseContext,
+        );
       }
     } finally {
       referenced.parent = previousParent;
@@ -215,20 +302,64 @@ extension AnimatedSvgPainterUseExtension on AnimatedSvgPainter {
     required SvgNode useNode,
     required SvgNode symbolNode,
     required Set<String> useStack,
+    _UseInheritanceContext? useContext,
   }) {
     final viewportTransform = _resolveUseViewportTransform(
       useNode: useNode,
       referenceNode: symbolNode,
     );
+
+    // Apply symbol viewport transform and clipping
     if (viewportTransform != null) {
       if (viewportTransform.clipRect != null) {
         canvas.clipRect(viewportTransform.clipRect!, doAntiAlias: true);
       }
       canvas.transform(viewportTransform.matrix.storage);
+    } else {
+      // Per SVG spec, symbol's default overflow is 'hidden'.
+      // Apply clipping based on use element's width/height if specified,
+      // or based on symbol's viewBox.
+      _applySymbolOverflowClipping(canvas, useNode, symbolNode);
     }
 
     for (final child in symbolNode.children) {
-      _paintNode(canvas, child, useStack: useStack);
+      _paintNodeWithUseContext(
+        canvas,
+        child,
+        useStack: useStack,
+        useContext: useContext,
+      );
+    }
+  }
+
+  /// Applies overflow clipping for symbol elements.
+  /// Symbol's default overflow is 'hidden' per SVG spec.
+  void _applySymbolOverflowClipping(
+    ui.Canvas canvas,
+    SvgNode useNode,
+    SvgNode symbolNode,
+  ) {
+    final overflow = _getInheritedString(symbolNode, 'overflow')?.toLowerCase();
+    if (overflow == 'visible') {
+      return; // No clipping needed
+    }
+
+    // Default is hidden - apply clipping based on use width/height or viewBox
+    final useWidth = _getNumber(useNode, 'width');
+    final useHeight = _getNumber(useNode, 'height');
+
+    if (useWidth != null && useHeight != null && useWidth > 0 && useHeight > 0) {
+      canvas.clipRect(
+        ui.Rect.fromLTWH(0, 0, useWidth, useHeight),
+        doAntiAlias: true,
+      );
+      return;
+    }
+
+    // Fall back to symbol's viewBox for clipping
+    final viewBox = _parseViewBox(_getString(symbolNode, 'viewBox'));
+    if (viewBox != null && viewBox.width > 0 && viewBox.height > 0) {
+      canvas.clipRect(viewBox, doAntiAlias: true);
     }
   }
 
@@ -237,6 +368,7 @@ extension AnimatedSvgPainterUseExtension on AnimatedSvgPainter {
     required SvgNode useNode,
     required SvgNode svgNode,
     required Set<String> useStack,
+    _UseInheritanceContext? useContext,
   }) {
     final viewportTransform = _resolveUseViewportTransform(
       useNode: useNode,
@@ -249,7 +381,30 @@ extension AnimatedSvgPainterUseExtension on AnimatedSvgPainter {
       canvas.transform(viewportTransform.matrix.storage);
     }
 
-    _paintNode(canvas, svgNode, useStack: useStack);
+    _paintNodeWithUseContext(
+      canvas,
+      svgNode,
+      useStack: useStack,
+      useContext: useContext,
+    );
+  }
+
+  /// Paints a node with use inheritance context for proper CSS cascade.
+  /// This method handles the inheritance of CSS properties from <use>
+  /// elements to their referenced content.
+  void _paintNodeWithUseContext(
+    ui.Canvas canvas,
+    SvgNode node, {
+    required Set<String> useStack,
+    _UseInheritanceContext? useContext,
+  }) {
+    _paintNodeImplWithUseContext(
+      this,
+      canvas,
+      node,
+      useStack: useStack,
+      useContext: useContext,
+    );
   }
 
   void _paintSwitch(

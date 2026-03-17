@@ -45,6 +45,16 @@ extension AnimatedSvgPainterValuesExtension on AnimatedSvgPainter {
       }
       current = current.parent;
     }
+
+    // Check use inheritance context for CSS properties inherited through <use>
+    // boundaries. This implements the shadow DOM inheritance semantics.
+    if (_currentUseContext != null) {
+      final useValue = _currentUseContext!.getInheritedValue(attributeName);
+      if (useValue != null) {
+        return useValue;
+      }
+    }
+
     return null;
   }
 
@@ -220,6 +230,20 @@ extension AnimatedSvgPainterValuesExtension on AnimatedSvgPainter {
       case 'exact':
       default:
         return _SvgTextPathSpacing.exact;
+    }
+  }
+
+  /// Resolves the textPath method attribute.
+  /// - align (default): Render glyphs along path with their natural spacing
+  /// - stretch: Scale glyphs uniformly to fill the path
+  _SvgTextPathMethod _resolveTextPathMethod(SvgNode node) {
+    final value = _getString(node, 'method')?.trim().toLowerCase();
+    switch (value) {
+      case 'stretch':
+        return _SvgTextPathMethod.stretch;
+      case 'align':
+      default:
+        return _SvgTextPathMethod.align;
     }
   }
 

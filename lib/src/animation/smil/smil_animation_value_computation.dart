@@ -100,7 +100,8 @@ extension SmilAnimationValueComputationExtension on SmilAnimation {
   }
 
   /// Вычислить значение для animateMotion
-  Object? _computeMotionValue(double t) {
+  /// [completedRepeats] is used for accumulate="sum" support
+  Object? _computeMotionValue(double t, {int completedRepeats = 0}) {
     // from содержит path data, to содержит rotate mode
     final pathData = from as String?;
     if (pathData == null || pathData.trim().isEmpty) {
@@ -114,15 +115,44 @@ extension SmilAnimationValueComputationExtension on SmilAnimation {
       // values содержит keyPoints если они есть
       final keyPoints = values?.map((v) => v as double).toList();
 
+      // Apply easing from keySplines if using spline calcMode
+      double easedT = t;
+      if (calcMode == SmilCalcMode.spline &&
+          keySplines != null &&
+          keySplines!.isNotEmpty) {
+        // For motion with keyPoints, apply spline to the segment progress
+        if (keyPoints != null && keyPoints.isNotEmpty && keyTimes != null) {
+          easedT = _applyMotionSpline(
+            t,
+            keyPoints,
+            keyTimes!,
+            keySplines!,
+          );
+        } else {
+          // Simple spline application for whole path
+          easedT = keySplines!.first.transform(t);
+        }
+      }
+
       // Получаем точку на пути
       final point = keyPoints != null && keyPoints.isNotEmpty
-          ? motionPath.getPointWithKeyPoints(t, keyPoints, keyTimes)
-          : motionPath.getPointAtTime(t);
+          ? motionPath.getPointWithKeyPoints(easedT, keyPoints, keyTimes)
+          : motionPath.getPointAtTime(easedT);
+
+      // Calculate position with accumulate="sum" support
+      double posX = point.position.dx;
+      double posY = point.position.dy;
+
+      // Handle accumulate="sum" - add end position * completedRepeats
+      if (accumulate && completedRepeats > 0) {
+        final endPos = motionPath.getEndPosition();
+        posX += endPos.dx * completedRepeats;
+        posY += endPos.dy * completedRepeats;
+      }
 
       // Формируем transform строку
       final rotateMode = to as String?;
-      final translatePart =
-          'translate(${point.position.dx}, ${point.position.dy})';
+      final translatePart = 'translate($posX, $posY)';
 
       if (rotateMode == null || rotateMode.isEmpty) {
         return translatePart;
@@ -145,6 +175,37 @@ extension SmilAnimationValueComputationExtension on SmilAnimation {
     } catch (e) {
       return null;
     }
+  }
+
+  /// Apply keySplines easing to motion with keyPoints/keyTimes
+  double _applyMotionSpline(
+    double t,
+    List<double> keyPoints,
+    List<double> keyTimes,
+    List<CubicBezier> splines,
+  ) {
+    // Find which segment we're in
+    for (int i = 0; i < keyTimes.length - 1; i++) {
+      if (t >= keyTimes[i] && t <= keyTimes[i + 1]) {
+        final segmentStart = keyTimes[i];
+        final segmentEnd = keyTimes[i + 1];
+        final segmentDuration = segmentEnd - segmentStart;
+
+        if (segmentDuration <= 0) continue;
+
+        // Calculate local progress within segment
+        var localT = (t - segmentStart) / segmentDuration;
+
+        // Apply spline easing if available for this segment
+        if (i < splines.length) {
+          localT = splines[i].transform(localT);
+        }
+
+        // Convert back to global progress
+        return segmentStart + localT * segmentDuration;
+      }
+    }
+    return t;
   }
 
   /// Интерполировать между двумя значениями

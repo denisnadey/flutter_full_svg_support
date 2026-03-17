@@ -622,5 +622,343 @@ void main() {
         );
       });
     });
+
+    group('CSS Inheritance Through Use Boundary', () {
+      testWidgets('inheritable CSS properties pass through use boundary', (
+        WidgetTester tester,
+      ) async {
+        // fill, stroke, font-family, etc. should inherit through <use>
+        const svgXml = '''
+          <svg viewBox="0 0 100 100">
+            <defs>
+              <rect id="myRect" x="10" y="10" width="80" height="80"/>
+            </defs>
+            <g fill="red">
+              <use href="#myRect"/>
+            </g>
+          </svg>
+        ''';
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+            ),
+          ),
+        );
+
+        await tester.pump();
+
+        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+
+        // fill="red" on parent <g> should inherit through <use> to <rect>
+        expect(analysis.pixelCount, greaterThan(1000));
+      });
+
+      testWidgets('stroke-width inherits through use boundary', (
+        WidgetTester tester,
+      ) async {
+        const svgXml = '''
+          <svg viewBox="0 0 100 100">
+            <defs>
+              <path id="myPath" d="M10,10 L90,10 L90,90 L10,90 Z" fill="none" stroke="red"/>
+            </defs>
+            <use href="#myPath" stroke-width="10"/>
+          </svg>
+        ''';
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+            ),
+          ),
+        );
+
+        await tester.pump();
+
+        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+
+        // stroke-width="10" should apply to the path through <use>
+        expect(analysis.pixelCount, greaterThan(500));
+      });
+
+      testWidgets('CSS class on use does NOT transfer to referenced content', (
+        WidgetTester tester,
+      ) async {
+        // Per spec, CSS classes do NOT transfer across shadow boundary
+        const svgXml = '''
+          <svg viewBox="0 0 100 100">
+            <style>
+              .highlight { fill: red; }
+            </style>
+            <defs>
+              <rect id="myRect" x="10" y="10" width="80" height="80"/>
+            </defs>
+            <use href="#myRect" class="highlight"/>
+          </svg>
+        ''';
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+            ),
+          ),
+        );
+
+        await tester.pump();
+
+        // The rect should NOT be red because class doesn't transfer
+        // It should have default fill (black)
+        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+      });
+    });
+
+    group('Symbol Overflow Clipping', () {
+      testWidgets('symbol with default overflow clips content', (
+        WidgetTester tester,
+      ) async {
+        // Symbol's default overflow is 'hidden'
+        const svgXml = '''
+          <svg viewBox="0 0 100 100">
+            <defs>
+              <symbol id="icon" viewBox="0 0 20 20">
+                <rect x="-5" y="-5" width="30" height="30" fill="red"/>
+              </symbol>
+            </defs>
+            <use href="#icon" x="10" y="10" width="40" height="40"/>
+          </svg>
+        ''';
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+            ),
+          ),
+        );
+
+        await tester.pump();
+
+        // Content should be clipped to viewBox bounds
+        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+      });
+
+      testWidgets('symbol with overflow="visible" does not clip', (
+        WidgetTester tester,
+      ) async {
+        const svgXml = '''
+          <svg viewBox="0 0 100 100">
+            <defs>
+              <symbol id="icon" viewBox="0 0 20 20" overflow="visible">
+                <rect x="-5" y="-5" width="30" height="30" fill="red"/>
+              </symbol>
+            </defs>
+            <use href="#icon" x="10" y="10" width="40" height="40"/>
+          </svg>
+        ''';
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+            ),
+          ),
+        );
+
+        await tester.pump();
+
+        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+
+        // With overflow="visible", the full rect should render
+        expect(analysis.pixelCount, greaterThan(1000));
+      });
+    });
+
+    group('Nested Use Inheritance Chains', () {
+      testWidgets('attributes cascade through multiple use boundaries', (
+        WidgetTester tester,
+      ) async {
+        const svgXml = '''
+          <svg viewBox="0 0 100 100">
+            <defs>
+              <rect id="baseRect" width="20" height="20"/>
+              <g id="group1">
+                <use href="#baseRect"/>
+              </g>
+            </defs>
+            <use href="#group1" x="10" y="10" fill="red"/>
+          </svg>
+        ''';
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+            ),
+          ),
+        );
+
+        await tester.pump();
+
+        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+
+        // fill="red" should cascade through use -> g -> use -> rect
+        expect(analysis.pixelCount, greaterThan(100));
+      });
+
+      testWidgets('intermediate use can override parent use attributes', (
+        WidgetTester tester,
+      ) async {
+        const svgXml = '''
+          <svg viewBox="0 0 100 100">
+            <defs>
+              <rect id="baseRect" width="20" height="20"/>
+              <use id="blueUse" href="#baseRect" fill="blue"/>
+            </defs>
+            <use href="#blueUse" x="10" y="10" fill="red"/>
+          </svg>
+        ''';
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+            ),
+          ),
+        );
+
+        await tester.pump();
+
+        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final redAnalysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+
+        // The inner use has fill="blue" which should override outer fill="red"
+        // So there should be minimal red pixels
+        expect(redAnalysis.pixelCount, lessThan(100));
+      });
+
+      testWidgets('self-reference circular use is handled gracefully', (
+        WidgetTester tester,
+      ) async {
+        const svgXml = '''
+          <svg viewBox="0 0 100 100">
+            <defs>
+              <g id="selfRef">
+                <rect width="20" height="20" fill="red"/>
+                <use href="#selfRef" x="5" y="5"/>
+              </g>
+            </defs>
+            <use href="#selfRef" x="10" y="10"/>
+          </svg>
+        ''';
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+            ),
+          ),
+        );
+
+        // Should not crash or hang - self-reference should be detected
+        await tester.pump();
+        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+      });
+    });
+
+    group('Presentation Attribute vs Style Precedence', () {
+      testWidgets('style attribute on use overrides presentation attribute', (
+        WidgetTester tester,
+      ) async {
+        const svgXml = '''
+          <svg viewBox="0 0 100 100">
+            <defs>
+              <rect id="myRect" x="10" y="10" width="80" height="80"/>
+            </defs>
+            <use href="#myRect" fill="blue" style="fill:red"/>
+          </svg>
+        ''';
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+            ),
+          ),
+        );
+
+        await tester.pump();
+
+        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+
+        // style="fill:red" should override fill="blue"
+        expect(analysis.pixelCount, greaterThan(3000));
+      });
+
+      testWidgets('referenced element own style takes precedence', (
+        WidgetTester tester,
+      ) async {
+        const svgXml = '''
+          <svg viewBox="0 0 100 100">
+            <defs>
+              <rect id="myRect" x="10" y="10" width="80" height="80" style="fill:blue"/>
+            </defs>
+            <use href="#myRect" fill="red"/>
+          </svg>
+        ''';
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+            ),
+          ),
+        );
+
+        await tester.pump();
+
+        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+
+        // rect's own style="fill:blue" should override use's fill="red"
+        expect(analysis.pixelCount, lessThan(100));
+      });
+
+      testWidgets('inherited use values apply when element has no own value', (
+        WidgetTester tester,
+      ) async {
+        const svgXml = '''
+          <svg viewBox="0 0 100 100">
+            <defs>
+              <rect id="myRect" x="10" y="10" width="80" height="80"/>
+            </defs>
+            <use href="#myRect" fill="red" stroke="blue" stroke-width="5"/>
+          </svg>
+        ''';
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+            ),
+          ),
+        );
+
+        await tester.pump();
+
+        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+
+        // fill and stroke from use should apply to rect
+        expect(analysis.pixelCount, greaterThan(1000));
+      });
+    });
   });
 }

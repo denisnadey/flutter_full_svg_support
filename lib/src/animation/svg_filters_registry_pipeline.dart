@@ -1,6 +1,11 @@
 part of 'svg_filters.dart';
 
 /// Internal context for tracking filter pipeline execution state.
+///
+/// This context manages the filter graph resolution including:
+/// - Named result caching for multi-hop chains (A→B→C references)
+/// - Circular reference detection via resolution depth tracking
+/// - Background/paint context propagation for nested filters
 class _FilterPipelineContext {
   _FilterPipelineContext({
     required this.sourceGraphic,
@@ -17,6 +22,39 @@ class _FilterPipelineContext {
 
   /// Track which primitives have been computed to avoid recomputation.
   final Set<String> computedPrimitives = <String>{};
+
+  /// Maximum resolution depth to prevent stack overflow on circular references.
+  static const int maxResolutionDepth = 64;
+
+  /// Current resolution depth for detecting deep chains.
+  int _currentDepth = 0;
+
+  /// Track currently resolving references to detect circular dependencies.
+  final Set<String> _resolvingReferences = <String>{};
+
+  /// Begin resolving a named reference. Returns false if circular.
+  bool beginResolve(String name) {
+    if (_resolvingReferences.contains(name)) {
+      return false; // Circular reference detected
+    }
+    if (_currentDepth >= maxResolutionDepth) {
+      return false; // Maximum depth exceeded
+    }
+    _resolvingReferences.add(name);
+    _currentDepth++;
+    return true;
+  }
+
+  /// End resolving a named reference.
+  void endResolve(String name) {
+    _resolvingReferences.remove(name);
+    if (_currentDepth > 0) _currentDepth--;
+  }
+
+  /// Check if a reference would cause circular dependency.
+  bool wouldCauseCircular(String name) {
+    return _resolvingReferences.contains(name);
+  }
 }
 
 extension SvgFiltersPipelineExtension on SvgFilters {

@@ -238,7 +238,7 @@ class _SMILAnimateMotionWidgetState extends State<SMILAnimateMotionWidget> {
               border: Border.all(color: Colors.grey.shade300),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 2),
                 ),
@@ -259,10 +259,10 @@ class _SMILAnimateMotionWidgetState extends State<SMILAnimateMotionWidget> {
           Container(
             padding: const EdgeInsets.all(AnimationTheme.spacingMedium),
             decoration: BoxDecoration(
-              color: AnimationTheme.primaryColor.withOpacity(0.05),
+              color: AnimationTheme.primaryColor.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(AnimationTheme.radiusMedium),
               border: Border.all(
-                color: AnimationTheme.primaryColor.withOpacity(0.2),
+                color: AnimationTheme.primaryColor.withValues(alpha: 0.2),
               ),
             ),
             child: Column(
@@ -334,9 +334,9 @@ class _InfoChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: chipColor.withOpacity(0.1),
+        color: chipColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: chipColor.withOpacity(0.3)),
+        border: Border.all(color: chipColor.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -346,7 +346,7 @@ class _InfoChip extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: chipColor.withOpacity(0.8),
+              color: chipColor.withValues(alpha: 0.8),
             ),
           ),
           Text(

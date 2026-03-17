@@ -72,9 +72,9 @@ void main() {
       // Red channel: 255 → 0, at 0.5 = 127
       // Green channel: 0 → 0, at 0.5 = 0
       // Blue channel: 0 → 255, at 0.5 = 127
-      expect(color.red, closeTo(127, 1));
-      expect(color.green, closeTo(0, 1));
-      expect(color.blue, closeTo(127, 1));
+      expect((color.r * 255).round(), closeTo(127, 1));
+      expect((color.g * 255).round(), closeTo(0, 1));
+      expect((color.b * 255).round(), closeTo(127, 1));
     });
 
     test('interpolates stroke colors', () {
@@ -104,9 +104,9 @@ void main() {
       // Red: 0 → 255, at 0.25 = 63
       // Green: 255 → 0, at 0.25 = 191
       // Blue: 0 → 0, at 0.25 = 0
-      expect(color.red, closeTo(63, 2));
-      expect(color.green, closeTo(191, 2));
-      expect(color.blue, equals(0));
+      expect((color.r * 255).round(), closeTo(63, 2));
+      expect((color.g * 255).round(), closeTo(191, 2));
+      expect((color.b * 255).round(), equals(0));
     });
 
     test('animates fill with values + keyTimes', () {

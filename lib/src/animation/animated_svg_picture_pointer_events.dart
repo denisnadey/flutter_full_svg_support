@@ -36,6 +36,8 @@ extension _AnimatedSvgPictureStatePointerEventsExtension
         }
         return _isFillEnabled(node);
       case 'visiblefill':
+        // visibleFill: requires visibility AND fill to be enabled
+        return !visibilityHidden && _isFillEnabled(node);
       case 'visible':
         return !visibilityHidden;
       case 'visiblestroke':
@@ -66,6 +68,8 @@ extension _AnimatedSvgPictureStatePointerEventsExtension
         }
         return _hasStroke(node);
       case 'visiblestroke':
+        // visibleStroke: requires visibility AND stroke to be enabled
+        return !visibilityHidden && _hasStroke(node);
       case 'visible':
         return !visibilityHidden;
       case 'visiblefill':

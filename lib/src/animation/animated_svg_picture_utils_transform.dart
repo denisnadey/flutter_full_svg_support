@@ -93,9 +93,89 @@ extension _AnimatedSvgPictureStateTransformExtension
     return Rect.fromLTWH(minX, minY, width, height);
   }
 
+  /// Resolves transform-origin for a node.
+  /// Returns (originX, originY) in local coordinates.
+  Offset _resolveTransformOrigin(SvgNode node) {
+    final originValue = _extractStyleValue(node, 'transform-origin') ??
+        node.getAttributeValue('transform-origin');
+    if (originValue == null) {
+      return Offset.zero;
+    }
+
+    final originStr = originValue.toString().trim();
+    if (originStr.isEmpty || originStr == '0 0') {
+      return Offset.zero;
+    }
+
+    // Parse transform-origin value (can be keywords, percentages, or lengths)
+    final parts = originStr.split(RegExp(r'\s+'));
+    if (parts.isEmpty) {
+      return Offset.zero;
+    }
+
+    // Get element bounds for percentage calculations
+    final bounds = _computeNodeLocalBounds(node);
+    final width = bounds?.width ?? 0.0;
+    final height = bounds?.height ?? 0.0;
+    final left = bounds?.left ?? 0.0;
+    final top = bounds?.top ?? 0.0;
+
+    double parseOriginComponent(
+      String value,
+      bool isHorizontal,
+      double dimension,
+      double offset,
+    ) {
+      final normalized = value.toLowerCase().trim();
+      // Handle keywords
+      switch (normalized) {
+        case 'left':
+          return offset;
+        case 'right':
+          return offset + dimension;
+        case 'top':
+          return offset;
+        case 'bottom':
+          return offset + dimension;
+        case 'center':
+          return offset + dimension / 2;
+      }
+      // Handle percentage
+      if (normalized.endsWith('%')) {
+        final percent = double.tryParse(
+          normalized.substring(0, normalized.length - 1),
+        );
+        if (percent != null) {
+          return offset + (dimension * percent / 100.0);
+        }
+      }
+      // Handle length value
+      final numValue = double.tryParse(
+        normalized.replaceAll(RegExp(r'[a-z]+$'), ''),
+      );
+      return numValue ?? 0.0;
+    }
+
+    final originX = parseOriginComponent(parts[0], true, width, left);
+    final originY = parts.length > 1
+        ? parseOriginComponent(parts[1], false, height, top)
+        : (height / 2 + top); // Default Y to center
+
+    return Offset(originX, originY);
+  }
+
   void _applyNodeTransform(Matrix4 matrix, SvgNode node) {
     final transformAttr = node.getAttributeValue('transform')?.toString();
     if (transformAttr == null || transformAttr.isEmpty) return;
+
+    // Check for transform-origin
+    final origin = _resolveTransformOrigin(node);
+    final hasOrigin = origin != Offset.zero;
+
+    // If transform-origin is set, translate to origin, apply transform, translate back
+    if (hasOrigin) {
+      matrix.translateByDouble(origin.dx, origin.dy, 0, 1);
+    }
 
     final transforms = SvgTransform.parse(transformAttr);
     for (final transform in transforms) {
@@ -253,6 +333,10 @@ extension _AnimatedSvgPictureStateTransformExtension
           }
           break;
       }
+    }
+    // Translate back from origin after transforms
+    if (hasOrigin) {
+      matrix.translateByDouble(-origin.dx, -origin.dy, 0, 1);
     }
   }
 }

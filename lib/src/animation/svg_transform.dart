@@ -141,10 +141,11 @@ class SvgTransform {
     return transforms;
   }
 
-  /// Parses a value that may include units (deg, rad, px, etc.)
+  /// Parses a value that may include units (deg, rad, px, em, etc.)
   static double _parseValueWithUnit(String s) {
     final trimmed = s.trim().toLowerCase();
-    // Handle angle units
+
+    // Handle angle units first
     if (trimmed.endsWith('deg')) {
       return double.tryParse(trimmed.substring(0, trimmed.length - 3)) ?? 0.0;
     } else if (trimmed.endsWith('rad')) {
@@ -159,9 +160,38 @@ class SvgTransform {
       final grad =
           double.tryParse(trimmed.substring(0, trimmed.length - 4)) ?? 0.0;
       return grad * 0.9; // Convert to degrees
-    } else if (trimmed.endsWith('px')) {
-      return double.tryParse(trimmed.substring(0, trimmed.length - 2)) ?? 0.0;
     }
+
+    // Handle length units for translate functions
+    // Map of unit suffixes to their pixel conversion factors
+    // Base assumptions: 16px = 1em = 1rem, 96dpi for absolute units
+    // Sorted by length descending to avoid 'em' matching 'rem'
+    const lengthUnits = <String, double>{
+      'rem': 16.0,  // Must come before 'em'
+      'em': 16.0,
+      'px': 1.0,
+      'ex': 8.0,
+      'ch': 8.0,
+      'cm': 37.795,
+      'mm': 3.7795,
+      'in': 96.0,
+      'pt': 1.333,
+      'pc': 16.0,
+    };
+
+    for (final entry in lengthUnits.entries) {
+      if (trimmed.endsWith(entry.key)) {
+        final numStr = trimmed.substring(0, trimmed.length - entry.key.length);
+        final num = double.tryParse(numStr) ?? 0.0;
+        return num * entry.value;
+      }
+    }
+
+    // Handle percentage (for transforms, just parse the number as-is)
+    if (trimmed.endsWith('%')) {
+      return double.tryParse(trimmed.substring(0, trimmed.length - 1)) ?? 0.0;
+    }
+
     return double.tryParse(trimmed) ?? 0.0;
   }
 
@@ -200,7 +230,8 @@ class SvgTransform {
 /// Декомпозиция матрицы трансформации для интерполяции
 ///
 /// Разбивает matrix на компоненты: translate, rotate, scale, skew
-/// для более плавной интерполяции между различными трансформациями
+/// для более плавной интерполяции между различными трансформациями.
+/// Uses QR decomposition for proper handling of arbitrary 2D matrices.
 @immutable
 class TransformDecomposition {
   const TransformDecomposition({
@@ -210,7 +241,19 @@ class TransformDecomposition {
     required this.scaleX,
     required this.scaleY,
     required this.skewX,
+    this.skewY = 0.0,
   });
+
+  /// Identity transform decomposition.
+  static const identity = TransformDecomposition(
+    translateX: 0.0,
+    translateY: 0.0,
+    rotation: 0.0,
+    scaleX: 1.0,
+    scaleY: 1.0,
+    skewX: 0.0,
+    skewY: 0.0,
+  );
 
   final double translateX;
   final double translateY;
@@ -218,6 +261,7 @@ class TransformDecomposition {
   final double scaleX;
   final double scaleY;
   final double skewX; // в радианах
+  final double skewY; // в радианах
 
   /// Создаёт декомпозицию из списка трансформаций
   factory TransformDecomposition.fromTransforms(List<SvgTransform> transforms) {
@@ -225,6 +269,7 @@ class TransformDecomposition {
     double rotation = 0.0;
     double sx = 1.0, sy = 1.0;
     double skewX = 0.0;
+    double skewY = 0.0;
 
     for (final transform in transforms) {
       switch (transform.type) {
@@ -245,8 +290,9 @@ class TransformDecomposition {
               ? transform.values[0] * math.pi / 180.0
               : 0.0;
         case SvgTransformType.skewY:
-          // Пока поддерживаем только skewX в декомпозиции.
-          break;
+          skewY += transform.values.isNotEmpty
+              ? transform.values[0] * math.pi / 180.0
+              : 0.0;
         case SvgTransformType.matrix:
           if (transform.values.length >= 6) {
             final matrixDecomposition = _decomposeMatrix(transform.values);
@@ -341,18 +387,31 @@ class TransformDecomposition {
       scaleX: sx,
       scaleY: sy,
       skewX: skewX,
+      skewY: skewY,
     );
   }
 
   /// Интерполирует между двумя декомпозициями
   TransformDecomposition lerp(TransformDecomposition other, double t) {
+    // Handle rotation interpolation via shortest path
+    var fromRotation = rotation;
+    var toRotation = other.rotation;
+    final rotationDiff = toRotation - fromRotation;
+    // If rotation difference is > pi, take the shorter path
+    if (rotationDiff > math.pi) {
+      fromRotation += 2 * math.pi;
+    } else if (rotationDiff < -math.pi) {
+      toRotation += 2 * math.pi;
+    }
+
     return TransformDecomposition(
       translateX: ui.lerpDouble(translateX, other.translateX, t)!,
       translateY: ui.lerpDouble(translateY, other.translateY, t)!,
-      rotation: ui.lerpDouble(rotation, other.rotation, t)!,
+      rotation: ui.lerpDouble(fromRotation, toRotation, t)!,
       scaleX: ui.lerpDouble(scaleX, other.scaleX, t)!,
       scaleY: ui.lerpDouble(scaleY, other.scaleY, t)!,
       skewX: ui.lerpDouble(skewX, other.skewX, t)!,
+      skewY: ui.lerpDouble(skewY, other.skewY, t)!,
     );
   }
 
@@ -393,6 +452,15 @@ class TransformDecomposition {
       );
     }
 
+    if (skewY != 0.0) {
+      result.add(
+        SvgTransform(
+          type: SvgTransformType.skewY,
+          values: [skewY * 180.0 / math.pi],
+        ),
+      );
+    }
+
     return result;
   }
 
@@ -402,10 +470,17 @@ class TransformDecomposition {
         'translate: ($translateX, $translateY), '
         'rotation: ${rotation * 180 / math.pi}°, '
         'scale: ($scaleX, $scaleY), '
-        'skewX: ${skewX * 180 / math.pi}°)';
+        'skewX: ${skewX * 180 / math.pi}°, '
+        'skewY: ${skewY * 180 / math.pi}°)';
   }
 
+  /// Decomposes a 2D matrix into translation, rotation, scale, and skew.
+  /// Uses QR decomposition with improved handling of degenerate matrices.
   static TransformDecomposition _decomposeMatrix(List<double> values) {
+    if (values.length < 6) {
+      return TransformDecomposition.identity;
+    }
+
     final a0 = values[0];
     final b0 = values[1];
     final c0 = values[2];
@@ -413,6 +488,21 @@ class TransformDecomposition {
     final tx = values[4];
     final ty = values[5];
     const epsilon = 1e-12;
+
+    // Check for degenerate matrix (zero determinant)
+    final determinant = a0 * d0 - b0 * c0;
+    if (determinant.abs() < epsilon) {
+      // Degenerate matrix - return identity-like transform with translation
+      return TransformDecomposition(
+        translateX: tx,
+        translateY: ty,
+        rotation: 0.0,
+        scaleX: 0.0,
+        scaleY: 0.0,
+        skewX: 0.0,
+        skewY: 0.0,
+      );
+    }
 
     var a = a0;
     var b = b0;
@@ -432,6 +522,7 @@ class TransformDecomposition {
         scaleX: 0.0,
         scaleY: scaleYFallback,
         skewX: 0.0,
+        skewY: 0.0,
       );
     }
 
@@ -453,8 +544,8 @@ class TransformDecomposition {
       skew = 0.0;
     }
 
-    final determinant = a * d - b * c;
-    if (determinant < 0) {
+    final det = a * d - b * c;
+    if (det < 0) {
       scaleX = -scaleX;
       skew = -skew;
       a = -a;
@@ -471,6 +562,7 @@ class TransformDecomposition {
       scaleX: scaleX,
       scaleY: scaleY,
       skewX: skewX,
+      skewY: 0.0, // skewY is not extracted from matrix decomposition
     );
   }
 }

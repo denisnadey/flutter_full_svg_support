@@ -4,6 +4,26 @@ part of 'animated_svg_picture.dart';
 /// This prevents infinite loops and excessive resource usage.
 const int _kMaxUseRecursionDepthHitTest = 10;
 
+/// Context for tracking pointer-events inheritance across <use> boundaries.
+class _UseHitTestContext {
+  const _UseHitTestContext({
+    this.inheritedPointerEvents,
+  });
+
+  /// Pointer-events value inherited from <use> element.
+  /// If null, use the referenced element's own pointer-events.
+  final String? inheritedPointerEvents;
+
+  /// Creates a new context inheriting from this one.
+  _UseHitTestContext copyWith({
+    String? inheritedPointerEvents,
+  }) {
+    return _UseHitTestContext(
+      inheritedPointerEvents: inheritedPointerEvents ?? this.inheritedPointerEvents,
+    );
+  }
+}
+
 extension _AnimatedSvgPictureStateHitTestUseExtension
     on _AnimatedSvgPictureState {
   String? _hitTestUseReference({
@@ -11,6 +31,7 @@ extension _AnimatedSvgPictureStateHitTestUseExtension
     required Offset documentPoint,
     required Matrix4 currentTransform,
     required Set<String> useStack,
+    _UseHitTestContext? context,
   }) {
     final hrefId = _extractHrefId(useNode);
     if (hrefId == null || hrefId.isEmpty || useStack.contains(hrefId)) {
@@ -26,6 +47,19 @@ extension _AnimatedSvgPictureStateHitTestUseExtension
     if (referenced == null || !_isUseReferenceAllowedTag(referenced.tagName)) {
       return null;
     }
+
+    // Check pointer-events on the <use> element itself
+    // Per SVG spec, pointer-events on <use> affects the entire shadow tree
+    final usePointerEvents = _resolvePointerEventsMode(useNode);
+    if (usePointerEvents == 'none') {
+      return null;
+    }
+
+    // Create context for pointer-events inheritance
+    final useContext = context?.copyWith(
+          inheritedPointerEvents: usePointerEvents,
+        ) ??
+        _UseHitTestContext(inheritedPointerEvents: usePointerEvents);
 
     final referenceTransform = Matrix4.copy(currentTransform)
       ..translateByDouble(
@@ -56,12 +90,13 @@ extension _AnimatedSvgPictureStateHitTestUseExtension
         }
         if (referenced.tagName == 'symbol') {
           for (int i = referenced.children.length - 1; i >= 0; i--) {
-            final hitChild = _hitTestNode(
+            final hitChild = _hitTestNodeWithUseContext(
               referenced.children[i],
               documentPoint,
               useReferenceTransform,
               useStack: nextUseStack,
               foreignObjectParent: null,
+              useContext: useContext,
             );
             if (hitChild != null) {
               return hitChild;
@@ -69,25 +104,141 @@ extension _AnimatedSvgPictureStateHitTestUseExtension
           }
           return null;
         }
-        return _hitTestNode(
+        return _hitTestNodeWithUseContext(
           referenced,
           documentPoint,
           useReferenceTransform,
           useStack: nextUseStack,
           foreignObjectParent: null,
+          useContext: useContext,
         );
       }
 
-      return _hitTestNode(
+      return _hitTestNodeWithUseContext(
         referenced,
         documentPoint,
         referenceTransform,
         useStack: nextUseStack,
         foreignObjectParent: null,
+        useContext: useContext,
       );
     } finally {
       referenced.parent = previousParent;
     }
+  }
+
+  /// Hit tests a node with <use> context for pointer-events inheritance.
+  String? _hitTestNodeWithUseContext(
+    SvgNode node,
+    Offset documentPoint,
+    Matrix4 parentTransform, {
+    required Set<String> useStack,
+    required SvgNode? foreignObjectParent,
+    required _UseHitTestContext useContext,
+  }) {
+    if (_isDefinitionOnlyTag(node.tagName)) {
+      return null;
+    }
+    if (_isDisplayNone(node)) {
+      return null;
+    }
+
+    // Check requiredExtensions for foreignObject
+    if (node.tagName == 'foreignObject') {
+      final requiredExtensions = node.getAttributeValue('requiredExtensions');
+      if (requiredExtensions != null &&
+          requiredExtensions.toString().trim().isNotEmpty) {
+        return null;
+      }
+    }
+
+    final currentUseStack = useStack;
+    final currentTransform = Matrix4.copy(parentTransform);
+    _applyNodeTransform(currentTransform, node);
+
+    if (!_isPointVisibleForNode(node, documentPoint, currentTransform)) {
+      return null;
+    }
+
+    // Check pointer-events with inheritance from <use>
+    final nodePointerEvents = _resolvePointerEventsMode(node);
+    final effectivePointerEvents =
+        nodePointerEvents == 'auto' || nodePointerEvents == 'visiblepainted'
+            ? useContext.inheritedPointerEvents ?? nodePointerEvents
+            : nodePointerEvents;
+    if (effectivePointerEvents == 'none') {
+      return null;
+    }
+
+    final childTransform = Matrix4.copy(currentTransform);
+    _applyForeignObjectChildTransform(childTransform, node);
+
+    // Apply nested SVG transform within foreignObject
+    if (node.tagName == 'svg' && foreignObjectParent != null) {
+      _applyNestedSvgTransformInForeignObject(
+        childTransform,
+        node,
+        foreignObjectParent,
+      );
+    }
+
+    if (node.tagName == 'switch') {
+      final activeChild = resolveActiveSwitchChild(node);
+      if (activeChild == null) {
+        return null;
+      }
+      return _hitTestNodeWithUseContext(
+        activeChild,
+        documentPoint,
+        childTransform,
+        useStack: currentUseStack,
+        foreignObjectParent: foreignObjectParent,
+        useContext: useContext,
+      );
+    }
+
+    // Determine if this node establishes a foreignObject context for children
+    final foParent = node.tagName == 'foreignObject'
+        ? node
+        : foreignObjectParent;
+
+    // Traverse children in reverse (last painted is visually on top)
+    for (int i = node.children.length - 1; i >= 0; i--) {
+      final hitChild = _hitTestNodeWithUseContext(
+        node.children[i],
+        documentPoint,
+        childTransform,
+        useStack: currentUseStack,
+        foreignObjectParent: foParent,
+        useContext: useContext,
+      );
+      if (hitChild != null) {
+        return hitChild;
+      }
+    }
+
+    if (node.tagName == 'use') {
+      final hitReferenced = _hitTestUseReference(
+        useNode: node,
+        documentPoint: documentPoint,
+        currentTransform: currentTransform,
+        useStack: currentUseStack,
+        context: useContext,
+      );
+      if (hitReferenced != null) {
+        return hitReferenced;
+      }
+    }
+
+    if (effectivePointerEvents == 'none' ||
+        node.id == null ||
+        !_isHitTestableTag(node.tagName)) {
+      return null;
+    }
+
+    return _nodeContainsPoint(node, documentPoint, currentTransform)
+        ? node.id
+        : null;
   }
 
   bool _isUseViewportReferenceTag(String tagName) {

@@ -146,8 +146,47 @@ String? _normalizeMatrix(List<String> args) {
   return 'matrix($values)';
 }
 
+/// Parses a CSS length value to pixels.
+/// Supports: px, em, rem, %, vw, vh, vmin, vmax, cm, mm, in, pt, pc, bare numbers.
 double _parseLength(String value) {
-  return _parseNumber(value, fallback: 0.0);
+  final trimmed = value.trim().toLowerCase();
+
+  // Handle percentage separately - need context for proper conversion
+  if (trimmed.endsWith('%')) {
+    // For transforms, we can't resolve % without context, so just parse the number
+    return double.tryParse(trimmed.substring(0, trimmed.length - 1)) ?? 0.0;
+  }
+
+  // Map of unit suffixes to their pixel conversion factors
+  // Base assumptions: 16px = 1em = 1rem, 96dpi for absolute units
+  // Sorted by length descending to avoid 'em' matching 'rem'
+  const unitConversions = <String, double>{
+    'vmin': 1.0,
+    'vmax': 1.0,
+    'rem': 16.0,  // Must come before 'em'
+    'em': 16.0,
+    'px': 1.0,
+    'ex': 8.0,
+    'ch': 8.0,
+    'vw': 1.0,
+    'vh': 1.0,
+    'cm': 37.795,
+    'mm': 3.7795,
+    'in': 96.0,
+    'pt': 1.333,
+    'pc': 16.0,
+  };
+
+  for (final entry in unitConversions.entries) {
+    if (trimmed.endsWith(entry.key)) {
+      final numStr = trimmed.substring(0, trimmed.length - entry.key.length);
+      final num = double.tryParse(numStr) ?? 0.0;
+      return num * entry.value;
+    }
+  }
+
+  // Bare number
+  return double.tryParse(trimmed) ?? 0.0;
 }
 
 double _parseAngleToDegrees(String value) {

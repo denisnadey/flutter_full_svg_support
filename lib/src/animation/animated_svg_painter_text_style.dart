@@ -30,9 +30,14 @@ extension AnimatedSvgPainterTextStyleExtension on AnimatedSvgPainter {
       _getInheritedString(node, 'dominant-baseline') ??
           _getInheritedString(node, 'alignment-baseline'),
     );
+    final lineHeight = _resolveLineHeight(
+      _getInheritedString(node, 'line-height'),
+      fontSize,
+    );
     final baselineShift = _resolveBaselineShift(
       _getInheritedAttributeValue(node, 'baseline-shift'),
       fontSize,
+      lineHeight: lineHeight,
     );
     final letterSpacing = (_getInheritedNumber(node, 'letter-spacing') ?? 0.0)
         .clamp(-1024.0, 1024.0);
@@ -137,10 +142,6 @@ extension AnimatedSvgPainterTextStyleExtension on AnimatedSvgPainter {
     );
     final verticalAlign = _resolveVerticalAlign(
       _getInheritedString(node, 'vertical-align'),
-      fontSize,
-    );
-    final lineHeight = _resolveLineHeight(
-      _getInheritedString(node, 'line-height'),
       fontSize,
     );
     final fontKerning = _resolveFontKerning(
@@ -1742,10 +1743,37 @@ extension AnimatedSvgPainterTextStyleExtension on AnimatedSvgPainter {
   }
 
   ui.Paragraph _buildTextParagraph(String text, _ResolvedTextStyle style) {
-    // Generate cache key for text paragraph
-    final cacheKey = _RenderCache.textKey(
+    // Apply font-size-adjust if specified
+    // font-size-adjust preserves x-height when font-fallback occurs
+    // adjusted-font-size = font-size * (font-size-adjust / actual-aspect-ratio)
+    var effectiveFontSize = style.fontSize;
+    if (style.fontSizeAdjust != null && style.fontSizeAdjust! > 0) {
+      // Estimate aspect ratio (x-height/font-size) - typical value is ~0.48 for many fonts
+      // This is a heuristic since Flutter doesn't expose actual x-height
+      const estimatedAspectRatio = 0.48;
+      effectiveFontSize = style.fontSize * (style.fontSizeAdjust! / estimatedAspectRatio);
+    }
+
+    // Build font variations list for variable font support
+    final fontVariations = <ui.FontVariation>[];
+
+    // Apply font-stretch via 'wdth' variation axis
+    // font-stretch 100 = normal, maps to wdth 100
+    if ((style.fontStretch - 100.0).abs() > 0.1) {
+      fontVariations.add(ui.FontVariation('wdth', style.fontStretch));
+    }
+
+    // Apply unicode-bidi by wrapping text with Unicode directional control characters
+    final processedText = _applyUnicodeBidi(
       text,
-      style.fontSize,
+      style.unicodeBidi,
+      style.textDirection,
+    );
+
+    // Generate cache key for text paragraph (include new properties)
+    final cacheKey = _RenderCache.textKey(
+      processedText,
+      effectiveFontSize,
       style.fontFamily,
       style.fontWeight.index,
       style.fontStyle.index,
@@ -1762,7 +1790,7 @@ extension AnimatedSvgPainterTextStyleExtension on AnimatedSvgPainter {
     // Build the paragraph
     final paragraphBuilder = ui.ParagraphBuilder(
       ui.ParagraphStyle(
-        fontSize: style.fontSize,
+        fontSize: effectiveFontSize,
         fontFamily: style.fontFamily,
         fontWeight: style.fontWeight,
         fontStyle: style.fontStyle,
@@ -1773,7 +1801,7 @@ extension AnimatedSvgPainterTextStyleExtension on AnimatedSvgPainter {
     paragraphBuilder.pushStyle(
       ui.TextStyle(
         color: style.color,
-        fontSize: style.fontSize,
+        fontSize: effectiveFontSize,
         fontFamily: style.fontFamily,
         fontWeight: style.fontWeight,
         fontStyle: style.fontStyle,
@@ -1782,9 +1810,10 @@ extension AnimatedSvgPainterTextStyleExtension on AnimatedSvgPainter {
         decoration: decoration,
         decorationColor: style.decorationColor ?? style.color,
         fontFeatures: style.fontFeatures.isNotEmpty ? style.fontFeatures : null,
+        fontVariations: fontVariations.isNotEmpty ? fontVariations : null,
       ),
     );
-    paragraphBuilder.addText(text);
+    paragraphBuilder.addText(processedText);
     final paragraph = paragraphBuilder.build();
     paragraph.layout(const ui.ParagraphConstraints(width: 1000000));
 
@@ -1792,6 +1821,64 @@ extension AnimatedSvgPainterTextStyleExtension on AnimatedSvgPainter {
     _renderCache.textParagraphs[cacheKey] = paragraph;
 
     return paragraph;
+  }
+
+  /// Applies unicode-bidi handling by wrapping text with Unicode directional control characters.
+  /// - embed: LRE/RLE + text + PDF
+  /// - bidi-override: LRO/RLO + text + PDF
+  /// - isolate: LRI/RLI + text + PDI
+  /// - isolate-override: FSI + LRO/RLO + text + PDF + PDI
+  /// - plaintext: FSI + text + PDI (determine direction from first strong char)
+  String _applyUnicodeBidi(
+    String text,
+    String? unicodeBidi,
+    ui.TextDirection textDirection,
+  ) {
+    if (unicodeBidi == null) {
+      return text;
+    }
+
+    // Unicode directional formatting characters
+    const String lre = '\u202A'; // Left-to-Right Embedding
+    const String rle = '\u202B'; // Right-to-Left Embedding
+    const String lro = '\u202D'; // Left-to-Right Override
+    const String rlo = '\u202E'; // Right-to-Left Override
+    const String pdf = '\u202C'; // Pop Directional Formatting
+    const String lri = '\u2066'; // Left-to-Right Isolate
+    const String rli = '\u2067'; // Right-to-Left Isolate
+    const String fsi = '\u2068'; // First Strong Isolate
+    const String pdi = '\u2069'; // Pop Directional Isolate
+
+    final isRtl = textDirection == ui.TextDirection.rtl;
+
+    switch (unicodeBidi) {
+      case 'embed':
+        // Embed a new level of directionality
+        return isRtl ? '$rle$text$pdf' : '$lre$text$pdf';
+
+      case 'bidi-override':
+        // Force all characters to use the specified direction
+        return isRtl ? '$rlo$text$pdf' : '$lro$text$pdf';
+
+      case 'isolate':
+        // Isolate text from surrounding bidi context
+        return isRtl ? '$rli$text$pdi' : '$lri$text$pdi';
+
+      case 'isolate-override':
+        // Isolate and override direction
+        return isRtl
+            ? '$fsi$rlo$text$pdf$pdi'
+            : '$fsi$lro$text$pdf$pdi';
+
+      case 'plaintext':
+        // Determine direction from first strong character
+        return '$fsi$text$pdi';
+
+      case 'normal':
+      default:
+        // Use normal Unicode bidi algorithm
+        return text;
+    }
   }
 
   void _drawParagraphWithEffects(
@@ -1857,38 +1944,79 @@ extension AnimatedSvgPainterTextStyleExtension on AnimatedSvgPainter {
     return shiftedBaselineY - baselineRef;
   }
 
+  /// Resolves baseline offset from paragraph metrics.
+  /// Returns the y-offset from the paragraph top to the specified baseline.
   double _resolveBaselineReference({
     required ui.Paragraph paragraph,
     required _SvgDominantBaseline dominantBaseline,
   }) {
+    // Get font metrics from paragraph
+    final height = paragraph.height;
+    final alphabeticBaseline = paragraph.alphabeticBaseline;
+    final ideographicBaseline = paragraph.ideographicBaseline;
+
+    // Calculate approximate ascent from alphabetic baseline
+    // alphabeticBaseline is the distance from top to baseline
+    final ascent = alphabeticBaseline;
+
+    // Approximate x-height as ~50% of ascent (typical for Latin fonts)
+    final xHeight = ascent * 0.5;
+
     return switch (dominantBaseline) {
-      _SvgDominantBaseline.alphabetic => paragraph.alphabeticBaseline,
-      _SvgDominantBaseline.central => paragraph.height / 2,
+      _SvgDominantBaseline.alphabetic => alphabeticBaseline,
+      _SvgDominantBaseline.central => height / 2,
+      _SvgDominantBaseline.middle => height / 2,
       _SvgDominantBaseline.textBeforeEdge => 0.0,
-      _SvgDominantBaseline.textAfterEdge => paragraph.height,
+      _SvgDominantBaseline.textAfterEdge => height,
+      // Hanging baseline: approximately 80% of ascent from top
+      // Used for Indic scripts where the main stroke hangs from the top
+      _SvgDominantBaseline.hanging => ascent * 0.8,
+      // Mathematical baseline: centered on math operators
+      // Typically at x-height / 2 + some offset (~50% of x-height above baseline)
+      _SvgDominantBaseline.mathematical => alphabeticBaseline - xHeight * 0.5,
+      // Ideographic baseline: at the bottom of the ideographic em box
+      // Use the ideographicBaseline if available, else approximate
+      _SvgDominantBaseline.ideographic => ideographicBaseline,
     };
   }
 
+  /// Resolves dominant-baseline or alignment-baseline attribute value.
+  /// SVG 2 spec: https://www.w3.org/TR/SVG2/text.html#DominantBaselineProperty
   _SvgDominantBaseline _resolveDominantBaseline(String? rawValue) {
     switch (rawValue?.trim().toLowerCase()) {
       case 'middle':
+        return _SvgDominantBaseline.middle;
       case 'central':
         return _SvgDominantBaseline.central;
       case 'text-before-edge':
       case 'before-edge':
-      case 'hanging':
+      case 'text-top':
         return _SvgDominantBaseline.textBeforeEdge;
       case 'text-after-edge':
       case 'after-edge':
-      case 'ideographic':
+      case 'text-bottom':
         return _SvgDominantBaseline.textAfterEdge;
+      case 'hanging':
+        return _SvgDominantBaseline.hanging;
+      case 'mathematical':
+        return _SvgDominantBaseline.mathematical;
+      case 'ideographic':
+        return _SvgDominantBaseline.ideographic;
       case 'alphabetic':
+      case 'auto':
       default:
         return _SvgDominantBaseline.alphabetic;
     }
   }
 
-  double _resolveBaselineShift(Object? rawValue, double fontSize) {
+  /// Resolves baseline-shift attribute value.
+  /// Supports: baseline, sub, super, percentage, length values.
+  /// Per SVG spec, percentage is relative to line-height (computed height of line box).
+  double _resolveBaselineShift(
+    Object? rawValue,
+    double fontSize, {
+    double? lineHeight,
+  }) {
     if (rawValue == null) {
       return 0.0;
     }
@@ -1899,19 +2027,43 @@ extension AnimatedSvgPainterTextStyleExtension on AnimatedSvgPainter {
     if (value.isEmpty || value == 'baseline') {
       return 0.0;
     }
+    // Subscript: shift down by a factor of font-size
+    // Blink uses ~0.3em descent from baseline
     if (value == 'sub') {
-      return -fontSize * 0.6;
+      return -fontSize * 0.3;
     }
+    // Superscript: shift up by a factor of font-size
+    // Blink uses ~0.4em above baseline
     if (value == 'super') {
-      return fontSize * 0.6;
+      return fontSize * 0.4;
     }
+    // Percentage: relative to line-height (or 1.2 * fontSize as default)
     if (value.endsWith('%')) {
       final percent = double.tryParse(value.substring(0, value.length - 1));
       if (percent == null) {
         return 0.0;
       }
-      return (fontSize * percent / 100.0).clamp(-4096.0, 4096.0);
+      // Use line-height if provided, otherwise default to 1.2 * fontSize
+      final effectiveLineHeight = lineHeight ?? (fontSize * 1.2);
+      return (effectiveLineHeight * percent / 100.0).clamp(-4096.0, 4096.0);
     }
+    // em units: relative to font-size
+    if (value.endsWith('em')) {
+      final em = double.tryParse(value.substring(0, value.length - 2));
+      if (em != null) {
+        return (fontSize * em).clamp(-4096.0, 4096.0);
+      }
+      return 0.0;
+    }
+    // ex units: relative to x-height (~0.5 * font-size)
+    if (value.endsWith('ex')) {
+      final ex = double.tryParse(value.substring(0, value.length - 2));
+      if (ex != null) {
+        return (fontSize * 0.5 * ex).clamp(-4096.0, 4096.0);
+      }
+      return 0.0;
+    }
+    // Plain number or px: treat as user units
     final numeric = double.tryParse(value.replaceAll(RegExp(r'[a-z]+$'), ''));
     return (numeric ?? 0.0).clamp(-4096.0, 4096.0);
   }

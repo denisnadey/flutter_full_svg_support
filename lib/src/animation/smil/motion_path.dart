@@ -25,6 +25,29 @@ class MotionPath {
     _computeSegmentLengths();
   }
 
+  /// Factory constructor for creating path from two coordinate points
+  /// Used for from/to/by linear motion
+  factory MotionPath.fromPoints(Offset from, Offset to) {
+    final pathData = 'M${from.dx},${from.dy} L${to.dx},${to.dy}';
+    return MotionPath(pathData);
+  }
+
+  /// Factory constructor for creating path from a list of coordinate points
+  /// Used for values attribute with coordinate pairs
+  factory MotionPath.fromPointList(List<Offset> points) {
+    if (points.isEmpty) {
+      return MotionPath('');
+    }
+    if (points.length == 1) {
+      return MotionPath('M${points[0].dx},${points[0].dy}');
+    }
+    final buffer = StringBuffer('M${points[0].dx},${points[0].dy}');
+    for (int i = 1; i < points.length; i++) {
+      buffer.write(' L${points[i].dx},${points[i].dy}');
+    }
+    return MotionPath(buffer.toString());
+  }
+
   /// Флаттер Path для измерений
   late Path _path;
 
@@ -34,44 +57,205 @@ class MotionPath {
   /// Длины сегментов пути (кумулятивные)
   late List<double> _cumulativeLengths;
 
+  /// Parsed commands for boundary tangent calculations
+  late List<PathCommand> _commands;
+
   /// Распарсить SVG path data
   void _parsePath(String pathData) {
     try {
       final parser = PathParser();
-      final commands = parser.parse(pathData);
+      _commands = parser.parse(pathData);
 
       // Конвертируем команды в Flutter Path
       _path = Path();
-      for (final command in commands) {
-        _applyCommand(command);
+      double currentX = 0, currentY = 0;
+      double subpathStartX = 0, subpathStartY = 0;
+      PathCommand? prevCommand;
+
+      for (final command in _commands) {
+        _applyCommand(
+          command,
+          currentX,
+          currentY,
+          subpathStartX,
+          subpathStartY,
+          prevCommand,
+        );
+        // Track current position for relative commands
+        final newPos = _getCommandEndPoint(
+          command,
+          currentX,
+          currentY,
+          subpathStartX,
+          subpathStartY,
+        );
+        currentX = newPos.dx;
+        currentY = newPos.dy;
+        if (command is MoveToCommand) {
+          subpathStartX = currentX;
+          subpathStartY = currentY;
+        } else if (command is ClosePathCommand) {
+          currentX = subpathStartX;
+          currentY = subpathStartY;
+        }
+        prevCommand = command;
       }
     } catch (e) {
       // Если парсинг не удался, создаём пустой путь
       _path = Path();
+      _commands = [];
     }
   }
 
-  /// Применить команду к Flutter Path
-  void _applyCommand(PathCommand command) {
+  /// Get the end point of a command
+  Offset _getCommandEndPoint(
+    PathCommand command,
+    double currentX,
+    double currentY,
+    double subpathStartX,
+    double subpathStartY,
+  ) {
     if (command is MoveToCommand) {
-      _path.moveTo(command.x, command.y);
+      return command.isRelative
+          ? Offset(currentX + command.x, currentY + command.y)
+          : Offset(command.x, command.y);
     } else if (command is LineToCommand) {
-      _path.lineTo(command.x, command.y);
+      return command.isRelative
+          ? Offset(currentX + command.x, currentY + command.y)
+          : Offset(command.x, command.y);
+    } else if (command is HorizontalLineToCommand) {
+      return Offset(
+        command.isRelative ? currentX + command.x : command.x,
+        currentY,
+      );
+    } else if (command is VerticalLineToCommand) {
+      return Offset(
+        currentX,
+        command.isRelative ? currentY + command.y : command.y,
+      );
     } else if (command is CubicBezierCommand) {
+      return command.isRelative
+          ? Offset(currentX + command.x, currentY + command.y)
+          : Offset(command.x, command.y);
+    } else if (command is SmoothCubicBezierCommand) {
+      return command.isRelative
+          ? Offset(currentX + command.x, currentY + command.y)
+          : Offset(command.x, command.y);
+    } else if (command is QuadraticBezierCommand) {
+      return command.isRelative
+          ? Offset(currentX + command.x, currentY + command.y)
+          : Offset(command.x, command.y);
+    } else if (command is SmoothQuadraticBezierCommand) {
+      return command.isRelative
+          ? Offset(currentX + command.x, currentY + command.y)
+          : Offset(command.x, command.y);
+    } else if (command is ArcCommand) {
+      return command.isRelative
+          ? Offset(currentX + command.x, currentY + command.y)
+          : Offset(command.x, command.y);
+    } else if (command is ClosePathCommand) {
+      return Offset(subpathStartX, subpathStartY);
+    }
+    return Offset(currentX, currentY);
+  }
+
+  /// Применить команду к Flutter Path
+  void _applyCommand(
+    PathCommand command,
+    double currentX,
+    double currentY,
+    double subpathStartX,
+    double subpathStartY,
+    PathCommand? prevCommand,
+  ) {
+    if (command is MoveToCommand) {
+      final x = command.isRelative ? currentX + command.x : command.x;
+      final y = command.isRelative ? currentY + command.y : command.y;
+      _path.moveTo(x, y);
+    } else if (command is LineToCommand) {
+      final x = command.isRelative ? currentX + command.x : command.x;
+      final y = command.isRelative ? currentY + command.y : command.y;
+      _path.lineTo(x, y);
+    } else if (command is HorizontalLineToCommand) {
+      final x = command.isRelative ? currentX + command.x : command.x;
+      _path.lineTo(x, currentY);
+    } else if (command is VerticalLineToCommand) {
+      final y = command.isRelative ? currentY + command.y : command.y;
+      _path.lineTo(currentX, y);
+    } else if (command is CubicBezierCommand) {
+      final absCmd = command.isRelative
+          ? command.toAbsolute(currentX, currentY) as CubicBezierCommand
+          : command;
       _path.cubicTo(
-        command.x1,
-        command.y1,
-        command.x2,
-        command.y2,
-        command.x,
-        command.y,
+        absCmd.x1,
+        absCmd.y1,
+        absCmd.x2,
+        absCmd.y2,
+        absCmd.x,
+        absCmd.y,
+      );
+    } else if (command is SmoothCubicBezierCommand) {
+      final cubic = command.toCubicBezier(
+        currentX: currentX,
+        currentY: currentY,
+        previousCommand: prevCommand,
+      );
+      final absCmd = cubic.isRelative
+          ? cubic.toAbsolute(currentX, currentY) as CubicBezierCommand
+          : cubic;
+      _path.cubicTo(
+        absCmd.x1,
+        absCmd.y1,
+        absCmd.x2,
+        absCmd.y2,
+        absCmd.x,
+        absCmd.y,
       );
     } else if (command is QuadraticBezierCommand) {
-      _path.quadraticBezierTo(command.x1, command.y1, command.x, command.y);
+      final absCmd = command.isRelative
+          ? command.toAbsolute(currentX, currentY) as QuadraticBezierCommand
+          : command;
+      _path.quadraticBezierTo(absCmd.x1, absCmd.y1, absCmd.x, absCmd.y);
+    } else if (command is SmoothQuadraticBezierCommand) {
+      final quad = command.toQuadraticBezier(
+        currentX: currentX,
+        currentY: currentY,
+        previousCommand: prevCommand,
+      );
+      final absCmd = quad.isRelative
+          ? quad.toAbsolute(currentX, currentY) as QuadraticBezierCommand
+          : quad;
+      _path.quadraticBezierTo(absCmd.x1, absCmd.y1, absCmd.x, absCmd.y);
+    } else if (command is ArcCommand) {
+      // Convert arc to a Flutter path using arcToPoint
+      _applyArcCommand(command, currentX, currentY);
     } else if (command is ClosePathCommand) {
       _path.close();
     }
-    // Для других команд (Arc и т.д.) можно добавить поддержку позже
+  }
+
+  /// Apply arc command to Flutter path
+  void _applyArcCommand(ArcCommand arc, double currentX, double currentY) {
+    final endX = arc.isRelative ? currentX + arc.x : arc.x;
+    final endY = arc.isRelative ? currentY + arc.y : arc.y;
+
+    // Handle degenerate arcs (zero radii or same start/end)
+    if (arc.rx == 0 || arc.ry == 0) {
+      _path.lineTo(endX, endY);
+      return;
+    }
+
+    if (currentX == endX && currentY == endY) {
+      return; // Nothing to draw
+    }
+
+    _path.arcToPoint(
+      Offset(endX, endY),
+      radius: Radius.elliptical(arc.rx.abs(), arc.ry.abs()),
+      rotation: arc.rotation,
+      largeArc: arc.largeArc,
+      clockwise: arc.sweep,
+    );
   }
 
   /// Вычислить длины сегментов пути
@@ -97,7 +281,8 @@ class MotionPath {
   /// Получить точку на пути в момент времени t ∈ [0, 1]
   ///
   /// Параметр [t] представляет прогресс вдоль пути (0 = начало, 1 = конец)
-  MotionPathPoint getPointAtTime(double t) {
+  /// [useAverageTangent] - whether to average tangents at segment boundaries
+  MotionPathPoint getPointAtTime(double t, {bool useAverageTangent = true}) {
     if (_totalLength == 0) {
       return const MotionPathPoint(position: Offset.zero, angle: 0);
     }
@@ -117,6 +302,7 @@ class MotionPath {
     }
 
     double accumulatedLength = 0;
+    int metricIndex = 0;
 
     for (final metric in metrics) {
       if (distance <= accumulatedLength + metric.length) {
@@ -125,13 +311,30 @@ class MotionPath {
         final tangent = metric.getTangentForOffset(localDistance);
 
         if (tangent != null) {
-          return MotionPathPoint(
-            position: tangent.position,
-            angle: tangent.angle,
-          );
+          double angle = tangent.angle;
+
+          // Handle degenerate case: zero-length segment
+          if (metric.length < 0.001 && metrics.length > 1) {
+            // Try to get angle from adjacent segment
+            angle = _getAngleFromAdjacentSegment(metrics, metricIndex);
+          }
+
+          // Average tangents at segment boundaries
+          if (useAverageTangent) {
+            angle = _getAveragedAngle(
+              metrics,
+              metricIndex,
+              localDistance,
+              metric.length,
+              angle,
+            );
+          }
+
+          return MotionPathPoint(position: tangent.position, angle: angle);
         }
       }
       accumulatedLength += metric.length;
+      metricIndex++;
     }
 
     // Если не нашли (например, из-за округления), возвращаем конечную точку
@@ -142,6 +345,85 @@ class MotionPath {
       position: tangent?.position ?? Offset.zero,
       angle: tangent?.angle ?? 0,
     );
+  }
+
+  /// Get angle from adjacent segment for degenerate (zero-length) segments
+  double _getAngleFromAdjacentSegment(List<PathMetric> metrics, int index) {
+    // Try next segment first
+    if (index + 1 < metrics.length && metrics[index + 1].length > 0.001) {
+      final nextTangent = metrics[index + 1].getTangentForOffset(0);
+      if (nextTangent != null) return nextTangent.angle;
+    }
+    // Try previous segment
+    if (index > 0 && metrics[index - 1].length > 0.001) {
+      final prevTangent = metrics[index - 1].getTangentForOffset(
+        metrics[index - 1].length,
+      );
+      if (prevTangent != null) return prevTangent.angle;
+    }
+    return 0;
+  }
+
+  /// Average tangent angles at segment boundaries for smooth rotation
+  /// This implements Blink's behavior at path segment junctions
+  double _getAveragedAngle(
+    List<PathMetric> metrics,
+    int metricIndex,
+    double localDistance,
+    double segmentLength,
+    double currentAngle,
+  ) {
+    const boundaryThreshold = 0.01; // Within 1% of boundary
+
+    // Check if we're at the start of a segment (junction with previous)
+    if (localDistance < segmentLength * boundaryThreshold && metricIndex > 0) {
+      final prevMetric = metrics[metricIndex - 1];
+      final prevTangent = prevMetric.getTangentForOffset(prevMetric.length);
+      if (prevTangent != null) {
+        return _averageAngles(prevTangent.angle, currentAngle);
+      }
+    }
+
+    // Check if we're at the end of a segment (junction with next)
+    if (localDistance > segmentLength * (1 - boundaryThreshold) &&
+        metricIndex + 1 < metrics.length) {
+      final nextMetric = metrics[metricIndex + 1];
+      final nextTangent = nextMetric.getTangentForOffset(0);
+      if (nextTangent != null) {
+        return _averageAngles(currentAngle, nextTangent.angle);
+      }
+    }
+
+    return currentAngle;
+  }
+
+  /// Average two angles, handling the wrap-around at ±π
+  double _averageAngles(double angle1, double angle2) {
+    // Normalize angles to [-π, π]
+    angle1 = _normalizeAngle(angle1);
+    angle2 = _normalizeAngle(angle2);
+
+    // Handle wrap-around: if angles are on opposite sides of ±π, adjust
+    if ((angle1 - angle2).abs() > math.pi) {
+      if (angle1 < 0) {
+        angle1 += 2 * math.pi;
+      } else {
+        angle2 += 2 * math.pi;
+      }
+    }
+
+    return _normalizeAngle((angle1 + angle2) / 2);
+  }
+
+  /// Normalize angle to [-π, π]
+  double _normalizeAngle(double angle) {
+    while (angle > math.pi) {
+      angle -= 2 * math.pi;
+    }
+    while (angle < -math.pi) {
+      angle += 2 * math.pi;
+    }
+    return angle;
   }
 
   /// Получить точку на пути используя keyPoints
@@ -219,8 +501,56 @@ class MotionPath {
   /// Общая длина пути
   double get totalLength => _totalLength;
 
+  /// Get list of segment lengths for paced calcMode distance calculation
+  List<double> getSegmentLengths() {
+    final pathMetrics = _path.computeMetrics();
+    return pathMetrics.map((m) => m.length).toList();
+  }
+
+  /// Get the final position on the path (for accumulate support)
+  Offset getEndPosition() {
+    if (_totalLength == 0) return Offset.zero;
+    final point = getPointAtTime(1.0);
+    return point.position;
+  }
+
   /// Преобразовать угол в градусы (для transform rotate)
   static double radiansToDegrees(double radians) {
     return radians * 180.0 / math.pi;
+  }
+
+  /// Parse a coordinate pair string "x,y" or "x y" into Offset
+  static Offset? parseCoordinatePair(String value) {
+    final cleaned = value.trim();
+    if (cleaned.isEmpty) return null;
+
+    // Split by comma or whitespace
+    final parts = cleaned.split(RegExp(r'[,\s]+'));
+    if (parts.length < 2) return null;
+
+    final x = double.tryParse(parts[0]);
+    final y = double.tryParse(parts[1]);
+    if (x == null || y == null) return null;
+
+    return Offset(x, y);
+  }
+
+  /// Parse a list of coordinate pairs from values string
+  /// Format: "x1,y1;x2,y2;..." or "x1 y1;x2 y2;..."
+  static List<Offset> parseCoordinatePairs(String values) {
+    final result = <Offset>[];
+    final pairs = values
+        .split(';')
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty);
+
+    for (final pair in pairs) {
+      final offset = parseCoordinatePair(pair);
+      if (offset != null) {
+        result.add(offset);
+      }
+    }
+
+    return result;
   }
 }

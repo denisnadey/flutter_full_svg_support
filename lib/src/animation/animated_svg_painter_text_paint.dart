@@ -151,6 +151,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
 
     // Parse textPath-specific attributes
     final spacing = _resolveTextPathSpacing(textPathNode);
+    final method = _resolveTextPathMethod(textPathNode);
 
     double offset = _parseTextPathStartOffset(textPathNode, metric.length);
     var consumed = 0.0;
@@ -166,6 +167,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
         metric: metric,
         startOffset: offset,
         spacing: spacing,
+        method: method,
         imageFilter: imageFilter,
         colorFilter: colorFilter,
         blendMode: blendMode,
@@ -191,6 +193,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
         metric: metric,
         startOffset: offset,
         spacing: spacing,
+        method: method,
         imageFilter: imageFilter,
         colorFilter: colorFilter,
         blendMode: blendMode,
@@ -492,6 +495,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
     required ui.PathMetric metric,
     required double startOffset,
     required _SvgTextPathSpacing spacing,
+    _SvgTextPathMethod method = _SvgTextPathMethod.align,
     ui.ImageFilter? imageFilter,
     ui.ColorFilter? colorFilter,
     ui.BlendMode? blendMode,
@@ -526,6 +530,23 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
     final displayAdvances = List<double>.from(advances);
     var totalWidth = displayAdvances.fold<double>(0.0, (sum, w) => sum + w);
     var glyphScaleX = 1.0;
+
+    // Calculate available path length from start offset
+    final availableLength = metric.length - startOffset;
+
+    // Apply method="stretch" - scale glyphs to fit available path length
+    if (method == _SvgTextPathMethod.stretch && totalWidth > 0) {
+      // Stretch mode scales all glyphs uniformly to fit the available path
+      final stretchFactor = availableLength / totalWidth;
+      glyphScaleX = stretchFactor;
+      for (int i = 0; i < displayWidths.length; i++) {
+        displayWidths[i] *= stretchFactor;
+        displayAdvances[i] *= stretchFactor;
+      }
+      totalWidth = availableLength;
+    }
+
+    // Apply textLength (takes precedence over method="stretch")
     final targetLength = _resolveTextLength(layoutNode);
     if (targetLength != null && targetLength > 0 && totalWidth > 0) {
       final lengthAdjust = _resolveLengthAdjust(layoutNode);
@@ -583,7 +604,15 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
       final glyphWidth = widths[i];
       final displayWidth = displayWidths[i];
       final glyphAdvance = displayAdvances[i];
+
+      // Clamp glyph center to path bounds for endpoint handling
       final center = (cursor + displayWidth / 2).clamp(0.0, metric.length);
+
+      // Skip glyphs that start beyond the path length (overflow handling)
+      if (cursor > metric.length) {
+        break;
+      }
+
       final tangent = metric.getTangentForOffset(center);
       if (tangent == null) {
         cursor += glyphAdvance;
@@ -609,9 +638,6 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
 
       cursor += glyphAdvance;
       consumed += glyphAdvance;
-      if (cursor > metric.length + style.fontSize) {
-        break;
-      }
     }
 
     if (needsLayer) {

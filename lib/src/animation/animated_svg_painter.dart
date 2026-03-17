@@ -294,12 +294,42 @@ class _TextCursor {
 
 enum _SvgTextAnchor { start, middle, end }
 
-enum _SvgDominantBaseline { alphabetic, central, textBeforeEdge, textAfterEdge }
+/// SVG dominant-baseline and alignment-baseline attribute values.
+enum _SvgDominantBaseline {
+  /// Default alphabetic baseline.
+  alphabetic,
+
+  /// Central baseline (middle of em box).
+  central,
+
+  /// Top of em box.
+  textBeforeEdge,
+
+  /// Bottom of em box.
+  textAfterEdge,
+
+  /// Hanging baseline (for Indic scripts, ~80% of ascent).
+  hanging,
+
+  /// Mathematical baseline (centered on operators, ~50% of x-height).
+  mathematical,
+
+  /// Ideographic baseline (for CJK, at bottom of em box).
+  ideographic,
+
+  /// Middle baseline (deprecated, same as central).
+  middle,
+}
 
 enum _SvgTextLengthAdjust { spacing, spacingAndGlyphs }
 
 /// SVG textPath spacing attribute values.
 enum _SvgTextPathSpacing { auto, exact }
+
+/// SVG textPath method attribute values.
+/// - align: Glyphs are aligned with the path (default)
+/// - stretch: Glyphs are stretched/compressed to fit the path
+enum _SvgTextPathMethod { align, stretch }
 
 /// SVG text-decoration line types.
 enum _SvgTextDecoration { underline, overline, lineThrough }
