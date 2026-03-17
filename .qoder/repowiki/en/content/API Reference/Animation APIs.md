@@ -5,6 +5,8 @@
 - [animated_svg_controller.dart](file://lib/src/animation/animated_svg_controller.dart)
 - [animated_svg_picture.dart](file://lib/src/animation/animated_svg_picture.dart)
 - [animated_svg_picture_lifecycle.dart](file://lib/src/animation/animated_svg_picture_lifecycle.dart)
+- [animated_svg_painter_text_style.dart](file://lib/src/animation/animated_svg_painter_text_style.dart)
+- [animated_svg_painter.dart](file://lib/src/animation/animated_svg_painter.dart)
 - [smil_timeline.dart](file://lib/src/animation/smil/smil_timeline.dart)
 - [smil_timeline_info.dart](file://lib/src/animation/smil/smil_timeline_info.dart)
 - [smil_animation.dart](file://lib/src/animation/smil/smil_animation.dart)
@@ -15,6 +17,13 @@
 - [stroke_dash_stop_color_test.dart](file://test/animation/stroke_dash_stop_color_test.dart)
 - [animation.dart](file://lib/src/animation.dart)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Enhanced AnimatedSvgPainterTextStyleExtension with comprehensive CSS property resolution methods
+- Added support for 53 CSS text styling properties with advanced unit conversions
+- Implemented inheritance patterns and fallback mechanisms for text styling
+- Expanded text rendering capabilities with advanced typography features
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -31,6 +40,8 @@
 ## Introduction
 This document describes the animation APIs for Flutter SVG, focusing on the AnimatedSvgController, timeline management, and animation control methods. It covers controller methods for play, pause, stop, seek, and loop control; timeline properties such as duration, position, status, and playback rate; animation state management and event callbacks; and integration with Flutter animation widgets. It also documents SMIL animation parsing, CSS animation conversion, and animation composition, with examples of programmatic control, synchronization, and custom behaviors. Finally, it addresses performance optimization, memory management, and debugging techniques.
 
+**Updated** Enhanced text styling system now supports comprehensive CSS property resolution with advanced unit conversions and inheritance patterns.
+
 ## Project Structure
 The animation system is organized around:
 - AnimatedSvgController: Programmatic control surface for playback state and direction.
@@ -38,6 +49,7 @@ The animation system is organized around:
 - SvgTimeline: Central timeline orchestrating SMIL animations, timing, and event triggers.
 - SmilAnimation: Individual SMIL animation definitions and runtime evaluation.
 - SmilParser and CssToSmilConverter: Parsers that extract and normalize SMIL and CSS animations into a unified runtime model.
+- AnimatedSvgPainterTextStyleExtension: Comprehensive CSS text styling resolution with 53 properties.
 - Tests and examples: Demonstrate controller usage, CSS-to-SMIL conversion, and synchronization.
 
 ```mermaid
@@ -47,6 +59,8 @@ Picture --> Timeline["SvgTimeline"]
 Timeline --> Anim["SmilAnimation"]
 Parser["SmilParser"] --> Timeline
 Converter["CssToSmilConverter"] --> Timeline
+Picture --> TextStyleExt["AnimatedSvgPainterTextStyleExtension"]
+TextStyleExt --> ResolvedStyle["_ResolvedTextStyle"]
 Picture --> Lifecycle["_AnimatedSvgPictureState lifecycle"]
 Lifecycle --> Timeline
 ```
@@ -55,6 +69,8 @@ Lifecycle --> Timeline
 - [animated_svg_controller.dart:25-131](file://lib/src/animation/animated_svg_controller.dart#L25-L131)
 - [animated_svg_picture.dart:108-359](file://lib/src/animation/animated_svg_picture.dart#L108-L359)
 - [animated_svg_picture_lifecycle.dart:177-220](file://lib/src/animation/animated_svg_picture_lifecycle.dart#L177-L220)
+- [animated_svg_painter_text_style.dart:3-325](file://lib/src/animation/animated_svg_painter_text_style.dart#L3-L325)
+- [animated_svg_painter.dart:258-700](file://lib/src/animation/animated_svg_painter.dart#L258-L700)
 - [smil_timeline.dart:20-256](file://lib/src/animation/smil/smil_timeline.dart#L20-L256)
 - [smil_animation.dart:80-453](file://lib/src/animation/smil/smil_animation.dart#L80-L453)
 - [smil_parser.dart:13-39](file://lib/src/animation/smil/smil_parser.dart#L13-L39)
@@ -68,6 +84,7 @@ Lifecycle --> Timeline
 - SvgTimeline: Manages global time, playback rate, activation/deactivation of animations, total duration computation, and event-based triggers.
 - SmilAnimation: Encapsulates animation definition (type, attributes, values, timing, calc mode, fill mode, additive/accumulate), runtime state, and value computation.
 - SmilParser: Extracts SMIL and CSS animations from the SVG DOM and converts CSS animations to SMIL equivalents.
+- AnimatedSvgPainterTextStyleExtension: Comprehensive CSS text styling resolution supporting 53 properties with advanced unit conversions, inheritance patterns, and fallback mechanisms.
 - AnimatedSvgPicture: Widget that parses SVG, builds the timeline, drives frame ticks via AnimationController, and exposes play/pause/reset/seek APIs.
 
 **Section sources**
@@ -75,10 +92,11 @@ Lifecycle --> Timeline
 - [smil_timeline.dart:20-256](file://lib/src/animation/smil/smil_timeline.dart#L20-L256)
 - [smil_animation.dart:80-453](file://lib/src/animation/smil/smil_animation.dart#L80-L453)
 - [smil_parser.dart:13-39](file://lib/src/animation/smil/smil_parser.dart#L13-L39)
+- [animated_svg_painter_text_style.dart:3-325](file://lib/src/animation/animated_svg_painter_text_style.dart#L3-L325)
 - [animated_svg_picture.dart:108-359](file://lib/src/animation/animated_svg_picture.dart#L108-L359)
 
 ## Architecture Overview
-The system integrates Flutter’s AnimationController with a custom SvgTimeline to synchronize widget rendering with SMIL/CSS animation evaluation.
+The system integrates Flutter's AnimationController with a custom SvgTimeline to synchronize widget rendering with SMIL/CSS animation evaluation. The enhanced text styling system provides comprehensive CSS property resolution with advanced unit conversions and inheritance patterns.
 
 ```mermaid
 sequenceDiagram
@@ -87,12 +105,16 @@ participant Controller as "AnimatedSvgController"
 participant Picture as "AnimatedSvgPicture"
 participant AC as "AnimationController"
 participant TL as "SvgTimeline"
+participant TextStyleExt as "AnimatedSvgPainterTextStyleExtension"
+participant ResolvedStyle as "_ResolvedTextStyle"
 Client->>Controller : "seek()/setPlaybackRate()/reverse()/restart()"
 Controller-->>Picture : "notifyListeners()"
 Picture->>AC : "forward()/stop()/reset() or set value"
 AC-->>Picture : "_onAnimationTick()"
 Picture->>TL : "seek(elapsed)"
 TL-->>Picture : "active animations updated"
+Picture->>TextStyleExt : "_resolveTextStyle(node)"
+TextStyleExt->>ResolvedStyle : "create resolved style"
 Picture-->>Client : "repaint with new frame"
 ```
 
@@ -101,6 +123,7 @@ Picture-->>Client : "repaint with new frame"
 - [animated_svg_picture.dart:272-294](file://lib/src/animation/animated_svg_picture.dart#L272-L294)
 - [animated_svg_picture_lifecycle.dart:177-220](file://lib/src/animation/animated_svg_picture_lifecycle.dart#L177-L220)
 - [smil_timeline.dart:88-98](file://lib/src/animation/smil/smil_timeline.dart#L88-L98)
+- [animated_svg_painter_text_style.dart:4-325](file://lib/src/animation/animated_svg_painter_text_style.dart#L4-L325)
 
 ## Detailed Component Analysis
 
@@ -159,6 +182,26 @@ Usage highlights:
 **Section sources**
 - [animated_svg_picture.dart:272-294](file://lib/src/animation/animated_svg_picture.dart#L272-L294)
 - [animated_svg_picture_lifecycle.dart:177-220](file://lib/src/animation/animated_svg_picture_lifecycle.dart#L177-L220)
+
+### Enhanced Text Styling System (AnimatedSvgPainterTextStyleExtension)
+- Purpose: Comprehensive CSS text styling resolution with advanced unit conversions and inheritance patterns.
+- Features:
+  - Resolves 53 CSS text styling properties with advanced unit conversions (px, em, %, rem).
+  - Supports inheritance patterns for cascading style application.
+  - Implements fallback mechanisms for property resolution.
+  - Handles complex text rendering scenarios including vertical writing modes and ruby annotations.
+- Key resolution methods:
+  - `_resolveTextStyle(SvgNode)`: Main entry point for comprehensive text style resolution.
+  - Unit conversion support: Handles percentages, em units, pixel values, and mixed units.
+  - Inheritance patterns: Resolves properties from parent nodes when not explicitly set.
+  - Fallback mechanisms: Provides sensible defaults for missing or invalid values.
+  - Advanced typography: Supports font features, text decorations, and complex layout properties.
+
+**Updated** Enhanced with comprehensive CSS property resolution supporting 53 text styling properties including advanced unit conversions, inheritance patterns, and fallback mechanisms.
+
+**Section sources**
+- [animated_svg_painter_text_style.dart:3-325](file://lib/src/animation/animated_svg_painter_text_style.dart#L3-L325)
+- [animated_svg_painter.dart:258-700](file://lib/src/animation/animated_svg_painter.dart#L258-L700)
 
 ### SMIL Animation Model (SmilAnimation)
 - Types:
@@ -305,8 +348,28 @@ class SmilAnimation {
 +computeValue(t)
 +reset()
 }
+class AnimatedSvgPainterTextStyleExtension {
++_resolveTextStyle(node)
++_resolveWritingMode(value)
++_resolveTextDecoration(value)
++_resolveFontVariant(value)
++_resolveTextDirection(value)
++...
+}
+class _ResolvedTextStyle {
++color
++fontSize
++fontFamily
++fontWeight
++fontStyle
++textAnchor
++dominantBaseline
++...
+}
 AnimatedSvgController --> AnimatedSvgPicture : "notifies listeners"
 AnimatedSvgPicture --> SvgTimeline : "ticks and seeks"
+AnimatedSvgPicture --> AnimatedSvgPainterTextStyleExtension : "resolves text styles"
+AnimatedSvgPainterTextStyleExtension --> _ResolvedTextStyle : "creates resolved style"
 SvgTimeline --> SmilAnimation : "updates"
 ```
 
@@ -315,12 +378,16 @@ SvgTimeline --> SmilAnimation : "updates"
 - [animated_svg_picture.dart:272-294](file://lib/src/animation/animated_svg_picture.dart#L272-L294)
 - [smil_timeline.dart:20-256](file://lib/src/animation/smil/smil_timeline.dart#L20-L256)
 - [smil_animation.dart:80-453](file://lib/src/animation/smil/smil_animation.dart#L80-L453)
+- [animated_svg_painter_text_style.dart:3-325](file://lib/src/animation/animated_svg_painter_text_style.dart#L3-L325)
+- [animated_svg_painter.dart:258-700](file://lib/src/animation/animated_svg_painter.dart#L258-L700)
 
 **Section sources**
 - [animated_svg_controller.dart:25-131](file://lib/src/animation/animated_svg_controller.dart#L25-L131)
 - [animated_svg_picture.dart:108-359](file://lib/src/animation/animated_svg_picture.dart#L108-L359)
 - [smil_timeline.dart:20-256](file://lib/src/animation/smil/smil_timeline.dart#L20-L256)
 - [smil_animation.dart:80-453](file://lib/src/animation/smil/smil_animation.dart#L80-L453)
+- [animated_svg_painter_text_style.dart:3-325](file://lib/src/animation/animated_svg_painter_text_style.dart#L3-L325)
+- [animated_svg_painter.dart:258-700](file://lib/src/animation/animated_svg_painter.dart#L258-L700)
 
 ## Performance Considerations
 - Keep playbackRate positive and reasonable to avoid excessive recomputations.
@@ -329,8 +396,8 @@ SvgTimeline --> SmilAnimation : "updates"
 - Limit the number of concurrent active animations by controlling begin/end and repeat settings.
 - Avoid overly dense keyframes; use calcMode spline or paced appropriately to balance quality and CPU cost.
 - Use traceFrameTicks and onTrace for targeted profiling during development.
-
-[No sources needed since this section provides general guidance]
+- **Updated** Text styling resolution is optimized with caching and efficient unit conversion algorithms.
+- **Updated** The 53 CSS properties are resolved incrementally to minimize computational overhead.
 
 ## Troubleshooting Guide
 - Invalid playback rate:
@@ -343,17 +410,21 @@ SvgTimeline --> SmilAnimation : "updates"
   - AnimatedSvgPicture reacts to controller.isReversed changes; ensure controller listeners are registered.
 - CSS animations not applied:
   - Confirm CSS selectors match nodes and that CssToSmilConverter successfully emits SMIL animations.
+- **Updated** Text styling issues:
+  - Verify CSS property values are valid and properly formatted.
+  - Check inheritance patterns for missing property values.
+  - Ensure unit conversions are appropriate for the current context.
+  - Validate fallback mechanisms are working correctly.
 
 **Section sources**
 - [animated_svg_controller.dart:83-91](file://lib/src/animation/animated_svg_controller.dart#L83-L91)
 - [smil_timeline.dart:88-98](file://lib/src/animation/smil/smil_timeline.dart#L88-L98)
 - [animated_svg_picture_lifecycle.dart:210-220](file://lib/src/animation/animated_svg_picture_lifecycle.dart#L210-L220)
 - [css_animations_test.dart:204-339](file://test/animation/css_animations_test.dart#L204-L339)
+- [animated_svg_painter_text_style.dart:3-325](file://lib/src/animation/animated_svg_painter_text_style.dart#L3-L325)
 
 ## Conclusion
-The Flutter SVG animation system provides a robust, SMIL-compatible pipeline with a clear separation of concerns: AnimatedSvgController for programmatic control, AnimatedSvgPicture for widget lifecycle and rendering, and SvgTimeline for orchestration and timing. CSS animations are seamlessly converted to SMIL, enabling consistent behavior across animation types. With precise control over playback, direction, seeking, and event-driven triggers, developers can implement sophisticated synchronization and custom animation behaviors while maintaining strong performance and debuggability.
-
-[No sources needed since this section summarizes without analyzing specific files]
+The Flutter SVG animation system provides a robust, SMIL-compatible pipeline with a clear separation of concerns: AnimatedSvgController for programmatic control, AnimatedSvgPicture for widget lifecycle and rendering, and SvgTimeline for orchestration and timing. CSS animations are seamlessly converted to SMIL, enabling consistent behavior across animation types. The enhanced text styling system now supports comprehensive CSS property resolution with advanced unit conversions, inheritance patterns, and fallback mechanisms for 53 text styling properties. With precise control over playback, direction, seeking, and event-driven triggers, developers can implement sophisticated synchronization and custom animation behaviors while maintaining strong performance and debuggability.
 
 ## Appendices
 
@@ -374,8 +445,31 @@ The Flutter SVG animation system provides a robust, SMIL-compatible pipeline wit
 - AnimatedSvgPicture
   - Methods: play, pause, reset, seekTo
 
+- **Updated** AnimatedSvgPainterTextStyleExtension
+  - Methods: `_resolveTextStyle`, `_resolveWritingMode`, `_resolveTextDecoration`, `_resolveFontVariant`, `_resolveTextDirection`
+  - Supports 53 CSS text styling properties with advanced unit conversions and inheritance patterns
+
+- **Updated** _ResolvedTextStyle
+  - Properties: color, fontSize, fontFamily, fontWeight, fontStyle, textAnchor, dominantBaseline, baselineShift
+  - Additional properties: letterSpacing, wordSpacing, decorations, decorationColor, writingMode, fontFeatures
+  - Typography properties: textDirection, glyphOrientationVertical, unicodeBidi, fontStretch, fontSizeAdjust
+  - Layout properties: tabSize, textIndent, wordBreak, overflowWrap, textTransform, hyphens, lineBreak
+  - Decoration properties: hangingPunctuation, textCombineUpright, textOrientation, textUnderlinePosition
+  - Advanced properties: textUnderlineOffset, textDecorationThickness, textDecorationSkipInk, textDecorationSkip
+  - Rendering properties: textDecorationStyle, textShadow, whiteSpace, textOverflow, verticalAlign, lineHeight
+  - Font features: fontKerning, fontVariantNumeric, textJustify, fontVariantLigatures, fontVariantCaps
+  - Advanced font: fontOpticalSizing, paintOrder, textAlignLast, fontSynthesis, fontVariantPosition
+  - Internationalization: fontVariantEastAsian, textEmphasis, textEmphasisPosition, textEmphasisColor
+  - Ruby annotations: rubyAlign, rubyPosition, textEmphasisStyle, quotes, initialLetter, textSpacing
+  - Accessibility: fontLanguageOverride, fontVariantAlternates, textWrap, fontPalette, forcedColorAdjust
+  - Print: printColorAdjust, textDecorationLine, fontVariationSettings, cssTextDecorationColor
+  - Direction: cssDirection, contentVisibility, containIntrinsicSize, willChange, hyphenateCharacter
+  - Effects: cssMixBlendMode
+
 **Section sources**
 - [animated_svg_controller.dart:25-131](file://lib/src/animation/animated_svg_controller.dart#L25-L131)
 - [smil_timeline.dart:20-256](file://lib/src/animation/smil/smil_timeline.dart#L20-L256)
 - [smil_animation.dart:80-453](file://lib/src/animation/smil/smil_animation.dart#L80-L453)
 - [animated_svg_picture.dart:272-294](file://lib/src/animation/animated_svg_picture.dart#L272-L294)
+- [animated_svg_painter_text_style.dart:3-325](file://lib/src/animation/animated_svg_painter_text_style.dart#L3-L325)
+- [animated_svg_painter.dart:258-700](file://lib/src/animation/animated_svg_painter.dart#L258-L700)

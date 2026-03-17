@@ -311,24 +311,6 @@ extension AnimatedSvgPainterValuesExtension on AnimatedSvgPainter {
     }
   }
 
-  /// Resolves color-rendering attribute to FilterQuality.
-  /// Affects gradient and color interpolation quality.
-  /// - auto: default quality (medium)
-  /// - optimizeSpeed: lower quality, faster (low)
-  /// - optimizeQuality: higher quality, slower (high)
-  ui.FilterQuality _resolveColorRenderingQuality(SvgNode node) {
-    final value = _getInheritedString(node, 'color-rendering')?.toLowerCase();
-    switch (value) {
-      case 'optimizespeed':
-        return ui.FilterQuality.low;
-      case 'optimizequality':
-        return ui.FilterQuality.high;
-      case 'auto':
-      default:
-        return ui.FilterQuality.medium;
-    }
-  }
-
   /// Resolves image-rendering attribute to Flutter FilterQuality.
   /// Default is medium.
   /// - auto: medium quality
@@ -393,17 +375,5 @@ extension AnimatedSvgPainterValuesExtension on AnimatedSvgPainter {
       default:
         return null;
     }
-  }
-
-  /// Resolves cursor CSS property to Flutter MouseCursor name.
-  /// Returns the cursor keyword for use with SystemMouseCursors.
-  /// Common values: default, pointer, text, move, crosshair, etc.
-  String? _resolveCursor(SvgNode node) {
-    final value = _getInheritedString(node, 'cursor')?.toLowerCase()?.trim();
-    if (value == null || value.isEmpty || value == 'auto') {
-      return null;
-    }
-    // Return the cursor keyword - actual cursor mapping is done at widget level
-    return value;
   }
 }

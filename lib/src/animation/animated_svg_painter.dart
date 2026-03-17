@@ -66,7 +66,6 @@ class AnimatedSvgPainter extends CustomPainter {
       <String, _ResolvedMarkerDefinition?>{};
   final Map<String, _ResolvedPatternDefinition?> _patternCache =
       <String, _ResolvedPatternDefinition?>{};
-  final Map<String, ui.Image?> _patternTileCache = <String, ui.Image?>{};
   bool _currentPassPaintFill = true;
   bool _currentPassPaintStroke = true;
 
@@ -536,6 +535,9 @@ class _ResolvedTextStyle {
 
   /// Hyphenate character (auto, or custom character).
   final String hyphenateCharacter;
+
+  /// CSS mix-blend-mode (normal, multiply, screen, etc.).
+  final String cssMixBlendMode;
 
   _ResolvedTextStyle copyWith({
     ui.Color? color,
