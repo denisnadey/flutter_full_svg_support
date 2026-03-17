@@ -2,11 +2,11 @@ import 'package:flutter_svg/src/animation/animated_svg_picture.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('paint-order CSS property', () {
-    testWidgets('paint-order: normal (default)', (tester) async {
+  group('font-variant-caps CSS property', () {
+    testWidgets('font-variant-caps: normal (default)', (tester) async {
       const svg = '''
         <svg viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg">
-          <text x="10" y="30" font-size="16" fill="blue" stroke="red">Normal</text>
+          <text x="10" y="30" font-size="16">Hello World</text>
         </svg>
       ''';
       await tester.pumpWidget(AnimatedSvgPicture.string(svg));
@@ -14,10 +14,10 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('paint-order: stroke fill', (tester) async {
+    testWidgets('font-variant-caps: small-caps', (tester) async {
       const svg = '''
         <svg viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg">
-          <text x="10" y="30" font-size="16" fill="blue" stroke="red" style="paint-order: stroke fill">Stroke first</text>
+          <text x="10" y="30" font-size="16" style="font-variant-caps: small-caps">Hello</text>
         </svg>
       ''';
       await tester.pumpWidget(AnimatedSvgPicture.string(svg));
@@ -25,10 +25,10 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('paint-order: fill stroke markers', (tester) async {
+    testWidgets('font-variant-caps: all-small-caps', (tester) async {
       const svg = '''
         <svg viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg">
-          <text x="10" y="30" font-size="16" fill="blue" stroke="red" style="paint-order: fill stroke markers">All three</text>
+          <text x="10" y="30" font-size="16" style="font-variant-caps: all-small-caps">Hello</text>
         </svg>
       ''';
       await tester.pumpWidget(AnimatedSvgPicture.string(svg));
@@ -36,10 +36,10 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('paint-order: stroke', (tester) async {
+    testWidgets('font-variant-caps: titling-caps', (tester) async {
       const svg = '''
         <svg viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg">
-          <text x="10" y="30" font-size="16" fill="blue" stroke="red" style="paint-order: stroke">Stroke only</text>
+          <text x="10" y="30" font-size="16" style="font-variant-caps: titling-caps">TITLE</text>
         </svg>
       ''';
       await tester.pumpWidget(AnimatedSvgPicture.string(svg));

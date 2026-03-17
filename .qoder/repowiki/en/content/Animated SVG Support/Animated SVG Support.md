@@ -23,15 +23,24 @@
 - [lib/src/animation/animated_svg_painter_text_paint.dart](file://lib/src/animation/animated_svg_painter_text_paint.dart)
 - [lib/src/animation/animated_svg_picture_hit_test_text_path_segments.dart](file://lib/src/animation/animated_svg_picture_hit_test_text_path_segments.dart)
 - [lib/src/animation/animated_svg_picture_hit_test_text_runs.dart](file://lib/src/animation/animated_svg_picture_hit_test_text_runs.dart)
+- [lib/src/animation/animated_svg_painter.dart](file://lib/src/animation/animated_svg_painter.dart)
+- [lib/src/animation/animated_svg_painter_gradients.dart](file://lib/src/animation/animated_svg_painter_gradients.dart)
+- [lib/src/animation/animated_svg_painter_patterns.dart](file://lib/src/animation/animated_svg_painter_patterns.dart)
+- [lib/src/animation/animated_svg_painter_paint_order.dart](file://lib/src/animation/animated_svg_painter_paint_order.dart)
+- [lib/src/animation/animated_svg_painter_markers.dart](file://lib/src/animation/animated_svg_painter_markers.dart)
+- [test/animation/paint_order_test.dart](file://test/animation/paint_order_test.dart)
+- [test/animation/marker_test.dart](file://test/animation/marker_test.dart)
+- [test/animation/pattern_test.dart](file://test/animation/pattern_test.dart)
 </cite>
 
 ## Update Summary
 **Changes Made**
-- Added documentation for new utility classes that provide consistent parsing and resolution mechanisms
-- Enhanced textPath spacing functionality documentation with new spacing modes
-- Added writing-mode support documentation for vertical text rendering
-- Integrated utility class architecture into core components documentation
-- Updated text rendering and hit-testing sections with new spacing and writing-mode features
+- Added comprehensive documentation for new paint order system with fill, stroke, and markers layer control
+- Documented complete marker support system including marker resolution, positioning, and orientation
+- Added extensive pattern implementation documentation with pattern units, inheritance, and caching
+- Enhanced gradient and paint handling with new utility classes and caching mechanisms
+- Updated paint server resolution to support both gradients and patterns
+- Added performance considerations for new caching systems
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -39,21 +48,25 @@
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
 5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Utility Classes and Parsing Mechanisms](#utility-classes-and-parsing-mechanisms)
-7. [Enhanced Text Rendering and Hit-Testing](#enhanced-text-rendering-and-hit-testing)
-8. [Dependency Analysis](#dependency-analysis)
-9. [Performance Considerations](#performance-considerations)
-10. [Troubleshooting Guide](#troubleshooting-guide)
-11. [Conclusion](#conclusion)
-12. [Appendices](#appendices)
+6. [Paint Order System](#paint-order-system)
+7. [Marker Support](#marker-support)
+8. [Pattern Implementation](#pattern-implementation)
+9. [Enhanced Gradient and Paint Handling](#enhanced-gradient-and-paint-handling)
+10. [Utility Classes and Parsing Mechanisms](#utility-classes-and-parsing-mechanisms)
+11. [Enhanced Text Rendering and Hit-Testing](#enhanced-text-rendering-and-hit-testing)
+12. [Dependency Analysis](#dependency-analysis)
+13. [Performance Considerations](#performance-considerations)
+14. [Troubleshooting Guide](#troubleshooting-guide)
+15. [Conclusion](#conclusion)
+16. [Appendices](#appendices)
 
 ## Introduction
 This document explains the animated SVG support built around the experimental SMIL animation system. It covers the animation architecture, SMIL specification compliance, animation control mechanisms, and CSS animation conversion capabilities. It documents the AnimatedSvgPicture widget, animation timeline management, controller system, and real-time playback controls. Both conceptual overviews for beginners and technical details for experienced developers are included, with terminology aligned to the codebase. Practical examples demonstrate animation creation, control, and optimization, along with public interfaces, animation parameters, and controller methods. Limitations, debugging approaches, and migration paths from CSS animations are also addressed.
 
-**Updated** Added comprehensive documentation for new utility classes that provide consistent parsing and resolution mechanisms across the animation system, along with enhanced textPath spacing functionality and writing-mode support.
+**Updated** Added comprehensive documentation for new paint order system, marker support, pattern implementation, and enhanced gradient and paint handling capabilities. These additions provide complete SVG paint server support with caching mechanisms for optimal performance.
 
 ## Project Structure
-The animated SVG pipeline is implemented as a separate, parallel system from the production static SVG renderer. It parses SVG to a DOM, extracts SMIL and CSS animations, manages timelines, and renders via a CustomPainter. The new utility classes provide centralized parsing and resolution mechanisms for attributes, styles, and transforms.
+The animated SVG pipeline is implemented as a separate, parallel system from the production static SVG renderer. It parses SVG to a DOM, extracts SMIL and CSS animations, manages timelines, and renders via a CustomPainter. The new paint system extends the rendering pipeline with comprehensive support for paint servers, markers, and pattern fills with caching mechanisms.
 
 ```mermaid
 graph TB
@@ -71,15 +84,18 @@ D --> F["SvgTimeline<br/>tick(), seek(), triggerEvent()"]
 G["AnimatedSvgController<br/>pause/resume/seek/rate/reverse"] --> F
 H["AnimatedSvgPicture<br/>widget + CustomPainter"] --> F
 end
-subgraph "Rendering"
+subgraph "Enhanced Rendering Pipeline"
 F --> I["AnimatedSvgPainter<br/>reads effective values"]
-I --> J["Canvas rendering"]
+I --> J["Paint Server Resolution<br/>Gradients + Patterns"]
+J --> K["Marker Placement<br/>Position + Orientation"]
+K --> L["Pattern Application<br/>Caching + Tiling"]
+L --> M["Canvas rendering"]
 end
 subgraph "Utility Layer"
-K["animated_svg_picture_utils_attrs.dart<br/>Attribute parsing & resolution"] --> I
-L["animated_svg_picture_utils_style.dart<br/>Style parsing & font handling"] --> I
-M["animated_svg_picture_utils_transform.dart<br/>Transform parsing & application"] --> I
-N["animated_svg_picture_utils.dart<br/>Core utilities & helpers"] --> I
+N["animated_svg_picture_utils_attrs.dart<br/>Attribute parsing & resolution"] --> I
+O["animated_svg_picture_utils_style.dart<br/>Style parsing & font handling"] --> I
+P["animated_svg_picture_utils_transform.dart<br/>Transform parsing & application"] --> I
+Q["animated_svg_picture_utils.dart<br/>Core utilities & helpers"] --> I
 end
 ```
 
@@ -90,10 +106,10 @@ end
 - [lib/src/animation/animated_svg_controller.dart:25-131](file://lib/src/animation/animated_svg_controller.dart#L25-L131)
 - [lib/src/animation/animated_svg_picture.dart:108-164](file://lib/src/animation/animated_svg_picture.dart#L108-L164)
 - [lib/src/animation/svg_dom.dart:266-317](file://lib/src/animation/svg_dom.dart#L266-L317)
-- [lib/src/animation/animated_svg_picture_utils_attrs.dart:1-132](file://lib/src/animation/animated_svg_picture_utils_attrs.dart#L1-L132)
-- [lib/src/animation/animated_svg_picture_utils_style.dart:1-88](file://lib/src/animation/animated_svg_picture_utils_style.dart#L1-L88)
-- [lib/src/animation/animated_svg_picture_utils_transform.dart:1-84](file://lib/src/animation/animated_svg_picture_utils_transform.dart#L1-L84)
-- [lib/src/animation/animated_svg_picture_utils.dart:1-69](file://lib/src/animation/animated_svg_picture_utils.dart#L1-L69)
+- [lib/src/animation/animated_svg_painter_gradients.dart:1-44](file://lib/src/animation/animated_svg_painter_gradients.dart#L1-L44)
+- [lib/src/animation/animated_svg_painter_patterns.dart:1-183](file://lib/src/animation/animated_svg_painter_patterns.dart#L1-L183)
+- [lib/src/animation/animated_svg_painter_markers.dart:1-449](file://lib/src/animation/animated_svg_painter_markers.dart#L1-L449)
+- [lib/src/animation/animated_svg_painter_paint_order.dart:1-90](file://lib/src/animation/animated_svg_painter_paint_order.dart#L1-L90)
 
 **Section sources**
 - [ARCHITECTURE.md:6-58](file://ARCHITECTURE.md#L6-L58)
@@ -108,6 +124,7 @@ end
 - Interpolators: Provides type-aware interpolation for numbers, colors, transforms, paths, and lists.
 - MotionPath: Computes positions and angles along SVG paths for animateMotion with keyPoints support.
 - SvgDom: Defines the DOM model with AnimatableSvgAttribute and SvgNode for attribute mutation and tree traversal.
+- **Enhanced Rendering System**: AnimatedSvgPainter with comprehensive paint server support, marker placement, pattern application, and paint order control.
 - **New Utility Classes**: Centralized parsing and resolution mechanisms for consistent attribute, style, and transform handling.
 
 **Section sources**
@@ -119,13 +136,15 @@ end
 - [lib/src/animation/smil/interpolators.dart:14-42](file://lib/src/animation/smil/interpolators.dart#L14-L42)
 - [lib/src/animation/smil/motion_path.dart:22-52](file://lib/src/animation/smil/motion_path.dart#L22-L52)
 - [lib/src/animation/svg_dom.dart:124-161](file://lib/src/animation/svg_dom.dart#L124-L161)
+- [lib/src/animation/animated_svg_painter.dart:46-135](file://lib/src/animation/animated_svg_painter.dart#L46-L135)
 
 ## Architecture Overview
-The animated pipeline follows a clear separation of concerns with enhanced utility layer:
+The animated pipeline follows a clear separation of concerns with enhanced utility layer and comprehensive paint server support:
 - Parsing: XML → DOM preserved for runtime mutation and SMIL discovery.
 - Extraction: SMIL and CSS animations parsed into typed SmilAnimation instances.
 - Timeline: Global time management with begin/end conditions, repeat counts, and event-driven activation.
-- Rendering: CustomPainter reads effective attribute values and draws the scene.
+- Rendering: CustomPainter reads effective attribute values and draws the scene with enhanced paint server support.
+- **Enhanced Rendering Pipeline**: Paint server resolution, marker placement, pattern application, and paint order control.
 - **Utility Layer**: Centralized parsing and resolution mechanisms for consistent attribute, style, and transform handling.
 
 ```mermaid
@@ -149,6 +168,9 @@ Widget->>Timeline : tick(delta)
 Timeline->>Timeline : update animations
 Timeline-->>Widget : active state
 Widget->>Painter : repaint with document
+Painter->>Painter : Resolve paint servers
+Painter->>Painter : Place markers
+Painter->>Painter : Apply patterns
 Painter-->>App : Canvas draw
 end
 ```
@@ -158,9 +180,10 @@ end
 - [lib/src/animation/smil/smil_timeline.dart:82-98](file://lib/src/animation/smil/smil_timeline.dart#L82-L98)
 - [lib/src/animation/animated_svg_picture.dart:166-220](file://lib/src/animation/animated_svg_picture.dart#L166-L220)
 - [lib/src/animation/animated_svg_controller.dart:25-131](file://lib/src/animation/animated_svg_controller.dart#L25-L131)
-- [lib/src/animation/animated_svg_picture_utils_attrs.dart:1-132](file://lib/src/animation/animated_svg_picture_utils_attrs.dart#L1-L132)
-- [lib/src/animation/animated_svg_picture_utils_style.dart:1-88](file://lib/src/animation/animated_svg_picture_utils_style.dart#L1-L88)
-- [lib/src/animation/animated_svg_picture_utils_transform.dart:1-84](file://lib/src/animation/animated_svg_picture_utils_transform.dart#L1-L84)
+- [lib/src/animation/animated_svg_painter_gradients.dart:1-44](file://lib/src/animation/animated_svg_painter_gradients.dart#L1-L44)
+- [lib/src/animation/animated_svg_painter_patterns.dart:1-183](file://lib/src/animation/animated_svg_painter_patterns.dart#L1-L183)
+- [lib/src/animation/animated_svg_painter_markers.dart:1-449](file://lib/src/animation/animated_svg_painter_markers.dart#L1-L449)
+- [lib/src/animation/animated_svg_painter_paint_order.dart:1-90](file://lib/src/animation/animated_svg_painter_paint_order.dart#L1-L90)
 
 **Section sources**
 - [ARCHITECTURE.md:146-154](file://ARCHITECTURE.md#L146-L154)
@@ -479,6 +502,259 @@ SvgNode --> AnimatableSvgAttribute : "attributes"
 - [lib/src/animation/svg_dom.dart:124-161](file://lib/src/animation/svg_dom.dart#L124-L161)
 - [lib/src/animation/svg_dom.dart:266-317](file://lib/src/animation/svg_dom.dart#L266-L317)
 
+## Paint Order System
+
+The paint order system provides comprehensive control over the rendering order of different paint layers in SVG shapes. It allows precise control over whether fill, stroke, and markers are drawn in specific orders.
+
+### Paint Order Layers
+The system defines three paint layers with specific rendering priorities:
+- **fill**: Primary fill area of shapes
+- **stroke**: Outline/border of shapes  
+- **markers**: Arrowheads and decorative markers placed along paths
+
+### Paint Order Parsing and Resolution
+The paint order system parses the `paint-order` attribute and determines the rendering sequence:
+
+```mermaid
+flowchart TD
+A["paint-order attribute parsing"] --> B{"Attribute value?"}
+B --> |null/empty| C["Default order: fill → stroke → markers"]
+B --> |"normal"| C
+B --> |custom| D["Parse space-separated tokens"]
+D --> E["Validate tokens (fill/stroke/markers)"]
+E --> F["Remove duplicates while preserving order"]
+F --> G["Add missing layers in default order"]
+G --> H["Return final paint order list"]
+```
+
+**Diagram sources**
+- [lib/src/animation/animated_svg_painter_paint_order.dart:9-64](file://lib/src/animation/animated_svg_painter_paint_order.dart#L9-L64)
+
+### Paint Order Implementation
+The `_paintWithOrder` method executes the paint order sequence:
+
+```mermaid
+sequenceDiagram
+participant Node as "SvgNode"
+participant Order as "_parsePaintOrder"
+participant Renderer as "_paintWithOrder"
+participant Fill as "paintFill()"
+participant Stroke as "paintStroke()"
+participant Markers as "paintMarkers()"
+Node->>Order : Parse paint-order attribute
+Order-->>Renderer : Return ordered layers
+loop For each layer in order
+Renderer->>Fill : Execute if layer == fill
+Renderer->>Stroke : Execute if layer == stroke
+Renderer->>Markers : Execute if layer == markers
+end
+```
+
+**Diagram sources**
+- [lib/src/animation/animated_svg_painter_paint_order.dart:69-89](file://lib/src/animation/animated_svg_painter_paint_order.dart#L69-L89)
+
+**Section sources**
+- [lib/src/animation/animated_svg_painter_paint_order.dart:1-90](file://lib/src/animation/animated_svg_painter_paint_order.dart#L1-L90)
+- [test/animation/paint_order_test.dart:1-232](file://test/animation/paint_order_test.dart#L1-L232)
+
+## Marker Support
+
+The marker system provides comprehensive support for arrowheads and decorative markers along SVG paths. It handles marker resolution, positioning, orientation, and scaling.
+
+### Marker Definition Resolution
+Markers are resolved from the SVG DOM using their IDs and support inheritance through the `href` attribute:
+
+```mermaid
+flowchart TD
+A["Marker resolution process"] --> B["Check marker cache"]
+B --> |hit| C["Return cached marker"]
+B --> |miss| D["Find marker node by ID"]
+D --> |found| E["Parse marker attributes"]
+D --> |not found| F["Cache null and return"]
+E --> G["Resolve markerUnits (userSpaceOnUse/strokeWidth)"]
+G --> H["Parse orient (auto/auto-start-reverse/angle)"]
+H --> I["Parse viewBox if present"]
+I --> J["Store in cache"]
+J --> K["Return resolved marker"]
+```
+
+**Diagram sources**
+- [lib/src/animation/animated_svg_painter_markers.dart:5-69](file://lib/src/animation/animated_svg_painter_markers.dart#L5-L69)
+
+### Marker Placement and Orientation
+The system calculates marker positions along paths and applies appropriate rotations:
+
+```mermaid
+sequenceDiagram
+participant Path as "Path geometry"
+participant Vertices as "Vertex extraction"
+participant Marker as "Marker placement"
+participant Canvas as "Canvas operations"
+Path->>Vertices : Extract path vertices
+Vertices-->>Marker : Return vertex positions
+loop For each marker position
+Marker->>Marker : Calculate tangent angle
+Marker->>Marker : Determine effective orientation
+Marker->>Canvas : Save canvas state
+Canvas->>Canvas : Translate to position
+Canvas->>Canvas : Rotate by calculated angle
+Canvas->>Canvas : Apply scale based on markerUnits
+Canvas->>Canvas : Translate by -refX, -refY
+Canvas->>Canvas : Draw marker content
+Canvas->>Canvas : Restore state
+end
+```
+
+**Diagram sources**
+- [lib/src/animation/animated_svg_painter_markers.dart:139-217](file://lib/src/animation/animated_svg_painter_markers.dart#L139-L217)
+- [lib/src/animation/animated_svg_painter_markers.dart:236-286](file://lib/src/animation/animated_svg_painter_markers.dart#L236-L286)
+
+### Marker Attributes and Units
+The marker system supports comprehensive SVG marker attributes:
+- **refX/refY**: Reference point for marker positioning
+- **markerWidth/markerHeight**: Size specifications
+- **markerUnits**: `userSpaceOnUse` or `strokeWidth` scaling
+- **orient**: `auto`, `auto-start-reverse`, or fixed angle
+- **viewBox**: Custom coordinate system for marker content
+
+**Section sources**
+- [lib/src/animation/animated_svg_painter_markers.dart:1-449](file://lib/src/animation/animated_svg_painter_markers.dart#L1-L449)
+- [test/animation/marker_test.dart:1-223](file://test/animation/marker_test.dart#L1-L223)
+
+## Pattern Implementation
+
+The pattern system provides complete SVG pattern support with advanced features including pattern units, inheritance, and caching mechanisms.
+
+### Pattern Definition Resolution
+Patterns are resolved with comprehensive inheritance support and caching:
+
+```mermaid
+flowchart TD
+A["Pattern resolution process"] --> B["Check pattern cache"]
+B --> |hit| C["Return cached pattern"]
+B --> |miss| D["Find pattern node by ID"]
+D --> |found| E["Check for href inheritance"]
+E --> |inherit| F["Resolve inherited pattern"]
+E --> |direct| G["Parse pattern attributes"]
+F --> H["Merge attributes with inheritance"]
+G --> H
+H --> I["Parse patternUnits (userSpaceOnUse/objectBoundingBox)"]
+I --> J["Parse patternContentUnits"]
+J --> K["Parse viewBox if present"]
+K --> L["Parse patternTransform"]
+L --> M["Store in cache"]
+M --> N["Return resolved pattern"]
+```
+
+**Diagram sources**
+- [lib/src/animation/animated_svg_painter_patterns.dart:5-103](file://lib/src/animation/animated_svg_painter_patterns.dart#L5-L103)
+
+### Pattern Application and Tiling
+The system generates ImageShaders for pattern fills with sophisticated tiling logic:
+
+```mermaid
+sequenceDiagram
+participant Pattern as "Pattern definition"
+participant Shader as "Pattern shader"
+participant Canvas as "Canvas operations"
+Pattern->>Shader : Create pattern shader
+Shader->>Shader : Calculate tile dimensions
+alt patternUnits = objectBoundingBox
+Shader->>Shader : Apply percentage of target bounds
+else patternUnits = userSpaceOnUse
+Shader->>Shader : Use absolute coordinates
+end
+Shader->>Shader : Render pattern content to Picture
+Shader->>Shader : Convert to Image (toImageSync)
+Shader->>Shader : Create ImageShader with TileMode
+Shader->>Canvas : Apply shader to fill/stroke
+```
+
+**Diagram sources**
+- [lib/src/animation/animated_svg_painter_patterns.dart:106-183](file://lib/src/animation/animated_svg_painter_patterns.dart#L106-L183)
+
+### Pattern Attributes and Units
+The pattern system supports comprehensive SVG pattern attributes:
+- **x/y/width/height**: Position and size specifications
+- **patternUnits**: `userSpaceOnUse` or `objectBoundingBox` coordinate system
+- **patternContentUnits**: `userSpaceOnUse` or `objectBoundingBox` for content
+- **patternTransform**: Matrix transformations for pattern orientation
+- **viewBox**: Custom coordinate system for pattern content
+
+**Section sources**
+- [lib/src/animation/animated_svg_painter_patterns.dart:1-184](file://lib/src/animation/animated_svg_painter_patterns.dart#L1-L184)
+- [test/animation/pattern_test.dart:1-189](file://test/animation/pattern_test.dart#L1-L189)
+
+## Enhanced Gradient and Paint Handling
+
+The enhanced gradient system provides comprehensive paint server support with caching mechanisms for optimal performance.
+
+### Paint Server Resolution
+The system resolves paint servers (gradients and patterns) with priority-based selection:
+
+```mermaid
+flowchart TD
+A["Paint server resolution"] --> B["Extract paint server ID from paint value"]
+B --> |found| C["Try gradient resolution"]
+C --> |success| D["Return gradient shader"]
+C --> |fail| E["Try pattern resolution"]
+E --> |success| F["Return pattern shader"]
+E --> |fail| G["Return null"]
+B --> |not found| H["Return null"]
+```
+
+**Diagram sources**
+- [lib/src/animation/animated_svg_painter_gradients.dart:4-29](file://lib/src/animation/animated_svg_painter_gradients.dart#L4-L29)
+
+### Gradient Implementation
+The gradient system supports both linear and radial gradients with advanced features:
+
+```mermaid
+flowchart TD
+A["Gradient shader creation"] --> B["Normalize paint bounds"]
+B --> C["Parse gradientUnits (userSpaceOnUse)"]
+C --> D["Parse spreadMethod (TileMode)"]
+D --> E["Parse gradientTransform matrix"]
+E --> F{"Gradient type?"}
+F --> |linear| G["Parse x1,y1,x2,y2 coordinates"]
+F --> |radial| H["Parse cx,cy,radius,focal points"]
+G --> I["Create ui.Gradient.linear"]
+H --> J["Create ui.Gradient.radial"]
+I --> K["Apply linearRGB interpolation if enabled"]
+J --> K
+K --> L["Return gradient shader"]
+```
+
+**Diagram sources**
+- [lib/src/animation/animated_svg_painter_gradients.dart:31-158](file://lib/src/animation/animated_svg_painter_gradients.dart#L31-L158)
+
+### Paint Cache Management
+The system implements comprehensive caching for paint servers:
+
+```mermaid
+classDiagram
+class PaintServerCaches {
+<<caches>>
++Map~String, _ResolvedGradientDefinition?~ _gradientCache
++Map~String, _ResolvedMarkerDefinition?~ _markerCache
++Map~String, _ResolvedPatternDefinition?~ _patternCache
++Map~String, ui.Image?~ _patternTileCache
+}
+class CacheOperations {
++getOrSet(key, factory)
++invalidate(key)
++clearAll()
+}
+PaintServerCaches --> CacheOperations : "manages"
+```
+
+**Diagram sources**
+- [lib/src/animation/animated_svg_painter.dart:63-69](file://lib/src/animation/animated_svg_painter.dart#L63-L69)
+
+**Section sources**
+- [lib/src/animation/animated_svg_painter_gradients.dart:1-160](file://lib/src/animation/animated_svg_painter_gradients.dart#L1-L160)
+- [lib/src/animation/animated_svg_painter.dart:63-69](file://lib/src/animation/animated_svg_painter.dart#L63-L69)
+
 ## Utility Classes and Parsing Mechanisms
 
 ### Core Utility Extensions
@@ -652,11 +928,13 @@ Enhanced text rendering includes comprehensive support for text decorations and 
   - SMIL engine depends on DOM and interpolators.
   - CSS converter depends on CSS parsing and SMIL types.
   - Widget depends on timeline and controller.
-  - **New**: Utility classes provide centralized parsing mechanisms with low coupling to core systems.
+  - **Enhanced**: Utility classes provide centralized parsing mechanisms with low coupling to core systems.
+  - **New**: Paint server extensions extend the rendering pipeline with comprehensive paint support.
 - Coupling:
   - Low coupling between parsing, timeline, and rendering via typed SmilAnimation and DOM attribute mutation.
   - Controlled coupling via ChangeNotifier and Ticker integration.
   - **Enhanced**: Utility classes reduce code duplication and provide consistent parsing across the entire system.
+  - **New**: Paint server extensions maintain clean separation while extending functionality.
 
 ```mermaid
 graph LR
@@ -670,6 +948,11 @@ Export --> Motion["motion_path.dart"]
 Export --> Dom["svg_dom.dart"]
 Export --> CssConv["css_to_smil_converter.dart"]
 Export --> Utils["Utility Classes"]
+Export --> PaintServers["Paint Server Extensions"]
+PaintServers --> Gradients["animated_svg_painter_gradients.dart"]
+PaintServers --> Patterns["animated_svg_painter_patterns.dart"]
+PaintServers --> Markers["animated_svg_painter_markers.dart"]
+PaintServers --> PaintOrder["animated_svg_painter_paint_order.dart"]
 Utils --> Attrs["animated_svg_picture_utils_attrs.dart"]
 Utils --> Style["animated_svg_picture_utils_style.dart"]
 Utils --> Transform["animated_svg_picture_utils_transform.dart"]
@@ -687,12 +970,17 @@ Utils --> Core["animated_svg_picture_utils.dart"]
 - Dirty tracking: Mark nodes dirty when animated values change; only re-render dirty subtrees.
 - Path optimization: Normalize paths once during parsing; reuse Path objects and reset rather than recreate.
 - **Enhanced**: Utility classes provide cached parsing results to reduce redundant computations.
+- **New**: Paint server caching reduces repeated pattern and gradient resolution overhead.
+- **New**: Pattern tile caching prevents expensive toImageSync operations for identical patterns.
+- **New**: Marker caching prevents repeated marker resolution and vertex extraction.
 - **Future optimizations (stage goals)**: layer caching for independent animations, GPU-accelerated path morphing, reduced allocations in hot paths, improved text rendering performance.
 - Baseline performance targets are documented in the project's animation guide.
 
 **Section sources**
 - [ARCHITECTURE.md:174-193](file://ARCHITECTURE.md#L174-L193)
 - [ANIMATION.md:172-178](file://ANIMATION.md#L172-L178)
+- [lib/src/animation/animated_svg_painter_patterns.dart:10-14](file://lib/src/animation/animated_svg_painter_patterns.dart#L10-L14)
+- [lib/src/animation/animated_svg_painter_markers.dart:6-9](file://lib/src/animation/animated_svg_painter_markers.dart#L6-L9)
 
 ## Troubleshooting Guide
 - Tracing:
@@ -705,14 +993,22 @@ Utils --> Core["animated_svg_picture_utils.dart"]
   - Check attribute parsing with `_getInheritedAttributeValue()` for style inheritance issues.
   - Verify transform parsing with `_applyNodeTransform()` for coordinate system problems.
   - Use `_resolveTextPathSpacing()` to debug textPath spacing issues.
+- **New**: Paint server troubleshooting:
+  - Verify paint server resolution with `_resolvePaintServerShader()` for gradient/pattern issues.
+  - Check pattern caching with `_patternCache` for repeated pattern resolution problems.
+  - Validate marker resolution with `_markerCache` for marker placement issues.
 - Common issues:
   - autoPlay false rendering: addressed by tests; confirm initialTime and controller state.
   - Path morphing compatibility: requires normalized path structures; ensure paths share topology.
   - **New**: Text rendering issues: verify writing-mode support and spacing calculations.
+  - **New**: Paint order issues: verify paint-order attribute syntax and layer ordering.
+  - **New**: Pattern rendering issues: check patternUnits, viewBox, and tile dimension calculations.
+  - **New**: Marker placement issues: verify markerUnits, orient values, and vertex extraction.
 - Validation:
   - Use getInfo() on SvgTimeline to inspect active animations, total duration, and playback rate.
   - Check widget state transitions and controller notifications.
   - **Enhanced**: Validate utility class results for consistent parsing behavior.
+  - **New**: Monitor paint server caches for proper caching and invalidation.
 
 **Section sources**
 - [lib/src/animation/animated_svg_picture.dart:37-86](file://lib/src/animation/animated_svg_picture.dart#L37-L86)
@@ -721,11 +1017,11 @@ Utils --> Core["animated_svg_picture_utils.dart"]
 - [ANIMATION.md:207-213](file://ANIMATION.md#L207-L213)
 
 ## Conclusion
-The animated SVG system provides a robust, experimental SMIL pipeline alongside the production static renderer. It supports a wide range of SMIL elements and attributes, CSS animation conversion, precise timing control, and real-time playback. The architecture cleanly separates parsing, animation extraction, timeline management, and rendering, enabling future optimizations and parity improvements. 
+The animated SVG system provides a robust, experimental SMIL pipeline alongside the production static renderer. It supports a wide range of SMIL elements and attributes, CSS animation conversion, precise timing control, and real-time playback. The architecture cleanly separates parsing, animation extraction, timeline management, and rendering, enabling future optimizations and parity improvements.
 
-**Updated**: The new utility classes provide centralized parsing and resolution mechanisms that enhance consistency and maintainability across the animation system. Enhanced textPath spacing functionality and writing-mode support expand the system's text rendering capabilities, supporting both horizontal and vertical text layouts with precise spacing control.
+**Updated**: The new paint order system, marker support, pattern implementation, and enhanced gradient handling significantly expand the system's capabilities. The comprehensive paint server support with caching mechanisms ensures optimal performance while maintaining full SVG specification compliance. These additions provide complete paint server functionality including fill/stroke ordering control, marker placement along paths, pattern fills with advanced tiling, and sophisticated gradient rendering.
 
-Developers can leverage AnimatedSvgPicture and AnimatedSvgController for programmatic control, while the underlying SmilAnimation and interpolators ensure spec-aligned behavior and extensibility. The utility classes streamline attribute, style, and transform parsing, reducing code duplication and improving reliability.
+Developers can leverage AnimatedSvgPicture and AnimatedSvgController for programmatic control, while the underlying SmilAnimation and interpolators ensure spec-aligned behavior and extensibility. The utility classes streamline attribute, style, and transform parsing, reducing code duplication and improving reliability. The new paint server extensions enable complex visual effects while maintaining performance through intelligent caching strategies.
 
 ## Appendices
 
@@ -748,8 +1044,12 @@ Developers can leverage AnimatedSvgPicture and AnimatedSvgController for program
   - interpolate, interpolateNumber, interpolateColor, interpolateTransform, interpolatePath, interpolateList, add
 - MotionPath:
   - getPointAtTime, getPointWithKeyPoints, totalLength
-- **New Utility Classes**:
-  - Attribute parsing: `_extractHrefId`, `_extractStyleValue`, `_getNumber`, `_getNumberList`, `_getInheritedAttributeValue`, `_getInheritedString`, `_getInheritedNumber`, `_extractTextContent`
+- **Enhanced Rendering System**:
+  - Paint server resolution: `_resolvePaintServerShader`, `_createGradientShader`, `_createPatternShader`
+  - Paint order control: `_parsePaintOrder`, `_paintWithOrder`
+  - Marker support: `_resolveMarkerDefinition`, `_paintMarkers`, `_paintMarker`
+  - Pattern implementation: `_resolvePatternDefinition`, `_createPatternShader`
+  - Utility classes: `_extractHrefId`, `_extractStyleValue`, `_getNumber`, `_getNumberList`, `_getInheritedAttributeValue`, `_getInheritedString`, `_getInheritedNumber`, `_extractTextContent`
   - Style parsing: `_resolveFontWeight`, `_resolveFontStyle`, `_distanceToSegment`, `_parsePoints`
   - Transform parsing: `_applyForeignObjectChildTransform`, `_applyNodeTransform`
   - Core utilities: `_isFillEnabled`, `_hasStroke`, `_strokeTolerance`, `_isPaintNone`, `_isPointerEventsNone`, `_isVisibilityHidden`, `_isDisplayNone`, `_trace`
@@ -761,6 +1061,10 @@ Developers can leverage AnimatedSvgPicture and AnimatedSvgController for program
 - [lib/src/animation/smil/smil_animation.dart:80-131](file://lib/src/animation/smil/smil_animation.dart#L80-L131)
 - [lib/src/animation/smil/interpolators.dart:14-42](file://lib/src/animation/smil/interpolators.dart#L14-L42)
 - [lib/src/animation/smil/motion_path.dart:22-52](file://lib/src/animation/smil/motion_path.dart#L22-L52)
+- [lib/src/animation/animated_svg_painter_gradients.dart:4-29](file://lib/src/animation/animated_svg_painter_gradients.dart#L4-L29)
+- [lib/src/animation/animated_svg_painter_paint_order.dart:9-64](file://lib/src/animation/animated_svg_painter_paint_order.dart#L9-L64)
+- [lib/src/animation/animated_svg_painter_markers.dart:5-69](file://lib/src/animation/animated_svg_painter_markers.dart#L5-L69)
+- [lib/src/animation/animated_svg_painter_patterns.dart:5-103](file://lib/src/animation/animated_svg_painter_patterns.dart#L5-L103)
 - [lib/src/animation/animated_svg_picture_utils_attrs.dart:1-132](file://lib/src/animation/animated_svg_picture_utils_attrs.dart#L1-L132)
 - [lib/src/animation/animated_svg_picture_utils_style.dart:1-88](file://lib/src/animation/animated_svg_picture_utils_style.dart#L1-L88)
 - [lib/src/animation/animated_svg_picture_utils_transform.dart:1-84](file://lib/src/animation/animated_svg_picture_utils_transform.dart#L1-L84)
@@ -769,6 +1073,9 @@ Developers can leverage AnimatedSvgPicture and AnimatedSvgController for program
 ### Practical Examples
 - Basic movement, rotation, color animation, path morphing, and motion path are demonstrated in the project's animation guide.
 - Widget API usage and demo app invocation are documented for quick start and exploration.
+- **New**: Paint order examples with fill/stroke/markers layer control
+- **New**: Marker examples with various orientations and marker units
+- **New**: Pattern examples with different units, inheritance, and transformations
 - **New**: TextPath spacing examples with both auto and exact spacing modes
 - **New**: Writing-mode examples for vertical text rendering (vertical-rl, vertical-lr)
 
@@ -780,6 +1087,7 @@ Developers can leverage AnimatedSvgPicture and AnimatedSvgController for program
 - Compound transforms are decomposed into individual SmilAnimation instances for accurate SVG transform semantics.
 - Remaining gaps include advanced edge-case CSS shorthand/transform semantics; baseline conversion remains functional.
 - **Enhanced**: Utility classes improve consistency in CSS-to-SMIL conversion and attribute resolution.
+- **New**: Paint server support enables migration from CSS background-image patterns to native SVG patterns.
 
 **Section sources**
 - [ANIMATION.md:54-66](file://ANIMATION.md#L54-L66)
@@ -797,3 +1105,18 @@ Developers can leverage AnimatedSvgPicture and AnimatedSvgController for program
 - [lib/src/animation/animated_svg_painter_text_style.dart:89-126](file://lib/src/animation/animated_svg_painter_text_style.dart#L89-L126)
 - [lib/src/animation/animated_svg_picture_hit_test_text_layout.dart:86-96](file://lib/src/animation/animated_svg_picture_hit_test_text_layout.dart#L86-L96)
 - [lib/src/animation/animated_svg_picture_hit_test_text_path_segments.dart:27-40](file://lib/src/animation/animated_svg_picture_hit_test_text_path_segments.dart#L27-L40)
+
+### Paint Server Features
+- **Paint Order Control**: Fill, stroke, and markers layer ordering with inheritance
+- **Marker Support**: Comprehensive marker resolution with orientation and scaling
+- **Pattern Implementation**: Advanced pattern fills with units, inheritance, and caching
+- **Gradient Handling**: Linear and radial gradients with advanced coordinate systems
+- **Caching Mechanisms**: Intelligent caching for paint servers to optimize performance
+- **Href Inheritance**: Pattern and marker inheritance through href attributes
+
+**Section sources**
+- [lib/src/animation/animated_svg_painter_paint_order.dart:1-90](file://lib/src/animation/animated_svg_painter_paint_order.dart#L1-L90)
+- [lib/src/animation/animated_svg_painter_markers.dart:1-449](file://lib/src/animation/animated_svg_painter_markers.dart#L1-L449)
+- [lib/src/animation/animated_svg_painter_patterns.dart:1-184](file://lib/src/animation/animated_svg_painter_patterns.dart#L1-L184)
+- [lib/src/animation/animated_svg_painter_gradients.dart:1-160](file://lib/src/animation/animated_svg_painter_gradients.dart#L1-L160)
+- [lib/src/animation/animated_svg_painter.dart:63-69](file://lib/src/animation/animated_svg_painter.dart#L63-L69)

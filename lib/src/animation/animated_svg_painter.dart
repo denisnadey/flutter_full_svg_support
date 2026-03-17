@@ -285,6 +285,53 @@ class _ResolvedTextStyle {
     this.lineBreak = 'auto',
     this.hangingPunctuation = 'none',
     this.textCombineUpright = 'none',
+    this.textOrientation = 'mixed',
+    this.textUnderlinePosition = 'auto',
+    this.textUnderlineOffset,
+    this.textDecorationThickness,
+    this.textDecorationSkipInk = 'auto',
+    this.textDecorationSkip = 'objects',
+    this.textDecorationStyle = 'solid',
+    this.textShadow,
+    this.whiteSpace = 'normal',
+    this.textOverflow = 'clip',
+    this.verticalAlign = 0.0,
+    this.lineHeight,
+    this.fontKerning = 'auto',
+    this.fontVariantNumeric = 'normal',
+    this.textJustify = 'auto',
+    this.fontVariantLigatures = 'normal',
+    this.fontVariantCaps = 'normal',
+    this.fontOpticalSizing = 'auto',
+    this.paintOrder = 'normal',
+    this.textAlignLast = 'auto',
+    this.fontSynthesis = 'weight style small-caps',
+    this.fontVariantPosition = 'normal',
+    this.fontVariantEastAsian = 'normal',
+    this.textEmphasis,
+    this.textEmphasisPosition = 'over right',
+    this.textEmphasisColor,
+    this.rubyAlign = 'space-around',
+    this.rubyPosition = 'over',
+    this.textEmphasisStyle,
+    this.quotes,
+    this.initialLetter,
+    this.textSpacing = 'normal',
+    this.fontLanguageOverride,
+    this.fontVariantAlternates,
+    this.textWrap = 'wrap',
+    this.fontPalette,
+    this.forcedColorAdjust = 'auto',
+    this.printColorAdjust = 'economy',
+    this.textDecorationLine = 'none',
+    this.fontVariationSettings,
+    this.cssTextDecorationColor,
+    this.cssDirection = 'ltr',
+    this.contentVisibility = 'visible',
+    this.containIntrinsicSize,
+    this.willChange = 'auto',
+    this.hyphenateCharacter = 'auto',
+    this.cssMixBlendMode = 'normal',
   });
 
   final ui.Color color;
@@ -352,6 +399,144 @@ class _ResolvedTextStyle {
   /// Text combine upright mode for vertical writing (none, all, digits).
   final String textCombineUpright;
 
+  /// Text orientation for vertical writing (mixed, upright, sideways).
+  final String textOrientation;
+
+  /// Text underline position (auto, under, left, right).
+  final String textUnderlinePosition;
+
+  /// Text underline offset in user units (null = auto).
+  final double? textUnderlineOffset;
+
+  /// Text decoration thickness in user units (null = auto/from-font).
+  final double? textDecorationThickness;
+
+  /// Text decoration skip ink mode (auto, all, none).
+  final String textDecorationSkipInk;
+
+  /// Text decoration skip mode (objects, spaces, etc.).
+  final String textDecorationSkip;
+
+  /// Text decoration style (solid, double, dotted, dashed, wavy).
+  final String textDecorationStyle;
+
+  /// Text shadow CSS value (null = none).
+  final String? textShadow;
+
+  /// White-space handling mode (normal, nowrap, pre, pre-wrap, pre-line, break-spaces).
+  final String whiteSpace;
+
+  /// Text overflow handling (clip, ellipsis, or custom string).
+  final String textOverflow;
+
+  /// Vertical alignment offset in user units.
+  final double verticalAlign;
+
+  /// Line height in user units (null = normal).
+  final double? lineHeight;
+
+  /// Font kerning mode (auto, normal, none).
+  final String fontKerning;
+
+  /// Font variant numeric mode.
+  final String fontVariantNumeric;
+
+  /// Text justification method (auto, none, inter-word, inter-character).
+  final String textJustify;
+
+  /// Font variant ligatures mode.
+  final String fontVariantLigatures;
+
+  /// Font variant caps mode.
+  final String fontVariantCaps;
+
+  /// Font optical sizing mode (auto, none).
+  final String fontOpticalSizing;
+
+  /// Paint order (normal, fill stroke markers, etc.).
+  final String paintOrder;
+
+  /// Text align last mode (auto, start, end, left, right, center, justify).
+  final String textAlignLast;
+
+  /// Font synthesis mode (none, or weight/style/small-caps).
+  final String fontSynthesis;
+
+  /// Font variant position mode (normal, sub, super).
+  final String fontVariantPosition;
+
+  /// Font variant East Asian mode.
+  final String fontVariantEastAsian;
+
+  /// Text emphasis style (null = none).
+  final String? textEmphasis;
+
+  /// Text emphasis position (over right, under left, etc.).
+  final String textEmphasisPosition;
+
+  /// Text emphasis color (null = currentColor).
+  final String? textEmphasisColor;
+
+  /// Ruby alignment (space-around, start, center, space-between).
+  final String rubyAlign;
+
+  /// Ruby position (over, under, inter-character, alternate).
+  final String rubyPosition;
+
+  /// Text emphasis style (null = none).
+  final String? textEmphasisStyle;
+
+  /// Quotes style (null = auto).
+  final String? quotes;
+
+  /// Initial letter (null = normal).
+  final String? initialLetter;
+
+  /// Text spacing for CJK (normal, none, auto).
+  final String textSpacing;
+
+  /// Font language override (null = normal).
+  final String? fontLanguageOverride;
+
+  /// Font variant alternates (null = normal).
+  final String? fontVariantAlternates;
+
+  /// Text wrap mode (wrap, nowrap, balance, pretty, stable).
+  final String textWrap;
+
+  /// Font palette (null = normal, light, dark, or custom).
+  final String? fontPalette;
+
+  /// Forced color adjust (auto, none, preserve-parent-color).
+  final String forcedColorAdjust;
+
+  /// Print color adjust (economy, exact).
+  final String printColorAdjust;
+
+  /// Text decoration line (none, or combination).
+  final String textDecorationLine;
+
+  /// Font variation settings (null = normal).
+  final String? fontVariationSettings;
+
+  /// CSS text decoration color (null = currentColor).
+  final String? cssTextDecorationColor;
+
+  /// CSS direction (ltr, rtl).
+  final String cssDirection;
+
+  /// Content visibility (visible, hidden, auto).
+  final String contentVisibility;
+
+  /// Contain intrinsic size (null = none).
+  final String? containIntrinsicSize;
+
+  /// Will change (auto, or property names).
+  final String willChange;
+
+  /// Hyphenate character (auto, or custom character).
+  final String hyphenateCharacter;
+
   _ResolvedTextStyle copyWith({
     ui.Color? color,
     double? fontSize,
@@ -381,6 +566,52 @@ class _ResolvedTextStyle {
     String? lineBreak,
     String? hangingPunctuation,
     String? textCombineUpright,
+    String? textOrientation,
+    String? textUnderlinePosition,
+    double? textUnderlineOffset,
+    double? textDecorationThickness,
+    String? textDecorationSkipInk,
+    String? textDecorationSkip,
+    String? textDecorationStyle,
+    String? textShadow,
+    String? whiteSpace,
+    String? textOverflow,
+    double? verticalAlign,
+    double? lineHeight,
+    String? fontKerning,
+    String? fontVariantNumeric,
+    String? textJustify,
+    String? fontVariantLigatures,
+    String? fontVariantCaps,
+    String? fontOpticalSizing,
+    String? paintOrder,
+    String? textAlignLast,
+    String? fontSynthesis,
+    String? fontVariantPosition,
+    String? fontVariantEastAsian,
+    String? textEmphasis,
+    String? textEmphasisPosition,
+    String? textEmphasisColor,
+    String? rubyAlign,
+    String? rubyPosition,
+    String? textEmphasisStyle,
+    String? quotes,
+    String? initialLetter,
+    String? textSpacing,
+    String? fontLanguageOverride,
+    String? fontVariantAlternates,
+    String? textWrap,
+    String? fontPalette,
+    String? forcedColorAdjust,
+    String? printColorAdjust,
+    String? textDecorationLine,
+    String? fontVariationSettings,
+    String? cssTextDecorationColor,
+    String? cssDirection,
+    String? contentVisibility,
+    String? containIntrinsicSize,
+    String? willChange,
+    String? hyphenateCharacter,
   }) {
     return _ResolvedTextStyle(
       color: color ?? this.color,
@@ -412,6 +643,52 @@ class _ResolvedTextStyle {
       lineBreak: lineBreak ?? this.lineBreak,
       hangingPunctuation: hangingPunctuation ?? this.hangingPunctuation,
       textCombineUpright: textCombineUpright ?? this.textCombineUpright,
+      textOrientation: textOrientation ?? this.textOrientation,
+      textUnderlinePosition: textUnderlinePosition ?? this.textUnderlinePosition,
+      textUnderlineOffset: textUnderlineOffset ?? this.textUnderlineOffset,
+      textDecorationThickness: textDecorationThickness ?? this.textDecorationThickness,
+      textDecorationSkipInk: textDecorationSkipInk ?? this.textDecorationSkipInk,
+      textDecorationSkip: textDecorationSkip ?? this.textDecorationSkip,
+      textDecorationStyle: textDecorationStyle ?? this.textDecorationStyle,
+      textShadow: textShadow ?? this.textShadow,
+      whiteSpace: whiteSpace ?? this.whiteSpace,
+      textOverflow: textOverflow ?? this.textOverflow,
+      verticalAlign: verticalAlign ?? this.verticalAlign,
+      lineHeight: lineHeight ?? this.lineHeight,
+      fontKerning: fontKerning ?? this.fontKerning,
+      fontVariantNumeric: fontVariantNumeric ?? this.fontVariantNumeric,
+      textJustify: textJustify ?? this.textJustify,
+      fontVariantLigatures: fontVariantLigatures ?? this.fontVariantLigatures,
+      fontVariantCaps: fontVariantCaps ?? this.fontVariantCaps,
+      fontOpticalSizing: fontOpticalSizing ?? this.fontOpticalSizing,
+      paintOrder: paintOrder ?? this.paintOrder,
+      textAlignLast: textAlignLast ?? this.textAlignLast,
+      fontSynthesis: fontSynthesis ?? this.fontSynthesis,
+      fontVariantPosition: fontVariantPosition ?? this.fontVariantPosition,
+      fontVariantEastAsian: fontVariantEastAsian ?? this.fontVariantEastAsian,
+      textEmphasis: textEmphasis ?? this.textEmphasis,
+      textEmphasisPosition: textEmphasisPosition ?? this.textEmphasisPosition,
+      textEmphasisColor: textEmphasisColor ?? this.textEmphasisColor,
+      rubyAlign: rubyAlign ?? this.rubyAlign,
+      rubyPosition: rubyPosition ?? this.rubyPosition,
+      textEmphasisStyle: textEmphasisStyle ?? this.textEmphasisStyle,
+      quotes: quotes ?? this.quotes,
+      initialLetter: initialLetter ?? this.initialLetter,
+      textSpacing: textSpacing ?? this.textSpacing,
+      fontLanguageOverride: fontLanguageOverride ?? this.fontLanguageOverride,
+      fontVariantAlternates: fontVariantAlternates ?? this.fontVariantAlternates,
+      textWrap: textWrap ?? this.textWrap,
+      fontPalette: fontPalette ?? this.fontPalette,
+      forcedColorAdjust: forcedColorAdjust ?? this.forcedColorAdjust,
+      printColorAdjust: printColorAdjust ?? this.printColorAdjust,
+      textDecorationLine: textDecorationLine ?? this.textDecorationLine,
+      fontVariationSettings: fontVariationSettings ?? this.fontVariationSettings,
+      cssTextDecorationColor: cssTextDecorationColor ?? this.cssTextDecorationColor,
+      cssDirection: cssDirection ?? this.cssDirection,
+      contentVisibility: contentVisibility ?? this.contentVisibility,
+      containIntrinsicSize: containIntrinsicSize ?? this.containIntrinsicSize,
+      willChange: willChange ?? this.willChange,
+      hyphenateCharacter: hyphenateCharacter ?? this.hyphenateCharacter,
     );
   }
 }

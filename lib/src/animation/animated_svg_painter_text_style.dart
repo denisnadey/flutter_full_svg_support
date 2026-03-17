@@ -103,6 +103,151 @@ extension AnimatedSvgPainterTextStyleExtension on AnimatedSvgPainter {
     final textCombineUpright = _resolveTextCombineUpright(
       _getInheritedString(node, 'text-combine-upright'),
     );
+    final textOrientation = _resolveTextOrientation(
+      _getInheritedString(node, 'text-orientation'),
+    );
+    final textUnderlinePosition = _resolveTextUnderlinePosition(
+      _getInheritedString(node, 'text-underline-position'),
+    );
+    final textUnderlineOffset = _resolveTextUnderlineOffset(
+      _getInheritedString(node, 'text-underline-offset'),
+      fontSize,
+    );
+    final textDecorationThickness = _resolveTextDecorationThickness(
+      _getInheritedString(node, 'text-decoration-thickness'),
+      fontSize,
+    );
+    final textDecorationSkipInk = _resolveTextDecorationSkipInk(
+      _getInheritedString(node, 'text-decoration-skip-ink'),
+    );
+    final textDecorationSkip = _resolveTextDecorationSkip(
+      _getInheritedString(node, 'text-decoration-skip'),
+    );
+    final textDecorationStyle = _resolveTextDecorationStyle(
+      _getInheritedString(node, 'text-decoration-style'),
+    );
+    final textShadow = _resolveTextShadow(
+      _getInheritedString(node, 'text-shadow'),
+    );
+    final whiteSpace = _resolveWhiteSpace(
+      _getInheritedString(node, 'white-space'),
+    );
+    final textOverflow = _resolveTextOverflow(
+      _getInheritedString(node, 'text-overflow'),
+    );
+    final verticalAlign = _resolveVerticalAlign(
+      _getInheritedString(node, 'vertical-align'),
+      fontSize,
+    );
+    final lineHeight = _resolveLineHeight(
+      _getInheritedString(node, 'line-height'),
+      fontSize,
+    );
+    final fontKerning = _resolveFontKerning(
+      _getInheritedString(node, 'font-kerning'),
+    );
+    final fontVariantNumeric = _resolveFontVariantNumeric(
+      _getInheritedString(node, 'font-variant-numeric'),
+    );
+    final textJustify = _resolveTextJustify(
+      _getInheritedString(node, 'text-justify'),
+    );
+    final fontVariantLigatures = _resolveFontVariantLigatures(
+      _getInheritedString(node, 'font-variant-ligatures'),
+    );
+    final fontVariantCaps = _resolveFontVariantCaps(
+      _getInheritedString(node, 'font-variant-caps'),
+    );
+    final fontOpticalSizing = _resolveFontOpticalSizing(
+      _getInheritedString(node, 'font-optical-sizing'),
+    );
+    final paintOrder = _resolvePaintOrder(
+      _getInheritedString(node, 'paint-order'),
+    );
+    final textAlignLast = _resolveTextAlignLast(
+      _getInheritedString(node, 'text-align-last'),
+    );
+    final fontSynthesis = _resolveFontSynthesis(
+      _getInheritedString(node, 'font-synthesis'),
+    );
+    final fontVariantPosition = _resolveFontVariantPosition(
+      _getInheritedString(node, 'font-variant-position'),
+    );
+    final fontVariantEastAsian = _resolveFontVariantEastAsian(
+      _getInheritedString(node, 'font-variant-east-asian'),
+    );
+    final textEmphasis = _resolveTextEmphasis(
+      _getInheritedString(node, 'text-emphasis'),
+    );
+    final textEmphasisPosition = _resolveTextEmphasisPosition(
+      _getInheritedString(node, 'text-emphasis-position'),
+    );
+    final textEmphasisColor = _resolveTextEmphasisColor(
+      _getInheritedString(node, 'text-emphasis-color'),
+    );
+    final rubyAlign = _resolveRubyAlign(
+      _getInheritedString(node, 'ruby-align'),
+    );
+    final rubyPosition = _resolveRubyPosition(
+      _getInheritedString(node, 'ruby-position'),
+    );
+    final textEmphasisStyle = _resolveTextEmphasisStyle(
+      _getInheritedString(node, 'text-emphasis-style'),
+    );
+    final quotes = _resolveQuotes(
+      _getInheritedString(node, 'quotes'),
+    );
+    final initialLetter = _resolveInitialLetter(
+      _getInheritedString(node, 'initial-letter'),
+    );
+    final textSpacing = _resolveTextSpacing(
+      _getInheritedString(node, 'text-spacing'),
+    );
+    final fontLanguageOverride = _resolveFontLanguageOverride(
+      _getInheritedString(node, 'font-language-override'),
+    );
+    final fontVariantAlternates = _resolveFontVariantAlternates(
+      _getInheritedString(node, 'font-variant-alternates'),
+    );
+    final textWrap = _resolveTextWrap(
+      _getInheritedString(node, 'text-wrap'),
+    );
+    final fontPalette = _resolveFontPalette(
+      _getInheritedString(node, 'font-palette'),
+    );
+    final forcedColorAdjust = _resolveForcedColorAdjust(
+      _getInheritedString(node, 'forced-color-adjust'),
+    );
+    final printColorAdjust = _resolvePrintColorAdjust(
+      _getInheritedString(node, 'print-color-adjust'),
+    );
+    final textDecorationLine = _resolveTextDecorationLine(
+      _getInheritedString(node, 'text-decoration-line'),
+    );
+    final fontVariationSettings = _resolveFontVariationSettings(
+      _getInheritedString(node, 'font-variation-settings'),
+    );
+    final cssTextDecorationColor = _resolveCssTextDecorationColor(
+      _getInheritedString(node, 'text-decoration-color'),
+    );
+    final cssDirection = _resolveCssDirection(
+      _getInheritedString(node, 'direction'),
+    );
+    final contentVisibility = _resolveContentVisibility(
+      _getInheritedString(node, 'content-visibility'),
+    );
+    final containIntrinsicSize = _resolveContainIntrinsicSize(
+      _getInheritedString(node, 'contain-intrinsic-size'),
+    );
+    final willChange = _resolveWillChange(
+      _getInheritedString(node, 'will-change'),
+    );
+    final hyphenateCharacter = _resolveHyphenateCharacter(
+      _getInheritedString(node, 'hyphenate-character'),
+    );
+    final cssMixBlendMode = _resolveCssMixBlendMode(
+      _getInheritedString(node, 'mix-blend-mode'),
+    );
 
     return _ResolvedTextStyle(
       color: color,
@@ -133,6 +278,53 @@ extension AnimatedSvgPainterTextStyleExtension on AnimatedSvgPainter {
       lineBreak: lineBreak,
       hangingPunctuation: hangingPunctuation,
       textCombineUpright: textCombineUpright,
+      textOrientation: textOrientation,
+      textUnderlinePosition: textUnderlinePosition,
+      textUnderlineOffset: textUnderlineOffset,
+      textDecorationThickness: textDecorationThickness,
+      textDecorationSkipInk: textDecorationSkipInk,
+      textDecorationSkip: textDecorationSkip,
+      textDecorationStyle: textDecorationStyle,
+      textShadow: textShadow,
+      whiteSpace: whiteSpace,
+      textOverflow: textOverflow,
+      verticalAlign: verticalAlign,
+      lineHeight: lineHeight,
+      fontKerning: fontKerning,
+      fontVariantNumeric: fontVariantNumeric,
+      textJustify: textJustify,
+      fontVariantLigatures: fontVariantLigatures,
+      fontVariantCaps: fontVariantCaps,
+      fontOpticalSizing: fontOpticalSizing,
+      paintOrder: paintOrder,
+      textAlignLast: textAlignLast,
+      fontSynthesis: fontSynthesis,
+      fontVariantPosition: fontVariantPosition,
+      fontVariantEastAsian: fontVariantEastAsian,
+      textEmphasis: textEmphasis,
+      textEmphasisPosition: textEmphasisPosition,
+      textEmphasisColor: textEmphasisColor,
+      rubyAlign: rubyAlign,
+      rubyPosition: rubyPosition,
+      textEmphasisStyle: textEmphasisStyle,
+      quotes: quotes,
+      initialLetter: initialLetter,
+      textSpacing: textSpacing,
+      fontLanguageOverride: fontLanguageOverride,
+      fontVariantAlternates: fontVariantAlternates,
+      textWrap: textWrap,
+      fontPalette: fontPalette,
+      forcedColorAdjust: forcedColorAdjust,
+      printColorAdjust: printColorAdjust,
+      textDecorationLine: textDecorationLine,
+      fontVariationSettings: fontVariationSettings,
+      cssTextDecorationColor: cssTextDecorationColor,
+      cssDirection: cssDirection,
+      contentVisibility: contentVisibility,
+      containIntrinsicSize: containIntrinsicSize,
+      willChange: willChange,
+      hyphenateCharacter: hyphenateCharacter,
+      cssMixBlendMode: cssMixBlendMode,
     );
   }
 
@@ -492,6 +684,965 @@ extension AnimatedSvgPainterTextStyleExtension on AnimatedSvgPainter {
       }
     }
     return 'none';
+  }
+
+  /// Resolves text-orientation CSS property for vertical writing.
+  /// Returns orientation mode (mixed, upright, sideways).
+  String _resolveTextOrientation(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'mixed';
+    }
+    final normalized = value.trim().toLowerCase();
+    switch (normalized) {
+      case 'upright':
+      case 'sideways':
+      case 'sideways-right': // Legacy alias
+        return normalized == 'sideways-right' ? 'sideways' : normalized;
+      case 'mixed':
+      default:
+        return 'mixed';
+    }
+  }
+
+  /// Resolves text-underline-position CSS property.
+  /// Returns underline position (auto, under, left, right).
+  String _resolveTextUnderlinePosition(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'auto';
+    }
+    final normalized = value.trim().toLowerCase();
+    // Can have multiple values like "under left"
+    final parts = normalized.split(RegExp(r'\s+'));
+    final validValues = <String>{};
+    for (final part in parts) {
+      switch (part) {
+        case 'under':
+        case 'left':
+        case 'right':
+        case 'from-font':
+          validValues.add(part);
+          break;
+        case 'auto':
+          return 'auto';
+      }
+    }
+    return validValues.isEmpty ? 'auto' : validValues.join(' ');
+  }
+
+  /// Resolves text-underline-offset CSS property.
+  /// Returns offset value in user units or null for auto.
+  double? _resolveTextUnderlineOffset(String? value, double fontSize) {
+    if (value == null || value.trim().isEmpty || value.trim().toLowerCase() == 'auto') {
+      return null;
+    }
+    final normalized = value.trim().toLowerCase();
+    // Handle em units
+    if (normalized.endsWith('em')) {
+      final numStr = normalized.substring(0, normalized.length - 2);
+      return (double.tryParse(numStr) ?? 0.0) * fontSize;
+    }
+    // Handle px units
+    if (normalized.endsWith('px')) {
+      final numStr = normalized.substring(0, normalized.length - 2);
+      return double.tryParse(numStr);
+    }
+    // Plain number treated as px
+    return double.tryParse(normalized);
+  }
+
+  /// Resolves text-decoration-thickness CSS property.
+  /// Returns thickness value in user units or null for auto/from-font.
+  double? _resolveTextDecorationThickness(String? value, double fontSize) {
+    if (value == null || value.trim().isEmpty) {
+      return null;
+    }
+    final normalized = value.trim().toLowerCase();
+    if (normalized == 'auto' || normalized == 'from-font') {
+      return null;
+    }
+    // Handle em units
+    if (normalized.endsWith('em')) {
+      final numStr = normalized.substring(0, normalized.length - 2);
+      return (double.tryParse(numStr) ?? 0.0) * fontSize;
+    }
+    // Handle px units
+    if (normalized.endsWith('px')) {
+      final numStr = normalized.substring(0, normalized.length - 2);
+      return double.tryParse(numStr);
+    }
+    // Handle percentage (relative to 1em)
+    if (normalized.endsWith('%')) {
+      final pctStr = normalized.substring(0, normalized.length - 1);
+      final pct = double.tryParse(pctStr);
+      if (pct != null) {
+        return fontSize * pct / 100;
+      }
+      return null;
+    }
+    // Plain number treated as px
+    return double.tryParse(normalized);
+  }
+
+  /// Resolves text-decoration-skip-ink CSS property.
+  /// Controls how underlines/overlines interact with glyph descenders/ascenders.
+  /// Returns: auto, all, or none.
+  String _resolveTextDecorationSkipInk(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'auto';
+    }
+    final normalized = value.trim().toLowerCase();
+    switch (normalized) {
+      case 'all':
+        return 'all';
+      case 'none':
+        return 'none';
+      case 'auto':
+      default:
+        return 'auto';
+    }
+  }
+
+  /// Resolves text-decoration-skip CSS property.
+  /// Controls what elements text decoration lines skip over.
+  /// Returns space-separated values: none, objects, spaces, leading-spaces,
+  /// trailing-spaces, edges, box-decoration.
+  String _resolveTextDecorationSkip(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'objects';
+    }
+    final normalized = value.trim().toLowerCase();
+    // Parse valid keywords
+    final validKeywords = <String>{
+      'none',
+      'objects',
+      'spaces',
+      'leading-spaces',
+      'trailing-spaces',
+      'edges',
+      'box-decoration',
+    };
+    if (normalized == 'none') {
+      return 'none';
+    }
+    final parts = normalized.split(RegExp(r'\s+'));
+    final result = parts.where((p) => validKeywords.contains(p)).toList();
+    return result.isEmpty ? 'objects' : result.join(' ');
+  }
+
+  /// Resolves text-decoration-style CSS property.
+  /// Controls the style of the decoration line.
+  /// Returns: solid, double, dotted, dashed, or wavy.
+  String _resolveTextDecorationStyle(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'solid';
+    }
+    final normalized = value.trim().toLowerCase();
+    switch (normalized) {
+      case 'double':
+        return 'double';
+      case 'dotted':
+        return 'dotted';
+      case 'dashed':
+        return 'dashed';
+      case 'wavy':
+        return 'wavy';
+      case 'solid':
+      default:
+        return 'solid';
+    }
+  }
+
+  /// Resolves text-shadow CSS property.
+  /// Returns normalized shadow string or null for none.
+  /// Format: "offset-x offset-y blur-radius color" (multiple comma-separated)
+  String? _resolveTextShadow(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return null;
+    }
+    final normalized = value.trim().toLowerCase();
+    if (normalized == 'none' || normalized == 'inherit' || normalized == 'initial') {
+      return null;
+    }
+    // Return the value as-is for further processing
+    return value.trim();
+  }
+
+  /// Resolves white-space CSS property.
+  /// Controls how whitespace is handled in text.
+  /// Returns: normal, nowrap, pre, pre-wrap, pre-line, break-spaces.
+  String _resolveWhiteSpace(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'normal';
+    }
+    final normalized = value.trim().toLowerCase();
+    switch (normalized) {
+      case 'nowrap':
+        return 'nowrap';
+      case 'pre':
+        return 'pre';
+      case 'pre-wrap':
+        return 'pre-wrap';
+      case 'pre-line':
+        return 'pre-line';
+      case 'break-spaces':
+        return 'break-spaces';
+      case 'normal':
+      default:
+        return 'normal';
+    }
+  }
+
+  /// Resolves text-overflow CSS property.
+  /// Controls how overflowed text is represented.
+  /// Returns: clip, ellipsis, or custom string.
+  String _resolveTextOverflow(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'clip';
+    }
+    final normalized = value.trim().toLowerCase();
+    if (normalized == 'ellipsis') {
+      return 'ellipsis';
+    }
+    if (normalized == 'clip') {
+      return 'clip';
+    }
+    // Custom string value
+    return value.trim();
+  }
+
+  /// Resolves vertical-align CSS property.
+  /// Returns baseline offset in user units.
+  /// Keywords: baseline, sub, super, text-top, text-bottom, middle, top, bottom
+  /// Or a length/percentage value.
+  double _resolveVerticalAlign(String? value, double fontSize) {
+    if (value == null || value.trim().isEmpty) {
+      return 0.0;
+    }
+    final normalized = value.trim().toLowerCase();
+    switch (normalized) {
+      case 'baseline':
+        return 0.0;
+      case 'sub':
+        return -fontSize * 0.3;
+      case 'super':
+        return fontSize * 0.4;
+      case 'text-top':
+        return fontSize * 0.8;
+      case 'text-bottom':
+        return -fontSize * 0.2;
+      case 'middle':
+        return fontSize * 0.35;
+      case 'top':
+        return fontSize;
+      case 'bottom':
+        return -fontSize * 0.25;
+      default:
+        // Handle length/percentage values
+        if (normalized.endsWith('%')) {
+          final pct = double.tryParse(normalized.substring(0, normalized.length - 1));
+          if (pct != null) {
+            return fontSize * pct / 100;
+          }
+        }
+        if (normalized.endsWith('em')) {
+          final em = double.tryParse(normalized.substring(0, normalized.length - 2));
+          if (em != null) {
+            return fontSize * em;
+          }
+        }
+        if (normalized.endsWith('px')) {
+          return double.tryParse(normalized.substring(0, normalized.length - 2)) ?? 0.0;
+        }
+        return double.tryParse(normalized) ?? 0.0;
+    }
+  }
+
+  /// Resolves line-height CSS property.
+  /// Returns line height in user units, or null for normal.
+  /// Can be a number, length, or percentage.
+  double? _resolveLineHeight(String? value, double fontSize) {
+    if (value == null || value.trim().isEmpty) {
+      return null;
+    }
+    final normalized = value.trim().toLowerCase();
+    if (normalized == 'normal' || normalized == 'inherit') {
+      return null;
+    }
+    // Handle percentage
+    if (normalized.endsWith('%')) {
+      final pct = double.tryParse(normalized.substring(0, normalized.length - 1));
+      if (pct != null) {
+        return fontSize * pct / 100;
+      }
+    }
+    // Handle em units
+    if (normalized.endsWith('em')) {
+      final em = double.tryParse(normalized.substring(0, normalized.length - 2));
+      if (em != null) {
+        return fontSize * em;
+      }
+    }
+    // Handle px units
+    if (normalized.endsWith('px')) {
+      return double.tryParse(normalized.substring(0, normalized.length - 2));
+    }
+    // Plain number (unitless multiplier)
+    final num = double.tryParse(normalized);
+    if (num != null) {
+      return fontSize * num;
+    }
+    return null;
+  }
+
+  /// Resolves font-kerning CSS property.
+  /// Controls kerning behavior.
+  /// Returns: auto, normal, or none.
+  String _resolveFontKerning(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'auto';
+    }
+    final normalized = value.trim().toLowerCase();
+    switch (normalized) {
+      case 'normal':
+        return 'normal';
+      case 'none':
+        return 'none';
+      case 'auto':
+      default:
+        return 'auto';
+    }
+  }
+
+  /// Resolves font-variant-numeric CSS property.
+  /// Controls numeric glyph variants.
+  /// Returns space-separated values or 'normal'.
+  String _resolveFontVariantNumeric(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'normal';
+    }
+    final normalized = value.trim().toLowerCase();
+    if (normalized == 'normal' || normalized == 'inherit') {
+      return 'normal';
+    }
+    // Valid keywords for numeric variants
+    final validKeywords = <String>{
+      'lining-nums',
+      'oldstyle-nums',
+      'proportional-nums',
+      'tabular-nums',
+      'diagonal-fractions',
+      'stacked-fractions',
+      'ordinal',
+      'slashed-zero',
+    };
+    final parts = normalized.split(RegExp(r'\s+'));
+    final result = parts.where((p) => validKeywords.contains(p)).toList();
+    return result.isEmpty ? 'normal' : result.join(' ');
+  }
+
+  /// Resolves text-justify CSS property.
+  /// Controls text justification method.
+  /// Returns: auto, none, inter-word, or inter-character.
+  String _resolveTextJustify(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'auto';
+    }
+    final normalized = value.trim().toLowerCase();
+    switch (normalized) {
+      case 'none':
+        return 'none';
+      case 'inter-word':
+        return 'inter-word';
+      case 'inter-character':
+        return 'inter-character';
+      case 'auto':
+      default:
+        return 'auto';
+    }
+  }
+
+  /// Resolves font-variant-ligatures CSS property.
+  /// Controls ligature usage.
+  /// Returns: normal, none, or specific ligature keywords.
+  String _resolveFontVariantLigatures(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'normal';
+    }
+    final normalized = value.trim().toLowerCase();
+    if (normalized == 'normal' || normalized == 'inherit') {
+      return 'normal';
+    }
+    if (normalized == 'none') {
+      return 'none';
+    }
+    // Valid keywords
+    final validKeywords = <String>{
+      'common-ligatures',
+      'no-common-ligatures',
+      'discretionary-ligatures',
+      'no-discretionary-ligatures',
+      'historical-ligatures',
+      'no-historical-ligatures',
+      'contextual',
+      'no-contextual',
+    };
+    final parts = normalized.split(RegExp(r'\s+'));
+    final result = parts.where((p) => validKeywords.contains(p)).toList();
+    return result.isEmpty ? 'normal' : result.join(' ');
+  }
+
+  /// Resolves font-variant-caps CSS property.
+  /// Controls capital letter glyph variants.
+  /// Returns: normal, small-caps, all-small-caps, petite-caps, all-petite-caps, unicase, titling-caps.
+  String _resolveFontVariantCaps(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'normal';
+    }
+    final normalized = value.trim().toLowerCase();
+    switch (normalized) {
+      case 'small-caps':
+        return 'small-caps';
+      case 'all-small-caps':
+        return 'all-small-caps';
+      case 'petite-caps':
+        return 'petite-caps';
+      case 'all-petite-caps':
+        return 'all-petite-caps';
+      case 'unicase':
+        return 'unicase';
+      case 'titling-caps':
+        return 'titling-caps';
+      case 'normal':
+      default:
+        return 'normal';
+    }
+  }
+
+  /// Resolves font-optical-sizing CSS property.
+  /// Controls optical sizing.
+  /// Returns: auto or none.
+  String _resolveFontOpticalSizing(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'auto';
+    }
+    final normalized = value.trim().toLowerCase();
+    if (normalized == 'none') {
+      return 'none';
+    }
+    return 'auto';
+  }
+
+  /// Resolves paint-order CSS property.
+  /// Controls the order of fill, stroke, and markers.
+  /// Returns: normal, or space-separated list of fill/stroke/markers.
+  String _resolvePaintOrder(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'normal';
+    }
+    final normalized = value.trim().toLowerCase();
+    if (normalized == 'normal') {
+      return 'normal';
+    }
+    // Valid keywords
+    final validKeywords = <String>{'fill', 'stroke', 'markers'};
+    final parts = normalized.split(RegExp(r'\s+'));
+    final result = parts.where((p) => validKeywords.contains(p)).toList();
+    return result.isEmpty ? 'normal' : result.join(' ');
+  }
+
+  /// Resolves text-align-last CSS property.
+  /// Controls alignment of the last line of text.
+  /// Returns: auto, start, end, left, right, center, justify.
+  String _resolveTextAlignLast(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'auto';
+    }
+    final normalized = value.trim().toLowerCase();
+    switch (normalized) {
+      case 'start':
+        return 'start';
+      case 'end':
+        return 'end';
+      case 'left':
+        return 'left';
+      case 'right':
+        return 'right';
+      case 'center':
+        return 'center';
+      case 'justify':
+        return 'justify';
+      case 'auto':
+      default:
+        return 'auto';
+    }
+  }
+
+  /// Resolves font-synthesis CSS property.
+  /// Controls automatic font synthesis.
+  /// Returns: none, or space-separated list of weight/style/small-caps.
+  String _resolveFontSynthesis(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'weight style small-caps';
+    }
+    final normalized = value.trim().toLowerCase();
+    if (normalized == 'none') {
+      return 'none';
+    }
+    // Valid keywords
+    final validKeywords = <String>{'weight', 'style', 'small-caps'};
+    final parts = normalized.split(RegExp(r'\s+'));
+    final result = parts.where((p) => validKeywords.contains(p)).toList();
+    return result.isEmpty ? 'weight style small-caps' : result.join(' ');
+  }
+
+  /// Resolves font-variant-position CSS property.
+  /// Controls subscript/superscript glyph variants.
+  /// Returns: normal, sub, or super.
+  String _resolveFontVariantPosition(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'normal';
+    }
+    final normalized = value.trim().toLowerCase();
+    switch (normalized) {
+      case 'sub':
+        return 'sub';
+      case 'super':
+        return 'super';
+      case 'normal':
+      default:
+        return 'normal';
+    }
+  }
+
+  /// Resolves font-variant-east-asian CSS property.
+  /// Controls East Asian font variants.
+  /// Returns: normal, or space-separated list of keywords.
+  String _resolveFontVariantEastAsian(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'normal';
+    }
+    final normalized = value.trim().toLowerCase();
+    if (normalized == 'normal') {
+      return 'normal';
+    }
+    // Valid keywords
+    final validKeywords = <String>{
+      'jis78',
+      'jis83',
+      'jis90',
+      'jis04',
+      'simplified',
+      'traditional',
+      'full-width',
+      'proportional-width',
+      'ruby',
+    };
+    final parts = normalized.split(RegExp(r'\s+'));
+    final result = parts.where((p) => validKeywords.contains(p)).toList();
+    return result.isEmpty ? 'normal' : result.join(' ');
+  }
+
+  /// Resolves text-emphasis CSS property.
+  /// Controls emphasis marks for text.
+  /// Returns: none, or emphasis style string.
+  String? _resolveTextEmphasis(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return null;
+    }
+    final normalized = value.trim().toLowerCase();
+    if (normalized == 'none') {
+      return null;
+    }
+    // Return as-is for further processing
+    return value.trim();
+  }
+
+  /// Resolves text-emphasis-position CSS property.
+  /// Controls position of emphasis marks.
+  /// Returns: over, under, over right, under left, etc.
+  String _resolveTextEmphasisPosition(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'over right';
+    }
+    final normalized = value.trim().toLowerCase();
+    // Valid combinations: over/under + right/left
+    final validKeywords = <String>{'over', 'under', 'right', 'left'};
+    final parts = normalized.split(RegExp(r'\s+'));
+    final result = parts.where((p) => validKeywords.contains(p)).toList();
+    return result.isEmpty ? 'over right' : result.join(' ');
+  }
+
+  /// Resolves text-emphasis-color CSS property.
+  /// Controls color of emphasis marks.
+  /// Returns: null for currentColor, or color string.
+  String? _resolveTextEmphasisColor(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return null; // currentColor
+    }
+    final normalized = value.trim().toLowerCase();
+    if (normalized == 'currentcolor') {
+      return null;
+    }
+    return value.trim();
+  }
+
+  /// Resolves ruby-align CSS property.
+  /// Controls alignment of ruby text.
+  /// Returns: space-around, start, center, space-between.
+  String _resolveRubyAlign(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'space-around';
+    }
+    final normalized = value.trim().toLowerCase();
+    switch (normalized) {
+      case 'start':
+        return 'start';
+      case 'center':
+        return 'center';
+      case 'space-between':
+        return 'space-between';
+      case 'space-around':
+      default:
+        return 'space-around';
+    }
+  }
+
+  /// Resolves ruby-position CSS property.
+  /// Controls position of ruby text.
+  /// Returns: over, under, inter-character, alternate.
+  String _resolveRubyPosition(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'over';
+    }
+    final normalized = value.trim().toLowerCase();
+    switch (normalized) {
+      case 'under':
+        return 'under';
+      case 'inter-character':
+        return 'inter-character';
+      case 'alternate':
+        return 'alternate';
+      case 'over':
+      default:
+        return 'over';
+    }
+  }
+
+  /// Resolves text-emphasis-style CSS property.
+  /// Controls style of emphasis marks.
+  /// Returns: none, filled, open, dot, circle, double-circle, triangle, sesame.
+  String? _resolveTextEmphasisStyle(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return null;
+    }
+    final normalized = value.trim().toLowerCase();
+    if (normalized == 'none') {
+      return null;
+    }
+    // Return as-is for further processing
+    return value.trim();
+  }
+
+  /// Resolves quotes CSS property.
+  /// Controls quotation marks used.
+  /// Returns: auto, none, or quote strings.
+  String? _resolveQuotes(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return null; // auto
+    }
+    final normalized = value.trim().toLowerCase();
+    if (normalized == 'auto' || normalized == 'none') {
+      return normalized;
+    }
+    // Return as-is for further processing (quote pairs)
+    return value.trim();
+  }
+
+  /// Resolves initial-letter CSS property.
+  /// Controls drop caps / initial letters.
+  /// Returns: normal, or size value.
+  String? _resolveInitialLetter(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return null; // normal
+    }
+    final normalized = value.trim().toLowerCase();
+    if (normalized == 'normal') {
+      return null;
+    }
+    // Return as-is for size value parsing
+    return value.trim();
+  }
+
+  /// Resolves text-spacing CSS property.
+  /// Controls spacing adjustments for CJK punctuation.
+  /// Returns: normal, none, auto, or combination.
+  String _resolveTextSpacing(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'normal';
+    }
+    final normalized = value.trim().toLowerCase();
+    switch (normalized) {
+      case 'none':
+        return 'none';
+      case 'auto':
+        return 'auto';
+      case 'normal':
+      default:
+        return 'normal';
+    }
+  }
+
+  /// Resolves font-language-override CSS property.
+  /// Controls OpenType language system.
+  /// Returns: normal, or language tag.
+  String? _resolveFontLanguageOverride(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return null; // normal
+    }
+    final normalized = value.trim().toLowerCase();
+    if (normalized == 'normal') {
+      return null;
+    }
+    // Return as-is for language tag
+    return value.trim();
+  }
+
+  /// Resolves font-variant-alternates CSS property.
+  /// Controls OpenType stylistic alternates.
+  /// Returns: normal, or alternate functions.
+  String? _resolveFontVariantAlternates(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return null; // normal
+    }
+    final normalized = value.trim().toLowerCase();
+    if (normalized == 'normal') {
+      return null;
+    }
+    // Return as-is for alternate functions
+    return value.trim();
+  }
+
+  /// Resolves text-wrap CSS property.
+  /// Controls text wrapping behavior.
+  /// Returns: wrap, nowrap, balance, pretty, stable.
+  String _resolveTextWrap(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'wrap';
+    }
+    final normalized = value.trim().toLowerCase();
+    switch (normalized) {
+      case 'nowrap':
+        return 'nowrap';
+      case 'balance':
+        return 'balance';
+      case 'pretty':
+        return 'pretty';
+      case 'stable':
+        return 'stable';
+      case 'wrap':
+      default:
+        return 'wrap';
+    }
+  }
+
+  /// Resolves font-palette CSS property.
+  /// Controls color font palettes.
+  /// Returns: normal, light, dark, or palette name.
+  String? _resolveFontPalette(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return null; // normal
+    }
+    final normalized = value.trim().toLowerCase();
+    if (normalized == 'normal') {
+      return null;
+    }
+    if (normalized == 'light' || normalized == 'dark') {
+      return normalized;
+    }
+    // Return as-is for custom palette
+    return value.trim();
+  }
+
+  /// Resolves forced-color-adjust CSS property.
+  /// Controls forced colors mode behavior.
+  /// Returns: auto, none, preserve-parent-color.
+  String _resolveForcedColorAdjust(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'auto';
+    }
+    final normalized = value.trim().toLowerCase();
+    switch (normalized) {
+      case 'none':
+        return 'none';
+      case 'preserve-parent-color':
+        return 'preserve-parent-color';
+      case 'auto':
+      default:
+        return 'auto';
+    }
+  }
+
+  /// Resolves print-color-adjust CSS property.
+  /// Controls printing color adjustment.
+  /// Returns: economy, exact.
+  String _resolvePrintColorAdjust(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'economy';
+    }
+    final normalized = value.trim().toLowerCase();
+    if (normalized == 'exact') {
+      return 'exact';
+    }
+    return 'economy';
+  }
+
+  /// Resolves text-decoration-line CSS property.
+  /// Controls which lines to display.
+  /// Returns: none, or combination of underline/overline/line-through/blink.
+  String _resolveTextDecorationLine(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'none';
+    }
+    final normalized = value.trim().toLowerCase();
+    if (normalized == 'none') {
+      return 'none';
+    }
+    // Valid keywords
+    final validKeywords = <String>{
+      'underline',
+      'overline',
+      'line-through',
+      'blink',
+    };
+    final parts = normalized.split(RegExp(r'\s+'));
+    final result = parts.where((p) => validKeywords.contains(p)).toList();
+    return result.isEmpty ? 'none' : result.join(' ');
+  }
+
+  /// Resolves font-variation-settings CSS property.
+  /// Controls variable font axes.
+  /// Returns: normal, or axis settings string.
+  String? _resolveFontVariationSettings(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return null; // normal
+    }
+    final normalized = value.trim().toLowerCase();
+    if (normalized == 'normal') {
+      return null;
+    }
+    // Return as-is for axis settings
+    return value.trim();
+  }
+
+  /// Resolves text-decoration-color CSS property.
+  /// Controls color of text decorations.
+  /// Returns: null for currentColor, or color string.
+  String? _resolveCssTextDecorationColor(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return null; // currentColor
+    }
+    final normalized = value.trim().toLowerCase();
+    if (normalized == 'currentcolor') {
+      return null;
+    }
+    return value.trim();
+  }
+
+  /// Resolves direction CSS property.
+  /// Controls text direction.
+  /// Returns: ltr or rtl.
+  String _resolveCssDirection(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'ltr';
+    }
+    final normalized = value.trim().toLowerCase();
+    if (normalized == 'rtl') {
+      return 'rtl';
+    }
+    return 'ltr';
+  }
+
+  /// Resolves content-visibility CSS property.
+  /// Controls rendering visibility optimization.
+  /// Returns: visible, hidden, auto.
+  String _resolveContentVisibility(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'visible';
+    }
+    final normalized = value.trim().toLowerCase();
+    switch (normalized) {
+      case 'hidden':
+        return 'hidden';
+      case 'auto':
+        return 'auto';
+      case 'visible':
+      default:
+        return 'visible';
+    }
+  }
+
+  /// Resolves contain-intrinsic-size CSS property.
+  /// Controls intrinsic size for content-visibility.
+  /// Returns: none, auto, or size value.
+  String? _resolveContainIntrinsicSize(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return null; // none
+    }
+    final normalized = value.trim().toLowerCase();
+    if (normalized == 'none') {
+      return null;
+    }
+    // Return as-is for size parsing
+    return value.trim();
+  }
+
+  /// Resolves will-change CSS property.
+  /// Hints browser about expected changes.
+  /// Returns: auto, or property names.
+  String _resolveWillChange(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'auto';
+    }
+    final normalized = value.trim().toLowerCase();
+    if (normalized == 'auto') {
+      return 'auto';
+    }
+    // Return as-is for property names
+    return value.trim();
+  }
+
+  /// Resolves hyphenate-character CSS property.
+  /// Controls hyphenation character.
+  /// Returns: auto, or custom character string.
+  String _resolveHyphenateCharacter(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'auto';
+    }
+    final normalized = value.trim().toLowerCase();
+    if (normalized == 'auto') {
+      return 'auto';
+    }
+    // Return as-is for custom character
+    return value.trim();
+  }
+
+  /// Resolves mix-blend-mode CSS property.
+  /// Controls blending mode.
+  /// Returns: normal, multiply, screen, overlay, etc.
+  String _resolveCssMixBlendMode(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'normal';
+    }
+    final normalized = value.trim().toLowerCase();
+    const validModes = <String>{
+      'normal', 'multiply', 'screen', 'overlay', 'darken', 'lighten',
+      'color-dodge', 'color-burn', 'hard-light', 'soft-light',
+      'difference', 'exclusion', 'hue', 'saturation', 'color', 'luminosity',
+    };
+    if (validModes.contains(normalized)) {
+      return normalized;
+    }
+    return 'normal';
   }
 
   /// Resolves text-rendering CSS property to font features.

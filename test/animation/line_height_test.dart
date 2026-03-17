@@ -2,11 +2,11 @@ import 'package:flutter_svg/src/animation/animated_svg_picture.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('white-space CSS property', () {
-    testWidgets('white-space: normal (default)', (tester) async {
+  group('line-height CSS property', () {
+    testWidgets('line-height: normal (default)', (tester) async {
       const svg = '''
-        <svg viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg">
-          <text x="10" y="30" font-size="16">Normal   spaces</text>
+        <svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+          <text x="10" y="30" font-size="16">Normal</text>
         </svg>
       ''';
       await tester.pumpWidget(
@@ -16,10 +16,10 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('white-space: nowrap', (tester) async {
+    testWidgets('line-height: number (unitless)', (tester) async {
       const svg = '''
-        <svg viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg">
-          <text x="10" y="30" font-size="16" style="white-space: nowrap">No wrap</text>
+        <svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+          <text x="10" y="30" font-size="16" style="line-height: 1.5">1.5x</text>
         </svg>
       ''';
       await tester.pumpWidget(
@@ -29,10 +29,10 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('white-space: pre', (tester) async {
+    testWidgets('line-height: px value', (tester) async {
       const svg = '''
-        <svg viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg">
-          <text x="10" y="30" font-size="16" style="white-space: pre">Pre   spaces</text>
+        <svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+          <text x="10" y="30" font-size="16" style="line-height: 24px">24px</text>
         </svg>
       ''';
       await tester.pumpWidget(
@@ -42,10 +42,10 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('white-space: pre-wrap', (tester) async {
+    testWidgets('line-height: em value', (tester) async {
       const svg = '''
-        <svg viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg">
-          <text x="10" y="30" font-size="16" style="white-space: pre-wrap">Pre wrap</text>
+        <svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+          <text x="10" y="30" font-size="16" style="line-height: 1.5em">1.5em</text>
         </svg>
       ''';
       await tester.pumpWidget(
@@ -55,10 +55,10 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('white-space: pre-line', (tester) async {
+    testWidgets('line-height: percentage', (tester) async {
       const svg = '''
-        <svg viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg">
-          <text x="10" y="30" font-size="16" style="white-space: pre-line">Pre line</text>
+        <svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+          <text x="10" y="30" font-size="16" style="line-height: 150%">150%</text>
         </svg>
       ''';
       await tester.pumpWidget(
@@ -68,10 +68,12 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('white-space: break-spaces', (tester) async {
+    testWidgets('line-height: inheritance', (tester) async {
       const svg = '''
-        <svg viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg">
-          <text x="10" y="30" font-size="16" style="white-space: break-spaces">Break spaces</text>
+        <svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+          <g style="line-height: 2">
+            <text x="10" y="30" font-size="16">Inherited</text>
+          </g>
         </svg>
       ''';
       await tester.pumpWidget(

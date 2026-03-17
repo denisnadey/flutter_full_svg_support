@@ -2,11 +2,11 @@ import 'package:flutter_svg/src/animation/animated_svg_picture.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('paint-order CSS property', () {
-    testWidgets('paint-order: normal (default)', (tester) async {
+  group('font-variant-ligatures CSS property', () {
+    testWidgets('font-variant-ligatures: normal (default)', (tester) async {
       const svg = '''
         <svg viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg">
-          <text x="10" y="30" font-size="16" fill="blue" stroke="red">Normal</text>
+          <text x="10" y="30" font-size="16">fi fl</text>
         </svg>
       ''';
       await tester.pumpWidget(AnimatedSvgPicture.string(svg));
@@ -14,10 +14,10 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('paint-order: stroke fill', (tester) async {
+    testWidgets('font-variant-ligatures: none', (tester) async {
       const svg = '''
         <svg viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg">
-          <text x="10" y="30" font-size="16" fill="blue" stroke="red" style="paint-order: stroke fill">Stroke first</text>
+          <text x="10" y="30" font-size="16" style="font-variant-ligatures: none">fi fl</text>
         </svg>
       ''';
       await tester.pumpWidget(AnimatedSvgPicture.string(svg));
@@ -25,10 +25,10 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('paint-order: fill stroke markers', (tester) async {
+    testWidgets('font-variant-ligatures: common-ligatures', (tester) async {
       const svg = '''
         <svg viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg">
-          <text x="10" y="30" font-size="16" fill="blue" stroke="red" style="paint-order: fill stroke markers">All three</text>
+          <text x="10" y="30" font-size="16" style="font-variant-ligatures: common-ligatures">fi fl</text>
         </svg>
       ''';
       await tester.pumpWidget(AnimatedSvgPicture.string(svg));
@@ -36,10 +36,10 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('paint-order: stroke', (tester) async {
+    testWidgets('font-variant-ligatures: discretionary-ligatures', (tester) async {
       const svg = '''
         <svg viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg">
-          <text x="10" y="30" font-size="16" fill="blue" stroke="red" style="paint-order: stroke">Stroke only</text>
+          <text x="10" y="30" font-size="16" style="font-variant-ligatures: discretionary-ligatures">st ct</text>
         </svg>
       ''';
       await tester.pumpWidget(AnimatedSvgPicture.string(svg));
