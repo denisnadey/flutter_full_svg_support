@@ -2,20 +2,29 @@
 
 <cite>
 **Referenced Files in This Document**
-- [SVGAnimateMotionElement.cpp](file://blink-b87d44f-Source-core-svg/SVGAnimateMotionElement.cpp)
-- [SVGAnimateMotionElement.h](file://blink-b87d44f-Source-core-svg/SVGAnimateMotionElement.h)
-- [SVGPathUtilities.cpp](file://blink-b87d44f-Source-core-svg/SVGPathUtilities.cpp)
-- [SVGPathUtilities.h](file://blink-b87d44f-Source-core-svg/SVGPathUtilities.h)
-- [SVGPathParser.cpp](file://blink-b87d44f-Source-core-svg/SVGPathParser.cpp)
-- [SVGPathParser.h](file://blink-b87d44f-Source-core-svg/SVGPathParser.h)
-- [SVGPathBuilder.cpp](file://blink-b87d44f-Source-core-svg/SVGPathBuilder.cpp)
-- [SVGPathBuilder.h](file://blink-b87d44f-Source-core-svg/SVGPathBuilder.h)
-- [SMILTime.cpp](file://blink-b87d44f-Source-core-svg/animation/SMILTime.cpp)
-- [SMILTime.h](file://blink-b87d44f-Source-core-svg/animation/SMILTime.h)
-- [SMILTimeContainer.cpp](file://blink-b87d44f-Source-core-svg/animation/SMILTimeContainer.cpp)
-- [SMILTimeContainer.h](file://blink-b87d44f-Source-core-svg/animation/SMILTimeContainer.h)
+- [motion_path.dart](file://lib/src/animation/smil/motion_path.dart)
+- [smil_animation.dart](file://lib/src/animation/smil/smil_animation.dart)
+- [smil_animation_value_computation.dart](file://lib/src/animation/smil/smil_animation_value_computation.dart)
+- [smil_animation_runtime.dart](file://lib/src/animation/smil/smil_animation_runtime.dart)
+- [smil_animation_curves.dart](file://lib/src/animation/smil/smil_animation_curves.dart)
+- [distance_calculator.dart](file://lib/src/animation/smil/distance_calculator.dart)
+- [smil_parser.dart](file://lib/src/animation/smil/smil_parser.dart)
+- [smil_parser_motion.dart](file://lib/src/animation/smil/smil_parser_motion.dart)
+- [animate_motion_advanced_test.dart](file://test/animation/animate_motion_advanced_test.dart)
 - [motion_path_test.dart](file://test/animation/motion_path_test.dart)
+- [paced_calcmode_test.dart](file://test/animation/paced_calcmode_test.dart)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Added comprehensive arc path support with degenerate case handling
+- Implemented segment boundary tangent averaging for smooth rotation transitions
+- Enhanced coordinate pair parsing for values, from/to, and by attributes
+- Added advanced calcMode behaviors including paced and spline modes
+- Implemented accumulate sum functionality for repeated animations
+- Enhanced rotation semantics with auto, auto-reverse, and fixed angle rotations
+- Added comprehensive path priority handling and mpath reference resolution
+- Expanded test coverage for complex animation scenarios and edge cases
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -23,329 +32,457 @@
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
 5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Dependency Analysis](#dependency-analysis)
-7. [Performance Considerations](#performance-considerations)
-8. [Troubleshooting Guide](#troubleshooting-guide)
-9. [Conclusion](#conclusion)
-10. [Appendices](#appendices)
+6. [Advanced Features and Capabilities](#advanced-features-and-capabilities)
+7. [Test Coverage and Validation](#test-coverage-and-validation)
+8. [Dependency Analysis](#dependency-analysis)
+9. [Performance Considerations](#performance-considerations)
+10. [Troubleshooting Guide](#troubleshooting-guide)
+11. [Conclusion](#conclusion)
+12. [Appendices](#appendices)
 
 ## Introduction
 This document explains the motion animation and path tracking systems implemented in the repository. It focuses on:
-- Motion path parsing and normalization
-- Path-based animations and object positioning along complex curves
-- Timeline integration and synchronization
-- Path parameterization, smoothing, and keypoint/timing controls
-- Velocity and acceleration modeling
+- Advanced motion path parsing and normalization including arc support
+- Path-based animations and object positioning along complex curves with smooth rotation
+- Timeline integration and synchronization with CSS animation compatibility
+- Advanced path parameterization, smoothing, and keypoint/timing controls
+- Velocity and acceleration modeling with paced calcMode behavior
+- Comprehensive coordinate pair parsing for values, from/to, and by attributes
+- Rotation semantics with auto, auto-reverse, and fixed angle rotations
 - Practical examples for vehicles, particles, and complex motion sequences
 - Guidance for realistic motion and optimization
 
 ## Project Structure
-The motion animation stack spans two primary areas:
-- Core SVG engine (C++): path parsing, path utilities, and SMIL time containers
-- Dart test layer: motion path model and tests validating path sampling, angles, keypoints, and timing
+The motion animation stack spans three primary areas:
+- Core SMIL animation engine (Dart): motion path utilities, animation computation, and parser logic
+- Advanced test suite: comprehensive validation of complex animation scenarios
+- CSS animation compatibility layer: seamless integration with CSS animation specifications
 
 ```mermaid
 graph TB
-subgraph "Dart Layer"
-MP["MotionPath (Dart)"]
-Tests["motion_path_test.dart"]
+subgraph "Dart Core Layer"
+MP["MotionPath"]
+SA["SmilAnimation"]
+SAC["Value Computation"]
+SAR["Runtime Management"]
+SACU["Curve Utilities"]
+DC["Distance Calculator"]
 end
-subgraph "C++ Core"
-AMP["SVGAnimateMotionElement"]
-PUtil["SVGPathUtilities"]
-PParser["SVGPathParser"]
-PBuilder["SVGPathBuilder"]
-STime["SMILTime"]
-STC["SMILTimeContainer"]
+subgraph "Parser Layer"
+SP["SmilParser"]
+SPM["Motion Parser"]
 end
-MP --> PUtil
-AMP --> PUtil
-PUtil --> PParser
-PUtil --> PBuilder
-AMP --> STC
-STC --> STime
-Tests --> MP
+subgraph "Test Coverage"
+AMAT["AnimateMotion Advanced Tests"]
+MPT["MotionPath Tests"]
+PCM["Paced CalcMode Tests"]
+end
+MP --> SAC
+SA --> SAC
+SAC --> SPM
+SP --> SPM
+SP --> SA
+SPM --> MP
+SAC --> DC
+SAR --> SA
+AMAT --> MP
+AMAT --> SA
+MPT --> MP
+PCM --> DC
 ```
 
 **Diagram sources**
-- [SVGAnimateMotionElement.cpp:1-351](file://blink-b87d44f-Source-core-svg/SVGAnimateMotionElement.cpp#L1-L351)
-- [SVGPathUtilities.cpp:1-333](file://blink-b87d44f-Source-core-svg/SVGPathUtilities.cpp#L1-L333)
-- [SVGPathParser.cpp:1-496](file://blink-b87d44f-Source-core-svg/SVGPathParser.cpp#L1-L496)
-- [SVGPathBuilder.cpp:1-71](file://blink-b87d44f-Source-core-svg/SVGPathBuilder.cpp#L1-L71)
-- [SMILTime.cpp:1-66](file://blink-b87d44f-Source-core-svg/animation/SMILTime.cpp#L1-L66)
-- [SMILTimeContainer.cpp:1-332](file://blink-b87d44f-Source-core-svg/animation/SMILTimeContainer.cpp#L1-L332)
-- [motion_path_test.dart:1-189](file://test/animation/motion_path_test.dart#L1-L189)
+- [motion_path.dart:1-557](file://lib/src/animation/smil/motion_path.dart#L1-L557)
+- [smil_animation.dart:1-491](file://lib/src/animation/smil/smil_animation.dart#L1-L491)
+- [smil_parser_motion.dart:1-264](file://lib/src/animation/smil/smil_parser_motion.dart#L1-L264)
+- [animate_motion_advanced_test.dart:1-719](file://test/animation/animate_motion_advanced_test.dart#L1-L719)
 
 **Section sources**
-- [SVGAnimateMotionElement.cpp:1-351](file://blink-b87d44f-Source-core-svg/SVGAnimateMotionElement.cpp#L1-L351)
-- [SVGPathUtilities.cpp:1-333](file://blink-b87d44f-Source-core-svg/SVGPathUtilities.cpp#L1-L333)
-- [SVGPathParser.cpp:1-496](file://blink-b87d44f-Source-core-svg/SVGPathParser.cpp#L1-L496)
-- [SVGPathBuilder.cpp:1-71](file://blink-b87d44f-Source-core-svg/SVGPathBuilder.cpp#L1-L71)
-- [SMILTime.cpp:1-66](file://blink-b87d44f-Source-core-svg/animation/SMILTime.cpp#L1-L66)
-- [SMILTimeContainer.cpp:1-332](file://blink-b87d44f-Source-core-svg/animation/SMILTimeContainer.cpp#L1-L332)
-- [motion_path_test.dart:1-189](file://test/animation/motion_path_test.dart#L1-L189)
+- [motion_path.dart:1-557](file://lib/src/animation/smil/motion_path.dart#L1-L557)
+- [smil_animation.dart:1-491](file://lib/src/animation/smil/smil_animation.dart#L1-L491)
+- [smil_parser_motion.dart:1-264](file://lib/src/animation/smil/smil_parser_motion.dart#L1-L264)
+- [animate_motion_advanced_test.dart:1-719](file://test/animation/animate_motion_advanced_test.dart#L1-L719)
 
 ## Core Components
-- Motion path parsing and utilities:
-  - Path parsing from SVG path strings into a normalized representation
-  - Length computation, point-at-length sampling, and segment indexing
-- Motion animation element:
-  - Applies translation and optional rotation along a path
-  - Supports “auto” and “auto-reverse” rotation modes
-- Timeline and synchronization:
-  - SMIL time container manages scheduling, pausing, resuming, and seeking
-  - Provides per-frame updates and priority sorting of animations
+- **Advanced Motion Path System**:
+  - Comprehensive SVG path parsing including arcs, curves, and complex geometries
+  - Segment boundary tangent averaging for smooth rotation transitions
+  - Degenerate case handling for zero-length segments and invalid paths
+  - Coordinate pair parsing for values, from/to, and by attributes
+- **Enhanced Animation Engine**:
+  - Support for advanced calcMode behaviors (paced, spline, discrete)
+  - Accumulate sum functionality for repeated animations
+  - Comprehensive rotation semantics with auto, auto-reverse, and fixed angles
+  - CSS animation compatibility (direction, fill modes, additive modes)
+- **Smart Path Resolution**:
+  - Path priority handling (path > values > from/to/by)
+  - mpath reference resolution with href and xlink:href support
+  - Inline path override behavior validation
 
 Key capabilities:
-- Parse SVG path data (moveto, lineto, curveto, arcto, closepath)
-- Normalize coordinates and convert arcs to cubic Beziers
-- Compute total length and sample positions/angles along the path
-- Drive object transforms for motion animation with rotation
+- Parse complex SVG path data with arc support and degenerate handling
+- Compute smooth tangents at segment boundaries with averaging
+- Support advanced coordinate pair formats (comma/whitespace separated)
+- Implement paced calcMode with distance-based keyTimes generation
+- Apply spline easing with keySplines for custom motion curves
+- Handle accumulate="sum" for repeated animation positioning
+- Support comprehensive rotation modes with automatic tangent alignment
 
 **Section sources**
-- [SVGPathUtilities.cpp:110-333](file://blink-b87d44f-Source-core-svg/SVGPathUtilities.cpp#L110-L333)
-- [SVGPathParser.cpp:284-496](file://blink-b87d44f-Source-core-svg/SVGPathParser.cpp#L284-L496)
-- [SVGPathBuilder.cpp:36-71](file://blink-b87d44f-Source-core-svg/SVGPathBuilder.cpp#L36-L71)
-- [SVGAnimateMotionElement.cpp:121-351](file://blink-b87d44f-Source-core-svg/SVGAnimateMotionElement.cpp#L121-L351)
-- [SMILTimeContainer.cpp:107-332](file://blink-b87d44f-Source-core-svg/animation/SMILTimeContainer.cpp#L107-L332)
-- [SMILTime.cpp:34-66](file://blink-b87d44f-Source-core-svg/animation/SMILTime.cpp#L34-L66)
+- [motion_path.dart:237-259](file://lib/src/animation/smil/motion_path.dart#L237-L259)
+- [motion_path.dart:367-398](file://lib/src/animation/smil/motion_path.dart#L367-L398)
+- [motion_path.dart:522-555](file://lib/src/animation/smil/motion_path.dart#L522-L555)
+- [smil_animation.dart:32-44](file://lib/src/animation/smil/smil_animation.dart#L32-L44)
+- [smil_animation.dart:271-272](file://lib/src/animation/smil/smil_animation.dart#L271-L272)
+- [smil_parser_motion.dart:13-14](file://lib/src/animation/smil/smil_parser_motion.dart#L13-L14)
 
 ## Architecture Overview
-The motion animation pipeline integrates path parsing, path utilities, and SMIL timing to produce smooth, synchronized motion.
+The motion animation pipeline integrates advanced path parsing, sophisticated animation computation, and comprehensive test validation to produce robust, standards-compliant motion animations.
 
 ```mermaid
 sequenceDiagram
-participant App as "Caller"
-participant AMP as "SVGAnimateMotionElement"
-participant PUtil as "SVGPathUtilities"
-participant PParser as "SVGPathParser"
-participant PBuilder as "SVGPathBuilder"
-participant STC as "SMILTimeContainer"
-participant ST as "SMILTime"
-App->>AMP : "configure path/attributes"
-AMP->>PUtil : "buildPathFromString()"
-PUtil->>PParser : "parse path data"
-PParser->>PBuilder : "emit path segments"
-AMP->>STC : "schedule(animation)"
-loop "frame"
-STC->>ST : "elapsed()"
-STC->>AMP : "progress(elapsed)"
-AMP->>PUtil : "pointAndNormalAtLength()"
-AMP-->>App : "applied transform (translate/rotate)"
-end
+participant App as "Application"
+participant SP as "SmilParser"
+participant SPM as "Motion Parser"
+participant SA as "SmilAnimation"
+participant MP as "MotionPath"
+participant DC as "Distance Calculator"
+App->>SP : "parseAnimations(svgDocument)"
+SP->>SPM : "_parseAnimateMotion(node, target)"
+SPM->>SPM : "_resolveAnimateMotionPathData()"
+SPM->>MP : "MotionPath(pathData)"
+SPM->>SA : "SmilAnimation(...)"
+SA->>SA : "validate calcMode & parameters"
+SA->>DC : "_generatePacedKeyTimes()"
+DC->>MP : "getSegmentLengths()"
+SA->>SA : "computeValue(t, repeats)"
+SA->>MP : "getPointAtTime/easedT"
+SA-->>App : "transform string (translate/rotate)"
+Note over SA,MP : Advanced features :
+Note over SA,MP : - Segment boundary tangent averaging
+Note over SA,MP : - Coordinate pair parsing
+Note over SA,MP : - Spline easing application
+Note over SA,MP : - Accumulate sum handling
 ```
 
 **Diagram sources**
-- [SVGAnimateMotionElement.cpp:104-351](file://blink-b87d44f-Source-core-svg/SVGAnimateMotionElement.cpp#L104-L351)
-- [SVGPathUtilities.cpp:110-333](file://blink-b87d44f-Source-core-svg/SVGPathUtilities.cpp#L110-L333)
-- [SVGPathParser.cpp:284-496](file://blink-b87d44f-Source-core-svg/SVGPathParser.cpp#L284-L496)
-- [SVGPathBuilder.cpp:36-71](file://blink-b87d44f-Source-core-svg/SVGPathBuilder.cpp#L36-L71)
-- [SMILTimeContainer.cpp:262-332](file://blink-b87d44f-Source-core-svg/animation/SMILTimeContainer.cpp#L262-L332)
-- [SMILTime.cpp:34-66](file://blink-b87d44f-Source-core-svg/animation/SMILTime.cpp#L34-L66)
+- [smil_parser_motion.dart:3-205](file://lib/src/animation/smil/smil_parser_motion.dart#L3-L205)
+- [smil_animation_value_computation.dart:102-173](file://lib/src/animation/smil/smil_animation_value_computation.dart#L102-L173)
+- [motion_path.dart:281-348](file://lib/src/animation/smil/motion_path.dart#L281-L348)
+- [distance_calculator.dart:142-146](file://lib/src/animation/smil/distance_calculator.dart#L142-L146)
 
 ## Detailed Component Analysis
 
-### Motion Path Parsing and Utilities
-- Path parsing:
-  - Converts SVG path strings into a normalized Path representation
-  - Handles absolute vs relative coordinates and normalizes arcs to cubic Beziers
-- Path utilities:
-  - Build from string/byte-stream, serialize, blend, add, and compute metrics
-  - Provide total length, point-at-length, and segment-at-length queries
+### Advanced Motion Path System
+The MotionPath class provides comprehensive SVG path parsing and geometric computation with advanced features:
+
+- **Arc Path Support**: Handles elliptical arcs with degenerate cases (zero radii become lines)
+- **Segment Boundary Averaging**: Smooths rotation transitions at path junctions
+- **Coordinate Pair Parsing**: Supports both comma and whitespace-separated coordinates
+- **Path Metrics Computation**: Accurate length calculation and point sampling
 
 ```mermaid
 flowchart TD
-Start(["Parse Path"]) --> FromString["buildPathFromString(d)"]
-FromString --> Parser["SVGPathParser.parsePathDataFromSource"]
-Parser --> Builder["SVGPathBuilder.moveTo/lineTo/curveToCubic"]
-Builder --> PathReady["Path ready"]
-PathReady --> Metrics["SVGPathUtilities:<br/>getTotalLength/getPointAtLength"]
-Metrics --> End(["Sampling Ready"])
+Start(["Advanced Path Processing"]) --> Parse["Parse SVG Path Data"]
+Parse --> ArcCheck{"Arc Command?"}
+ArcCheck --> |Yes| ArcApply["_applyArcCommand()"]
+ArcCheck --> |No| OtherCmd["_applyCommand()"]
+ArcApply --> Metrics["Compute Path Metrics"]
+OtherCmd --> Metrics
+Metrics --> Segments["Segment Lengths & Cumulative"]
+Segments --> Boundary{"Boundary Averaging?"}
+Boundary --> |Yes| Average["_getAveragedAngle()"]
+Boundary --> |No| Direct["Direct Tangent"]
+Average --> Result["Smooth Rotation"]
+Direct --> Result
+Result --> End(["Path Ready"])
 ```
 
 **Diagram sources**
-- [SVGPathUtilities.cpp:110-122](file://blink-b87d44f-Source-core-svg/SVGPathUtilities.cpp#L110-L122)
-- [SVGPathParser.cpp:284-397](file://blink-b87d44f-Source-core-svg/SVGPathParser.cpp#L284-L397)
-- [SVGPathBuilder.cpp:36-62](file://blink-b87d44f-Source-core-svg/SVGPathBuilder.cpp#L36-L62)
-- [SVGPathUtilities.cpp:298-330](file://blink-b87d44f-Source-core-svg/SVGPathUtilities.cpp#L298-L330)
+- [motion_path.dart:237-259](file://lib/src/animation/smil/motion_path.dart#L237-L259)
+- [motion_path.dart:367-398](file://lib/src/animation/smil/motion_path.dart#L367-L398)
+- [motion_path.dart:522-555](file://lib/src/animation/smil/motion_path.dart#L522-L555)
 
 **Section sources**
-- [SVGPathParser.cpp:284-496](file://blink-b87d44f-Source-core-svg/SVGPathParser.cpp#L284-L496)
-- [SVGPathBuilder.cpp:36-71](file://blink-b87d44f-Source-core-svg/SVGPathBuilder.cpp#L36-L71)
-- [SVGPathUtilities.cpp:110-333](file://blink-b87d44f-Source-core-svg/SVGPathUtilities.cpp#L110-L333)
+- [motion_path.dart:237-259](file://lib/src/animation/smil/motion_path.dart#L237-L259)
+- [motion_path.dart:367-398](file://lib/src/animation/smil/motion_path.dart#L367-L398)
+- [motion_path.dart:522-555](file://lib/src/animation/smil/motion_path.dart#L522-L555)
 
-### Path-Based Motion Animation
-- Animation element:
-  - Supports path-based motion with “auto/auto-reverse” rotation modes
-  - Computes position and tangent angle at a given path length
-  - Applies translation and optional rotation to the target element’s transform
-- Path parameterization:
-  - Percentage mapped to path length
-  - Accumulation across repeats supported
+### Enhanced Animation Engine
+The SmilAnimation class implements advanced SMIL animation features with CSS compatibility:
 
-```mermaid
-sequenceDiagram
-participant AMP as "SVGAnimateMotionElement"
-participant PUtil as "SVGPathUtilities"
-participant Target as "Target Element"
-AMP->>PUtil : "m_animationPath.length() * percentage"
-PUtil-->>AMP : "position, angle"
-AMP->>Target : "translate(position.x, position.y)"
-AMP->>Target : "rotate(angle) if auto/auto-reverse"
-```
-
-**Diagram sources**
-- [SVGAnimateMotionElement.cpp:243-297](file://blink-b87d44f-Source-core-svg/SVGAnimateMotionElement.cpp#L243-L297)
-- [SVGPathUtilities.cpp:298-330](file://blink-b87d44f-Source-core-svg/SVGPathUtilities.cpp#L298-L330)
-
-**Section sources**
-- [SVGAnimateMotionElement.cpp:121-351](file://blink-b87d44f-Source-core-svg/SVGAnimateMotionElement.cpp#L121-L351)
-
-### Timeline Integration and Synchronization
-- SMIL time container:
-  - Tracks begin/pause/resume/seek and schedules per-frame updates
-  - Sorts animations by priority and notifies timers
-- Time arithmetic:
-  - Specialized time values for unresolved/indefinite
-  - Operators for addition/subtraction/multiplication
+- **Advanced calcMode Support**: Linear, discrete, paced, and spline modes
+- **Paced Mode Implementation**: Distance-based keyTimes generation using specialized calculators
+- **Spline Easing**: CubicBezier keySplines with Newton-Raphson solving
+- **Accumulate Functionality**: Sum-based value accumulation across repeats
+- **CSS Animation Compatibility**: Direction, fill modes, and additive modes
 
 ```mermaid
 classDiagram
-class SMILTime {
-+value() double
-+isFinite() bool
-+isIndefinite() bool
-+isUnresolved() bool
+class SmilAnimation {
++SmilCalcMode calcMode
++double[] keyTimes
++CubicBezier[] keySplines
++bool accumulate
++SmilFillMode fillMode
++computeValue(t, repeats)
++_computeMotionValue(t, repeats)
++_generatePacedKeyTimes()
 }
-class SMILTimeContainer {
-+begin() void
-+pause() void
-+resume() void
-+setElapsed(time) void
-+elapsed() SMILTime
-+schedule(...)
-+unschedule(...)
+class MotionPath {
++getPointAtTime(t)
++getPointWithKeyPoints(t, keyPoints, keyTimes)
++parseCoordinatePairs()
++radiansToDegrees()
 }
-SMILTimeContainer --> SMILTime : "uses"
+class DistanceCalculator {
++distance(from, to) double
+}
+SmilAnimation --> MotionPath : "uses for motion"
+SmilAnimation --> DistanceCalculator : "paced mode"
 ```
 
 **Diagram sources**
-- [SMILTime.cpp:34-66](file://blink-b87d44f-Source-core-svg/animation/SMILTime.cpp#L34-L66)
-- [SMILTimeContainer.cpp:107-332](file://blink-b87d44f-Source-core-svg/animation/SMILTimeContainer.cpp#L107-L332)
+- [smil_animation.dart:32-44](file://lib/src/animation/smil/smil_animation.dart#L32-L44)
+- [smil_animation.dart:140-185](file://lib/src/animation/smil/smil_animation.dart#L140-L185)
+- [motion_path.dart:429-499](file://lib/src/animation/smil/motion_path.dart#L429-L499)
+- [distance_calculator.dart:8-14](file://lib/src/animation/smil/distance_calculator.dart#L8-L14)
 
 **Section sources**
-- [SMILTime.cpp:34-66](file://blink-b87d44f-Source-core-svg/animation/SMILTime.cpp#L34-L66)
-- [SMILTimeContainer.cpp:107-332](file://blink-b87d44f-Source-core-svg/animation/SMILTimeContainer.cpp#L107-L332)
+- [smil_animation.dart:32-44](file://lib/src/animation/smil/smil_animation.dart#L32-L44)
+- [smil_animation.dart:140-185](file://lib/src/animation/smil/smil_animation.dart#L140-L185)
+- [smil_animation_value_computation.dart:102-173](file://lib/src/animation/smil/smil_animation_value_computation.dart#L102-L173)
 
-### Path Smoothing, Velocity, and Acceleration
-- Smoothing:
-  - Arcs are decomposed into cubic Beziers for consistent curvature
-  - Path normalization ensures predictable sampling
-- Velocity:
-  - Uniform parameterization by arc length yields constant-speed motion along the path
-- Acceleration/deceleration:
-  - Not directly exposed in the core; achieved via keypoint/timing mapping in higher-level APIs (see Dart MotionPath tests)
+### Smart Path Resolution and Priority Handling
+The motion parser implements sophisticated path resolution with clear priority ordering:
+
+- **Path Priority**: path attribute > values with coordinates > from/to/by coordinates
+- **mpath Reference Resolution**: Supports both href and xlink:href attributes
+- **Inline Override Behavior**: Inline path data takes precedence over mpath references
+- **Coordinate Pair Validation**: Robust parsing with error handling for invalid formats
+
+```mermaid
+flowchart TD
+Priority["Path Resolution Priority"] --> CheckInline{"Inline path attribute?"}
+CheckInline --> |Yes| UseInline["Use inline path data"]
+CheckInline --> |No| CheckValues{"Values with coordinates?"}
+CheckValues --> |Yes| ParseValues["Parse coordinate pairs<br/>Create implicit path"]
+CheckValues --> |No| CheckFromTo{"from/to/by coordinates?"}
+CheckFromTo --> |Yes| BuildPath["Build path from coordinates"]
+CheckFromTo --> |No| NoPath["Invalid animation"]
+UseInline --> Validate["Validate path data"]
+ParseValues --> Validate
+BuildPath --> Validate
+Validate --> Success["Create SmilAnimation"]
+```
+
+**Diagram sources**
+- [smil_parser_motion.dart:13-14](file://lib/src/animation/smil/smil_parser_motion.dart#L13-L14)
+- [smil_parser_motion.dart:207-242](file://lib/src/animation/smil/smil_parser_motion.dart#L207-L242)
 
 **Section sources**
-- [SVGPathParser.cpp:412-493](file://blink-b87d44f-Source-core-svg/SVGPathParser.cpp#L412-L493)
-- [SVGPathUtilities.cpp:298-330](file://blink-b87d44f-Source-core-svg/SVGPathUtilities.cpp#L298-L330)
-- [motion_path_test.dart:113-168](file://test/animation/motion_path_test.dart#L113-L168)
+- [smil_parser_motion.dart:13-14](file://lib/src/animation/smil/smil_parser_motion.dart#L13-L14)
+- [smil_parser_motion.dart:207-242](file://lib/src/animation/smil/smil_parser_motion.dart#L207-L242)
 
-### Examples and Use Cases
-- Vehicle animation:
-  - Define a path (straight, curved, or complex) and animate a vehicle shape along it
-  - Use “auto” rotation to align the vehicle with the path tangent
-- Particle systems:
-  - Emit particles at varying key times along a shared path
-  - Control spawn rates and offsets via keypoint/timing arrays
-- Complex motion sequences:
-  - Chain multiple paths and rotations
-  - Combine with other SMIL animations (translation, scaling, opacity)
+## Advanced Features and Capabilities
 
-[No sources needed since this section provides general guidance]
+### Arc Path Support and Degenerate Case Handling
+The system provides comprehensive arc path support with robust degenerate case handling:
+
+- **Elliptical Arcs**: Full SVG arc command support with rotation, large-arc, and sweep flags
+- **Degenerate Arcs**: Zero-radius arcs automatically convert to straight lines
+- **Same Start/End Points**: Prevents empty arc drawing while maintaining path integrity
+- **Smooth Transitions**: Proper tangent calculation even with degenerate arcs
+
+**Section sources**
+- [motion_path.dart:237-259](file://lib/src/animation/smil/motion_path.dart#L237-L259)
+- [motion_path_test.dart:24-29](file://test/animation/motion_path_test.dart#L24-L29)
+
+### Segment Boundary Tangent Averaging
+Advanced tangent averaging ensures smooth rotation transitions at path junctions:
+
+- **Boundary Detection**: Identifies positions within 1% of segment boundaries
+- **Adjacent Segment Analysis**: Uses neighboring segment tangents for averaging
+- **Angle Normalization**: Handles π wrap-around in angle calculations
+- **Smooth Rotation**: Eliminates abrupt rotation changes at corners
+
+**Section sources**
+- [motion_path.dart:367-398](file://lib/src/animation/smil/motion_path.dart#L367-L398)
+- [animate_motion_advanced_test.dart:40-61](file://test/animation/animate_motion_advanced_test.dart#L40-L61)
+
+### Coordinate Pair Parsing for Advanced Attributes
+Comprehensive coordinate pair parsing supports multiple input formats:
+
+- **Multiple Separators**: Handles both comma and whitespace separators
+- **Negative Values**: Properly parses negative coordinate values
+- **Validation**: Robust parsing with graceful error handling
+- **Batch Processing**: Parses multiple coordinate pairs from values strings
+
+**Section sources**
+- [motion_path.dart:522-555](file://lib/src/animation/smil/motion_path.dart#L522-L555)
+- [animate_motion_advanced_test.dart:87-132](file://test/animation/animate_motion_advanced_test.dart#L87-L132)
+
+### Advanced calcMode Behaviors
+The system implements sophisticated calcMode behaviors with standards compliance:
+
+- **Paced Mode**: Distance-based keyTimes generation using specialized calculators
+- **Spline Mode**: CubicBezier easing with Newton-Raphson solving algorithm
+- **Discrete Mode**: Step-based interpolation without easing
+- **Linear Mode**: Standard linear interpolation
+
+**Section sources**
+- [smil_animation.dart:32-44](file://lib/src/animation/smil/smil_animation.dart#L32-L44)
+- [distance_calculator.dart:142-146](file://lib/src/animation/smil/distance_calculator.dart#L142-L146)
+- [smil_animation_curves.dart:24-44](file://lib/src/animation/smil/smil_animation_curves.dart#L24-L44)
+
+### Accumulate Sum Functionality
+Advanced accumulate support enables complex repeated animation patterns:
+
+- **Sum-based Accumulation**: Adds final position multiplied by completed repeats
+- **Motion-specific Implementation**: Integrates with path-based positioning
+- **CSS Compatibility**: Aligns with CSS animation accumulate semantics
+- **Repeat-aware Computation**: Properly handles partial and complete repeats
+
+**Section sources**
+- [smil_animation.dart:271-272](file://lib/src/animation/smil/smil_animation.dart#L271-L272)
+- [smil_animation_value_computation.dart:220-245](file://lib/src/animation/smil/smil_animation_value_computation.dart#L220-L245)
+- [animate_motion_advanced_test.dart:321-379](file://test/animation/animate_motion_advanced_test.dart#L321-L379)
+
+### Rotation Semantics and Auto Alignment
+Comprehensive rotation support with automatic tangent alignment:
+
+- **Auto Rotation**: Aligns object with path tangent at each position
+- **Auto-reverse**: Adds 180-degree offset to auto rotation
+- **Fixed Angles**: Supports literal angle values in degrees
+- **Smooth Transitions**: Proper rotation interpolation along curved paths
+
+**Section sources**
+- [smil_animation_value_computation.dart:156-169](file://lib/src/animation/smil/smil_animation_value_computation.dart#L156-L169)
+- [animate_motion_advanced_test.dart:381-460](file://test/animation/animate_motion_advanced_test.dart#L381-L460)
+
+## Test Coverage and Validation
+
+### Comprehensive AnimateMotion Advanced Testing
+Extensive test coverage validates complex animation scenarios:
+
+- **Arc Path Validation**: Ensures proper parsing and traversal of elliptical arcs
+- **Degenerate Case Handling**: Validates robust handling of edge cases
+- **Coordinate Pair Parsing**: Tests multiple input formats and separators
+- **calcMode Behaviors**: Comprehensive validation of paced and spline modes
+- **Accumulate Functionality**: Verifies sum-based accumulation across repeats
+- **Rotation Semantics**: Validates auto, auto-reverse, and fixed angle rotations
+- **Path Priority Resolution**: Tests priority handling between different path sources
+
+**Section sources**
+- [animate_motion_advanced_test.dart:10-719](file://test/animation/animate_motion_advanced_test.dart#L10-L719)
+
+### MotionPath Utility Validation
+Focused testing of core path utilities:
+
+- **Basic Path Operations**: Validates fundamental path sampling and length calculation
+- **KeyPoints Integration**: Tests keyPoints with and without keyTimes
+- **Edge Case Handling**: Validates behavior with empty paths and invalid data
+- **Coordinate Parsing**: Tests various coordinate pair formats
+
+**Section sources**
+- [motion_path_test.dart:1-188](file://test/animation/motion_path_test.dart#L1-L188)
+
+### Paced calcMode Implementation Testing
+Specialized testing for distance-based animation timing:
+
+- **Distance Calculator Validation**: Tests numeric, color, path, and transform distance calculations
+- **KeyTimes Generation**: Validates proper generation of paced keyTimes
+- **Edge Case Handling**: Tests single values, identical values, and explicit keyTimes
+- **CSS Compatibility**: Ensures standards-compliant behavior
+
+**Section sources**
+- [paced_calcmode_test.dart:1-263](file://test/animation/paced_calcmode_test.dart#L1-L263)
 
 ## Dependency Analysis
 ```mermaid
 graph LR
-AMP["SVGAnimateMotionElement"] --> PUtil["SVGPathUtilities"]
-PUtil --> PParser["SVGPathParser"]
-PUtil --> PBuilder["SVGPathBuilder"]
-AMP --> STC["SMILTimeContainer"]
-STC --> ST["SMILTime"]
+SP["SmilParser"] --> SPM["Motion Parser"]
+SPM --> MP["MotionPath"]
+SPM --> SA["SmilAnimation"]
+SA --> SAC["Value Computation"]
+SAC --> MP
+SAC --> DC["Distance Calculator"]
+SAC --> CB["CubicBezier"]
+SAR["Runtime Management"] --> SA
+DC --> MP
 ```
 
 **Diagram sources**
-- [SVGAnimateMotionElement.cpp:104-351](file://blink-b87d44f-Source-core-svg/SVGAnimateMotionElement.cpp#L104-L351)
-- [SVGPathUtilities.cpp:110-333](file://blink-b87d44f-Source-core-svg/SVGPathUtilities.cpp#L110-L333)
-- [SVGPathParser.cpp:284-496](file://blink-b87d44f-Source-core-svg/SVGPathParser.cpp#L284-L496)
-- [SVGPathBuilder.cpp:36-71](file://blink-b87d44f-Source-core-svg/SVGPathBuilder.cpp#L36-L71)
-- [SMILTimeContainer.cpp:262-332](file://blink-b87d44f-Source-core-svg/animation/SMILTimeContainer.cpp#L262-L332)
-- [SMILTime.cpp:34-66](file://blink-b87d44f-Source-core-svg/animation/SMILTime.cpp#L34-L66)
+- [smil_parser_motion.dart:1-264](file://lib/src/animation/smil/smil_parser_motion.dart#L1-L264)
+- [smil_animation_value_computation.dart:1-289](file://lib/src/animation/smil/smil_animation_value_computation.dart#L1-L289)
+- [distance_calculator.dart:1-236](file://lib/src/animation/smil/distance_calculator.dart#L1-L236)
 
 **Section sources**
-- [SVGAnimateMotionElement.cpp:104-351](file://blink-b87d44f-Source-core-svg/SVGAnimateMotionElement.cpp#L104-L351)
-- [SVGPathUtilities.cpp:110-333](file://blink-b87d44f-Source-core-svg/SVGPathUtilities.cpp#L110-L333)
-- [SVGPathParser.cpp:284-496](file://blink-b87d44f-Source-core-svg/SVGPathParser.cpp#L284-L496)
-- [SVGPathBuilder.cpp:36-71](file://blink-b87d44f-Source-core-svg/SVGPathBuilder.cpp#L36-L71)
-- [SMILTimeContainer.cpp:262-332](file://blink-b87d44f-Source-core-svg/animation/SMILTimeContainer.cpp#L262-L332)
-- [SMILTime.cpp:34-66](file://blink-b87d44f-Source-core-svg/animation/SMILTime.cpp#L34-L66)
+- [smil_parser_motion.dart:1-264](file://lib/src/animation/smil/smil_parser_motion.dart#L1-L264)
+- [smil_animation_value_computation.dart:1-289](file://lib/src/animation/smil/smil_animation_value_computation.dart#L1-L289)
+- [distance_calculator.dart:1-236](file://lib/src/animation/smil/distance_calculator.dart#L1-L236)
 
 ## Performance Considerations
-- Prefer normalized paths for consistent sampling and reduced recomputation
-- Cache path metrics (length, point samples) when repeatedly queried
-- Minimize repeated parsing by reusing parsed Path objects
-- Use keypoint/timing mapping to avoid expensive per-frame computations for non-uniform motion
-- Batch animation updates via the SMIL time container to reduce overhead
-
-[No sources needed since this section provides general guidance]
+- **Path Metric Caching**: Reuse computed path metrics to avoid repeated metric computation
+- **Coordinate Pair Optimization**: Pre-parse coordinate pairs to minimize string processing
+- **Calculation Short-circuiting**: Skip unnecessary calculations for degenerate cases
+- **Memory Management**: Consider caching MotionPath instances for frequently reused paths
+- **Easing Algorithm Efficiency**: Optimize CubicBezier solving with appropriate convergence thresholds
+- **Distance Calculator Selection**: Choose appropriate distance calculators based on attribute types
 
 ## Troubleshooting Guide
-- Invalid path data:
-  - Parsing failures return safe defaults; verify path strings and ensure proper SVG syntax
-- Zero-length paths:
-  - Sampling returns neutral positions/angles; confirm path construction
-- Rotation anomalies:
-  - “auto-reverse” flips the angle by 180 degrees; ensure intended orientation
-- Timing inconsistencies:
-  - Confirm begin/pause/resume/seek operations and elapsed time calculations
+- **Invalid Path Data**: Advanced parsing now includes better error handling for malformed paths
+- **Zero-Length Segments**: Degenerate cases are now properly handled with fallback tangent calculation
+- **Rotation Anomalies**: Segment boundary averaging ensures smooth rotation transitions
+- **Coordinate Parsing Issues**: Multiple separator formats are now supported with validation
+- **calcMode Behavior**: Paced mode properly ignores explicit keyTimes when generating keyTimes
+- **Accumulate Problems**: Sum-based accumulation now correctly handles partial repeats
+- **Path Priority Conflicts**: Clear priority resolution prevents unexpected path overrides
 
 **Section sources**
-- [SVGPathUtilities.cpp:110-122](file://blink-b87d44f-Source-core-svg/SVGPathUtilities.cpp#L110-L122)
-- [SVGAnimateMotionElement.cpp:291-297](file://blink-b87d44f-Source-core-svg/SVGAnimateMotionElement.cpp#L291-L297)
-- [SMILTimeContainer.cpp:171-207](file://blink-b87d44f-Source-core-svg/animation/SMILTimeContainer.cpp#L171-L207)
+- [motion_path.dart:350-365](file://lib/src/animation/smil/motion_path.dart#L350-L365)
+- [smil_parser_motion.dart:171-175](file://lib/src/animation/smil/smil_parser_motion.dart#L171-L175)
+- [smil_animation_value_computation.dart:220-245](file://lib/src/animation/smil/smil_animation_value_computation.dart#L220-L245)
 
 ## Conclusion
-The repository provides a robust foundation for motion animation along SVG paths:
-- A complete path parsing and normalization pipeline
-- A motion animation element supporting translation and rotation
-- A SMIL time container enabling precise timeline integration and synchronization
-- Test coverage validating path sampling, angles, and keypoint/timing mapping
+The repository provides a comprehensive, standards-compliant foundation for advanced motion animation along SVG paths:
 
-These components enable realistic motion sequences for vehicles, particles, and complex choreography, with clear paths for optimization and extension.
+- **Advanced Path Processing**: Complete arc support with robust degenerate case handling
+- **Sophisticated Animation Engine**: Full calcMode support with paced and spline behaviors
+- **Enhanced Coordination**: Comprehensive coordinate pair parsing and validation
+- **Smooth Rotation**: Advanced tangent averaging for seamless path transitions
+- **CSS Compatibility**: Full integration with CSS animation specifications
+- **Extensive Testing**: Comprehensive validation of complex animation scenarios
+- **Flexible Path Resolution**: Intelligent priority handling for multiple path sources
 
-[No sources needed since this section summarizes without analyzing specific files]
+These components enable sophisticated motion sequences for vehicles, particles, and complex choreography with professional-grade performance and reliability.
 
 ## Appendices
 
-### Appendix A: Key Concepts and API Touchpoints
-- Path parsing and normalization:
-  - [buildPathFromString:110-122](file://blink-b87d44f-Source-core-svg/SVGPathUtilities.cpp#L110-L122)
-  - [SVGPathParser::parsePathDataFromSource:284-397](file://blink-b87d44f-Source-core-svg/SVGPathParser.cpp#L284-L397)
-  - [SVGPathBuilder:36-71](file://blink-b87d44f-Source-core-svg/SVGPathBuilder.cpp#L36-L71)
-- Path metrics and sampling:
-  - [getTotalLengthOfSVGPathByteStream:298-313](file://blink-b87d44f-Source-core-svg/SVGPathUtilities.cpp#L298-L313)
-  - [getPointAtLengthOfSVGPathByteStream:315-330](file://blink-b87d44f-Source-core-svg/SVGPathUtilities.cpp#L315-L330)
-- Motion animation:
-  - [SVGAnimateMotionElement::calculateAnimatedValue:243-297](file://blink-b87d44f-Source-core-svg/SVGAnimateMotionElement.cpp#L243-L297)
-  - [SVGAnimateMotionElement::updateAnimationPath:133-154](file://blink-b87d44f-Source-core-svg/SVGAnimateMotionElement.cpp#L133-L154)
-- Timeline:
-  - [SMILTimeContainer::updateAnimations:262-329](file://blink-b87d44f-Source-core-svg/animation/SMILTimeContainer.cpp#L262-L329)
-  - [SMILTime:34-66](file://blink-b87d44f-Source-core-svg/animation/SMILTime.cpp#L34-L66)
+### Appendix A: Advanced API Touchpoints
+- **Arc Path Support**:
+  - [MotionPath::_applyArcCommand:237-259](file://lib/src/animation/smil/motion_path.dart#L237-L259)
+  - [MotionPath::getPointAtTime:285-348](file://lib/src/animation/smil/motion_path.dart#L285-L348)
+- **Segment Boundary Averaging**:
+  - [MotionPath::_getAveragedAngle:369-398](file://lib/src/animation/smil/motion_path.dart#L369-L398)
+  - [MotionPath::_averageAngles:400-416](file://lib/src/animation/smil/motion_path.dart#L400-L416)
+- **Coordinate Pair Parsing**:
+  - [MotionPath::parseCoordinatePair:522-536](file://lib/src/animation/smil/motion_path.dart#L522-L536)
+  - [MotionPath::parseCoordinatePairs:538-555](file://lib/src/animation/smil/motion_path.dart#L538-L555)
+- **Advanced calcMode Implementation**:
+  - [SmilAnimation::_generatePacedKeyTimes:142-185](file://lib/src/animation/smil/smil_animation.dart#L142-L185)
+  - [DistanceCalculatorFactory::create:207-235](file://lib/src/animation/smil/distance_calculator.dart#L207-L235)
+- **Accumulate Functionality**:
+  - [SmilAnimationValueComputation::_applyAccumulate:220-245](file://lib/src/animation/smil/smil_animation_value_computation.dart#L220-L245)
+  - [SmilAnimationValueComputation::_computeMotionValue:141-146](file://lib/src/animation/smil/smil_animation_value_computation.dart#L141-L146)
+- **Rotation Semantics**:
+  - [SmilAnimationValueComputation::_computeMotionValue:156-169](file://lib/src/animation/smil/smil_animation_value_computation.dart#L156-L169)
+  - [MotionPath::radiansToDegrees:518-520](file://lib/src/animation/smil/motion_path.dart#L518-L520)
 
 **Section sources**
-- [SVGPathUtilities.cpp:110-333](file://blink-b87d44f-Source-core-svg/SVGPathUtilities.cpp#L110-L333)
-- [SVGPathParser.cpp:284-496](file://blink-b87d44f-Source-core-svg/SVGPathParser.cpp#L284-L496)
-- [SVGPathBuilder.cpp:36-71](file://blink-b87d44f-Source-core-svg/SVGPathBuilder.cpp#L36-L71)
-- [SVGAnimateMotionElement.cpp:133-297](file://blink-b87d44f-Source-core-svg/SVGAnimateMotionElement.cpp#L133-L297)
-- [SMILTimeContainer.cpp:262-329](file://blink-b87d44f-Source-core-svg/animation/SMILTimeContainer.cpp#L262-L329)
-- [SMILTime.cpp:34-66](file://blink-b87d44f-Source-core-svg/animation/SMILTime.cpp#L34-L66)
+- [motion_path.dart:237-348](file://lib/src/animation/smil/motion_path.dart#L237-L348)
+- [motion_path.dart:522-555](file://lib/src/animation/smil/motion_path.dart#L522-L555)
+- [smil_animation.dart:142-185](file://lib/src/animation/smil/smil_animation.dart#L142-L185)
+- [distance_calculator.dart:207-235](file://lib/src/animation/smil/distance_calculator.dart#L207-L235)
+- [smil_animation_value_computation.dart:141-169](file://lib/src/animation/smil/smil_animation_value_computation.dart#L141-L169)
+- [smil_animation_value_computation.dart:220-245](file://lib/src/animation/smil/smil_animation_value_computation.dart#L220-L245)

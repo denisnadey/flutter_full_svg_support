@@ -83,7 +83,8 @@ extension AnimatedSvgPainterGradientValuesExtension on AnimatedSvgPainter {
     return _parseColor(value.toString());
   }
 
-  /// Resolves a color value for a node, supporting the 'currentColor' keyword.
+  /// Resolves a color value for a node, supporting the 'currentColor' keyword
+  /// and CSS variable references (var(--name, fallback)).
   /// currentColor refers to the inherited 'color' CSS property value.
   ui.Color? _resolveColorForNode(Object? value, SvgNode node) {
     if (value == null) {
@@ -93,8 +94,16 @@ extension AnimatedSvgPainterGradientValuesExtension on AnimatedSvgPainter {
       return value;
     }
 
-    final strValue = value.toString().trim().toLowerCase();
-    if (strValue == 'currentcolor') {
+    var strValue = value.toString().trim();
+
+    // Resolve CSS variable references before color parsing.
+    // This handles fill: var(--my-color, blue) and similar patterns.
+    if (strValue.contains('var(')) {
+      strValue = CssVariableResolver.resolveValue(strValue, node);
+    }
+
+    final lowerValue = strValue.toLowerCase();
+    if (lowerValue == 'currentcolor') {
       // Resolve the inherited 'color' property
       final colorProperty = _getInheritedString(node, 'color');
       if (colorProperty != null && colorProperty.isNotEmpty) {
@@ -104,7 +113,7 @@ extension AnimatedSvgPainterGradientValuesExtension on AnimatedSvgPainter {
       return const ui.Color(0xFF000000);
     }
 
-    return _parseColor(value.toString());
+    return _parseColor(strValue);
   }
 
   ui.Color _applyOpacity(ui.Color color, double opacity) {

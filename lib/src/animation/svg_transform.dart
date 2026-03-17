@@ -146,8 +146,13 @@ class SvgTransform {
     final trimmed = s.trim().toLowerCase();
 
     // Handle angle units first
+    // NOTE: 'grad' must be checked before 'rad' because 'grad'.endsWith('rad') == true
     if (trimmed.endsWith('deg')) {
       return double.tryParse(trimmed.substring(0, trimmed.length - 3)) ?? 0.0;
+    } else if (trimmed.endsWith('grad')) {
+      final grad =
+          double.tryParse(trimmed.substring(0, trimmed.length - 4)) ?? 0.0;
+      return grad * 0.9; // Convert to degrees (100 grad = 90 deg)
     } else if (trimmed.endsWith('rad')) {
       final rad =
           double.tryParse(trimmed.substring(0, trimmed.length - 3)) ?? 0.0;
@@ -156,10 +161,6 @@ class SvgTransform {
       final turn =
           double.tryParse(trimmed.substring(0, trimmed.length - 4)) ?? 0.0;
       return turn * 360.0; // Convert to degrees
-    } else if (trimmed.endsWith('grad')) {
-      final grad =
-          double.tryParse(trimmed.substring(0, trimmed.length - 4)) ?? 0.0;
-      return grad * 0.9; // Convert to degrees
     }
 
     // Handle length units for translate functions

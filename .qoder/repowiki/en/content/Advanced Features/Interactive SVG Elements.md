@@ -21,6 +21,9 @@
 - [smil_event_timing_widget.dart](file://example/lib/widgets/smil_event_timing_widget.dart)
 - [ARCHITECTURE.md](file://ARCHITECTURE.md)
 - [svg_dom.dart](file://lib/src/animation/svg_dom.dart)
+- [SVGAElement.cpp](file://blink-b87d44f-Source-core-svg/SVGAElement.cpp)
+- [xlinkattrs.in](file://blink-b87d44f-Source-core-svg/xlinkattrs.in)
+- [SVGURIReference.cpp](file://blink-b87d44f-Source-core-svg/SVGURIReference.cpp)
 </cite>
 
 ## Update Summary
@@ -32,6 +35,8 @@
 - Added support for both href and xlink:href attributes in anchor elements
 - Integrated anchor information into hit testing traversal system
 - Implemented accessibility properties (accessibleName, accessibleDescription, accessibleRole) for SVG documents
+- Enhanced hit testing traversal with anchor context propagation
+- Added SMIL timeline integration for anchor-based interactions
 
 ## Table of Contents
 1. [Introduction](#introduction)

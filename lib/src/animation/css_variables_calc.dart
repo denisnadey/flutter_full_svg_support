@@ -3,6 +3,15 @@ library;
 
 import 'svg_dom.dart';
 
+/// Callback type for looking up custom properties from use context.
+/// This enables CSS variables to flow through <use> boundaries.
+typedef UseContextCustomPropertyLookup = String? Function(String name);
+
+/// Global hook for use context custom property lookup.
+/// Set by the render tree when inside a <use> boundary.
+/// Made public for access from part files.
+UseContextCustomPropertyLookup? useContextCustomPropertyLookup;
+
 /// Regex to match CSS custom property declarations: --property-name: value
 final RegExp _customPropertyDeclarationRegex = RegExp(
   r'(--[\w-]+)\s*:\s*([^;]+)',
@@ -138,6 +147,7 @@ class CssVariableResolver {
   }
 
   /// Look up a custom property by walking up the element tree.
+  /// Also checks use inheritance context for properties defined on <use> elements.
   static String? _lookupVariable(String name, SvgNode node) {
     SvgNode? current = node;
 
@@ -147,6 +157,15 @@ class CssVariableResolver {
         return props.get(name);
       }
       current = current.parent;
+    }
+
+    // Check use inheritance context for CSS custom properties.
+    // Per SVG spec, custom properties should cascade through <use> boundaries.
+    if (useContextCustomPropertyLookup != null) {
+      final useValue = useContextCustomPropertyLookup!(name);
+      if (useValue != null) {
+        return useValue;
+      }
     }
 
     return null;

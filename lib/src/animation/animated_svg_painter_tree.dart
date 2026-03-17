@@ -34,8 +34,13 @@ void _paintNodeImplWithUseContext(
 }) {
   // Store use context for attribute resolution
   final previousUseContext = _currentUseContext;
+  final previousUseContextLookup = useContextCustomPropertyLookup;
+
   if (useContext != null) {
     _currentUseContext = useContext;
+    // Set up CSS custom property lookup through use context.
+    // This enables var(--custom-property) to resolve from <use> elements.
+    useContextCustomPropertyLookup = (name) => useContext.getCustomProperty(name);
   }
   final display = painter
       ._getStyleOrAttributeValue(node, 'display')
@@ -235,9 +240,9 @@ void _paintNodeImplWithUseContext(
           foreignObjectParent: node.tagName == 'foreignObject' ? node : null,
           useContext: useContext,
         )) {
-          // Children already painted in opacity layer, skip normal recursion
-          // Restore previous use context
+          // Restore previous use context and CSS variable lookup
           _currentUseContext = previousUseContext;
+          useContextCustomPropertyLookup = previousUseContextLookup;
           canvas.restore();
           return;
         }
@@ -267,8 +272,9 @@ void _paintNodeImplWithUseContext(
     }
   }
 
-  // Restore previous use context
+  // Restore previous use context and CSS variable lookup
   _currentUseContext = previousUseContext;
+  useContextCustomPropertyLookup = previousUseContextLookup;
 
   canvas.restore();
 }

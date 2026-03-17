@@ -6,6 +6,14 @@
 - [SVGFilter.h](file://blink-b87d44f-Source-core-svg/graphics/filters/SVGFilter.h)
 - [SVGFilterBuilder.cpp](file://blink-b87d44f-Source-core-svg/graphics/filters/SVGFilterBuilder.cpp)
 - [SVGFilterBuilder.h](file://blink-b87d44f-Source-core-svg/graphics/filters/SVGFilterBuilder.h)
+- [svg_filters_registry_pipeline.dart](file://lib/src/animation/svg_filters_registry_pipeline.dart)
+- [svg_filters_registry_pipeline_compositing.dart](file://lib/src/animation/svg_filters_registry_pipeline_compositing.dart)
+- [svg_filters_registry_pipeline_primitives.dart](file://lib/src/animation/svg_filters_registry_pipeline_primitives.dart)
+- [svg_filters_registry_pipeline_primitives_paint.dart](file://lib/src/animation/svg_filters_registry_pipeline_primitives_paint.dart)
+- [svg_filters_registry_pipeline_primitives_effects.dart](file://lib/src/animation/svg_filters_registry_pipeline_primitives_effects.dart)
+- [svg_filters_primitives_convolve_matrix.dart](file://lib/src/animation/svg_filters_primitives_convolve_matrix.dart)
+- [filter_advanced_graph_test.dart](file://test/animation/filter_advanced_graph_test.dart)
+- [fe_convolve_matrix_test.dart](file://test/animation/fe_convolve_matrix_test.dart)
 - [SVGFEBlendElement.cpp](file://blink-b87d44f-Source-core-svg/SVGFEBlendElement.cpp)
 - [SVGFEColorMatrixElement.cpp](file://blink-b87d44f-Source-core-svg/SVGFEColorMatrixElement.cpp)
 - [SVGFEGaussianBlurElement.cpp](file://blink-b87d44f-Source-core-svg/SVGFEGaussianBlurElement.cpp)
@@ -22,674 +30,374 @@
 - [SVGFELightElement.h](file://blink-b87d44f-Source-core-svg/SVGFELightElement.h)
 - [svg_filters_primitives_lighting.dart](file://lib/src/animation/svg_filters_primitives_lighting.dart)
 - [svg_filters_primitives_lighting_math.dart](file://lib/src/animation/svg_filters_primitives_lighting_math.dart)
-- [svg_filters_registry_pipeline_primitives_effects.dart](file://lib/src/animation/svg_filters_registry_pipeline_primitives_effects.dart)
-- [fe_convolve_matrix_test.dart](file://test/animation/fe_convolve_matrix_test.dart)
 </cite>
 
 ## Update Summary
 **Changes Made**
-- Added comprehensive documentation for new convolution matrix filter primitive with edge mode support
-- Enhanced lighting system documentation with detailed coverage of diffuse and specular reflection calculations
-- Added documentation for new light source types: distant, point, and spot lights
-- Updated filter animation support section to include convolution matrix parameters
-- Expanded performance considerations with convolution matrix optimization guidelines
+- Enhanced filter registry system with comprehensive pipeline processing improvements
+- Added advanced compositing capabilities including arithmetic composite mode handling
+- Implemented sophisticated primitive paint handling with pass composition
+- Introduced comprehensive filter graph complexity testing with multi-hop chains
+- Enhanced convolution matrix processing with identity kernel detection and edge mode support
+- Added advanced lighting system with multiple light source types and mathematical calculations
 
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
-5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Dependency Analysis](#dependency-analysis)
-7. [Performance Considerations](#performance-considerations)
-8. [Troubleshooting Guide](#troubleshooting-guide)
-9. [Conclusion](#conclusion)
-10. [Appendices](#appendices)
+5. [Enhanced Pipeline Processing](#enhanced-pipeline-processing)
+6. [Advanced Compositing Capabilities](#advanced-compositing-capabilities)
+7. [Primitive Paint Handling](#primitive-paint-handling)
+8. [Filter Graph Complexity Testing](#filter-graph-complexity-testing)
+9. [Detailed Component Analysis](#detailed-component-analysis)
+10. [Performance Considerations](#performance-considerations)
+11. [Troubleshooting Guide](#troubleshooting-guide)
+12. [Conclusion](#conclusion)
+13. [Appendices](#appendices)
 
 ## Introduction
-This document explains the SVG filter system and effects implemented in the codebase. It covers the filter architecture, including the filter primitive registry, pipeline compositing, and input/output management. It documents built-in filter primitives such as blur, turbulence, lighting, color matrix transformations, and component transfer functions. The system now includes advanced convolution matrix filtering with edge mode support and comprehensive lighting calculations including diffuse and specular reflections with distant, point, and spot light sources. It also describes filter animation support, parameter interpolation, and real-time effect updates. Practical examples of filter combinations, performance optimization techniques, and debugging complex filter chains are included, along with limitations, browser compatibility considerations, and best practices for smooth animated effects.
+This document explains the enhanced SVG filter system and effects implemented in the codebase. The system has been significantly upgraded with an improved filter registry system featuring enhanced pipeline processing, advanced composite operations, and sophisticated primitive paint handling. It covers comprehensive filter graph complexity testing and advanced compositing capabilities. The architecture now includes sophisticated filter primitive resolution, named result caching, circular reference detection, and comprehensive edge case handling for complex filter chains.
 
 ## Project Structure
-The filter system is organized around:
-- A filter container and coordinate scaling logic
-- A filter builder that manages named and builtin effects, input references, and real-time updates
-- Individual filter primitive elements that parse attributes, expose animated properties, and construct filter effects
-- Advanced convolution matrix processing with edge mode handling
-- Comprehensive lighting system with multiple light source types
+The enhanced filter system is organized around:
+- A comprehensive filter registry with pipeline processing and named result caching
+- Advanced compositing extensions supporting blend modes, composite operations, and arithmetic modes
+- Sophisticated primitive paint handling with pass composition and chaining
+- Comprehensive filter graph complexity testing with multi-hop chains and edge cases
+- Enhanced convolution matrix processing with identity kernel detection and edge mode support
+- Advanced lighting system with multiple light source types and mathematical calculations
 
 ```mermaid
 graph TB
-subgraph "Filters"
-SVGFilter["SVGFilter<br/>container + scaling"]
-Builder["SVGFilterBuilder<br/>registry + refs"]
+subgraph "Enhanced Pipeline System"
+Pipeline["SvgFiltersPipelineExtension<br/>resolvePaintPasses()"]
+Context["_FilterPipelineContext<br/>namedResults + circular detection"]
 end
-subgraph "Primitives"
-Blur["SVGFEGaussianBlurElement"]
-Blend["SVGFEBlendElement"]
-Comp["SVGFECompositeElement"]
-Merge["SVGFEMergeElement"]
-Turb["SVGFETurbulenceElement"]
-ColMat["SVGFEColorMatrixElement"]
-CompTr["SVGFEComponentTransferElement"]
-Light["SVGFEDiffuseLightingElement"]
-Offset["SVGFEOffsetElement"]
-Convolve["SVGFEConvolveMatrixElement<br/>+ Edge Modes + Divisor + Bias"]
+subgraph "Compositing Extensions"
+Blend["_resolveBlendOutput()"]
+Composite["_resolveCompositeOutput()"]
+Arithmetic["_resolveArithmeticCompositePasses()"]
+Merge["_resolveMergeOutput()"]
 end
-subgraph "Light Sources"
-Distant["SVGFEDistantLightElement"]
-Point["SVGFELightElement<br/>(Point/Spot)"]
-Specular["SVGFESpecularLightingElement"]
+subgraph "Primitive Paint Handling"
+PrimitivePaint["_resolvePrimitiveOutput()"]
+DropShadow["_resolveDropShadowOutput()"]
+ColorMatrix["_resolveColorMatrixOutput()"]
+Passthrough["_resolvePassthroughOutput()"]
 end
-SVGFilter --> Builder
-Builder --> Blur
-Builder --> Blend
-Builder --> Comp
-Builder --> Merge
-Builder --> Turb
-Builder --> ColMat
-Builder --> CompTr
-Builder --> Light
-Builder --> Offset
-Builder --> Convolve
-Light --> Distant
-Light --> Point
-Specular --> Distant
-Specular --> Point
+subgraph "Advanced Features"
+ConvolveProc["ConvolveMatrixProcessor<br/>identity detection + edge modes"]
+GraphTest["filter_advanced_graph_test.dart<br/>complex chains + edge cases"]
+ConvolveTest["fe_convolve_matrix_test.dart<br/>kernel testing"]
+end
+Pipeline --> Context
+Pipeline --> Blend
+Pipeline --> Composite
+Pipeline --> Arithmetic
+Pipeline --> Merge
+Blend --> PrimitivePaint
+Composite --> PrimitivePaint
+Arithmetic --> PrimitivePaint
+Merge --> PrimitivePaint
+PrimitivePaint --> DropShadow
+PrimitivePaint --> ColorMatrix
+PrimitivePaint --> Passthrough
+PrimitivePaint --> ConvolveProc
+Context --> GraphTest
+ConvolveProc --> ConvolveTest
 ```
 
 **Diagram sources**
-- [SVGFilter.cpp:28-55](file://blink-b87d44f-Source-core-svg/graphics/filters/SVGFilter.cpp#L28-L55)
-- [SVGFilterBuilder.cpp:31-91](file://blink-b87d44f-Source-core-svg/graphics/filters/SVGFilterBuilder.cpp#L31-L91)
-- [SVGFEConvolveMatrixElement.cpp:283-344](file://blink-b87d44f-Source-core-svg/SVGFEConvolveMatrixElement.cpp#L283-L344)
-- [SVGFEDiffuseLightingElement.cpp:35-64](file://blink-b87d44f-Source-core-svg/SVGFEDiffuseLightingElement.cpp#L35-L64)
-- [SVGFEDistantLightElement.h:27-35](file://blink-b87d44f-Source-core-svg/SVGFEDistantLightElement.h#L27-L35)
+- [svg_filters_registry_pipeline.dart:60-175](file://lib/src/animation/svg_filters_registry_pipeline.dart#L60-L175)
+- [svg_filters_registry_pipeline_compositing.dart:3-460](file://lib/src/animation/svg_filters_registry_pipeline_compositing.dart#L3-L460)
+- [svg_filters_registry_pipeline_primitives_paint.dart:3-169](file://lib/src/animation/svg_filters_registry_pipeline_primitives_paint.dart#L3-L169)
+- [svg_filters_primitives_convolve_matrix.dart:1-52](file://lib/src/animation/svg_filters_primitives_convolve_matrix.dart#L1-L52)
+- [filter_advanced_graph_test.dart:1-1297](file://test/animation/filter_advanced_graph_test.dart#L1-L1297)
+- [fe_convolve_matrix_test.dart:146-449](file://test/animation/fe_convolve_matrix_test.dart#L146-L449)
 
 **Section sources**
-- [SVGFilter.cpp:28-55](file://blink-b87d44f-Source-core-svg/graphics/filters/SVGFilter.cpp#L28-L55)
-- [SVGFilterBuilder.cpp:31-91](file://blink-b87d44f-Source-core-svg/graphics/filters/SVGFilterBuilder.cpp#L31-L91)
+- [svg_filters_registry_pipeline.dart:60-175](file://lib/src/animation/svg_filters_registry_pipeline.dart#L60-L175)
+- [svg_filters_registry_pipeline_compositing.dart:3-460](file://lib/src/animation/svg_filters_registry_pipeline_compositing.dart#L3-L460)
+- [svg_filters_registry_pipeline_primitives_paint.dart:3-169](file://lib/src/animation/svg_filters_registry_pipeline_primitives_paint.dart#L3-L169)
 
 ## Core Components
-- SVGFilter: Encapsulates filter geometry, bounding boxes, and effect bounding box scaling behavior. Provides creation and scale application helpers used by filter primitives.
-- SVGFilterBuilder: Maintains builtin effects (source graphic/alpha), named effects, and inter-effect references. Supports clearing, invalidation, and recursive result clearing.
+The enhanced filter system introduces several key components:
 
-Key responsibilities:
-- Coordinate scaling based on effect bounding box mode
-- Manage effect identity resolution and dependency graph
-- Enable runtime attribute changes to trigger revalidation
+**SvgFiltersPipelineExtension**: Central orchestrator for filter chain resolution with comprehensive input handling and named result caching.
+
+**_FilterPipelineContext**: Manages filter graph resolution state including named result caching, circular reference detection, and background/paint context propagation.
+
+**SvgFiltersPipelineCompositingExtension**: Handles advanced compositing operations including blend modes, composite operators, arithmetic mode approximation, and merge operations.
+
+**SvgFiltersPipelinePrimitivePaintExtension**: Manages primitive-specific paint pass resolution with input chaining, offset handling, and specialized primitive processing.
+
+**SvgFiltersPipelinePrimitiveEffectsExtension**: Processes effect-specific primitives including blur, morphology, displacement map, lighting, and convolution matrix operations.
 
 **Section sources**
-- [SVGFilter.h:35-51](file://blink-b87d44f-Source-core-svg/graphics/filters/SVGFilter.h#L35-L51)
-- [SVGFilter.cpp:28-55](file://blink-b87d44f-Source-core-svg/graphics/filters/SVGFilter.cpp#L28-L55)
-- [SVGFilterBuilder.h:35-79](file://blink-b87d44f-Source-core-svg/graphics/filters/SVGFilterBuilder.h#L35-L79)
-- [SVGFilterBuilder.cpp:31-91](file://blink-b87d44f-Source-core-svg/graphics/filters/SVGFilterBuilder.cpp#L31-L91)
+- [svg_filters_registry_pipeline.dart:60-187](file://lib/src/animation/svg_filters_registry_pipeline.dart#L60-L187)
+- [svg_filters_registry_pipeline_compositing.dart:3-460](file://lib/src/animation/svg_filters_registry_pipeline_compositing.dart#L3-L460)
+- [svg_filters_registry_pipeline_primitives_paint.dart:3-169](file://lib/src/animation/svg_filters_registry_pipeline_primitives_paint.dart#L3-L169)
+- [svg_filters_registry_pipeline_primitives_effects.dart:3-224](file://lib/src/animation/svg_filters_registry_pipeline_primitives_effects.dart#L3-L224)
 
 ## Architecture Overview
-The filter pipeline is constructed from SVG filter primitive elements. Each primitive parses attributes, registers animated properties, and builds a corresponding filter effect with inputs resolved via the builder. The builder maintains:
-- Builtin effects (source graphic and source alpha)
-- Named effects keyed by id
-- Reverse references from inputs to dependents
-- Renderer-to-effect mapping for live updates
+The enhanced filter pipeline architecture provides comprehensive filter chain resolution with sophisticated input handling, named result caching, and edge case management. The system processes filter primitives in order, handling implicit input chaining, explicit named references, and complex multi-hop chains with proper caching and circular reference detection.
 
 ```mermaid
 sequenceDiagram
-participant Elem as "Filter Primitive Element"
-participant Builder as "SVGFilterBuilder"
-participant Filter as "Filter (SVGFilter)"
-participant Effect as "FilterEffect"
-Elem->>Builder : "getEffectById(in1/in2/id)"
-Builder-->>Elem : "FilterEffect or builtin"
-Elem->>Effect : "create(Filter, params...)"
-Effect->>Builder : "register inputEffects"
-Builder->>Builder : "appendEffectToEffectReferences(effect, renderer)"
-Note over Builder,Effect : "Later, renderer changes update effect via effectByRenderer"
+participant Parser as "SVG Parser"
+participant Pipeline as "SvgFiltersPipelineExtension"
+participant Context as "_FilterPipelineContext"
+participant Primitive as "Primitive Resolver"
+participant Compositor as "Compositing Extension"
+Parser->>Pipeline : "resolvePaintPasses(id)"
+Pipeline->>Context : "create pipeline context"
+loop For each primitive in chain
+Pipeline->>Context : "beginResolve(resultName)"
+Pipeline->>Primitive : "_resolvePrimitiveOutput(primitive)"
+Primitive->>Context : "resolve input references"
+Context-->>Primitive : "namedResults + previous"
+Primitive->>Compositor : "apply primitive-specific processing"
+Compositor-->>Primitive : "paint passes"
+Primitive-->>Pipeline : "output passes"
+Pipeline->>Context : "cache named result"
+Pipeline->>Context : "endResolve(resultName)"
+end
+Pipeline-->>Parser : "final paint passes"
 ```
 
 **Diagram sources**
-- [SVGFilterBuilder.cpp:52-82](file://blink-b87d44f-Source-core-svg/graphics/filters/SVGFilterBuilder.cpp#L52-L82)
-- [SVGFEBlendElement.cpp:128-142](file://blink-b87d44f-Source-core-svg/SVGFEBlendElement.cpp#L128-L142)
-- [SVGFECompositeElement.cpp:173-187](file://blink-b87d44f-Source-core-svg/SVGFECompositeElement.cpp#L173-L187)
+- [svg_filters_registry_pipeline.dart:74-175](file://lib/src/animation/svg_filters_registry_pipeline.dart#L74-L175)
+- [svg_filters_registry_pipeline_compositing.dart:45-95](file://lib/src/animation/svg_filters_registry_pipeline_compositing.dart#L45-L95)
+
+## Enhanced Pipeline Processing
+The enhanced pipeline processing system provides sophisticated filter chain resolution with comprehensive input handling and caching mechanisms.
+
+**Named Result Caching**: The system caches computed results for multi-hop chains, allowing primitives to reference results from earlier in the chain without recomputation. This enables complex filter graphs with shared intermediate results.
+
+**Circular Reference Detection**: The pipeline includes robust circular reference detection using depth tracking and reference resolution state management to prevent infinite loops and stack overflows.
+
+**Background/Paint Context Propagation**: The system supports background image, background alpha, fill paint, and stroke paint contexts that can be passed down through filter chains for complex rendering scenarios.
+
+**Section sources**
+- [svg_filters_registry_pipeline.dart:9-58](file://lib/src/animation/svg_filters_registry_pipeline.dart#L9-L58)
+- [svg_filters_registry_pipeline.dart:112-175](file://lib/src/animation/svg_filters_registry_pipeline.dart#L112-L175)
+
+## Advanced Compositing Capabilities
+The enhanced compositing system provides comprehensive support for blend modes, composite operators, and arithmetic mode approximation with sophisticated edge case handling.
+
+**Blend Operations**: Supports all standard blend modes with proper input resolution and fallback handling for unknown references.
+
+**Composite Operations**: Handles all composite operators including arithmetic mode with intelligent coefficient approximation and bias handling.
+
+**Merge Operations**: Supports complex merge scenarios with non-adjacent result references, implicit input chaining, and proper layer ordering according to SVG specifications.
+
+**Arithmetic Mode Approximation**: Provides intelligent approximation of arithmetic composite operations using blend modes and color filters for complex coefficient combinations.
+
+**Section sources**
+- [svg_filters_registry_pipeline_compositing.dart:4-95](file://lib/src/animation/svg_filters_registry_pipeline_compositing.dart#L4-L95)
+- [svg_filters_registry_pipeline_compositing.dart:166-253](file://lib/src/animation/svg_filters_registry_pipeline_compositing.dart#L166-L253)
+- [svg_filters_registry_pipeline_compositing.dart:255-443](file://lib/src/animation/svg_filters_registry_pipeline_compositing.dart#L255-L443)
+
+## Primitive Paint Handling
+The primitive paint handling system provides sophisticated pass composition and chaining for individual filter primitives.
+
+**Pass Composition**: Each primitive can compose multiple paint passes with different properties including image filters, color filters, blend modes, offsets, and paint scopes.
+
+**Input Resolution**: Supports comprehensive input resolution including SourceGraphic, SourceAlpha, BackgroundImage, BackgroundAlpha, FillPaint, StrokePaint, and named results with proper fallback handling.
+
+**Specialized Processing**: Includes specialized handlers for drop shadow expansion, color matrix application, offset processing, and passthrough operations.
+
+**Section sources**
+- [svg_filters_registry_pipeline_primitives_paint.dart:20-128](file://lib/src/animation/svg_filters_registry_pipeline_primitives_paint.dart#L20-L128)
+- [svg_filters_registry_pipeline_primitives_paint.dart:130-169](file://lib/src/animation/svg_filters_registry_pipeline_primitives_paint.dart#L130-L169)
+
+## Filter Graph Complexity Testing
+The comprehensive filter graph complexity testing validates the enhanced pipeline system with extensive scenarios covering multi-hop chains, complex dependencies, and edge cases.
+
+**Multi-hop Chain Testing**: Validates complex chains with multiple intermediate results and cross-references including branching scenarios where the same result is used by multiple downstream primitives.
+
+**Background/Foreground Context Testing**: Tests background image and alpha handling with proper fallback to SourceGraphic when context is not provided.
+
+**Fill/Stroke Paint Scope Testing**: Validates paint scope handling for fill and stroke operations with proper channel masking.
+
+**Arithmetic Mode Precision Testing**: Comprehensive testing of arithmetic composite modes with various coefficient combinations and edge cases.
+
+**Forward Reference Handling**: Validates proper handling of forward references producing transparent black output as per SVG specifications.
+
+**Section sources**
+- [filter_advanced_graph_test.dart:17-92](file://test/animation/filter_advanced_graph_test.dart#L17-L92)
+- [filter_advanced_graph_test.dart:125-238](file://test/animation/filter_advanced_graph_test.dart#L125-L238)
+- [filter_advanced_graph_test.dart:244-347](file://test/animation/filter_advanced_graph_test.dart#L244-L347)
+- [filter_advanced_graph_test.dart:352-453](file://test/animation/filter_advanced_graph_test.dart#L352-L453)
+- [filter_advanced_graph_test.dart:780-842](file://test/animation/filter_advanced_graph_test.dart#L780-L842)
 
 ## Detailed Component Analysis
 
-### SVGFilter
-- Purpose: Container for filter region, target bounding box, and effect bounding box mode. Applies horizontal/vertical scaling when effect bbox mode is active.
-- Creation: Factory method constructs with transform, source region, target bbox, filter region, and effect bbox flag.
-- Scaling: Multiplies incoming values by target width/height when effect bbox mode is enabled.
+### Enhanced Pipeline Architecture
+The enhanced pipeline architecture provides comprehensive filter chain resolution with sophisticated input handling and caching mechanisms.
+
+**Named Result Management**: The system maintains a cache of computed results that can be referenced by downstream primitives, enabling complex multi-hop chains without recomputation.
+
+**Circular Reference Prevention**: Depth tracking and reference state management prevent infinite loops and stack overflows in complex filter graphs.
+
+**Background Context Handling**: Supports background image, alpha, fill, and stroke paint contexts that can be passed through filter chains for advanced rendering scenarios.
 
 ```mermaid
 classDiagram
-class SVGFilter {
-+create(absoluteTransform, absoluteSourceDrawingRegion, targetBoundingBox, filterRegion, effectBBoxMode) SVGFilter
-+applyHorizontalScale(value) float
-+applyVerticalScale(value) float
-+sourceImageRect() FloatRect
-+targetBoundingBox() FloatRect
+class SvgFiltersPipelineExtension {
++resolvePaintPasses(id, sourceContext) SvgFilterPaintPass[]
++_resolvePrimitiveOutput(primitive, previous, namedResults, sourceGraphic, sourceAlpha) SvgFilterPaintPass[]
 }
+class _FilterPipelineContext {
++namedResults Map~String, SvgFilterPaintPass[]~
++computedPrimitives Set~String~
++beginResolve(name) bool
++endResolve(name) void
++wouldCauseCircular(name) bool
+}
+class SvgFilterPaintPass {
++imageFilter ImageFilter?
++colorFilter ColorFilter?
++blendMode BlendMode?
++offset Offset
++paintFill bool
++paintStroke bool
+}
+SvgFiltersPipelineExtension --> _FilterPipelineContext
+SvgFiltersPipelineExtension --> SvgFilterPaintPass
+_FilterPipelineContext --> SvgFilterPaintPass
 ```
 
 **Diagram sources**
-- [SVGFilter.h:35-51](file://blink-b87d44f-Source-core-svg/graphics/filters/SVGFilter.h#L35-L51)
-- [SVGFilter.cpp:28-55](file://blink-b87d44f-Source-core-svg/graphics/filters/SVGFilter.cpp#L28-L55)
+- [svg_filters_registry_pipeline.dart:60-187](file://lib/src/animation/svg_filters_registry_pipeline.dart#L60-L187)
+- [svg_filters_registry_pipeline_primitives_paint.dart:43-52](file://lib/src/animation/svg_filters_registry_pipeline_primitives_paint.dart#L43-L52)
 
 **Section sources**
-- [SVGFilter.h:35-51](file://blink-b87d44f-Source-core-svg/graphics/filters/SVGFilter.h#L35-L51)
-- [SVGFilter.cpp:28-55](file://blink-b87d44f-Source-core-svg/graphics/filters/SVGFilter.cpp#L28-L55)
+- [svg_filters_registry_pipeline.dart:9-58](file://lib/src/animation/svg_filters_registry_pipeline.dart#L9-L58)
+- [svg_filters_registry_pipeline.dart:112-175](file://lib/src/animation/svg_filters_registry_pipeline.dart#L112-L175)
 
-### SVGFilterBuilder
-- Purpose: Central registry for named and builtin effects; tracks effect dependencies; supports clearing and recursive result clearing; maps renderers to effects for live updates.
-- Builtin effects: SourceGraphic and SourceAlpha are registered automatically.
-- Effect lookup: Empty id resolves to last effect or builtin source graphic; otherwise resolves named ids or builtin ids.
-- References: For each effect input, records dependents to enable cascading invalidation.
+### Advanced Compositing System
+The advanced compositing system provides comprehensive support for blend modes, composite operators, and arithmetic mode approximation.
 
-```mermaid
-classDiagram
-class SVGFilterBuilder {
-+create(sourceGraphic, sourceAlpha) SVGFilterBuilder
-+add(id, effect) void
-+getEffectById(id) FilterEffect*
-+lastEffect() FilterEffect*
-+appendEffectToEffectReferences(effect, renderer) void
-+effectReferences(effect) FilterEffectSet&
-+effectByRenderer(renderer) FilterEffect*
-+clearEffects() void
-+clearResultsRecursive(effect) void
-}
-```
+**Blend Mode Processing**: Handles all standard blend modes with proper input resolution and fallback to empty output for unknown references.
 
-**Diagram sources**
-- [SVGFilterBuilder.h:35-79](file://blink-b87d44f-Source-core-svg/graphics/filters/SVGFilterBuilder.h#L35-L79)
+**Composite Operator Handling**: Supports all composite operators with special handling for arithmetic mode including coefficient approximation and bias application.
 
-**Section sources**
-- [SVGFilterBuilder.h:35-79](file://blink-b87d44f-Source-core-svg/graphics/filters/SVGFilterBuilder.h#L35-L79)
-- [SVGFilterBuilder.cpp:31-91](file://blink-b87d44f-Source-core-svg/graphics/filters/SVGFilterBuilder.cpp#L31-L91)
+**Merge Operation Complexity**: Supports complex merge scenarios with non-adjacent result references, implicit input chaining, and proper layer ordering.
 
-### Built-in Filter Primitives
-
-#### Gaussian Blur (SVGFEGaussianBlurElement)
-- Inputs: in1 (default to last/builtin), stdDeviation x/y
-- Validation: Negative deviations are rejected
-- Build: Creates a blur effect with parsed parameters and attaches in1 as input
+**Arithmetic Mode Intelligence**: Provides intelligent approximation of arithmetic composite operations using blend modes and color filters for complex coefficient combinations.
 
 ```mermaid
 flowchart TD
-Start(["Build Gaussian Blur"]) --> GetIn["Resolve 'in1' via builder"]
-GetIn --> ValidIn{"Input found?"}
-ValidIn -- No --> Fail["Return null"]
-ValidIn -- Yes --> CheckDev["Check stdDeviation >= 0"]
-CheckDev --> DevOK{"Valid?"}
-DevOK -- No --> Fail
-DevOK -- Yes --> Create["Create FEGaussianBlur(effect, rx, ry)"]
-Create --> Attach["Attach input 'in1'"]
-Attach --> Done(["Effect ready"])
+Start(["Arithmetic Composite Processing"]) --> CheckCoeffs["Check k1,k2,k3,k4 coefficients"]
+CheckCoeffs --> AllZero{"All coefficients zero?"}
+AllZero -- Yes --> EmptyOutput["Return empty output"]
+AllZero -- No --> CheckK2One{"k2 ≈ 1.0?"}
+CheckK2One -- Yes --> ReturnInput["Return input passes"]
+CheckK2One -- No --> CheckK3One{"k3 ≈ 1.0?"}
+CheckK3One -- Yes --> ResolveInput2["Resolve input2"]
+CheckK3One -- No --> CheckK2K3{"k2 ≈ 1.0 AND k3 ≈ 1.0?"}
+CheckK2K3 -- Yes --> AdditiveBlend["Create additive blend (plus)"]
+CheckK2K3 -- No --> GeneralArithmetic["Handle general arithmetic"]
+GeneralArithmetic --> ApplyBias["Apply k4 bias if present"]
+ApplyBias --> CombineInputs["Combine inputs with appropriate blend modes"]
+CombineInputs --> ReturnResult["Return combined passes"]
 ```
 
 **Diagram sources**
-- [SVGFEGaussianBlurElement.cpp:128-141](file://blink-b87d44f-Source-core-svg/SVGFEGaussianBlurElement.cpp#L128-L141)
+- [svg_filters_registry_pipeline_compositing.dart:166-253](file://lib/src/animation/svg_filters_registry_pipeline_compositing.dart#L166-L253)
+- [svg_filters_registry_pipeline_compositing.dart:255-443](file://lib/src/animation/svg_filters_registry_pipeline_compositing.dart#L255-L443)
 
 **Section sources**
-- [SVGFEGaussianBlurElement.cpp:128-141](file://blink-b87d44f-Source-core-svg/SVGFEGaussianBlurElement.cpp#L128-L141)
+- [svg_filters_registry_pipeline_compositing.dart:4-95](file://lib/src/animation/svg_filters_registry_pipeline_compositing.dart#L4-L95)
+- [svg_filters_registry_pipeline_compositing.dart:166-253](file://lib/src/animation/svg_filters_registry_pipeline_compositing.dart#L166-L253)
+- [svg_filters_registry_pipeline_compositing.dart:255-443](file://lib/src/animation/svg_filters_registry_pipeline_compositing.dart#L255-L443)
 
-#### Blend (SVGFEBlendElement)
-- Inputs: in1, in2; mode enumeration
-- Build: Creates a blend effect with two inputs and sets blend mode
+### Primitive Paint Pass System
+The primitive paint pass system provides sophisticated pass composition and chaining for individual filter primitives.
 
-```mermaid
-sequenceDiagram
-participant Elem as "SVGFEBlendElement"
-participant Builder as "SVGFilterBuilder"
-participant Blend as "FEBlend"
-Elem->>Builder : "getEffectById(in1)"
-Elem->>Builder : "getEffectById(in2)"
-Builder-->>Elem : "inputs"
-Elem->>Blend : "create(filter, mode)"
-Blend->>Blend : "inputEffects = [in1, in2]"
-```
+**Pass Composition**: Each primitive can generate multiple paint passes with different properties including image filters, color filters, blend modes, offsets, and paint scopes.
 
-**Diagram sources**
-- [SVGFEBlendElement.cpp:128-142](file://blink-b87d44f-Source-core-svg/SVGFEBlendElement.cpp#L128-L142)
+**Input Resolution**: Comprehensive input resolution supporting SourceGraphic, SourceAlpha, BackgroundImage, BackgroundAlpha, FillPaint, StrokePaint, and named results with proper fallback handling.
+
+**Specialized Handlers**: Includes specialized handlers for drop shadow expansion (feDropShadow), color matrix application, offset processing, and passthrough operations.
 
 **Section sources**
-- [SVGFEBlendElement.cpp:128-142](file://blink-b87d44f-Source-core-svg/SVGFEBlendElement.cpp#L128-L142)
+- [svg_filters_registry_pipeline_primitives_paint.dart:20-128](file://lib/src/animation/svg_filters_registry_pipeline_primitives_paint.dart#L20-L128)
+- [svg_filters_registry_pipeline_primitives_paint.dart:130-169](file://lib/src/animation/svg_filters_registry_pipeline_primitives_paint.dart#L130-L169)
 
-#### Composite (SVGFECompositeElement)
-- Inputs: in1, in2; operator and k1..k4 constants
-- Build: Creates a composite effect with operator and constant parameters
+### Enhanced Convolution Matrix Processing
+The enhanced convolution matrix processing system includes identity kernel detection and comprehensive edge mode support.
 
-```mermaid
-sequenceDiagram
-participant Elem as "SVGFECompositeElement"
-participant Builder as "SVGFilterBuilder"
-participant Comp as "FEComposite"
-Elem->>Builder : "getEffectById(in1)"
-Elem->>Builder : "getEffectById(in2)"
-Builder-->>Elem : "inputs"
-Elem->>Comp : "create(filter, op, k1..k4)"
-Comp->>Comp : "inputEffects = [in1, in2]"
-```
+**Identity Kernel Detection**: Sophisticated detection of identity kernels to avoid unnecessary convolution processing, improving performance for common operations.
 
-**Diagram sources**
-- [SVGFECompositeElement.cpp:173-187](file://blink-b87d44f-Source-core-svg/SVGFECompositeElement.cpp#L173-L187)
+**Edge Mode Support**: Comprehensive support for all edge modes (duplicate, wrap, none) with proper boundary handling and pixel sampling strategies.
+
+**Kernel Validation**: Thorough validation of kernel parameters including order dimensions, divisor normalization, and bias application.
 
 **Section sources**
-- [SVGFECompositeElement.cpp:173-187](file://blink-b87d44f-Source-core-svg/SVGFECompositeElement.cpp#L173-L187)
-
-#### Merge (SVGFEMergeElement)
-- Inputs: feMergeNode children; each node resolves via in1
-- Build: Creates a merge effect and appends all valid merge inputs
-
-```mermaid
-flowchart TD
-Start(["Build Merge"]) --> Iterate["Iterate feMergeNode children"]
-Iterate --> Resolve["Resolve child 'in1' via builder"]
-Resolve --> Found{"Input found?"}
-Found -- No --> Fail["Return null"]
-Found -- Yes --> Append["Append to merge inputEffects"]
-Append --> More{"More nodes?"}
-More -- Yes --> Iterate
-More -- No --> Create["Create FEMerge(effect)"]
-Create --> Done(["Effect ready"])
-```
-
-**Diagram sources**
-- [SVGFEMergeElement.cpp:44-61](file://blink-b87d44f-Source-core-svg/SVGFEMergeElement.cpp#L44-L61)
-
-**Section sources**
-- [SVGFEMergeElement.cpp:44-61](file://blink-b87d44f-Source-core-svg/SVGFEMergeElement.cpp#L44-L61)
-
-#### Turbulence (SVGFETurbulenceElement)
-- Parameters: type, baseFrequency x/y, numOctaves, seed, stitchTiles
-- Build: Creates a turbulence effect with validated parameters
-
-```mermaid
-flowchart TD
-Start(["Build Turbulence"]) --> Validate["Validate baseFrequency >= 0"]
-Validate --> OK{"Valid?"}
-OK -- No --> Fail["Return null"]
-OK -- Yes --> Create["Create FETurbulence(effect, type, freqX, freqY, octaves, seed, stitch)"]
-Create --> Done(["Effect ready"])
-```
-
-**Diagram sources**
-- [SVGFETurbulenceElement.cpp:175-180](file://blink-b87d44f-Source-core-svg/SVGFETurbulenceElement.cpp#L175-L180)
-
-**Section sources**
-- [SVGFETurbulenceElement.cpp:175-180](file://blink-b87d44f-Source-core-svg/SVGFETurbulenceElement.cpp#L175-L180)
-
-#### Color Matrix (SVGFEColorMatrixElement)
-- Inputs: in1; type (matrix/saturate/hueRotate) and values
-- Defaults: If values absent, defaults per type are applied
-- Build: Creates a color matrix effect with type and values
-
-```mermaid
-flowchart TD
-Start(["Build Color Matrix"]) --> GetIn["Resolve 'in1'"]
-GetIn --> HasVals{"Has 'values'?"}
-HasVals -- No --> Defaults["Apply defaults by type"]
-HasVals -- Yes --> Validate["Validate size matches type"]
-Validate --> SizeOK{"Valid?"}
-SizeOK -- No --> Fail["Return null"]
-SizeOK -- Yes --> Create["Create FEColorMatrix(effect, type, values)"]
-Defaults --> Create
-Create --> Attach["Attach input 'in1'"]
-Attach --> Done(["Effect ready"])
-```
-
-**Diagram sources**
-- [SVGFEColorMatrixElement.cpp:133-174](file://blink-b87d44f-Source-core-svg/SVGFEColorMatrixElement.cpp#L133-L174)
-
-**Section sources**
-- [SVGFEColorMatrixElement.cpp:133-174](file://blink-b87d44f-Source-core-svg/SVGFEColorMatrixElement.cpp#L133-L174)
-
-#### Component Transfer (SVGFEComponentTransferElement)
-- Inputs: in1; children define R/G/B/A transfer functions
-- Build: Collects per-channel transfer functions and creates a component transfer effect
-
-```mermaid
-sequenceDiagram
-participant Elem as "SVGFEComponentTransferElement"
-participant Builder as "SVGFilterBuilder"
-participant CT as "FEComponentTransfer"
-Elem->>Builder : "getEffectById(in1)"
-Builder-->>Elem : "input"
-Elem->>CT : "create(filter, r,g,b,a)"
-CT->>CT : "inputEffects = [in1]"
-```
-
-**Diagram sources**
-- [SVGFEComponentTransferElement.cpp:79-105](file://blink-b87d44f-Source-core-svg/SVGFEComponentTransferElement.cpp#L79-L105)
-
-**Section sources**
-- [SVGFEComponentTransferElement.cpp:79-105](file://blink-b87d44f-Source-core-svg/SVGFEComponentTransferElement.cpp#L79-L105)
-
-#### Lighting (SVGFEDiffuseLightingElement)
-- Inputs: in1; lighting color from style, surface scale, diffuse constant, kernel unit length x/y
-- Light source: Resolved from associated light element; attributes mapped to light source
-- Build: Creates a diffuse lighting effect with light source and parameters
-
-```mermaid
-sequenceDiagram
-participant Elem as "SVGFEDiffuseLightingElement"
-participant Builder as "SVGFilterBuilder"
-participant Light as "LightSource"
-participant DL as "FEDiffuseLighting"
-Elem->>Builder : "getEffectById(in1)"
-Builder-->>Elem : "input"
-Elem->>Light : "findLightSource(this)"
-Light-->>Elem : "light source"
-Elem->>DL : "create(filter, color, surfaceScale, K, kx, ky, light)"
-DL->>DL : "inputEffects = [in1]"
-```
-
-**Diagram sources**
-- [SVGFEDiffuseLightingElement.cpp:204-226](file://blink-b87d44f-Source-core-svg/SVGFEDiffuseLightingElement.cpp#L204-L226)
-
-**Section sources**
-- [SVGFEDiffuseLightingElement.cpp:204-226](file://blink-b87d44f-Source-core-svg/SVGFEDiffuseLightingElement.cpp#L204-L226)
-
-#### Convolution Matrix (SVGFEConvolveMatrixElement)
-- **Updated** New comprehensive convolution matrix primitive with advanced edge mode support
-- Inputs: in1; kernel matrix with configurable order (x/y dimensions)
-- Edge modes: duplicate, wrap, none - controls boundary handling
-- Mathematical parameters: divisor (normalization), bias (offset), target point (offset calculation)
-- Kernel unit length: x/y scaling factors for kernel space
-- Alpha preservation: optional flag to maintain original alpha channel
-- Validation: Ensures order dimensions match kernel matrix size and valid parameter ranges
-
-```mermaid
-flowchart TD
-Start(["Build Convolution Matrix"]) --> GetIn["Resolve 'in1' via builder"]
-GetIn --> ValidIn{"Input found?"}
-ValidIn -- No --> Fail["Return null"]
-ValidIn -- Yes --> ParseParams["Parse order, kernel matrix, edge mode"]
-ParseParams --> Validate["Validate orderX * orderY == kernelSize"]
-Validate --> Valid{"Valid?"}
-Valid -- No --> Fail
-Valid -- Yes --> CalcDivisor["Calculate divisor (explicit or sum)"]
-CalcDivisor --> CheckDiv{"Divisor != 0?"}
-CheckDiv -- No --> Fail
-CheckDiv -- Yes --> Create["Create FEConvolveMatrix(effect, order, divisor, bias, target, edgeMode, kernelUnitLength, preserveAlpha, kernel)"]
-Create --> Attach["Attach input 'in1'"]
-Attach --> Done(["Effect ready"])
-```
-
-**Diagram sources**
-- [SVGFEConvolveMatrixElement.cpp:283-344](file://blink-b87d44f-Source-core-svg/SVGFEConvolveMatrixElement.cpp#L283-L344)
-
-**Section sources**
-- [SVGFEConvolveMatrixElement.cpp:35-63](file://blink-b87d44f-Source-core-svg/SVGFEConvolveMatrixElement.cpp#L35-L63)
-- [SVGFEConvolveMatrixElement.cpp:103-119](file://blink-b87d44f-Source-core-svg/SVGFEConvolveMatrixElement.cpp#L103-L119)
-- [SVGFEConvolveMatrixElement.cpp:283-344](file://blink-b87d44f-Source-core-svg/SVGFEConvolveMatrixElement.cpp#L283-L344)
-
-#### Offset (SVGFEOffsetElement)
-- Inputs: in1; dx, dy offsets
-- Build: Creates an offset effect and attaches in1
-
-```mermaid
-sequenceDiagram
-participant Elem as "SVGFEOffsetElement"
-participant Builder as "SVGFilterBuilder"
-participant Off as "FEOffset"
-Elem->>Builder : "getEffectById(in1)"
-Builder-->>Elem : "input"
-Elem->>Off : "create(filter, dx, dy)"
-Off->>Off : "inputEffects = [in1]"
-```
-
-**Diagram sources**
-- [SVGFEOffsetElement.cpp:110-120](file://blink-b87d44f-Source-core-svg/SVGFEOffsetElement.cpp#L110-L120)
-
-**Section sources**
-- [SVGFEOffsetElement.cpp:110-120](file://blink-b87d44f-Source-core-svg/SVGFEOffsetElement.cpp#L110-L120)
-
-### Advanced Lighting System
-
-#### Light Source Types
-The system now supports three distinct light source types with comprehensive mathematical implementations:
-
-**Distant Light (SVGFEDistantLightElement)**
-- Directional lighting from infinity
-- Parameters: azimuth (horizontal angle), elevation (vertical angle)
-- Constant light direction across entire surface
-- Mathematical model: converts spherical coordinates to Cartesian direction vector
-
-**Point Light (SVGFELightElement)**
-- Local lighting from specific 3D position
-- Parameters: x, y, z coordinates
-- Direction varies per pixel based on surface position
-- Mathematical model: normalizes vector from light position to surface point
-
-**Spot Light (SVGFELightElement)**
-- Conical lighting with directional emphasis
-- Parameters: x, y, z (position), pointsAtX, pointsAtY, pointsAtZ (target), specularExponent, limitingConeAngle
-- Combines point light with conical attenuation
-- Mathematical model: calculates both direction and angular attenuation
-
-```mermaid
-classDiagram
-class LightSource {
-<<abstract>>
-+getDirection(surfaceX, surfaceY, surfaceZ) LightingVector3
-+getIntensity(surfaceX, surfaceY, surfaceZ) double
-}
-class DistantLight {
-+azimuth : double
-+elevation : double
-+getDirection() LightingVector3
-}
-class PointLight {
-+x : double
-+y : double
-+z : double
-+getDirection(surfaceX, surfaceY, surfaceZ) LightingVector3
-}
-class SpotLight {
-+x : double
-+y : double
-+z : double
-+pointsAtX : double
-+pointsAtY : double
-+pointsAtZ : double
-+specularExponent : double
-+limitingConeAngle : double
-+getDirection(surfaceX, surfaceY, surfaceZ) LightingVector3
-+getIntensity(surfaceX, surfaceY, surfaceZ) double
-}
-LightSource <|-- DistantLight
-LightSource <|-- PointLight
-LightSource <|-- SpotLight
-```
-
-**Diagram sources**
-- [SVGFEDistantLightElement.h:27-35](file://blink-b87d44f-Source-core-svg/SVGFEDistantLightElement.h#L27-L35)
-- [SVGFELightElement.h:1-39](file://blink-b87d44f-Source-core-svg/SVGFELightElement.h#L1-L39)
-- [svg_filters_primitives_lighting.dart:8-50](file://lib/src/animation/svg_filters_primitives_lighting.dart#L8-L50)
-
-#### Diffuse and Specular Reflection Calculations
-
-**Diffuse Lighting (Lambertian Reflectance)**
-- Formula: result.rgb = diffuseConstant × max(0, N·L) × lightColor
-- result.a = 1.0
-- Uses Lambert's cosine law for uniform surface illumination
-- Surface normal calculated from alpha channel gradients
-
-**Specular Lighting (Blinn-Phong)**
-- Formula: result.rgb = specularConstant × max(0, N·H)^specularExponent × lightColor
-- result.a = max(result.r, result.g, result.b)
-- Uses Blinn-Phong model with half-vector calculation
-- Eye position assumed at infinity on z-axis
-
-```mermaid
-flowchart TD
-LightingStart["Lighting Calculation Start"] --> ChooseModel{"Choose Model"}
-ChooseModel --> Diffuse["Diffuse Lighting<br/>Lambertian"]
-ChooseModel --> Specular["Specular Lighting<br/>Blinn-Phong"]
-Diffuse --> CalcNDotL["N·L = cos(θ)"]
-CalcNDotL --> ClampNDotL["Clamp to [0,1]"]
-ClampNDotL --> ApplyDiffuse["result = diffuseConstant × (N·L) × lightColor"]
-Specular --> CalcHalfVector["H = normalize(L + E)"]
-CalcHalfVector --> CalcNDotH["N·H"]
-NDotH --> ClampNDotH2["Clamp to [0,1]"]
-ClampNDotH2 --> PowerNDotH["(N·H)^specularExponent"]
-PowerNDotH --> ApplySpecular["result = specularConstant × (N·H)^exponent × lightColor"]
-```
-
-**Diagram sources**
-- [svg_filters_primitives_lighting_math.dart:277-318](file://lib/src/animation/svg_filters_primitives_lighting_math.dart#L277-L318)
-- [svg_filters_primitives_lighting_math.dart:326-381](file://lib/src/animation/svg_filters_primitives_lighting_math.dart#L326-L381)
-
-**Section sources**
-- [SVGFEDiffuseLightingElement.cpp:35-64](file://blink-b87d44f-Source-core-svg/SVGFEDiffuseLightingElement.cpp#L35-L64)
-- [SVGFELightElement.cpp](file://blink-b87d44f-Source-core-svg/SVGFELightElement.cpp)
-- [SVGFELightElement.h](file://blink-b87d44f-Source-core-svg/SVGFELightElement.h)
-- [svg_filters_primitives_lighting.dart:52-198](file://lib/src/animation/svg_filters_primitives_lighting.dart#L52-L198)
-- [svg_filters_primitives_lighting_math.dart:130-188](file://lib/src/animation/svg_filters_primitives_lighting_math.dart#L130-L188)
-
-### Filter Animation Support and Real-time Updates
-- Animated properties: Each primitive registers animated properties for its attributes (e.g., stdDeviation, mode, operator, k1..k4, offsets, convolution parameters).
-- Attribute parsing: Attributes are parsed into base/current values; invalidation triggers rebuilds.
-- Runtime updates: The builder maps renderers to effects, enabling live updates when attributes change.
-- **Updated** Convolution matrix parameters now support real-time animation including edge mode, divisor, bias, and preserveAlpha flags.
-
-```mermaid
-sequenceDiagram
-participant Renderer as "Renderer"
-participant Elem as "Filter Primitive Element"
-participant Builder as "SVGFilterBuilder"
-participant Effect as "FilterEffect"
-Renderer->>Elem : "Attribute change"
-Elem->>Elem : "parseAttribute(name, value)"
-Elem->>Elem : "svgAttributeChanged(name)"
-Elem->>Builder : "invalidate() / primitiveAttributeChanged()"
-Builder->>Effect : "clearResultsRecursive(effect)"
-Effect-->>Renderer : "Rebuild and redraw"
-```
-
-**Diagram sources**
-- [SVGFECompositeElement.cpp:147-171](file://blink-b87d44f-Source-core-svg/SVGFECompositeElement.cpp#L147-L171)
-- [SVGFEBlendElement.cpp:106-126](file://blink-b87d44f-Source-core-svg/SVGFEBlendElement.cpp#L106-L126)
-- [SVGFEColorMatrixElement.cpp:111-131](file://blink-b87d44f-Source-core-svg/SVGFEColorMatrixElement.cpp#L111-L131)
-- [SVGFEDiffuseLightingElement.cpp:170-193](file://blink-b87d44f-Source-core-svg/SVGFEDiffuseLightingElement.cpp#L170-L193)
-- [SVGFEConvolveMatrixElement.cpp:253-281](file://blink-b87d44f-Source-core-svg/SVGFEConvolveMatrixElement.cpp#L253-L281)
-- [SVGFilterBuilder.cpp:67-82](file://blink-b87d44f-Source-core-svg/graphics/filters/SVGFilterBuilder.cpp#L67-L82)
-
-**Section sources**
-- [SVGFECompositeElement.cpp:147-171](file://blink-b87d44f-Source-core-svg/SVGFECompositeElement.cpp#L147-L171)
-- [SVGFEBlendElement.cpp:106-126](file://blink-b87d44f-Source-core-svg/SVGFEBlendElement.cpp#L106-L126)
-- [SVGFEColorMatrixElement.cpp:111-131](file://blink-b87d44f-Source-core-svg/SVGFEColorMatrixElement.cpp#L111-L131)
-- [SVGFEDiffuseLightingElement.cpp:170-193](file://blink-b87d44f-Source-core-svg/SVGFEDiffuseLightingElement.cpp#L170-L193)
-- [SVGFEConvolveMatrixElement.cpp:253-281](file://blink-b87d44f-Source-core-svg/SVGFEConvolveMatrixElement.cpp#L253-L281)
-- [SVGFilterBuilder.cpp:67-82](file://blink-b87d44f-Source-core-svg/graphics/filters/SVGFilterBuilder.cpp#L67-L82)
-
-## Dependency Analysis
-- SVGFilterBuilder depends on FilterEffect registry and maintains reverse references to support cascading invalidation.
-- Filter primitives depend on the builder for input resolution and on Filter for effect construction.
-- **Updated** Lighting primitives depend on associated light elements for light source parameters and mathematical calculations.
-- **Updated** Convolution matrix primitive depends on edge mode enumeration and mathematical processing utilities.
-
-```mermaid
-graph LR
-Builder["SVGFilterBuilder"] --> |resolves| FE["FilterEffect"]
-Blur["SVGFEGaussianBlurElement"] --> Builder
-Blend["SVGFEBlendElement"] --> Builder
-Comp["SVGFECompositeElement"] --> Builder
-Merge["SVGFEMergeElement"] --> Builder
-Turb["SVGFETurbulenceElement"] --> Builder
-ColMat["SVGFEColorMatrixElement"] --> Builder
-CompTr["SVGFEComponentTransferElement"] --> Builder
-Light["SVGFEDiffuseLightingElement"] --> Builder
-Offset["SVGFEOffsetElement"] --> Builder
-Convolve["SVGFEConvolveMatrixElement"] --> Builder
-Light --> LightSrc["SVGFELightElement"]
-Convolve --> EdgeModes["EdgeModeType<br/>duplicate/wrap/none"]
-```
-
-**Diagram sources**
-- [SVGFilterBuilder.cpp:31-91](file://blink-b87d44f-Source-core-svg/graphics/filters/SVGFilterBuilder.cpp#L31-L91)
-- [SVGFEDiffuseLightingElement.cpp:211-213](file://blink-b87d44f-Source-core-svg/SVGFEDiffuseLightingElement.cpp#L211-L213)
-- [SVGFEConvolveMatrixElement.h:33-64](file://blink-b87d44f-Source-core-svg/SVGFEConvolveMatrixElement.h#L33-L64)
-
-**Section sources**
-- [SVGFilterBuilder.cpp:31-91](file://blink-b87d44f-Source-core-svg/graphics/filters/SVGFilterBuilder.cpp#L31-L91)
-- [SVGFEDiffuseLightingElement.cpp:211-213](file://blink-b87d44f-Source-core-svg/SVGFEDiffuseLightingElement.cpp#L211-L213)
-- [SVGFEConvolveMatrixElement.h:33-64](file://blink-b87d44f-Source-core-svg/SVGFEConvolveMatrixElement.h#L33-L64)
+- [svg_filters_registry_pipeline_primitives_effects.dart:177-222](file://lib/src/animation/svg_filters_registry_pipeline_primitives_effects.dart#L177-L222)
+- [svg_filters_primitives_convolve_matrix.dart:1-52](file://lib/src/animation/svg_filters_primitives_convolve_matrix.dart#L1-L52)
 
 ## Performance Considerations
-- Prefer merging multiple operations into fewer passes when possible to reduce intermediate buffers.
-- Use effect bounding box mode judiciously; it scales parameters by target dimensions and can increase computation.
-- Limit the number of octaves and base frequency in turbulence to keep CPU/GPU costs reasonable.
-- Avoid excessive negative std deviation checks and zero-size kernels; early validation prevents wasted work.
-- **Updated** Convolution matrix performance optimization:
-  - Use identity kernel detection to skip unnecessary processing
-  - Choose appropriate edge modes (duplicate/wrap/none) based on desired visual effect
-  - Set divisor appropriately to avoid numerical instability
-  - Consider preserveAlpha flag impact on performance
-  - Optimize kernel sizes (prefer odd dimensions) for better performance
-- Reuse named effects via ids to minimize redundant computations across the pipeline.
-- Keep component transfer function chains short; each channel incurs additional sampling cost.
-- **Updated** Lighting calculations:
-  - Diffuse lighting is computationally less expensive than specular
-  - Spot lights with tight cones can be optimized with early termination
-  - Surface scale and kernel unit length significantly impact performance
+The enhanced filter system includes several performance optimizations and considerations:
 
-## Troubleshooting Guide
-Common issues and remedies:
-- Missing inputs: If an in1/in2 id does not resolve, the primitive returns null. Verify ids and ensure previous effects are declared before dependent ones.
-- Invalid parameters: Negative std deviation or mismatched color matrix sizes cause rejection. Validate inputs before applying animations.
-- **Updated** Convolution matrix issues:
-  - Order dimensions must equal kernel matrix size (orderX × orderY = kernelSize)
-  - Divisor cannot be zero; specify explicit divisor or ensure kernel sum is non-zero
-  - Target coordinates must be within valid bounds (0 ≤ target < order)
-  - Edge mode values must be valid enum values
-  - Kernel unit length values must be positive
-- **Updated** Lighting system issues:
-  - Ensure light elements are properly associated with lighting primitives
-  - Verify light source parameters are within valid ranges
-  - Check surface scale and kernel unit length values
-  - Validate specular exponent values for numerical stability
-- Cascading invalidation: When changing attributes, rely on primitiveAttributeChanged and invalidate to propagate updates; avoid bypassing the builder's reference tracking.
-- Recursive result clearing: Use clearResultsRecursive to reset downstream cached results after attribute changes.
+**Named Result Caching**: Computed results are cached for reuse by downstream primitives, eliminating redundant computations in complex filter chains.
+
+**Identity Kernel Optimization**: Convolution matrix processing includes identity kernel detection to avoid unnecessary convolution operations.
+
+**Early Exit Conditions**: Comprehensive early exit conditions for empty outputs, unknown references, and invalid parameter combinations.
+
+**Memory Management**: Proper memory management with unmodifiable cached results and efficient pass composition.
+
+**Circular Reference Prevention**: Depth tracking and circular reference detection prevent infinite loops and excessive memory usage.
 
 **Section sources**
-- [SVGFEGaussianBlurElement.cpp:135-137](file://blink-b87d44f-Source-core-svg/SVGFEGaussianBlurElement.cpp#L135-L137)
-- [SVGFEColorMatrixElement.cpp:163-167](file://blink-b87d44f-Source-core-svg/SVGFEColorMatrixElement.cpp#L163-L167)
-- [SVGFEConvolveMatrixElement.cpp:296-303](file://blink-b87d44f-Source-core-svg/SVGFEConvolveMatrixElement.cpp#L296-L303)
-- [SVGFEDiffuseLightingElement.cpp:211-213](file://blink-b87d44f-Source-core-svg/SVGFEDiffuseLightingElement.cpp#L211-L213)
-- [SVGFilterBuilder.cpp:93-104](file://blink-b87d44f-Source-core-svg/graphics/filters/SVGFilterBuilder.cpp#L93-L104)
+- [svg_filters_registry_pipeline.dart:177-186](file://lib/src/animation/svg_filters_registry_pipeline.dart#L177-L186)
+- [svg_filters_registry_pipeline_primitives_effects.dart:192-206](file://lib/src/animation/svg_filters_registry_pipeline_primitives_effects.dart#L192-L206)
+- [svg_filters_registry_pipeline.dart:26-58](file://lib/src/animation/svg_filters_registry_pipeline.dart#L26-L58)
+
+## Troubleshooting Guide
+Common issues and remedies for the enhanced filter system:
+
+**Circular Reference Issues**: The system detects circular references and produces transparent black output. Check for result name cycles and ensure proper primitive ordering.
+
+**Unknown Reference Handling**: Unknown references produce transparent black output. Verify result names match between primitives and check for typos in result attributes.
+
+**Background Context Problems**: Background images and alpha require proper source context. Ensure background context is provided when using BackgroundImage or BackgroundAlpha inputs.
+
+**Arithmetic Mode Precision**: Arithmetic composite modes with complex coefficients are approximated. For exact results, consider using equivalent blend modes or separate primitives.
+
+**Performance Issues**: Complex filter chains with many intermediate results can impact performance. Use named results judiciously and avoid excessive nesting.
+
+**Section sources**
+- [svg_filters_registry_pipeline.dart:128-132](file://lib/src/animation/svg_filters_registry_pipeline.dart#L128-L132)
+- [svg_filters_registry_pipeline_compositing.dart:187-189](file://lib/src/animation/svg_filters_registry_pipeline_compositing.dart#L187-L189)
+- [filter_advanced_graph_test.dart:780-842](file://test/animation/filter_advanced_graph_test.dart#L780-L842)
 
 ## Conclusion
-The filter system integrates a robust builder-based registry with individual filter primitives that expose animated properties and construct GPU-friendly effects. The enhanced system now includes advanced convolution matrix filtering with comprehensive edge mode support and a complete lighting system with diffuse and specular reflection calculations. By leveraging named effects, builtin sources, and precise invalidation, it supports dynamic, real-time updates. Following the best practices and troubleshooting tips herein will help achieve smooth, efficient animated effects while maintaining compatibility and performance.
+The enhanced SVG filter system provides a comprehensive and sophisticated architecture for filter chain processing with advanced pipeline capabilities, comprehensive compositing support, and extensive testing validation. The system successfully handles complex filter graphs with multi-hop chains, named result caching, circular reference prevention, and sophisticated edge case handling. The enhanced convolution matrix processing, advanced lighting system, and comprehensive testing framework ensure reliable and performant filter operations across diverse use cases.
 
 ## Appendices
 
-### Practical Examples of Filter Combinations
-- Blur + Offset + Merge: Apply blur to a source, offset it, then merge with original for glow-like effects.
-- Turbulence + Displacement Map + Lighting: Use turbulence as a displacement field and combine with lighting for organic surface appearance.
-- Color Matrix + Component Transfer: Adjust saturation/hue with color matrix, then fine-tune curves per channel via component transfer.
-- **Updated** Convolution Matrix Applications:
-  - Sharpening: `kernelMatrix="0 -1 0 -1 5 -1 0 -1 0"` with divisor=1
-  - Edge Detection: `kernelMatrix="-1 -1 -1 -1 8 -1 -1 -1 -1"` with bias=0
-  - Emboss: `kernelMatrix="2 0 0 0 -1 0 0 0 -1"` with bias=127
-  - Blur: `kernelMatrix="1 2 1 2 4 2 1 2 1"` with divisor=16
-- **Updated** Lighting Combinations:
-  - Multiple light sources: Combine distant and point lights for complex illumination
-  - Specular highlights: Add specular lighting over diffuse base for metallic surfaces
-  - Spot lighting: Create focused illumination with adjustable cone angles
-
-### Browser Compatibility and Limitations
-- Some SVG filter features may vary across engines; validate rendering across targets.
-- Certain parameter ranges or combinations may be disallowed by validation logic; adhere to documented constraints.
-- Large filter regions and high octaves can impact performance; profile and tune accordingly.
-- **Updated** Convolution matrix support varies by browser; test edge mode implementations carefully.
-- **Updated** Lighting calculations may have slight variations in different SVG engines; validate results across targets.
+### Practical Examples of Enhanced Filter Combinations
+- **Complex Multi-hop Chains**: Three-step chains with result references, branching scenarios with shared intermediate results, and deep chains with accumulated transformations.
+- **Advanced Compositing**: Blend modes with proper fallback handling, composite operations with arithmetic mode approximation, and merge operations with non-adjacent result references.
+- **Background Context Usage**: Background image and alpha integration, fill and stroke paint scope handling, and context propagation through filter chains.
+- **Convolution Matrix Applications**: Identity kernel detection optimization, edge mode testing with duplicate/wrap/none, and comprehensive kernel validation.
+- **Lighting Combinations**: Multiple light sources with different types, complex illumination scenarios, and performance optimization techniques.
 
 ### Advanced Optimization Techniques
-- **Updated** Convolution Matrix Optimization:
-  - Use identity kernel detection to avoid unnecessary processing
-  - Implement early exit for zero kernels
-  - Cache frequently used kernels
-  - Consider separable kernels for 2D operations
-- **Updated** Lighting Optimization:
-  - Pre-compute light vectors when possible
-  - Use appropriate surface scales for target resolutions
-  - Consider approximations for real-time performance
-  - Batch similar lighting operations
+- **Named Result Caching**: Strategic use of result attributes to cache intermediate computations and avoid redundant processing.
+- **Identity Kernel Detection**: Leveraging identity kernel detection to optimize convolution matrix operations.
+- **Early Exit Conditions**: Utilizing early exit for empty outputs and invalid parameter combinations.
+- **Memory Management**: Efficient pass composition and proper memory management for large filter chains.
+- **Circular Reference Prevention**: Designing filter chains to avoid circular dependencies and ensure proper execution order.
+
+### Comprehensive Testing Coverage
+- **Multi-hop Chain Validation**: Extensive testing of complex chains with shared intermediate results and cross-references.
+- **Background Context Testing**: Validation of background image and alpha handling with proper fallback mechanisms.
+- **Fill/Stroke Paint Scope**: Testing of paint scope handling for different rendering contexts.
+- **Arithmetic Mode Precision**: Comprehensive testing of arithmetic composite modes with various coefficient combinations.
+- **Edge Case Handling**: Validation of forward reference handling, unknown reference fallback, and circular reference detection.

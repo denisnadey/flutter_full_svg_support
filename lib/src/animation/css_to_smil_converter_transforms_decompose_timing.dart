@@ -61,10 +61,13 @@ _resolveDecomposedTransformTiming({
 String _resolveSmilTransformType(String functionName) {
   switch (functionName) {
     case 'rotate':
+    case 'rotatez':
       return 'rotate';
     case 'scale':
     case 'scalex':
     case 'scaley':
+    case 'scale3d':
+    case 'scalez':
       return 'scale';
     case 'skewx':
       return 'skewX';
@@ -73,6 +76,22 @@ String _resolveSmilTransformType(String functionName) {
     case 'translate':
     case 'translatex':
     case 'translatey':
+    case 'translate3d':
+    case 'translatez':
+      return 'translate';
+    // 3D rotations that need special handling
+    case 'rotatex':
+      return 'rotateX';
+    case 'rotatey':
+      return 'rotateY';
+    case 'rotate3d':
+      return 'rotate3d';
+    case 'perspective':
+      return 'perspective';
+    case 'matrix':
+      return 'matrix';
+    case 'matrix3d':
+      return 'matrix3d';
     default:
       return 'translate';
   }

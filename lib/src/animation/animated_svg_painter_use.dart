@@ -4,6 +4,88 @@ part of 'animated_svg_painter.dart';
 /// This prevents infinite loops and excessive resource usage.
 const int _kMaxUseRecursionDepth = 10;
 
+/// CSS properties that are inherited by default per CSS/SVG specification.
+/// Non-inherited properties (like opacity, transform, display) should NOT
+/// flow through <use> boundaries.
+const Set<String> _cssInheritablePropertiesForUse = {
+  // Color properties
+  'color',
+
+  // Font properties
+  'font',
+  'font-family',
+  'font-size',
+  'font-size-adjust',
+  'font-stretch',
+  'font-style',
+  'font-variant',
+  'font-variant-caps',
+  'font-variant-ligatures',
+  'font-variant-numeric',
+  'font-weight',
+  'font-feature-settings',
+  'font-variation-settings',
+
+  // Text properties
+  'letter-spacing',
+  'line-height',
+  'text-align',
+  'text-indent',
+  'text-transform',
+  'white-space',
+  'word-spacing',
+  'word-break',
+  'word-wrap',
+  'overflow-wrap',
+  'direction',
+  'writing-mode',
+  'text-orientation',
+  'dominant-baseline',
+  'alignment-baseline',
+  'baseline-shift',
+
+  // SVG specific inheritable properties
+  'fill',
+  'fill-opacity',
+  'fill-rule',
+  'stroke',
+  'stroke-opacity',
+  'stroke-width',
+  'stroke-linecap',
+  'stroke-linejoin',
+  'stroke-miterlimit',
+  'stroke-dasharray',
+  'stroke-dashoffset',
+  'marker',
+  'marker-start',
+  'marker-mid',
+  'marker-end',
+  'paint-order',
+  'color-interpolation',
+  'color-interpolation-filters',
+  'color-rendering',
+  'shape-rendering',
+  'text-rendering',
+  'image-rendering',
+
+  // Visibility
+  'visibility',
+  'pointer-events',
+  'cursor',
+
+  // Text decoration (partially inheritable)
+  'text-decoration',
+  'text-decoration-line',
+  'text-decoration-style',
+  'text-decoration-color',
+
+  // Text emphasis
+  'text-emphasis',
+  'text-emphasis-color',
+  'text-emphasis-position',
+  'text-emphasis-style',
+};
+
 /// Context for tracking inherited CSS properties across <use> element boundaries.
 ///
 /// Per SVG spec, presentation attributes and inherited CSS properties on a
@@ -14,6 +96,10 @@ const int _kMaxUseRecursionDepth = 10;
 /// Specificity rules:
 /// - Referenced element's own styles > use element's inherited styles
 /// - style attribute on use > presentation attributes on use > inherited from parent
+///
+/// IMPORTANT: Only inheritable CSS properties should flow through <use> boundaries.
+/// Non-inherited properties (opacity, transform, display, clip-path, mask, filter)
+/// should NOT cascade to referenced content.
 class _UseInheritanceContext {
   const _UseInheritanceContext({required this.useNode, this.parentContext});
 
@@ -24,9 +110,24 @@ class _UseInheritanceContext {
   final _UseInheritanceContext? parentContext;
 
   /// Gets the inherited value for a property, checking the use chain.
-  /// Returns null if the property is not set on any use element in the chain.
+  /// Returns null if the property is not inheritable or not set on any
+  /// use element in the chain.
+  ///
+  /// Per SVG spec, only inheritable CSS properties should flow through
+  /// <use> boundaries. Non-inherited properties stay on the <use> element
+  /// itself and do not cascade to referenced content.
   Object? getInheritedValue(String property) {
     final normalizedProp = property.trim().toLowerCase();
+
+    // Per SVG spec: only inheritable properties flow through <use> boundaries.
+    // Non-inherited properties (opacity, transform, display, etc.) should NOT
+    // cascade to the referenced content.
+    //
+    // CSS custom properties (starting with --) are always inherited.
+    if (!normalizedProp.startsWith('--') &&
+        !_cssInheritablePropertiesForUse.contains(normalizedProp)) {
+      return null;
+    }
 
     // Check style attribute first (highest specificity)
     final styleValue = _extractStyleValueFromNode(useNode, normalizedProp);
@@ -42,6 +143,40 @@ class _UseInheritanceContext {
 
     // Check parent context (for nested use chains)
     return parentContext?.getInheritedValue(property);
+  }
+
+  /// Gets a CSS custom property value from the use chain.
+  /// Custom properties are always inherited.
+  /// This method also checks the DOM ancestors of the use element.
+  String? getCustomProperty(String name) {
+    final normalizedName = name.trim();
+    if (!normalizedName.startsWith('--')) {
+      return null;
+    }
+
+    // Check style attribute for custom property on the use element
+    final styleValue = _extractStyleValueFromNode(useNode, normalizedName);
+    if (styleValue != null) {
+      return styleValue;
+    }
+
+    // Check DOM ancestors of the use element for custom property.
+    // CSS custom properties are inherited, so they cascade through the DOM.
+    SvgNode? ancestor = useNode.parent;
+    while (ancestor != null) {
+      final ancestorValue = _extractStyleValueFromNode(ancestor, normalizedName);
+      if (ancestorValue != null) {
+        return ancestorValue;
+      }
+      // Also check if ancestor has cssCustomProperties store
+      if (ancestor.cssCustomProperties.has(normalizedName)) {
+        return ancestor.cssCustomProperties.get(normalizedName);
+      }
+      ancestor = ancestor.parent;
+    }
+
+    // Check parent use context (for nested use chains)
+    return parentContext?.getCustomProperty(normalizedName);
   }
 
   /// Extracts a property value from an inline style attribute.

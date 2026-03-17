@@ -99,11 +99,16 @@ extension SvgFiltersPipelineCompositingExtension on SvgFilters {
   /// feMerge layers multiple inputs on top of each other in declaration order.
   /// Each feMergeNode can reference:
   /// - Named results from any previous primitive (non-adjacent allowed)
-  /// - Built-in inputs (SourceGraphic, SourceAlpha, etc.)
+  /// - Built-in inputs (SourceGraphic, SourceAlpha, BackgroundImage, etc.)
   /// - Implicit previous output (when `in` is omitted)
   ///
-  /// Layer ordering follows SVG spec: first feMergeNode is bottom layer,
-  /// last feMergeNode is top layer.
+  /// Per SVG spec:
+  /// - Layer ordering follows declaration: first feMergeNode is bottom layer,
+  ///   last feMergeNode is top layer.
+  /// - When feMergeNode omits `in`, it uses the previous primitive's result
+  ///   (or SourceGraphic for the first reference in the filter chain).
+  /// - Forward references produce transparent black.
+  /// - If all nodes resolve to empty, the result is identity (no filtering).
   List<SvgFilterPaintPass> _resolveMergeOutput({
     required SvgMergeFilter merge,
     required List<SvgFilterPaintPass> previous,
@@ -113,7 +118,8 @@ extension SvgFiltersPipelineCompositingExtension on SvgFilters {
   }) {
     final merged = <SvgFilterPaintPass>[];
 
-    // Empty nodeInputs: use previous output as fallback.
+    // Empty nodeInputs: use previous output as fallback per SVG spec.
+    // This handles the case where feMerge has no children.
     if (merge.nodeInputs.isEmpty) {
       merged.addAll(previous);
       return merged.isEmpty ? previous : merged;
@@ -123,16 +129,23 @@ extension SvgFiltersPipelineCompositingExtension on SvgFilters {
     var hasContributions = false;
 
     // Process each feMergeNode in order (bottom to top layering).
-    for (final nodeInput in merge.nodeInputs) {
+    // Each node's resolved passes are appended to create the layer stack.
+    for (var nodeIndex = 0; nodeIndex < merge.nodeInputs.length; nodeIndex++) {
+      final nodeInput = merge.nodeInputs[nodeIndex];
+
+      // Determine the effective input for this merge node.
+      // Per SVG spec: when `in` is omitted (null/empty), use the previous
+      // primitive's result. For feMergeNode specifically, if `in` is null,
+      // it inherits from the implicit previous chain.
+      final effectiveInput =
+          (nodeInput == null || nodeInput.trim().isEmpty) ? null : nodeInput;
+
       final nodePasses = _resolveInputPasses(
-        requestedInput: nodeInput,
+        requestedInput: effectiveInput,
         previous: previous,
         namedResults: namedResults,
         sourceGraphic: sourceGraphic,
         sourceAlpha: sourceAlpha,
-        // Explicit unresolved merge-node inputs are treated as empty inputs.
-        // Implicit node input (missing `in`) still resolves via previous-chain
-        // semantics.
       );
 
       if (nodePasses.isNotEmpty) {
@@ -141,7 +154,8 @@ extension SvgFiltersPipelineCompositingExtension on SvgFilters {
       }
     }
 
-    // If all nodes resolved to empty, return identity to prevent black output.
+    // If all nodes resolved to empty (e.g., all forward references),
+    // return identity to prevent black output per baseline behavior.
     if (!hasContributions) {
       return const <SvgFilterPaintPass>[SvgFilterPaintPass.identity];
     }

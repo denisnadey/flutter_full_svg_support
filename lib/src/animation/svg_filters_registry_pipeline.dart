@@ -58,6 +58,19 @@ class _FilterPipelineContext {
 }
 
 extension SvgFiltersPipelineExtension on SvgFilters {
+  /// Resolves a filter chain to a list of paint passes.
+  ///
+  /// This method processes all primitives in the filter chain, handling:
+  /// - Named result caching for multi-hop chains (A→B→C references)
+  /// - Implicit input chaining (previous result fallback)
+  /// - Forward reference handling (transparent black per SVG spec)
+  /// - Circular reference detection via resolution tracking
+  ///
+  /// Per SVG spec:
+  /// - When `in` is omitted, use the previous primitive's result
+  /// - For the first primitive, omitted `in` means SourceGraphic
+  /// - Forward references produce transparent black
+  /// - Circular references are detected and produce transparent black
   List<SvgFilterPaintPass> resolvePaintPasses(
     String id, {
     SvgFilterSourceContext? sourceContext,
@@ -105,22 +118,47 @@ extension SvgFiltersPipelineExtension on SvgFilters {
       var previous = <SvgFilterPaintPass>[...sourceGraphic];
 
       for (final primitive in list) {
-        final output = _resolvePrimitiveOutput(
-          primitive: primitive,
-          previous: previous,
-          namedResults: context.namedResults,
-          sourceGraphic: sourceGraphic,
-          sourceAlpha: sourceAlpha,
-        );
-
-        previous = output;
+        // Detect circular references by checking if we're re-entering
+        // a primitive that's currently being resolved.
         final resultName = primitive.resultName?.trim();
+        final isCircular = resultName != null &&
+            resultName.isNotEmpty &&
+            context.wouldCauseCircular(resultName);
+
+        if (isCircular) {
+          // Circular reference detected - produce transparent black per spec.
+          previous = const <SvgFilterPaintPass>[];
+          continue;
+        }
+
+        // Mark this primitive as being resolved for circular detection.
         if (resultName != null && resultName.isNotEmpty) {
-          // Cache the result for potential reuse by downstream primitives.
-          // Use shallow copy to preserve reference sharing while protecting
-          // against accidental mutation.
-          context.namedResults[resultName] = _cacheNamedResult(output);
-          context.computedPrimitives.add(resultName);
+          context.beginResolve(resultName);
+        }
+
+        try {
+          final output = _resolvePrimitiveOutput(
+            primitive: primitive,
+            previous: previous,
+            namedResults: context.namedResults,
+            sourceGraphic: sourceGraphic,
+            sourceAlpha: sourceAlpha,
+          );
+
+          previous = output;
+
+          if (resultName != null && resultName.isNotEmpty) {
+            // Cache the result for potential reuse by downstream primitives.
+            // Use shallow copy to preserve reference sharing while protecting
+            // against accidental mutation.
+            context.namedResults[resultName] = _cacheNamedResult(output);
+            context.computedPrimitives.add(resultName);
+          }
+        } finally {
+          // End resolution tracking for this primitive.
+          if (resultName != null && resultName.isNotEmpty) {
+            context.endResolve(resultName);
+          }
         }
       }
 

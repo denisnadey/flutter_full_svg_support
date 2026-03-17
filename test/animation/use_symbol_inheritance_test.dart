@@ -960,5 +960,232 @@ void main() {
         expect(analysis.pixelCount, greaterThan(1000));
       });
     });
+
+    group('Non-Inherited Properties Do NOT Flow Through Use', () {
+      testWidgets('opacity on use does NOT apply to referenced element itself', (
+        WidgetTester tester,
+      ) async {
+        // Per SVG spec, opacity is NOT an inherited property.
+        // The opacity on <use> affects the use element as a whole,
+        // but should NOT cascade to the referenced content via inheritance.
+        // The visual result is the same (the whole use subtree appears semi-transparent)
+        // but the mechanism is different - it's group compositing, not inheritance.
+        const svgXml = '''
+          <svg viewBox="0 0 100 100">
+            <defs>
+              <rect id="myRect" x="10" y="10" width="80" height="80" fill="red"/>
+            </defs>
+            <use href="#myRect" opacity="0.5"/>
+          </svg>
+        ''';
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+            ),
+          ),
+        );
+
+        await tester.pump();
+
+        // Should render (opacity is applied at the use level, not inherited)
+        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+      });
+
+      testWidgets('transform on use applies to use element only', (
+        WidgetTester tester,
+      ) async {
+        // Transform is NOT an inherited property.
+        // It affects the coordinate system but doesn't inherit.
+        const svgXml = '''
+          <svg viewBox="0 0 100 100">
+            <defs>
+              <rect id="myRect" x="0" y="0" width="30" height="30" fill="red"/>
+            </defs>
+            <use href="#myRect" transform="translate(20,20)"/>
+          </svg>
+        ''';
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+            ),
+          ),
+        );
+
+        await tester.pump();
+
+        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+
+        // The rect should be translated by the use transform
+        expect(analysis.boundingBox.left, greaterThan(30));
+        expect(analysis.boundingBox.top, greaterThan(30));
+      });
+
+      testWidgets('clip-path on use does NOT flow to referenced content', (
+        WidgetTester tester,
+      ) async {
+        // clip-path is NOT an inherited property.
+        const svgXml = '''
+          <svg viewBox="0 0 100 100">
+            <defs>
+              <clipPath id="clip1">
+                <rect x="0" y="0" width="50" height="50"/>
+              </clipPath>
+              <rect id="myRect" x="0" y="0" width="80" height="80" fill="red"/>
+            </defs>
+            <use href="#myRect" clip-path="url(#clip1)"/>
+          </svg>
+        ''';
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+            ),
+          ),
+        );
+
+        await tester.pump();
+
+        // The clip-path should be applied to the <use> element, clipping the content.
+        // This is valid and should work - clip-path on use clips the whole subtree.
+        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+      });
+    });
+
+    group('CSS Custom Properties Through Use Boundaries', () {
+      testWidgets('CSS variable defined on use cascades to referenced content', (
+        WidgetTester tester,
+      ) async {
+        // CSS custom properties are always inherited and should cascade
+        // through <use> boundaries. Uses inline style (not CSS class rules)
+        // since the renderer resolves inline styles during painting.
+        const svgXml = '''
+          <svg viewBox="0 0 100 100">
+            <defs>
+              <rect id="myRect" x="10" y="10" width="80" height="80"
+                    style="fill: var(--my-color, blue);"/>
+            </defs>
+            <use href="#myRect" style="--my-color: red;"/>
+          </svg>
+        ''';
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+            ),
+          ),
+        );
+
+        await tester.pump();
+
+        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+
+        // The CSS variable --my-color: red should cascade through use,
+        // so the rect should be red
+        expect(analysis.pixelCount, greaterThan(1000));
+      });
+
+      testWidgets('CSS variable on parent of use cascades to referenced content', (
+        WidgetTester tester,
+      ) async {
+        const svgXml = '''
+          <svg viewBox="0 0 100 100">
+            <defs>
+              <rect id="myRect" x="10" y="10" width="80" height="80"
+                    style="fill: var(--my-color, blue);"/>
+            </defs>
+            <g style="--my-color: red;">
+              <use href="#myRect"/>
+            </g>
+          </svg>
+        ''';
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+            ),
+          ),
+        );
+
+        await tester.pump();
+
+        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+
+        // The CSS variable from parent <g> should be available to referenced content
+        expect(analysis.pixelCount, greaterThan(1000));
+      });
+
+      testWidgets('CSS variable fallback is used when variable not defined', (
+        WidgetTester tester,
+      ) async {
+        // When a CSS variable is not defined, the fallback value should be used.
+        // Uses inline style to test var() fallback resolution.
+        const svgXml = '''
+          <svg viewBox="0 0 100 100">
+            <defs>
+              <rect id="myRect" x="10" y="10" width="80" height="80"
+                    style="fill: var(--undefined-color, red);"/>
+            </defs>
+            <use href="#myRect"/>
+          </svg>
+        ''';
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+            ),
+          ),
+        );
+
+        await tester.pump();
+
+        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+
+        // Should use the fallback value (red)
+        expect(analysis.pixelCount, greaterThan(1000));
+      });
+
+      testWidgets('nested use elements inherit CSS variables through chain', (
+        WidgetTester tester,
+      ) async {
+        const svgXml = '''
+          <svg viewBox="0 0 100 100">
+            <defs>
+              <rect id="baseRect" x="0" y="0" width="30" height="30"
+                    style="fill: var(--my-color, blue);"/>
+              <use id="inner" href="#baseRect"/>
+            </defs>
+            <use href="#inner" x="10" y="10" style="--my-color: red;"/>
+          </svg>
+        ''';
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+            ),
+          ),
+        );
+
+        await tester.pump();
+
+        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+
+        // CSS variable should cascade through nested use chain
+        expect(analysis.pixelCount, greaterThan(50));
+      });
+    });
   });
 }

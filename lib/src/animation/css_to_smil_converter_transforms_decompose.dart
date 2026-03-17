@@ -48,12 +48,11 @@ Map<String, Map<double, String>> _collectTransformFunctionsByOffset(
     final rawTransform = kf.properties['transform']!;
     for (final m in _cssTransformFunctionRegex.allMatches(rawTransform)) {
       final funcName = m.group(1)!.toLowerCase();
-      final args = m
-          .group(2)!
-          .split(RegExp(r'[\s,]+'))
-          .where((s) => s.trim().isNotEmpty)
-          .map((s) => s.trim())
-          .toList();
+      final argsStart = m.end;
+      final argsString = _extractFunctionArgs(rawTransform, argsStart);
+      if (argsString == null) continue;
+      
+      final args = _parseTransformArgs(argsString);
 
       String? normalized;
       switch (funcName) {

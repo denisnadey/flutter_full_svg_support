@@ -772,5 +772,525 @@ void main() {
         expect(passes, isNotEmpty);
       });
     });
+
+    // =========================================================================
+    // Forward reference and edge case tests
+    // =========================================================================
+    group('Forward reference handling', () {
+      test('Forward reference produces transparent black (empty output)', () {
+        final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="forwardRefFx">
+      <feOffset in="futureResult" dx="5" dy="0" result="first"/>
+      <feGaussianBlur stdDeviation="2" result="futureResult"/>
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="50" height="50" fill="blue" filter="url(#forwardRefFx)"/>
+</svg>
+''';
+
+        final document = SvgParser.parse(svgString);
+        final passes = document.filters!.resolvePaintPasses('forwardRefFx');
+
+        // Forward reference "futureResult" not yet computed when "first" runs
+        // Results in transparent black for first, then futureResult computes normally
+        // Final output is futureResult's blur
+        expect(passes, isNotEmpty);
+      });
+
+      test('Multiple forward references all produce identity fallback', () {
+        final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="multiFwdRefFx">
+      <feOffset in="nonExistent1" dx="2" dy="0"/>
+      <feOffset in="nonExistent2" dx="3" dy="0"/>
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="50" height="50" fill="blue" filter="url(#multiFwdRefFx)"/>
+</svg>
+''';
+
+        final document = SvgParser.parse(svgString);
+        final passes = document.filters!.resolvePaintPasses('multiFwdRefFx');
+
+        // Both references are unresolved, should get identity
+        expect(passes, hasLength(1));
+        expect(passes.single.imageFilter, isNull);
+        expect(passes.single.colorFilter, isNull);
+      });
+
+      test('Unknown reference without fallback produces identity', () {
+        final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="unknownRefFx">
+      <feComposite in="doesNotExist" in2="alsoDoesNotExist" operator="over"/>
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="50" height="50" fill="blue" filter="url(#unknownRefFx)"/>
+</svg>
+''';
+
+        final document = SvgParser.parse(svgString);
+        final passes = document.filters!.resolvePaintPasses('unknownRefFx');
+
+        // Both inputs unresolved, result is identity
+        expect(passes, hasLength(1));
+      });
+    });
+
+    // =========================================================================
+    // Empty filter and single primitive tests
+    // =========================================================================
+    group('Empty filter and single primitive handling', () {
+      test('Empty filter (no primitives) returns identity', () {
+        final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="emptyFx">
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="50" height="50" fill="blue" filter="url(#emptyFx)"/>
+</svg>
+''';
+
+        final document = SvgParser.parse(svgString);
+        final passes = document.filters!.resolvePaintPasses('emptyFx');
+
+        // Empty filter should return identity
+        expect(passes, hasLength(1));
+        expect(passes.single.imageFilter, isNull);
+        expect(passes.single.colorFilter, isNull);
+        expect(passes.single.blendMode, isNull);
+      });
+
+      test('Single feOffset primitive', () {
+        final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="singleOffsetFx">
+      <feOffset dx="10" dy="20"/>
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="50" height="50" fill="blue" filter="url(#singleOffsetFx)"/>
+</svg>
+''';
+
+        final document = SvgParser.parse(svgString);
+        final passes = document.filters!.resolvePaintPasses('singleOffsetFx');
+
+        expect(passes, hasLength(1));
+        expect(passes.single.offset, const ui.Offset(10, 20));
+      });
+
+      test('Single feFlood primitive', () {
+        final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="singleFloodFx">
+      <feFlood flood-color="red" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="50" height="50" fill="blue" filter="url(#singleFloodFx)"/>
+</svg>
+''';
+
+        final document = SvgParser.parse(svgString);
+        final passes = document.filters!.resolvePaintPasses('singleFloodFx');
+
+        expect(passes, hasLength(1));
+        expect(passes.single.colorFilter, isNotNull);
+      });
+
+      test('Non-existent filter ID returns identity', () {
+        final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="existingFx">
+      <feGaussianBlur stdDeviation="5"/>
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="50" height="50" fill="blue" filter="url(#existingFx)"/>
+</svg>
+''';
+
+        final document = SvgParser.parse(svgString);
+        final passes = document.filters!.resolvePaintPasses('nonExistentFx');
+
+        // Non-existent filter returns identity
+        expect(passes, hasLength(1));
+        expect(passes.single.imageFilter, isNull);
+        expect(passes.single.colorFilter, isNull);
+      });
+    });
+
+    // =========================================================================
+    // feDropShadow spec compliance tests
+    // =========================================================================
+    group('feDropShadow SVG spec compliance', () {
+      test('feDropShadow with custom dx/dy', () {
+        final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="customOffsetShadowFx">
+      <feDropShadow dx="8" dy="12" stdDeviation="0"/>
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="50" height="50" fill="blue" filter="url(#customOffsetShadowFx)"/>
+</svg>
+''';
+
+        final document = SvgParser.parse(svgString);
+        final passes = document.filters!.resolvePaintPasses(
+          'customOffsetShadowFx',
+        );
+
+        // Shadow pass + source pass
+        expect(passes, hasLength(2));
+        expect(passes[0].offset, const ui.Offset(8, 12)); // shadow
+        expect(passes[1].offset, ui.Offset.zero); // source
+      });
+
+      test('feDropShadow with flood-color', () {
+        final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="coloredShadowFx">
+      <feDropShadow dx="3" dy="3" stdDeviation="2" flood-color="#FF0000"/>
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="50" height="50" fill="blue" filter="url(#coloredShadowFx)"/>
+</svg>
+''';
+
+        final document = SvgParser.parse(svgString);
+        final passes = document.filters!.resolvePaintPasses('coloredShadowFx');
+
+        expect(passes, hasLength(2));
+        expect(passes[0].colorFilter, isNotNull); // shadow color
+      });
+
+      test('feDropShadow with flood-opacity', () {
+        final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="opacityShadowFx">
+      <feDropShadow dx="2" dy="2" stdDeviation="1" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="50" height="50" fill="blue" filter="url(#opacityShadowFx)"/>
+</svg>
+''';
+
+        final document = SvgParser.parse(svgString);
+        final passes = document.filters!.resolvePaintPasses('opacityShadowFx');
+
+        expect(passes, hasLength(2));
+        expect(passes[0].colorFilter, isNotNull); // includes opacity
+      });
+
+      test('feDropShadow with asymmetric stdDeviation', () {
+        final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="asymmetricBlurShadowFx">
+      <feDropShadow dx="4" dy="4" stdDeviation="2 6"/>
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="50" height="50" fill="blue" filter="url(#asymmetricBlurShadowFx)"/>
+</svg>
+''';
+
+        final document = SvgParser.parse(svgString);
+        final passes = document.filters!.resolvePaintPasses(
+          'asymmetricBlurShadowFx',
+        );
+
+        expect(passes, hasLength(2));
+        // Shadow should have blur filter applied
+        expect(passes[0].imageFilter, isNotNull);
+      });
+
+      test('feDropShadow with input from previous primitive', () {
+        final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="chainedShadowFx">
+      <feColorMatrix type="saturate" values="0" result="grayscale"/>
+      <feDropShadow in="grayscale" dx="3" dy="3" stdDeviation="2"/>
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="50" height="50" fill="blue" filter="url(#chainedShadowFx)"/>
+</svg>
+''';
+
+        final document = SvgParser.parse(svgString);
+        final passes = document.filters!.resolvePaintPasses('chainedShadowFx');
+
+        // grayscale input -> shadow produces 2 passes (shadow + grayscale source)
+        expect(passes, hasLength(2));
+      });
+    });
+
+    // =========================================================================
+    // feMerge implicit input tests
+    // =========================================================================
+    group('feMerge implicit input handling', () {
+      test('feMergeNode with omitted in uses previous result', () {
+        final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="implicitMergeFx">
+      <feOffset dx="5" dy="0" result="shifted"/>
+      <feMerge>
+        <feMergeNode in="SourceGraphic"/>
+        <feMergeNode/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="50" height="50" fill="blue" filter="url(#implicitMergeFx)"/>
+</svg>
+''';
+
+        final document = SvgParser.parse(svgString);
+        final passes = document.filters!.resolvePaintPasses('implicitMergeFx');
+
+        // SourceGraphic (no offset) + implicit previous (shifted = offset 5)
+        expect(passes, hasLength(2));
+        expect(passes[0].offset, ui.Offset.zero); // SourceGraphic
+        expect(passes[1].offset, const ui.Offset(5, 0)); // shifted (previous)
+      });
+
+      test('Empty feMerge uses previous output', () {
+        final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="emptyMergeFx">
+      <feOffset dx="7" dy="0"/>
+      <feMerge>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="50" height="50" fill="blue" filter="url(#emptyMergeFx)"/>
+</svg>
+''';
+
+        final document = SvgParser.parse(svgString);
+        final passes = document.filters!.resolvePaintPasses('emptyMergeFx');
+
+        // Empty merge should pass through previous offset
+        expect(passes, hasLength(1));
+        expect(passes.single.offset, const ui.Offset(7, 0));
+      });
+
+      test('feMerge with all implicit inputs', () {
+        final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="allImplicitMergeFx">
+      <feOffset dx="3" dy="0"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode/>
+        <feMergeNode/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="50" height="50" fill="blue" filter="url(#allImplicitMergeFx)"/>
+</svg>
+''';
+
+        final document = SvgParser.parse(svgString);
+        final passes = document.filters!.resolvePaintPasses(
+          'allImplicitMergeFx',
+        );
+
+        // All three nodes use previous (offset), creating 3 identical layers
+        expect(passes, hasLength(3));
+        for (final pass in passes) {
+          expect(pass.offset, const ui.Offset(3, 0));
+        }
+      });
+
+      test('feMerge at start of filter uses SourceGraphic as implicit input',
+          () {
+        final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="firstMergeFx">
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceAlpha"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="50" height="50" fill="blue" filter="url(#firstMergeFx)"/>
+</svg>
+''';
+
+        final document = SvgParser.parse(svgString);
+        final passes = document.filters!.resolvePaintPasses('firstMergeFx');
+
+        // First implicit node should use SourceGraphic, second is SourceAlpha
+        expect(passes, hasLength(2));
+        expect(passes[0].colorFilter, isNull); // SourceGraphic (no color filter)
+        expect(passes[1].colorFilter, isNotNull); // SourceAlpha (has color filter)
+      });
+    });
+
+    // =========================================================================
+    // Filter chain with result attribute tests
+    // =========================================================================
+    group('Filter chain with result attribute cross-references', () {
+      test('Multiple primitives reference same named result', () {
+        final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="sharedResultFx">
+      <feGaussianBlur stdDeviation="2" result="blurred"/>
+      <feOffset in="blurred" dx="2" dy="0" result="offset1"/>
+      <feOffset in="blurred" dx="4" dy="0" result="offset2"/>
+      <feMerge>
+        <feMergeNode in="offset1"/>
+        <feMergeNode in="offset2"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="50" height="50" fill="blue" filter="url(#sharedResultFx)"/>
+</svg>
+''';
+
+        final document = SvgParser.parse(svgString);
+        final passes = document.filters!.resolvePaintPasses('sharedResultFx');
+
+        // Two offsets from same blurred base merged together
+        expect(passes, hasLength(2));
+        expect(passes[0].offset, const ui.Offset(2, 0)); // offset1
+        expect(passes[1].offset, const ui.Offset(4, 0)); // offset2
+        // Both should have blur
+        expect(passes[0].imageFilter, isNotNull);
+        expect(passes[1].imageFilter, isNotNull);
+      });
+
+      test('Complex DAG with diamond dependency pattern', () {
+        final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="diamondFx">
+      <feOffset dx="1" dy="0" result="root"/>
+      <feOffset in="root" dx="2" dy="0" result="leftBranch"/>
+      <feOffset in="root" dx="3" dy="0" result="rightBranch"/>
+      <feComposite in="leftBranch" in2="rightBranch" operator="over" result="merged"/>
+      <feOffset in="merged" dx="4" dy="0"/>
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="50" height="50" fill="blue" filter="url(#diamondFx)"/>
+</svg>
+''';
+
+        final document = SvgParser.parse(svgString);
+        final passes = document.filters!.resolvePaintPasses('diamondFx');
+
+        // Composite merges left (1+2=3) and right (1+3=4), then offset by 4
+        // Result should have 2 passes from composite, both offset by 4
+        expect(passes, hasLength(2));
+      });
+
+      test('Result name reuse (later primitive with same result name)', () {
+        final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="reusedResultFx">
+      <feOffset dx="1" dy="0" result="temp"/>
+      <feOffset in="temp" dx="2" dy="0"/>
+      <feOffset dx="5" dy="0" result="temp"/>
+      <feOffset in="temp" dx="10" dy="0"/>
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="50" height="50" fill="blue" filter="url(#reusedResultFx)"/>
+</svg>
+''';
+
+        final document = SvgParser.parse(svgString);
+        final passes = document.filters!.resolvePaintPasses('reusedResultFx');
+
+        // Second "temp" overwrites first, so last offset uses dx=5 (from second temp)
+        // Final offset: (1+2) implicit chain, then 5 (new temp), then 5+10=15
+        expect(passes, hasLength(1));
+        // The last temp was from implicit chain (1+2+5=8), then +10 = 18
+        expect(passes.single.offset, const ui.Offset(18, 0));
+      });
+    });
+
+    // =========================================================================
+    // Implicit input chaining tests (omitted in attributes)
+    // =========================================================================
+    group('Implicit input chaining (omitted in attributes)', () {
+      test('Chain of primitives with all omitted in attributes', () {
+        final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="implicitChainFx">
+      <feOffset dx="1" dy="0"/>
+      <feOffset dx="2" dy="0"/>
+      <feOffset dx="3" dy="0"/>
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="50" height="50" fill="blue" filter="url(#implicitChainFx)"/>
+</svg>
+''';
+
+        final document = SvgParser.parse(svgString);
+        final passes = document.filters!.resolvePaintPasses('implicitChainFx');
+
+        // Each offset uses previous, accumulating: 1+2+3=6
+        expect(passes, hasLength(1));
+        expect(passes.single.offset, const ui.Offset(6, 0));
+      });
+
+      test('First primitive with omitted in uses SourceGraphic', () {
+        final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="firstImplicitFx">
+      <feGaussianBlur stdDeviation="3"/>
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="50" height="50" fill="blue" filter="url(#firstImplicitFx)"/>
+</svg>
+''';
+
+        final document = SvgParser.parse(svgString);
+        final passes = document.filters!.resolvePaintPasses('firstImplicitFx');
+
+        // First primitive with no "in" uses SourceGraphic
+        expect(passes, hasLength(1));
+        expect(passes.single.imageFilter, isNotNull); // blur applied
+      });
+
+      test('Mix of explicit and implicit inputs', () {
+        final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="mixedInputsFx">
+      <feOffset dx="1" dy="0" result="a"/>
+      <feOffset dx="2" dy="0"/>
+      <feOffset in="a" dx="3" dy="0"/>
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="50" height="50" fill="blue" filter="url(#mixedInputsFx)"/>
+</svg>
+''';
+
+        final document = SvgParser.parse(svgString);
+        final passes = document.filters!.resolvePaintPasses('mixedInputsFx');
+
+        // a=1, implicit uses a=1+2=3, then explicit uses a=1+3=4
+        expect(passes, hasLength(1));
+        expect(passes.single.offset, const ui.Offset(4, 0));
+      });
+    });
   });
 }

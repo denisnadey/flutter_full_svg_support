@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'css_animations.dart';
+import 'css_variables_calc.dart';
 import 'smil/smil_animation.dart';
 import 'svg_dom.dart';
 
