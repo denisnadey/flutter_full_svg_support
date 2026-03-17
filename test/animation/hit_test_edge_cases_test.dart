@@ -224,7 +224,7 @@ void main() {
       testWidgets(
         'nested use references work correctly',
         (WidgetTester tester) async {
-        const svgXml = '''
+          const svgXml = '''
           <svg viewBox="0 0 100 100">
             <defs>
               <circle id="baseCircle" cx="0" cy="0" r="10" fill="blue"/>
@@ -243,53 +243,56 @@ void main() {
           </svg>
         ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: Center(
-                child: AnimatedSvgPicture.string(
-                  svgXml,
-                  width: 200,
-                  height: 200,
-                  autoPlay: true,
+          await tester.pumpWidget(
+            const MaterialApp(
+              home: Scaffold(
+                body: Center(
+                  child: AnimatedSvgPicture.string(
+                    svgXml,
+                    width: 200,
+                    height: 200,
+                    autoPlay: true,
+                  ),
                 ),
               ),
             ),
-          ),
-        );
+          );
 
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 100));
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 100));
 
-        final pictureFinder = find.byType(AnimatedSvgPicture);
-        final topLeft = tester.getTopLeft(pictureFinder);
+          final pictureFinder = find.byType(AnimatedSvgPicture);
+          final topLeft = tester.getTopLeft(pictureFinder);
 
-        // Circle should be at (50, 50) in SVG coords = (100, 100) in widget
-        final beforePixels = await VisualTestUtils.captureWidgetPixels(tester);
-        final beforeAnalysis = VisualTestUtils.analyzeRedPixels(
-          beforePixels,
-          800,
-          600,
-        );
+          // Circle should be at (50, 50) in SVG coords = (100, 100) in widget
+          final beforePixels = await VisualTestUtils.captureWidgetPixels(
+            tester,
+          );
+          final beforeAnalysis = VisualTestUtils.analyzeRedPixels(
+            beforePixels,
+            800,
+            600,
+          );
 
-        await tester.tapAt(topLeft + const Offset(100, 100));
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 500));
+          await tester.tapAt(topLeft + const Offset(100, 100));
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 500));
 
-        final afterPixels = await VisualTestUtils.captureWidgetPixels(tester);
-        final afterAnalysis = VisualTestUtils.analyzeRedPixels(
-          afterPixels,
-          800,
-          600,
-        );
+          final afterPixels = await VisualTestUtils.captureWidgetPixels(tester);
+          final afterAnalysis = VisualTestUtils.analyzeRedPixels(
+            afterPixels,
+            800,
+            600,
+          );
 
-        // Animation should have started
-        expect(
-          (afterAnalysis.centroid.dx - beforeAnalysis.centroid.dx).abs(),
-          greaterThan(5),
-        );
+          // Animation should have started
+          expect(
+            (afterAnalysis.centroid.dx - beforeAnalysis.centroid.dx).abs(),
+            greaterThan(5),
+          );
         },
-        skip: true, // Nested use chains need event propagation to parent use elements
+        skip:
+            true, // Nested use chains need event propagation to parent use elements
       );
 
       testWidgets('pointer-events:none on use element blocks hit', (

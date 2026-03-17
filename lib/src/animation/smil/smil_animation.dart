@@ -337,7 +337,10 @@ class SmilAnimation {
     if (type == SmilAnimationType.animateMotion) {
       // animateMotion обычно не использует additive (он всегда суммирует трансформации)
       // Но применяем accumulate если нужно
-      final motionValue = _computeMotionValue(t, completedRepeats: completedRepeats);
+      final motionValue = _computeMotionValue(
+        t,
+        completedRepeats: completedRepeats,
+      );
       // Для motion accumulate применяется внутри _computeMotionValue через keyPoints
       return motionValue;
     }

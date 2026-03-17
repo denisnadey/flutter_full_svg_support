@@ -349,7 +349,9 @@ class _SMILSyncbaseWidgetState extends State<SMILSyncbaseWidget> {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: AnimationTheme.accentColor.withValues(alpha: 0.15),
+                        color: AnimationTheme.accentColor.withValues(
+                          alpha: 0.15,
+                        ),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(

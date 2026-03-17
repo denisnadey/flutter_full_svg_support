@@ -15,10 +15,7 @@ const int _kMaxUseRecursionDepth = 10;
 /// - Referenced element's own styles > use element's inherited styles
 /// - style attribute on use > presentation attributes on use > inherited from parent
 class _UseInheritanceContext {
-  const _UseInheritanceContext({
-    required this.useNode,
-    this.parentContext,
-  });
+  const _UseInheritanceContext({required this.useNode, this.parentContext});
 
   /// The <use> element providing inherited properties.
   final SvgNode useNode;
@@ -348,7 +345,10 @@ extension AnimatedSvgPainterUseExtension on AnimatedSvgPainter {
     final useWidth = _getNumber(useNode, 'width');
     final useHeight = _getNumber(useNode, 'height');
 
-    if (useWidth != null && useHeight != null && useWidth > 0 && useHeight > 0) {
+    if (useWidth != null &&
+        useHeight != null &&
+        useWidth > 0 &&
+        useHeight > 0) {
       canvas.clipRect(
         ui.Rect.fromLTWH(0, 0, useWidth, useHeight),
         doAntiAlias: true,

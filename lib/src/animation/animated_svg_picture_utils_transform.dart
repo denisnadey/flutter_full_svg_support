@@ -96,7 +96,8 @@ extension _AnimatedSvgPictureStateTransformExtension
   /// Resolves transform-origin for a node.
   /// Returns (originX, originY) in local coordinates.
   Offset _resolveTransformOrigin(SvgNode node) {
-    final originValue = _extractStyleValue(node, 'transform-origin') ??
+    final originValue =
+        _extractStyleValue(node, 'transform-origin') ??
         node.getAttributeValue('transform-origin');
     if (originValue == null) {
       return Offset.zero;

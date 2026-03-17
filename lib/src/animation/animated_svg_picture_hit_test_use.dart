@@ -6,20 +6,17 @@ const int _kMaxUseRecursionDepthHitTest = 10;
 
 /// Context for tracking pointer-events inheritance across <use> boundaries.
 class _UseHitTestContext {
-  const _UseHitTestContext({
-    this.inheritedPointerEvents,
-  });
+  const _UseHitTestContext({this.inheritedPointerEvents});
 
   /// Pointer-events value inherited from <use> element.
   /// If null, use the referenced element's own pointer-events.
   final String? inheritedPointerEvents;
 
   /// Creates a new context inheriting from this one.
-  _UseHitTestContext copyWith({
-    String? inheritedPointerEvents,
-  }) {
+  _UseHitTestContext copyWith({String? inheritedPointerEvents}) {
     return _UseHitTestContext(
-      inheritedPointerEvents: inheritedPointerEvents ?? this.inheritedPointerEvents,
+      inheritedPointerEvents:
+          inheritedPointerEvents ?? this.inheritedPointerEvents,
     );
   }
 }
@@ -56,9 +53,8 @@ extension _AnimatedSvgPictureStateHitTestUseExtension
     }
 
     // Create context for pointer-events inheritance
-    final useContext = context?.copyWith(
-          inheritedPointerEvents: usePointerEvents,
-        ) ??
+    final useContext =
+        context?.copyWith(inheritedPointerEvents: usePointerEvents) ??
         _UseHitTestContext(inheritedPointerEvents: usePointerEvents);
 
     final referenceTransform = Matrix4.copy(currentTransform)
@@ -164,8 +160,8 @@ extension _AnimatedSvgPictureStateHitTestUseExtension
     final nodePointerEvents = _resolvePointerEventsMode(node);
     final effectivePointerEvents =
         nodePointerEvents == 'auto' || nodePointerEvents == 'visiblepainted'
-            ? useContext.inheritedPointerEvents ?? nodePointerEvents
-            : nodePointerEvents;
+        ? useContext.inheritedPointerEvents ?? nodePointerEvents
+        : nodePointerEvents;
     if (effectivePointerEvents == 'none') {
       return null;
     }

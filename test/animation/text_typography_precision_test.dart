@@ -5,7 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('dominant-baseline precision', () {
     testWidgets('hanging baseline positions text correctly', (tester) async {
-      const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="50" dominant-baseline="hanging" fill="black">Hanging</text>
       </svg>''';
 
@@ -25,7 +26,8 @@ void main() {
     testWidgets('mathematical baseline positions text correctly', (
       tester,
     ) async {
-      const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="50" dominant-baseline="mathematical" fill="black">Math</text>
       </svg>''';
 
@@ -45,7 +47,8 @@ void main() {
     testWidgets('ideographic baseline positions text correctly', (
       tester,
     ) async {
-      const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="80" dominant-baseline="ideographic" fill="black">漢字</text>
       </svg>''';
 
@@ -65,7 +68,8 @@ void main() {
     testWidgets('central baseline positions text at vertical center', (
       tester,
     ) async {
-      const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="50" dominant-baseline="central" fill="black">Central</text>
       </svg>''';
 
@@ -85,7 +89,8 @@ void main() {
     testWidgets('alignment-baseline falls back to dominant-baseline', (
       tester,
     ) async {
-      const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="50" alignment-baseline="middle" fill="black">Middle</text>
       </svg>''';
 
@@ -105,7 +110,8 @@ void main() {
 
   group('baseline-shift precision', () {
     testWidgets('percentage baseline-shift uses line-height', (tester) async {
-      const svg = '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="50" fill="black" style="line-height: 1.5">
           Base<tspan baseline-shift="50%">shifted</tspan>
         </text>
@@ -125,7 +131,8 @@ void main() {
     });
 
     testWidgets('em units baseline-shift works', (tester) async {
-      const svg = '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="50" fill="black">
           Base<tspan baseline-shift="0.5em">shifted</tspan>
         </text>
@@ -145,7 +152,8 @@ void main() {
     });
 
     testWidgets('ex units baseline-shift works', (tester) async {
-      const svg = '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="50" fill="black">
           Base<tspan baseline-shift="1ex">shifted</tspan>
         </text>
@@ -165,7 +173,8 @@ void main() {
     });
 
     testWidgets('sub keyword shifts down', (tester) async {
-      const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="50" fill="black">
           H<tspan baseline-shift="sub">2</tspan>O
         </text>
@@ -185,7 +194,8 @@ void main() {
     });
 
     testWidgets('super keyword shifts up', (tester) async {
-      const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="50" fill="black">
           x<tspan baseline-shift="super">2</tspan>
         </text>
@@ -207,7 +217,8 @@ void main() {
 
   group('textPath method attribute', () {
     testWidgets('method="align" positions glyphs along path', (tester) async {
-      const svg = '''<svg viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <path id="myPath" d="M 50,100 Q 150,50 250,100" fill="none"/>
         </defs>
@@ -230,7 +241,8 @@ void main() {
     });
 
     testWidgets('method="stretch" stretches text to fill path', (tester) async {
-      const svg = '''<svg viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <path id="myPath" d="M 50,100 Q 150,50 250,100" fill="none"/>
         </defs>
@@ -253,7 +265,8 @@ void main() {
     });
 
     testWidgets('textPath with percentage startOffset', (tester) async {
-      const svg = '''<svg viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <path id="myPath" d="M 0,100 L 300,100" fill="none"/>
         </defs>
@@ -275,8 +288,11 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('textPath text overflow is clipped at path end', (tester) async {
-      const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+    testWidgets('textPath text overflow is clipped at path end', (
+      tester,
+    ) async {
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <path id="shortPath" d="M 10,50 L 100,50" fill="none"/>
         </defs>
@@ -301,7 +317,8 @@ void main() {
 
   group('bidirectional text handling', () {
     testWidgets('unicode-bidi embed works with RTL', (tester) async {
-      const svg = '''<svg viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
         <text x="390" y="50" direction="rtl" unicode-bidi="embed" fill="black">
           שלום Hello World
         </text>
@@ -321,7 +338,8 @@ void main() {
     });
 
     testWidgets('unicode-bidi bidi-override forces direction', (tester) async {
-      const svg = '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="50" direction="rtl" unicode-bidi="bidi-override" fill="black">
           ABC123
         </text>
@@ -341,7 +359,8 @@ void main() {
     });
 
     testWidgets('unicode-bidi isolate works', (tester) async {
-      const svg = '''<svg viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="50" fill="black">
           LTR <tspan direction="rtl" unicode-bidi="isolate">מבודד</tspan> text
         </text>
@@ -361,7 +380,8 @@ void main() {
     });
 
     testWidgets('unicode-bidi isolate-override works', (tester) async {
-      const svg = '''<svg viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="50" fill="black">
           Normal <tspan direction="rtl" unicode-bidi="isolate-override">ABC</tspan> text
         </text>
@@ -381,7 +401,8 @@ void main() {
     });
 
     testWidgets('unicode-bidi plaintext determines direction', (tester) async {
-      const svg = '''<svg viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="50" unicode-bidi="plaintext" fill="black">
           שלום וברכה
         </text>
@@ -405,7 +426,8 @@ void main() {
     testWidgets('font-size-adjust scales font size based on aspect ratio', (
       tester,
     ) async {
-      const svg = '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="30" font-size="24" fill="black">Normal text</text>
         <text x="10" y="70" font-size="24" font-size-adjust="0.5" fill="black">Adjusted text</text>
       </svg>''';
@@ -424,7 +446,8 @@ void main() {
     });
 
     testWidgets('font-size-adjust none has no effect', (tester) async {
-      const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="50" font-size="24" font-size-adjust="none" fill="black">Normal</text>
       </svg>''';
 
@@ -444,7 +467,8 @@ void main() {
 
   group('font-stretch', () {
     testWidgets('font-stretch condensed keyword applies', (tester) async {
-      const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="50" font-stretch="condensed" fill="black">Condensed</text>
       </svg>''';
 
@@ -462,7 +486,8 @@ void main() {
     });
 
     testWidgets('font-stretch expanded keyword applies', (tester) async {
-      const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="50" font-stretch="expanded" fill="black">Expanded</text>
       </svg>''';
 
@@ -480,7 +505,8 @@ void main() {
     });
 
     testWidgets('font-stretch percentage applies', (tester) async {
-      const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="50" font-stretch="150%" fill="black">150%</text>
       </svg>''';
 
@@ -498,7 +524,8 @@ void main() {
     });
 
     testWidgets('font-stretch ultra-condensed keyword', (tester) async {
-      const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="50" font-stretch="ultra-condensed" fill="black">Ultra</text>
       </svg>''';
 
@@ -517,8 +544,11 @@ void main() {
   });
 
   group('multi-position attribute edge cases', () {
-    testWidgets('rotate last value repeats for remaining chars', (tester) async {
-      const svg = '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+    testWidgets('rotate last value repeats for remaining chars', (
+      tester,
+    ) async {
+      const svg =
+          '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
         <text x="50" y="50" rotate="0 15 30" fill="black">ABCDEFGH</text>
       </svg>''';
 
@@ -536,7 +566,8 @@ void main() {
     });
 
     testWidgets('mixed x and dx positioning', (tester) async {
-      const svg = '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10 50" dx="5 10 15" y="50" fill="black">ABCDEF</text>
       </svg>''';
 
@@ -556,7 +587,8 @@ void main() {
     testWidgets('vertical writing mode with multi-position attributes', (
       tester,
     ) async {
-      const svg = '''<svg viewBox="0 0 100 300" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 100 300" xmlns="http://www.w3.org/2000/svg">
         <text x="50" y="20 60 100 140" writing-mode="vertical-rl" fill="black">縦書き</text>
       </svg>''';
 
@@ -574,7 +606,8 @@ void main() {
     });
 
     testWidgets('tspan inherits and extends position lists', (tester) async {
-      const svg = '''<svg viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10 50 90" y="50" fill="black">
           ABC<tspan>DEF</tspan>
         </text>

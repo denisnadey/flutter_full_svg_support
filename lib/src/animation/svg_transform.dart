@@ -167,7 +167,7 @@ class SvgTransform {
     // Base assumptions: 16px = 1em = 1rem, 96dpi for absolute units
     // Sorted by length descending to avoid 'em' matching 'rem'
     const lengthUnits = <String, double>{
-      'rem': 16.0,  // Must come before 'em'
+      'rem': 16.0, // Must come before 'em'
       'em': 16.0,
       'px': 1.0,
       'ex': 8.0,

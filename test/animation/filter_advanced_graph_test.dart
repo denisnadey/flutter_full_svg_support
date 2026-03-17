@@ -36,8 +36,10 @@ void main() {
         expect(passes.single.imageFilter, isNotNull);
       });
 
-      test('Multi-hop with branching: same result used by multiple downstream primitives', () {
-        final svgString = '''
+      test(
+        'Multi-hop with branching: same result used by multiple downstream primitives',
+        () {
+          final svgString = '''
 <svg viewBox="0 0 100 100">
   <defs>
     <filter id="branchingFx">
@@ -54,15 +56,16 @@ void main() {
 </svg>
 ''';
 
-        final document = SvgParser.parse(svgString);
-        final passes = document.filters!.resolvePaintPasses('branchingFx');
+          final document = SvgParser.parse(svgString);
+          final passes = document.filters!.resolvePaintPasses('branchingFx');
 
-        // Merge combines blurred and rotated, both derived from base
-        expect(passes, hasLength(2));
-        expect(passes[0].offset, const ui.Offset(3, 0)); // blurred base
-        expect(passes[1].offset, const ui.Offset(3, 0)); // rotated base
-        expect(passes[0].imageFilter, isNotNull); // has blur
-      });
+          // Merge combines blurred and rotated, both derived from base
+          expect(passes, hasLength(2));
+          expect(passes[0].offset, const ui.Offset(3, 0)); // blurred base
+          expect(passes[1].offset, const ui.Offset(3, 0)); // rotated base
+          expect(passes[0].imageFilter, isNotNull); // has blur
+        },
+      );
 
       test('Deep chain with 5 sequential primitives', () {
         final svgString = '''
@@ -88,8 +91,10 @@ void main() {
         expect(passes.single.offset, const ui.Offset(15, 0));
       });
 
-      test('Chain with skip reference: primitive C uses result from A, not B', () {
-        final svgString = '''
+      test(
+        'Chain with skip reference: primitive C uses result from A, not B',
+        () {
+          final svgString = '''
 <svg viewBox="0 0 100 100">
   <defs>
     <filter id="skipFx">
@@ -102,14 +107,15 @@ void main() {
 </svg>
 ''';
 
-        final document = SvgParser.parse(svgString);
-        final passes = document.filters!.resolvePaintPasses('skipFx');
+          final document = SvgParser.parse(svgString);
+          final passes = document.filters!.resolvePaintPasses('skipFx');
 
-        // Composite uses "first" (offset) directly, skipping "middle" (blur)
-        expect(passes, hasLength(2));
-        expect(passes[0].offset, ui.Offset.zero); // SourceGraphic base
-        expect(passes[1].offset, const ui.Offset(5, 0)); // first (offset)
-      });
+          // Composite uses "first" (offset) directly, skipping "middle" (blur)
+          expect(passes, hasLength(2));
+          expect(passes[0].offset, ui.Offset.zero); // SourceGraphic base
+          expect(passes[1].offset, const ui.Offset(5, 0)); // first (offset)
+        },
+      );
     });
 
     // =========================================================================
@@ -358,7 +364,9 @@ void main() {
 ''';
 
         final document = SvgParser.parse(svgString);
-        final passes = document.filters!.resolvePaintPasses('arithmeticBlendFx');
+        final passes = document.filters!.resolvePaintPasses(
+          'arithmeticBlendFx',
+        );
 
         expect(passes, hasLength(2));
       });
@@ -467,13 +475,18 @@ void main() {
 ''';
 
         final document = SvgParser.parse(svgString);
-        final passes = document.filters!.resolvePaintPasses('nonAdjacentMergeFx');
+        final passes = document.filters!.resolvePaintPasses(
+          'nonAdjacentMergeFx',
+        );
 
         // Merge of first (offset 1) and last (offset 1+3=4 since last processes middle output)
         // middle processes first's output, last processes middle's output
         expect(passes, hasLength(2));
         expect(passes[0].offset, const ui.Offset(1, 0)); // first
-        expect(passes[1].offset, const ui.Offset(4, 0)); // last (first + last offset = 1+3)
+        expect(
+          passes[1].offset,
+          const ui.Offset(4, 0),
+        ); // last (first + last offset = 1+3)
       });
 
       test('feMerge with 4 nodes from different parts of chain', () {
@@ -556,7 +569,9 @@ void main() {
 ''';
 
         final document = SvgParser.parse(svgString);
-        final passes = document.filters!.resolvePaintPasses('shadowCompositeFx');
+        final passes = document.filters!.resolvePaintPasses(
+          'shadowCompositeFx',
+        );
 
         // DropShadow produces 2 passes, composite uses them
         expect(passes.length, greaterThanOrEqualTo(2));

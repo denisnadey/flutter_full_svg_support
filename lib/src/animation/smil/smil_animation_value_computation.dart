@@ -122,12 +122,7 @@ extension SmilAnimationValueComputationExtension on SmilAnimation {
           keySplines!.isNotEmpty) {
         // For motion with keyPoints, apply spline to the segment progress
         if (keyPoints != null && keyPoints.isNotEmpty && keyTimes != null) {
-          easedT = _applyMotionSpline(
-            t,
-            keyPoints,
-            keyTimes!,
-            keySplines!,
-          );
+          easedT = _applyMotionSpline(t, keyPoints, keyTimes!, keySplines!);
         } else {
           // Simple spline application for whole path
           easedT = keySplines!.first.transform(t);

@@ -84,12 +84,9 @@ extension SvgFiltersInputResolverExtension on SvgFilters {
   }) {
     // Use _createFillPaintInput and _createStrokePaintInput for proper handling
     // of pattern fills, gradient fills with objectBoundingBox, and inherited paint.
-    final fillPaint =
-        _activeFillPaint ??
-        _createFillPaintInput(sourceGraphic);
+    final fillPaint = _activeFillPaint ?? _createFillPaintInput(sourceGraphic);
     final strokePaint =
-        _activeStrokePaint ??
-        _createStrokePaintInput(sourceGraphic);
+        _activeStrokePaint ?? _createStrokePaintInput(sourceGraphic);
 
     // Use effective background methods for nested filter context support.
     final backgroundImage = effectiveBackgroundImage ?? sourceGraphic;
@@ -137,11 +134,7 @@ extension SvgFiltersInputResolverExtension on SvgFilters {
   List<SvgFilterPaintPass> _createFillPaintInput(
     List<SvgFilterPaintPass> source,
   ) {
-    return _maskPaintSourcePasses(
-      source,
-      paintFill: true,
-      paintStroke: false,
-    );
+    return _maskPaintSourcePasses(source, paintFill: true, paintStroke: false);
   }
 
   /// Create StrokePaint input with proper handling of pattern strokes,
@@ -149,11 +142,7 @@ extension SvgFiltersInputResolverExtension on SvgFilters {
   List<SvgFilterPaintPass> _createStrokePaintInput(
     List<SvgFilterPaintPass> source,
   ) {
-    return _maskPaintSourcePasses(
-      source,
-      paintFill: false,
-      paintStroke: true,
-    );
+    return _maskPaintSourcePasses(source, paintFill: false, paintStroke: true);
   }
 
   /// Resolve BackgroundImage input with transform handling.
@@ -171,12 +160,14 @@ extension SvgFiltersInputResolverExtension on SvgFilters {
 
     // Apply transform to background image passes for proper coordinate mapping.
     return backgroundImage
-        .map((pass) => pass.copyWith(
-              imageFilter: _composeImageFilter(
-                ui.ImageFilter.matrix(transform),
-                pass.imageFilter,
-              ),
-            ))
+        .map(
+          (pass) => pass.copyWith(
+            imageFilter: _composeImageFilter(
+              ui.ImageFilter.matrix(transform),
+              pass.imageFilter,
+            ),
+          ),
+        )
         .toList(growable: false);
   }
 
@@ -191,12 +182,14 @@ extension SvgFiltersInputResolverExtension on SvgFilters {
 
     // Apply transform to background alpha passes.
     return backgroundAlpha
-        .map((pass) => pass.copyWith(
-              imageFilter: _composeImageFilter(
-                ui.ImageFilter.matrix(transform),
-                pass.imageFilter,
-              ),
-            ))
+        .map(
+          (pass) => pass.copyWith(
+            imageFilter: _composeImageFilter(
+              ui.ImageFilter.matrix(transform),
+              pass.imageFilter,
+            ),
+          ),
+        )
         .toList(growable: false);
   }
 

@@ -14,7 +14,9 @@ String _interpolateTransformValue(Object from, Object to, double t) {
   final toStr = to.toString();
 
   // Handle 'none' values as identity transform
-  final effectiveFrom = _isNoneTransform(fromStr) ? _identityTransform : fromStr;
+  final effectiveFrom = _isNoneTransform(fromStr)
+      ? _identityTransform
+      : fromStr;
   final effectiveTo = _isNoneTransform(toStr) ? _identityTransform : toStr;
 
   // If both are 'none', return identity

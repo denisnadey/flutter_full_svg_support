@@ -163,7 +163,7 @@ double _parseLength(String value) {
   const unitConversions = <String, double>{
     'vmin': 1.0,
     'vmax': 1.0,
-    'rem': 16.0,  // Must come before 'em'
+    'rem': 16.0, // Must come before 'em'
     'em': 16.0,
     'px': 1.0,
     'ex': 8.0,

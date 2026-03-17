@@ -57,11 +57,13 @@ class SvgFilters {
     List<SvgFilterPaintPass>? backgroundAlpha,
     Float64List? transform,
   }) {
-    _backgroundContextStack.add(_NestedBackgroundContext(
-      backgroundImage: backgroundImage,
-      backgroundAlpha: backgroundAlpha,
-      transform: transform,
-    ));
+    _backgroundContextStack.add(
+      _NestedBackgroundContext(
+        backgroundImage: backgroundImage,
+        backgroundAlpha: backgroundAlpha,
+        transform: transform,
+      ),
+    );
   }
 
   /// Pop the most recent nested background context.

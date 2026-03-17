@@ -290,10 +290,8 @@ void main() {
       // At t=0.5, should be halfway
       final translate = transforms.firstWhere(
         (t) => t.type == SvgTransformType.translate,
-        orElse: () => SvgTransform(
-          type: SvgTransformType.translate,
-          values: [0, 0],
-        ),
+        orElse: () =>
+            SvgTransform(type: SvgTransformType.translate, values: [0, 0]),
       );
       expect(translate.values[0], closeTo(50.0, 1.0));
       expect(translate.values[1], closeTo(50.0, 1.0));
@@ -318,11 +316,7 @@ void main() {
     });
 
     test('interpolates empty string as none', () {
-      final result = Interpolators.interpolateTransform(
-        '',
-        'rotate(90)',
-        0.5,
-      );
+      final result = Interpolators.interpolateTransform('', 'rotate(90)', 0.5);
 
       final transforms = SvgTransform.parse(result);
       expect(transforms.isNotEmpty, isTrue);

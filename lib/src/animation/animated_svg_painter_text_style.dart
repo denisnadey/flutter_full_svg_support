@@ -1751,7 +1751,8 @@ extension AnimatedSvgPainterTextStyleExtension on AnimatedSvgPainter {
       // Estimate aspect ratio (x-height/font-size) - typical value is ~0.48 for many fonts
       // This is a heuristic since Flutter doesn't expose actual x-height
       const estimatedAspectRatio = 0.48;
-      effectiveFontSize = style.fontSize * (style.fontSizeAdjust! / estimatedAspectRatio);
+      effectiveFontSize =
+          style.fontSize * (style.fontSizeAdjust! / estimatedAspectRatio);
     }
 
     // Build font variations list for variable font support
@@ -1866,9 +1867,7 @@ extension AnimatedSvgPainterTextStyleExtension on AnimatedSvgPainter {
 
       case 'isolate-override':
         // Isolate and override direction
-        return isRtl
-            ? '$fsi$rlo$text$pdf$pdi'
-            : '$fsi$lro$text$pdf$pdi';
+        return isRtl ? '$fsi$rlo$text$pdf$pdi' : '$fsi$lro$text$pdf$pdi';
 
       case 'plaintext':
         // Determine direction from first strong character

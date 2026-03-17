@@ -332,15 +332,16 @@ extension SvgFiltersPipelineCompositingExtension on SvgFilters {
     // Scale by k2 and add bias
     if (_isApproximately(k2, 1.0)) {
       // No scaling needed, just add bias via blend
-      return pass.copyWith(
-        blendMode: ui.BlendMode.plus,
-      );
+      return pass.copyWith(blendMode: ui.BlendMode.plus);
     }
     return _scalePassByFactor(pass, k2);
   }
 
   /// Scale a paint pass by a factor using color filter.
-  SvgFilterPaintPass _scalePassByFactor(SvgFilterPaintPass pass, double factor) {
+  SvgFilterPaintPass _scalePassByFactor(
+    SvgFilterPaintPass pass,
+    double factor,
+  ) {
     final clampedFactor = factor.clamp(0.0, 2.0); // Allow some over-scaling
     if (_isApproximately(clampedFactor, 1.0)) {
       return pass;
@@ -363,9 +364,7 @@ extension SvgFiltersPipelineCompositingExtension on SvgFilters {
       0, 0, 0, clampedFactor, 0, // A
     ]);
 
-    return pass.copyWith(
-      colorFilter: ui.ColorFilter.matrix(matrix),
-    );
+    return pass.copyWith(colorFilter: ui.ColorFilter.matrix(matrix));
   }
 
   /// Combine arithmetic inputs using blend modes based on k-coefficients.
@@ -383,15 +382,18 @@ extension SvgFiltersPipelineCompositingExtension on SvgFilters {
     // k2 controls input1 contribution
     // k3 controls input2 contribution
 
-    if (_isApproximately(k1, 1.0) && _isApproximately(k2, 0.0) &&
+    if (_isApproximately(k1, 1.0) &&
+        _isApproximately(k2, 0.0) &&
         _isApproximately(k3, 0.0)) {
       // Pure multiplication: i1 * i2
       blendMode = ui.BlendMode.multiply;
-    } else if (_isApproximately(k1, 0.0) && _isApproximately(k2, 1.0) &&
+    } else if (_isApproximately(k1, 0.0) &&
+        _isApproximately(k2, 1.0) &&
         _isApproximately(k3, 1.0)) {
       // Additive: i1 + i2
       blendMode = ui.BlendMode.plus;
-    } else if (_isApproximately(k1, -1.0) && _isApproximately(k2, 1.0) &&
+    } else if (_isApproximately(k1, -1.0) &&
+        _isApproximately(k2, 1.0) &&
         _isApproximately(k3, 1.0)) {
       // Difference-like: i1 + i2 - i1*i2
       blendMode = ui.BlendMode.screen;

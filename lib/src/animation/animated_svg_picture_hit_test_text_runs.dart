@@ -1,11 +1,7 @@
 part of 'animated_svg_picture.dart';
 
 /// Writing modes for text layout.
-enum _WritingMode {
-  horizontalTb,
-  verticalRl,
-  verticalLr,
-}
+enum _WritingMode { horizontalTb, verticalRl, verticalLr }
 
 extension _AnimatedSvgPictureStateHitTestTextRunsExtension
     on _AnimatedSvgPictureState {

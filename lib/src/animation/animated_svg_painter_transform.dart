@@ -5,7 +5,10 @@ extension AnimatedSvgPainterCanvasTransformExtension on AnimatedSvgPainter {
     // Get both SVG transform attribute and CSS transform property
     // CSS transform property takes precedence over SVG transform attribute per spec
     final svgTransformStr = _getString(node, 'transform');
-    final cssTransformStr = _getStyleOrAttributeValue(node, 'transform')?.toString();
+    final cssTransformStr = _getStyleOrAttributeValue(
+      node,
+      'transform',
+    )?.toString();
 
     // Use CSS transform if available, otherwise fall back to SVG attribute
     // Note: In Blink, CSS transform overrides SVG transform completely
@@ -415,7 +418,9 @@ extension AnimatedSvgPainterCanvasTransformExtension on AnimatedSvgPainter {
     var yPart = parts.length > 1 ? parts[1] : 'center';
 
     // Check if first part is a vertical keyword and second is horizontal
-    if (_isVerticalKeyword(xPart) && parts.length > 1 && _isHorizontalKeyword(yPart)) {
+    if (_isVerticalKeyword(xPart) &&
+        parts.length > 1 &&
+        _isHorizontalKeyword(yPart)) {
       final temp = xPart;
       xPart = yPart;
       yPart = temp;
@@ -443,7 +448,11 @@ extension AnimatedSvgPainterCanvasTransformExtension on AnimatedSvgPainter {
 
   /// Parses a CSS length value to pixels.
   /// Supports: px, em, rem, %, vw, vh, bare numbers.
-  double _parseLengthToPixels(String value, double referenceSize, bool isWidth) {
+  double _parseLengthToPixels(
+    String value,
+    double referenceSize,
+    bool isWidth,
+  ) {
     final lower = value.toLowerCase().trim();
 
     if (lower.endsWith('px')) {
@@ -452,11 +461,13 @@ extension AnimatedSvgPainterCanvasTransformExtension on AnimatedSvgPainter {
     if (lower.endsWith('em') || lower.endsWith('rem')) {
       // Default font size is typically 16px
       final unitLen = lower.endsWith('rem') ? 3 : 2;
-      final num = double.tryParse(lower.substring(0, lower.length - unitLen)) ?? 0.0;
+      final num =
+          double.tryParse(lower.substring(0, lower.length - unitLen)) ?? 0.0;
       return num * 16.0;
     }
     if (lower.endsWith('%')) {
-      final percent = double.tryParse(lower.substring(0, lower.length - 1)) ?? 0.0;
+      final percent =
+          double.tryParse(lower.substring(0, lower.length - 1)) ?? 0.0;
       return (percent / 100.0) * referenceSize;
     }
     if (lower.endsWith('vw')) {
