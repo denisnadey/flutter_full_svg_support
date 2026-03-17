@@ -3,7 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('shape-rendering attribute', () {
-    testWidgets('shape-rendering: auto (default, anti-aliased)', (tester) async {
+    testWidgets('shape-rendering: auto (default, anti-aliased)', (
+      tester,
+    ) async {
       const svg = '''
         <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <rect x="10" y="10" width="80" height="80" fill="blue"
@@ -19,7 +21,9 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('shape-rendering: geometricPrecision (anti-aliased)', (tester) async {
+    testWidgets('shape-rendering: geometricPrecision (anti-aliased)', (
+      tester,
+    ) async {
       const svg = '''
         <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <circle cx="50" cy="50" r="40" fill="red"
@@ -35,7 +39,9 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('shape-rendering: optimizeSpeed (no anti-alias)', (tester) async {
+    testWidgets('shape-rendering: optimizeSpeed (no anti-alias)', (
+      tester,
+    ) async {
       const svg = '''
         <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <rect x="10" y="10" width="80" height="80" fill="green"

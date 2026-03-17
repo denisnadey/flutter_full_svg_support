@@ -41,8 +41,10 @@ extension AnimatedSvgPainterTextStyleExtension on AnimatedSvgPainter {
     final decorations = _resolveTextDecoration(
       _getInheritedString(node, 'text-decoration'),
     );
-    final decorationColorValue =
-        _getInheritedAttributeValue(node, 'text-decoration-color');
+    final decorationColorValue = _getInheritedAttributeValue(
+      node,
+      'text-decoration-color',
+    );
     final decorationColor = decorationColorValue != null
         ? _resolveColorForNode(decorationColorValue, node)
         : null;
@@ -75,9 +77,7 @@ extension AnimatedSvgPainterTextStyleExtension on AnimatedSvgPainter {
     final fontSizeAdjust = _resolveFontSizeAdjust(
       _getInheritedString(node, 'font-size-adjust'),
     );
-    final tabSize = _resolveTabSize(
-      _getInheritedString(node, 'tab-size'),
-    );
+    final tabSize = _resolveTabSize(_getInheritedString(node, 'tab-size'));
     final textIndent = _resolveTextIndent(
       _getInheritedString(node, 'text-indent'),
       fontSize,
@@ -93,9 +93,7 @@ extension AnimatedSvgPainterTextStyleExtension on AnimatedSvgPainter {
     final textTransform = _resolveTextTransform(
       _getInheritedString(node, 'text-transform'),
     );
-    final hyphens = _resolveHyphens(
-      _getInheritedString(node, 'hyphens'),
-    );
+    final hyphens = _resolveHyphens(_getInheritedString(node, 'hyphens'));
     final lineBreak = _resolveLineBreak(
       _getInheritedString(node, 'line-break'),
     );
@@ -229,7 +227,9 @@ extension AnimatedSvgPainterTextStyleExtension on AnimatedSvgPainter {
   /// - 0deg, 0: upright glyphs
   /// - 90deg, 90: rotated 90 degrees clockwise
   double? _resolveGlyphOrientationVertical(String? value) {
-    if (value == null || value.trim().isEmpty || value.trim().toLowerCase() == 'auto') {
+    if (value == null ||
+        value.trim().isEmpty ||
+        value.trim().toLowerCase() == 'auto') {
       return null; // auto orientation
     }
     final normalized = value.trim().toLowerCase().replaceAll('deg', '');
@@ -245,7 +245,9 @@ extension AnimatedSvgPainterTextStyleExtension on AnimatedSvgPainter {
   /// - isolate-override: combine isolate and override
   /// - plaintext: determine direction from first strong character
   String? _resolveUnicodeBidi(String? value) {
-    if (value == null || value.trim().isEmpty || value.trim().toLowerCase() == 'normal') {
+    if (value == null ||
+        value.trim().isEmpty ||
+        value.trim().toLowerCase() == 'normal') {
       return null;
     }
     return value.trim().toLowerCase();
@@ -259,13 +261,13 @@ extension AnimatedSvgPainterTextStyleExtension on AnimatedSvgPainter {
       return 100.0; // normal
     }
     final normalized = value.trim().toLowerCase();
-    
+
     // Handle percentage values
     if (normalized.endsWith('%')) {
       final numStr = normalized.substring(0, normalized.length - 1);
       return double.tryParse(numStr)?.clamp(50.0, 200.0) ?? 100.0;
     }
-    
+
     // Handle keyword values
     switch (normalized) {
       case 'ultra-condensed':
@@ -296,7 +298,9 @@ extension AnimatedSvgPainterTextStyleExtension on AnimatedSvgPainter {
   /// This is used to scale font size to maintain consistent x-height
   /// when fallback fonts have different aspect ratios.
   double? _resolveFontSizeAdjust(String? value) {
-    if (value == null || value.trim().isEmpty || value.trim().toLowerCase() == 'none') {
+    if (value == null ||
+        value.trim().isEmpty ||
+        value.trim().toLowerCase() == 'none') {
       return null;
     }
     return double.tryParse(value.trim());
@@ -516,9 +520,7 @@ extension AnimatedSvgPainterTextStyleExtension on AnimatedSvgPainter {
         ];
       case 'geometricprecision':
         // Precise geometry - enable kerning
-        return const <ui.FontFeature>[
-          ui.FontFeature.enable('kern'),
-        ];
+        return const <ui.FontFeature>[ui.FontFeature.enable('kern')];
       case 'auto':
       default:
         return const <ui.FontFeature>[];

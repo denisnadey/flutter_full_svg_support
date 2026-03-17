@@ -3,7 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('currentColor keyword', () {
-    testWidgets('currentColor in fill uses inherited color property', (tester) async {
+    testWidgets('currentColor in fill uses inherited color property', (
+      tester,
+    ) async {
       const svg = '''
         <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <g color="blue">
@@ -20,7 +22,9 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('currentColor in stroke uses inherited color property', (tester) async {
+    testWidgets('currentColor in stroke uses inherited color property', (
+      tester,
+    ) async {
       const svg = '''
         <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <g color="#FF0000">
@@ -38,7 +42,9 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('currentColor inherits through multiple levels', (tester) async {
+    testWidgets('currentColor inherits through multiple levels', (
+      tester,
+    ) async {
       const svg = '''
         <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <g color="green">
@@ -59,7 +65,9 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('currentColor defaults to black when no color property', (tester) async {
+    testWidgets('currentColor defaults to black when no color property', (
+      tester,
+    ) async {
       const svg = '''
         <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <rect x="10" y="10" width="80" height="80" fill="currentColor"/>

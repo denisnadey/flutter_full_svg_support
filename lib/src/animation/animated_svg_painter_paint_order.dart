@@ -27,7 +27,10 @@ extension AnimatedSvgPainterPaintOrderExtension on AnimatedSvgPainter {
     }
 
     // Parse space-separated tokens
-    final tokens = normalized.split(RegExp(r'\s+')).where((t) => t.isNotEmpty).toList();
+    final tokens = normalized
+        .split(RegExp(r'\s+'))
+        .where((t) => t.isNotEmpty)
+        .toList();
     final result = <_SvgPaintLayer>[];
     final seen = <_SvgPaintLayer>{};
 

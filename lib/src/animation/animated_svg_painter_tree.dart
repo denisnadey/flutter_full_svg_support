@@ -226,12 +226,8 @@ bool _paintGroupWithOpacity(
 
   // Use saveLayer for opacity compositing
   // Using null bounds lets Flutter determine the layer size
-  final layerPaint = ui.Paint()..color = ui.Color.fromARGB(
-    (opacity * 255).round(),
-    255,
-    255,
-    255,
-  );
+  final layerPaint = ui.Paint()
+    ..color = ui.Color.fromARGB((opacity * 255).round(), 255, 255, 255);
 
   canvas.saveLayer(null, layerPaint);
 

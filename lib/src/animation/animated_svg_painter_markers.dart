@@ -103,8 +103,10 @@ extension AnimatedSvgPainterMarkersExtension on AnimatedSvgPainter {
     var markerEnd = parseMarkerUrl(markerAll);
 
     // Override with specific attributes
-    final startVal =
-        _getInheritedAttributeValue(node, 'marker-start')?.toString();
+    final startVal = _getInheritedAttributeValue(
+      node,
+      'marker-start',
+    )?.toString();
     final midVal = _getInheritedAttributeValue(node, 'marker-mid')?.toString();
     final endVal = _getInheritedAttributeValue(node, 'marker-end')?.toString();
 
@@ -330,9 +332,9 @@ extension AnimatedSvgPainterMarkersExtension on AnimatedSvgPainter {
     return (x == 0 && y == 0)
         ? 0.0
         : (180.0 / 3.14159265358979) *
-            (y < 0
-                ? -_acos(x / _sqrt(x * x + y * y))
-                : _acos(x / _sqrt(x * x + y * y)));
+              (y < 0
+                  ? -_acos(x / _sqrt(x * x + y * y))
+                  : _acos(x / _sqrt(x * x + y * y)));
   }
 
   double _acos(double x) {
@@ -416,10 +418,12 @@ extension _PathVertexExtraction on AnimatedSvgPainter {
         final tangent = metric.getTangentForOffset(distance);
         if (tangent != null) {
           // Check if this is a "corner" point (significant direction change)
-          final prevTangent =
-              metric.getTangentForOffset(distance - sampleInterval * 0.5);
-          final nextTangent =
-              metric.getTangentForOffset(distance + sampleInterval * 0.5);
+          final prevTangent = metric.getTangentForOffset(
+            distance - sampleInterval * 0.5,
+          );
+          final nextTangent = metric.getTangentForOffset(
+            distance + sampleInterval * 0.5,
+          );
           if (prevTangent != null && nextTangent != null) {
             final angleDiff =
                 (prevTangent.angle - nextTangent.angle).abs() * 180 / 3.14159;

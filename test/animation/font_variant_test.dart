@@ -156,7 +156,9 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('font-variant combined with other text attributes', (tester) async {
+    testWidgets('font-variant combined with other text attributes', (
+      tester,
+    ) async {
       const svg = '''
         <svg viewBox="0 0 300 50" xmlns="http://www.w3.org/2000/svg">
           <text x="10" y="30" font-size="20" font-weight="bold" 

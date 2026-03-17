@@ -184,8 +184,9 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('pathLength without dasharray renders solid stroke',
-        (tester) async {
+    testWidgets('pathLength without dasharray renders solid stroke', (
+      tester,
+    ) async {
       const svg = '''
         <svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
           <path d="M10,50 L190,50"

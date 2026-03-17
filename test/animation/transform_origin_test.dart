@@ -37,7 +37,9 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('transform-origin: 50% 50% (center percentage)', (tester) async {
+    testWidgets('transform-origin: 50% 50% (center percentage)', (
+      tester,
+    ) async {
       const svg = '''
         <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <rect x="25" y="25" width="50" height="50" fill="green"
@@ -88,7 +90,9 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('transform-origin: 25px 25px (absolute values)', (tester) async {
+    testWidgets('transform-origin: 25px 25px (absolute values)', (
+      tester,
+    ) async {
       const svg = '''
         <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <rect x="0" y="0" width="50" height="50" fill="teal"
@@ -190,7 +194,9 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('transform-origin: single value (applied to both axes)', (tester) async {
+    testWidgets('transform-origin: single value (applied to both axes)', (
+      tester,
+    ) async {
       const svg = '''
         <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <rect x="25" y="25" width="50" height="50" fill="magenta"

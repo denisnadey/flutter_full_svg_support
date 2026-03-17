@@ -297,10 +297,13 @@ class _ResolvedTextStyle {
   final double baselineShift;
   final double letterSpacing;
   final double wordSpacing;
+
   /// Set of active text decorations (underline, overline, line-through).
   final Set<_SvgTextDecoration> decorations;
+
   /// Optional decoration color (defaults to text color).
   final ui.Color? decorationColor;
+
   /// Writing mode for vertical text support.
   final _SvgWritingMode writingMode;
 
@@ -395,7 +398,8 @@ class _ResolvedTextStyle {
       writingMode: writingMode ?? this.writingMode,
       fontFeatures: fontFeatures ?? this.fontFeatures,
       textDirection: textDirection ?? this.textDirection,
-      glyphOrientationVertical: glyphOrientationVertical ?? this.glyphOrientationVertical,
+      glyphOrientationVertical:
+          glyphOrientationVertical ?? this.glyphOrientationVertical,
       unicodeBidi: unicodeBidi ?? this.unicodeBidi,
       fontStretch: fontStretch ?? this.fontStretch,
       fontSizeAdjust: fontSizeAdjust ?? this.fontSizeAdjust,

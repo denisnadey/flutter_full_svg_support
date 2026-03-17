@@ -3,7 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('vector-effect attribute', () {
-    testWidgets('non-scaling-stroke keeps stroke width constant under scale', (tester) async {
+    testWidgets('non-scaling-stroke keeps stroke width constant under scale', (
+      tester,
+    ) async {
       // Without non-scaling-stroke, the stroke appears 2x as thick when scaled 2x
       // With non-scaling-stroke, stroke width stays constant
       const svg = '''
@@ -17,18 +19,16 @@ void main() {
       ''';
 
       await tester.pumpWidget(
-        AnimatedSvgPicture.string(
-          svg,
-          width: 100,
-          height: 100,
-        ),
+        AnimatedSvgPicture.string(svg, width: 100, height: 100),
       );
       await tester.pumpAndSettle();
 
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('non-scaling-stroke works with nested transforms', (tester) async {
+    testWidgets('non-scaling-stroke works with nested transforms', (
+      tester,
+    ) async {
       const svg = '''
         <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <g transform="scale(2)">
@@ -42,11 +42,7 @@ void main() {
       ''';
 
       await tester.pumpWidget(
-        AnimatedSvgPicture.string(
-          svg,
-          width: 100,
-          height: 100,
-        ),
+        AnimatedSvgPicture.string(svg, width: 100, height: 100),
       );
       await tester.pumpAndSettle();
 
@@ -65,11 +61,7 @@ void main() {
       ''';
 
       await tester.pumpWidget(
-        AnimatedSvgPicture.string(
-          svg,
-          width: 100,
-          height: 100,
-        ),
+        AnimatedSvgPicture.string(svg, width: 100, height: 100),
       );
       await tester.pumpAndSettle();
 
@@ -88,11 +80,7 @@ void main() {
       ''';
 
       await tester.pumpWidget(
-        AnimatedSvgPicture.string(
-          svg,
-          width: 100,
-          height: 100,
-        ),
+        AnimatedSvgPicture.string(svg, width: 100, height: 100),
       );
       await tester.pumpAndSettle();
 
@@ -111,11 +99,7 @@ void main() {
       ''';
 
       await tester.pumpWidget(
-        AnimatedSvgPicture.string(
-          svg,
-          width: 100,
-          height: 100,
-        ),
+        AnimatedSvgPicture.string(svg, width: 100, height: 100),
       );
       await tester.pumpAndSettle();
 
@@ -134,11 +118,7 @@ void main() {
       ''';
 
       await tester.pumpWidget(
-        AnimatedSvgPicture.string(
-          svg,
-          width: 100,
-          height: 100,
-        ),
+        AnimatedSvgPicture.string(svg, width: 100, height: 100),
       );
       await tester.pumpAndSettle();
 
@@ -157,11 +137,7 @@ void main() {
       ''';
 
       await tester.pumpWidget(
-        AnimatedSvgPicture.string(
-          svg,
-          width: 100,
-          height: 100,
-        ),
+        AnimatedSvgPicture.string(svg, width: 100, height: 100),
       );
       await tester.pumpAndSettle();
 
@@ -179,18 +155,16 @@ void main() {
       ''';
 
       await tester.pumpWidget(
-        AnimatedSvgPicture.string(
-          svg,
-          width: 100,
-          height: 100,
-        ),
+        AnimatedSvgPicture.string(svg, width: 100, height: 100),
       );
       await tester.pumpAndSettle();
 
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('non-scaling-stroke works with rotation transform', (tester) async {
+    testWidgets('non-scaling-stroke works with rotation transform', (
+      tester,
+    ) async {
       const svg = '''
         <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <g transform="rotate(45, 50, 50) scale(2)">
@@ -202,18 +176,16 @@ void main() {
       ''';
 
       await tester.pumpWidget(
-        AnimatedSvgPicture.string(
-          svg,
-          width: 100,
-          height: 100,
-        ),
+        AnimatedSvgPicture.string(svg, width: 100, height: 100),
       );
       await tester.pumpAndSettle();
 
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('default (no vector-effect) scales stroke normally', (tester) async {
+    testWidgets('default (no vector-effect) scales stroke normally', (
+      tester,
+    ) async {
       // Without vector-effect, stroke scales with transform
       const svg = '''
         <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
@@ -225,11 +197,7 @@ void main() {
       ''';
 
       await tester.pumpWidget(
-        AnimatedSvgPicture.string(
-          svg,
-          width: 100,
-          height: 100,
-        ),
+        AnimatedSvgPicture.string(svg, width: 100, height: 100),
       );
       await tester.pumpAndSettle();
 
@@ -248,11 +216,7 @@ void main() {
       ''';
 
       await tester.pumpWidget(
-        AnimatedSvgPicture.string(
-          svg,
-          width: 100,
-          height: 100,
-        ),
+        AnimatedSvgPicture.string(svg, width: 100, height: 100),
       );
       await tester.pumpAndSettle();
 

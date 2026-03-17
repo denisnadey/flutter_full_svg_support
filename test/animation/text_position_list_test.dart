@@ -402,9 +402,11 @@ void main() {
   });
 
   group('text-decoration attribute', () {
-    testWidgets('text with text-decoration="underline" renders without error',
-        (tester) async {
-      const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+    testWidgets('text with text-decoration="underline" renders without error', (
+      tester,
+    ) async {
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="50" text-decoration="underline" fill="black">Underlined</text>
       </svg>''';
 
@@ -421,9 +423,11 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('text with text-decoration="overline" renders without error',
-        (tester) async {
-      const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+    testWidgets('text with text-decoration="overline" renders without error', (
+      tester,
+    ) async {
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="50" text-decoration="overline" fill="black">Overlined</text>
       </svg>''';
 
@@ -441,28 +445,32 @@ void main() {
     });
 
     testWidgets(
-        'text with text-decoration="line-through" renders without error',
-        (tester) async {
-      const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      'text with text-decoration="line-through" renders without error',
+      (tester) async {
+        const svg =
+            '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="50" text-decoration="line-through" fill="black">Strikethrough</text>
       </svg>''';
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AnimatedSvgPicture.string(svg, width: 200, height: 100),
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svg, width: 200, height: 100),
+            ),
           ),
-        ),
-      );
-      await tester.pump();
-      await tester.pump();
+        );
+        await tester.pump();
+        await tester.pump();
 
-      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-    });
+        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+      },
+    );
 
-    testWidgets('text with multiple decorations renders without error',
-        (tester) async {
-      const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+    testWidgets('text with multiple decorations renders without error', (
+      tester,
+    ) async {
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="50" text-decoration="underline overline" fill="black">Both</text>
       </svg>''';
 
@@ -480,7 +488,8 @@ void main() {
     });
 
     testWidgets('tspan inherits text-decoration from parent', (tester) async {
-      const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="50" text-decoration="underline" fill="black">
           Hello <tspan fill="red">World</tspan>
         </text>
@@ -500,7 +509,8 @@ void main() {
     });
 
     testWidgets('text-decoration="none" removes decoration', (tester) async {
-      const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="50" fill="black">No decoration</text>
       </svg>''';
 
@@ -519,28 +529,33 @@ void main() {
   });
 
   group('writing-mode attribute', () {
-    testWidgets('text with writing-mode="horizontal-tb" renders without error',
-        (tester) async {
-      const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+    testWidgets(
+      'text with writing-mode="horizontal-tb" renders without error',
+      (tester) async {
+        const svg =
+            '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="50" writing-mode="horizontal-tb" fill="black">Horizontal</text>
       </svg>''';
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AnimatedSvgPicture.string(svg, width: 200, height: 100),
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svg, width: 200, height: 100),
+            ),
           ),
-        ),
-      );
-      await tester.pump();
-      await tester.pump();
+        );
+        await tester.pump();
+        await tester.pump();
 
-      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-    });
+        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+      },
+    );
 
-    testWidgets('text with writing-mode="vertical-rl" renders without error',
-        (tester) async {
-      const svg = '''<svg viewBox="0 0 100 200" xmlns="http://www.w3.org/2000/svg">
+    testWidgets('text with writing-mode="vertical-rl" renders without error', (
+      tester,
+    ) async {
+      const svg =
+          '''<svg viewBox="0 0 100 200" xmlns="http://www.w3.org/2000/svg">
         <text x="50" y="10" writing-mode="vertical-rl" fill="black">縦書き</text>
       </svg>''';
 
@@ -557,9 +572,11 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('text with writing-mode="vertical-lr" renders without error',
-        (tester) async {
-      const svg = '''<svg viewBox="0 0 100 200" xmlns="http://www.w3.org/2000/svg">
+    testWidgets('text with writing-mode="vertical-lr" renders without error', (
+      tester,
+    ) async {
+      const svg =
+          '''<svg viewBox="0 0 100 200" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="10" writing-mode="vertical-lr" fill="black">ABC</text>
       </svg>''';
 
@@ -577,7 +594,8 @@ void main() {
     });
 
     testWidgets('writing-mode is inherited by tspan', (tester) async {
-      const svg = '''<svg viewBox="0 0 100 200" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 100 200" xmlns="http://www.w3.org/2000/svg">
         <text x="50" y="10" writing-mode="vertical-rl" fill="black">
           Hello<tspan fill="red">World</tspan>
         </text>
@@ -597,7 +615,8 @@ void main() {
     });
 
     testWidgets('legacy SVG 1.1 tb-rl value works', (tester) async {
-      const svg = '''<svg viewBox="0 0 100 200" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 100 200" xmlns="http://www.w3.org/2000/svg">
         <text x="50" y="10" writing-mode="tb-rl" fill="black">Legacy</text>
       </svg>''';
 

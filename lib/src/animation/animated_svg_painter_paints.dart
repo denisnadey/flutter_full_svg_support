@@ -29,7 +29,8 @@ extension AnimatedSvgPainterPaintsExtension on AnimatedSvgPainter {
         ..shader = shader
         ..color = const ui.Color(0xFFFFFFFF).withValues(alpha: finalOpacity);
     } else {
-      final color = _resolveColorForNode(fillValue, node) ?? const ui.Color(0xFF000000);
+      final color =
+          _resolveColorForNode(fillValue, node) ?? const ui.Color(0xFF000000);
       paint.color = _applyOpacity(color, finalOpacity);
     }
 
@@ -155,7 +156,7 @@ extension AnimatedSvgPainterPaintsExtension on AnimatedSvgPainter {
   ///
   /// If stroke-dasharray is not set or is 'none', returns [path] unchanged.
   /// Otherwise walks the path's PathMetrics and builds a new dashed path.
-  /// 
+  ///
   /// Supports pathLength attribute for scaling dasharray/dashoffset values.
   /// When pathLength is specified, all dash values are scaled by the ratio
   /// of actual path length to pathLength.

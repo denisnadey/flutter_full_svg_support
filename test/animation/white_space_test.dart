@@ -3,8 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('white-space CSS property', () {
-    testWidgets('white-space: normal (default, collapses whitespace)',
-        (tester) async {
+    testWidgets('white-space: normal (default, collapses whitespace)', (
+      tester,
+    ) async {
       const svg = '''
         <svg viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg">
           <text x="10" y="30" font-size="16" style="white-space: normal">Hello    World</text>
@@ -34,8 +35,9 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('white-space: pre-wrap (preserves with wrapping)',
-        (tester) async {
+    testWidgets('white-space: pre-wrap (preserves with wrapping)', (
+      tester,
+    ) async {
       const svg = '''
         <svg viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg">
           <text x="10" y="30" font-size="16" style="white-space: pre-wrap">Hello    World</text>
@@ -65,8 +67,9 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('white-space: pre-line (preserves newlines only)',
-        (tester) async {
+    testWidgets('white-space: pre-line (preserves newlines only)', (
+      tester,
+    ) async {
       const svg = '''
         <svg viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg">
           <text x="10" y="30" font-size="16" style="white-space: pre-line">Hello    World</text>

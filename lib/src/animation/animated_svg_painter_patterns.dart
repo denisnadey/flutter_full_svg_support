@@ -46,8 +46,10 @@ extension AnimatedSvgPainterPatternsExtension on AnimatedSvgPainter {
         : (inherited?.patternUnits ?? _SvgPatternUnits.objectBoundingBox);
 
     // Parse patternContentUnits (default: userSpaceOnUse)
-    final contentUnitsStr =
-        _getString(node, 'patternContentUnits')?.toLowerCase();
+    final contentUnitsStr = _getString(
+      node,
+      'patternContentUnits',
+    )?.toLowerCase();
     final patternContentUnits = contentUnitsStr == 'objectboundingbox'
         ? _SvgPatternUnits.objectBoundingBox
         : (inherited?.patternContentUnits ?? _SvgPatternUnits.userSpaceOnUse);

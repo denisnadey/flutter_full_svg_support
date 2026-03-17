@@ -33,7 +33,9 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('xml:space="preserve" keeps leading/trailing spaces', (tester) async {
+    testWidgets('xml:space="preserve" keeps leading/trailing spaces', (
+      tester,
+    ) async {
       const svg = '''
         <svg viewBox="0 0 300 50" xmlns="http://www.w3.org/2000/svg">
           <text x="10" y="30" font-size="16" xml:space="preserve">  Padded Text  </text>

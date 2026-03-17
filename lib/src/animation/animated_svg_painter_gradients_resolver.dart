@@ -50,9 +50,8 @@ extension AnimatedSvgPainterGradientResolverExtension on AnimatedSvgPainter {
     final stops = ownStops.isNotEmpty ? ownStops : inherited?.stops;
 
     // Get color-interpolation mode
-    final colorInterpolation = (attributes['color-interpolation']?.toString() ??
-            'sRGB')
-        .toLowerCase();
+    final colorInterpolation =
+        (attributes['color-interpolation']?.toString() ?? 'sRGB').toLowerCase();
 
     final resolved = _ResolvedGradientDefinition(
       type: node.tagName,

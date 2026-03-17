@@ -5,7 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('marker element rendering', () {
     testWidgets('path with marker-end renders without error', (tester) async {
-      const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5"
               markerWidth="6" markerHeight="6" orient="auto">
@@ -29,7 +30,8 @@ void main() {
     });
 
     testWidgets('path with marker-start renders without error', (tester) async {
-      const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <marker id="circle" viewBox="0 0 10 10" refX="5" refY="5"
               markerWidth="5" markerHeight="5">
@@ -52,9 +54,11 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('polyline with marker-mid renders without error',
-        (tester) async {
-      const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+    testWidgets('polyline with marker-mid renders without error', (
+      tester,
+    ) async {
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <marker id="dot" viewBox="0 0 10 10" refX="5" refY="5"
               markerWidth="4" markerHeight="4">
@@ -79,7 +83,8 @@ void main() {
     });
 
     testWidgets('marker shorthand applies to all positions', (tester) async {
-      const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <marker id="square" viewBox="0 0 10 10" refX="5" refY="5"
               markerWidth="5" markerHeight="5">
@@ -103,9 +108,11 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('marker with orient="auto-start-reverse" renders without error',
-        (tester) async {
-      const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+    testWidgets(
+      'marker with orient="auto-start-reverse" renders without error',
+      (tester) async {
+        const svg =
+            '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <marker id="arrowRev" viewBox="0 0 10 10" refX="5" refY="5"
               markerWidth="6" markerHeight="6" orient="auto-start-reverse">
@@ -116,22 +123,25 @@ void main() {
             marker-start="url(#arrowRev)" marker-end="url(#arrowRev)"/>
       </svg>''';
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AnimatedSvgPicture.string(svg, width: 200, height: 100),
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svg, width: 200, height: 100),
+            ),
           ),
-        ),
-      );
-      await tester.pump();
-      await tester.pump();
+        );
+        await tester.pump();
+        await tester.pump();
 
-      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-    });
+        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+      },
+    );
 
-    testWidgets('marker with fixed angle orientation renders without error',
-        (tester) async {
-      const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+    testWidgets('marker with fixed angle orientation renders without error', (
+      tester,
+    ) async {
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <marker id="fixedArrow" viewBox="0 0 10 10" refX="5" refY="5"
               markerWidth="6" markerHeight="6" orient="45deg">
@@ -154,9 +164,11 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('marker with markerUnits="userSpaceOnUse" renders without error',
-        (tester) async {
-      const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+    testWidgets(
+      'marker with markerUnits="userSpaceOnUse" renders without error',
+      (tester) async {
+        const svg =
+            '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <marker id="userSpace" viewBox="0 0 10 10" refX="5" refY="5"
               markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse">
@@ -167,21 +179,23 @@ void main() {
             marker-end="url(#userSpace)"/>
       </svg>''';
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AnimatedSvgPicture.string(svg, width: 200, height: 100),
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svg, width: 200, height: 100),
+            ),
           ),
-        ),
-      );
-      await tester.pump();
-      await tester.pump();
+        );
+        await tester.pump();
+        await tester.pump();
 
-      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-    });
+        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+      },
+    );
 
     testWidgets('polygon with markers renders without error', (tester) async {
-      const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <marker id="tri" viewBox="0 0 10 10" refX="5" refY="5"
               markerWidth="4" markerHeight="4" orient="auto">

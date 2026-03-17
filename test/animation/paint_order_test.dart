@@ -14,11 +14,7 @@ void main() {
       ''';
 
       await tester.pumpWidget(
-        AnimatedSvgPicture.string(
-          svg,
-          width: 100,
-          height: 100,
-        ),
+        AnimatedSvgPicture.string(svg, width: 100, height: 100),
       );
       await tester.pumpAndSettle();
 
@@ -26,7 +22,9 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('paint-order: stroke fill renders stroke first', (tester) async {
+    testWidgets('paint-order: stroke fill renders stroke first', (
+      tester,
+    ) async {
       // With stroke first, fill paints on top of stroke
       const svg = '''
         <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
@@ -37,11 +35,7 @@ void main() {
       ''';
 
       await tester.pumpWidget(
-        AnimatedSvgPicture.string(
-          svg,
-          width: 100,
-          height: 100,
-        ),
+        AnimatedSvgPicture.string(svg, width: 100, height: 100),
       );
       await tester.pumpAndSettle();
 
@@ -49,7 +43,9 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('paint-order: stroke fill markers orders correctly', (tester) async {
+    testWidgets('paint-order: stroke fill markers orders correctly', (
+      tester,
+    ) async {
       // Full order specification
       const svg = '''
         <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
@@ -60,11 +56,7 @@ void main() {
       ''';
 
       await tester.pumpWidget(
-        AnimatedSvgPicture.string(
-          svg,
-          width: 100,
-          height: 100,
-        ),
+        AnimatedSvgPicture.string(svg, width: 100, height: 100),
       );
       await tester.pumpAndSettle();
 
@@ -82,11 +74,7 @@ void main() {
       ''';
 
       await tester.pumpWidget(
-        AnimatedSvgPicture.string(
-          svg,
-          width: 100,
-          height: 100,
-        ),
+        AnimatedSvgPicture.string(svg, width: 100, height: 100),
       );
       await tester.pumpAndSettle();
 
@@ -105,11 +93,7 @@ void main() {
       ''';
 
       await tester.pumpWidget(
-        AnimatedSvgPicture.string(
-          svg,
-          width: 100,
-          height: 100,
-        ),
+        AnimatedSvgPicture.string(svg, width: 100, height: 100),
       );
       await tester.pumpAndSettle();
 
@@ -126,11 +110,7 @@ void main() {
       ''';
 
       await tester.pumpWidget(
-        AnimatedSvgPicture.string(
-          svg,
-          width: 100,
-          height: 100,
-        ),
+        AnimatedSvgPicture.string(svg, width: 100, height: 100),
       );
       await tester.pumpAndSettle();
 
@@ -147,11 +127,7 @@ void main() {
       ''';
 
       await tester.pumpWidget(
-        AnimatedSvgPicture.string(
-          svg,
-          width: 100,
-          height: 100,
-        ),
+        AnimatedSvgPicture.string(svg, width: 100, height: 100),
       );
       await tester.pumpAndSettle();
 
@@ -168,11 +144,7 @@ void main() {
       ''';
 
       await tester.pumpWidget(
-        AnimatedSvgPicture.string(
-          svg,
-          width: 100,
-          height: 100,
-        ),
+        AnimatedSvgPicture.string(svg, width: 100, height: 100),
       );
       await tester.pumpAndSettle();
 
@@ -189,11 +161,7 @@ void main() {
       ''';
 
       await tester.pumpWidget(
-        AnimatedSvgPicture.string(
-          svg,
-          width: 100,
-          height: 100,
-        ),
+        AnimatedSvgPicture.string(svg, width: 100, height: 100),
       );
       await tester.pumpAndSettle();
 
@@ -210,11 +178,7 @@ void main() {
       ''';
 
       await tester.pumpWidget(
-        AnimatedSvgPicture.string(
-          svg,
-          width: 100,
-          height: 100,
-        ),
+        AnimatedSvgPicture.string(svg, width: 100, height: 100),
       );
       await tester.pumpAndSettle();
 
@@ -239,11 +203,7 @@ void main() {
       ''';
 
       await tester.pumpWidget(
-        AnimatedSvgPicture.string(
-          svg,
-          width: 100,
-          height: 100,
-        ),
+        AnimatedSvgPicture.string(svg, width: 100, height: 100),
       );
       await tester.pumpAndSettle();
 
@@ -261,11 +221,7 @@ void main() {
       ''';
 
       await tester.pumpWidget(
-        AnimatedSvgPicture.string(
-          svg,
-          width: 100,
-          height: 100,
-        ),
+        AnimatedSvgPicture.string(svg, width: 100, height: 100),
       );
       await tester.pumpAndSettle();
 
