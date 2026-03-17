@@ -72,7 +72,9 @@ class SvgParser {
     for (final viewElement in viewElements) {
       final id = viewElement.getAttribute('id');
       final viewBoxAttr = viewElement.getAttribute('viewBox');
-      final preserveAspectRatio = viewElement.getAttribute('preserveAspectRatio');
+      final preserveAspectRatio = viewElement.getAttribute(
+        'preserveAspectRatio',
+      );
 
       if (id != null && id.isNotEmpty) {
         final viewBox = _parseViewBox(viewBoxAttr);
@@ -92,7 +94,9 @@ class SvgParser {
       for (final viewElement in viewElements) {
         final id = viewElement.getAttribute('id');
         final viewBoxAttr = viewElement.getAttribute('viewBox');
-        final preserveAspectRatio = viewElement.getAttribute('preserveAspectRatio');
+        final preserveAspectRatio = viewElement.getAttribute(
+          'preserveAspectRatio',
+        );
 
         if (id != null && id.isNotEmpty) {
           final viewBox = _parseViewBox(viewBoxAttr);

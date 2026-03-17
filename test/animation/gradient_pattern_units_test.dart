@@ -5,11 +5,13 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('gradient units', () {
     group('gradientUnits="objectBoundingBox"', () {
-      testWidgets('linear gradient with objectBoundingBox units (default)',
-          (tester) async {
+      testWidgets('linear gradient with objectBoundingBox units (default)', (
+        tester,
+      ) async {
         // objectBoundingBox is the default for gradientUnits
         // Coordinates 0-1 map to element bounding box
-        const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+        const svg =
+            '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <linearGradient id="grad1">
               <stop offset="0%" stop-color="red"/>
@@ -33,10 +35,11 @@ void main() {
       });
 
       testWidgets(
-          'linear gradient with explicit objectBoundingBox and fractional coords',
-          (tester) async {
-        // Coordinates as fractions (0.0 to 1.0) of element bounding box
-        const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+        'linear gradient with explicit objectBoundingBox and fractional coords',
+        (tester) async {
+          // Coordinates as fractions (0.0 to 1.0) of element bounding box
+          const svg =
+              '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <linearGradient id="grad1" gradientUnits="objectBoundingBox"
                             x1="0" y1="0" x2="1" y2="1">
@@ -47,24 +50,26 @@ void main() {
           <rect x="20" y="20" width="160" height="60" fill="url(#grad1)"/>
         </svg>''';
 
-        await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: AnimatedSvgPicture.string(svg, width: 200, height: 100),
+          await tester.pumpWidget(
+            MaterialApp(
+              home: Scaffold(
+                body: AnimatedSvgPicture.string(svg, width: 200, height: 100),
+              ),
             ),
-          ),
-        );
-        await tester.pump();
-        await tester.pump();
+          );
+          await tester.pump();
+          await tester.pump();
 
-        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-      });
+          expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+        },
+      );
 
       testWidgets(
-          'linear gradient with objectBoundingBox and percentage coords',
-          (tester) async {
-        // Percentage values (0% to 100%) of element bounding box
-        const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+        'linear gradient with objectBoundingBox and percentage coords',
+        (tester) async {
+          // Percentage values (0% to 100%) of element bounding box
+          const svg =
+              '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <linearGradient id="grad1" gradientUnits="objectBoundingBox"
                             x1="0%" y1="50%" x2="100%" y2="50%">
@@ -75,23 +80,26 @@ void main() {
           <ellipse cx="100" cy="50" rx="80" ry="40" fill="url(#grad1)"/>
         </svg>''';
 
-        await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: AnimatedSvgPicture.string(svg, width: 200, height: 100),
+          await tester.pumpWidget(
+            MaterialApp(
+              home: Scaffold(
+                body: AnimatedSvgPicture.string(svg, width: 200, height: 100),
+              ),
             ),
-          ),
-        );
-        await tester.pump();
-        await tester.pump();
+          );
+          await tester.pump();
+          await tester.pump();
 
-        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-      });
+          expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+        },
+      );
 
-      testWidgets('radial gradient with objectBoundingBox units (default)',
-          (tester) async {
+      testWidgets('radial gradient with objectBoundingBox units (default)', (
+        tester,
+      ) async {
         // Default is objectBoundingBox, cx/cy/r are fractions of bounding box
-        const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+        const svg =
+            '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <radialGradient id="grad1">
               <stop offset="0%" stop-color="white"/>
@@ -114,9 +122,11 @@ void main() {
         expect(find.byType(AnimatedSvgPicture), findsOneWidget);
       });
 
-      testWidgets('radial gradient with objectBoundingBox explicit coords',
-          (tester) async {
-        const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      testWidgets('radial gradient with objectBoundingBox explicit coords', (
+        tester,
+      ) async {
+        const svg =
+            '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <radialGradient id="grad1" gradientUnits="objectBoundingBox"
                             cx="0.5" cy="0.5" r="0.5">
@@ -142,10 +152,12 @@ void main() {
     });
 
     group('gradientUnits="userSpaceOnUse"', () {
-      testWidgets('linear gradient with userSpaceOnUse coordinates',
-          (tester) async {
+      testWidgets('linear gradient with userSpaceOnUse coordinates', (
+        tester,
+      ) async {
         // Coordinates are in user space (same as the element coordinates)
-        const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+        const svg =
+            '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <linearGradient id="grad1" gradientUnits="userSpaceOnUse"
                             x1="50" y1="25" x2="150" y2="75">
@@ -169,9 +181,11 @@ void main() {
         expect(find.byType(AnimatedSvgPicture), findsOneWidget);
       });
 
-      testWidgets('radial gradient with userSpaceOnUse coordinates',
-          (tester) async {
-        const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      testWidgets('radial gradient with userSpaceOnUse coordinates', (
+        tester,
+      ) async {
+        const svg =
+            '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <radialGradient id="grad1" gradientUnits="userSpaceOnUse"
                             cx="100" cy="50" r="40">
@@ -196,10 +210,11 @@ void main() {
       });
 
       testWidgets(
-          'linear gradient userSpaceOnUse with percentage in user coords',
-          (tester) async {
-        // Percentage values in userSpaceOnUse refer to the element bounding box
-        const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+        'linear gradient userSpaceOnUse with percentage in user coords',
+        (tester) async {
+          // Percentage values in userSpaceOnUse refer to the element bounding box
+          const svg =
+              '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <linearGradient id="grad1" gradientUnits="userSpaceOnUse"
                             x1="0%" y1="0%" x2="100%" y2="100%">
@@ -210,25 +225,28 @@ void main() {
           <rect x="0" y="0" width="200" height="100" fill="url(#grad1)"/>
         </svg>''';
 
-        await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: AnimatedSvgPicture.string(svg, width: 200, height: 100),
+          await tester.pumpWidget(
+            MaterialApp(
+              home: Scaffold(
+                body: AnimatedSvgPicture.string(svg, width: 200, height: 100),
+              ),
             ),
-          ),
-        );
-        await tester.pump();
-        await tester.pump();
+          );
+          await tester.pump();
+          await tester.pump();
 
-        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-      });
+          expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+        },
+      );
     });
 
     group('radial gradient focal point', () {
-      testWidgets('radial gradient with fx,fy different from cx,cy',
-          (tester) async {
+      testWidgets('radial gradient with fx,fy different from cx,cy', (
+        tester,
+      ) async {
         // Focal point offset creates a non-concentric gradient
-        const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+        const svg =
+            '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <radialGradient id="grad1" cx="50%" cy="50%" r="50%" fx="30%" fy="30%">
               <stop offset="0%" stop-color="white"/>
@@ -251,9 +269,9 @@ void main() {
         expect(find.byType(AnimatedSvgPicture), findsOneWidget);
       });
 
-      testWidgets('radial gradient with fx,fy userSpaceOnUse',
-          (tester) async {
-        const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      testWidgets('radial gradient with fx,fy userSpaceOnUse', (tester) async {
+        const svg =
+            '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <radialGradient id="grad1" gradientUnits="userSpaceOnUse"
                             cx="100" cy="50" r="40" fx="80" fy="40">
@@ -278,7 +296,8 @@ void main() {
       });
 
       testWidgets('radial gradient with focal radius fr', (tester) async {
-        const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+        const svg =
+            '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <radialGradient id="grad1" cx="50%" cy="50%" r="50%" 
                             fx="30%" fy="30%" fr="10%">
@@ -304,9 +323,11 @@ void main() {
     });
 
     group('gradient in nested SVG', () {
-      testWidgets('gradient defined in nested svg with viewBox',
-          (tester) async {
-        const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      testWidgets('gradient defined in nested svg with viewBox', (
+        tester,
+      ) async {
+        const svg =
+            '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
           <svg x="50" y="25" width="100" height="50" viewBox="0 0 50 25">
             <defs>
               <linearGradient id="nestedGrad" gradientUnits="userSpaceOnUse"
@@ -332,9 +353,9 @@ void main() {
         expect(find.byType(AnimatedSvgPicture), findsOneWidget);
       });
 
-      testWidgets('gradient used across nested svg boundaries',
-          (tester) async {
-        const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      testWidgets('gradient used across nested svg boundaries', (tester) async {
+        const svg =
+            '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <linearGradient id="sharedGrad" gradientUnits="objectBoundingBox">
               <stop offset="0%" stop-color="teal"/>
@@ -363,7 +384,8 @@ void main() {
 
     group('gradient stop offset animation', () {
       testWidgets('animated stop offset via SMIL animate', (tester) async {
-        const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+        const svg =
+            '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <linearGradient id="animGrad">
               <stop offset="0%" stop-color="red"/>
@@ -392,7 +414,8 @@ void main() {
       });
 
       testWidgets('multiple animated stop offsets', (tester) async {
-        const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+        const svg =
+            '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <linearGradient id="multiAnimGrad">
               <stop offset="0%" stop-color="green">
@@ -428,9 +451,11 @@ void main() {
 
   group('pattern units', () {
     group('patternUnits', () {
-      testWidgets('patternUnits="objectBoundingBox" with fractional coords',
-          (tester) async {
-        const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      testWidgets('patternUnits="objectBoundingBox" with fractional coords', (
+        tester,
+      ) async {
+        const svg =
+            '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <pattern id="pat1" patternUnits="objectBoundingBox" 
                      width="0.2" height="0.2">
@@ -454,9 +479,11 @@ void main() {
         expect(find.byType(AnimatedSvgPicture), findsOneWidget);
       });
 
-      testWidgets('patternUnits="userSpaceOnUse" with absolute coords',
-          (tester) async {
-        const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      testWidgets('patternUnits="userSpaceOnUse" with absolute coords', (
+        tester,
+      ) async {
+        const svg =
+            '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <pattern id="pat1" patternUnits="userSpaceOnUse" 
                      x="0" y="0" width="20" height="20">
@@ -484,7 +511,8 @@ void main() {
     group('patternContentUnits', () {
       testWidgets('patternContentUnits="objectBoundingBox"', (tester) async {
         // Pattern content coordinates scaled relative to element bounding box
-        const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+        const svg =
+            '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <pattern id="pat1" patternUnits="userSpaceOnUse" 
                      patternContentUnits="objectBoundingBox"
@@ -508,9 +536,11 @@ void main() {
         expect(find.byType(AnimatedSvgPicture), findsOneWidget);
       });
 
-      testWidgets('patternContentUnits="userSpaceOnUse" (default)',
-          (tester) async {
-        const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      testWidgets('patternContentUnits="userSpaceOnUse" (default)', (
+        tester,
+      ) async {
+        const svg =
+            '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <pattern id="pat1" patternUnits="userSpaceOnUse" 
                      patternContentUnits="userSpaceOnUse"
@@ -536,7 +566,8 @@ void main() {
 
       testWidgets('combined objectBoundingBox units', (tester) async {
         // Both patternUnits and patternContentUnits as objectBoundingBox
-        const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+        const svg =
+            '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <pattern id="pat1" 
                      patternUnits="objectBoundingBox" 
@@ -564,9 +595,11 @@ void main() {
     });
 
     group('pattern edge cases', () {
-      testWidgets('pattern with width=0 does not render (no error)',
-          (tester) async {
-        const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      testWidgets('pattern with width=0 does not render (no error)', (
+        tester,
+      ) async {
+        const svg =
+            '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <pattern id="zeroPat" patternUnits="userSpaceOnUse" 
                      width="0" height="20">
@@ -590,9 +623,11 @@ void main() {
         expect(find.byType(AnimatedSvgPicture), findsOneWidget);
       });
 
-      testWidgets('pattern with height=0 does not render (no error)',
-          (tester) async {
-        const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      testWidgets('pattern with height=0 does not render (no error)', (
+        tester,
+      ) async {
+        const svg =
+            '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <pattern id="zeroPat" patternUnits="userSpaceOnUse" 
                      width="20" height="0">
@@ -615,9 +650,11 @@ void main() {
         expect(find.byType(AnimatedSvgPicture), findsOneWidget);
       });
 
-      testWidgets('pattern with negative width treated as 0 (no error)',
-          (tester) async {
-        const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      testWidgets('pattern with negative width treated as 0 (no error)', (
+        tester,
+      ) async {
+        const svg =
+            '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <pattern id="negPat" patternUnits="userSpaceOnUse" 
                      width="-20" height="20">
@@ -640,9 +677,11 @@ void main() {
         expect(find.byType(AnimatedSvgPicture), findsOneWidget);
       });
 
-      testWidgets('pattern with negative height treated as 0 (no error)',
-          (tester) async {
-        const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      testWidgets('pattern with negative height treated as 0 (no error)', (
+        tester,
+      ) async {
+        const svg =
+            '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <pattern id="negPat" patternUnits="userSpaceOnUse" 
                      width="20" height="-20">
@@ -666,7 +705,8 @@ void main() {
       });
 
       testWidgets('pattern with both width and height zero', (tester) async {
-        const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+        const svg =
+            '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <pattern id="zeroPat" patternUnits="userSpaceOnUse" 
                      width="0" height="0">
@@ -689,10 +729,12 @@ void main() {
         expect(find.byType(AnimatedSvgPicture), findsOneWidget);
       });
 
-      testWidgets('pattern objectBoundingBox with resulting zero tile size',
-          (tester) async {
+      testWidgets('pattern objectBoundingBox with resulting zero tile size', (
+        tester,
+      ) async {
         // When objectBoundingBox results in zero tile size
-        const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+        const svg =
+            '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <pattern id="smallPat" patternUnits="objectBoundingBox" 
                      width="0" height="0.1">
@@ -719,7 +761,8 @@ void main() {
 
   group('gradient edge cases', () {
     testWidgets('gradient with zero radius (radial)', (tester) async {
-      const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <radialGradient id="zeroRad" cx="50%" cy="50%" r="0">
             <stop offset="0%" stop-color="red"/>
@@ -743,7 +786,8 @@ void main() {
     });
 
     testWidgets('gradient with single stop', (tester) async {
-      const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <linearGradient id="singleStop">
             <stop offset="50%" stop-color="green"/>
@@ -766,7 +810,8 @@ void main() {
     });
 
     testWidgets('gradient with no stops', (tester) async {
-      const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <linearGradient id="noStops">
           </linearGradient>
@@ -788,7 +833,8 @@ void main() {
     });
 
     testWidgets('gradient with gradientTransform', (tester) async {
-      const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <linearGradient id="transformed" gradientTransform="rotate(45)">
             <stop offset="0%" stop-color="orange"/>
@@ -812,7 +858,8 @@ void main() {
     });
 
     testWidgets('gradient with spreadMethod repeat', (tester) async {
-      const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <linearGradient id="repeatGrad" spreadMethod="repeat"
                           x1="0%" y1="0%" x2="25%" y2="0%">
@@ -837,7 +884,8 @@ void main() {
     });
 
     testWidgets('gradient with spreadMethod reflect', (tester) async {
-      const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <linearGradient id="reflectGrad" spreadMethod="reflect"
                           x1="0%" y1="0%" x2="25%" y2="0%">

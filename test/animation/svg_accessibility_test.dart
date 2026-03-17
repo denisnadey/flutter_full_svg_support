@@ -43,7 +43,10 @@ void main() {
       final doc = SvgParser.parse(svgXml);
 
       expect(doc.root.titleText, equals('Chart Title'));
-      expect(doc.root.descText, equals('A bar chart showing quarterly sales data'));
+      expect(
+        doc.root.descText,
+        equals('A bar chart showing quarterly sales data'),
+      );
     });
 
     test('normalizes whitespace in title/desc', () {
@@ -61,7 +64,10 @@ void main() {
       final doc = SvgParser.parse(svgXml);
 
       expect(doc.root.titleText, equals('Multiple spaces here'));
-      expect(doc.root.descText, equals('This has line breaks and extra spaces'));
+      expect(
+        doc.root.descText,
+        equals('This has line breaks and extra spaces'),
+      );
     });
 
     test('parses title/desc on nested elements', () {
@@ -219,17 +225,20 @@ void main() {
       expect(doc.accessibleDescription, equals('external-desc'));
     });
 
-    test('accessibleDescription falls back to desc when no aria-describedby', () {
-      const svgXml = '''
+    test(
+      'accessibleDescription falls back to desc when no aria-describedby',
+      () {
+        const svgXml = '''
         <svg viewBox="0 0 100 100">
           <desc>Internal Description</desc>
         </svg>
       ''';
 
-      final doc = SvgParser.parse(svgXml);
+        final doc = SvgParser.parse(svgXml);
 
-      expect(doc.accessibleDescription, equals('Internal Description'));
-    });
+        expect(doc.accessibleDescription, equals('Internal Description'));
+      },
+    );
 
     test('accessibleRole defaults to img when not specified', () {
       const svgXml = '''
@@ -270,7 +279,9 @@ void main() {
   });
 
   group('SVG Accessibility - Widget Integration', () {
-    testWidgets('AnimatedSvgPicture wraps with Semantics when title present', (tester) async {
+    testWidgets('AnimatedSvgPicture wraps with Semantics when title present', (
+      tester,
+    ) async {
       const svgXml = '''
         <svg viewBox="0 0 100 100">
           <title>Accessible SVG</title>
@@ -281,11 +292,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: AnimatedSvgPicture.string(
-              svgXml,
-              width: 100,
-              height: 100,
-            ),
+            body: AnimatedSvgPicture.string(svgXml, width: 100, height: 100),
           ),
         ),
       );
@@ -301,7 +308,9 @@ void main() {
       expect(semanticsFinder, findsOneWidget);
     });
 
-    testWidgets('AnimatedSvgPicture wraps with Semantics when desc present', (tester) async {
+    testWidgets('AnimatedSvgPicture wraps with Semantics when desc present', (
+      tester,
+    ) async {
       const svgXml = '''
         <svg viewBox="0 0 100 100">
           <desc>A blue rectangle</desc>
@@ -312,11 +321,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: AnimatedSvgPicture.string(
-              svgXml,
-              width: 100,
-              height: 100,
-            ),
+            body: AnimatedSvgPicture.string(svgXml, width: 100, height: 100),
           ),
         ),
       );
@@ -331,7 +336,9 @@ void main() {
       expect(semanticsFinder, findsOneWidget);
     });
 
-    testWidgets('AnimatedSvgPicture uses aria-label over title', (tester) async {
+    testWidgets('AnimatedSvgPicture uses aria-label over title', (
+      tester,
+    ) async {
       const svgXml = '''
         <svg viewBox="0 0 100 100" aria-label="ARIA Label">
           <title>Title Text</title>
@@ -342,11 +349,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: AnimatedSvgPicture.string(
-              svgXml,
-              width: 100,
-              height: 100,
-            ),
+            body: AnimatedSvgPicture.string(svgXml, width: 100, height: 100),
           ),
         ),
       );
@@ -361,7 +364,9 @@ void main() {
       expect(semanticsFinder, findsOneWidget);
     });
 
-    testWidgets('AnimatedSvgPicture sets image role for role=img', (tester) async {
+    testWidgets('AnimatedSvgPicture sets image role for role=img', (
+      tester,
+    ) async {
       const svgXml = '''
         <svg viewBox="0 0 100 100" role="img">
           <title>Image</title>
@@ -372,11 +377,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: AnimatedSvgPicture.string(
-              svgXml,
-              width: 100,
-              height: 100,
-            ),
+            body: AnimatedSvgPicture.string(svgXml, width: 100, height: 100),
           ),
         ),
       );
@@ -402,11 +403,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: AnimatedSvgPicture.string(
-              svgXml,
-              width: 100,
-              height: 100,
-            ),
+            body: AnimatedSvgPicture.string(svgXml, width: 100, height: 100),
           ),
         ),
       );
@@ -421,35 +418,34 @@ void main() {
       expect(semanticsFinder, findsOneWidget);
     });
 
-    testWidgets('AnimatedSvgPicture does not add Semantics when no accessibility info', (tester) async {
-      const svgXml = '''
+    testWidgets(
+      'AnimatedSvgPicture does not add Semantics when no accessibility info',
+      (tester) async {
+        const svgXml = '''
         <svg viewBox="0 0 100 100">
           <rect x="10" y="10" width="80" height="80" fill="blue"/>
         </svg>
       ''';
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AnimatedSvgPicture.string(
-              svgXml,
-              width: 100,
-              height: 100,
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 100, height: 100),
             ),
           ),
-        ),
-      );
+        );
 
-      // Should find the CustomPaint but not as a descendant of Semantics with label
-      final ancestorSemantics = find.byWidgetPredicate((widget) {
-        if (widget is Semantics) {
-          final props = widget.properties;
-          return props.label != null || props.hint != null;
-        }
-        return false;
-      });
-      expect(ancestorSemantics, findsNothing);
-    });
+        // Should find the CustomPaint but not as a descendant of Semantics with label
+        final ancestorSemantics = find.byWidgetPredicate((widget) {
+          if (widget is Semantics) {
+            final props = widget.properties;
+            return props.label != null || props.hint != null;
+          }
+          return false;
+        });
+        expect(ancestorSemantics, findsNothing);
+      },
+    );
   });
 
   group('SVG Accessibility - Edge Cases', () {

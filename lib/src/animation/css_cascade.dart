@@ -406,7 +406,7 @@ class CssCascadeResolver {
     final id = node.getAttributeValue('id')?.toString();
     final className = node.getAttributeValue('class')?.toString();
     final tagName = node.tagName;
-    
+
     // Include pseudo-class state in cache key
     final pseudoKey = _buildPseudoStateKey(id);
     final cacheKey = '$tagName|${id ?? ''}|${className ?? ''}|$pseudoKey';
@@ -462,12 +462,24 @@ class CssCascadeResolver {
 
     // For simple selectors (no combinators), just match the subject
     if (parsed.isSimple) {
-      return _matchSimpleSelector(parsed.subject.selector, node, tagName, id, classes);
+      return _matchSimpleSelector(
+        parsed.subject.selector,
+        node,
+        tagName,
+        id,
+        classes,
+      );
     }
 
     // For complex selectors with combinators, we need to traverse the DOM
     // For now, use basic matching for the subject part
-    return _matchSimpleSelector(parsed.subject.selector, node, tagName, id, classes);
+    return _matchSimpleSelector(
+      parsed.subject.selector,
+      node,
+      tagName,
+      id,
+      classes,
+    );
   }
 
   /// Match a simple selector against a node, including pseudo-classes.

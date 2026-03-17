@@ -68,10 +68,12 @@ class _SurfaceNormalCalculator {
     // Gx = | -1  0  1 |    Gy = | -1 -2 -1 |
     //      | -2  0  2 |         |  0  0  0 |
     //      | -1  0  1 |         |  1  2  1 |
-    final gx = (alphaValues[2] - alphaValues[0]) +
+    final gx =
+        (alphaValues[2] - alphaValues[0]) +
         2 * (alphaValues[5] - alphaValues[3]) +
         (alphaValues[8] - alphaValues[6]);
-    final gy = (alphaValues[6] - alphaValues[0]) +
+    final gy =
+        (alphaValues[6] - alphaValues[0]) +
         2 * (alphaValues[7] - alphaValues[1]) +
         (alphaValues[8] - alphaValues[2]);
 
@@ -261,8 +263,9 @@ class _SpotLightCalculator {
     }
 
     // Compute attenuation
-    final attenuation =
-        math.pow(spotDot.clamp(0.0, 1.0), specularExponent).toDouble();
+    final attenuation = math
+        .pow(spotDot.clamp(0.0, 1.0), specularExponent)
+        .toDouble();
     return (lightDir, attenuation);
   }
 }
@@ -352,8 +355,10 @@ class _SpecularLightingCalculator {
 
     // specularConstant * (N·H)^specularExponent * lightIntensity
     final specular = math.pow(nDotH, specularExponent);
-    final factor =
-        (specularConstant * specular * lightIntensity).clamp(0.0, 1.0);
+    final factor = (specularConstant * specular * lightIntensity).clamp(
+      0.0,
+      1.0,
+    );
 
     final r = (lightingColor.r * 255.0 * factor).round().clamp(0, 255);
     final g = (lightingColor.g * 255.0 * factor).round().clamp(0, 255);
@@ -396,15 +401,16 @@ extension _LightSourceExtension on SvgLightSource {
       final spot = this as SvgSpotLightSource;
       // Use spot direction
       return _SpotLightCalculator(
-        lightX: spot.x,
-        lightY: spot.y,
-        lightZ: spot.z,
-        pointsAtX: spot.pointsAtX,
-        pointsAtY: spot.pointsAtY,
-        pointsAtZ: spot.pointsAtZ,
-        specularExponent: spot.specularExponent,
-        limitingConeAngleDegrees: spot.limitingConeAngle,
-      ).spotDirection * -1.0; // Reverse for light direction
+            lightX: spot.x,
+            lightY: spot.y,
+            lightZ: spot.z,
+            pointsAtX: spot.pointsAtX,
+            pointsAtY: spot.pointsAtY,
+            pointsAtZ: spot.pointsAtZ,
+            specularExponent: spot.specularExponent,
+            limitingConeAngleDegrees: spot.limitingConeAngle,
+          ).spotDirection *
+          -1.0; // Reverse for light direction
     }
     // Default: light from above
     return const _LightingVector3(0, 0, 1);

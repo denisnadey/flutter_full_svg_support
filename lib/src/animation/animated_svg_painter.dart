@@ -86,7 +86,8 @@ class _RenderCache {
     ui.Rect bounds,
     Map<String, Object?> attributes,
   ) {
-    final boundsHash = '${bounds.left.toStringAsFixed(2)}_'
+    final boundsHash =
+        '${bounds.left.toStringAsFixed(2)}_'
         '${bounds.top.toStringAsFixed(2)}_'
         '${bounds.width.toStringAsFixed(2)}_'
         '${bounds.height.toStringAsFixed(2)}';
@@ -103,7 +104,8 @@ class _RenderCache {
     int tileWidth,
     int tileHeight,
   ) {
-    final boundsHash = '${bounds.left.toStringAsFixed(2)}_'
+    final boundsHash =
+        '${bounds.left.toStringAsFixed(2)}_'
         '${bounds.top.toStringAsFixed(2)}_'
         '${bounds.width.toStringAsFixed(2)}_'
         '${bounds.height.toStringAsFixed(2)}';

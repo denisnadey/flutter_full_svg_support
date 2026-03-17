@@ -67,8 +67,9 @@ void main() {
     });
 
     group('onLinkTap callback', () {
-      testWidgets('triggers onLinkTap when child element is clicked',
-          (tester) async {
+      testWidgets('triggers onLinkTap when child element is clicked', (
+        tester,
+      ) async {
         SvgLinkInfo? tappedLink;
 
         const svg = '''
@@ -113,8 +114,9 @@ void main() {
         expect(tappedLink!.href, 'https://example.com/page1');
       });
 
-      testWidgets('passes target attribute to onLinkTap callback',
-          (tester) async {
+      testWidgets('passes target attribute to onLinkTap callback', (
+        tester,
+      ) async {
         SvgLinkInfo? tappedLink;
 
         const svg = '''
@@ -204,8 +206,9 @@ void main() {
         expect(tappedLink!.href, 'https://xlink-example.com');
       });
 
-      testWidgets('does not trigger when clicking outside anchor children',
-          (tester) async {
+      testWidgets('does not trigger when clicking outside anchor children', (
+        tester,
+      ) async {
         SvgLinkInfo? tappedLink;
 
         const svg = '''
@@ -252,8 +255,9 @@ void main() {
     });
 
     group('nested anchors', () {
-      testWidgets('inner anchor takes precedence over outer anchor',
-          (tester) async {
+      testWidgets('inner anchor takes precedence over outer anchor', (
+        tester,
+      ) async {
         SvgLinkInfo? tappedLink;
 
         const svg = '''
@@ -301,8 +305,9 @@ void main() {
         expect(tappedLink!.href, 'https://inner.com');
       });
 
-      testWidgets('clicking outer anchor area triggers outer link',
-          (tester) async {
+      testWidgets('clicking outer anchor area triggers outer link', (
+        tester,
+      ) async {
         SvgLinkInfo? tappedLink;
 
         const svg = '''
@@ -539,8 +544,9 @@ void main() {
     });
 
     group('anchor without href', () {
-      testWidgets('does not trigger callback when anchor has no href',
-          (tester) async {
+      testWidgets('does not trigger callback when anchor has no href', (
+        tester,
+      ) async {
         SvgLinkInfo? tappedLink;
 
         const svg = '''

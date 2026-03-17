@@ -2,10 +2,7 @@ part of 'animated_svg_picture.dart';
 
 /// Result of hit testing that includes both the element ID and anchor info.
 class _HitTestResult {
-  const _HitTestResult({
-    this.elementId,
-    this.anchorInfo,
-  });
+  const _HitTestResult({this.elementId, this.anchorInfo});
 
   /// The ID of the hit element, if any.
   final String? elementId;
@@ -55,10 +52,7 @@ extension _AnimatedSvgPictureStateHitTestTraversalExtension
 
     final target = node.getAttributeValue('target')?.toString();
 
-    return SvgLinkInfo(
-      href: hrefString,
-      target: target,
-    );
+    return SvgLinkInfo(href: hrefString, target: target);
   }
 
   Offset? _localToDocumentPoint(Offset localPosition, Size size) {
@@ -148,7 +142,9 @@ extension _AnimatedSvgPictureStateHitTestTraversalExtension
     }
 
     // Determine if this node establishes a foreignObject context for children
-    final foParent = node.tagName == 'foreignObject' ? node : foreignObjectParent;
+    final foParent = node.tagName == 'foreignObject'
+        ? node
+        : foreignObjectParent;
 
     // Идём с конца: последний нарисованный элемент визуально сверху
     for (int i = node.children.length - 1; i >= 0; i--) {
@@ -258,7 +254,9 @@ extension _AnimatedSvgPictureStateHitTestTraversalExtension
     }
 
     // Determine if this node establishes a foreignObject context for children
-    final foParent = node.tagName == 'foreignObject' ? node : foreignObjectParent;
+    final foParent = node.tagName == 'foreignObject'
+        ? node
+        : foreignObjectParent;
 
     // Traverse children in reverse (last painted is visually on top)
     for (int i = node.children.length - 1; i >= 0; i--) {
@@ -295,10 +293,7 @@ extension _AnimatedSvgPictureStateHitTestTraversalExtension
     }
 
     if (_nodeContainsPoint(node, documentPoint, currentTransform)) {
-      return _HitTestResult(
-        elementId: node.id,
-        anchorInfo: activeAnchor,
-      );
+      return _HitTestResult(elementId: node.id, anchorInfo: activeAnchor);
     }
     return const _HitTestResult();
   }

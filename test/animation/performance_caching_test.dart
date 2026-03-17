@@ -6,7 +6,8 @@ void main() {
   group('Performance caching', () {
     group('Pattern image caching', () {
       testWidgets('pattern is rendered correctly with caching', (tester) async {
-        const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+        const svg =
+            '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <pattern id="dots" patternUnits="userSpaceOnUse" width="10" height="10">
               <circle cx="5" cy="5" r="3" fill="blue"/>
@@ -28,10 +29,9 @@ void main() {
         expect(find.byType(AnimatedSvgPicture), findsOneWidget);
       });
 
-      testWidgets('multiple frames reuse cached pattern image', (
-        tester,
-      ) async {
-        const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      testWidgets('multiple frames reuse cached pattern image', (tester) async {
+        const svg =
+            '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <pattern id="grid" patternUnits="userSpaceOnUse" width="10" height="10">
               <rect width="10" height="10" fill="none" stroke="gray"/>
@@ -60,7 +60,8 @@ void main() {
 
     group('Gradient shader caching', () {
       testWidgets('linear gradient is rendered with caching', (tester) async {
-        const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+        const svg =
+            '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" style="stop-color:rgb(255,0,0);stop-opacity:1"/>
@@ -84,7 +85,8 @@ void main() {
       });
 
       testWidgets('radial gradient is rendered with caching', (tester) async {
-        const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+        const svg =
+            '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <radialGradient id="grad2" cx="50%" cy="50%" r="50%">
               <stop offset="0%" style="stop-color:yellow;stop-opacity:1"/>
@@ -110,7 +112,8 @@ void main() {
       testWidgets('multiple elements with same gradient reuse cache', (
         tester,
       ) async {
-        const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+        const svg =
+            '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <linearGradient id="shared">
               <stop offset="0%" stop-color="green"/>
@@ -139,7 +142,8 @@ void main() {
 
     group('Text paragraph caching', () {
       testWidgets('text element uses paragraph caching', (tester) async {
-        const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+        const svg =
+            '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
           <text x="100" y="50" text-anchor="middle" font-size="20" fill="black">
             Hello World
           </text>
@@ -161,7 +165,8 @@ void main() {
       testWidgets('multiple text elements with same style share cache', (
         tester,
       ) async {
-        const svg = '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+        const svg =
+            '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
           <text x="50" y="30" font-size="16" fill="navy">Line 1</text>
           <text x="50" y="50" font-size="16" fill="navy">Line 2</text>
           <text x="50" y="70" font-size="16" fill="navy">Line 3</text>
@@ -181,7 +186,8 @@ void main() {
       });
 
       testWidgets('tspan elements use text caching', (tester) async {
-        const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+        const svg =
+            '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
           <text x="10" y="50" font-size="14" fill="black">
             <tspan>Part 1 </tspan>
             <tspan fill="red">Part 2 </tspan>
@@ -205,7 +211,8 @@ void main() {
 
     group('Hit-test path caching', () {
       testWidgets('path hit-test uses geometry caching', (tester) async {
-        const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+        const svg =
+            '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
           <path id="myPath" d="M10,10 L190,10 L190,90 L10,90 Z" fill="blue"/>
         </svg>''';
 
@@ -229,7 +236,8 @@ void main() {
       });
 
       testWidgets('complex path benefits from caching', (tester) async {
-        const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+        const svg =
+            '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
           <path id="complex" 
                 d="M10,50 C10,10 90,10 90,50 C90,90 170,90 170,50 C170,10 190,10 190,50 L190,90 L10,90 Z" 
                 fill="green"/>
@@ -251,7 +259,8 @@ void main() {
 
     group('Cache invalidation', () {
       testWidgets('static SVG maintains cache across pumps', (tester) async {
-        const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+        const svg =
+            '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <linearGradient id="g1">
               <stop offset="0%" stop-color="orange"/>
@@ -285,7 +294,8 @@ void main() {
 
     group('Combined caching scenarios', () {
       testWidgets('complex SVG with all cacheable elements', (tester) async {
-        const svg = '''<svg viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg">
+        const svg =
+            '''<svg viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <linearGradient id="lgradient" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stop-color="#ff0000"/>

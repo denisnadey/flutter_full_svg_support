@@ -34,12 +34,12 @@ extension _AnimatedSvgPictureStateLifecycleExtension
           'viewCount': _document.viewIds.length,
         },
       );
-      
+
       // Populate available views on controller
       if (widget.controller != null) {
         widget.controller!.availableViews = _document.viewIds.toList();
       }
-      
+
       _scheduleImagePreload();
 
       if (_hasAnimations) {
@@ -269,7 +269,8 @@ extension _AnimatedSvgPictureStateLifecycleExtension
     }
 
     // Handle view switching
-    if (controller.pendingViewId != null || controller.currentViewId != _document.activeViewId) {
+    if (controller.pendingViewId != null ||
+        controller.currentViewId != _document.activeViewId) {
       final viewId = controller.pendingViewId ?? controller.currentViewId;
       final success = _document.switchToView(viewId);
       if (success) {

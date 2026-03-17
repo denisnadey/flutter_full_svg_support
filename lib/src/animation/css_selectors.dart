@@ -208,11 +208,16 @@ class CssSimpleSelector {
   /// Whether this is a universal selector
   bool get isUniversal =>
       tagName == '*' ||
-      (tagName == null && id == null && classes.isEmpty && attributes.isEmpty &&
-          pseudoClasses.isEmpty && notSelectors.isEmpty);
+      (tagName == null &&
+          id == null &&
+          classes.isEmpty &&
+          attributes.isEmpty &&
+          pseudoClasses.isEmpty &&
+          notSelectors.isEmpty);
 
   /// Whether this selector has any pseudo-class requirements
-  bool get hasPseudoClasses => pseudoClasses.isNotEmpty || notSelectors.isNotEmpty;
+  bool get hasPseudoClasses =>
+      pseudoClasses.isNotEmpty || notSelectors.isNotEmpty;
 
   @override
   String toString() {
@@ -432,12 +437,12 @@ int _skipWhitespace(String str, int pos) {
         final (pseudoName, newPos) = _parseIdent(str, pos);
         pos = newPos;
         final lowerPseudo = pseudoName.toLowerCase();
-        
+
         // Handle :not() pseudo-class
         if (lowerPseudo == 'not' && pos < str.length && str[pos] == '(') {
           pos++; // skip (
           pos = _skipWhitespace(str, pos);
-          
+
           // Parse the inner selector(s)
           final (innerSelector, innerEndPos) = _parseSimpleSelector(str, pos);
           if (innerSelector != null) {
@@ -445,7 +450,7 @@ int _skipWhitespace(String str, int pos) {
           }
           pos = innerEndPos;
           pos = _skipWhitespace(str, pos);
-          
+
           // Skip to closing )
           if (pos < str.length && str[pos] == ')') {
             pos++;
@@ -473,8 +478,12 @@ int _skipWhitespace(String str, int pos) {
     }
   }
 
-  if (tagName == null && id == null && classes.isEmpty && attributes.isEmpty &&
-      pseudoClasses.isEmpty && notSelectors.isEmpty) {
+  if (tagName == null &&
+      id == null &&
+      classes.isEmpty &&
+      attributes.isEmpty &&
+      pseudoClasses.isEmpty &&
+      notSelectors.isEmpty) {
     return (null, startPos);
   }
 

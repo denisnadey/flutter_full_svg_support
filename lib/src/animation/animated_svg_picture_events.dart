@@ -21,14 +21,14 @@ extension _AnimatedSvgPictureStateEventsExtension on _AnimatedSvgPictureState {
     if (hitResult.anchorInfo != null && widget.onLinkTap != null) {
       widget.onLinkTap!(hitResult.anchorInfo!);
     }
-    
+
     // Set :active state
     if (targetId != null) {
       _document.pseudoClassState.setActive(targetId, true);
       // Set :focus state on tap
       _document.pseudoClassState.setFocus(targetId);
     }
-    
+
     if (targetId != null) {
       _timeline?.triggerEvent(targetId, 'click');
     }
@@ -97,7 +97,7 @@ extension _AnimatedSvgPictureStateEventsExtension on _AnimatedSvgPictureState {
       _timeline?.triggerEvent(_hoveredElementId, 'mouseout');
       _document.pseudoClassState.setHovered(_hoveredElementId!, false);
     }
-    
+
     // Set new :hover state
     if (hitElementId != null) {
       _timeline?.triggerEvent(hitElementId, 'mouseover');

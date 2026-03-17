@@ -279,10 +279,22 @@ void main() {
       test('Apply convolution with edge mode none', () {
         // 2x2 all white
         final pixels = Uint8List.fromList([
-          255, 255, 255, 255,
-          255, 255, 255, 255,
-          255, 255, 255, 255,
-          255, 255, 255, 255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
         ]);
 
         // Box blur 3x3
@@ -462,9 +474,10 @@ void main() {
         expect(convolvePass.convolveFilter.divisor, 1.0);
       });
 
-      test('Resolve feConvolveMatrix with identity kernel returns regular pass',
-          () {
-        final svgString = '''
+      test(
+        'Resolve feConvolveMatrix with identity kernel returns regular pass',
+        () {
+          final svgString = '''
 <svg viewBox="0 0 100 100">
   <defs>
     <filter id="identityFx">
@@ -478,13 +491,14 @@ void main() {
 </svg>
 ''';
 
-        final document = SvgParser.parse(svgString);
-        final passes = document.filters!.resolvePaintPasses('identityFx');
+          final document = SvgParser.parse(svgString);
+          final passes = document.filters!.resolvePaintPasses('identityFx');
 
-        expect(passes, hasLength(1));
-        // Identity kernel should return regular pass, not SvgConvolveMatrixPaintPass
-        expect(passes.single, isNot(isA<SvgConvolveMatrixPaintPass>()));
-      });
+          expect(passes, hasLength(1));
+          // Identity kernel should return regular pass, not SvgConvolveMatrixPaintPass
+          expect(passes.single, isNot(isA<SvgConvolveMatrixPaintPass>()));
+        },
+      );
 
       test('Resolve feConvolveMatrix with chained filters', () {
         final svgString = '''

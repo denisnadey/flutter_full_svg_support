@@ -207,8 +207,9 @@ void main() {
 ''';
 
       final document = SvgParser.parse(svgString);
-      final filter = document.filters!.getById('pointSpecular')
-          as SvgSpecularLightingFilter;
+      final filter =
+          document.filters!.getById('pointSpecular')
+              as SvgSpecularLightingFilter;
 
       expect(filter.surfaceScale, 2.0);
       expect(filter.specularConstant, 0.5);
@@ -235,26 +236,29 @@ void main() {
 ''';
 
       final document = SvgParser.parse(svgString);
-      final filter = document.filters!.getById('specularCalc')
-          as SvgSpecularLightingFilter;
+      final filter =
+          document.filters!.getById('specularCalc')
+              as SvgSpecularLightingFilter;
 
       final colorFilter = filter.colorFilter();
       expect(colorFilter, isNotNull);
     });
 
-    test('feSpecularLighting returns null colorFilter without light source',
-        () {
-      final filter = SvgSpecularLightingFilter(
-        id: 'noLight',
-        surfaceScale: 1.0,
-        specularConstant: 1.0,
-        specularExponent: 20.0,
-        lightingColor: const ui.Color(0xFFFFFFFF),
-        lightSource: null,
-      );
+    test(
+      'feSpecularLighting returns null colorFilter without light source',
+      () {
+        final filter = SvgSpecularLightingFilter(
+          id: 'noLight',
+          surfaceScale: 1.0,
+          specularConstant: 1.0,
+          specularExponent: 20.0,
+          lightingColor: const ui.Color(0xFFFFFFFF),
+          lightSource: null,
+        );
 
-      expect(filter.colorFilter(), isNull);
-    });
+        expect(filter.colorFilter(), isNull);
+      },
+    );
 
     test('feSpecularLighting alpha equals max RGB component', () {
       // With white light and maximum specular intensity, alpha should be 255
@@ -287,7 +291,9 @@ void main() {
 ''';
 
       final document = SvgParser.parse(svgString);
-      final colorFilter = document.filters!.resolveColorFilter('diffusePipeline');
+      final colorFilter = document.filters!.resolveColorFilter(
+        'diffusePipeline',
+      );
 
       // Pipeline should resolve a color filter for diffuse lighting
       expect(colorFilter, isNotNull);
@@ -307,8 +313,9 @@ void main() {
 ''';
 
       final document = SvgParser.parse(svgString);
-      final colorFilter =
-          document.filters!.resolveColorFilter('specularPipeline');
+      final colorFilter = document.filters!.resolveColorFilter(
+        'specularPipeline',
+      );
 
       expect(colorFilter, isNotNull);
     });
@@ -350,7 +357,8 @@ void main() {
 
       final document = SvgParser.parse(svgString);
       final filter =
-          document.filters!.getById('noLightSource') as SvgDiffuseLightingFilter;
+          document.filters!.getById('noLightSource')
+              as SvgDiffuseLightingFilter;
 
       // Without light source, should return null color filter
       expect(filter.lightSource, isNull);

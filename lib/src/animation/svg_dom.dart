@@ -373,11 +373,7 @@ class SvgPseudoClassState {
 /// A <view> element defines an alternate view of an SVG document,
 /// with its own viewBox and preserveAspectRatio.
 class SvgViewElement {
-  const SvgViewElement({
-    this.id,
-    this.viewBox,
-    this.preserveAspectRatio,
-  });
+  const SvgViewElement({this.id, this.viewBox, this.preserveAspectRatio});
 
   /// ID of the view element (used in fragment identifiers).
   final String? id;

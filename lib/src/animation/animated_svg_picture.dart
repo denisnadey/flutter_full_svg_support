@@ -97,10 +97,7 @@ typedef SvgTraceCallback = void Function(SvgTraceEvent event);
 @immutable
 class SvgLinkInfo {
   /// Creates link info.
-  const SvgLinkInfo({
-    required this.href,
-    this.target,
-  });
+  const SvgLinkInfo({required this.href, this.target});
 
   /// The link URL (from href or xlink:href attribute).
   final String href;
@@ -280,8 +277,8 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
     );
 
     // Wrap with gesture detection for event-based animations or link handling
-    final needsGestureDetection = (_hasAnimations && _timeline != null) ||
-        widget.onLinkTap != null;
+    final needsGestureDetection =
+        (_hasAnimations && _timeline != null) || widget.onLinkTap != null;
     if (needsGestureDetection) {
       svgWidget = GestureDetector(
         onTapDown: (details) => _handleTapDown(details),
