@@ -43,13 +43,19 @@ enum SmilCalcMode {
   spline,
 }
 
-/// Режим заполнения после окончания анимации
+/// Fill mode for CSS animation (extends SMIL with backwards/both)
 enum SmilFillMode {
-  /// Сохранить последнее значение (freeze)
+  /// Retain final value after animation (freeze)
   freeze,
 
-  /// Вернуться к базовому значению (remove)
+  /// Return to base value after animation (remove)
   remove,
+
+  /// Apply first keyframe values during delay (CSS backwards)
+  backwards,
+
+  /// Both freeze and backwards (CSS both)
+  both,
 }
 
 /// Режим добавления (additive)
@@ -76,9 +82,9 @@ enum SmilPlaybackDirection {
   alternateReverse,
 }
 
-/// Базовый класс для SMIL анимации
+/// Base class for SMIL animation
 class SmilAnimation {
-  /// Создаёт SMIL анимацию
+  /// Creates a SMIL animation
   SmilAnimation({
     this.id,
     required this.type,
@@ -105,6 +111,7 @@ class SmilAnimation {
     this.accumulate = false,
     this.beginConditions = const [],
     this.endConditions = const [],
+    this.isPaused = false,
   }) {
     // Валидация
     if (values != null) {
@@ -261,10 +268,13 @@ class SmilAnimation {
   /// Режим добавления к базовому значению
   final SmilAdditiveMode additive;
 
-  /// Накапливать ли значения между итерациями
+  /// Accumulate values between iterations
   final bool accumulate;
 
-  // === Runtime состояние ===
+  /// Whether the animation is paused (CSS animation-play-state)
+  final bool isPaused;
+
+  // === Runtime state ===
 
   /// Активна ли анимация в данный момент
   bool _isActive = false;
@@ -365,27 +375,47 @@ class SmilAnimation {
   }
 
   void updateForTime(Duration globalTime) {
+    // If animation is paused, don't update
+    if (isPaused) {
+      return;
+    }
+
     final effectiveBegin = getEffectiveBeginTime();
     final effectiveEnd = getEffectiveEndTime();
 
-    // Проверяем, находимся ли мы в активном временном окне
-    if (globalTime < effectiveBegin) {
-      // Анимация ещё не началась
+    // Handle negative delay - start animation partway through
+    // A negative begin means we need to compute as if time already passed
+    final adjustedTime = globalTime;
+    final hasNegativeDelay = effectiveBegin.isNegative;
+
+    // Before animation start time
+    if (adjustedTime < effectiveBegin) {
+      // Animation hasn't started yet
       if (_isActive) {
         _isActive = false;
+      }
+
+      // For backwards/both fill mode, apply initial keyframe values during delay
+      if (fillMode == SmilFillMode.backwards || fillMode == SmilFillMode.both) {
+        final initialT = _resolveDirectedProgress(0.0, 0);
+        final initialValue = computeValue(initialT, completedRepeats: 0);
+        if (initialValue != null) {
+          _applyValue(initialValue);
+        }
+      } else {
         _clearValue();
       }
       return;
     }
 
-    if (globalTime >= effectiveEnd) {
-      // Анимация закончилась
+    // After animation end time
+    if (adjustedTime >= effectiveEnd) {
       if (_isActive) {
         _isActive = false;
       }
 
-      // Применяем fill mode
-      if (fillMode == SmilFillMode.freeze) {
+      // Apply fill mode at end
+      if (fillMode == SmilFillMode.freeze || fillMode == SmilFillMode.both) {
         final finalProgress = _computeProgressAtEnd(
           effectiveBegin: effectiveBegin,
           effectiveEnd: effectiveEnd,
@@ -398,17 +428,22 @@ class SmilAnimation {
           _applyValue(finalValue);
         }
       } else {
-        // Убираем анимированное значение
         _clearValue();
       }
       return;
     }
 
-    // Анимация активна
+    // Animation is active
     _isActive = true;
 
-    // Вычисляем локальное время и итерацию
-    final timeSinceBegin = globalTime - effectiveBegin;
+    // Compute local time and iteration
+    var timeSinceBegin = adjustedTime - effectiveBegin;
+
+    // For negative delays, the elapsed time at t=0 is already |negativeDelay|
+    if (hasNegativeDelay) {
+      timeSinceBegin = adjustedTime + effectiveBegin.abs();
+    }
+
     final durMicros = dur.inMicroseconds;
 
     if (durMicros > 0) {
@@ -416,14 +451,14 @@ class SmilAnimation {
       final iterationMicros = timeSinceBegin.inMicroseconds % durMicros;
       _localTime = Duration(microseconds: iterationMicros);
 
-      // Прогресс внутри итерации (0.0 - 1.0)
+      // Progress within iteration (0.0 - 1.0)
       final baseT = iterationMicros / durMicros;
       final t = _resolveDirectedProgress(baseT, _currentIteration);
 
-      // Вычисляем значение с учётом завершённых повторений
+      // Compute value with completed repetitions
       _lastValue = computeValue(t, completedRepeats: _currentIteration);
 
-      // Применяем значение
+      // Apply value
       if (_lastValue != null) {
         _applyValue(_lastValue!);
       }

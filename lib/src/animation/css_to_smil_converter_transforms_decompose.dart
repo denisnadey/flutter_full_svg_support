@@ -87,6 +87,37 @@ Map<String, Map<double, String>> _collectTransformFunctionsByOffset(
         case 'matrix':
           normalized = _normalizeMatrix(args);
           break;
+        // 3D transform functions
+        case 'translate3d':
+          normalized = _normalizeTranslate3d(args);
+          break;
+        case 'translatez':
+          normalized = _normalizeTranslateZ(args);
+          break;
+        case 'rotate3d':
+          normalized = _normalizeRotate3d(args);
+          break;
+        case 'rotatex':
+          normalized = _normalizeRotateAxis(args, 'rotateX');
+          break;
+        case 'rotatey':
+          normalized = _normalizeRotateAxis(args, 'rotateY');
+          break;
+        case 'rotatez':
+          normalized = _normalizeRotateAxis(args, 'rotateZ');
+          break;
+        case 'scale3d':
+          normalized = _normalizeScale3d(args);
+          break;
+        case 'scalez':
+          normalized = _normalizeScaleZ(args);
+          break;
+        case 'perspective':
+          normalized = _normalizePerspective(args);
+          break;
+        case 'matrix3d':
+          normalized = _normalizeMatrix3d(args);
+          break;
       }
 
       if (normalized != null) {

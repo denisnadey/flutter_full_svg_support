@@ -1,11 +1,25 @@
 ## NEXT
 
 * Updates minimum supported SDK version to Flutter 3.32/Dart 3.8.
+* CSS combinator selectors: descendant (space), child (`>`), adjacent sibling (`+`), general sibling (`~`) for advanced style rule matching.
+* CSS attribute selectors: `[attr]`, `[attr=value]`, `[attr~=value]`, `[attr|=value]`, `[attr^=value]`, `[attr$=value]`, `[attr*=value]` with case-insensitive flag support.
+* Compound selectors with combinators: `g.container > rect[fill=red].item` and similar complex patterns.
 * Advanced hit-testing for complex geometry: clip-path geometric intersection, mask alpha-based visibility, stroke-width expansion with linecap/linejoin support, per-character text hit-testing.
 * Advanced text typography: tspan absolute positioning creates new text chunks with proper cursor reset.
 * Advanced text typography: text-anchor applies independently per text chunk.
 * textLength conflict resolution: ignored when explicit per-character positions exist (per SVG spec).
 * Advanced `<foreignObject>` semantics: requiredExtensions fallback for switch patterns, nested SVG context switching with viewBox/preserveAspectRatio, overflow handling, transform propagation, hit-testing through foreignObject children.
+* CSS cascade and specificity resolution: proper specificity calculation (inline > ID > class > element), cascade order (later wins), !important handling, and inheritable property support (fill, stroke, font-*, color, visibility, etc.).
+* CSS shorthand property expansion: font shorthand (font-style/variant/weight/size/line-height/family), animation shorthand with multiple comma-separated animations, transition shorthand, margin/padding shorthand (1-4 value expansion), marker shorthand (SVG-specific), border shorthand.
+* CSS custom properties (variables) and calc() support: `var(--name)` resolution by walking up element tree, `var(--name, fallback)` with fallback values, calc() expression parser with arithmetic (+, -, *, /) and unit support (px, em, %, pt, rem), nested calc(), var() inside calc().
+* CSS animation edge cases:
+  * Multiple animations per element: comma-separated `animation` shorthand parsing generates multiple SMIL animations.
+  * `animation-play-state`: `paused`/`running` support integrated with SmilAnimation runtime.
+  * Negative `animation-delay`: Start animations partway through (e.g., `-0.5s` on 2s animation starts at 25%).
+  * `animation-fill-mode` edge cases: `backwards` applies first keyframe during delay, `both` combines forwards+backwards.
+* CSS transitions support: Parse `transition` shorthand and individual `transition-*` properties (property, duration, timing-function, delay).
+* @media queries in SVG style blocks: Parse `@media` rules, support `prefers-color-scheme` (dark/light) and viewport queries (`min-width`, `max-width`, `min-height`, `max-height`).
+* CSS 3D transforms: `translate3d`, `translateZ`, `rotateX`, `rotateY`, `rotateZ`, `rotate3d`, `scale3d`, `scaleZ`, `perspective`, `matrix3d` with proper 3D→2D projection using homogeneous coordinates and `backface-visibility` support.
 
 ## 2.2.2
 

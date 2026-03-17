@@ -3,6 +3,8 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 
+import 'transform_3d.dart';
+
 /// Тип SVG трансформации
 enum SvgTransformType {
   /// translate(x [y])
@@ -22,6 +24,38 @@ enum SvgTransformType {
 
   /// matrix(a b c d e f)
   matrix,
+
+  // 3D transform types
+
+  /// translate3d(x, y, z)
+  translate3d,
+
+  /// translateZ(z)
+  translateZ,
+
+  /// scale3d(x, y, z)
+  scale3d,
+
+  /// scaleZ(z)
+  scaleZ,
+
+  /// rotateX(angle)
+  rotateX,
+
+  /// rotateY(angle)
+  rotateY,
+
+  /// rotateZ(angle) - alias for rotate
+  rotateZ,
+
+  /// rotate3d(x, y, z, angle)
+  rotate3d,
+
+  /// perspective(length)
+  perspective,
+
+  /// matrix3d - 4x4 matrix (16 values)
+  matrix3d,
 }
 
 /// Представление SVG transform attribute
@@ -59,10 +93,13 @@ class SvgTransform {
   /// - scale(2, 3)
   /// - matrix(1, 0, 0, 1, 0, 0)
   /// - Комбинации: "translate(10, 20) rotate(45)"
+  /// - 3D transforms: translate3d, translateZ, rotateX, rotateY, rotateZ,
+  ///   rotate3d, scale3d, scaleZ, perspective, matrix3d
   static List<SvgTransform> parse(String transformString) {
     final transforms = <SvgTransform>[];
+    // Updated regex to include 3D transform functions
     final regex = RegExp(
-      r'(translate|rotate|scale|skewX|skewY|matrix)\s*\(\s*([^)]+)\s*\)',
+      r'(translate3d|translatez|translate|rotate3d|rotatex|rotatey|rotatez|rotate|scale3d|scalez|scale|skewX|skewY|matrix3d|matrix|perspective)\s*\(\s*([^)]+)\s*\)',
       caseSensitive: false,
     );
 
@@ -72,7 +109,7 @@ class SvgTransform {
       final values = valuesStr
           .split(RegExp(r'[\s,]+'))
           .where((s) => s.isNotEmpty)
-          .map((s) => double.tryParse(s) ?? 0.0)
+          .map((s) => _parseValueWithUnit(s))
           .toList();
 
       final transformType = switch (type) {
@@ -82,6 +119,17 @@ class SvgTransform {
         'skewx' => SvgTransformType.skewX,
         'skewy' => SvgTransformType.skewY,
         'matrix' => SvgTransformType.matrix,
+        // 3D transform types
+        'translate3d' => SvgTransformType.translate3d,
+        'translatez' => SvgTransformType.translateZ,
+        'scale3d' => SvgTransformType.scale3d,
+        'scalez' => SvgTransformType.scaleZ,
+        'rotatex' => SvgTransformType.rotateX,
+        'rotatey' => SvgTransformType.rotateY,
+        'rotatez' => SvgTransformType.rotateZ,
+        'rotate3d' => SvgTransformType.rotate3d,
+        'perspective' => SvgTransformType.perspective,
+        'matrix3d' => SvgTransformType.matrix3d,
         _ => null,
       };
 
@@ -91,6 +139,27 @@ class SvgTransform {
     }
 
     return transforms;
+  }
+
+  /// Parses a value that may include units (deg, rad, px, etc.)
+  static double _parseValueWithUnit(String s) {
+    final trimmed = s.trim().toLowerCase();
+    // Handle angle units
+    if (trimmed.endsWith('deg')) {
+      return double.tryParse(trimmed.substring(0, trimmed.length - 3)) ?? 0.0;
+    } else if (trimmed.endsWith('rad')) {
+      final rad = double.tryParse(trimmed.substring(0, trimmed.length - 3)) ?? 0.0;
+      return rad * 180.0 / math.pi; // Convert to degrees
+    } else if (trimmed.endsWith('turn')) {
+      final turn = double.tryParse(trimmed.substring(0, trimmed.length - 4)) ?? 0.0;
+      return turn * 360.0; // Convert to degrees
+    } else if (trimmed.endsWith('grad')) {
+      final grad = double.tryParse(trimmed.substring(0, trimmed.length - 4)) ?? 0.0;
+      return grad * 0.9; // Convert to degrees
+    } else if (trimmed.endsWith('px')) {
+      return double.tryParse(trimmed.substring(0, trimmed.length - 2)) ?? 0.0;
+    }
+    return double.tryParse(trimmed) ?? 0.0;
   }
 
   /// Конвертирует трансформацию в Matrix4
@@ -184,6 +253,79 @@ class TransformDecomposition {
             sx *= matrixDecomposition.scaleX;
             sy *= matrixDecomposition.scaleY;
             skewX += matrixDecomposition.skewX;
+          }
+          break;
+        // 3D transforms - project to 2D for decomposition
+        case SvgTransformType.translate3d:
+          tx += transform.values.isNotEmpty ? transform.values[0] : 0.0;
+          ty += transform.values.length > 1 ? transform.values[1] : 0.0;
+          // Z translation is ignored in 2D projection
+          break;
+        case SvgTransformType.translateZ:
+          // Z-only translation has no effect in 2D without perspective
+          break;
+        case SvgTransformType.scale3d:
+          sx *= transform.values.isNotEmpty ? transform.values[0] : 1.0;
+          sy *= transform.values.length > 1 ? transform.values[1] : 1.0;
+          // Z scale is ignored in 2D projection
+          break;
+        case SvgTransformType.scaleZ:
+          // Z-only scale has no effect in 2D without perspective
+          break;
+        case SvgTransformType.rotateX:
+        case SvgTransformType.rotateY:
+          // X/Y rotations produce perspective effects
+          // For decomposition, we extract the projected 2D transform
+          final angle = transform.values.isNotEmpty
+              ? transform.values[0] * math.pi / 180.0
+              : 0.0;
+          final matrix = transform.type == SvgTransformType.rotateX
+              ? Matrix4x4.rotationX(angle)
+              : Matrix4x4.rotationY(angle);
+          final extracted = matrix.extract2DMatrix();
+          final matrixDecomp = _decomposeMatrix(extracted);
+          rotation += matrixDecomp.rotation;
+          sx *= matrixDecomp.scaleX;
+          sy *= matrixDecomp.scaleY;
+          skewX += matrixDecomp.skewX;
+          break;
+        case SvgTransformType.rotateZ:
+          // Same as regular rotate
+          rotation += transform.values.isNotEmpty
+              ? transform.values[0] * math.pi / 180.0
+              : 0.0;
+          break;
+        case SvgTransformType.rotate3d:
+          // rotate3d(x, y, z, angle)
+          if (transform.values.length >= 4) {
+            final axisX = transform.values[0];
+            final axisY = transform.values[1];
+            final axisZ = transform.values[2];
+            final angle = transform.values[3] * math.pi / 180.0;
+            final matrix = Matrix4x4.rotation3d(axisX, axisY, axisZ, angle);
+            final extracted = matrix.extract2DMatrix();
+            final matrixDecomp = _decomposeMatrix(extracted);
+            rotation += matrixDecomp.rotation;
+            sx *= matrixDecomp.scaleX;
+            sy *= matrixDecomp.scaleY;
+            skewX += matrixDecomp.skewX;
+          }
+          break;
+        case SvgTransformType.perspective:
+          // Perspective doesn't affect decomposition directly
+          break;
+        case SvgTransformType.matrix3d:
+          // Extract 2D portion of 4x4 matrix
+          if (transform.values.length >= 16) {
+            final matrix = Matrix4x4.fromMatrix3d(transform.values);
+            final extracted = matrix.extract2DMatrix();
+            final matrixDecomp = _decomposeMatrix(extracted);
+            tx += matrixDecomp.translateX;
+            ty += matrixDecomp.translateY;
+            rotation += matrixDecomp.rotation;
+            sx *= matrixDecomp.scaleX;
+            sy *= matrixDecomp.scaleY;
+            skewX += matrixDecomp.skewX;
           }
           break;
       }

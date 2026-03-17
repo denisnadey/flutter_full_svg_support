@@ -24,7 +24,7 @@ SvgNode _parseElement(XmlElement element) {
     final attributeType = _inferAttributeType(attrName, isAnimationElement);
     final parsedValue = _parseAttributeValue(attrValue, attributeType);
 
-    node.setAttribute(attrName, parsedValue, type: attributeType);
+    node.setAttribute(attrName, parsedValue, type: attributeType, rawValue: attrValue);
   }
 
   // Сохраняем прямой текстовый контент для текстовых узлов.

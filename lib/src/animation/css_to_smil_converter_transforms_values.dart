@@ -1,7 +1,7 @@
 part of 'css_to_smil_converter.dart';
 
 final RegExp _cssTransformFunctionRegex = RegExp(
-  r'(translate|translatex|translatey|rotate|scale|scalex|scaley|skewx|skewy|matrix)\s*\(\s*([^)]+)\s*\)',
+  r'(translate3d|translatez|translatex|translatey|translate|rotate3d|rotatex|rotatey|rotatez|rotate|scale3d|scalez|scalex|scaley|scale|skewx|skewy|matrix3d|matrix|perspective)\s*\(\s*([^)]+)\s*\)',
   caseSensitive: false,
 );
 
@@ -64,6 +64,37 @@ String _normalizeCssTransformInternal(String value) {
         break;
       case 'matrix':
         normalized = _normalizeMatrix(args);
+        break;
+      // 3D transform functions
+      case 'translate3d':
+        normalized = _normalizeTranslate3d(args);
+        break;
+      case 'translatez':
+        normalized = _normalizeTranslateZ(args);
+        break;
+      case 'rotate3d':
+        normalized = _normalizeRotate3d(args);
+        break;
+      case 'rotatex':
+        normalized = _normalizeRotateAxis(args, 'rotateX');
+        break;
+      case 'rotatey':
+        normalized = _normalizeRotateAxis(args, 'rotateY');
+        break;
+      case 'rotatez':
+        normalized = _normalizeRotateAxis(args, 'rotateZ');
+        break;
+      case 'scale3d':
+        normalized = _normalizeScale3d(args);
+        break;
+      case 'scalez':
+        normalized = _normalizeScaleZ(args);
+        break;
+      case 'perspective':
+        normalized = _normalizePerspective(args);
+        break;
+      case 'matrix3d':
+        normalized = _normalizeMatrix3d(args);
         break;
     }
 
@@ -158,4 +189,61 @@ String _formatDouble(double value) {
       .toStringAsFixed(4)
       .replaceFirst(RegExp(r'0+$'), '')
       .replaceFirst(RegExp(r'\.$'), '');
+}
+
+// 3D transform normalization functions
+
+String? _normalizeTranslate3d(List<String> args) {
+  final tx = args.isNotEmpty ? _parseLength(args[0]) : 0.0;
+  final ty = args.length > 1 ? _parseLength(args[1]) : 0.0;
+  final tz = args.length > 2 ? _parseLength(args[2]) : 0.0;
+  return 'translate3d(${_formatDouble(tx)}, ${_formatDouble(ty)}, ${_formatDouble(tz)})';
+}
+
+String? _normalizeTranslateZ(List<String> args) {
+  final tz = args.isNotEmpty ? _parseLength(args[0]) : 0.0;
+  return 'translateZ(${_formatDouble(tz)})';
+}
+
+String? _normalizeRotate3d(List<String> args) {
+  final x = args.isNotEmpty ? _parseNumber(args[0], fallback: 0.0) : 0.0;
+  final y = args.length > 1 ? _parseNumber(args[1], fallback: 0.0) : 0.0;
+  final z = args.length > 2 ? _parseNumber(args[2], fallback: 0.0) : 0.0;
+  final angle = args.length > 3 ? _parseAngleToDegrees(args[3]) : 0.0;
+  return 'rotate3d(${_formatDouble(x)}, ${_formatDouble(y)}, ${_formatDouble(z)}, ${_formatDouble(angle)})';
+}
+
+String? _normalizeRotateAxis(List<String> args, String name) {
+  final angle = args.isNotEmpty ? _parseAngleToDegrees(args[0]) : 0.0;
+  return '$name(${_formatDouble(angle)})';
+}
+
+String? _normalizeScale3d(List<String> args) {
+  final sx = args.isNotEmpty ? _parseNumber(args[0], fallback: 1.0) : 1.0;
+  final sy = args.length > 1 ? _parseNumber(args[1], fallback: 1.0) : 1.0;
+  final sz = args.length > 2 ? _parseNumber(args[2], fallback: 1.0) : 1.0;
+  return 'scale3d(${_formatDouble(sx)}, ${_formatDouble(sy)}, ${_formatDouble(sz)})';
+}
+
+String? _normalizeScaleZ(List<String> args) {
+  final sz = args.isNotEmpty ? _parseNumber(args[0], fallback: 1.0) : 1.0;
+  return 'scaleZ(${_formatDouble(sz)})';
+}
+
+String? _normalizePerspective(List<String> args) {
+  final distance = args.isNotEmpty ? _parseLength(args[0]) : 0.0;
+  return 'perspective(${_formatDouble(distance)})';
+}
+
+String? _normalizeMatrix3d(List<String> args) {
+  if (args.length < 16) {
+    return null;
+  }
+
+  final values = args
+      .take(16)
+      .map((part) => _parseNumber(part, fallback: 0.0))
+      .map(_formatDouble)
+      .join(', ');
+  return 'matrix3d($values)';
 }

@@ -13,85 +13,60 @@ extension AnimatedSvgPainterCanvasTransformExtension on AnimatedSvgPainter {
     final origin = _parseTransformOrigin(node);
     final hasOrigin = origin != null && (origin.dx != 0.0 || origin.dy != 0.0);
 
+    // Check for perspective property
+    final perspectiveValue = _getPerspective(node);
+    final hasPerspective = perspectiveValue != null && perspectiveValue > 0;
+
+    // Check for backface-visibility
+    final hideBackface = _getBackfaceVisibility(node) == BackfaceVisibility.hidden;
+
     // Apply origin offset before transform
     if (hasOrigin) {
       canvas.translate(origin.dx, origin.dy);
     }
 
-    // Применяем каждую трансформацию в порядке объявления
-    for (final transform in transforms) {
-      switch (transform.type) {
-        case SvgTransformType.translate:
-          final tx = transform.values.isNotEmpty ? transform.values[0] : 0.0;
-          final ty = transform.values.length > 1 ? transform.values[1] : 0.0;
-          canvas.translate(tx, ty);
+    // Check if we have any 3D transforms
+    final has3DTransform = transforms.any((t) => _is3DTransform(t.type));
 
-        case SvgTransformType.rotate:
-          final angle = transform.values.isNotEmpty ? transform.values[0] : 0.0;
-          final cx = transform.values.length > 1 ? transform.values[1] : 0.0;
-          final cy = transform.values.length > 2 ? transform.values[2] : 0.0;
+    if (has3DTransform || hasPerspective) {
+      // Build a 4x4 matrix for 3D transforms
+      var matrix = Matrix4x4.identity();
 
-          // Rotate with center point
-          if (cx != 0.0 || cy != 0.0) {
-            canvas.translate(cx, cy);
-            canvas.rotate(angle * 3.14159 / 180.0); // degrees to radians
-            canvas.translate(-cx, -cy);
-          } else {
-            canvas.rotate(angle * 3.14159 / 180.0);
-          }
+      // Apply perspective first if present
+      if (hasPerspective) {
+        matrix = matrix * Matrix4x4.perspective(perspectiveValue);
+      }
 
-        case SvgTransformType.scale:
-          final sx = transform.values.isNotEmpty ? transform.values[0] : 1.0;
-          final sy = transform.values.length > 1
-              ? transform.values[1]
-              : sx; // sy defaults to sx
-          canvas.scale(sx, sy);
+      // Apply each transform
+      for (final transform in transforms) {
+        matrix = matrix * _createMatrix4x4(transform);
+      }
 
-        case SvgTransformType.skewX:
-          final angle = transform.values.isNotEmpty ? transform.values[0] : 0.0;
-          final radians = angle * 3.14159 / 180.0;
-          final tanValue = radians.isFinite ? radians : 0.0;
-          // skewX matrix: [1, tan(angle), 0]
-          //               [0,     1,      0]
-          //               [0,     0,      1]
-          final matrix = Matrix4.identity()
-            ..setEntry(0, 1, tanValue); // Set skewX component
-          canvas.transform(matrix.storage);
+      // Check backface visibility
+      if (hideBackface && matrix.isBackfacing()) {
+        // Element is facing away, don't render
+        // Set up a transform that puts everything at infinity (invisible)
+        canvas.scale(0, 0);
+        if (hasOrigin) {
+          canvas.translate(-origin.dx, -origin.dy);
+        }
+        return;
+      }
 
-        case SvgTransformType.skewY:
-          final angle = transform.values.isNotEmpty ? transform.values[0] : 0.0;
-          final radians = angle * 3.14159 / 180.0;
-          final tanValue = radians.isFinite ? radians : 0.0;
-          // skewY matrix: [    1,      0, 0]
-          //               [tan(angle), 1, 0]
-          //               [    0,      0, 1]
-          final matrix = Matrix4.identity()
-            ..setEntry(1, 0, tanValue); // Set skewY component
-          canvas.transform(matrix.storage);
-
-        case SvgTransformType.matrix:
-          if (transform.values.length >= 6) {
-            // SVG matrix(a, b, c, d, e, f) maps to:
-            // [a  c  e]
-            // [b  d  f]
-            // [0  0  1]
-            final a = transform.values[0];
-            final b = transform.values[1];
-            final c = transform.values[2];
-            final d = transform.values[3];
-            final e = transform.values[4];
-            final f = transform.values[5];
-
-            final matrix = Matrix4.identity()
-              ..setEntry(0, 0, a) // m11
-              ..setEntry(1, 0, b) // m21
-              ..setEntry(0, 1, c) // m12
-              ..setEntry(1, 1, d) // m22
-              ..setEntry(0, 3, e) // m14 (translateX)
-              ..setEntry(1, 3, f); // m24 (translateY)
-            canvas.transform(matrix.storage);
-          }
-          break;
+      // Extract 2D matrix and apply
+      final matrix2d = matrix.extract2DMatrix();
+      final flutterMatrix = Matrix4.identity()
+        ..setEntry(0, 0, matrix2d[0]) // a
+        ..setEntry(1, 0, matrix2d[1]) // b
+        ..setEntry(0, 1, matrix2d[2]) // c
+        ..setEntry(1, 1, matrix2d[3]) // d
+        ..setEntry(0, 3, matrix2d[4]) // e (tx)
+        ..setEntry(1, 3, matrix2d[5]); // f (ty)
+      canvas.transform(flutterMatrix.storage);
+    } else {
+      // Apply 2D transforms directly (original behavior)
+      for (final transform in transforms) {
+        _apply2DTransform(canvas, transform);
       }
     }
 
@@ -99,6 +74,279 @@ extension AnimatedSvgPainterCanvasTransformExtension on AnimatedSvgPainter {
     if (hasOrigin) {
       canvas.translate(-origin.dx, -origin.dy);
     }
+  }
+
+  /// Checks if a transform type is a 3D transform
+  bool _is3DTransform(SvgTransformType type) {
+    return type == SvgTransformType.translate3d ||
+        type == SvgTransformType.translateZ ||
+        type == SvgTransformType.scale3d ||
+        type == SvgTransformType.scaleZ ||
+        type == SvgTransformType.rotateX ||
+        type == SvgTransformType.rotateY ||
+        type == SvgTransformType.rotateZ ||
+        type == SvgTransformType.rotate3d ||
+        type == SvgTransformType.perspective ||
+        type == SvgTransformType.matrix3d;
+  }
+
+  /// Creates a 4x4 matrix from an SvgTransform
+  Matrix4x4 _createMatrix4x4(SvgTransform transform) {
+    switch (transform.type) {
+      case SvgTransformType.translate:
+        final tx = transform.values.isNotEmpty ? transform.values[0] : 0.0;
+        final ty = transform.values.length > 1 ? transform.values[1] : 0.0;
+        return Matrix4x4.translation(tx, ty, 0);
+
+      case SvgTransformType.translate3d:
+        final tx = transform.values.isNotEmpty ? transform.values[0] : 0.0;
+        final ty = transform.values.length > 1 ? transform.values[1] : 0.0;
+        final tz = transform.values.length > 2 ? transform.values[2] : 0.0;
+        return Matrix4x4.translation(tx, ty, tz);
+
+      case SvgTransformType.translateZ:
+        final tz = transform.values.isNotEmpty ? transform.values[0] : 0.0;
+        return Matrix4x4.translation(0, 0, tz);
+
+      case SvgTransformType.rotate:
+        final angle = transform.values.isNotEmpty ? transform.values[0] : 0.0;
+        final radians = angle * 3.14159265359 / 180.0;
+        final cx = transform.values.length > 1 ? transform.values[1] : 0.0;
+        final cy = transform.values.length > 2 ? transform.values[2] : 0.0;
+        if (cx != 0.0 || cy != 0.0) {
+          // Rotate around a point
+          return Matrix4x4.translation(cx, cy, 0) *
+              Matrix4x4.rotationZ(radians) *
+              Matrix4x4.translation(-cx, -cy, 0);
+        }
+        return Matrix4x4.rotationZ(radians);
+
+      case SvgTransformType.rotateX:
+        final angle = transform.values.isNotEmpty ? transform.values[0] : 0.0;
+        final radians = angle * 3.14159265359 / 180.0;
+        return Matrix4x4.rotationX(radians);
+
+      case SvgTransformType.rotateY:
+        final angle = transform.values.isNotEmpty ? transform.values[0] : 0.0;
+        final radians = angle * 3.14159265359 / 180.0;
+        return Matrix4x4.rotationY(radians);
+
+      case SvgTransformType.rotateZ:
+        final angle = transform.values.isNotEmpty ? transform.values[0] : 0.0;
+        final radians = angle * 3.14159265359 / 180.0;
+        return Matrix4x4.rotationZ(radians);
+
+      case SvgTransformType.rotate3d:
+        if (transform.values.length >= 4) {
+          final x = transform.values[0];
+          final y = transform.values[1];
+          final z = transform.values[2];
+          final angle = transform.values[3];
+          final radians = angle * 3.14159265359 / 180.0;
+          return Matrix4x4.rotation3d(x, y, z, radians);
+        }
+        return Matrix4x4.identity();
+
+      case SvgTransformType.scale:
+        final sx = transform.values.isNotEmpty ? transform.values[0] : 1.0;
+        final sy = transform.values.length > 1 ? transform.values[1] : sx;
+        return Matrix4x4.scale(sx, sy, 1);
+
+      case SvgTransformType.scale3d:
+        final sx = transform.values.isNotEmpty ? transform.values[0] : 1.0;
+        final sy = transform.values.length > 1 ? transform.values[1] : 1.0;
+        final sz = transform.values.length > 2 ? transform.values[2] : 1.0;
+        return Matrix4x4.scale(sx, sy, sz);
+
+      case SvgTransformType.scaleZ:
+        final sz = transform.values.isNotEmpty ? transform.values[0] : 1.0;
+        return Matrix4x4.scale(1, 1, sz);
+
+      case SvgTransformType.skewX:
+        final angle = transform.values.isNotEmpty ? transform.values[0] : 0.0;
+        final radians = angle * 3.14159265359 / 180.0;
+        final matrix = Matrix4x4.identity();
+        matrix.set(0, 1, math.tan(radians));
+        return matrix;
+
+      case SvgTransformType.skewY:
+        final angle = transform.values.isNotEmpty ? transform.values[0] : 0.0;
+        final radians = angle * 3.14159265359 / 180.0;
+        final matrix = Matrix4x4.identity();
+        matrix.set(1, 0, math.tan(radians));
+        return matrix;
+
+      case SvgTransformType.matrix:
+        if (transform.values.length >= 6) {
+          return Matrix4x4.from2dMatrix(transform.values);
+        }
+        return Matrix4x4.identity();
+
+      case SvgTransformType.matrix3d:
+        if (transform.values.length >= 16) {
+          return Matrix4x4.fromMatrix3d(transform.values);
+        }
+        return Matrix4x4.identity();
+
+      case SvgTransformType.perspective:
+        final distance = transform.values.isNotEmpty ? transform.values[0] : 0.0;
+        if (distance > 0) {
+          return Matrix4x4.perspective(distance);
+        }
+        return Matrix4x4.identity();
+    }
+  }
+
+  /// Applies a 2D transform directly to the canvas (original behavior)
+  void _apply2DTransform(ui.Canvas canvas, SvgTransform transform) {
+    switch (transform.type) {
+      case SvgTransformType.translate:
+        final tx = transform.values.isNotEmpty ? transform.values[0] : 0.0;
+        final ty = transform.values.length > 1 ? transform.values[1] : 0.0;
+        canvas.translate(tx, ty);
+
+      case SvgTransformType.rotate:
+        final angle = transform.values.isNotEmpty ? transform.values[0] : 0.0;
+        final cx = transform.values.length > 1 ? transform.values[1] : 0.0;
+        final cy = transform.values.length > 2 ? transform.values[2] : 0.0;
+
+        // Rotate with center point
+        if (cx != 0.0 || cy != 0.0) {
+          canvas.translate(cx, cy);
+          canvas.rotate(angle * 3.14159 / 180.0); // degrees to radians
+          canvas.translate(-cx, -cy);
+        } else {
+          canvas.rotate(angle * 3.14159 / 180.0);
+        }
+
+      case SvgTransformType.scale:
+        final sx = transform.values.isNotEmpty ? transform.values[0] : 1.0;
+        final sy = transform.values.length > 1
+            ? transform.values[1]
+            : sx; // sy defaults to sx
+        canvas.scale(sx, sy);
+
+      case SvgTransformType.skewX:
+        final angle = transform.values.isNotEmpty ? transform.values[0] : 0.0;
+        final radians = angle * 3.14159 / 180.0;
+        final tanValue = radians.isFinite ? radians : 0.0;
+        final matrix = Matrix4.identity()
+          ..setEntry(0, 1, tanValue); // Set skewX component
+        canvas.transform(matrix.storage);
+
+      case SvgTransformType.skewY:
+        final angle = transform.values.isNotEmpty ? transform.values[0] : 0.0;
+        final radians = angle * 3.14159 / 180.0;
+        final tanValue = radians.isFinite ? radians : 0.0;
+        final matrix = Matrix4.identity()
+          ..setEntry(1, 0, tanValue); // Set skewY component
+        canvas.transform(matrix.storage);
+
+      case SvgTransformType.matrix:
+        if (transform.values.length >= 6) {
+          final a = transform.values[0];
+          final b = transform.values[1];
+          final c = transform.values[2];
+          final d = transform.values[3];
+          final e = transform.values[4];
+          final f = transform.values[5];
+
+          final matrix = Matrix4.identity()
+            ..setEntry(0, 0, a) // m11
+            ..setEntry(1, 0, b) // m21
+            ..setEntry(0, 1, c) // m12
+            ..setEntry(1, 1, d) // m22
+            ..setEntry(0, 3, e) // m14 (translateX)
+            ..setEntry(1, 3, f); // m24 (translateY)
+          canvas.transform(matrix.storage);
+        }
+        break;
+
+      // 3D transforms in 2D mode - just ignore Z components
+      case SvgTransformType.translate3d:
+        final tx = transform.values.isNotEmpty ? transform.values[0] : 0.0;
+        final ty = transform.values.length > 1 ? transform.values[1] : 0.0;
+        canvas.translate(tx, ty);
+
+      case SvgTransformType.translateZ:
+        // Z-only translation has no effect in 2D
+        break;
+
+      case SvgTransformType.rotateX:
+      case SvgTransformType.rotateY:
+        // X/Y rotations have perspective effects, approximate with scale
+        final angle = transform.values.isNotEmpty ? transform.values[0] : 0.0;
+        final radians = angle * 3.14159 / 180.0;
+        final cosAngle = math.cos(radians);
+        if (transform.type == SvgTransformType.rotateX) {
+          canvas.scale(1, cosAngle);
+        } else {
+          canvas.scale(cosAngle, 1);
+        }
+
+      case SvgTransformType.rotateZ:
+        final angle = transform.values.isNotEmpty ? transform.values[0] : 0.0;
+        canvas.rotate(angle * 3.14159 / 180.0);
+
+      case SvgTransformType.rotate3d:
+        // For 2D, just use Z rotation if Z axis dominates
+        if (transform.values.length >= 4) {
+          final z = transform.values[2];
+          final angle = transform.values[3];
+          if (z.abs() > 0.5) {
+            canvas.rotate(angle * z.sign * 3.14159 / 180.0);
+          }
+        }
+
+      case SvgTransformType.scale3d:
+        final sx = transform.values.isNotEmpty ? transform.values[0] : 1.0;
+        final sy = transform.values.length > 1 ? transform.values[1] : 1.0;
+        canvas.scale(sx, sy);
+
+      case SvgTransformType.scaleZ:
+        // Z-only scale has no effect in 2D
+        break;
+
+      case SvgTransformType.perspective:
+        // Perspective alone doesn't change 2D rendering
+        break;
+
+      case SvgTransformType.matrix3d:
+        // Extract 2D portion
+        if (transform.values.length >= 16) {
+          final matrix = Matrix4x4.fromMatrix3d(transform.values);
+          final matrix2d = matrix.extract2DMatrix();
+          final flutterMatrix = Matrix4.identity()
+            ..setEntry(0, 0, matrix2d[0])
+            ..setEntry(1, 0, matrix2d[1])
+            ..setEntry(0, 1, matrix2d[2])
+            ..setEntry(1, 1, matrix2d[3])
+            ..setEntry(0, 3, matrix2d[4])
+            ..setEntry(1, 3, matrix2d[5]);
+          canvas.transform(flutterMatrix.storage);
+        }
+    }
+  }
+
+  /// Gets the perspective value from CSS perspective property
+  double? _getPerspective(SvgNode node) {
+    final value = _getStyleOrAttributeValue(node, 'perspective');
+    if (value == null) return null;
+    final str = value.toString().trim().toLowerCase();
+    if (str == 'none' || str.isEmpty) return null;
+    // Parse length value (px, em, etc)
+    final numValue = str.replaceAll(RegExp(r'[a-z%]+$'), '');
+    return double.tryParse(numValue);
+  }
+
+  /// Gets the backface-visibility property
+  BackfaceVisibility _getBackfaceVisibility(SvgNode node) {
+    final value = _getStyleOrAttributeValue(node, 'backface-visibility');
+    if (value == null) return BackfaceVisibility.visible;
+    final str = value.toString().trim().toLowerCase();
+    return str == 'hidden'
+        ? BackfaceVisibility.hidden
+        : BackfaceVisibility.visible;
   }
 
   /// Parses the transform-origin CSS property.

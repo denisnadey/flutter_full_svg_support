@@ -195,3 +195,12 @@ Map<String, String> _parseProperties(String propertiesStr) {
 
   return properties;
 }
+
+/// Parses CSS properties from string and expands shorthand properties.
+///
+/// This is the preferred function for parsing CSS that may contain
+/// shorthand properties like font, margin, padding, animation, etc.
+Map<String, String> _parsePropertiesWithShorthandExpansion(String propertiesStr) {
+  final properties = _parseProperties(propertiesStr);
+  return CssShorthandExpander.expandAll(properties);
+}

@@ -1,6 +1,6 @@
 # TODO - Animation Work Queue
 
-**Last Updated:** March 16, 2026  
+**Last Updated:** March 17, 2026  
 **Status Source:** `/Users/denisnadey/apps/flutter_full_svg_support/CURRENT_STATUS.md`
 **Closed Issues Registry:** `/Users/denisnadey/apps/flutter_full_svg_support/docs/RESOLVED_ISSUES.md`
 
@@ -9,6 +9,9 @@ For factual project status, use `CURRENT_STATUS.md` only.
 
 ## Completed Recently
 
+- [x] CSS combinator selectors: descendant (space), child (`>`), adjacent sibling (`+`), general sibling (`~`)
+- [x] CSS attribute selectors: `[attr]`, `[attr=value]`, `[attr~=value]`, `[attr|=value]`, `[attr^=value]`, `[attr$=value]`, `[attr*=value]`, case-insensitive flag
+- [x] Compound selectors with combinators: `g.container > rect[fill=red].item`
 - [x] `calcMode="paced"` distance support completed for `path` and `transform` + regression coverage
 - [x] Refactor milestone: split `smil_animation.dart` into focused part files (API preserved)
 - [x] Refactor milestone: split `smil_parser.dart` into focused part files (API preserved)
@@ -121,6 +124,13 @@ For factual project status, use `CURRENT_STATUS.md` only.
 - [x] Advanced text typography: tspan absolute positioning creates new text chunks with proper cursor reset
 - [x] Advanced text typography: text-anchor applies independently per text chunk (when tspan has absolute x/y)
 - [x] textLength conflict resolution: ignored when explicit per-character x/y positions exist (per SVG spec)
+- [x] CSS cascade and specificity resolution: proper specificity calculation, cascade order, !important handling, and inheritable property support
+- [x] CSS shorthand property expansion: font, animation (multiple), transition, margin/padding, marker (SVG), border shorthands
+- [x] CSS 3D transforms: `translate3d`, `translateZ`, `rotateX`, `rotateY`, `rotateZ`, `rotate3d`, `scale3d`, `scaleZ`, `perspective`, `matrix3d` with 3D→2D projection and `backface-visibility`
+- [x] CSS animation edge cases: multiple animations per element, animation-play-state (paused/running), negative animation-delay, fill-mode (backwards/both)
+- [x] CSS transitions support: transition shorthand parsing, transition-property/duration/timing-function/delay, multiple transitions
+- [x] @media queries in SVG style blocks: prefers-color-scheme (dark/light), viewport queries (min-width/max-width/min-height/max-height)
+- [x] CSS custom properties (variables) and calc() support: `var(--name)`, `var(--name, fallback)`, calc() arithmetic with units, nested calc(), var() inside calc()
 
 ## P0 - Blink Parity Foundations
 

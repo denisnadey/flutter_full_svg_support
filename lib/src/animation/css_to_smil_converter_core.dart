@@ -24,7 +24,7 @@ Map<String, List<Object>> _extractAnimatedProperties(CssKeyframes keyframes) {
   return result;
 }
 
-/// Создаёт SMIL анимацию из CSS keyframes и animation
+/// Creates a SMIL animation from CSS keyframes and animation
 SmilAnimation? _createSmilAnimation({
   required CssKeyframes keyframes,
   required CssAnimation animation,
@@ -138,6 +138,7 @@ SmilAnimation? _createSmilAnimation({
       playbackDirection: playbackDirection,
       additive: SmilAdditiveMode.replace,
       accumulate: false,
+      isPaused: animation.isPaused,
     );
   } catch (_) {
     // Если не удалось создать анимацию, возвращаем null
@@ -176,13 +177,15 @@ List<Object> _convertCssValues(
   return cssValues;
 }
 
-/// Конвертирует CSS fillMode в SMIL fillMode
+/// Converts CSS fillMode to SMIL fillMode
 SmilFillMode _convertFillMode(String fillMode) {
   switch (fillMode.toLowerCase()) {
     case 'forwards':
-    case 'both':
       return SmilFillMode.freeze;
     case 'backwards':
+      return SmilFillMode.backwards;
+    case 'both':
+      return SmilFillMode.both;
     case 'none':
     default:
       return SmilFillMode.remove;

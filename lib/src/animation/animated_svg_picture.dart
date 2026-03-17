@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'animated_svg_controller.dart';
 import 'animated_svg_painter.dart';
 import 'animation_detector.dart';
+import 'css_variables_calc.dart';
 import 'path_data.dart';
 import 'path_parser.dart';
 import 'preserve_aspect_ratio.dart';
@@ -18,6 +19,7 @@ import 'smil/smil_timeline.dart';
 import 'svg_dom.dart';
 import 'svg_parser.dart';
 import 'svg_transform.dart';
+import 'transform_3d.dart';
 
 part 'animated_svg_picture_pointer_events.dart';
 part 'animated_svg_picture_lifecycle.dart';

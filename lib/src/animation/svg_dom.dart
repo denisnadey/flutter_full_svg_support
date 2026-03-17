@@ -131,7 +131,8 @@ class SvgNode {
     List<SvgNode>? children,
     this.parent,
   }) : attributes = attributes ?? {},
-       children = children ?? [];
+       children = children ?? [],
+       _rawAttributes = {};
 
   /// Тег элемента: 'svg', 'g', 'rect', 'circle', 'path', 'text', etc.
   final String tagName;
@@ -144,6 +145,9 @@ class SvgNode {
 
   /// Атрибуты элемента
   final Map<String, AnimatableSvgAttribute> attributes;
+
+  /// Raw attribute values for CSS selector matching
+  final Map<String, String> _rawAttributes;
 
   /// Дочерние элементы
   final List<SvgNode> children;
@@ -192,17 +196,27 @@ class SvgNode {
     return attributes[name]?.effectiveValue;
   }
 
+  /// Get raw (original string) attribute value for CSS selector matching
+  String? getRawAttributeValue(String name) {
+    if (name == 'id') return id;
+    if (name == 'className' || name == 'class') return className;
+    return _rawAttributes[name];
+  }
+
   /// Установить атрибут
   void setAttribute(
     String name,
     Object value, {
     SvgAttributeType type = SvgAttributeType.string,
+    String? rawValue,
   }) {
     attributes[name] = AnimatableSvgAttribute(
       name: name,
       baseValue: value,
       type: type,
     );
+    // Store raw value if provided, otherwise use string representation
+    _rawAttributes[name] = rawValue ?? (value is String ? value : value.toString());
   }
 
   /// Найти узел по ID в поддереве

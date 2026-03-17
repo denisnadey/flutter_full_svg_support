@@ -1,5 +1,6 @@
 import '../css_animations.dart';
 import '../css_to_smil_converter.dart';
+import '../css_variables_calc.dart';
 import '../svg_dom.dart';
 import 'smil_animation.dart';
 import 'timing_condition.dart';

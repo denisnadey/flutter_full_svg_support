@@ -5,6 +5,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/rendering.dart';
 
 import 'css_named_colors.dart';
+import 'css_variables_calc.dart';
 import 'path_data.dart';
 import 'path_parser.dart';
 import 'preserve_aspect_ratio.dart';
@@ -12,6 +13,7 @@ import 'switch_processing.dart';
 import 'svg_dom.dart';
 import 'svg_filters.dart';
 import 'svg_transform.dart';
+import 'transform_3d.dart';
 
 part 'animated_svg_painter_use.dart';
 part 'animated_svg_painter_tree.dart';

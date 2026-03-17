@@ -30,6 +30,9 @@ extension _AnimatedSvgPictureStateAttrsExtension on _AnimatedSvgPictureState {
       return null;
     }
 
+    // Parse and store custom properties from this node's style
+    node.parseAndSetCustomProperties(style);
+
     for (final declaration in style.split(';')) {
       final parts = declaration.split(':');
       if (parts.length < 2) {
@@ -39,13 +42,18 @@ extension _AnimatedSvgPictureStateAttrsExtension on _AnimatedSvgPictureState {
       if (key != property) {
         continue;
       }
-      final value = parts.sublist(1).join(':').trim();
-      final normalizedValue = value
-          .replaceFirst(RegExp(r'\s*!important\s*$', caseSensitive: false), '')
+      var value = parts.sublist(1).join(':').trim();
+      value = value
+          .replaceFirst(RegExp(r'\s*!important\s*\$', caseSensitive: false), '')
           .trim();
-      if (normalizedValue.isNotEmpty) {
-        return normalizedValue;
+      if (value.isEmpty) {
+        return null;
       }
+      // Resolve CSS variables if present
+      if (containsVarReference(value)) {
+        value = CssVariableResolver.resolveValue(value, node);
+      }
+      return value.isEmpty ? null : value;
     }
     return null;
   }

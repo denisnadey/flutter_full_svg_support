@@ -1,6 +1,6 @@
 # Current Development Status
 
-**Last Updated:** March 16, 2026  
+**Last Updated:** March 17, 2026  
 **Authority:** This file is the single source of truth for current project state.
 
 ## Snapshot
@@ -9,7 +9,7 @@
 - Flutter SDK: `3.38.1` (via `./.fvm/flutter_sdk/bin/flutter`)
 - Dart SDK: `3.10.0`
 
-## Verified Health (March 16, 2026)
+## Verified Health (March 17, 2026)
 
 Commands run in `/Users/denisnadey/apps/flutter_full_svg_support`:
 
@@ -19,8 +19,8 @@ Commands run in `/Users/denisnadey/apps/flutter_full_svg_support`:
 ```
 
 Result:
-- `flutter test`: **All tests passed** (`+1171 ~1`)
-- `flutter analyze`: **26 info**, **0 errors**, **0 warnings** (deprecations/minor lint only)
+- `flutter test`: **All tests passed** (`+1262`)
+- `flutter analyze`: **0 errors**, **0 warnings**
 
 ## Documentation Cleanup (March 16, 2026)
 
@@ -81,6 +81,69 @@ See: `/Users/denisnadey/apps/flutter_full_svg_support/docs/RESOLVED_ISSUES.md`
 - CSS->SMIL timing conversion with `cubic-bezier(...)` and `ease*` mapped to SMIL `keySplines`
 - CSS `animation-direction`: `reverse`, `alternate`, `alternate-reverse` runtime behavior
 - Baseline CSS transform-function normalization in converter (`deg/rad/turn`, `px`, aliases like `translateX`)
+- **CSS Selectors**:
+  - Simple selectors: tag, `#id`, `.class`
+  - Compound selectors: `tag.class#id`
+  - Combinator selectors:
+    - Descendant (space): `g rect` — matches rect inside g at any depth
+    - Child (`>`): `g > rect` — matches direct children only
+    - Adjacent sibling (`+`): `rect + circle` — matches immediately following sibling
+    - General sibling (`~`): `rect ~ circle` — matches any following sibling
+  - Attribute selectors:
+    - `[attr]` — has attribute
+    - `[attr=value]` — exact match
+    - `[attr~=value]` — space-separated list contains value
+    - `[attr|=value]` — exact or prefix with hyphen
+    - `[attr^=value]` — starts with
+    - `[attr$=value]` — ends with
+    - `[attr*=value]` — contains substring
+    - Case-insensitive flag (`i`): `[attr=value i]`
+- **Multiple Animations Per Element**:
+  - Comma-separated `animation` shorthand parsing (e.g., `animation: fadeIn 1s, slideUp 2s 0.5s`)
+  - Generates multiple SMIL animation elements per CSS rule
+- **animation-play-state**: `paused` / `running` support integrated with SmilAnimation
+- **Negative animation-delay**: Start animations partway through (e.g., `-0.5s` on 2s animation starts at 25%)
+- **animation-fill-mode edge cases**:
+  - `forwards`: Retain final keyframe value after animation ends
+  - `backwards`: Apply first keyframe value during delay period
+  - `both`: Combine forwards and backwards behavior
+- **CSS Transitions**:
+  - Parse `transition` shorthand and individual `transition-*` properties
+  - Support for `transition-property`, `transition-duration`, `transition-timing-function`, `transition-delay`
+  - Multiple comma-separated transitions support
+- **@media Queries in SVG Style Blocks**:
+  - Parse `@media` rules within `<style>` elements
+  - Support for `prefers-color-scheme: dark/light`
+  - Support for viewport queries: `min-width`, `max-width`, `min-height`, `max-height`
+  - Conditional rule evaluation with CssMediaContext
+- **CSS 3D Transforms**:
+  - 3D translation: `translate3d(x, y, z)`, `translateZ(z)`
+  - 3D rotation: `rotateX(angle)`, `rotateY(angle)`, `rotateZ(angle)`, `rotate3d(x, y, z, angle)`
+  - 3D scaling: `scale3d(x, y, z)`, `scaleZ(z)`
+  - Perspective: `perspective(length)` function
+  - 4x4 matrix: `matrix3d()` 16-value matrix
+  - Proper 3D→2D projection using homogeneous coordinates
+  - `backface-visibility` support (`visible`/`hidden`)
+- **CSS Cascade and Specificity Resolution**:
+  - Proper specificity calculation: inline (1,0,0,0) > ID (0,1,0,0) > class/attribute/pseudo-class (0,0,1,0) > element/pseudo-element (0,0,0,1)
+  - Cascade order: later declarations win when specificity is equal
+  - `!important` handling: overrides normal specificity rules
+  - Style inheritance: inheritable CSS properties (fill, stroke, font-*, color, visibility, etc.) cascade from parent to child
+- **CSS Shorthand Property Expansion** (NEW):
+  - `font` shorthand → font-style, font-variant, font-weight, font-size, line-height, font-family
+  - `animation` shorthand with multiple comma-separated animations support
+  - `transition` shorthand → transition-property, transition-duration, transition-timing-function, transition-delay
+  - `margin`/`padding` shorthand (1-4 value expansion)
+  - `marker` shorthand → marker-start, marker-mid, marker-end (SVG-specific)
+  - `border` shorthand → border-width, border-style, border-color
+- **CSS Custom Properties (Variables) and calc() Support** (NEW):
+  - Custom property declarations: `--custom-name: value` in style blocks and inline styles
+  - `var()` resolution: `var(--name)` references resolved by walking up the element tree
+  - `var()` with fallback: `var(--name, fallback-value)` when variable not defined
+  - Variable inheritance: custom properties inherit through the element tree (parent → child)
+  - `calc()` expression parser: arithmetic operations (+, -, *, /), unit support (px, em, %, pt, rem)
+  - Nested calc(): `calc(100% - calc(20px + 5px))`
+  - `var()` inside `calc()`: `calc(var(--size) * 2)`
 
 ### Color Parsing (Parser Path)
 - `#RGB`, `#RGBA`, `#RRGGBB`, `#RRGGBBAA`
