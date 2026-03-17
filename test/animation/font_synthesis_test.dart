@@ -3,7 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('font-synthesis CSS property', () {
-    testWidgets('font-synthesis: default (weight style small-caps)', (tester) async {
+    testWidgets('font-synthesis: default (weight style small-caps)', (
+      tester,
+    ) async {
       const svg = '''
         <svg viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg">
           <text x="10" y="30" font-size="16">Default</text>

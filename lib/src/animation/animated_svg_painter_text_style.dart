@@ -194,9 +194,7 @@ extension AnimatedSvgPainterTextStyleExtension on AnimatedSvgPainter {
     final textEmphasisStyle = _resolveTextEmphasisStyle(
       _getInheritedString(node, 'text-emphasis-style'),
     );
-    final quotes = _resolveQuotes(
-      _getInheritedString(node, 'quotes'),
-    );
+    final quotes = _resolveQuotes(_getInheritedString(node, 'quotes'));
     final initialLetter = _resolveInitialLetter(
       _getInheritedString(node, 'initial-letter'),
     );
@@ -209,9 +207,7 @@ extension AnimatedSvgPainterTextStyleExtension on AnimatedSvgPainter {
     final fontVariantAlternates = _resolveFontVariantAlternates(
       _getInheritedString(node, 'font-variant-alternates'),
     );
-    final textWrap = _resolveTextWrap(
-      _getInheritedString(node, 'text-wrap'),
-    );
+    final textWrap = _resolveTextWrap(_getInheritedString(node, 'text-wrap'));
     final fontPalette = _resolveFontPalette(
       _getInheritedString(node, 'font-palette'),
     );
@@ -732,7 +728,9 @@ extension AnimatedSvgPainterTextStyleExtension on AnimatedSvgPainter {
   /// Resolves text-underline-offset CSS property.
   /// Returns offset value in user units or null for auto.
   double? _resolveTextUnderlineOffset(String? value, double fontSize) {
-    if (value == null || value.trim().isEmpty || value.trim().toLowerCase() == 'auto') {
+    if (value == null ||
+        value.trim().isEmpty ||
+        value.trim().toLowerCase() == 'auto') {
       return null;
     }
     final normalized = value.trim().toLowerCase();
@@ -860,7 +858,9 @@ extension AnimatedSvgPainterTextStyleExtension on AnimatedSvgPainter {
       return null;
     }
     final normalized = value.trim().toLowerCase();
-    if (normalized == 'none' || normalized == 'inherit' || normalized == 'initial') {
+    if (normalized == 'none' ||
+        normalized == 'inherit' ||
+        normalized == 'initial') {
       return null;
     }
     // Return the value as-is for further processing
@@ -939,19 +939,26 @@ extension AnimatedSvgPainterTextStyleExtension on AnimatedSvgPainter {
       default:
         // Handle length/percentage values
         if (normalized.endsWith('%')) {
-          final pct = double.tryParse(normalized.substring(0, normalized.length - 1));
+          final pct = double.tryParse(
+            normalized.substring(0, normalized.length - 1),
+          );
           if (pct != null) {
             return fontSize * pct / 100;
           }
         }
         if (normalized.endsWith('em')) {
-          final em = double.tryParse(normalized.substring(0, normalized.length - 2));
+          final em = double.tryParse(
+            normalized.substring(0, normalized.length - 2),
+          );
           if (em != null) {
             return fontSize * em;
           }
         }
         if (normalized.endsWith('px')) {
-          return double.tryParse(normalized.substring(0, normalized.length - 2)) ?? 0.0;
+          return double.tryParse(
+                normalized.substring(0, normalized.length - 2),
+              ) ??
+              0.0;
         }
         return double.tryParse(normalized) ?? 0.0;
     }
@@ -970,14 +977,18 @@ extension AnimatedSvgPainterTextStyleExtension on AnimatedSvgPainter {
     }
     // Handle percentage
     if (normalized.endsWith('%')) {
-      final pct = double.tryParse(normalized.substring(0, normalized.length - 1));
+      final pct = double.tryParse(
+        normalized.substring(0, normalized.length - 1),
+      );
       if (pct != null) {
         return fontSize * pct / 100;
       }
     }
     // Handle em units
     if (normalized.endsWith('em')) {
-      final em = double.tryParse(normalized.substring(0, normalized.length - 2));
+      final em = double.tryParse(
+        normalized.substring(0, normalized.length - 2),
+      );
       if (em != null) {
         return fontSize * em;
       }
@@ -1635,9 +1646,22 @@ extension AnimatedSvgPainterTextStyleExtension on AnimatedSvgPainter {
     }
     final normalized = value.trim().toLowerCase();
     const validModes = <String>{
-      'normal', 'multiply', 'screen', 'overlay', 'darken', 'lighten',
-      'color-dodge', 'color-burn', 'hard-light', 'soft-light',
-      'difference', 'exclusion', 'hue', 'saturation', 'color', 'luminosity',
+      'normal',
+      'multiply',
+      'screen',
+      'overlay',
+      'darken',
+      'lighten',
+      'color-dodge',
+      'color-burn',
+      'hard-light',
+      'soft-light',
+      'difference',
+      'exclusion',
+      'hue',
+      'saturation',
+      'color',
+      'luminosity',
     };
     if (validModes.contains(normalized)) {
       return normalized;

@@ -36,7 +36,9 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('font-variant-ligatures: discretionary-ligatures', (tester) async {
+    testWidgets('font-variant-ligatures: discretionary-ligatures', (
+      tester,
+    ) async {
       const svg = '''
         <svg viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg">
           <text x="10" y="30" font-size="16" style="font-variant-ligatures: discretionary-ligatures">st ct</text>

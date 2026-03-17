@@ -9,9 +9,7 @@ void main() {
           <text x="10" y="30" font-size="16">Baseline</text>
         </svg>
       ''';
-      await tester.pumpWidget(
-        AnimatedSvgPicture.string(svg),
-      );
+      await tester.pumpWidget(AnimatedSvgPicture.string(svg));
       await tester.pump();
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
@@ -22,9 +20,7 @@ void main() {
           <text x="10" y="30" font-size="16" style="vertical-align: sub">Sub</text>
         </svg>
       ''';
-      await tester.pumpWidget(
-        AnimatedSvgPicture.string(svg),
-      );
+      await tester.pumpWidget(AnimatedSvgPicture.string(svg));
       await tester.pump();
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
@@ -35,9 +31,7 @@ void main() {
           <text x="10" y="30" font-size="16" style="vertical-align: super">Super</text>
         </svg>
       ''';
-      await tester.pumpWidget(
-        AnimatedSvgPicture.string(svg),
-      );
+      await tester.pumpWidget(AnimatedSvgPicture.string(svg));
       await tester.pump();
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
@@ -48,9 +42,7 @@ void main() {
           <text x="10" y="30" font-size="16" style="vertical-align: middle">Middle</text>
         </svg>
       ''';
-      await tester.pumpWidget(
-        AnimatedSvgPicture.string(svg),
-      );
+      await tester.pumpWidget(AnimatedSvgPicture.string(svg));
       await tester.pump();
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
@@ -61,9 +53,7 @@ void main() {
           <text x="10" y="30" font-size="16" style="vertical-align: 5px">Px</text>
         </svg>
       ''';
-      await tester.pumpWidget(
-        AnimatedSvgPicture.string(svg),
-      );
+      await tester.pumpWidget(AnimatedSvgPicture.string(svg));
       await tester.pump();
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
@@ -74,9 +64,7 @@ void main() {
           <text x="10" y="30" font-size="16" style="vertical-align: 50%">Pct</text>
         </svg>
       ''';
-      await tester.pumpWidget(
-        AnimatedSvgPicture.string(svg),
-      );
+      await tester.pumpWidget(AnimatedSvgPicture.string(svg));
       await tester.pump();
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });

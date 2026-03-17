@@ -78,7 +78,9 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('text-decoration-thickness inherited from group', (tester) async {
+    testWidgets('text-decoration-thickness inherited from group', (
+      tester,
+    ) async {
       const svg = '''
         <svg viewBox="0 0 200 80" xmlns="http://www.w3.org/2000/svg">
           <g text-decoration="underline" style="text-decoration-thickness: 3px">

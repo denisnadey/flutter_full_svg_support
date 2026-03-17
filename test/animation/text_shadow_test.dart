@@ -9,9 +9,7 @@ void main() {
           <text x="10" y="30" font-size="16">No Shadow</text>
         </svg>
       ''';
-      await tester.pumpWidget(
-        AnimatedSvgPicture.string(svg),
-      );
+      await tester.pumpWidget(AnimatedSvgPicture.string(svg));
       await tester.pump();
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
@@ -22,9 +20,7 @@ void main() {
           <text x="10" y="30" font-size="16" style="text-shadow: 2px 2px">Simple</text>
         </svg>
       ''';
-      await tester.pumpWidget(
-        AnimatedSvgPicture.string(svg),
-      );
+      await tester.pumpWidget(AnimatedSvgPicture.string(svg));
       await tester.pump();
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
@@ -35,9 +31,7 @@ void main() {
           <text x="10" y="30" font-size="16" style="text-shadow: 2px 2px 4px">Blur</text>
         </svg>
       ''';
-      await tester.pumpWidget(
-        AnimatedSvgPicture.string(svg),
-      );
+      await tester.pumpWidget(AnimatedSvgPicture.string(svg));
       await tester.pump();
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
@@ -48,9 +42,7 @@ void main() {
           <text x="10" y="30" font-size="16" style="text-shadow: 2px 2px 4px red">Color</text>
         </svg>
       ''';
-      await tester.pumpWidget(
-        AnimatedSvgPicture.string(svg),
-      );
+      await tester.pumpWidget(AnimatedSvgPicture.string(svg));
       await tester.pump();
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
@@ -61,9 +53,7 @@ void main() {
           <text x="10" y="30" font-size="16" style="text-shadow: 1px 1px red, 2px 2px blue">Multi</text>
         </svg>
       ''';
-      await tester.pumpWidget(
-        AnimatedSvgPicture.string(svg),
-      );
+      await tester.pumpWidget(AnimatedSvgPicture.string(svg));
       await tester.pump();
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
@@ -74,9 +64,7 @@ void main() {
           <text x="10" y="30" font-size="16" style="text-shadow: none">None</text>
         </svg>
       ''';
-      await tester.pumpWidget(
-        AnimatedSvgPicture.string(svg),
-      );
+      await tester.pumpWidget(AnimatedSvgPicture.string(svg));
       await tester.pump();
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
@@ -89,9 +77,7 @@ void main() {
           </g>
         </svg>
       ''';
-      await tester.pumpWidget(
-        AnimatedSvgPicture.string(svg),
-      );
+      await tester.pumpWidget(AnimatedSvgPicture.string(svg));
       await tester.pump();
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });

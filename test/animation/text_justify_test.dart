@@ -9,9 +9,7 @@ void main() {
           <text x="10" y="30" font-size="16">Auto justify</text>
         </svg>
       ''';
-      await tester.pumpWidget(
-        AnimatedSvgPicture.string(svg),
-      );
+      await tester.pumpWidget(AnimatedSvgPicture.string(svg));
       await tester.pump();
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
@@ -22,9 +20,7 @@ void main() {
           <text x="10" y="30" font-size="16" style="text-justify: none">No justify</text>
         </svg>
       ''';
-      await tester.pumpWidget(
-        AnimatedSvgPicture.string(svg),
-      );
+      await tester.pumpWidget(AnimatedSvgPicture.string(svg));
       await tester.pump();
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
@@ -35,9 +31,7 @@ void main() {
           <text x="10" y="30" font-size="16" style="text-justify: inter-word">Inter word</text>
         </svg>
       ''';
-      await tester.pumpWidget(
-        AnimatedSvgPicture.string(svg),
-      );
+      await tester.pumpWidget(AnimatedSvgPicture.string(svg));
       await tester.pump();
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
@@ -48,9 +42,7 @@ void main() {
           <text x="10" y="30" font-size="16" style="text-justify: inter-character">Inter char</text>
         </svg>
       ''';
-      await tester.pumpWidget(
-        AnimatedSvgPicture.string(svg),
-      );
+      await tester.pumpWidget(AnimatedSvgPicture.string(svg));
       await tester.pump();
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
@@ -63,9 +55,7 @@ void main() {
           </g>
         </svg>
       ''';
-      await tester.pumpWidget(
-        AnimatedSvgPicture.string(svg),
-      );
+      await tester.pumpWidget(AnimatedSvgPicture.string(svg));
       await tester.pump();
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });

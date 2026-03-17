@@ -3,7 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('text-decoration-color CSS property', () {
-    testWidgets('text-decoration-color: currentColor (default)', (tester) async {
+    testWidgets('text-decoration-color: currentColor (default)', (
+      tester,
+    ) async {
       const svg = '''
         <svg viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg">
           <text x="10" y="30" font-size="16" style="text-decoration: underline">Default color</text>

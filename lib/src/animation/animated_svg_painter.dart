@@ -644,10 +644,13 @@ class _ResolvedTextStyle {
       hangingPunctuation: hangingPunctuation ?? this.hangingPunctuation,
       textCombineUpright: textCombineUpright ?? this.textCombineUpright,
       textOrientation: textOrientation ?? this.textOrientation,
-      textUnderlinePosition: textUnderlinePosition ?? this.textUnderlinePosition,
+      textUnderlinePosition:
+          textUnderlinePosition ?? this.textUnderlinePosition,
       textUnderlineOffset: textUnderlineOffset ?? this.textUnderlineOffset,
-      textDecorationThickness: textDecorationThickness ?? this.textDecorationThickness,
-      textDecorationSkipInk: textDecorationSkipInk ?? this.textDecorationSkipInk,
+      textDecorationThickness:
+          textDecorationThickness ?? this.textDecorationThickness,
+      textDecorationSkipInk:
+          textDecorationSkipInk ?? this.textDecorationSkipInk,
       textDecorationSkip: textDecorationSkip ?? this.textDecorationSkip,
       textDecorationStyle: textDecorationStyle ?? this.textDecorationStyle,
       textShadow: textShadow ?? this.textShadow,
@@ -676,14 +679,17 @@ class _ResolvedTextStyle {
       initialLetter: initialLetter ?? this.initialLetter,
       textSpacing: textSpacing ?? this.textSpacing,
       fontLanguageOverride: fontLanguageOverride ?? this.fontLanguageOverride,
-      fontVariantAlternates: fontVariantAlternates ?? this.fontVariantAlternates,
+      fontVariantAlternates:
+          fontVariantAlternates ?? this.fontVariantAlternates,
       textWrap: textWrap ?? this.textWrap,
       fontPalette: fontPalette ?? this.fontPalette,
       forcedColorAdjust: forcedColorAdjust ?? this.forcedColorAdjust,
       printColorAdjust: printColorAdjust ?? this.printColorAdjust,
       textDecorationLine: textDecorationLine ?? this.textDecorationLine,
-      fontVariationSettings: fontVariationSettings ?? this.fontVariationSettings,
-      cssTextDecorationColor: cssTextDecorationColor ?? this.cssTextDecorationColor,
+      fontVariationSettings:
+          fontVariationSettings ?? this.fontVariationSettings,
+      cssTextDecorationColor:
+          cssTextDecorationColor ?? this.cssTextDecorationColor,
       cssDirection: cssDirection ?? this.cssDirection,
       contentVisibility: contentVisibility ?? this.contentVisibility,
       containIntrinsicSize: containIntrinsicSize ?? this.containIntrinsicSize,
