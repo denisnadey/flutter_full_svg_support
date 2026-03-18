@@ -208,6 +208,7 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
     final baselineRef = _resolveBaselineReference(
       paragraph: paragraph,
       dominantBaseline: style.dominantBaseline,
+      writingMode: style.writingMode,
     );
     final shiftedBaselineY = baselineY - style.baselineShift;
     return shiftedBaselineY - baselineRef;
@@ -339,6 +340,58 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
 
     // Default: collapse whitespace
     final normalized = raw.replaceAll(RegExp(r'\s+'), ' ').trim();
+    return normalized.isEmpty ? null : normalized;
+  }
+
+  /// Extracts text content with XML whitespace normalization for multi-tspan flow.
+  /// Handles whitespace between tspans per SVG/XML specification:
+  /// - Leading/trailing whitespace is stripped unless xml:space="preserve"
+  /// - Multiple whitespace characters are collapsed to single space
+  /// - Whitespace between elements is preserved as single space for flow
+  String? _extractTextContentWithWhitespaceNormalization(
+    SvgNode node,
+    _ResolvedTextStyle? parentStyle,
+  ) {
+    final raw = _getString(node, '__text');
+    if (raw == null) {
+      return null;
+    }
+
+    // Check xml:space attribute for whitespace handling
+    final xmlSpace = _getInheritedString(node, 'xml:space')?.toLowerCase();
+    final whiteSpace = _getInheritedString(node, 'white-space')?.toLowerCase();
+
+    // Preserve mode: xml:space="preserve" or white-space: pre/pre-wrap
+    final preserveWhitespace = xmlSpace == 'preserve' ||
+        whiteSpace == 'pre' ||
+        whiteSpace == 'pre-wrap' ||
+        whiteSpace == 'break-spaces';
+
+    if (preserveWhitespace) {
+      // Only convert newlines to spaces
+      final preserved = raw.replaceAll('\n', ' ').replaceAll('\r', ' ');
+      return preserved.isEmpty ? null : preserved;
+    }
+
+    // Default whitespace normalization for SVG text
+    // Per SVG spec: collapse whitespace, but preserve single space for flow
+    var normalized = raw.replaceAll(RegExp(r'\s+'), ' ');
+
+    // For tspan children (parentStyle != null), preserve leading space for flow
+    // but still normalize multiple spaces
+    if (parentStyle != null) {
+      // Don't trim leading space if it exists - it's needed for text flow
+      // Only trim trailing space
+      normalized = normalized.trimRight();
+      if (normalized.isEmpty && raw.contains(RegExp(r'\s'))) {
+        // If text was only whitespace, preserve as single space for flow
+        return ' ';
+      }
+    } else {
+      // For root text, trim both ends
+      normalized = normalized.trim();
+    }
+
     return normalized.isEmpty ? null : normalized;
   }
 

@@ -168,6 +168,72 @@ class SvgFilterPaintPass {
   }
 }
 
+/// Paint pass for feImage primitive with element reference or external image.
+///
+/// This specialized pass carries the feImage configuration so the painter
+/// can render the referenced element or external image into the filter subregion.
+class SvgFeImagePaintPass extends SvgFilterPaintPass {
+  const SvgFeImagePaintPass({
+    required this.feImageFilter,
+    super.imageFilter,
+    super.colorFilter,
+    super.blendMode,
+    super.offset,
+    super.paintFill,
+    super.paintStroke,
+  });
+
+  /// The feImage filter containing href and preserveAspectRatio settings.
+  final SvgFeImageFilter feImageFilter;
+
+  /// Whether this feImage references an SVG element by ID (e.g., `#myRect`).
+  bool get isElementReference {
+    final href = feImageFilter.href;
+    return href != null && href.startsWith('#');
+  }
+
+  /// Get the referenced element ID if this is an element reference.
+  String? get referencedElementId {
+    final href = feImageFilter.href;
+    if (href == null || !href.startsWith('#')) return null;
+    return href.substring(1);
+  }
+
+  /// Whether this feImage references an external image.
+  bool get isExternalImage {
+    final href = feImageFilter.href;
+    return href != null && !href.startsWith('#');
+  }
+
+  /// Get the primitive subregion for rendering.
+  ui.Rect get subregion => ui.Rect.fromLTWH(
+    feImageFilter.x,
+    feImageFilter.y,
+    feImageFilter.width,
+    feImageFilter.height,
+  );
+
+  @override
+  SvgFilterPaintPass copyWith({
+    ui.ImageFilter? imageFilter,
+    ui.ColorFilter? colorFilter,
+    ui.BlendMode? blendMode,
+    ui.Offset? offset,
+    bool? paintFill,
+    bool? paintStroke,
+  }) {
+    return SvgFeImagePaintPass(
+      feImageFilter: feImageFilter,
+      imageFilter: imageFilter ?? this.imageFilter,
+      colorFilter: colorFilter ?? this.colorFilter,
+      blendMode: blendMode ?? this.blendMode,
+      offset: offset ?? this.offset,
+      paintFill: paintFill ?? this.paintFill,
+      paintStroke: paintStroke ?? this.paintStroke,
+    );
+  }
+}
+
 /// Optional context for built-in filter inputs tied to element paint.
 class SvgFilterSourceContext {
   const SvgFilterSourceContext({

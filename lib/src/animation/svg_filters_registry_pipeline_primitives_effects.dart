@@ -112,14 +112,30 @@ extension SvgFiltersPipelinePrimitiveEffectsExtension on SvgFilters {
       );
     }
 
-    if ((imagePrimitive.href ?? '').trim().isNotEmpty) {
-      // Non-source primitive semantics: feImage with href starts a new
-      // primitive output instead of inheriting previous chain state.
-      // Baseline renderer uses SourceGraphic as placeholder source.
-      return <SvgFilterPaintPass>[...sourceGraphic];
+    final href = (imagePrimitive.href ?? '').trim();
+    if (href.isEmpty) {
+      // No href specified - return previous or SourceGraphic as fallback.
+      return previous.isEmpty ? <SvgFilterPaintPass>[...sourceGraphic] : previous;
     }
 
-    return previous.isEmpty ? <SvgFilterPaintPass>[...sourceGraphic] : previous;
+    // Per SVG spec, feImage with href starts a new primitive output
+    // instead of inheriting previous chain state.
+    //
+    // If href references an SVG element (#id) or external image,
+    // create a specialized paint pass that carries the feImage config.
+    // The painter will use this to render the referenced content.
+    //
+    // For unresolvable references, return transparent black (empty list)
+    // per SVG spec. The painter handles this by checking if the
+    // referenced element/image exists.
+    return <SvgFilterPaintPass>[
+      SvgFeImagePaintPass(
+        feImageFilter: imagePrimitive,
+        // No source-derived filters for feImage - it's a new source.
+        paintFill: true,
+        paintStroke: true,
+      ),
+    ];
   }
 
   List<SvgFilterPaintPass> _resolveDiffuseLightingOutput({

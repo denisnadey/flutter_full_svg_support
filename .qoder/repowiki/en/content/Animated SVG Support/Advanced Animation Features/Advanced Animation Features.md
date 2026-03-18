@@ -19,8 +19,13 @@
 - [lib/src/animation/css_selectors.dart](file://lib/src/animation/css_selectors.dart)
 - [lib/src/animation/css_variables_calc.dart](file://lib/src/animation/css_variables_calc.dart)
 - [lib/src/animation/css_shorthand_expansion.dart](file://lib/src/animation/css_shorthand_expansion.dart)
+- [lib/src/animation/css_shorthand_expansion_animation.dart](file://lib/src/animation/css_shorthand_expansion_animation.dart)
+- [lib/src/animation/css_shorthand_expansion_font.dart](file://lib/src/animation/css_shorthand_expansion_font.dart)
+- [lib/src/animation/css_shorthand_expansion_box.dart](file://lib/src/animation/css_shorthand_expansion_box.dart)
 - [lib/src/animation/transform_3d.dart](file://lib/src/animation/transform_3d.dart)
 - [lib/src/animation/svg_dom.dart](file://lib/src/animation/svg_dom.dart)
+- [lib/src/animation/css_animations.dart](file://lib/src/animation/css_animations.dart)
+- [lib/src/animation/css_animations_parser.dart](file://lib/src/animation/css_animations_parser.dart)
 - [example/lib/advanced_path_morphing.dart](file://example/lib/advanced_path_morphing.dart)
 - [example/lib/path_morphing_example.dart](file://example/lib/path_morphing_example.dart)
 - [test/animation/path_morphing_test.dart](file://test/animation/path_morphing_test.dart)
@@ -41,12 +46,14 @@
 
 ## Update Summary
 **Changes Made**
-- Added comprehensive CSS pseudo-class support system with :hover, :active, :focus, :first-child, :last-child, :only-child, :empty, :root pseudo-classes
-- Enhanced 3D transform capabilities with full Matrix4x4 operations and perspective projections
-- Implemented new rendering cache system for performance optimization
-- Updated architecture to reflect new CSS processing pipeline with pseudo-class state tracking
-- Enhanced text styling system with advanced typography features
-- Added performance considerations for new CSS features and rendering optimizations
+- Enhanced CSS shorthand expansion system with dedicated files for animation, box model, and font shorthand properties
+- Split the CSS shorthand expansion functionality into modular, specialized components for better maintainability
+- Comprehensive animation shorthand expansion supporting multiple animations with proper comma separation and timing function handling
+- Advanced font shorthand expansion with complete CSS font property parsing including system fonts and complex font families
+- Complete box model shorthand expansion supporting margin, padding, border, border-width, border-style, border-color, border-radius, and background properties
+- SVG-specific marker shorthand expansion for marker-start, marker-mid, and marker-end properties
+- Enhanced CSS processing pipeline with improved property resolution and inheritance support
+- Comprehensive testing coverage for all shorthand expansion scenarios
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -57,7 +64,7 @@
 6. [CSS Cascade and Specificity System](#css-cascade-and-specificity-system)
 7. [CSS Selector Parsing and Advanced Combinators](#css-selector-parsing-and-advanced-combinators)
 8. [CSS Pseudo-Class State Management](#css-pseudo-class-state-management)
-9. [CSS Shorthand Property Expansion](#css-shorthand-property-expansion)
+9. [Enhanced CSS Shorthand Property Expansion System](#enhanced-css-shorthand-property-expansion-system)
 10. [Custom Properties and Calc() Function Support](#custom-properties-and-calcc-function-support)
 11. [3D Transform Capabilities](#3d-transform-capabilities)
 12. [Performance Optimization Through Rendering Cache](#performance-optimization-through-rendering-cache)
@@ -72,7 +79,7 @@
 This document explains advanced animation features implemented in the codebase, focusing on:
 - Comprehensive CSS cascade system with specificity calculation and advanced selector parsing
 - CSS pseudo-class support system including :hover, :active, :focus, :first-child, :last-child, :only-child, :empty, :root pseudo-classes
-- CSS shorthand property expansion for efficient styling
+- **Enhanced CSS shorthand property expansion system with dedicated modular components**
 - Custom properties with calc() function support for dynamic styling
 - Full 3D transform capabilities including Matrix4x4 operations
 - Enhanced rendering cache system for performance optimization
@@ -92,7 +99,7 @@ The animation system is organized into:
 - SMIL engine for time management, parsing, and interpolation
 - Path morphing utilities for shape interpolation
 - Filter runtime for color matrix, blur, and lighting primitives
-- Advanced CSS processing pipeline with cascade system, selectors, pseudo-classes, and variables
+- **Enhanced CSS processing pipeline with modular shorthand expansion system**
 - 3D transform system with Matrix4x4 operations
 - Rendering cache system for performance optimization
 - Advanced text styling and typography system with CSS property support
@@ -116,11 +123,14 @@ subgraph "Filters"
 G["svg_filters_color_matrix.dart"]
 H["svg_filters_primitives_lighting.dart"]
 end
-subgraph "CSS Processing"
+subgraph "Enhanced CSS Processing"
 I["css_cascade.dart"]
 J["css_selectors.dart"]
 K["css_variables_calc.dart"]
 L["css_shorthand_expansion.dart"]
+L1["css_shorthand_expansion_animation.dart"]
+L2["css_shorthand_expansion_font.dart"]
+L3["css_shorthand_expansion_box.dart"]
 M["svg_dom.dart (SvgPseudoClassState)"]
 end
 subgraph "3D Transforms"
@@ -163,6 +173,9 @@ B --> I
 I --> J
 I --> K
 I --> L
+L --> L1
+L --> L2
+L --> L3
 I --> M
 B --> N
 B --> O
@@ -199,7 +212,10 @@ HH --> P
 - [lib/src/animation/css_cascade.dart:1-663](file://lib/src/animation/css_cascade.dart#L1-L663)
 - [lib/src/animation/css_selectors.dart:1-645](file://lib/src/animation/css_selectors.dart#L1-L645)
 - [lib/src/animation/css_variables_calc.dart:1-576](file://lib/src/animation/css_variables_calc.dart#L1-L576)
-- [lib/src/animation/css_shorthand_expansion.dart:1-69](file://lib/src/animation/css_shorthand_expansion.dart#L1-L69)
+- [lib/src/animation/css_shorthand_expansion.dart:1-95](file://lib/src/animation/css_shorthand_expansion.dart#L1-L95)
+- [lib/src/animation/css_shorthand_expansion_animation.dart:1-300](file://lib/src/animation/css_shorthand_expansion_animation.dart#L1-L300)
+- [lib/src/animation/css_shorthand_expansion_font.dart:1-206](file://lib/src/animation/css_shorthand_expansion_font.dart#L1-L206)
+- [lib/src/animation/css_shorthand_expansion_box.dart:1-404](file://lib/src/animation/css_shorthand_expansion_box.dart#L1-L404)
 - [lib/src/animation/transform_3d.dart:1-400](file://lib/src/animation/transform_3d.dart#L1-L400)
 - [lib/src/animation/svg_dom.dart:300-369](file://lib/src/animation/svg_dom.dart#L300-L369)
 - [lib/src/animation/animated_svg_painter.dart:41-130](file://lib/src/animation/animated_svg_painter.dart#L41-L130)
@@ -236,6 +252,7 @@ HH --> P
 - Filter runtime: Supports color matrix, blur, and lighting primitives with baseline behavior.
 - CSS Cascade System: Comprehensive CSS processing with specificity calculation, selector parsing, pseudo-class state tracking, and property resolution.
 - CSS Pseudo-Class State Manager: Tracks :hover, :active, :focus states and structural pseudo-classes (:first-child, :last-child, :only-child, :empty, :root).
+- **Enhanced CSS Shorthand Expansion System: Modular components for animation, font, and box model shorthand properties**
 - 3D Transform System: Full Matrix4x4 support for 3D rotations, translations, scaling, and perspective projections.
 - Rendering Cache System: Performance optimization through intelligent caching of computed values.
 - Text styling system: Comprehensive CSS text property support including underline, overline, line-through, writing-mode, font variants, and advanced typography features.
@@ -250,12 +267,16 @@ HH --> P
 - [lib/src/animation/svg_filters_primitives_lighting.dart:52-125](file://lib/src/animation/svg_filters_primitives_lighting.dart#L52-L125)
 - [lib/src/animation/css_cascade.dart:18-663](file://lib/src/animation/css_cascade.dart#L18-L663)
 - [lib/src/animation/svg_dom.dart:300-369](file://lib/src/animation/svg_dom.dart#L300-L369)
+- [lib/src/animation/css_shorthand_expansion.dart:1-95](file://lib/src/animation/css_shorthand_expansion.dart#L1-L95)
+- [lib/src/animation/css_shorthand_expansion_animation.dart:1-300](file://lib/src/animation/css_shorthand_expansion_animation.dart#L1-L300)
+- [lib/src/animation/css_shorthand_expansion_font.dart:1-206](file://lib/src/animation/css_shorthand_expansion_font.dart#L1-L206)
+- [lib/src/animation/css_shorthand_expansion_box.dart:1-404](file://lib/src/animation/css_shorthand_expansion_box.dart#L1-L404)
 - [lib/src/animation/transform_3d.dart:22-400](file://lib/src/animation/transform_3d.dart#L22-L400)
 - [lib/src/animation/animated_svg_painter.dart:41-130](file://lib/src/animation/animated_svg_painter.dart#L41-L130)
 - [lib/src/animation/animated_svg_painter_text_style.dart:1-1046](file://lib/src/animation/animated_svg_painter_text_style.dart#L1-L1046)
 
 ## Architecture Overview
-The animated pipeline separates concerns across parsing, CSS processing, animation extraction, timeline management, and rendering. It preserves DOM for SMIL support and provides a CustomPainter-based renderer with comprehensive text styling capabilities, advanced CSS processing, and performance optimizations through intelligent caching.
+The animated pipeline separates concerns across parsing, CSS processing, animation extraction, timeline management, and rendering. It preserves DOM for SMIL support and provides a CustomPainter-based renderer with comprehensive text styling capabilities, advanced CSS processing with modular shorthand expansion, and performance optimizations through intelligent caching.
 
 ```mermaid
 sequenceDiagram
@@ -263,6 +284,7 @@ participant App as "Flutter App"
 participant Picture as "AnimatedSvgPicture"
 participant Parser as "SvgParser"
 participant CssProcessor as "CSS Processor"
+participant ShorthandExpander as "CssShorthandExpander"
 participant PseudoState as "SvgPseudoClassState"
 participant Timeline as "SvgTimeline"
 participant Anim as "SmilAnimation"
@@ -274,6 +296,8 @@ App->>Picture : Build widget
 Picture->>Parser : Parse SVG to DOM
 Parser-->>Picture : SvgDocument
 Picture->>CssProcessor : Process CSS cascade, selectors, pseudo-classes, variables
+CssProcessor->>ShorthandExpander : Expand shorthand properties (modular components)
+ShorthandExpander->>ShorthandExpander : Animation/Font/Box model expansion
 CssProcessor->>PseudoState : Track : hover, : active, : focus states
 CssProcessor-->>Picture : Resolved styles with specificity
 Picture->>Timeline : Initialize with animations
@@ -710,48 +734,134 @@ The system supports comprehensive pseudo-class functionality:
 - [lib/src/animation/css_selectors.dart:3-34](file://lib/src/animation/css_selectors.dart#L3-L34)
 - [test/animation/css_pseudo_classes_view_test.dart:114-191](file://test/animation/css_pseudo_classes_view_test.dart#L114-L191)
 
-## CSS Shorthand Property Expansion
+## Enhanced CSS Shorthand Property Expansion System
 
-### Comprehensive Shorthand Expansion System
-The CSS shorthand expansion system automatically expands CSS shorthand properties into their longhand equivalents, ensuring proper inheritance and animation support.
+### Modular Shorthand Expansion Architecture
+The CSS shorthand expansion system has been enhanced with dedicated files for different property categories, providing comprehensive CSS property expansion capabilities with improved maintainability and performance.
 
 ```mermaid
-flowchart TD
-Start(["CSS Property Input"]) --> Check{"Is shorthand?"}
-Check --> |Yes| Expand["expandProperty()"]
-Check --> |No| Direct["Direct assignment"]
-Expand --> Font["Font shorthand: font-style, font-weight, font-size, line-height, font-family"]
-Expand --> Animation["Animation shorthand: animation-name, animation-duration, animation-timing-function, animation-delay, animation-iteration-count, animation-direction, animation-fill-mode"]
-Expand --> Transition["Transition shorthand: transition-property, transition-duration, transition-timing-function, transition-delay"]
-Expand --> BoxModel["Box model shorthand: margin, padding, border"]
-Expand --> Background["Background shorthand: background-color, background-image, background-repeat, background-position"]
-Expand --> Marker["Marker shorthand: marker-start, marker-mid, marker-end"]
-Direct --> Overlay["Overlay explicit longhand properties"]
-Overlay --> Result["Expanded property map"]
-Font --> Overlay
-Animation --> Overlay
-Transition --> Overlay
-BoxModel --> Overlay
-Background --> Overlay
-Marker --> Overlay
+classDiagram
+class CssShorthandExpander {
++expandAll(properties) Map~String,String~
++expandProperty(property, value) Map~String,String~
++_isShorthandProperty(property) bool
+}
+class CssShorthandExpansionAnimation {
++_expandAnimation(value) Map~String,String~
++_expandSingleAnimation(value) Map~String,String~
++_parseSingleAnimationToComponents(value) Map~String,String~
++_expandTransition(value) Map~String,String~
++_expandSingleTransition(value) Map~String,String~
++_parseSingleTransitionToComponents(value) Map~String,String~
++_splitAnimations(value) String[]
++_isTimeValue(value) bool
++_isAnimationDirection(value) bool
++_isAnimationFillMode(value) bool
++_isAnimationPlayState(value) bool
+}
+class CssShorthandExpansionFont {
++_expandFont(value) Map~String,String~
++_isSystemFont(value) bool
++_isFontStyle(value) bool
++_isFontVariant(value) bool
++_isFontWeight(value) bool
++_isFontSize(value) bool
++_tokenizeFontShorthand(input) String[]
+}
+class CssShorthandExpansionBox {
++_expandBoxModel(property, value) Map~String,String~
++_expandMarker(value) Map~String,String~
++_expandBorder(value) Map~String,String~
++_expandBorderWidth(value) Map~String,String~
++_expandBorderStyle(value) Map~String,String~
++_expandBorderColor(value) Map~String,String~
++_expandBorderRadius(value) Map~String,String~
++_expandBackground(value) Map~String,String~
++_parseBorderRadiusValues(value) String[]
++_isBorderStyle(value) bool
++_isBorderWidth(value) bool
++_isBackgroundColor(value) bool
++_isNamedColor(value) bool
+}
+CssShorthandExpander --> CssShorthandExpansionAnimation : "delegates to"
+CssShorthandExpander --> CssShorthandExpansionFont : "delegates to"
+CssShorthandExpander --> CssShorthandExpansionBox : "delegates to"
 ```
 
 **Diagram sources**
-- [lib/src/animation/css_shorthand_expansion.dart:7-69](file://lib/src/animation/css_shorthand_expansion.dart#L7-L69)
+- [lib/src/animation/css_shorthand_expansion.dart:12-94](file://lib/src/animation/css_shorthand_expansion.dart#L12-L94)
+- [lib/src/animation/css_shorthand_expansion_animation.dart:19-300](file://lib/src/animation/css_shorthand_expansion_animation.dart#L19-L300)
+- [lib/src/animation/css_shorthand_expansion_font.dart:16-206](file://lib/src/animation/css_shorthand_expansion_font.dart#L16-L206)
+- [lib/src/animation/css_shorthand_expansion_box.dart:19-404](file://lib/src/animation/css_shorthand_expansion_box.dart#L19-L404)
 
-### Supported Shorthand Properties
-The system handles all major CSS shorthand properties:
-- **Font**: `font: italic bold 16px Arial` → expands to individual font properties
-- **Animation**: `animation: spin 1s ease-in infinite alternate` → expands to animation-name, duration, timing-function, etc.
-- **Transition**: `transition: opacity 0.3s ease-in-out` → expands to transition properties
-- **Margin/Padding**: `margin: 10px 20px` → expands to individual side properties
-- **Border**: `border: 1px solid black` → expands to width, style, color for all sides
-- **Background**: `background: #ff0000 url(image.png)` → expands to background-color and image
-- **Marker**: `marker: url(#arrowhead)` → expands to marker-start, -mid, -end
+### Supported Shorthand Properties by Category
+
+#### Animation and Transition Properties
+The animation shorthand expansion system provides comprehensive support for CSS animation properties:
+
+**Animation Shorthand Expansion**
+- **Format**: `animation: name duration timing-function delay iteration-count direction fill-mode play-state`
+- **Multiple Animations**: Proper comma separation with parentheses preservation for timing functions
+- **Individual Properties**: Expanded into separate longhand properties for precise control
+- **Timing Functions**: Support for cubic-bezier(), steps(), ease, linear, and other standard functions
+- **Delay Handling**: Proper parsing of animation-delay values
+- **Iteration Count**: Support for numeric values and 'infinite'
+- **Direction Control**: 'normal', 'reverse', 'alternate', 'alternate-reverse'
+- **Fill Modes**: 'none', 'forwards', 'backwards', 'both'
+- **Play States**: 'running', 'paused'
+
+**Transition Shorthand Expansion**
+- **Format**: `transition: property duration timing-function delay`
+- **Property Names**: Individual property names or 'all'
+- **Duration Handling**: Standard CSS time values (ms, s)
+- **Timing Functions**: Complete support for all timing functions
+- **Delay Support**: Optional transition-delay specification
+
+#### Font Properties
+The font shorthand expansion system provides complete CSS font property parsing:
+
+**Font Shorthand Expansion**
+- **Format**: `font: [font-style] [font-variant] [font-weight] font-size[/line-height] font-family`
+- **System Fonts**: Support for CSS system font keywords (caption, icon, menu, etc.)
+- **Font Styles**: 'normal', 'italic', 'oblique' with optional angles
+- **Font Variants**: 'normal', 'small-caps'
+- **Font Weights**: Numeric weights (100-900) and keywords ('normal', 'bold', 'bolder', 'lighter')
+- **Font Sizes**: Absolute sizes (xx-small to xxx-large), relative sizes ('smaller', 'larger'), and unit values
+- **Line Heights**: Separate line-height specification with '/' syntax
+- **Font Families**: Support for quoted and unquoted font names with comma separation
+
+#### Box Model Properties
+The box model shorthand expansion system covers all CSS box properties:
+
+**Margin and Padding Shorthand**
+- **Single Value**: Applies to all four sides
+- **Two Values**: Vertical | horizontal
+- **Three Values**: Top | horizontal | bottom
+- **Four Values**: Top | right | bottom | left (with fallback for missing fourth value)
+
+**Border Shorthand Properties**
+- **Border**: Expands to border-width, border-style, border-color for all sides
+- **Border-width**: Four-value box model expansion
+- **Border-style**: Four-value box model expansion with style validation
+- **Border-color**: Four-value box model expansion
+- **Border-radius**: Support for '/' syntax for horizontal/vertical radii with four-corner expansion
+
+**Background Shorthand**
+- **Color Detection**: Automatic recognition of background colors vs images
+- **Image Recognition**: Detection of url() patterns for background images
+- **Keyword Support**: 'none', 'inherit', 'initial', 'unset' handling
+- **Fallback Behavior**: Complex backgrounds fall back to original value for safety
+
+**SVG Marker Properties**
+- **Marker Shorthand**: Expands 'marker' to 'marker-start', 'marker-mid', 'marker-end'
+- **SVG-Specific**: Tailored for SVG marker properties with URL and 'none' support
 
 **Section sources**
-- [lib/src/animation/css_shorthand_expansion.dart:7-69](file://lib/src/animation/css_shorthand_expansion.dart#L7-L69)
-- [test/animation/css_shorthand_expansion_test.dart:5-619](file://test/animation/css_shorthand_expansion_test.dart#L5-L619)
+- [lib/src/animation/css_shorthand_expansion.dart:1-95](file://lib/src/animation/css_shorthand_expansion.dart#L1-L95)
+- [lib/src/animation/css_shorthand_expansion_animation.dart:1-300](file://lib/src/animation/css_shorthand_expansion_animation.dart#L1-L300)
+- [lib/src/animation/css_shorthand_expansion_font.dart:1-206](file://lib/src/animation/css_shorthand_expansion_font.dart#L1-L206)
+- [lib/src/animation/css_shorthand_expansion_box.dart:1-404](file://lib/src/animation/css_shorthand_expansion_box.dart#L1-L404)
+- [test/animation/css_shorthand_expansion_test.dart:1-619](file://test/animation/css_shorthand_expansion_test.dart#L1-L619)
 
 ## Custom Properties and Calc() Function Support
 
@@ -1054,6 +1164,7 @@ Painter-->>Node : Rendered text
 - Path morphing depends on PathParser, PathNormalizer, and PathInterpolator
 - Filters depend on Flutter's ui.ImageFilter and color matrices
 - CSS processing depends on CssCascadeResolver, CssSelectorParser, CssVariableResolver, CssCalcEvaluator, and SvgPseudoClassState
+- **Enhanced CSS shorthand expansion depends on modular components: CssShorthandExpansionAnimation, CssShorthandExpansionFont, CssShorthandExpansionBox**
 - 3D transforms depend on Matrix4x4 and Transform3DContext
 - Rendering cache depends on _RenderCache and AnimatedSvgPainter
 - Text styling system depends on Flutter's ui.TextDirection, ui.FontFeature, and ui.ParagraphBuilder
@@ -1066,6 +1177,10 @@ Picture --> CssCascade["CssCascadeResolver"]
 CssCascade --> CssSelectors["CssSelectorParser"]
 CssCascade --> CssVars["CssVariableResolver"]
 CssCascade --> CssCalc["CssCalcEvaluator"]
+CssCascade --> ShorthandExpander["CssShorthandExpander"]
+ShorthandExpander --> AnimationExpander["CssShorthandExpansionAnimation"]
+ShorthandExpander --> FontExpander["CssShorthandExpansionFont"]
+ShorthandExpander --> BoxExpander["CssShorthandExpansionBox"]
 CssCascade --> PseudoState["SvgPseudoClassState"]
 Timeline --> Anim["SmilAnimation"]
 Anim --> Interp["Interpolators"]
@@ -1094,6 +1209,10 @@ TextStyle --> ResolvedStyle["_ResolvedTextStyle"]
 - [lib/src/animation/css_cascade.dart:1-663](file://lib/src/animation/css_cascade.dart#L1-L663)
 - [lib/src/animation/css_selectors.dart:1-645](file://lib/src/animation/css_selectors.dart#L1-L645)
 - [lib/src/animation/css_variables_calc.dart:1-576](file://lib/src/animation/css_variables_calc.dart#L1-L576)
+- [lib/src/animation/css_shorthand_expansion.dart:1-95](file://lib/src/animation/css_shorthand_expansion.dart#L1-L95)
+- [lib/src/animation/css_shorthand_expansion_animation.dart:1-300](file://lib/src/animation/css_shorthand_expansion_animation.dart#L1-L300)
+- [lib/src/animation/css_shorthand_expansion_font.dart:1-206](file://lib/src/animation/css_shorthand_expansion_font.dart#L1-L206)
+- [lib/src/animation/css_shorthand_expansion_box.dart:1-404](file://lib/src/animation/css_shorthand_expansion_box.dart#L1-L404)
 - [lib/src/animation/transform_3d.dart:1-400](file://lib/src/animation/transform_3d.dart#L1-L400)
 - [lib/src/animation/svg_dom.dart:300-369](file://lib/src/animation/svg_dom.dart#L300-L369)
 - [lib/src/animation/animated_svg_painter.dart:41-130](file://lib/src/animation/animated_svg_painter.dart#L41-L130)
@@ -1113,7 +1232,7 @@ TextStyle --> ResolvedStyle["_ResolvedTextStyle"]
   - Rule cache with specificity-based matching
   - Selector parsing with efficient combinator handling
   - Variable resolution with iteration limits
-  - Shorthand expansion with lazy evaluation
+  - **Enhanced shorthand expansion with modular component architecture**
   - Pseudo-class state tracking with minimal overhead
 - 3D transform optimization:
   - Matrix reuse and cloning
@@ -1136,7 +1255,8 @@ Practical tips:
 - Leverage CSS cascade specificity for efficient property resolution
 - Use calc() expressions judiciously to avoid excessive recalculation
 - Implement proper 3D transform ordering for optimal performance
-- **Utilize rendering cache**: Enable caching for static content, clear caches on animation changes
+- **Utilize enhanced shorthand expansion**: Take advantage of modular CSS shorthand components for better performance
+- **Leverage rendering cache**: Enable caching for static content, clear caches on animation changes
 - **Monitor pseudo-class state**: Efficient state tracking minimizes CSS cascade overhead
 
 **Section sources**
@@ -1161,7 +1281,8 @@ Common issues and resolutions:
   - Verify selector specificity calculations
   - Check CSS rule ordering and !important declarations
   - Ensure proper inheritance for inheritable properties
-  - **Pseudo-class state tracking**: Verify SvgPseudoClassState is properly initialized and updated
+  - **Enhanced shorthand expansion issues**: Verify property names are properly normalized and supported
+  - **Modular component conflicts**: Check that shorthand expansion components are properly loaded
 - CSS selector matching problems
   - Test selectors with simple patterns first
   - Verify combinator precedence and matching logic
@@ -1174,6 +1295,12 @@ Common issues and resolutions:
   - Verify matrix dimensionality and operations
   - Check perspective distance and origin settings
   - Ensure proper transform order for expected results
+- **Enhanced shorthand expansion issues**
+  - **Animation shorthand**: Verify comma-separated animation syntax and timing function parentheses
+  - **Font shorthand**: Check font property order and system font keyword support
+  - **Box model shorthand**: Verify value count and unit compatibility
+  - **SVG marker shorthand**: Ensure proper URL format or 'none' keyword usage
+  - **Background shorthand**: Check for complex background values that fall back to original
 - **Rendering cache issues**
   - Verify cache invalidation on animation changes
   - Check cache key generation for uniqueness
@@ -1188,6 +1315,7 @@ Diagnostic utilities:
 - AnimatedSvgPicture exposes trace callbacks and frame tick logging for detailed runtime insights
 - Use test suites to validate normalization and interpolation correctness
 - CSS processing tests provide comprehensive coverage of selector parsing, cascade resolution, and pseudo-class matching
+- **Enhanced shorthand expansion tests**: Validate all shorthand property expansions with comprehensive test coverage
 - 3D transform tests validate matrix operations and perspective calculations
 - **Pseudo-class state tests**: Validate hover, active, and focus state tracking
 - **Rendering cache tests**: Monitor cache effectiveness and invalidation behavior
@@ -1202,6 +1330,7 @@ Diagnostic utilities:
 - [test/animation/css_variables_calc_test.dart:344-400](file://test/animation/css_variables_calc_test.dart#L344-L400)
 - [test/animation/css_3d_transforms_test.dart:114-126](file://test/animation/css_3d_transforms_test.dart#L114-L126)
 - [test/animation/css_pseudo_classes_view_test.dart:193-298](file://test/animation/css_pseudo_classes_view_test.dart#L193-L298)
+- [test/animation/css_shorthand_expansion_test.dart:1-619](file://test/animation/css_shorthand_expansion_test.dart#L1-L619)
 - [test/animation/font_variant_test.dart:1-196](file://test/animation/font_variant_test.dart#L1-L196)
 - [test/animation/text_orientation_test.dart:1-85](file://test/animation/text_orientation_test.dart#L1-L85)
 
@@ -1212,7 +1341,7 @@ The codebase delivers a robust animated SVG pipeline with comprehensive advanced
 - Practical path morphing with normalization and morphers
 - Filter runtime covering color matrix, blur, and lighting primitives
 - Comprehensive CSS cascade system with specificity calculation, selector parsing, pseudo-class state tracking, and property resolution
-- CSS shorthand property expansion for efficient styling
+- **Enhanced CSS shorthand expansion system with modular components for animation, font, and box model properties**
 - Custom properties with calc() function support for dynamic styling
 - Full 3D transform capabilities with Matrix4x4 operations
 - **Enhanced rendering cache system** for significant performance improvements
@@ -1220,7 +1349,7 @@ The codebase delivers a robust animated SVG pipeline with comprehensive advanced
 - Advanced typography features including underline, overline, line-through, writing-mode, font variants, and text decoration controls
 - Strong performance strategies and extensible architecture
 
-The addition of comprehensive CSS pseudo-class support enables sophisticated interactive animations with :hover, :active, :focus, and structural pseudo-classes. The enhanced 3D transform system provides professional-grade 3D animation capabilities. The new rendering cache system delivers substantial performance improvements for static content while maintaining proper invalidation for animated elements. Adopt the examples and tests as references for building complex, performant animations while adhering to normalization and interpolation constraints.
+The addition of comprehensive CSS pseudo-class support enables sophisticated interactive animations with :hover, :active, :focus, and structural pseudo-classes. The enhanced 3D transform system provides professional-grade 3D animation capabilities. The new rendering cache system delivers substantial performance improvements for static content while maintaining proper invalidation for animated elements. **The enhanced CSS shorthand expansion system with dedicated modular components provides comprehensive property expansion capabilities, improving maintainability and performance across animation, font, and box model properties.** Adopt the examples and tests as references for building complex, performant animations while adhering to normalization and interpolation constraints.
 
 ## Appendices
 
@@ -1229,7 +1358,7 @@ The addition of comprehensive CSS pseudo-class support enables sophisticated int
 - CSS animations: parsing and conversion to SMIL with timing and direction
 - CSS cascade system: specificity calculation, selector parsing, pseudo-class state tracking, property resolution
 - **CSS pseudo-classes**: :hover, :active, :focus, :first-child, :last-child, :only-child, :empty, :root support
-- CSS shorthand expansion: comprehensive property expansion support
+- **Enhanced CSS shorthand expansion**: Modular components for animation, font, and box model properties
 - Custom properties: var() resolution with inheritance and fallback
 - Calc() functions: mathematical expression evaluation with unit conversion
 - 3D transforms: Matrix4x4 operations, perspective projection, backface culling
@@ -1243,7 +1372,10 @@ The addition of comprehensive CSS pseudo-class support enables sophisticated int
 - [lib/src/animation/css_cascade.dart:18-663](file://lib/src/animation/css_cascade.dart#L18-L663)
 - [lib/src/animation/css_selectors.dart:1-645](file://lib/src/animation/css_selectors.dart#L1-L645)
 - [lib/src/animation/css_variables_calc.dart:1-576](file://lib/src/animation/css_variables_calc.dart#L1-L576)
-- [lib/src/animation/css_shorthand_expansion.dart:1-69](file://lib/src/animation/css_shorthand_expansion.dart#L1-L69)
+- [lib/src/animation/css_shorthand_expansion.dart:1-95](file://lib/src/animation/css_shorthand_expansion.dart#L1-L95)
+- [lib/src/animation/css_shorthand_expansion_animation.dart:1-300](file://lib/src/animation/css_shorthand_expansion_animation.dart#L1-L300)
+- [lib/src/animation/css_shorthand_expansion_font.dart:1-206](file://lib/src/animation/css_shorthand_expansion_font.dart#L1-L206)
+- [lib/src/animation/css_shorthand_expansion_box.dart:1-404](file://lib/src/animation/css_shorthand_expansion_box.dart#L1-L404)
 - [lib/src/animation/transform_3d.dart:1-400](file://lib/src/animation/transform_3d.dart#L1-L400)
 - [lib/src/animation/svg_dom.dart:300-369](file://lib/src/animation/svg_dom.dart#L300-L369)
 - [lib/src/animation/animated_svg_painter.dart:41-130](file://lib/src/animation/animated_svg_painter.dart#L41-L130)

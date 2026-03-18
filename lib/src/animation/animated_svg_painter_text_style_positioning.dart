@@ -211,6 +211,7 @@ extension AnimatedSvgPainterTextStylePositioningExtension
   double _resolveBaselineReference({
     required ui.Paragraph paragraph,
     required _SvgDominantBaseline dominantBaseline,
+    _SvgWritingMode writingMode = _SvgWritingMode.horizontalTb,
   }) {
     // Get font metrics from paragraph
     final height = paragraph.height;
@@ -223,6 +224,21 @@ extension AnimatedSvgPainterTextStylePositioningExtension
 
     // Approximate x-height as ~50% of ascent (typical for Latin fonts)
     final xHeight = ascent * 0.5;
+
+    // For vertical writing modes, adjust baseline model
+    if (writingMode != _SvgWritingMode.horizontalTb) {
+      // In vertical writing, central baseline is most common
+      return switch (dominantBaseline) {
+        _SvgDominantBaseline.alphabetic => height / 2,
+        _SvgDominantBaseline.central => height / 2,
+        _SvgDominantBaseline.middle => height / 2,
+        _SvgDominantBaseline.textBeforeEdge => 0.0,
+        _SvgDominantBaseline.textAfterEdge => height,
+        _SvgDominantBaseline.hanging => ascent * 0.8,
+        _SvgDominantBaseline.mathematical => height / 2,
+        _SvgDominantBaseline.ideographic => ideographicBaseline,
+      };
+    }
 
     return switch (dominantBaseline) {
       _SvgDominantBaseline.alphabetic => alphabeticBaseline,

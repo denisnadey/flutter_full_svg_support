@@ -6,6 +6,12 @@
 - [animated_svg_picture.dart](file://lib/src/animation/animated_svg_picture.dart)
 - [animated_svg_picture_lifecycle.dart](file://lib/src/animation/animated_svg_picture_lifecycle.dart)
 - [animated_svg_painter_text_style.dart](file://lib/src/animation/animated_svg_painter_text_style.dart)
+- [animated_svg_painter_text_style_font.dart](file://lib/src/animation/animated_svg_painter_text_style_font.dart)
+- [animated_svg_painter_text_style_decoration.dart](file://lib/src/animation/animated_svg_painter_text_style_decoration.dart)
+- [animated_svg_painter_text_style_layout.dart](file://lib/src/animation/animated_svg_painter_text_style_layout.dart)
+- [animated_svg_painter_text_style_positioning.dart](file://lib/src/animation/animated_svg_painter_text_style_positioning.dart)
+- [animated_svg_painter_text_style_rendering.dart](file://lib/src/animation/animated_svg_painter_text_style_rendering.dart)
+- [animated_svg_painter_text_paint.dart](file://lib/src/animation/animated_svg_painter_text_paint.dart)
 - [animated_svg_painter.dart](file://lib/src/animation/animated_svg_painter.dart)
 - [smil_timeline.dart](file://lib/src/animation/smil/smil_timeline.dart)
 - [smil_timeline_info.dart](file://lib/src/animation/smil/smil_timeline_info.dart)
@@ -25,10 +31,11 @@
 
 ## Update Summary
 **Changes Made**
-- Enhanced AnimatedSvgPainterTextStyleExtension with comprehensive CSS property resolution methods
-- Added support for 53 CSS text styling properties including text-decoration-thickness, text-underline-position, text-emphasis, ruby-align, font-variation-settings, and comprehensive typography features
-- Implemented extensive unit conversion support (px, em, %, rem) with inheritance patterns and fallback mechanisms
-- Expanded text rendering capabilities with advanced typography features and internationalization support
+- Enhanced text styling system restructured from monolithic file into 5 specialized modules (font, decoration, layout, positioning, rendering)
+- Expanded CSS property support to 53 properties including advanced typography, internationalization, and accessibility features
+- Implemented comprehensive unit conversion support (px, em, %, rem) with inheritance patterns and fallback mechanisms
+- Added specialized resolver modules for font features, text decoration, layout properties, positioning, and rendering utilities
+- Enhanced _ResolvedTextStyle with comprehensive property coverage including advanced CSS features
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -45,7 +52,7 @@
 ## Introduction
 This document describes the animation APIs for Flutter SVG, focusing on the AnimatedSvgController, timeline management, and animation control methods. It covers controller methods for play, pause, stop, seek, and loop control; timeline properties such as duration, position, status, and playback rate; animation state management and event callbacks; and integration with Flutter animation widgets. It also documents SMIL animation parsing, CSS animation conversion, and animation composition, with examples of programmatic control, synchronization, and custom behaviors. Finally, it addresses performance optimization, memory management, and debugging techniques.
 
-**Updated** Enhanced text styling system now supports comprehensive CSS property resolution with advanced unit conversions and inheritance patterns, covering 53 advanced text styling properties including typography, internationalization, and accessibility features.
+**Updated** Enhanced text styling system now restructured into 5 specialized modules with comprehensive CSS property resolution supporting 53 advanced text styling properties including typography, internationalization, and accessibility features.
 
 ## Project Structure
 The animation system is organized around:
@@ -54,7 +61,7 @@ The animation system is organized around:
 - SvgTimeline: Central timeline orchestrating SMIL animations, timing, and event triggers.
 - SmilAnimation: Individual SMIL animation definitions and runtime evaluation.
 - SmilParser and CssToSmilConverter: Parsers that extract and normalize SMIL and CSS animations into a unified runtime model.
-- AnimatedSvgPainterTextStyleExtension: Comprehensive CSS text styling resolution with 53 properties and advanced unit conversions.
+- **Enhanced** AnimatedSvgPainterTextStyleExtension: Comprehensive CSS text styling resolution with 5 specialized modules supporting 53 properties and advanced unit conversions.
 - Tests and examples: Demonstrate controller usage, CSS-to-SMIL conversion, and synchronization.
 
 ```mermaid
@@ -65,7 +72,16 @@ Timeline --> Anim["SmilAnimation"]
 Parser["SmilParser"] --> Timeline
 Converter["CssToSmilConverter"] --> Timeline
 Picture --> TextStyleExt["AnimatedSvgPainterTextStyleExtension"]
-TextStyleExt --> ResolvedStyle["_ResolvedTextStyle"]
+TextStyleExt --> FontModule["Font Module"]
+TextStyleExt --> DecorationModule["Decoration Module"]
+TextStyleExt --> LayoutModule["Layout Module"]
+TextStyleExt --> PositioningModule["Positioning Module"]
+TextStyleExt --> RenderingModule["Rendering Module"]
+FontModule --> ResolvedStyle["_ResolvedTextStyle"]
+DecorationModule --> ResolvedStyle
+LayoutModule --> ResolvedStyle
+PositioningModule --> ResolvedStyle
+RenderingModule --> ResolvedStyle
 Picture --> Lifecycle["_AnimatedSvgPictureState lifecycle"]
 Lifecycle --> Timeline
 ```
@@ -74,8 +90,13 @@ Lifecycle --> Timeline
 - [animated_svg_controller.dart:25-131](file://lib/src/animation/animated_svg_controller.dart#L25-L131)
 - [animated_svg_picture.dart:108-359](file://lib/src/animation/animated_svg_picture.dart#L108-L359)
 - [animated_svg_picture_lifecycle.dart:177-220](file://lib/src/animation/animated_svg_picture_lifecycle.dart#L177-L220)
-- [animated_svg_painter_text_style.dart:3-325](file://lib/src/animation/animated_svg_painter_text_style.dart#L3-L325)
-- [animated_svg_painter.dart:258-700](file://lib/src/animation/animated_svg_painter.dart#L258-L700)
+- [animated_svg_painter_text_style.dart:3-342](file://lib/src/animation/animated_svg_painter_text_style.dart#L3-L342)
+- [animated_svg_painter_text_style_font.dart:1-362](file://lib/src/animation/animated_svg_painter_text_style_font.dart#L1-L362)
+- [animated_svg_painter_text_style_decoration.dart:1-32](file://lib/src/animation/animated_svg_painter_text_style_decoration.dart#L1-L32)
+- [animated_svg_painter_text_style_layout.dart:1-451](file://lib/src/animation/animated_svg_painter_text_style_layout.dart#L1-L451)
+- [animated_svg_painter_text_style_positioning.dart:1-335](file://lib/src/animation/animated_svg_painter_text_style_positioning.dart#L1-L335)
+- [animated_svg_painter_text_style_rendering.dart:1-545](file://lib/src/animation/animated_svg_painter_text_style_rendering.dart#L1-L545)
+- [animated_svg_painter.dart:412-857](file://lib/src/animation/animated_svg_painter.dart#L412-L857)
 - [smil_timeline.dart:20-256](file://lib/src/animation/smil/smil_timeline.dart#L20-L256)
 - [smil_animation.dart:80-453](file://lib/src/animation/smil/smil_animation.dart#L80-L453)
 - [smil_parser.dart:13-39](file://lib/src/animation/smil/smil_parser.dart#L13-L39)
@@ -89,7 +110,7 @@ Lifecycle --> Timeline
 - SvgTimeline: Manages global time, playback rate, activation/deactivation of animations, total duration computation, and event-based triggers.
 - SmilAnimation: Encapsulates animation definition (type, attributes, values, timing, calc mode, fill mode, additive/accumulate), runtime state, and value computation.
 - SmilParser: Extracts SMIL and CSS animations from the SVG DOM and converts CSS animations to SMIL equivalents.
-- AnimatedSvgPainterTextStyleExtension: Comprehensive CSS text styling resolution supporting 53 properties with advanced unit conversions, inheritance patterns, and fallback mechanisms.
+- **Enhanced** AnimatedSvgPainterTextStyleExtension: Comprehensive CSS text styling resolution with 5 specialized modules supporting 53 properties with advanced unit conversions, inheritance patterns, and fallback mechanisms.
 - AnimatedSvgPicture: Widget that parses SVG, builds the timeline, drives frame ticks via AnimationController, and exposes play/pause/reset/seek APIs.
 
 **Section sources**
@@ -97,11 +118,11 @@ Lifecycle --> Timeline
 - [smil_timeline.dart:20-256](file://lib/src/animation/smil/smil_timeline.dart#L20-L256)
 - [smil_animation.dart:80-453](file://lib/src/animation/smil/smil_animation.dart#L80-L453)
 - [smil_parser.dart:13-39](file://lib/src/animation/smil/smil_parser.dart#L13-L39)
-- [animated_svg_painter_text_style.dart:3-325](file://lib/src/animation/animated_svg_painter_text_style.dart#L3-L325)
+- [animated_svg_painter_text_style.dart:3-342](file://lib/src/animation/animated_svg_painter_text_style.dart#L3-L342)
 - [animated_svg_picture.dart:108-359](file://lib/src/animation/animated_svg_picture.dart#L108-L359)
 
 ## Architecture Overview
-The system integrates Flutter's AnimationController with a custom SvgTimeline to synchronize widget rendering with SMIL/CSS animation evaluation. The enhanced text styling system provides comprehensive CSS property resolution with advanced unit conversions and inheritance patterns.
+The system integrates Flutter's AnimationController with a custom SvgTimeline to synchronize widget rendering with SMIL/CSS animation evaluation. The enhanced text styling system provides comprehensive CSS property resolution with advanced unit conversions and inheritance patterns distributed across 5 specialized modules.
 
 ```mermaid
 sequenceDiagram
@@ -119,7 +140,16 @@ AC-->>Picture : "_onAnimationTick()"
 Picture->>TL : "seek(elapsed)"
 TL-->>Picture : "active animations updated"
 Picture->>TextStyleExt : "_resolveTextStyle(node)"
-TextStyleExt->>ResolvedStyle : "create resolved style"
+TextStyleExt->>FontModule : "Resolve font properties"
+TextStyleExt->>DecorationModule : "Resolve decoration properties"
+TextStyleExt->>LayoutModule : "Resolve layout properties"
+TextStyleExt->>PositioningModule : "Resolve positioning properties"
+TextStyleExt->>RenderingModule : "Resolve rendering properties"
+FontModule->>ResolvedStyle : "create resolved style"
+DecorationModule->>ResolvedStyle : "create resolved style"
+LayoutModule->>ResolvedStyle : "create resolved style"
+PositioningModule->>ResolvedStyle : "create resolved style"
+RenderingModule->>ResolvedStyle : "create resolved style"
 Picture-->>Client : "repaint with new frame"
 ```
 
@@ -128,7 +158,7 @@ Picture-->>Client : "repaint with new frame"
 - [animated_svg_picture.dart:272-294](file://lib/src/animation/animated_svg_picture.dart#L272-L294)
 - [animated_svg_picture_lifecycle.dart:177-220](file://lib/src/animation/animated_svg_picture_lifecycle.dart#L177-L220)
 - [smil_timeline.dart:88-98](file://lib/src/animation/smil/smil_timeline.dart#L88-L98)
-- [animated_svg_painter_text_style.dart:4-325](file://lib/src/animation/animated_svg_painter_text_style.dart#L4-L325)
+- [animated_svg_painter_text_style.dart:4-342](file://lib/src/animation/animated_svg_painter_text_style.dart#L4-L342)
 
 ## Detailed Component Analysis
 
@@ -189,7 +219,13 @@ Usage highlights:
 - [animated_svg_picture_lifecycle.dart:177-220](file://lib/src/animation/animated_svg_picture_lifecycle.dart#L177-L220)
 
 ### Enhanced Text Styling System (AnimatedSvgPainterTextStyleExtension)
-- Purpose: Comprehensive CSS text styling resolution with advanced unit conversions and inheritance patterns.
+- Purpose: Comprehensive CSS text styling resolution with advanced unit conversions and inheritance patterns distributed across 5 specialized modules.
+- **Updated** Restructured into 5 specialized modules:
+  - **Font Module** (`animated_svg_painter_text_style_font.dart`): Font-related properties (font-variant, font-stretch, font-size-adjust, font-kerning, font-optical-sizing, font-synthesis, font-variant-* properties)
+  - **Decoration Module** (`animated_svg_painter_text_style_decoration.dart`): Text decoration properties (text-decoration, text-decoration-line, text-decoration-style, text-decoration-color, text-decoration-thickness, text-underline-position, text-decoration-skip, text-decoration-skip-ink)
+  - **Layout Module** (`animated_svg_painter_text_style_layout.dart`): Layout properties (tab-size, text-indent, white-space, text-overflow, word-break, overflow-wrap, text-wrap, line-break, text-transform, hyphens, hyphenate-character, line-height, vertical-align, hanging-punctuation, text-justify, text-align-last, text-spacing, quotes, initial-letter)
+  - **Positioning Module** (`animated_svg_painter_text_style_positioning.dart`): Positioning properties (writing-mode, direction, text-orientation, dominant-baseline, alignment-baseline, baseline-shift, glyph-orientation-vertical, unicode-bidi, text-combine-upright, text-orientation, paint-order, ruby-align, ruby-position)
+  - **Rendering Module** (`animated_svg_painter_text_style_rendering.dart`): Rendering properties (forced-color-adjust, print-color-adjust, content-visibility, contain-intrinsic-size, will-change, mix-blend-mode, text-rendering, paint-order)
 - Features:
   - Resolves 53 CSS text styling properties with advanced unit conversions (px, em, %, rem).
   - Supports inheritance patterns for cascading style application.
@@ -201,21 +237,16 @@ Usage highlights:
   - Inheritance patterns: Resolves properties from parent nodes when not explicitly set.
   - Fallback mechanisms: Provides sensible defaults for missing or invalid values.
   - Advanced typography: Supports font features, text decorations, and complex layout properties.
-- **Updated** Comprehensive coverage of advanced CSS properties including:
-  - Text decoration enhancements: text-decoration-thickness, text-underline-position, text-decoration-skip-ink, text-decoration-skip
-  - Typography features: font-variation-settings for variable fonts, font-variant-numeric, font-variant-ligatures, font-variant-caps
-  - Internationalization: ruby-align, ruby-position, text-emphasis, text-emphasis-position, text-emphasis-color, text-emphasis-style
-  - Accessibility and rendering: forced-color-adjust, print-color-adjust, will-change, content-visibility, contain-intrinsic-size
-  - Advanced layout: text-wrap, text-spacing, hyphenate-character, mix-blend-mode
 
 **Section sources**
-- [animated_svg_painter_text_style.dart:3-325](file://lib/src/animation/animated_svg_painter_text_style.dart#L3-L325)
-- [animated_svg_painter.dart:258-700](file://lib/src/animation/animated_svg_painter.dart#L258-L700)
-- [text_decoration_thickness_test.dart:1-102](file://test/animation/text_decoration_thickness_test.dart#L1-L102)
-- [text_underline_position_test.dart:1-100](file://test/animation/text_underline_position_test.dart#L1-L100)
-- [text_emphasis_test.dart:1-51](file://test/animation/text_emphasis_test.dart#L1-L51)
-- [ruby_align_test.dart:1-51](file://test/animation/ruby_align_test.dart#L1-L51)
-- [font_variation_settings_test.dart:1-40](file://test/animation/font_variation_settings_test.dart#L1-L40)
+- [animated_svg_painter_text_style.dart:3-342](file://lib/src/animation/animated_svg_painter_text_style.dart#L3-L342)
+- [animated_svg_painter_text_style_font.dart:1-362](file://lib/src/animation/animated_svg_painter_text_style_font.dart#L1-L362)
+- [animated_svg_painter_text_style_decoration.dart:1-32](file://lib/src/animation/animated_svg_painter_text_style_decoration.dart#L1-L32)
+- [animated_svg_painter_text_style_layout.dart:1-451](file://lib/src/animation/animated_svg_painter_text_style_layout.dart#L1-L451)
+- [animated_svg_painter_text_style_positioning.dart:1-335](file://lib/src/animation/animated_svg_painter_text_style_positioning.dart#L1-L335)
+- [animated_svg_painter_text_style_rendering.dart:1-545](file://lib/src/animation/animated_svg_painter_text_style_rendering.dart#L1-L545)
+- [animated_svg_painter_text_paint.dart:260-296](file://lib/src/animation/animated_svg_painter_text_paint.dart#L260-L296)
+- [animated_svg_painter.dart:412-857](file://lib/src/animation/animated_svg_painter.dart#L412-L857)
 
 ### SMIL Animation Model (SmilAnimation)
 - Types:
@@ -364,11 +395,11 @@ class SmilAnimation {
 }
 class AnimatedSvgPainterTextStyleExtension {
 +_resolveTextStyle(node)
-+_resolveWritingMode(value)
-+_resolveTextDecoration(value)
-+_resolveFontVariant(value)
-+_resolveTextDirection(value)
-+...
++Font Module methods
++Decoration Module methods
++Layout Module methods
++Positioning Module methods
++Rendering Module methods
 }
 class _ResolvedTextStyle {
 +color
@@ -378,7 +409,7 @@ class _ResolvedTextStyle {
 +fontStyle
 +textAnchor
 +dominantBaseline
-+...
++...53 properties total
 }
 AnimatedSvgController --> AnimatedSvgPicture : "notifies listeners"
 AnimatedSvgPicture --> SvgTimeline : "ticks and seeks"
@@ -392,16 +423,26 @@ SvgTimeline --> SmilAnimation : "updates"
 - [animated_svg_picture.dart:272-294](file://lib/src/animation/animated_svg_picture.dart#L272-L294)
 - [smil_timeline.dart:20-256](file://lib/src/animation/smil/smil_timeline.dart#L20-L256)
 - [smil_animation.dart:80-453](file://lib/src/animation/smil/smil_animation.dart#L80-L453)
-- [animated_svg_painter_text_style.dart:3-325](file://lib/src/animation/animated_svg_painter_text_style.dart#L3-L325)
-- [animated_svg_painter.dart:258-700](file://lib/src/animation/animated_svg_painter.dart#L258-L700)
+- [animated_svg_painter_text_style.dart:3-342](file://lib/src/animation/animated_svg_painter_text_style.dart#L3-L342)
+- [animated_svg_painter_text_style_font.dart:1-362](file://lib/src/animation/animated_svg_painter_text_style_font.dart#L1-L362)
+- [animated_svg_painter_text_style_decoration.dart:1-32](file://lib/src/animation/animated_svg_painter_text_style_decoration.dart#L1-L32)
+- [animated_svg_painter_text_style_layout.dart:1-451](file://lib/src/animation/animated_svg_painter_text_style_layout.dart#L1-L451)
+- [animated_svg_painter_text_style_positioning.dart:1-335](file://lib/src/animation/animated_svg_painter_text_style_positioning.dart#L1-L335)
+- [animated_svg_painter_text_style_rendering.dart:1-545](file://lib/src/animation/animated_svg_painter_text_style_rendering.dart#L1-L545)
+- [animated_svg_painter.dart:412-857](file://lib/src/animation/animated_svg_painter.dart#L412-L857)
 
 **Section sources**
 - [animated_svg_controller.dart:25-131](file://lib/src/animation/animated_svg_controller.dart#L25-L131)
 - [animated_svg_picture.dart:108-359](file://lib/src/animation/animated_svg_picture.dart#L108-L359)
 - [smil_timeline.dart:20-256](file://lib/src/animation/smil/smil_timeline.dart#L20-L256)
 - [smil_animation.dart:80-453](file://lib/src/animation/smil/smil_animation.dart#L80-L453)
-- [animated_svg_painter_text_style.dart:3-325](file://lib/src/animation/animated_svg_painter_text_style.dart#L3-L325)
-- [animated_svg_painter.dart:258-700](file://lib/src/animation/animated_svg_painter.dart#L258-L700)
+- [animated_svg_painter_text_style.dart:3-342](file://lib/src/animation/animated_svg_painter_text_style.dart#L3-L342)
+- [animated_svg_painter_text_style_font.dart:1-362](file://lib/src/animation/animated_svg_painter_text_style_font.dart#L1-L362)
+- [animated_svg_painter_text_style_decoration.dart:1-32](file://lib/src/animation/animated_svg_painter_text_style_decoration.dart#L1-L32)
+- [animated_svg_painter_text_style_layout.dart:1-451](file://lib/src/animation/animated_svg_painter_text_style_layout.dart#L1-L451)
+- [animated_svg_painter_text_style_positioning.dart:1-335](file://lib/src/animation/animated_svg_painter_text_style_positioning.dart#L1-L335)
+- [animated_svg_painter_text_style_rendering.dart:1-545](file://lib/src/animation/animated_svg_painter_text_style_rendering.dart#L1-L545)
+- [animated_svg_painter.dart:412-857](file://lib/src/animation/animated_svg_painter.dart#L412-L857)
 
 ## Performance Considerations
 - Keep playbackRate positive and reasonable to avoid excessive recomputations.
@@ -410,9 +451,10 @@ SvgTimeline --> SmilAnimation : "updates"
 - Limit the number of concurrent active animations by controlling begin/end and repeat settings.
 - Avoid overly dense keyframes; use calcMode spline or paced appropriately to balance quality and CPU cost.
 - Use traceFrameTicks and onTrace for targeted profiling during development.
-- **Updated** Text styling resolution is optimized with caching and efficient unit conversion algorithms.
-- **Updated** The 53 CSS properties are resolved incrementally to minimize computational overhead.
-- **Updated** Advanced typography features utilize efficient font feature application and variable font axis handling.
+- **Updated** Text styling resolution is optimized with caching and efficient unit conversion algorithms distributed across 5 specialized modules.
+- **Updated** The 53 CSS properties are resolved incrementally through modular architecture to minimize computational overhead.
+- **Updated** Advanced typography features utilize efficient font feature application and variable font axis handling across specialized font modules.
+- **Updated** Modular architecture enables selective property resolution and improved memory management.
 
 ## Troubleshooting Guide
 - Invalid playback rate:
@@ -433,16 +475,18 @@ SvgTimeline --> SmilAnimation : "updates"
   - **Updated** For advanced properties like font-variation-settings, ensure variable font support is available.
   - **Updated** For ruby and text-emphasis properties, verify proper Unicode support and font availability.
   - **Updated** For internationalization features, ensure locale-specific font fallbacks are configured.
+  - **Updated** Check specialized module resolution for specific property categories (font, decoration, layout, positioning, rendering).
+  - **Updated** Verify 53-property coverage includes the specific CSS property causing issues.
 
 **Section sources**
 - [animated_svg_controller.dart:83-91](file://lib/src/animation/animated_svg_controller.dart#L83-L91)
 - [smil_timeline.dart:88-98](file://lib/src/animation/smil/smil_timeline.dart#L88-L98)
 - [animated_svg_picture_lifecycle.dart:210-220](file://lib/src/animation/animated_svg_picture_lifecycle.dart#L210-L220)
 - [css_animations_test.dart:204-339](file://test/animation/css_animations_test.dart#L204-L339)
-- [animated_svg_painter_text_style.dart:3-325](file://lib/src/animation/animated_svg_painter_text_style.dart#L3-L325)
+- [animated_svg_painter_text_style.dart:3-342](file://lib/src/animation/animated_svg_painter_text_style.dart#L3-L342)
 
 ## Conclusion
-The Flutter SVG animation system provides a robust, SMIL-compatible pipeline with a clear separation of concerns: AnimatedSvgController for programmatic control, AnimatedSvgPicture for widget lifecycle and rendering, and SvgTimeline for orchestration and timing. CSS animations are seamlessly converted to SMIL, enabling consistent behavior across animation types. The enhanced text styling system now supports comprehensive CSS property resolution with advanced unit conversions, inheritance patterns, and fallback mechanisms for 53 text styling properties. This includes advanced typography features like font-variation-settings for variable fonts, comprehensive text decoration controls, internationalization support with ruby annotations and text emphasis, and accessibility features for forced color adjustments and content visibility optimization. With precise control over playback, direction, seeking, and event-driven triggers, developers can implement sophisticated synchronization and custom animation behaviors while maintaining strong performance and debuggability.
+The Flutter SVG animation system provides a robust, SMIL-compatible pipeline with a clear separation of concerns: AnimatedSvgController for programmatic control, AnimatedSvgPicture for widget lifecycle and rendering, and SvgTimeline for orchestration and timing. CSS animations are seamlessly converted to SMIL, enabling consistent behavior across animation types. The enhanced text styling system now provides comprehensive CSS property resolution with advanced unit conversions, inheritance patterns, and fallback mechanisms distributed across 5 specialized modules supporting 53 text styling properties. This includes advanced typography features like font-variation-settings for variable fonts, comprehensive text decoration controls, internationalization support with ruby annotations and text emphasis, and accessibility features for forced color adjustments and content visibility optimization. The modular architecture improves maintainability, performance, and extensibility while maintaining strong performance and debuggability. With precise control over playback, direction, seeking, and event-driven triggers, developers can implement sophisticated synchronization and custom animation behaviors.
 
 ## Appendices
 
@@ -464,30 +508,31 @@ The Flutter SVG animation system provides a robust, SMIL-compatible pipeline wit
   - Methods: play, pause, reset, seekTo
 
 - **Updated** AnimatedSvgPainterTextStyleExtension
-  - Methods: `_resolveTextStyle`, `_resolveWritingMode`, `_resolveTextDecoration`, `_resolveFontVariant`, `_resolveTextDirection`
-  - Supports 53 CSS text styling properties with advanced unit conversions and inheritance patterns
+  - Methods: `_resolveTextStyle`, delegates to 5 specialized modules
+  - **Updated** Font Module: `_resolveFontVariant`, `_resolveFontStretch`, `_resolveFontSizeAdjust`, `_resolveFontKerning`, `_resolveFontVariantNumeric`, `_resolveFontVariantLigatures`, `_resolveFontVariantCaps`, `_resolveFontOpticalSizing`, `_resolveFontSynthesis`, `_resolveFontVariantPosition`, `_resolveFontVariantEastAsian`, `_resolveFontLanguageOverride`, `_resolveFontVariantAlternates`, `_resolveFontPalette`, `_resolveFontVariationSettings`
+  - **Updated** Decoration Module: `_resolveTextDecoration`, `_resolveTextDecorationThickness`, `_resolveTextUnderlinePosition`, `_resolveTextDecorationSkipInk`, `_resolveTextDecorationSkip`, `_resolveTextDecorationStyle`
+  - **Updated** Layout Module: `_resolveTabSize`, `_resolveTextIndent`, `_resolveWordBreak`, `_resolveOverflowWrap`, `_resolveTextTransform`, `_resolveHyphens`, `_resolveLineBreak`, `_resolveWhiteSpace`, `_resolveTextOverflow`, `_resolveTextWrap`, `_resolveLineHeight`, `_resolveVerticalAlign`, `_resolveHangingPunctuation`, `_resolveTextJustify`, `_resolveTextAlignLast`, `_resolveHyphenateCharacter`, `_resolveQuotes`, `_resolveInitialLetter`, `_resolveTextSpacing`
+  - **Updated** Positioning Module: `_resolveWritingMode`, `_resolveTextDirection`, `_resolveGlyphOrientationVertical`, `_resolveUnicodeBidi`, `_resolveTextCombineUpright`, `_resolveTextOrientation`, `_resolveDominantBaseline`, `_resolveBaselineShift`, `_resolvePaintOrder`, `_resolveRubyAlign`, `_resolveRubyPosition`
+  - **Updated** Rendering Module: `_resolveTextRenderingFeatures`, `_resolveForcedColorAdjust`, `_resolvePrintColorAdjust`, `_resolveContentVisibility`, `_resolveContainIntrinsicSize`, `_resolveWillChange`, `_resolveCssMixBlendMode`
 
-- **Updated** _ResolvedTextStyle
-  - Properties: color, fontSize, fontFamily, fontWeight, fontStyle, textAnchor, dominantBaseline, baselineShift
-  - Additional properties: letterSpacing, wordSpacing, decorations, decorationColor, writingMode, fontFeatures
-  - Typography properties: textDirection, glyphOrientationVertical, unicodeBidi, fontStretch, fontSizeAdjust
-  - Layout properties: tabSize, textIndent, wordBreak, overflowWrap, textTransform, hyphens, lineBreak
-  - Decoration properties: hangingPunctuation, textCombineUpright, textOrientation, textUnderlinePosition
-  - Advanced properties: textUnderlineOffset, textDecorationThickness, textDecorationSkipInk, textDecorationSkip
-  - Rendering properties: textDecorationStyle, textShadow, whiteSpace, textOverflow, verticalAlign, lineHeight
-  - Font features: fontKerning, fontVariantNumeric, textJustify, fontVariantLigatures, fontVariantCaps
-  - Advanced font: fontOpticalSizing, paintOrder, textAlignLast, fontSynthesis, fontVariantPosition
-  - Internationalization: fontVariantEastAsian, textEmphasis, textEmphasisPosition, textEmphasisColor
-  - Ruby annotations: rubyAlign, rubyPosition, textEmphasisStyle, quotes, initialLetter, textSpacing
-  - Accessibility: fontLanguageOverride, fontVariantAlternates, textWrap, fontPalette, forcedColorAdjust
-  - Print: printColorAdjust, textDecorationLine, fontVariationSettings, cssTextDecorationColor
-  - Direction: cssDirection, contentVisibility, containIntrinsicSize, willChange, hyphenateCharacter
-  - Effects: cssMixBlendMode
+- **Updated** _ResolvedTextStyle (53 Properties Total)
+  - **Typography & Font**: color, fontSize, fontFamily, fontWeight, fontStyle, textAnchor, dominantBaseline, baselineShift, letterSpacing, wordSpacing, fontFeatures, fontStretch, fontSizeAdjust, fontKerning, fontVariantNumeric, fontVariantLigatures, fontVariantCaps, fontOpticalSizing, fontSynthesis, fontVariantPosition, fontVariantEastAsian, fontLanguageOverride, fontVariantAlternates, fontPalette, fontVariationSettings
+  - **Text Decoration**: decorations, decorationColor, textDecorationLine, textDecorationThickness, textUnderlinePosition, textUnderlineOffset, textDecorationSkipInk, textDecorationSkip, textDecorationStyle, cssTextDecorationColor
+  - **Layout & Spacing**: tabSize, textIndent, wordBreak, overflowWrap, textTransform, hyphens, lineBreak, whiteSpace, textOverflow, verticalAlign, lineHeight, textJustify, textAlignLast, hyphenateCharacter, textSpacing, quotes, initialLetter
+  - **Positioning & Alignment**: writingMode, textDirection, glyphOrientationVertical, unicodeBidi, textCombineUpright, textOrientation, paintOrder, rubyAlign, rubyPosition, textEmphasis, textEmphasisPosition, textEmphasisColor, textEmphasisStyle
+  - **Internationalization**: fontVariantEastAsian, textEmphasis, textEmphasisPosition, textEmphasisColor, textEmphasisStyle, quotes, initialLetter, textSpacing, fontLanguageOverride, fontVariantAlternates
+  - **Accessibility & Rendering**: forcedColorAdjust, printColorAdjust, contentVisibility, containIntrinsicSize, willChange, cssMixBlendMode, textShadow, cssDirection
 
 **Section sources**
 - [animated_svg_controller.dart:25-131](file://lib/src/animation/animated_svg_controller.dart#L25-L131)
 - [smil_timeline.dart:20-256](file://lib/src/animation/smil/smil_timeline.dart#L20-L256)
 - [smil_animation.dart:80-453](file://lib/src/animation/smil/smil_animation.dart#L80-L453)
 - [animated_svg_picture.dart:272-294](file://lib/src/animation/animated_svg_picture.dart#L272-L294)
-- [animated_svg_painter_text_style.dart:3-325](file://lib/src/animation/animated_svg_painter_text_style.dart#L3-L325)
-- [animated_svg_painter.dart:258-700](file://lib/src/animation/animated_svg_painter.dart#L258-L700)
+- [animated_svg_painter_text_style.dart:3-342](file://lib/src/animation/animated_svg_painter_text_style.dart#L3-L342)
+- [animated_svg_painter_text_style_font.dart:1-362](file://lib/src/animation/animated_svg_painter_text_style_font.dart#L1-L362)
+- [animated_svg_painter_text_style_decoration.dart:1-32](file://lib/src/animation/animated_svg_painter_text_style_decoration.dart#L1-L32)
+- [animated_svg_painter_text_style_layout.dart:1-451](file://lib/src/animation/animated_svg_painter_text_style_layout.dart#L1-L451)
+- [animated_svg_painter_text_style_positioning.dart:1-335](file://lib/src/animation/animated_svg_painter_text_style_positioning.dart#L1-L335)
+- [animated_svg_painter_text_style_rendering.dart:1-545](file://lib/src/animation/animated_svg_painter_text_style_rendering.dart#L1-L545)
+- [animated_svg_painter_text_paint.dart:260-296](file://lib/src/animation/animated_svg_painter_text_paint.dart#L260-L296)
+- [animated_svg_painter.dart:412-857](file://lib/src/animation/animated_svg_painter.dart#L412-L857)

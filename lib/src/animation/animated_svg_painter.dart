@@ -4,6 +4,8 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/rendering.dart';
 
+import 'css_animations.dart';
+import 'css_cascade.dart';
 import 'css_named_colors.dart';
 import 'css_variables_calc.dart';
 import 'path_data.dart';
@@ -184,6 +186,9 @@ class AnimatedSvgPainter extends CustomPainter {
     // Prepare cache for this frame
     _renderCache.prepareFrame(animationTime, hasAnimations);
 
+    // Set up CSS rules from document for use-referenced content resolution
+    _currentDocumentCssRules = document.cssSelectorRules;
+
     // Применяем фон если указан
     if (backgroundColor != null) {
       canvas.drawRect(
@@ -202,6 +207,9 @@ class AnimatedSvgPainter extends CustomPainter {
     _paintNode(canvas, document.root);
 
     canvas.restore();
+
+    // Clean up global CSS rules reference
+    _currentDocumentCssRules = null;
   }
 
   /// Вычисляет матрицу трансформации для viewBox

@@ -13,6 +13,9 @@
 - [path_morphing_test.dart](file://test/animation/path_morphing_test.dart)
 - [controller_test.dart](file://test/animation/controller_test.dart)
 - [css_animations_test.dart](file://test/animation/css_animations_test.dart)
+- [css_transform_calc_test.dart](file://test/animation/css_transform_calc_test.dart)
+- [css_transform_edge_cases_test.dart](file://test/animation/css_transform_edge_cases_test.dart)
+- [css_variables_calc_test.dart](file://test/animation/css_variables_calc_test.dart)
 - [text_position_list_test.dart](file://test/animation/text_position_list_test.dart)
 - [marker_test.dart](file://test/animation/marker_test.dart)
 - [paint_order_test.dart](file://test/animation/paint_order_test.dart)
@@ -32,15 +35,20 @@
 - [widget_svg_test.dart](file://test/widget_svg_test.dart)
 - [pubspec.yaml](file://pubspec.yaml)
 - [animated_svg_painter_text_style.dart](file://lib/src/animation/animated_svg_painter_text_style.dart)
+- [css_to_smil_converter_transforms_decompose.dart](file://lib/src/animation/css_to_smil_converter_transforms_decompose.dart)
+- [css_to_smil_converter_transforms_values.dart](file://lib/src/animation/css_to_smil_converter_transforms_values.dart)
+- [svg_transform.dart](file://lib/src/animation/svg_transform.dart)
+- [css_variables_calc.dart](file://lib/src/animation/css_variables_calc.dart)
+- [transform_3d.dart](file://lib/src/animation/transform_3d.dart)
 </cite>
 
 ## Update Summary
 **Changes Made**
-- Added comprehensive test coverage for expanded CSS text styling features including text-decoration-thickness, text-shadow, text-wrap, vertical-align, line-height, text-spacing, text-justify, and white-space properties
-- Integrated 40 new test files validating advanced CSS text styling capabilities with extensive unit testing
-- Enhanced visual testing methodology with updated guidelines and pixel analysis patterns for text rendering
-- Updated architecture overview to include new text styling resolution system and CSS property processing
-- Expanded text styling validation to cover font variant properties, emphasis features, and advanced typography controls
+- Added comprehensive CSS transform calculation testing with support for calc() expressions, angle unit conversions, length unit conversions, and complex transform sequences
+- Integrated 3 new test files validating CSS transform parsing, unit conversions, and 3D transform handling
+- Enhanced CSS variables and calc() evaluation testing with 402 lines of comprehensive unit tests
+- Updated architecture overview to include new transform decomposition and unit conversion systems
+- Expanded testing framework to cover advanced CSS transform features including transform-origin, transform-box, and matrix decomposition
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -55,13 +63,15 @@
 10. [Appendices](#appendices)
 
 ## Introduction
-This document explains the comprehensive testing and quality assurance framework for the flutter_svg package with a focus on visual testing, automated animation testing, and validation approaches. The framework now includes extensive widget-level testing for advanced SVG features including marker rendering, paint order validation, pattern fills, and comprehensive text styling capabilities with expanded CSS property support.
+This document explains the comprehensive testing and quality assurance framework for the flutter_svg package with a focus on visual testing, automated animation testing, and validation approaches. The framework now includes extensive widget-level testing for advanced SVG features including marker rendering, paint order validation, pattern fills, comprehensive text styling capabilities, and **comprehensive CSS transform calculation testing** with support for calc() expressions, angle unit conversions, length unit conversions, and complex transform sequences.
 
 Key areas covered:
 - Visual testing methodology for SMIL animations and complex SVG rendering
 - Automated pixel-based verification of transforms, motion, and advanced styling
 - Comprehensive widget-level testing for marker elements, paint ordering, and pattern fills
 - Extensive text styling validation including text-rendering, decorations, thickness, shadows, wrapping, alignment, and advanced typography features
+- **Advanced CSS transform calculation testing** including calc() expression evaluation, unit conversions, and 3D transform handling
+- **CSS variables and calc() evaluation system** with comprehensive testing for var() resolution and calc() arithmetic
 - Quality assurance processes, configuration, and CI considerations
 - Relationships between the animation system, rendering pipeline, and advanced SVG features
 - Best practices, debugging techniques, and performance validation
@@ -69,13 +79,15 @@ Key areas covered:
 The goal is to help developers implement robust tests, maintain the existing infrastructure, and extend it confidently with comprehensive validation of advanced SVG rendering features.
 
 ## Project Structure
-The testing surface is primarily under the test/animation directory, with supporting utilities and cross-cutting guidelines. The framework now includes extensive widget-level tests for advanced SVG features alongside traditional animation and visual testing:
+The testing surface is primarily under the test/animation directory, with supporting utilities and cross-cutting guidelines. The framework now includes extensive widget-level tests for advanced SVG features alongside traditional animation and visual testing, **plus comprehensive CSS transform calculation testing**:
 
 - Animation logic and parsing tests (SMIL, CSS-to-SMIL conversion, path morphing)
 - Widget-level integration tests for AnimatedSvgPicture with comprehensive feature coverage
 - Visual testing utilities and golden-style pixel analysis
 - Controller-level tests for playback control and seek/pause/forward/reverse
 - Advanced rendering tests for markers, paint order, patterns, and text styling
+- **CSS transform calculation tests** for calc() expressions, unit conversions, and complex transform sequences
+- **CSS variables and calc() evaluation tests** for var() resolution and calc() arithmetic
 - CI configuration and platform constraints
 
 ```mermaid
@@ -107,6 +119,9 @@ A22["line_height_test.dart"]
 A23["text_spacing_test.dart"]
 A24["text_justify_test.dart"]
 A25["white_space_test.dart"]
+A26["css_transform_calc_test.dart"]
+A27["css_transform_edge_cases_test.dart"]
+A28["css_variables_calc_test.dart"]
 end
 subgraph "Widget Tests"
 W["test/widget_svg_test.dart"]
@@ -142,6 +157,9 @@ A --> A22
 A --> A23
 A --> A24
 A --> A25
+A --> A26
+A --> A27
+A --> A28
 W --> A10
 G --> A1
 C --> A
@@ -175,6 +193,9 @@ C --> W
 - [text_spacing_test.dart](file://test/animation/text_spacing_test.dart)
 - [text_justify_test.dart](file://test/animation/text_justify_test.dart)
 - [white_space_test.dart](file://test/animation/white_space_test.dart)
+- [css_transform_calc_test.dart](file://test/animation/css_transform_calc_test.dart)
+- [css_transform_edge_cases_test.dart](file://test/animation/css_transform_edge_cases_test.dart)
+- [css_variables_calc_test.dart](file://test/animation/css_variables_calc_test.dart)
 - [widget_svg_test.dart](file://test/widget_svg_test.dart)
 - [dart_test.yaml](file://dart_test.yaml)
 
@@ -191,6 +212,8 @@ C --> W
 - **Controller tests**: Validate AnimatedSvgController playback controls and seek behavior.
 - **Path morphing tests**: Validate path normalization, interpolation, and morphing pipeline.
 - **Text styling resolution system**: Processes and validates CSS text properties including thickness, shadows, wrapping, alignment, and advanced typography.
+- **CSS transform calculation system**: **Validates calc() expression evaluation, unit conversions, and complex transform parsing**.
+- **CSS variables and calc() evaluation system**: **Processes CSS variables and calc() expressions with comprehensive unit conversion support**.
 
 **Section sources**
 - [visual_test_utils.dart](file://test/animation/visual_test_utils.dart)
@@ -205,13 +228,18 @@ C --> W
 - [stroke_styling_test.dart](file://test/animation/stroke_styling_test.dart)
 - [text_rendering_test.dart](file://test/animation/text_rendering_test.dart)
 - [animated_svg_painter_text_style.dart](file://lib/src/animation/animated_svg_painter_text_style.dart)
+- [css_transform_calc_test.dart](file://test/animation/css_transform_calc_test.dart)
+- [css_transform_edge_cases_test.dart](file://test/animation/css_transform_edge_cases_test.dart)
+- [css_variables_calc_test.dart](file://test/animation/css_variables_calc_test.dart)
 
 ## Architecture Overview
-The testing architecture separates concerns across four layers with enhanced coverage of advanced SVG rendering features:
+The testing architecture separates concerns across four layers with enhanced coverage of advanced SVG rendering features, **including comprehensive CSS transform calculation testing**:
 - **Logic tests**: Validate SMIL parsing, interpolation, and timeline mechanics.
 - **Rendering tests**: Validate widget-level rendering and animation progression.
 - **Visual tests**: Validate actual pixel output and geometric changes.
-- **Advanced feature tests**: Validate markers, paint order, patterns, and comprehensive text styling with extensive CSS property coverage.
+- **Advanced feature tests**: Validate markers, paint order, patterns, text styling, and **comprehensive CSS transform calculation testing**.
+- **CSS transform system tests**: Validate calc() expressions, unit conversions, and 3D transform handling.
+- **CSS variables and calc() system tests**: Validate var() resolution and calc() arithmetic evaluation.
 
 ```mermaid
 graph TB
@@ -220,6 +248,8 @@ L1["SMIL Parser<br/>Interpolators"]
 L2["SVG Timeline"]
 L3["CSS-to-SMIL Converter"]
 L4["Path Normalizer/Interpolator/Morpher"]
+L5["CSS Transform Calculator<br/>Unit Conversions"]
+L6["CSS Variables & Calc<br/>Evaluator"]
 end
 subgraph "Rendering Layer"
 R1["AnimatedSvgPicture"]
@@ -227,6 +257,7 @@ R2["AnimatedSvgController"]
 R3["Text Styling System"]
 R4["Pattern Fill System"]
 R5["Marker System"]
+R6["Transform Decomposition<br/>3D Transform Context"]
 end
 subgraph "Visual Layer"
 V1["VisualTestUtils"]
@@ -238,15 +269,20 @@ AF2["Paint Order Control"]
 AF3["Pattern Fills"]
 AF4["Text Styling Features"]
 AF5["CSS Property Resolution"]
+AF6["Transform Calculation Tests"]
+AF7["CSS Variables & Calc Tests"]
 end
 L1 --> R1
 L2 --> R1
 L3 --> L1
 L4 --> R1
+L5 --> L3
+L6 --> L5
 R2 --> R1
 R3 --> R1
 R4 --> R1
 R5 --> R1
+R6 --> R1
 R1 --> V1
 V1 --> V2
 AF1 --> R5
@@ -254,6 +290,8 @@ AF2 --> R1
 AF3 --> R4
 AF4 --> R3
 AF5 --> R3
+AF6 --> L5
+AF7 --> L6
 ```
 
 **Diagram sources**
@@ -270,6 +308,14 @@ AF5 --> R3
 - [stroke_styling_test.dart](file://test/animation/stroke_styling_test.dart)
 - [text_rendering_test.dart](file://test/animation/text_rendering_test.dart)
 - [animated_svg_painter_text_style.dart](file://lib/src/animation/animated_svg_painter_text_style.dart)
+- [css_transform_calc_test.dart](file://test/animation/css_transform_calc_test.dart)
+- [css_transform_edge_cases_test.dart](file://test/animation/css_transform_edge_cases_test.dart)
+- [css_variables_calc_test.dart](file://test/animation/css_variables_calc_test.dart)
+- [css_to_smil_converter_transforms_decompose.dart](file://lib/src/animation/css_to_smil_converter_transforms_decompose.dart)
+- [css_to_smil_converter_transforms_values.dart](file://lib/src/animation/css_to_smil_converter_transforms_values.dart)
+- [svg_transform.dart](file://lib/src/animation/svg_transform.dart)
+- [css_variables_calc.dart](file://lib/src/animation/css_variables_calc.dart)
+- [transform_3d.dart](file://lib/src/animation/transform_3d.dart)
 
 ## Detailed Component Analysis
 
@@ -567,6 +613,37 @@ The framework now includes comprehensive testing for expanded CSS text styling f
 - [text_justify_test.dart](file://test/animation/text_justify_test.dart)
 - [white_space_test.dart](file://test/animation/white_space_test.dart)
 
+### CSS Transform Calculation System
+**Updated** The framework now includes comprehensive CSS transform calculation testing with support for calc() expressions, angle unit conversions, length unit conversions, and complex transform sequences.
+
+#### CSS Transform Parsing and Unit Conversion
+- **Transform Parser**: Validates parsing of complex transform sequences including translate, rotate, scale, skew, and matrix functions
+- **Unit Conversion**: Supports px, em, rem, %, vw, vh, vmin, vmax, cm, mm, in, pt, pc, and bare numbers
+- **Angle Unit Conversion**: Handles deg, rad, turn, and grad units with proper conversion to degrees
+- **Calc Expression Evaluation**: Processes calc() expressions with arithmetic operations and unit conversions
+
+#### Complex Transform Sequence Testing
+- **Multi-function Sequences**: Validates parsing of complex transform chains like "translate(10px, 20px) rotate(45deg) scale(1.5)"
+- **3D Transform Support**: Tests translate3d, rotate3d, scale3d, perspective, and matrix3d functions
+- **Transform Origin and Box**: Validates transform-origin and transform-box properties with keywords and units
+- **Matrix Decomposition**: Tests matrix decomposition and reconstruction for smooth interpolation
+
+#### CSS Variables and Calc() Evaluation System
+- **Variable Resolution**: Validates var() reference resolution with inheritance and fallback support
+- **Calc Arithmetic**: Tests calc() expression evaluation with nested calc(), mixed units, and arithmetic precedence
+- **Unit Context**: Handles font-size and container-size context for em/rem/% calculations
+- **Integration Testing**: Validates end-to-end CSS variables and calc() evaluation in transform parsing
+
+**Section sources**
+- [css_transform_calc_test.dart](file://test/animation/css_transform_calc_test.dart)
+- [css_transform_edge_cases_test.dart](file://test/animation/css_transform_edge_cases_test.dart)
+- [css_variables_calc_test.dart](file://test/animation/css_variables_calc_test.dart)
+- [css_to_smil_converter_transforms_decompose.dart](file://lib/src/animation/css_to_smil_converter_transforms_decompose.dart)
+- [css_to_smil_converter_transforms_values.dart](file://lib/src/animation/css_to_smil_converter_transforms_values.dart)
+- [svg_transform.dart](file://lib/src/animation/svg_transform.dart)
+- [css_variables_calc.dart](file://lib/src/animation/css_variables_calc.dart)
+- [transform_3d.dart](file://lib/src/animation/transform_3d.dart)
+
 ### Text Styling Resolution System
 The animated_svg_painter_text_style.dart file implements comprehensive CSS text property resolution:
 
@@ -635,6 +712,8 @@ The system also resolves numerous other CSS text properties including:
 - **Logic tests depend** on SMIL, CSS, and path modules.
 - **Advanced feature tests depend** on marker, paint order, pattern, and text styling systems.
 - **Text styling tests depend** on the comprehensive text resolution system in animated_svg_painter_text_style.dart.
+- **CSS transform tests depend** on the transform calculation system in css_to_smil_converter_transforms_values.dart and svg_transform.dart.
+- **CSS variables and calc() tests depend** on the comprehensive evaluation system in css_variables_calc.dart.
 
 ```mermaid
 graph LR
@@ -664,6 +743,9 @@ T --> WS["white_space_test.dart"]
 T --> SDSC["stroke_dash_stop_color_test.dart"]
 T --> ASTS["animated_svg_painter_text_style.dart"]
 T --> WS["widget_svg_test.dart"]
+T --> CTC["css_transform_calc_test.dart"]
+T --> CTEC["css_transform_edge_cases_test.dart"]
+T --> CVC["css_variables_calc_test.dart"]
 V --> VT["visual_*_test.dart"]
 MK --> AP
 PO --> AP
@@ -681,7 +763,9 @@ TJ --> AP
 WS --> AP
 SDSC --> S
 ASTS --> AP
-WS --> AP
+CTC --> CTC
+CTEC --> CTEC
+CVC --> CVC
 ```
 
 **Diagram sources**
@@ -711,6 +795,9 @@ WS --> AP
 - [stroke_dash_stop_color_test.dart](file://test/animation/stroke_dash_stop_color_test.dart)
 - [animated_svg_painter_text_style.dart](file://lib/src/animation/animated_svg_painter_text_style.dart)
 - [widget_svg_test.dart](file://test/widget_svg_test.dart)
+- [css_transform_calc_test.dart](file://test/animation/css_transform_calc_test.dart)
+- [css_transform_edge_cases_test.dart](file://test/animation/css_transform_edge_cases_test.dart)
+- [css_variables_calc_test.dart](file://test/animation/css_variables_calc_test.dart)
 
 **Section sources**
 - [dart_test.yaml](file://dart_test.yaml)
@@ -724,6 +811,8 @@ WS --> AP
 - **Advanced feature tests** leverage efficient rendering pipelines for markers, patterns, and text styling.
 - **Large test suites** benefit from selective testing and focused visual verification to maintain performance.
 - **Text styling resolution** optimizes CSS property processing with efficient parsing and caching mechanisms.
+- **CSS transform calculation** efficiently processes calc() expressions and unit conversions with caching mechanisms.
+- **CSS variables and calc() evaluation** optimizes variable resolution with iterative evaluation and fallback handling.
 
 ## Troubleshooting Guide
 Common issues and resolutions:
@@ -744,15 +833,22 @@ Common issues and resolutions:
   - Check paint order layering and z-index behavior.
   - Validate pattern coordinate transformations and unit conversions.
   - Ensure text styling inheritance and combined property handling.
-- **Text styling property issues**:
-  - Verify CSS property parsing and unit conversion accuracy.
-  - Check font-relative calculations for em and percentage values.
-  - Validate inheritance behavior for nested text elements.
-  - Ensure proper handling of complex text layouts and wrapping.
+- **CSS transform calculation issues**:
+  - Verify calc() expression parsing and arithmetic evaluation.
+  - Check unit conversion accuracy for px, em, rem, %, and other units.
+  - Validate angle unit conversions (deg, rad, turn, grad).
+  - Ensure proper handling of complex transform sequences and 3D transforms.
+  - Test transform-origin and transform-box property resolution.
+- **CSS variables and calc() evaluation issues**:
+  - Verify var() reference resolution with inheritance chain traversal.
+  - Check fallback value handling for missing variables.
+  - Validate calc() expression evaluation with nested calc() support.
+  - Ensure proper unit context handling for font-size and container-size.
 - **Large test suite performance**:
   - Use selective testing for specific feature areas.
   - Leverage visual analysis for quick regression detection.
   - Optimize text styling resolution with cached property values.
+  - Cache CSS transform calculations and unit conversions.
 
 **Section sources**
 - [VISUAL_TESTING_GUIDELINES.md](file://VISUAL_TESTING_GUIDELINES.md)
@@ -762,9 +858,12 @@ Common issues and resolutions:
 - [paint_order_test.dart](file://test/animation/paint_order_test.dart)
 - [pattern_test.dart](file://test/animation/pattern_test.dart)
 - [animated_svg_painter_text_style.dart](file://lib/src/animation/animated_svg_painter_text_style.dart)
+- [css_transform_calc_test.dart](file://test/animation/css_transform_calc_test.dart)
+- [css_transform_edge_cases_test.dart](file://test/animation/css_transform_edge_cases_test.dart)
+- [css_variables_calc_test.dart](file://test/animation/css_variables_calc_test.dart)
 
 ## Conclusion
-The flutter_svg testing framework combines logic validation, widget integration, and robust visual verification to ensure accurate SMIL animation rendering and comprehensive advanced SVG feature support. With the addition of extensive tests covering marker functionality, paint order validation, pattern rendering, and comprehensive text styling features, the suite now provides complete coverage of advanced SVG rendering capabilities.
+The flutter_svg testing framework combines logic validation, widget integration, and robust visual verification to ensure accurate SMIL animation rendering and comprehensive advanced SVG feature support. With the addition of extensive tests covering marker functionality, paint order validation, pattern rendering, comprehensive text styling features, and **comprehensive CSS transform calculation testing**, the suite now provides complete coverage of advanced SVG rendering capabilities.
 
 The expanded framework includes:
 - **40 new test files** validating expanded CSS text styling features
@@ -775,8 +874,12 @@ The expanded framework includes:
 - **Text spacing and justification testing** for internationalization support
 - **White space handling validation** for different content types
 - **Enhanced text styling resolution system** with 20+ CSS properties
+- **3 new comprehensive CSS transform calculation test files** validating calc() expressions, unit conversions, and complex transform sequences
+- **402 lines of CSS variables and calc() evaluation tests** validating var() resolution and calc() arithmetic
+- **Advanced CSS transform parsing and decomposition system** with 3D transform support
+- **Comprehensive unit conversion system** supporting px, em, rem, %, vw, vh, vmin, vmax, cm, mm, in, pt, pc, and deg, rad, turn, grad
 
-By leveraging pixel-based geometry analysis, deterministic timelines, and careful controller-driven playback, the comprehensive suite provides reliable regression protection and clear debugging signals. The extensive advanced feature testing ensures backward compatibility while supporting modern SVG rendering features. The new comprehensive text styling coverage validates complex typography scenarios including font-relative sizing, inheritance behavior, and international text handling. Adhering to the documented guidelines and patterns ensures maintainability and extensibility of the testing infrastructure.
+By leveraging pixel-based geometry analysis, deterministic timelines, and careful controller-driven playback, the comprehensive suite provides reliable regression protection and clear debugging signals. The extensive advanced feature testing ensures backward compatibility while supporting modern SVG rendering features. The new comprehensive text styling coverage validates complex typography scenarios including font-relative sizing, inheritance behavior, and international text handling. **The new CSS transform calculation testing validates complex transform scenarios including calc() expressions, unit conversions, and 3D transforms with proper decomposition and interpolation.** Adhering to the documented guidelines and patterns ensures maintainability and extensibility of the testing infrastructure.
 
 ## Appendices
 
@@ -803,6 +906,10 @@ By leveraging pixel-based geometry analysis, deterministic timelines, and carefu
   - Ensure proper rendering across different SVG elements and coordinate systems.
   - Test complex text layouts with multiple CSS properties and international content.
   - Validate font-relative calculations and unit conversions for responsive text styling.
+  - **Test CSS transform calculation scenarios** including calc() expressions, unit conversions, and complex transform sequences.
+  - **Validate CSS variables and calc() evaluation** with inheritance, fallbacks, and nested expressions.
+  - **Test 3D transform handling** with perspective, transform-style, and backface-visibility.
+  - **Validate transform-origin and transform-box** properties with keywords and units.
 
 **Section sources**
 - [VISUAL_TESTING_GUIDELINES.md](file://VISUAL_TESTING_GUIDELINES.md)
@@ -824,3 +931,6 @@ By leveraging pixel-based geometry analysis, deterministic timelines, and carefu
 - [text_spacing_test.dart](file://test/animation/text_spacing_test.dart)
 - [text_justify_test.dart](file://test/animation/text_justify_test.dart)
 - [white_space_test.dart](file://test/animation/white_space_test.dart)
+- [css_transform_calc_test.dart](file://test/animation/css_transform_calc_test.dart)
+- [css_transform_edge_cases_test.dart](file://test/animation/css_transform_edge_cases_test.dart)
+- [css_variables_calc_test.dart](file://test/animation/css_variables_calc_test.dart)

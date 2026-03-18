@@ -36,6 +36,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
     List<double> parentDyList = const <double>[],
     List<double> parentRotateList = const <double>[],
     bool isRootText = false,
+    _ResolvedTextStyle? parentStyle,
   }) {
     // Parse position lists from this node
     final nodeXList = _getNumberList(node, 'x');
@@ -80,7 +81,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
     }
 
     final style = _resolveTextStyle(node);
-    final text = _extractTextContent(node);
+    final text = _extractTextContentWithWhitespaceNormalization(node, parentStyle);
     if (text != null && text.isNotEmpty) {
       final consumed = _paintPlainTextWithPositions(
         canvas,
@@ -97,12 +98,26 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
         imageFilter: imageFilter,
         colorFilter: colorFilter,
         blendMode: blendMode,
+        parentStyle: parentStyle,
       );
       cursor.x += consumed;
     }
 
     for (final child in node.children) {
       if (child.tagName == 'tspan') {
+        // Handle empty tspans gracefully - skip if no content and no positioning
+        final childText = _extractTextContent(child);
+        final hasContent = childText != null && childText.isNotEmpty;
+        final hasChildPosition = _getNumberList(child, 'x').isNotEmpty ||
+            _getNumberList(child, 'y').isNotEmpty ||
+            _getNumberList(child, 'dx').isNotEmpty ||
+            _getNumberList(child, 'dy').isNotEmpty ||
+            child.children.isNotEmpty;
+
+        if (!hasContent && !hasChildPosition) {
+          continue; // Skip empty tspans with no positioning
+        }
+
         _paintTextNode(
           canvas,
           child,
@@ -115,6 +130,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
           parentDxList: dxList,
           parentDyList: dyList,
           parentRotateList: rotateList,
+          parentStyle: style,
         );
       } else if (child.tagName == 'textPath') {
         final consumed = _paintTextPathNode(
@@ -149,6 +165,9 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
       return 0.0;
     }
 
+    // Check if path is closed (for wrapping behavior)
+    final isClosed = metric.isClosed;
+
     // Parse textPath-specific attributes
     final spacing = _resolveTextPathSpacing(textPathNode);
     final method = _resolveTextPathMethod(textPathNode);
@@ -168,6 +187,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
         startOffset: offset,
         spacing: spacing,
         method: method,
+        isClosed: isClosed,
         imageFilter: imageFilter,
         colorFilter: colorFilter,
         blendMode: blendMode,
@@ -194,6 +214,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
         startOffset: offset,
         spacing: spacing,
         method: method,
+        isClosed: isClosed,
         imageFilter: imageFilter,
         colorFilter: colorFilter,
         blendMode: blendMode,
@@ -222,6 +243,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
     ui.ImageFilter? imageFilter,
     ui.ColorFilter? colorFilter,
     ui.BlendMode? blendMode,
+    _ResolvedTextStyle? parentStyle,
   }) {
     final glyphs = text.runes.map((r) => String.fromCharCode(r)).toList();
     final hasMultiPositions =
@@ -273,6 +295,18 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
       }
     }
 
+    // For mixed font-size tspans, calculate baseline offset to align properly
+    // When child tspan has different font-size than parent, align on alphabetic baseline
+    double mixedBaselineOffset = 0.0;
+    if (parentStyle != null && parentStyle.fontSize != style.fontSize) {
+      // Calculate offset to align child baseline with parent baseline
+      final parentParagraph = _buildTextParagraph('X', parentStyle);
+      final childParagraph = _buildTextParagraph('X', style);
+      final parentBaseline = parentParagraph.alphabeticBaseline;
+      final childBaseline = childParagraph.alphabeticBaseline;
+      mixedBaselineOffset = parentBaseline - childBaseline;
+    }
+
     for (int i = 0; i < glyphs.length; i++) {
       final charIdx = cursor.charIndex + i;
 
@@ -305,7 +339,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
       final drawY = _resolveTextTopFromBaseline(
         paragraph: paragraph,
         style: style,
-        baselineY: cursor.y,
+        baselineY: cursor.y + mixedBaselineOffset,
       );
 
       // Apply rotation around the character's baseline position
@@ -496,6 +530,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
     required double startOffset,
     required _SvgTextPathSpacing spacing,
     _SvgTextPathMethod method = _SvgTextPathMethod.align,
+    bool isClosed = false,
     ui.ImageFilter? imageFilter,
     ui.ColorFilter? colorFilter,
     ui.BlendMode? blendMode,
@@ -605,15 +640,25 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
       final displayWidth = displayWidths[i];
       final glyphAdvance = displayAdvances[i];
 
-      // Clamp glyph center to path bounds for endpoint handling
-      final center = (cursor + displayWidth / 2).clamp(0.0, metric.length);
+      // For closed paths, wrap around when exceeding path length
+      double effectiveCenter;
+      if (isClosed) {
+        // Wrap position around for closed paths
+        effectiveCenter = (cursor + displayWidth / 2) % metric.length;
+        if (effectiveCenter < 0) {
+          effectiveCenter += metric.length;
+        }
+      } else {
+        // For open paths, clamp to path bounds
+        effectiveCenter = (cursor + displayWidth / 2).clamp(0.0, metric.length);
 
-      // Skip glyphs that start beyond the path length (overflow handling)
-      if (cursor > metric.length) {
-        break;
+        // Skip glyphs that start beyond the path length (overflow handling)
+        if (cursor > metric.length) {
+          break;
+        }
       }
 
-      final tangent = metric.getTangentForOffset(center);
+      final tangent = metric.getTangentForOffset(effectiveCenter);
       if (tangent == null) {
         cursor += glyphAdvance;
         consumed += glyphAdvance;

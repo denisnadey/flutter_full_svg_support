@@ -4,6 +4,10 @@ part of 'animated_svg_painter.dart';
 /// This prevents infinite loops and excessive resource usage.
 const int _kMaxUseRecursionDepth = 10;
 
+/// Global CSS rules available during painting.
+/// Set by the painter when rendering begins.
+List<CssSelectorRule>? _currentDocumentCssRules;
+
 /// CSS properties that are inherited by default per CSS/SVG specification.
 /// Non-inherited properties (like opacity, transform, display) should NOT
 /// flow through <use> boundaries.
@@ -101,13 +105,21 @@ const Set<String> _cssInheritablePropertiesForUse = {
 /// Non-inherited properties (opacity, transform, display, clip-path, mask, filter)
 /// should NOT cascade to referenced content.
 class _UseInheritanceContext {
-  const _UseInheritanceContext({required this.useNode, this.parentContext});
+  const _UseInheritanceContext({
+    required this.useNode,
+    this.parentContext,
+    this.cssRules,
+  });
 
   /// The <use> element providing inherited properties.
   final SvgNode useNode;
 
   /// Parent inheritance context for nested <use> chains.
   final _UseInheritanceContext? parentContext;
+
+  /// CSS rules from the document's <style> blocks.
+  /// Used to resolve CSS class/id rules on referenced elements.
+  final List<CssSelectorRule>? cssRules;
 
   /// Gets the inherited value for a property, checking the use chain.
   /// Returns null if the property is not inheritable or not set on any
@@ -143,6 +155,25 @@ class _UseInheritanceContext {
 
     // Check parent context (for nested use chains)
     return parentContext?.getInheritedValue(property);
+  }
+
+  /// Resolves a CSS property from document style rules for a given node.
+  /// This handles CSS class and id selectors that should apply to the
+  /// referenced element.
+  ///
+  /// Per SVG spec cascade order:
+  /// 1. Inline style on referenced element (highest)
+  /// 2. Document CSS rules matching referenced element
+  /// 3. Presentation attributes on referenced element
+  /// 4. Use element inherited values
+  String? resolveCssRuleValue(SvgNode node, String property) {
+    if (cssRules == null || cssRules!.isEmpty) {
+      return null;
+    }
+
+    final normalizedProperty = property.trim().toLowerCase();
+    final resolver = CssCascadeResolver(cssRules: cssRules!);
+    return resolver.resolveOwnProperty(node, normalizedProperty);
   }
 
   /// Gets a CSS custom property value from the use chain.
@@ -392,9 +423,11 @@ extension AnimatedSvgPainterUseExtension on AnimatedSvgPainter {
 
     // Create inheritance context for this use boundary.
     // This allows CSS properties set on <use> to be inherited by referenced content.
+    // Also pass CSS rules from document for proper class/id resolution.
     final currentUseContext = _UseInheritanceContext(
       useNode: node,
       parentContext: useContext,
+      cssRules: _currentDocumentCssRules ?? useContext?.cssRules,
     );
 
     final previousParent = referenced.parent;

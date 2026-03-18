@@ -34,6 +34,31 @@ extension AnimatedSvgPainterValuesExtension on AnimatedSvgPainter {
   Object? _getInheritedAttributeValue(SvgNode node, String attributeName) {
     final normalizedName = attributeName.trim().toLowerCase();
     SvgNode? current = node;
+
+    // First check the node itself for inline style or explicit attribute
+    final nodeStyleValue = _extractStyleValue(node, normalizedName);
+    if (nodeStyleValue != null) {
+      return nodeStyleValue;
+    }
+    final nodeAttrValue = node.getAttributeValue(attributeName);
+    if (nodeAttrValue != null) {
+      return nodeAttrValue;
+    }
+
+    // Check CSS rules from document's <style> blocks for this node.
+    // This allows CSS class/id rules to apply to use-referenced elements.
+    if (_currentUseContext != null) {
+      final cssValue = _currentUseContext!.resolveCssRuleValue(
+        node,
+        normalizedName,
+      );
+      if (cssValue != null) {
+        return cssValue;
+      }
+    }
+
+    // Walk up the parent chain
+    current = node.parent;
     while (current != null) {
       final styleValue = _extractStyleValue(current, normalizedName);
       if (styleValue != null) {
