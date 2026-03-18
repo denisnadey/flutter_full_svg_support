@@ -381,11 +381,7 @@ void main() {
 
         final beforePixels = await VisualTestUtils.captureWidgetPixels(tester);
         // Capture baseline pixel analysis (side effect: validates pixel buffer)
-        VisualTestUtils.analyzeRedPixels(
-          beforePixels,
-          800,
-          600,
-        );
+        VisualTestUtils.analyzeRedPixels(beforePixels, 800, 600);
 
         final pictureFinder = find.byType(AnimatedSvgPicture);
         final topLeft = tester.getTopLeft(pictureFinder);

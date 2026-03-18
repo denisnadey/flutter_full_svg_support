@@ -4,10 +4,10 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('Multi-tspan paragraph layout', () {
-    testWidgets('multiple tspans with different font-weight render on same line', (
-      tester,
-    ) async {
-      const svg = '''
+    testWidgets(
+      'multiple tspans with different font-weight render on same line',
+      (tester) async {
+        const svg = '''
         <svg viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
           <text x="10" y="50" font-size="16" fill="black">
             Normal <tspan font-weight="bold">Bold</tspan> Normal
@@ -15,23 +15,24 @@ void main() {
         </svg>
       ''';
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AnimatedSvgPicture.string(svg, width: 400, height: 100),
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svg, width: 400, height: 100),
+            ),
           ),
-        ),
-      );
-      await tester.pump();
-      await tester.pump();
+        );
+        await tester.pump();
+        await tester.pump();
 
-      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-    });
+        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+      },
+    );
 
-    testWidgets('multiple tspans with different font-size render on same line', (
-      tester,
-    ) async {
-      const svg = '''
+    testWidgets(
+      'multiple tspans with different font-size render on same line',
+      (tester) async {
+        const svg = '''
         <svg viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
           <text x="10" y="50" font-size="16" fill="black">
             Normal <tspan font-size="24">Large</tspan> Normal
@@ -39,22 +40,21 @@ void main() {
         </svg>
       ''';
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AnimatedSvgPicture.string(svg, width: 400, height: 100),
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svg, width: 400, height: 100),
+            ),
           ),
-        ),
-      );
-      await tester.pump();
-      await tester.pump();
+        );
+        await tester.pump();
+        await tester.pump();
 
-      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-    });
+        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+      },
+    );
 
-    testWidgets('multiple tspans with different fill colors', (
-      tester,
-    ) async {
+    testWidgets('multiple tspans with different fill colors', (tester) async {
       const svg = '''
         <svg viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
           <text x="10" y="50" font-size="16" fill="black">
@@ -100,9 +100,7 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('xml:space="preserve" keeps whitespace intact', (
-      tester,
-    ) async {
+    testWidgets('xml:space="preserve" keeps whitespace intact', (tester) async {
       const svg = '''
         <svg viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
           <text x="10" y="50" xml:space="preserve" fill="black">
@@ -124,9 +122,7 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('mixed font-size tspans align on baseline', (
-      tester,
-    ) async {
+    testWidgets('mixed font-size tspans align on baseline', (tester) async {
       const svg = '''
         <svg viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
           <text x="10" y="50" font-size="12" fill="black">
@@ -172,9 +168,7 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('empty tspans do not break layout', (
-      tester,
-    ) async {
+    testWidgets('empty tspans do not break layout', (tester) async {
       const svg = '''
         <svg viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
           <text x="10" y="50" fill="black">
@@ -196,9 +190,7 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('tspan with absolute x creates new text chunk', (
-      tester,
-    ) async {
+    testWidgets('tspan with absolute x creates new text chunk', (tester) async {
       const svg = '''
         <svg viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
           <text x="10" y="50" fill="black">
@@ -220,9 +212,7 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('tspan with dx applies relative offset', (
-      tester,
-    ) async {
+    testWidgets('tspan with dx applies relative offset', (tester) async {
       const svg = '''
         <svg viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
           <text x="10" y="50" fill="black">
@@ -244,9 +234,7 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('multiple tspans with different font-style', (
-      tester,
-    ) async {
+    testWidgets('multiple tspans with different font-style', (tester) async {
       const svg = '''
         <svg viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
           <text x="10" y="50" font-size="16" fill="black">
@@ -268,9 +256,7 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('tspan with text-decoration', (
-      tester,
-    ) async {
+    testWidgets('tspan with text-decoration', (tester) async {
       const svg = '''
         <svg viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
           <text x="10" y="50" font-size="16" fill="black">
@@ -294,9 +280,7 @@ void main() {
   });
 
   group('Baseline-shift interactions', () {
-    testWidgets('baseline-shift sub positions subscript', (
-      tester,
-    ) async {
+    testWidgets('baseline-shift sub positions subscript', (tester) async {
       const svg = '''
         <svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
           <text x="10" y="50" font-size="20" fill="black">
@@ -318,9 +302,7 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('baseline-shift super positions superscript', (
-      tester,
-    ) async {
+    testWidgets('baseline-shift super positions superscript', (tester) async {
       const svg = '''
         <svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
           <text x="10" y="50" font-size="20" fill="black">
@@ -342,9 +324,7 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('baseline-shift with percentage value', (
-      tester,
-    ) async {
+    testWidgets('baseline-shift with percentage value', (tester) async {
       const svg = '''
         <svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
           <text x="10" y="50" font-size="20" fill="black">
@@ -366,9 +346,7 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('baseline-shift with length value (em)', (
-      tester,
-    ) async {
+    testWidgets('baseline-shift with length value (em)', (tester) async {
       const svg = '''
         <svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
           <text x="10" y="50" font-size="20" fill="black">
@@ -390,9 +368,7 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('nested baseline-shift is cumulative', (
-      tester,
-    ) async {
+    testWidgets('nested baseline-shift is cumulative', (tester) async {
       const svg = '''
         <svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
           <text x="10" y="50" font-size="16" fill="black">
@@ -416,9 +392,7 @@ void main() {
   });
 
   group('Vertical text with mixed tspan styles', () {
-    testWidgets('vertical-rl with multiple tspans', (
-      tester,
-    ) async {
+    testWidgets('vertical-rl with multiple tspans', (tester) async {
       const svg = '''
         <svg viewBox="0 0 100 300" xmlns="http://www.w3.org/2000/svg">
           <text x="50" y="20" writing-mode="vertical-rl" fill="black">
@@ -440,9 +414,7 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('vertical-lr with different font-sizes', (
-      tester,
-    ) async {
+    testWidgets('vertical-lr with different font-sizes', (tester) async {
       const svg = '''
         <svg viewBox="0 0 100 300" xmlns="http://www.w3.org/2000/svg">
           <text x="20" y="20" writing-mode="vertical-lr" fill="black">
@@ -466,9 +438,7 @@ void main() {
   });
 
   group('Empty tspan handling', () {
-    testWidgets('empty tspan with dx does not break', (
-      tester,
-    ) async {
+    testWidgets('empty tspan with dx does not break', (tester) async {
       const svg = '''
         <svg viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
           <text x="10" y="50" fill="black">
@@ -490,9 +460,7 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('whitespace-only tspan preserves flow', (
-      tester,
-    ) async {
+    testWidgets('whitespace-only tspan preserves flow', (tester) async {
       const svg = '''
         <svg viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
           <text x="10" y="50" fill="black">
@@ -514,9 +482,7 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('tspan with only newlines collapses', (
-      tester,
-    ) async {
+    testWidgets('tspan with only newlines collapses', (tester) async {
       const svg = '''
         <svg viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
           <text x="10" y="50" fill="black">

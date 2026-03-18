@@ -115,7 +115,9 @@ extension SvgFiltersPipelinePrimitiveEffectsExtension on SvgFilters {
     final href = (imagePrimitive.href ?? '').trim();
     if (href.isEmpty) {
       // No href specified - return previous or SourceGraphic as fallback.
-      return previous.isEmpty ? <SvgFilterPaintPass>[...sourceGraphic] : previous;
+      return previous.isEmpty
+          ? <SvgFilterPaintPass>[...sourceGraphic]
+          : previous;
     }
 
     // Per SVG spec, feImage with href starts a new primitive output

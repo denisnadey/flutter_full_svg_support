@@ -130,7 +130,11 @@ void main() {
           await tester.pump();
 
           final pixels = await VisualTestUtils.captureWidgetPixels(tester);
-          final redAnalysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+          final redAnalysis = VisualTestUtils.analyzeRedPixels(
+            pixels,
+            800,
+            600,
+          );
 
           // Inline style should override CSS rule - rect should be red
           expect(redAnalysis.pixelCount, greaterThan(1000));
@@ -196,7 +200,11 @@ void main() {
           await tester.pump();
 
           final pixels = await VisualTestUtils.captureWidgetPixels(tester);
-          final redAnalysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+          final redAnalysis = VisualTestUtils.analyzeRedPixels(
+            pixels,
+            800,
+            600,
+          );
 
           // Referenced element's explicit fill="red" should win
           expect(redAnalysis.pixelCount, greaterThan(1000));
@@ -578,11 +586,11 @@ void main() {
     });
 
     group('Presentation Attribute Override Semantics', () {
-      testWidgets(
-        'use fill applies when referenced element inherits fill',
-        (WidgetTester tester) async {
-          // When referenced element doesn't have explicit fill, use's fill applies
-          const svgXml = '''
+      testWidgets('use fill applies when referenced element inherits fill', (
+        WidgetTester tester,
+      ) async {
+        // When referenced element doesn't have explicit fill, use's fill applies
+        const svgXml = '''
             <svg viewBox="0 0 100 100">
               <defs>
                 <g id="g">
@@ -593,33 +601,28 @@ void main() {
             </svg>
           ''';
 
-          await tester.pumpWidget(
-            const MaterialApp(
-              home: Scaffold(
-                body: AnimatedSvgPicture.string(
-                  svgXml,
-                  width: 200,
-                  height: 200,
-                ),
-              ),
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
             ),
-          );
+          ),
+        );
 
-          await tester.pump();
+        await tester.pump();
 
-          final pixels = await VisualTestUtils.captureWidgetPixels(tester);
-          final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
 
-          // Use's fill should apply to rect which has no explicit fill
-          expect(analysis.pixelCount, greaterThan(1000));
-        },
-      );
+        // Use's fill should apply to rect which has no explicit fill
+        expect(analysis.pixelCount, greaterThan(1000));
+      });
 
-      testWidgets(
-        'referenced element explicit fill overrides use fill',
-        (WidgetTester tester) async {
-          // When referenced element has explicit fill, it should win
-          const svgXml = '''
+      testWidgets('referenced element explicit fill overrides use fill', (
+        WidgetTester tester,
+      ) async {
+        // When referenced element has explicit fill, it should win
+        const svgXml = '''
             <svg viewBox="0 0 100 100">
               <defs>
                 <g id="g" fill="red">
@@ -630,27 +633,22 @@ void main() {
             </svg>
           ''';
 
-          await tester.pumpWidget(
-            const MaterialApp(
-              home: Scaffold(
-                body: AnimatedSvgPicture.string(
-                  svgXml,
-                  width: 200,
-                  height: 200,
-                ),
-              ),
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
             ),
-          );
+          ),
+        );
 
-          await tester.pump();
+        await tester.pump();
 
-          final pixels = await VisualTestUtils.captureWidgetPixels(tester);
-          final redAnalysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final redAnalysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
 
-          // Referenced group's fill="red" should override use's fill="blue"
-          expect(redAnalysis.pixelCount, greaterThan(1000));
-        },
-      );
+        // Referenced group's fill="red" should override use's fill="blue"
+        expect(redAnalysis.pixelCount, greaterThan(1000));
+      });
 
       testWidgets('use style attribute overrides use presentation attribute', (
         WidgetTester tester,

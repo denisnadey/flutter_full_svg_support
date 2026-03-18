@@ -81,7 +81,10 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
     }
 
     final style = _resolveTextStyle(node);
-    final text = _extractTextContentWithWhitespaceNormalization(node, parentStyle);
+    final text = _extractTextContentWithWhitespaceNormalization(
+      node,
+      parentStyle,
+    );
     if (text != null && text.isNotEmpty) {
       final consumed = _paintPlainTextWithPositions(
         canvas,
@@ -108,7 +111,8 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
         // Handle empty tspans gracefully - skip if no content and no positioning
         final childText = _extractTextContent(child);
         final hasContent = childText != null && childText.isNotEmpty;
-        final hasChildPosition = _getNumberList(child, 'x').isNotEmpty ||
+        final hasChildPosition =
+            _getNumberList(child, 'x').isNotEmpty ||
             _getNumberList(child, 'y').isNotEmpty ||
             _getNumberList(child, 'dx').isNotEmpty ||
             _getNumberList(child, 'dy').isNotEmpty ||

@@ -131,7 +131,9 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('text with startOffset exceeds path gracefully', (tester) async {
+    testWidgets('text with startOffset exceeds path gracefully', (
+      tester,
+    ) async {
       const svg = '''
         <svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
           <defs>
@@ -438,7 +440,9 @@ void main() {
   });
 
   group('textPath with tspan children', () {
-    testWidgets('textPath with multiple tspans different colors', (tester) async {
+    testWidgets('textPath with multiple tspans different colors', (
+      tester,
+    ) async {
       const svg = '''
         <svg viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg">
           <defs>
@@ -525,7 +529,9 @@ void main() {
   });
 
   group('textPath with textLength', () {
-    testWidgets('textLength stretches text to specified length', (tester) async {
+    testWidgets('textLength stretches text to specified length', (
+      tester,
+    ) async {
       const svg = '''
         <svg viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg">
           <defs>
@@ -575,7 +581,9 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('textLength with lengthAdjust="spacingAndGlyphs"', (tester) async {
+    testWidgets('textLength with lengthAdjust="spacingAndGlyphs"', (
+      tester,
+    ) async {
       const svg = '''
         <svg viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg">
           <defs>

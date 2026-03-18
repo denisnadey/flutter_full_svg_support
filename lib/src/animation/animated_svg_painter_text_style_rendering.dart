@@ -362,7 +362,8 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
     final whiteSpace = _getInheritedString(node, 'white-space')?.toLowerCase();
 
     // Preserve mode: xml:space="preserve" or white-space: pre/pre-wrap
-    final preserveWhitespace = xmlSpace == 'preserve' ||
+    final preserveWhitespace =
+        xmlSpace == 'preserve' ||
         whiteSpace == 'pre' ||
         whiteSpace == 'pre-wrap' ||
         whiteSpace == 'break-spaces';

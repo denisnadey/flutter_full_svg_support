@@ -235,8 +235,10 @@ void main() {
         expect(effectiveColor.a, closeTo(0.3, 0.01));
       });
 
-      test('feDropShadow flood-opacity=0 produces fully transparent shadow', () {
-        final svgString = '''
+      test(
+        'feDropShadow flood-opacity=0 produces fully transparent shadow',
+        () {
+          final svgString = '''
 <svg viewBox="0 0 100 100">
   <defs>
     <filter id="transparentShadowFx">
@@ -247,13 +249,14 @@ void main() {
 </svg>
 ''';
 
-        final document = SvgParser.parse(svgString);
-        final filter = document.filters!.getById('transparentShadowFx');
-        final dropShadow = filter as SvgDropShadowFilter;
+          final document = SvgParser.parse(svgString);
+          final filter = document.filters!.getById('transparentShadowFx');
+          final dropShadow = filter as SvgDropShadowFilter;
 
-        expect(dropShadow.floodOpacity, 0.0);
-        expect(dropShadow.effectiveShadowColor.a, 0.0);
-      });
+          expect(dropShadow.floodOpacity, 0.0);
+          expect(dropShadow.effectiveShadowColor.a, 0.0);
+        },
+      );
     });
 
     // =========================================================================
@@ -318,7 +321,9 @@ void main() {
 ''';
 
         final document = SvgParser.parse(svgString);
-        final passes = document.filters!.resolvePaintPasses('sharpColoredShadowFx');
+        final passes = document.filters!.resolvePaintPasses(
+          'sharpColoredShadowFx',
+        );
 
         expect(passes, hasLength(2));
         expect(passes[0].offset, const ui.Offset(8, 12));
@@ -388,7 +393,9 @@ void main() {
 ''';
 
         final document = SvgParser.parse(svgString);
-        final passes = document.filters!.resolvePaintPasses('multiShadowOrderFx');
+        final passes = document.filters!.resolvePaintPasses(
+          'multiShadowOrderFx',
+        );
 
         // Each feDropShadow doubles passes (shadow + source)
         // First shadow: 2 passes, second processes those 2: 4 passes
@@ -601,7 +608,9 @@ void main() {
 ''';
 
         final document = SvgParser.parse(svgString);
-        final passes = document.filters!.resolvePaintPasses('unresolvedInputFx');
+        final passes = document.filters!.resolvePaintPasses(
+          'unresolvedInputFx',
+        );
 
         // Unresolved input should produce identity fallback
         expect(passes, hasLength(1));
@@ -626,7 +635,9 @@ void main() {
 ''';
 
         final document = SvgParser.parse(svgString);
-        final passes = document.filters!.resolvePaintPasses('shadowCompositeFx');
+        final passes = document.filters!.resolvePaintPasses(
+          'shadowCompositeFx',
+        );
 
         // Composite uses shadow (2 passes) + SourceGraphic (1 pass)
         expect(passes.length, greaterThanOrEqualTo(2));

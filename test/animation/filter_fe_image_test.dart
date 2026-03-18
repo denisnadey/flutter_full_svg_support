@@ -370,7 +370,9 @@ void main() {
 ''';
 
         final document = SvgParser.parse(svgString);
-        final passes = document.filters!.resolvePaintPasses('defaultSubregionFx');
+        final passes = document.filters!.resolvePaintPasses(
+          'defaultSubregionFx',
+        );
 
         expect(passes, hasLength(1));
         final feImagePass = passes.single as SvgFeImagePaintPass;
