@@ -77,8 +77,10 @@ extension _AnimatedSvgPictureStateLifecycleExtension
             _markNeedsRepaint();
           }
 
-          // Создаём AnimationController только если autoPlay
-          if (widget.autoPlay) {
+          // Создаём AnimationController если autoPlay или есть event-based анимации
+          // Event-based анимации требуют тикера для обновления кадров после активации
+          final hasEventAnimations = _timeline!.hasEventBasedAnimations();
+          if (widget.autoPlay || hasEventAnimations) {
             final duration = _timeline!.totalDuration;
 
             _controller = AnimationController(vsync: this, duration: duration);
@@ -95,18 +97,32 @@ extension _AnimatedSvgPictureStateLifecycleExtension
             _controller!.addListener(_onAnimationTick);
             _trace(
               category: 'controller',
-              message: 'Animation controller created',
+              message: widget.autoPlay
+                  ? 'Animation controller created'
+                  : 'Animation controller created for event-driven mode',
               data: <String, Object?>{
                 'durationMs': duration.inMilliseconds,
                 'initialValue': _controller!.value,
                 'isReversed': _isReversed,
+                'hasEventAnimations': hasEventAnimations,
               },
             );
-            _startPlayback();
+
+            if (widget.autoPlay) {
+              _startPlayback();
+            } else {
+              // Для event-driven режима запускаем контроллер в repeat mode
+              // чтобы тикер работал и обновлял кадры после событий
+              _controller!.repeat();
+              _trace(
+                category: 'controller',
+                message: 'Event-driven ticker started (repeat mode)',
+              );
+            }
           } else {
             _trace(
               category: 'controller',
-              message: 'Auto play disabled, controller not started',
+              message: 'Auto play disabled and no event-based animations',
             );
           }
         } else {

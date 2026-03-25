@@ -208,6 +208,12 @@ class SvgTimeline {
     return animations.any((anim) => anim.isActive);
   }
 
+  /// Проверить, есть ли анимации, ожидающие событий (click, mouseover, etc.)
+  /// Используется для определения необходимости тикера при autoPlay=false
+  bool hasEventBasedAnimations() {
+    return _eventListeners.isNotEmpty;
+  }
+
   /// Вычислить общую длительность всех анимаций
   static Duration _computeTotalDuration(List<SmilAnimation> animations) {
     if (animations.isEmpty) {
