@@ -71,7 +71,8 @@ SmilAnimation? _createSmilAnimation({
     'alignment-baseline',
   };
 
-  final isDiscreteAttribute = discreteAttributes.contains(attributeName) ||
+  final isDiscreteAttribute =
+      discreteAttributes.contains(attributeName) ||
       attributeType == SvgAttributeType.string ||
       attributeType == SvgAttributeType.url;
 

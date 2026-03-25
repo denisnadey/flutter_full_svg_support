@@ -59,15 +59,24 @@ void main() {
 
       // At t=0, visibility should be 'visible' (first value)
       timeline.seek(Duration.zero);
-      expect(rect.getAttributeValue('visibility')?.toString(), equals('visible'));
+      expect(
+        rect.getAttributeValue('visibility')?.toString(),
+        equals('visible'),
+      );
 
       // At t=1.2s, visibility should be 'hidden' (second value)
       timeline.seek(const Duration(milliseconds: 1200));
-      expect(rect.getAttributeValue('visibility')?.toString(), equals('hidden'));
+      expect(
+        rect.getAttributeValue('visibility')?.toString(),
+        equals('hidden'),
+      );
 
       // At t=2.5s, visibility should be 'visible' (third value)
       timeline.seek(const Duration(milliseconds: 2500));
-      expect(rect.getAttributeValue('visibility')?.toString(), equals('visible'));
+      expect(
+        rect.getAttributeValue('visibility')?.toString(),
+        equals('visible'),
+      );
     });
 
     test('visibility animation with freeze preserves final value', () {
@@ -90,11 +99,17 @@ void main() {
 
       // During animation (t=0.5s)
       timeline.seek(const Duration(milliseconds: 500));
-      expect(rect.getAttributeValue('visibility')?.toString(), equals('hidden'));
+      expect(
+        rect.getAttributeValue('visibility')?.toString(),
+        equals('hidden'),
+      );
 
       // After animation ends (t=2s), freeze keeps the value
       timeline.seek(const Duration(seconds: 2));
-      expect(rect.getAttributeValue('visibility')?.toString(), equals('hidden'));
+      expect(
+        rect.getAttributeValue('visibility')?.toString(),
+        equals('hidden'),
+      );
     });
 
     test('visibility animation resets after remove fill mode', () {
@@ -117,11 +132,17 @@ void main() {
 
       // During animation (t=0.5s)
       timeline.seek(const Duration(milliseconds: 500));
-      expect(rect.getAttributeValue('visibility')?.toString(), equals('hidden'));
+      expect(
+        rect.getAttributeValue('visibility')?.toString(),
+        equals('hidden'),
+      );
 
       // After animation ends (t=2s), remove restores base value
       timeline.seek(const Duration(seconds: 2));
-      expect(rect.getAttributeValue('visibility')?.toString(), equals('visible'));
+      expect(
+        rect.getAttributeValue('visibility')?.toString(),
+        equals('visible'),
+      );
     });
   });
 

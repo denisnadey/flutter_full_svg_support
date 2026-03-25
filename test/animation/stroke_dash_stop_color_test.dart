@@ -269,8 +269,10 @@ void main() {
   // CSS compound transform handling (no decomposition - CSS uses REPLACE semantics)
   // ─────────────────────────────────────────────────────────────────────────
   group('CSS compound transform (no decomposition)', () {
-    test('compound transform produces single SMIL animation with full string', () {
-      const svgString = '''
+    test(
+      'compound transform produces single SMIL animation with full string',
+      () {
+        const svgString = '''
 <svg viewBox="0 0 100 100">
   <style>
     @keyframes compound {
@@ -281,27 +283,28 @@ void main() {
   <g style="animation: compound 1s linear forwards;"/>
 </svg>
 ''';
-      final document = SvgParser.parse(svgString);
-      final animations = SmilParser.parseAnimations(document);
+        final document = SvgParser.parse(svgString);
+        final animations = SmilParser.parseAnimations(document);
 
-      final transformAnims = animations
-          .where((a) => a.attributeName == 'transform')
-          .toList();
+        final transformAnims = animations
+            .where((a) => a.attributeName == 'transform')
+            .toList();
 
-      // Should have exactly ONE transform animation (not decomposed)
-      expect(
-        transformAnims.length,
-        equals(1),
-        reason: 'Expected single transform animation, not decomposed',
-      );
+        // Should have exactly ONE transform animation (not decomposed)
+        expect(
+          transformAnims.length,
+          equals(1),
+          reason: 'Expected single transform animation, not decomposed',
+        );
 
-      // Should use additive=replace (CSS semantics)
-      expect(
-        transformAnims.first.additive,
-        equals(SmilAdditiveMode.replace),
-        reason: 'CSS transforms should use replace mode',
-      );
-    });
+        // Should use additive=replace (CSS semantics)
+        expect(
+          transformAnims.first.additive,
+          equals(SmilAdditiveMode.replace),
+          reason: 'CSS transforms should use replace mode',
+        );
+      },
+    );
 
     test('compound transform: translate+rotate yields single animation', () {
       const svgString = '''
@@ -365,7 +368,8 @@ void main() {
       expect(
         transformAnims.length,
         equals(1),
-        reason: 'Expected single transform animation from SVGator-style keyframe',
+        reason:
+            'Expected single transform animation from SVGator-style keyframe',
       );
 
       final anim = transformAnims.first;
