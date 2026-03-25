@@ -180,7 +180,7 @@ SmilAnimation? _parseAnimateMotion(
       id: id,
       type: SmilAnimationType.animateMotion,
       targetNode: targetNode,
-      attributeName: 'motion', // Специальное имя для motion
+      attributeName: 'transform', // Use 'transform' so renderer picks up the value
       attributeType: SvgAttributeType.transform,
       from: pathData, // Path data хранится в from
       to: rotateMode, // Rotate mode хранится в to

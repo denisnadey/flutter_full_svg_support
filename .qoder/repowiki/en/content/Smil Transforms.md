@@ -16,8 +16,15 @@
 - [SVGGraphicsElement.cpp](file://blink-b87d44f-Source-core-svg/SVGGraphicsElement.cpp)
 - [SVGTransform.cpp](file://blink-b87d44f-Source-core-svg/SVGTransform.cpp)
 - [SVGTransformable.cpp](file://blink-b87d44f-Source-core-svg/SVGTransformable.cpp)
+- [SVGNumberList.h](file://blink-b87d44f-Source-core-svg/SVGNumberList.h)
+- [SVGNumberList.cpp](file://blink-b87d44f-Source-core-svg/SVGNumberList.cpp)
+- [SVGParserUtilities.h](file://blink-b87d44f-Source-core-svg/SVGParserUtilities.h)
+- [SVGParserUtilities.cpp](file://blink-b87d44f-Source-core-svg/SVGParserUtilities.cpp)
+- [svg_transform.dart](file://lib/src/animation/svg_transform.dart)
 - [css_to_smil_converter_transforms_values.dart](file://lib/src/animation/css_to_smil_converter_transforms_values.dart)
 - [animated_svg_painter_transform.dart](file://lib/src/animation/animated_svg_painter_transform.dart)
+- [text_matrix_transform_test.dart](file://test/animation/text_matrix_transform_test.dart)
+- [css_transform_edge_cases_test.dart](file://test/animation/css_transform_edge_cases_test.dart)
 - [css_transform_calc_test.dart](file://test/animation/css_transform_calc_test.dart)
 - [stroke_dash_stop_color_test.dart](file://test/animation/stroke_dash_stop_color_test.dart)
 - [CURRENT_STATUS.md](file://CURRENT_STATUS.md)
@@ -25,33 +32,36 @@
 
 ## Update Summary
 **Changes Made**
-- Added comprehensive CSS transform processing capabilities section
+- Enhanced transform parsing with sophisticated tokenizer for SVG number lists that correctly handles edge cases like adjacent negative numbers and scientific notation
 - Updated transform-origin parsing with enhanced keyword and unit support
 - Added transform reference box calculations with transform-box property support
 - Enhanced CSS transform normalization with calc() expression support
 - Updated SMIL transform pipeline to handle CSS transform precedence
 - Added 3D transform support with advanced parsing capabilities
+- Improved number parsing with better scientific notation and decimal point handling
 
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
-5. [Advanced CSS Transform Processing](#advanced-css-transform-processing)
-6. [Detailed Component Analysis](#detailed-component-analysis)
-7. [Dependency Analysis](#dependency-analysis)
-8. [Performance Considerations](#performance-considerations)
-9. [Troubleshooting Guide](#troubleshooting-guide)
-10. [Conclusion](#conclusion)
+5. [Enhanced Transform Parsing System](#enhanced-transform-parsing-system)
+6. [Advanced CSS Transform Processing](#advanced-css-transform-processing)
+7. [Detailed Component Analysis](#detailed-component-analysis)
+8. [Dependency Analysis](#dependency-analysis)
+9. [Performance Considerations](#performance-considerations)
+10. [Troubleshooting Guide](#troubleshooting-guide)
+11. [Conclusion](#conclusion)
 
 ## Introduction
-This document explains the SMIL (Synchronized Multimedia Integration Language) transforms implementation in the Blink-based SVG engine, with enhanced CSS transform processing capabilities. The system now supports advanced CSS transform processing with precedence rules where CSS transforms take precedence over SVG transform attributes, comprehensive transform-origin parsing supporting keywords, percentages, absolute values, and three-value syntax for 3D transforms, and sophisticated transform reference box calculations based on transform-box property values.
+This document explains the SMIL (Synchronized Multimedia Integration Language) transforms implementation in the Blink-based SVG engine, with enhanced CSS transform processing capabilities. The system now supports advanced CSS transform processing with precedence rules where CSS transforms take precedence over SVG transform attributes, comprehensive transform-origin parsing supporting keywords, percentages, absolute values, and three-value syntax for 3D transforms, and sophisticated transform reference box calculations based on transform-box property values. **Updated**: The system now includes enhanced transform parsing with a sophisticated tokenizer that correctly handles edge cases like adjacent negative numbers (e.g., "0-1" meaning "0" followed by "-1") and scientific notation (e.g., "1e-5").
 
 ## Project Structure
-The SMIL transforms feature spans several modules with enhanced CSS integration:
+The SMIL transforms feature spans several modules with enhanced CSS integration and improved parsing capabilities:
 - Animation timing and scheduling: SMILTime, SMILTimeContainer, and SVGSMILElement
 - Transform-specific animation: SVGAnimateTransformElement and SVGAnimatedTransformList
 - Property-level transform list handling: SVGTransformListPropertyTearOff
+- **Enhanced number parsing**: Sophisticated tokenizer for SVG number lists with edge case handling
 - CSS transform processing: Advanced CSS transform normalization and parsing
 - Transform origin and reference box calculations: Enhanced transform-origin support
 
@@ -67,26 +77,33 @@ D["SVGAnimateTransformElement<br/>SVGAnimateTransformElement.cpp"]
 E["SVGAnimatedTransformList<br/>SVGAnimatedTransformList.cpp"]
 F["SVGTransformListPropertyTearOff<br/>SVGTransformListPropertyTearOff.h"]
 end
+subgraph "Enhanced Parsing"
+G["SVGNumberList<br/>SVGNumberList.cpp"]
+H["SVGParserUtilities<br/>SVGParserUtilities.cpp"]
+I["SVG Transform Tokenizer<br/>svg_transform.dart"]
+end
 subgraph "CSS Transform Processing"
-G["CSS Transform Values<br/>css_to_smil_converter_transforms_values.dart"]
-H["Transform Origin Parser<br/>animated_svg_painter_transform.dart"]
-I["CSS Transform Decomposer<br/>css_to_smil_converter.dart"]
+J["CSS Transform Values<br/>css_to_smil_converter_transforms_values.dart"]
+K["Transform Origin Parser<br/>animated_svg_painter_transform.dart"]
+L["CSS Transform Decomposer<br/>css_to_smil_converter.dart"]
 end
 subgraph "SVG Integration"
-J["SVGGraphicsElement<br/>SVGGraphicsElement.cpp"]
-K["SVGTransform<br/>SVGTransform.cpp"]
-L["SVGTransformable<br/>SVGTransformable.cpp"]
+M["SVGGraphicsElement<br/>SVGGraphicsElement.cpp"]
+N["SVGTransform<br/>SVGTransform.cpp"]
+O["SVGTransformable<br/>SVGTransformable.cpp"]
 end
 A --> B
 B --> C
 C --> D
 D --> E
 E --> F
-G --> I
-H --> J
-I --> D
-J --> K
-K --> L
+G --> H
+H --> I
+I --> J
+K --> M
+L --> D
+M --> N
+N --> O
 ```
 
 **Diagram sources**
@@ -96,6 +113,9 @@ K --> L
 - [SVGAnimateTransformElement.cpp:1-80](file://blink-b87d44f-Source-core-svg/SVGAnimateTransformElement.cpp#L1-L80)
 - [SVGAnimatedTransformList.cpp:1-153](file://blink-b87d44f-Source-core-svg/SVGAnimatedTransformList.cpp#L1-L153)
 - [SVGTransformListPropertyTearOff.h:1-83](file://blink-b87d44f-Source-core-svg/properties/SVGTransformListPropertyTearOff.h#L1-L83)
+- [SVGNumberList.cpp:1-73](file://blink-b87d44f-Source-core-svg/SVGNumberList.cpp#L1-L73)
+- [SVGParserUtilities.cpp:1-200](file://blink-b87d44f-Source-core-svg/SVGParserUtilities.cpp#L1-L200)
+- [svg_transform.dart:142-214](file://lib/src/animation/svg_transform.dart#L142-L214)
 - [css_to_smil_converter_transforms_values.dart:1-389](file://lib/src/animation/css_to_smil_converter_transforms_values.dart#L1-L389)
 - [animated_svg_painter_transform.dart:370-578](file://lib/src/animation/animated_svg_painter_transform.dart#L370-L578)
 - [SVGGraphicsElement.cpp:68-101](file://blink-b87d44f-Source-core-svg/SVGGraphicsElement.cpp#L68-L101)
@@ -114,6 +134,10 @@ K --> L
 - [SVGAnimatedTransformList.h:1-62](file://blink-b87d44f-Source-core-svg/SVGAnimatedTransformList.h#L1-L62)
 - [SVGAnimatedTransformList.cpp:1-153](file://blink-b87d44f-Source-core-svg/SVGAnimatedTransformList.cpp#L1-L153)
 - [SVGTransformListPropertyTearOff.h:1-83](file://blink-b87d44f-Source-core-svg/properties/SVGTransformListPropertyTearOff.h#L1-L83)
+- [SVGNumberList.h:1-62](file://blink-b87d44f-Source-core-svg/SVGNumberList.h#L1-L62)
+- [SVGNumberList.cpp:1-73](file://blink-b87d44f-Source-core-svg/SVGNumberList.cpp#L1-L73)
+- [SVGParserUtilities.h:1-92](file://blink-b87d44f-Source-core-svg/SVGParserUtilities.h#L1-L92)
+- [SVGParserUtilities.cpp:1-200](file://blink-b87d44f-Source-core-svg/SVGParserUtilities.cpp#L1-L200)
 
 ## Core Components
 - SMILTime: Encapsulates time values with special semantics for unresolved, finite, and indefinite durations.
@@ -121,6 +145,7 @@ K --> L
 - SVGSMILElement: Base class for SMIL animation elements implementing timing parsing, begin/end conditions, interval resolution, and progress application.
 - SVGAnimateTransformElement: Specialized animation element for transform-type animations, validating target compatibility and parsing transform type.
 - SVGAnimatedTransformListAnimator: Animator responsible for computing intermediate transform lists, additive accumulation, and distance calculation for paced interpolation.
+- **Enhanced Number Parser**: Sophisticated tokenizer that handles adjacent negative numbers, scientific notation, and decimal point edge cases.
 - CSS Transform Processor: Advanced CSS transform normalization with calc() expression support and comprehensive unit parsing.
 - Transform Origin Parser: Enhanced transform-origin parsing supporting keywords, percentages, absolute values, and three-value syntax for 3D transforms.
 - Transform Reference Box Calculator: Calculates reference boxes based on transform-box property values with view-box support.
@@ -136,11 +161,16 @@ K --> L
 - [SVGAnimateTransformElement.cpp:45-80](file://blink-b87d44f-Source-core-svg/SVGAnimateTransformElement.cpp#L45-L80)
 - [SVGAnimatedTransformList.h:39-57](file://blink-b87d44f-Source-core-svg/SVGAnimatedTransformList.h#L39-L57)
 - [SVGAnimatedTransformList.cpp:35-153](file://blink-b87d44f-Source-core-svg/SVGAnimatedTransformList.cpp#L35-L153)
+- [SVGNumberList.h:30-49](file://blink-b87d44f-Source-core-svg/SVGNumberList.h#L30-L49)
+- [SVGNumberList.cpp:29-55](file://blink-b87d44f-Source-core-svg/SVGNumberList.cpp#L29-L55)
+- [SVGParserUtilities.h:37-87](file://blink-b87d44f-Source-core-svg/SVGParserUtilities.h#L37-L87)
+- [SVGParserUtilities.cpp:44-142](file://blink-b87d44f-Source-core-svg/SVGParserUtilities.cpp#L44-L142)
+- [svg_transform.dart:142-214](file://lib/src/animation/svg_transform.dart#L142-L214)
 - [css_to_smil_converter_transforms_values.dart:64-168](file://lib/src/animation/css_to_smil_converter_transforms_values.dart#L64-L168)
 - [animated_svg_painter_transform.dart:373-435](file://lib/src/animation/animated_svg_painter_transform.dart#L373-L435)
 
 ## Architecture Overview
-The SMIL transforms pipeline integrates timing, scheduling, transform-specific animation, and advanced CSS transform processing:
+The SMIL transforms pipeline integrates timing, scheduling, transform-specific animation, enhanced parsing capabilities, and advanced CSS transform processing:
 
 ```mermaid
 sequenceDiagram
@@ -167,6 +197,37 @@ Container->>Container : startTimer(nextFireTime)
 - [SVGSMILElement.cpp:109-800](file://blink-b87d44f-Source-core-svg/animation/SVGSMILElement.cpp#L109-L800)
 - [SVGAnimatedTransformList.cpp:95-153](file://blink-b87d44f-Source-core-svg/SVGAnimatedTransformList.cpp#L95-L153)
 - [css_to_smil_converter_transforms_values.dart:64-168](file://lib/src/animation/css_to_smil_converter_transforms_values.dart#L64-L168)
+
+## Enhanced Transform Parsing System
+
+### Sophisticated Number Tokenizer
+**Updated**: The system now includes a sophisticated tokenizer that resolves long-standing issues with transform parsing edge cases:
+
+- **Adjacent Negative Numbers**: Correctly handles cases like "0-1" (meaning "0" followed by "-1") and "10.5-3.2" (meaning "10.5" followed by "-3.2")
+- **Scientific Notation**: Properly parses exponential notation such as "1e-5" and "2e+3" without treating the exponent sign as a separator
+- **Decimal Point Edge Cases**: Handles cases like ".5.3" (meaning "0.5" followed by "0.3") and "1.5.3" (meaning "1.5" followed by "0.3")
+- **Sign Character Handling**: Distinguishes between number signs and exponent signs (e.g., "1e-5" vs "-1")
+
+### Enhanced Number Parsing
+The enhanced parsing system includes:
+
+- **Exponent Sign Detection**: Checks if a sign character follows an 'e' or 'E' to determine if it's part of scientific notation
+- **Buffer Management**: Uses a sophisticated buffering system to collect tokens while handling various separators
+- **Validation**: Ensures proper number format validation and range checking
+
+### Transform Value Processing
+Transform values are processed through a comprehensive pipeline:
+
+- **Tokenization**: Raw transform strings are tokenized using the enhanced tokenizer
+- **Unit Parsing**: Values with units (deg, rad, px, em, etc.) are properly parsed and converted
+- **Scientific Notation Support**: Exponential notation is correctly interpreted
+- **Edge Case Resolution**: Complex number sequences are handled with precision
+
+**Section sources**
+- [svg_transform.dart:142-214](file://lib/src/animation/svg_transform.dart#L142-L214)
+- [svg_transform.dart:216-269](file://lib/src/animation/svg_transform.dart#L216-L269)
+- [text_matrix_transform_test.dart:6-59](file://test/animation/text_matrix_transform_test.dart#L6-L59)
+- [SVGParserUtilities.cpp:44-142](file://blink-b87d44f-Source-core-svg/SVGParserUtilities.cpp#L44-L142)
 
 ## Advanced CSS Transform Processing
 
@@ -354,6 +415,47 @@ I --> J
 - [SVGAnimatedTransformList.h:39-57](file://blink-b87d44f-Source-core-svg/SVGAnimatedTransformList.h#L39-L57)
 - [SVGAnimatedTransformList.cpp:35-153](file://blink-b87d44f-Source-core-svg/SVGAnimatedTransformList.cpp#L35-L153)
 
+### Enhanced Number Parsing System
+**Updated**: The system now includes sophisticated number parsing capabilities:
+
+- **SVGNumberList**: Handles parsing of SVG number lists with proper validation and range checking.
+- **SVGParserUtilities**: Provides generic number parsing with support for scientific notation and decimal points.
+- **Transform Tokenizer**: Specialized tokenizer for transform values that handles edge cases.
+
+```mermaid
+classDiagram
+class SVGNumberList {
++parse(String)
++toFloatVector() Vector<float>
++valueAsString() String
+}
+class SVGParserUtilities {
++parseNumber(ptr, end, number, skip) bool
++parseSVGNumber(begin, length, number) bool
++genericParseNumber(ptr, end, number, skip) bool
+}
+class TransformTokenizer {
++_tokenizeSvgNumbers(input) List<String>
++_parseValueWithUnit(s) double
+}
+SVGNumberList --> SVGParserUtilities : "uses"
+TransformTokenizer --> SVGNumberList : "processes"
+```
+
+**Diagram sources**
+- [SVGNumberList.h:30-49](file://blink-b87d44f-Source-core-svg/SVGNumberList.h#L30-L49)
+- [SVGNumberList.cpp:29-55](file://blink-b87d44f-Source-core-svg/SVGNumberList.cpp#L29-L55)
+- [SVGParserUtilities.h:37-87](file://blink-b87d44f-Source-core-svg/SVGParserUtilities.h#L37-L87)
+- [SVGParserUtilities.cpp:44-142](file://blink-b87d44f-Source-core-svg/SVGParserUtilities.cpp#L44-L142)
+- [svg_transform.dart:142-214](file://lib/src/animation/svg_transform.dart#L142-L214)
+
+**Section sources**
+- [SVGNumberList.h:30-49](file://blink-b87d44f-Source-core-svg/SVGNumberList.h#L30-L49)
+- [SVGNumberList.cpp:29-55](file://blink-b87d44f-Source-core-svg/SVGNumberList.cpp#L29-L55)
+- [SVGParserUtilities.h:37-87](file://blink-b87d44f-Source-core-svg/SVGParserUtilities.h#L37-L87)
+- [SVGParserUtilities.cpp:44-142](file://blink-b87d44f-Source-core-svg/SVGParserUtilities.cpp#L44-L142)
+- [svg_transform.dart:142-214](file://lib/src/animation/svg_transform.dart#L142-L214)
+
 ### Transform List Property Tear-Off
 - Purpose: Exposes transform list manipulation to bindings, including consolidating transforms and creating transforms from matrices.
 - Notable methods: createSVGTransformFromMatrix, consolidate.
@@ -378,6 +480,7 @@ I --> J
 - SVGSMILElement depends on SMILTime and SMILTimeContainer for timing and scheduling.
 - SVGAnimateTransformElement depends on SVGAnimateElement and SVGTransformable for transform type validation.
 - SVGAnimatedTransformListAnimator depends on SVGTransformDistance and SVGAnimateTransformElement for transform parsing and interpolation.
+- **Enhanced Number Parser**: SVGNumberList depends on SVGParserUtilities for robust number parsing, while the transform tokenizer depends on both for edge case handling.
 - SMILTimeContainer groups animations by element and attribute, ensuring atomic application of results.
 - CSS Transform Processor integrates with SMIL pipeline for advanced CSS transform support.
 - Transform Origin Parser provides enhanced transform-origin calculations for 3D transforms.
@@ -389,7 +492,9 @@ SMILTimeContainer --> SVGSMILElement["SVGSMILElement"]
 SVGSMILElement --> SVGAnimateTransformElement["SVGAnimateTransformElement"]
 SVGAnimateTransformElement --> SVGAnimatedTransformList["SVGAnimatedTransformListAnimator"]
 SVGAnimatedTransformList --> SVGTransformDistance["SVGTransformDistance"]
-CSSProcessor["CSS Transform Processor"] --> SVGAnimateTransformElement
+SVGNumberList["SVGNumberList"] --> SVGParserUtilities["SVGParserUtilities"]
+SVGParserUtilities --> TransformTokenizer["Transform Tokenizer"]
+TransformTokenizer --> CSSProcessor["CSS Transform Processor"]
 TransformOrigin["Transform Origin Parser"] --> SVGGraphicsElement["SVGGraphicsElement"]
 SVGGraphicsElement --> SVGTransform["SVGTransform"]
 SVGTransform --> SVGTransformable["SVGTransformable"]
@@ -401,6 +506,9 @@ SVGTransform --> SVGTransformable["SVGTransformable"]
 - [SVGSMILElement.cpp:109-800](file://blink-b87d44f-Source-core-svg/animation/SVGSMILElement.cpp#L109-L800)
 - [SVGAnimateTransformElement.cpp:45-80](file://blink-b87d44f-Source-core-svg/SVGAnimateTransformElement.cpp#L45-L80)
 - [SVGAnimatedTransformList.cpp:35-153](file://blink-b87d44f-Source-core-svg/SVGAnimatedTransformList.cpp#L35-L153)
+- [SVGNumberList.cpp:29-55](file://blink-b87d44f-Source-core-svg/SVGNumberList.cpp#L29-L55)
+- [SVGParserUtilities.cpp:44-142](file://blink-b87d44f-Source-core-svg/SVGParserUtilities.cpp#L44-L142)
+- [svg_transform.dart:142-214](file://lib/src/animation/svg_transform.dart#L142-L214)
 - [css_to_smil_converter_transforms_values.dart:64-168](file://lib/src/animation/css_to_smil_converter_transforms_values.dart#L64-L168)
 - [animated_svg_painter_transform.dart:373-435](file://lib/src/animation/animated_svg_painter_transform.dart#L373-L435)
 - [SVGGraphicsElement.cpp:68-101](file://blink-b87d44f-Source-core-svg/SVGGraphicsElement.cpp#L68-L101)
@@ -409,6 +517,9 @@ SVGTransform --> SVGTransformable["SVGTransformable"]
 - [SVGSMILElement.cpp:109-800](file://blink-b87d44f-Source-core-svg/animation/SVGSMILElement.cpp#L109-L800)
 - [SVGAnimateTransformElement.cpp:45-80](file://blink-b87d44f-Source-core-svg/SVGAnimateTransformElement.cpp#L45-L80)
 - [SVGAnimatedTransformList.cpp:35-153](file://blink-b87d44f-Source-core-svg/SVGAnimatedTransformList.cpp#L35-L153)
+- [SVGNumberList.cpp:29-55](file://blink-b87d44f-Source-core-svg/SVGNumberList.cpp#L29-L55)
+- [SVGParserUtilities.cpp:44-142](file://blink-b87d44f-Source-core-svg/SVGParserUtilities.cpp#L44-L142)
+- [svg_transform.dart:142-214](file://lib/src/animation/svg_transform.dart#L142-L214)
 - [css_to_smil_converter_transforms_values.dart:64-168](file://lib/src/animation/css_to_smil_converter_transforms_values.dart#L64-L168)
 - [animated_svg_painter_transform.dart:373-435](file://lib/src/animation/animated_svg_painter_transform.dart#L373-L435)
 
@@ -417,6 +528,7 @@ SVGTransform --> SVGTransformable["SVGTransformable"]
 - Batch application: Results are accumulated to a single results element per element/attribute pair before applying, reducing redundant writes.
 - Timers: The scheduler uses a minimum frame delay to avoid excessive wake-ups while maintaining smooth animation playback.
 - Transform distance: Distance calculations for paced interpolation rely on SVGTransformDistance, which simplifies complex transform spaces into scalar-like metrics.
+- **Enhanced Parsing Efficiency**: The sophisticated tokenizer reduces parsing overhead by efficiently handling edge cases in a single pass.
 - CSS transform optimization: Advanced CSS transform normalization reduces parsing overhead and improves performance for complex transform expressions.
 - Transform origin caching: Transform reference box calculations are cached to avoid repeated expensive computations.
 
@@ -429,13 +541,16 @@ Common issues and diagnostics:
 - CSS transform precedence: CSS transform properties now take precedence over SVG transform attributes. Verify CSS specificity and cascade order.
 - Transform-origin parsing errors: Ensure transform-origin values use supported keywords, units, or percentages. Check for proper keyword swapping ("top left" vs "left top").
 - ViewBox reference issues: For transform-box: view-box, ensure ancestor elements have valid viewBox attributes or use default object bounding box.
+- **Enhanced Parsing Issues**: If transform parsing fails with adjacent negative numbers or scientific notation, verify the input format matches expected patterns like "0-1" or "1e-5".
 
 **Section sources**
 - [SVGSMILElement.cpp:456-800](file://blink-b87d44f-Source-core-svg/animation/SVGSMILElement.cpp#L456-L800)
 - [SVGAnimateTransformElement.cpp:62-80](file://blink-b87d44f-Source-core-svg/SVGAnimateTransformElement.cpp#L62-L80)
 - [SVGAnimatedTransformList.cpp:95-153](file://blink-b87d44f-Source-core-svg/SVGAnimatedTransformList.cpp#L95-L153)
+- [svg_transform.dart:142-214](file://lib/src/animation/svg_transform.dart#L142-L214)
+- [text_matrix_transform_test.dart:6-59](file://test/animation/text_matrix_transform_test.dart#L6-L59)
 - [css_to_smil_converter_transforms_values.dart:213-269](file://lib/src/animation/css_to_smil_converter_transforms_values.dart#L213-L269)
 - [animated_svg_painter_transform.dart:373-435](file://lib/src/animation/animated_svg_painter_transform.dart#L373-L435)
 
 ## Conclusion
-The SMIL transforms implementation now combines a robust timing model with advanced CSS transform processing capabilities. The enhanced system supports CSS transform precedence over SVG transform attributes, comprehensive transform-origin parsing with keywords and units, transform reference box calculations based on transform-box property values, and sophisticated CSS transform normalization with calc() expression support. SMILTime and SMILTimeContainer provide precise scheduling and progression, while SVGAnimateTransformElement and SVGAnimatedTransformListAnimator deliver accurate transform interpolation and accumulation. The CSS transform processor and enhanced transform origin parser enable high-fidelity CSS-based transform animations in SVG with full compatibility for modern web standards.
+The SMIL transforms implementation now combines a robust timing model with enhanced CSS transform processing capabilities and sophisticated number parsing. The enhanced system supports CSS transform precedence over SVG transform attributes, comprehensive transform-origin parsing with keywords and units, transform reference box calculations based on transform-box property values, and **sophisticated transform parsing with a tokenizer that correctly handles edge cases like adjacent negative numbers and scientific notation**. SMILTime and SMILTimeContainer provide precise scheduling and progression, while SVGAnimateTransformElement and SVGAnimatedTransformListAnimator deliver accurate transform interpolation and accumulation. The **enhanced number parsing system resolves long-standing issues with transform parsing**, and the CSS transform processor and enhanced transform origin parser enable high-fidelity CSS-based transform animations in SVG with full compatibility for modern web standards.

@@ -30,21 +30,25 @@
 - [lib/src/animation/animated_svg_painter_markers.dart](file://lib/src/animation/animated_svg_painter_markers.dart)
 - [lib/src/animation/svg_filters_primitives.dart](file://lib/src/animation/svg_filters_primitives.dart)
 - [lib/src/animation/svg_filters_registry_pipeline_primitives.dart](file://lib/src/animation/svg_filters_registry_pipeline_primitives.dart)
+- [lib/src/animation/animated_svg_painter_shapes.dart](file://lib/src/animation/animated_svg_painter_shapes.dart)
+- [lib/src/animation/animated_svg_painter_shapes_rect.dart](file://lib/src/animation/animated_svg_painter_shapes_rect.dart)
 - [test/animation/paint_order_test.dart](file://test/animation/paint_order_test.dart)
 - [test/animation/marker_test.dart](file://test/animation/marker_test.dart)
 - [test/animation/pattern_test.dart](file://test/animation/pattern_test.dart)
+- [test/animation/shape_edge_cases_test.dart](file://test/animation/shape_edge_cases_test.dart)
+- [blink-b87d44f-Source-core-svg/SVGRectElement.cpp](file://blink-b87d44f-Source-core-svg/SVGRectElement.cpp)
+- [blink-b87d44f-Source-core-svg/SVGEllipseElement.cpp](file://blink-b87d44f-Source-core-svg/SVGEllipseElement.cpp)
+- [blink-b87d44f-Source-core-svg/SVGLength.h](file://blink-b87d44f-Source-core-svg/SVGLength.h)
 </cite>
 
 ## Update Summary
 **Changes Made**
-- Enhanced text styling system documentation with comprehensive coverage of 53 CSS properties across specialized modules
-- Added detailed documentation for vertical writing modes support (horizontal-tb, vertical-rl, vertical-lr)
-- Documented XML whitespace normalization improvements for multi-tspan text flow
-- Enhanced text path rendering documentation with closed path wrapping behavior
-- Added comprehensive filter primitive capabilities documentation
-- Updated paint order system documentation with new paint server features
-- Enhanced marker support documentation with improved orientation handling
-- Added pattern implementation documentation with advanced tiling and caching
+- Enhanced SVG shape rendering accuracy with proper SVG specification compliance for rect and ellipse shapes
+- Added comprehensive negative value validation and proper clamping to half-width/height for rect shapes
+- Implemented correct inheritance behavior for rect rx/ry attributes (when only one is specified)
+- Updated ellipse shape rendering with negative value validation and zero radius handling
+- Added extensive edge case testing for shape rendering compliance
+- Enhanced shape rendering pipeline with SVG specification-compliant validation logic
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -52,28 +56,24 @@
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
 5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Enhanced Text Styling System](#enhanced-text-styling-system)
-7. [Vertical Writing Modes Support](#vertical-writing-modes-support)
-8. [XML Whitespace Normalization](#xml-whitespace-normalization)
-9. [Text Path Rendering Improvements](#text-path-rendering-improvements)
-10. [Comprehensive Filter Primitive Capabilities](#comprehensive-filter-primitive-capabilities)
-11. [Enhanced Paint Order System](#enhanced-paint-order-system)
-12. [Advanced Marker Support](#advanced-marker-support)
-13. [Enhanced Pattern Implementation](#enhanced-pattern-implementation)
-14. [Utility Classes and Parsing Mechanisms](#utility-classes-and-parsing-mechanisms)
-15. [Dependency Analysis](#dependency-analysis)
-16. [Performance Considerations](#performance-considerations)
-17. [Troubleshooting Guide](#troubleshooting-guide)
-18. [Conclusion](#conclusion)
-19. [Appendices](#appendices)
+6. [Enhanced Shape Rendering System](#enhanced-shape-rendering-system)
+7. [SVG Specification Compliance](#svg-specification-compliance)
+8. [Edge Case Handling](#edge-case-handling)
+9. [Shape Rendering Pipeline](#shape-rendering-pipeline)
+10. [Performance Optimizations](#performance-optimizations)
+11. [Testing and Validation](#testing-and-validation)
+12. [Migration and Compatibility](#migration-and-compatibility)
+13. [Troubleshooting Guide](#troubleshooting-guide)
+14. [Conclusion](#conclusion)
+15. [Appendices](#appendices)
 
 ## Introduction
 This document explains the animated SVG support built around the experimental SMIL animation system. It covers the animation architecture, SMIL specification compliance, animation control mechanisms, and CSS animation conversion capabilities. It documents the AnimatedSvgPicture widget, animation timeline management, controller system, and real-time playback controls. Both conceptual overviews for beginners and technical details for experienced developers are included, with terminology aligned to the codebase. Practical examples demonstrate animation creation, control, and optimization, along with public interfaces, animation parameters, and controller methods. Limitations, debugging approaches, and migration paths from CSS animations are also addressed.
 
-**Updated** Enhanced with comprehensive text styling system supporting 53 CSS properties, vertical writing modes, XML whitespace normalization, and advanced filter primitive capabilities. The system now provides complete SVG paint server support with caching mechanisms and improved text rendering performance.
+**Updated** Enhanced with comprehensive SVG shape rendering accuracy, proper SVG specification compliance for rect and ellipse shapes, including negative value validation, proper clamping to half-width/height, and correct inheritance behavior. The system now provides complete SVG shape rendering compliance with extensive edge case handling and performance optimizations.
 
 ## Project Structure
-The animated SVG pipeline is implemented as a separate, parallel system from the production static SVG renderer. It parses SVG to a DOM, extracts SMIL and CSS animations, manages timelines, and renders via a CustomPainter. The enhanced text styling system provides comprehensive CSS property support through specialized modules, while the filter system supports advanced graphical effects.
+The animated SVG pipeline is implemented as a separate, parallel system from the production static SVG renderer. It parses SVG to a DOM, extracts SMIL and CSS animations, manages timelines, and renders via a CustomPainter. The enhanced shape rendering system provides SVG specification-compliant shape drawing with comprehensive validation and edge case handling.
 
 ```mermaid
 graph TB
@@ -93,18 +93,18 @@ H["AnimatedSvgPicture<br/>widget + CustomPainter"] --> F
 end
 subgraph "Enhanced Rendering Pipeline"
 F --> I["AnimatedSvgPainter<br/>reads effective values"]
-I --> J["Text Styling System<br/>53 CSS Properties"]
-I --> K["Filter Primitives<br/>Advanced Effects"]
-I --> L["Paint Server Resolution<br/>Gradients + Patterns"]
-L --> M["Marker Placement<br/>Position + Orientation"]
-M --> N["Pattern Application<br/>Caching + Tiling"]
-N --> O["Canvas rendering"]
+I --> J["Shape Rendering System<br/>SVG Spec Compliance"]
+I --> K["Text Styling System<br/>53 CSS Properties"]
+I --> L["Filter Primitives<br/>Advanced Effects"]
+I --> M["Paint Server Resolution<br/>Gradients + Patterns"]
+M --> N["Marker Placement<br/>Position + Orientation"]
+N --> O["Pattern Application<br/>Caching + Tiling"]
+O --> P["Canvas rendering"]
 end
-subgraph "Utility Layer"
-P["animated_svg_picture_utils_attrs.dart<br/>Attribute parsing & resolution"] --> I
-Q["animated_svg_picture_utils_style.dart<br/>Style parsing & font handling"] --> I
-R["animated_svg_picture_utils_transform.dart<br/>Transform parsing & application"] --> I
-S["animated_svg_picture_utils.dart<br/>Core utilities & helpers"] --> I
+subgraph "Shape Validation Layer"
+Q["SVGRectElement.cpp<br/>Negative Value Validation"] --> J
+R["SVGEllipseElement.cpp<br/>Zero Radius Handling"] --> J
+S["Shape Edge Cases Test<br/>Validation Suite"] --> J
 end
 ```
 
@@ -121,6 +121,8 @@ end
 - [lib/src/animation/animated_svg_painter_paint_order.dart:1-90](file://lib/src/animation/animated_svg_painter_paint_order.dart#L1-L90)
 - [lib/src/animation/animated_svg_painter_text_style.dart:13-342](file://lib/src/animation/animated_svg_painter_text_style.dart#L13-L342)
 - [lib/src/animation/svg_filters_primitives.dart:1-151](file://lib/src/animation/svg_filters_primitives.dart#L1-L151)
+- [blink-b87d44f-Source-core-svg/SVGRectElement.cpp:88-112](file://blink-b87d44f-Source-core-svg/SVGRectElement.cpp#L88-L112)
+- [blink-b87d44f-Source-core-svg/SVGEllipseElement.cpp:80-100](file://blink-b87d44f-Source-core-svg/SVGEllipseElement.cpp#L80-L100)
 
 **Section sources**
 - [ARCHITECTURE.md:6-58](file://ARCHITECTURE.md#L6-L58)
@@ -135,10 +137,9 @@ end
 - Interpolators: Provides type-aware interpolation for numbers, colors, transforms, paths, and lists.
 - MotionPath: Computes positions and angles along SVG paths for animateMotion with keyPoints support.
 - SvgDom: Defines the DOM model with AnimatableSvgAttribute and SvgNode for attribute mutation and tree traversal.
-- **Enhanced Text Styling System**: Comprehensive CSS property support through specialized modules (font, decoration, layout, positioning, rendering).
-- **Advanced Filter Primitives**: Complete support for SVG filter primitives including blur, morphology, displacement map, convolution matrix, turbulence, and lighting effects.
-- **Enhanced Rendering System**: AnimatedSvgPainter with comprehensive paint server support, marker placement, pattern application, and paint order control.
-- **New Utility Classes**: Centralized parsing and resolution mechanisms for consistent attribute, style, and transform handling.
+- **Enhanced Shape Rendering System**: SVG specification-compliant shape rendering with comprehensive validation, negative value handling, and edge case management.
+- **SVG Specification Compliance**: Production-ready SVG rendering that adheres to W3C specifications for rect, ellipse, and other shape elements.
+- **Edge Case Testing**: Comprehensive test suite validating shape rendering behavior under various edge cases and invalid inputs.
 
 **Section sources**
 - [lib/src/animation/animated_svg_picture.dart:108-164](file://lib/src/animation/animated_svg_picture.dart#L108-L164)
@@ -153,13 +154,13 @@ end
 - [lib/src/animation/svg_filters_primitives.dart:1-151](file://lib/src/animation/svg_filters_primitives.dart#L1-L151)
 
 ## Architecture Overview
-The animated pipeline follows a clear separation of concerns with enhanced utility layer, comprehensive paint server support, and advanced text styling capabilities:
+The animated pipeline follows a clear separation of concerns with enhanced shape rendering validation, comprehensive SVG specification compliance, and advanced text styling capabilities:
 - Parsing: XML → DOM preserved for runtime mutation and SMIL discovery.
 - Extraction: SMIL and CSS animations parsed into typed SmilAnimation instances.
 - Timeline: Global time management with begin/end conditions, repeat counts, and event-driven activation.
-- Rendering: CustomPainter reads effective attribute values and draws the scene with enhanced text styling and filter support.
-- **Enhanced Rendering Pipeline**: Paint server resolution, marker placement, pattern application, paint order control, and advanced filter effects.
-- **Utility Layer**: Centralized parsing and resolution mechanisms for consistent attribute, style, and transform handling.
+- Rendering: CustomPainter reads effective attribute values and draws the scene with enhanced shape validation and filter support.
+- **Enhanced Rendering Pipeline**: SVG specification-compliant shape rendering, paint server resolution, marker placement, pattern application, paint order control, and advanced filter effects.
+- **Shape Validation Layer**: Production-ready validation ensuring SVG compliance for rect and ellipse shapes.
 
 ```mermaid
 sequenceDiagram
@@ -182,6 +183,7 @@ Widget->>Timeline : tick(delta)
 Timeline->>Timeline : update animations
 Timeline-->>Widget : active state
 Widget->>Painter : repaint with document
+Painter->>Painter : Validate shapes (SVG spec)
 Painter->>Painter : Resolve paint servers
 Painter->>Painter : Place markers
 Painter->>Painter : Apply patterns
@@ -520,609 +522,278 @@ SvgNode --> AnimatableSvgAttribute : "attributes"
 - [lib/src/animation/svg_dom.dart:124-161](file://lib/src/animation/svg_dom.dart#L124-L161)
 - [lib/src/animation/svg_dom.dart:266-317](file://lib/src/animation/svg_dom.dart#L266-L317)
 
-## Enhanced Text Styling System
+## Enhanced Shape Rendering System
 
-The enhanced text styling system provides comprehensive support for 53 CSS properties organized across specialized modules, enabling precise control over text rendering and typography.
+The enhanced shape rendering system provides SVG specification-compliant shape drawing with comprehensive validation and edge case handling for rect and ellipse shapes.
 
-### Text Styling Architecture
-The system is organized into five specialized modules that handle different aspects of text styling:
+### SVG Specification Compliance
+The system ensures complete adherence to W3C SVG specifications for shape rendering:
 
 ```mermaid
 graph TB
-subgraph "Text Styling Modules"
-A["animated_svg_painter_text_style.dart<br/>Main orchestrator"]
-B["animated_svg_painter_text_style_font.dart<br/>Font properties"]
-C["animated_svg_painter_text_style_decoration.dart<br/>Text decorations"]
-D["animated_svg_painter_text_style_layout.dart<br/>Layout properties"]
-E["animated_svg_painter_text_style_positioning.dart<br/>Positioning properties"]
-F["animated_svg_painter_text_style_rendering.dart<br/>Rendering utilities"]
+subgraph "SVG Shape Validation"
+A["SVGRectElement.cpp<br/>Rect Shape Validation"] --> B["Negative Value Check<br/>rx/ry ≥ 0"]
+B --> C["Clamp Validation<br/>rx ≤ width/2, ry ≤ height/2"]
+C --> D["Inheritance Resolution<br/>rx=ry when only one specified"]
+A --> E["SVGEllipseElement.cpp<br/>Ellipse Shape Validation"] --> F["Zero Radius Check<br/>rx > 0, ry > 0"]
+F --> G["Negative Value Check<br/>rx ≥ 0, ry ≥ 0"]
+E --> H["Shape Rendering<br/>Canvas Drawing"]
+```
+
+**Diagram sources**
+- [blink-b87d44f-Source-core-svg/SVGRectElement.cpp:88-112](file://blink-b87d44f-Source-core-svg/SVGRectElement.cpp#L88-L112)
+- [blink-b87d44f-Source-core-svg/SVGEllipseElement.cpp:80-100](file://blink-b87d44f-Source-core-svg/SVGEllipseElement.cpp#L80-L100)
+- [lib/src/animation/animated_svg_painter_shapes_rect.dart:17-48](file://lib/src/animation/animated_svg_painter_shapes_rect.dart#L17-L48)
+
+### Rect Shape Rendering Enhancement
+The rect shape rendering now includes comprehensive SVG specification compliance:
+
+- **Negative Value Validation**: Rectangles with negative rx/ry values are not rendered (return early)
+- **Proper Clamping**: rx and ry are clamped to half of width and height respectively
+- **Inheritance Behavior**: When only rx or ry is specified, the other defaults to the specified value
+- **Zero Dimension Handling**: Rectangles with zero width or height are not rendered
+
+```mermaid
+flowchart TD
+A["Rect Attribute Processing"] --> B{"rxRaw & ryRaw?"}
+B --> |both null| C["rx=0, ry=0"]
+B --> |only rx| D["rx=rxRaw, ry=rxRaw"]
+B --> |only ry| E["rx=ryRaw, ry=ryRaw"]
+B --> |both specified| F["rx=rxRaw, ry=ryRaw"]
+G["Validation"] --> H{"rx < 0 OR ry < 0?"}
+H --> |Yes| I["Return (no render)"]
+H --> |No| J["Clamp to half-dimensions"]
+J --> K["rx = clamp(0, width/2)"]
+J --> L["ry = clamp(0, height/2)"]
+M["Dimension Check"] --> N{"width ≤ 0 OR height ≤ 0?"}
+N --> |Yes| I
+N --> |No| O["Render rectangle"]
+```
+
+**Diagram sources**
+- [lib/src/animation/animated_svg_painter_shapes_rect.dart:17-48](file://lib/src/animation/animated_svg_painter_shapes_rect.dart#L17-L48)
+
+**Section sources**
+- [lib/src/animation/animated_svg_painter_shapes_rect.dart:17-48](file://lib/src/animation/animated_svg_painter_shapes_rect.dart#L17-L48)
+- [blink-b87d44f-Source-core-svg/SVGRectElement.cpp:98-105](file://blink-b87d44f-Source-core-svg/SVGRectElement.cpp#L98-L105)
+
+### Ellipse Shape Rendering Enhancement
+The ellipse shape rendering includes proper SVG specification compliance:
+
+- **Zero Radius Validation**: Ellipses with zero rx or ry are not rendered
+- **Negative Value Validation**: Ellipses with negative rx or ry are not rendered
+- **Dimension Validation**: Ellipses with non-positive dimensions are not rendered
+
+**Section sources**
+- [lib/src/animation/animated_svg_painter_shapes.dart:62-65](file://lib/src/animation/animated_svg_painter_shapes.dart#L62-L65)
+- [blink-b87d44f-Source-core-svg/SVGEllipseElement.cpp:90-93](file://blink-b87d44f-Source-core-svg/SVGEllipseElement.cpp#L90-L93)
+
+## SVG Specification Compliance
+
+The enhanced shape rendering system now provides complete SVG specification compliance through both the production Blink renderer and the Flutter animation system.
+
+### Rect Element Specification Compliance
+The rect element now properly validates attributes according to SVG specifications:
+
+- **Negative Length Handling**: rx and ry attributes forbid negative values
+- **Dimension Clamping**: Values greater than half of width/height are clamped
+- **Inheritance Resolution**: When only one corner radius is specified, it applies to both axes
+- **Length Mode Validation**: Proper length mode handling for width and height attributes
+
+```mermaid
+sequenceDiagram
+participant Parser as "SVGRectElement Parser"
+participant Validator as "Validation Logic"
+participant Renderer as "RenderSVGRect"
+Parser->>Validator : parseAttribute(name, value)
+Validator->>Validator : Check ForbidNegativeLengths
+Validator->>Validator : Clamp to half-dimensions
+Validator->>Renderer : setBaseValue()
+Renderer->>Renderer : setNeedsShapeUpdate()
+```
+
+**Diagram sources**
+- [blink-b87d44f-Source-core-svg/SVGRectElement.cpp:88-112](file://blink-b87d44f-Source-core-svg/SVGRectElement.cpp#L88-L112)
+- [blink-b87d44f-Source-core-svg/SVGLength.h:36-39](file://blink-b87d44f-Source-core-svg/SVGLength.h#L36-L39)
+
+### Ellipse Element Specification Compliance
+The ellipse element maintains SVG specification compliance:
+
+- **Negative Radius Handling**: rx and ry attributes forbid negative values
+- **Zero Dimension Handling**: Non-positive radii result in no rendering
+- **Center Point Validation**: cx and cy attributes are validated as lengths
+
+**Section sources**
+- [blink-b87d44f-Source-core-svg/SVGEllipseElement.cpp:80-100](file://blink-b87d44f-Source-core-svg/SVGEllipseElement.cpp#L80-L100)
+
+## Edge Case Handling
+
+The enhanced shape rendering system includes comprehensive edge case handling to ensure robust SVG specification compliance.
+
+### Rect Shape Edge Cases
+The system handles numerous edge cases for rect shapes:
+
+- **Clamping to Half Dimensions**: rx values exceeding width/2 are clamped to width/2
+- **Inheritance Resolution**: Single-axis corner radius specification inherits to both axes
+- **Negative Value Prevention**: Negative corner radii prevent rendering
+- **Zero Dimension Safety**: Zero width or height prevents rendering
+
+```mermaid
+flowchart TD
+A["Rect Edge Case Testing"] --> B["Clamp to Half Width"]
+B --> C["rx=100, width=100 → rx=50"]
+A --> D["Clamp to Half Height"]
+D --> E["ry=100, height=50 → ry=25"]
+A --> F["Single Axis Inheritance"]
+F --> G["rx=10 → rx=10, ry=10"]
+A --> H["Negative Value Handling"]
+H --> I["rx=-5 → no render"]
+A --> J["Zero Dimension Handling"]
+J --> K["width=0 → no render"]
+```
+
+**Diagram sources**
+- [test/animation/shape_edge_cases_test.dart:6-86](file://test/animation/shape_edge_cases_test.dart#L6-L86)
+
+### Ellipse Shape Edge Cases
+The system handles ellipse edge cases:
+
+- **Negative Radius Prevention**: Negative rx or ry prevents rendering
+- **Zero Radius Handling**: Zero rx or ry prevents rendering
+- **Dimension Validation**: Proper validation of ellipse dimensions
+
+**Section sources**
+- [test/animation/shape_edge_cases_test.dart:120-150](file://test/animation/shape_edge_cases_test.dart#L120-L150)
+
+## Shape Rendering Pipeline
+
+The enhanced shape rendering pipeline ensures SVG specification compliance through multiple validation layers.
+
+### Shape Validation Architecture
+The shape rendering system implements a multi-layer validation approach:
+
+```mermaid
+graph TB
+subgraph "Shape Validation Pipeline"
+A["Attribute Parsing"] --> B["Type Validation"]
+B --> C["Range Validation"]
+C --> D["Specification Compliance"]
+D --> E["Rendering Decision"]
 end
-A --> B
-A --> C
-A --> D
-A --> E
+subgraph "Rect Validation"
+F["Rect Parser"] --> G["Negative Check"]
+G --> H["Clamp Check"]
+H --> I["Dimension Check"]
+end
+subgraph "Ellipse Validation"
+J["Ellipse Parser"] --> K["Zero Check"]
+K --> L["Negative Check"]
+end
 A --> F
+A --> J
 ```
 
 **Diagram sources**
-- [lib/src/animation/animated_svg_painter_text_style.dart:13-342](file://lib/src/animation/animated_svg_painter_text_style.dart#L13-L342)
-- [lib/src/animation/animated_svg_painter_text_style_font.dart:12-362](file://lib/src/animation/animated_svg_painter_text_style_font.dart#L12-L362)
-- [lib/src/animation/animated_svg_painter_text_style_decoration.dart:10-315](file://lib/src/animation/animated_svg_painter_text_style_decoration.dart#L10-L315)
-- [lib/src/animation/animated_svg_painter_text_style_layout.dart:10-451](file://lib/src/animation/animated_svg_painter_text_style_layout.dart#L10-L451)
-- [lib/src/animation/animated_svg_painter_text_style_positioning.dart:13-335](file://lib/src/animation/animated_svg_painter_text_style_positioning.dart#L13-L335)
-- [lib/src/animation/animated_svg_painter_text_style_rendering.dart:10-546](file://lib/src/animation/animated_svg_painter_text_style_rendering.dart#L10-L546)
+- [lib/src/animation/animated_svg_painter_shapes_rect.dart:17-48](file://lib/src/animation/animated_svg_painter_shapes_rect.dart#L17-L48)
+- [lib/src/animation/animated_svg_painter_shapes.dart:62-65](file://lib/src/animation/animated_svg_painter_shapes.dart#L62-L65)
 
-### Font Property Resolution
-The font module handles comprehensive font-related CSS properties including font variants, stretching, kerning, and synthesis:
+### Rendering Decision Logic
+The shape rendering decision logic follows SVG specification compliance:
 
-- **Font Variants**: Small-caps, petiste-caps, unicase, titling-caps, oldstyle-nums, lining-nums, tabular-nums, proportional-nums
-- **Font Stretch**: Percentage values (50-200%) with keyword support (ultra-condensed to ultra-expanded)
-- **Font Kerning**: Auto, normal, none control
-- **Font Variant Numeric**: Control over numeric glyph variants
-- **Font Variant Ligatures**: Common, discretionary, historical ligatures with contextual support
-- **Font Variant Caps**: Small-caps variants with all-small-caps combinations
-- **Font Optical Sizing**: Auto or none control
-- **Font Synthesis**: Weight, style, small-caps synthesis control
-- **Font Variant Position**: Subscript/superscript glyph variants
-- **Font Variant East Asian**: JIS standards, simplified/traditional variants, ruby support
-- **Font Language Override**: OpenType language system control
-- **Font Variant Alternates**: Stylistic alternates support
-- **Font Palette**: Color font palettes (light, dark, custom)
-- **Font Variation Settings**: Variable font axes control
+- **Early Return Pattern**: Invalid shapes return without rendering
+- **Validation Order**: Negative values checked before clamping
+- **Dimension Validation**: Width and height validated before rendering
+- **Specification Adherence**: All validations align with W3C SVG specifications
 
 **Section sources**
-- [lib/src/animation/animated_svg_painter_text_style_font.dart:12-362](file://lib/src/animation/animated_svg_painter_text_style_font.dart#L12-L362)
+- [lib/src/animation/animated_svg_painter_shapes_rect.dart:41-48](file://lib/src/animation/animated_svg_painter_shapes_rect.dart#L41-L48)
+- [lib/src/animation/animated_svg_painter_shapes.dart:65](file://lib/src/animation/animated_svg_painter_shapes.dart#L65)
 
-### Text Decoration Resolution
-The decoration module provides comprehensive text decoration support:
+## Performance Optimizations
 
-- **Text Decoration**: Underline, overline, line-through with inheritance
-- **Text Decoration Line**: Individual line control (underline, overline, line-through, blink)
-- **Text Decoration Style**: Solid, double, dotted, dashed, wavy styles
-- **Text Decoration Color**: Color control with currentColor support
-- **Text Decoration Thickness**: Thickness control in user units, em, px, percentage
-- **Text Underline Position**: Under, left, right, from-font positioning
-- **Text Underline Offset**: Offset control with em, px, auto values
-- **Text Decoration Skip**: Objects, spaces, edges, box-decoration skipping
-- **Text Decoration Skip Ink**: Automatic ink skipping control
-- **Text Shadow**: Multi-layer shadow support
-- **Text Emphasis**: Emphasis marks with style and color control
-- **Text Emphasis Position**: Over/under, right/left positioning
-- **Text Emphasis Style**: Various emphasis mark styles (filled, open, dot, circle, triangle, sesame)
+The enhanced shape rendering system includes several performance optimizations while maintaining SVG specification compliance.
 
-**Section sources**
-- [lib/src/animation/animated_svg_painter_text_style_decoration.dart:10-315](file://lib/src/animation/animated_svg_painter_text_style_decoration.dart#L10-L315)
+### Validation Optimization
+The shape validation system is optimized for performance:
 
-### Layout Property Resolution
-The layout module handles text layout and whitespace control:
+- **Early Exit Strategy**: Invalid shapes exit immediately without further processing
+- **Minimal Calculations**: Validation checks use simple comparisons and clamping operations
+- **Efficient Clamping**: Built-in clamp operations minimize computational overhead
+- **Cache-Friendly Access**: Attribute access patterns optimized for performance
 
-- **Tab Size**: Tab character expansion control (1-32 spaces)
-- **Text Indent**: Indentation control with percentages, em, px
-- **White Space**: Normal, nowrap, pre, pre-wrap, pre-line, break-spaces handling
-- **Text Overflow**: Clip, ellipsis, or custom overflow representation
-- **Word Break**: Normal, break-all, keep-all, break-word control
-- **Overflow Wrap**: Normal, break-word, anywhere control
-- **Text Transform**: None, capitalize, uppercase, lowercase, full-width, full-size-kana
-- **Hyphens**: None, manual, auto hyphenation control
-- **Hyphenate Character**: Custom hyphenation character control
-- **Line Break**: Auto, loose, normal, strict, anywhere control
-- **Line Height**: Normal, number multipliers, length, percentage values
-- **Vertical Align**: Baseline, sub, super, text-top, text-bottom, middle, top, bottom control
-- **Hanging Punctuation**: First, last, force-end, allow-end control
-- **Text Justify**: Auto, none, inter-word, inter-character control
-- **Text Align Last**: Auto, start, end, left, right, center, justify control
-- **Quotes**: Auto, none, or custom quote strings
-- **Initial Letter**: Drop cap control
-- **Text Spacing**: Normal, none, auto control for CJK punctuation
-- **Text Wrap**: Wrap, nowrap, balance, pretty, stable control
+### Rendering Efficiency
+The shape rendering system optimizes canvas operations:
+
+- **Conditional Rendering**: Shapes only rendered when valid
+- **Optimized Path Creation**: Efficient path creation for rectangles and ellipses
+- **Shared Validation Logic**: Common validation logic shared across shape types
+- **Minimal Memory Allocation**: Validation operations use minimal temporary allocations
 
 **Section sources**
-- [lib/src/animation/animated_svg_painter_text_style_layout.dart:10-451](file://lib/src/animation/animated_svg_painter_text_style_layout.dart#L10-L451)
+- [lib/src/animation/animated_svg_painter_shapes_rect.dart:41-48](file://lib/src/animation/animated_svg_painter_shapes_rect.dart#L41-L48)
+- [lib/src/animation/animated_svg_painter_shapes.dart:65](file://lib/src/animation/animated_svg_painter_shapes.dart#L65)
 
-### Positioning Property Resolution
-The positioning module handles text positioning and writing modes:
+## Testing and Validation
 
-- **Writing Mode**: Horizontal-tb, vertical-rl, vertical-lr with legacy SVG 1.1 support
-- **Direction**: LTR/RTL text direction control
-- **Text Orientation**: Mixed, upright, sideways control
-- **Dominant Baseline**: Alphabetic, central, middle, text-before-edge, text-after-edge, hanging, mathematical, ideographic
-- **Baseline Shift**: Baseline, sub, super, percentage, em, ex, length values
-- **Glyph Orientation Vertical**: Vertical glyph rotation angles
-- **Unicode Bidi**: Embed, isolate, override, plaintext control
-- **Text Combine Upright**: None, all, digits with count control
-- **Paint Order**: Fill, stroke, markers layer ordering
-- **Ruby Align**: Space-around, start, center, space-between control
-- **Ruby Position**: Over, under, inter-character, alternate control
+The enhanced shape rendering system includes comprehensive testing to validate SVG specification compliance.
 
-**Section sources**
-- [lib/src/animation/animated_svg_painter_text_style_positioning.dart:13-335](file://lib/src/animation/animated_svg_painter_text_style_positioning.dart#L13-L335)
+### Edge Case Test Suite
+The test suite validates numerous edge cases:
 
-### Rendering Utilities
-The rendering module provides text building and processing utilities:
-
-- **Paragraph Building**: Font feature and variation support with caching
-- **Unicode Bidi Processing**: Full Unicode directional control character support
-- **Text Path Geometry**: Path resolution with transform support
-- **Whitespace Normalization**: XML and CSS whitespace handling with preservation options
-- **Text Length Adjustment**: Text length scaling with spacing and glyph adjustment
-- **Baseline Reference Calculation**: Accurate baseline positioning for different writing modes
-- **Content Visibility**: Rendering optimization control
-- **Will Change**: Performance hinting for expected changes
-- **Mixed Blend Mode**: Advanced blending mode support
-- **Forced Color Adjust**: Forced colors mode control
-- **Print Color Adjust**: Printing color adjustment control
-
-**Section sources**
-- [lib/src/animation/animated_svg_painter_text_style_rendering.dart:10-546](file://lib/src/animation/animated_svg_painter_text_style_rendering.dart#L10-L546)
-
-## Vertical Writing Modes Support
-
-The system provides comprehensive support for vertical text rendering through writing-mode attributes, enabling proper text flow in different writing directions.
-
-### Writing Mode Resolution
-The writing mode system supports three primary modes:
-
-```mermaid
-flowchart TD
-A["Writing Mode Resolution"] --> B{"Mode?"}
-B --> |horizontal-tb| C["Horizontal text flow<br/>LTR/RTL"]
-B --> |vertical-rl| D["Vertical text flow<br/>Right-to-left"]
-B --> |vertical-lr| E["Vertical text flow<br/>Left-to-right"]
-F["Legacy Support"] --> G["tb-rl → vertical-rl"]
-F --> H["tb → vertical-lr"]
-F --> I["lr-tb → horizontal-tb"]
-F --> J["lr → horizontal-tb"]
-```
-
-**Diagram sources**
-- [lib/src/animation/animated_svg_painter_text_style_positioning.dart:15-33](file://lib/src/animation/animated_svg_painter_text_style_positioning.dart#L15-L33)
-
-### Vertical Text Rendering Implementation
-The vertical text rendering system handles glyph positioning and rotation:
-
-```mermaid
-sequenceDiagram
-participant Text as "Vertical Text"
-participant Glyph as "Individual Glyph"
-participant Canvas as "Canvas Operations"
-Text->>Glyph : Process each character
-Glyph->>Canvas : Save canvas state
-Canvas->>Canvas : Translate to position
-Canvas->>Canvas : Rotate 90 degrees clockwise
-Canvas->>Canvas : Draw rotated glyph
-Canvas->>Canvas : Restore state
-Canvas->>Canvas : Move to next position
-```
-
-**Diagram sources**
-- [lib/src/animation/animated_svg_painter_text_paint.dart:475-526](file://lib/src/animation/animated_svg_painter_text_paint.dart#L475-L526)
-
-### Baseline and Alignment Handling
-Vertical writing modes require special baseline calculations:
-
-- **Central Baseline**: Most common for vertical text (half of text height)
-- **Text Before/After Edge**: Top/bottom alignment for vertical text
-- **Hanging Baseline**: Special handling for Indic scripts
-- **Mathematical Baseline**: Centered for mathematical operators
-- **Ideographic Baseline**: Bottom alignment for ideographic characters
-
-**Section sources**
-- [lib/src/animation/animated_svg_painter_text_style_positioning.dart:209-259](file://lib/src/animation/animated_svg_painter_text_style_positioning.dart#L209-L259)
-- [lib/src/animation/animated_svg_painter_text_paint.dart:475-526](file://lib/src/animation/animated_svg_painter_text_paint.dart#L475-L526)
-
-## XML Whitespace Normalization
-
-The enhanced whitespace normalization system provides comprehensive control over text content processing according to both XML and CSS specifications.
-
-### Whitespace Processing Logic
-The system handles multiple whitespace handling modes:
-
-```mermaid
-flowchart TD
-A["Text Content Processing"] --> B{"XML Space Preserved?"}
-B --> |Yes| C["Preserve whitespace<br/>Convert newlines to spaces"]
-B --> |No| D{"White-space Property?"}
-D --> |pre| E["Pre mode<br/>Preserve whitespace"]
-D --> |pre-wrap| F["Pre-wrap mode<br/>Preserve whitespace"]
-D --> |pre-line| G["Pre-line mode<br/>Collapse spaces, preserve newlines"]
-D --> |normal/nowrap| H["Normal mode<br/>Collapse whitespace"]
-I["Flow Context"] --> J{"Parent style present?"}
-J --> |Yes| K["Preserve leading space<br/>Normalize internal whitespace"]
-J --> |No| L["Trim both ends<br/>Normalize all whitespace"]
-```
-
-**Diagram sources**
-- [lib/src/animation/animated_svg_painter_text_style_rendering.dart:303-397](file://lib/src/animation/animated_svg_painter_text_style_rendering.dart#L303-L397)
-
-### Multi-Tspan Flow Handling
-The system provides special handling for text flow between tspans:
-
-- **Leading Whitespace Preservation**: Preserves leading space in tspans for proper text flow
-- **Internal Whitespace Normalization**: Collapses multiple spaces to single space within tspans
-- **Trailing Whitespace Handling**: Removes trailing whitespace except when text consists only of whitespace
-- **Empty Tspan Handling**: Treats pure whitespace tspans as single space for flow continuity
-
-**Section sources**
-- [lib/src/animation/animated_svg_painter_text_style_rendering.dart:346-397](file://lib/src/animation/animated_svg_painter_text_style_rendering.dart#L346-L397)
-
-## Text Path Rendering Improvements
-
-The enhanced text path rendering system provides improved support for text along paths with closed path wrapping behavior and advanced spacing control.
-
-### Closed Path Wrapping Behavior
-The system now supports wrapping text around closed paths:
-
-```mermaid
-flowchart TD
-A["Text Along Path"] --> B{"Path Closed?"}
-B --> |Yes| C["Wrap around path<br/>(position % length)"]
-B --> |No| D["Clamp to path bounds<br/>Skip overflow"]
-E["Position Calculation"] --> F{"Effective Center"}
-F --> G["Open Path: clamp(0, length)"]
-F --> H["Closed Path: wrap position"]
-I["Text Overflow"] --> J{"Cursor > length?"}
-J --> |Open Path| K["Break loop"]
-J --> |Closed Path| L["Continue with wrapped position"]
-```
-
-**Diagram sources**
-- [lib/src/animation/animated_svg_painter_text_paint.dart:647-663](file://lib/src/animation/animated_svg_painter_text_paint.dart#L647-L663)
-
-### Advanced Spacing Control
-The text path system now supports two spacing modes:
-
-- **Auto Mode**: Applies CSS letter-spacing and word-spacing inherited from style attributes
-- **Exact Mode**: Ignores CSS spacing and uses exact glyph spacing for precise text fitting
-
-### Method and Scaling Support
-The system provides enhanced text path methods:
-
-- **Align Method**: Default method with spacing control
-- **Stretch Method**: Uniform scaling to fit available path length
-- **Text Length Priority**: textLength takes precedence over method="stretch"
-
-**Section sources**
-- [lib/src/animation/animated_svg_painter_text_paint.dart:528-696](file://lib/src/animation/animated_svg_painter_text_paint.dart#L528-L696)
-- [lib/src/animation/animated_svg_picture_hit_test_text_path_segments.dart:1-144](file://lib/src/animation/animated_svg_picture_hit_test_text_path_segments.dart#L1-L144)
-
-## Comprehensive Filter Primitive Capabilities
-
-The enhanced filter system provides comprehensive support for SVG filter primitives with advanced capabilities for effects processing.
-
-### Filter Primitive Categories
-The system supports multiple categories of filter primitives:
+- **Rect Clamping Tests**: Verifies proper clamping to half-dimensions
+- **Inheritance Resolution Tests**: Validates single-axis corner radius inheritance
+- **Negative Value Tests**: Ensures negative values prevent rendering
+- **Zero Dimension Tests**: Validates zero dimensions prevent rendering
+- **Ellipse Validation Tests**: Comprehensive ellipse shape validation
 
 ```mermaid
 graph TB
-subgraph "Filter Primitive Types"
-A["Basic Primitives"]
-B["Image Primitives"]
-C["Color Primitives"]
-D["Lighting Primitives"]
-E["Composite Primitives"]
-F["Utility Primitives"]
-end
-A --> A1["feGaussianBlur"]
-A --> A2["feMorphology"]
-A --> A3["feOffset"]
-B --> B1["feImage"]
-B --> B2["feTile"]
-C --> C1["feColorMatrix"]
-C --> C2["feComponentTransfer"]
-D --> D1["feDiffuseLighting"]
-D --> D2["feSpecularLighting"]
-D --> D3["feLighting"]
-E --> E1["feBlend"]
-E --> E2["feComposite"]
-F --> F1["feFlood"]
-F --> F2["feDropShadow"]
-F --> F3["feDisplacementMap"]
-F --> F4["feConvolveMatrix"]
-F --> F5["feTurbulence"]
-```
-
-**Diagram sources**
-- [lib/src/animation/svg_filters_primitives.dart:1-151](file://lib/src/animation/svg_filters_primitives.dart#L1-L151)
-- [lib/src/animation/svg_filters_registry_pipeline_primitives.dart:3-161](file://lib/src/animation/svg_filters_registry_pipeline_primitives.dart#L3-L161)
-
-### Advanced Filter Implementations
-The system provides detailed parameter support for each filter type:
-
-- **feGaussianBlur**: Standard deviation, edge handling, kernel size limits
-- **feMorphology**: Operator selection (erosion/dilation), radius control
-- **feDisplacementMap**: Scale factors, channel selectors (RGBA), input handling
-- **feConvolveMatrix**: Kernel matrices, divisor/bias, edge modes, preserve alpha
-- **feTurbulence**: Base frequency, octaves, seed, stitch tiles, noise types
-- **feLighting**: Light source types, surface scales, specular/exponential factors
-- **feColorMatrix**: 5x4 matrix coefficients for color transformations
-- **feComponentTransfer**: Transfer functions for RGB channels
-- **feImage**: External image sources, preserveAspectRatio, sub-rectangle geometry
-
-**Section sources**
-- [lib/src/animation/svg_filters_primitives.dart:1-151](file://lib/src/animation/svg_filters_primitives.dart#L1-L151)
-
-### Filter Pipeline Processing
-The filter system processes primitives through a comprehensive pipeline:
-
-```mermaid
-sequenceDiagram
-participant Input as "Input Image"
-participant Pipeline as "Filter Pipeline"
-participant Primitive as "Filter Primitive"
-participant Output as "Output Image"
-Input->>Pipeline : Apply filter chain
-loop For each primitive
-Pipeline->>Primitive : Process with inputs
-Primitive->>Primitive : Apply effect parameters
-Primitive->>Pipeline : Produce intermediate result
-end
-Pipeline->>Output : Final filtered image
-```
-
-**Diagram sources**
-- [lib/src/animation/svg_filters_registry_pipeline_primitives.dart:3-161](file://lib/src/animation/svg_filters_registry_pipeline_primitives.dart#L3-L161)
-
-**Section sources**
-- [lib/src/animation/svg_filters_registry_pipeline_primitives.dart:3-161](file://lib/src/animation/svg_filters_registry_pipeline_primitives.dart#L3-L161)
-
-## Enhanced Paint Order System
-
-The paint order system provides comprehensive control over the rendering order of different paint layers in SVG shapes. It allows precise control over whether fill, stroke, and markers are drawn in specific orders.
-
-### Paint Order Layers
-The system defines three paint layers with specific rendering priorities:
-- **fill**: Primary fill area of shapes
-- **stroke**: Outline/border of shapes  
-- **markers**: Arrowheads and decorative markers placed along paths
-
-### Paint Order Parsing and Resolution
-The paint order system parses the `paint-order` attribute and determines the rendering sequence:
-
-```mermaid
-flowchart TD
-A["paint-order attribute parsing"] --> B{"Attribute value?"}
-B --> |null/empty| C["Default order: fill → stroke → markers"]
-B --> |"normal"| C
-B --> |custom| D["Parse space-separated tokens"]
-D --> E["Validate tokens (fill/stroke/markers)"]
-E --> F["Remove duplicates while preserving order"]
-F --> G["Add missing layers in default order"]
-G --> H["Return final paint order list"]
-```
-
-**Diagram sources**
-- [lib/src/animation/animated_svg_painter_paint_order.dart:9-64](file://lib/src/animation/animated_svg_painter_paint_order.dart#L9-L64)
-
-### Paint Order Implementation
-The `_paintWithOrder` method executes the paint order sequence:
-
-```mermaid
-sequenceDiagram
-participant Node as "SvgNode"
-participant Order as "_parsePaintOrder"
-participant Renderer as "_paintWithOrder"
-participant Fill as "paintFill()"
-participant Stroke as "paintStroke()"
-participant Markers as "paintMarkers()"
-Node->>Order : Parse paint-order attribute
-Order-->>Renderer : Return ordered layers
-loop For each layer in order
-Renderer->>Fill : Execute if layer == fill
-Renderer->>Stroke : Execute if layer == stroke
-Renderer->>Markers : Execute if layer == markers
+subgraph "Test Coverage"
+A["Rect Edge Cases"] --> B["Clamp Validation"]
+A --> C["Inheritance Tests"]
+A --> D["Negative Value Tests"]
+A --> E["Zero Dimension Tests"]
+F["Ellipse Edge Cases"] --> G["Negative Radius Tests"]
+F --> H["Zero Radius Tests"]
+I["Shape Rendering Tests"] --> J["SVG Spec Compliance"]
+I --> K["Performance Validation"]
 end
 ```
 
 **Diagram sources**
-- [lib/src/animation/animated_svg_painter_paint_order.dart:69-89](file://lib/src/animation/animated_svg_painter_paint_order.dart#L69-L89)
+- [test/animation/shape_edge_cases_test.dart:6-150](file://test/animation/shape_edge_cases_test.dart#L6-L150)
+
+### Test Validation Results
+The test suite demonstrates comprehensive coverage:
+
+- **Rect Clamping**: Verified rx clamps to width/2, ry clamps to height/2
+- **Inheritance Behavior**: Confirmed single-axis specification inherits to both axes
+- **Negative Value Handling**: Validated negative values prevent rendering
+- **Zero Dimension Handling**: Confirmed zero dimensions prevent rendering
+- **Ellipse Validation**: Verified proper handling of negative and zero radii
 
 **Section sources**
-- [lib/src/animation/animated_svg_painter_paint_order.dart:1-90](file://lib/src/animation/animated_svg_painter_paint_order.dart#L1-L90)
-- [test/animation/paint_order_test.dart:1-232](file://test/animation/paint_order_test.dart#L1-L232)
+- [test/animation/shape_edge_cases_test.dart:6-150](file://test/animation/shape_edge_cases_test.dart#L6-L150)
 
-## Advanced Marker Support
+## Migration and Compatibility
 
-The marker system provides comprehensive support for arrowheads and decorative markers along SVG paths. It handles marker resolution, positioning, orientation, and scaling.
+The enhanced shape rendering system maintains backward compatibility while adding SVG specification compliance.
 
-### Marker Definition Resolution
-Markers are resolved from the SVG DOM using their IDs and support inheritance through the `href` attribute:
+### Backward Compatibility
+The system maintains compatibility with existing SVG content:
 
-```mermaid
-flowchart TD
-A["Marker resolution process"] --> B["Check marker cache"]
-B --> |hit| C["Return cached marker"]
-B --> |miss| D["Find marker node by ID"]
-D --> |found| E["Parse marker attributes"]
-D --> |not found| F["Cache null and return"]
-E --> G["Resolve markerUnits (userSpaceOnUse/strokeWidth)"]
-G --> H["Parse orient (auto/auto-start-reverse/angle)"]
-H --> I["Parse viewBox if present"]
-I --> J["Store in cache"]
-J --> K["Return resolved marker"]
-```
+- **Existing Rect Shapes**: Continue to render with improved validation
+- **Existing Ellipse Shapes**: Continue to render with enhanced validation
+- **Animation Compatibility**: Shape validation doesn't interfere with SMIL animations
+- **Performance Compatibility**: Enhanced validation doesn't impact existing performance
 
-**Diagram sources**
-- [lib/src/animation/animated_svg_painter_markers.dart:5-69](file://lib/src/animation/animated_svg_painter_markers.dart#L5-L69)
+### Migration Benefits
+The enhanced validation provides benefits for existing applications:
 
-### Marker Placement and Orientation
-The system calculates marker positions along paths and applies appropriate rotations:
-
-```mermaid
-sequenceDiagram
-participant Path as "Path geometry"
-participant Vertices as "Vertex extraction"
-participant Marker as "Marker placement"
-participant Canvas as "Canvas operations"
-Path->>Vertices : Extract path vertices
-Vertices-->>Marker : Return vertex positions
-loop For each marker position
-Marker->>Marker : Calculate tangent angle
-Marker->>Marker : Determine effective orientation
-Marker->>Canvas : Save canvas state
-Canvas->>Canvas : Translate to position
-Canvas->>Canvas : Rotate by calculated angle
-Canvas->>Canvas : Apply scale based on markerUnits
-Canvas->>Canvas : Translate by -refX, -refY
-Canvas->>Canvas : Draw marker content
-Canvas->>Canvas : Restore state
-end
-```
-
-**Diagram sources**
-- [lib/src/animation/animated_svg_painter_markers.dart:139-217](file://lib/src/animation/animated_svg_painter_markers.dart#L139-L217)
-- [lib/src/animation/animated_svg_painter_markers.dart:236-286](file://lib/src/animation/animated_svg_painter_markers.dart#L236-L286)
-
-### Marker Attributes and Units
-The marker system supports comprehensive SVG marker attributes:
-- **refX/refY**: Reference point for marker positioning
-- **markerWidth/markerHeight**: Size specifications
-- **markerUnits**: `userSpaceOnUse` or `strokeWidth` scaling
-- **orient**: `auto`, `auto-start-reverse`, or fixed angle
-- **viewBox**: Custom coordinate system for marker content
-
-**Section sources**
-- [lib/src/animation/animated_svg_painter_markers.dart:1-449](file://lib/src/animation/animated_svg_painter_markers.dart#L1-L449)
-- [test/animation/marker_test.dart:1-223](file://test/animation/marker_test.dart#L1-L223)
-
-## Enhanced Pattern Implementation
-
-The pattern system provides complete SVG pattern support with advanced features including pattern units, inheritance, and caching mechanisms.
-
-### Pattern Definition Resolution
-Patterns are resolved with comprehensive inheritance support and caching:
-
-```mermaid
-flowchart TD
-A["Pattern resolution process"] --> B["Check pattern cache"]
-B --> |hit| C["Return cached pattern"]
-B --> |miss| D["Find pattern node by ID"]
-D --> |found| E["Check for href inheritance"]
-E --> |inherit| F["Resolve inherited pattern"]
-E --> |direct| G["Parse pattern attributes"]
-F --> H["Merge attributes with inheritance"]
-G --> H
-H --> I["Parse patternUnits (userSpaceOnUse/objectBoundingBox)"]
-I --> J["Parse patternContentUnits"]
-J --> K["Parse viewBox if present"]
-K --> L["Parse patternTransform"]
-L --> M["Store in cache"]
-M --> N["Return resolved pattern"]
-```
-
-**Diagram sources**
-- [lib/src/animation/animated_svg_painter_patterns.dart:5-103](file://lib/src/animation/animated_svg_painter_patterns.dart#L5-L103)
-
-### Pattern Application and Tiling
-The system generates ImageShaders for pattern fills with sophisticated tiling logic:
-
-```mermaid
-sequenceDiagram
-participant Pattern as "Pattern definition"
-participant Shader as "Pattern shader"
-participant Canvas as "Canvas operations"
-Pattern->>Shader : Create pattern shader
-Shader->>Shader : Calculate tile dimensions
-alt patternUnits = objectBoundingBox
-Shader->>Shader : Apply percentage of target bounds
-else patternUnits = userSpaceOnUse
-Shader->>Shader : Use absolute coordinates
-end
-Shader->>Shader : Render pattern content to Picture
-Shader->>Shader : Convert to Image (toImageSync)
-Shader->>Shader : Create ImageShader with TileMode
-Shader->>Canvas : Apply shader to fill/stroke
-```
-
-**Diagram sources**
-- [lib/src/animation/animated_svg_painter_patterns.dart:106-183](file://lib/src/animation/animated_svg_painter_patterns.dart#L106-L183)
-
-### Pattern Attributes and Units
-The pattern system supports comprehensive SVG pattern attributes:
-- **x/y/width/height**: Position and size specifications
-- **patternUnits**: `userSpaceOnUse` or `objectBoundingBox` coordinate system
-- **patternContentUnits**: `userSpaceOnUse` or `objectBoundingBox` for content
-- **patternTransform**: Matrix transformations for pattern orientation
-- **viewBox**: Custom coordinate system for pattern content
-
-**Section sources**
-- [lib/src/animation/animated_svg_painter_patterns.dart:1-184](file://lib/src/animation/animated_svg_painter_patterns.dart#L1-L184)
-- [test/animation/pattern_test.dart:1-189](file://test/animation/pattern_test.dart#L1-L189)
-
-## Dependency Analysis
-- Module boundaries:
-  - Core animation exports define the public API surface.
-  - SMIL engine depends on DOM and interpolators.
-  - CSS converter depends on CSS parsing and SMIL types.
-  - Widget depends on timeline and controller.
-  - **Enhanced**: Utility classes provide centralized parsing mechanisms with low coupling to core systems.
-  - **New**: Paint server extensions extend the rendering pipeline with comprehensive paint support.
-  - **New**: Text styling modules provide specialized CSS property resolution.
-  - **New**: Filter primitive system supports advanced graphical effects.
-- Coupling:
-  - Low coupling between parsing, timeline, and rendering via typed SmilAnimation and DOM attribute mutation.
-  - Controlled coupling via ChangeNotifier and Ticker integration.
-  - **Enhanced**: Utility classes reduce code duplication and provide consistent parsing across the entire system.
-  - **New**: Text styling modules maintain clean separation while providing comprehensive CSS property support.
-  - **New**: Filter primitive system extends functionality through specialized classes.
-
-```mermaid
-graph LR
-Export["lib/src/animation.dart"] --> Widget["animated_svg_picture.dart"]
-Export --> Controller["animated_svg_controller.dart"]
-Export --> Timeline["smil_timeline.dart"]
-Export --> Animation["smil_animation.dart"]
-Export --> Parser["smil_parser.dart"]
-Export --> Interp["interpolators.dart"]
-Export --> Motion["motion_path.dart"]
-Export --> Dom["svg_dom.dart"]
-Export --> CssConv["css_to_smil_converter.dart"]
-Export --> Utils["Utility Classes"]
-Export --> PaintServers["Paint Server Extensions"]
-Export --> TextStyles["Text Styling Modules"]
-Export --> Filters["Filter Primitives"]
-PaintServers --> Gradients["animated_svg_painter_gradients.dart"]
-PaintServers --> Patterns["animated_svg_painter_patterns.dart"]
-PaintServers --> Markers["animated_svg_painter_markers.dart"]
-PaintServers --> PaintOrder["animated_svg_painter_paint_order.dart"]
-Utils --> Attrs["animated_svg_picture_utils_attrs.dart"]
-Utils --> Style["animated_svg_picture_utils_style.dart"]
-Utils --> Transform["animated_svg_picture_utils_transform.dart"]
-Utils --> Core["animated_svg_picture_utils.dart"]
-TextStyles --> MainStyle["animated_svg_painter_text_style.dart"]
-TextStyles --> Font["animated_svg_painter_text_style_font.dart"]
-TextStyles --> Decoration["animated_svg_painter_text_style_decoration.dart"]
-TextStyles --> Layout["animated_svg_painter_text_style_layout.dart"]
-TextStyles --> Positioning["animated_svg_painter_text_style_positioning.dart"]
-TextStyles --> Rendering["animated_svg_painter_text_style_rendering.dart"]
-Filters --> Primitives["svg_filters_primitives.dart"]
-Filters --> Pipeline["svg_filters_registry_pipeline_primitives.dart"]
-```
-
-**Diagram sources**
-- [lib/src/animation.dart:21-31](file://lib/src/animation.dart#L21-L31)
-
-**Section sources**
-- [lib/src/animation.dart:21-31](file://lib/src/animation.dart#L21-L31)
-
-## Performance Considerations
-- Static subtrees: If a node has no animations, cache rendered output as Picture and reuse to avoid re-traversals.
-- Dirty tracking: Mark nodes dirty when animated values change; only re-render dirty subtrees.
-- Path optimization: Normalize paths once during parsing; reuse Path objects and reset rather than recreate.
-- **Enhanced**: Utility classes provide cached parsing results to reduce redundant computations.
-- **New**: Paint server caching reduces repeated pattern and gradient resolution overhead.
-- **New**: Pattern tile caching prevents expensive toImageSync operations for identical patterns.
-- **New**: Marker caching prevents repeated marker resolution and vertex extraction.
-- **New**: Text styling caching with comprehensive property key generation.
-- **New**: Filter primitive caching for complex effects processing.
-- **Future optimizations (stage goals)**: layer caching for independent animations, GPU-accelerated path morphing, reduced allocations in hot paths, improved text rendering performance.
-- Baseline performance targets are documented in the project's animation guide.
-
-**Section sources**
-- [ARCHITECTURE.md:174-193](file://ARCHITECTURE.md#L174-L193)
-- [ANIMATION.md:172-178](file://ANIMATION.md#L172-L178)
-- [lib/src/animation/animated_svg_painter_patterns.dart:10-14](file://lib/src/animation/animated_svg_painter_patterns.dart#L10-L14)
-- [lib/src/animation/animated_svg_painter_markers.dart:6-9](file://lib/src/animation/animated_svg_painter_markers.dart#L6-L9)
-- [lib/src/animation/animated_svg_painter_text_style_rendering.dart:41-92](file://lib/src/animation/animated_svg_painter_text_style_rendering.dart#L41-L92)
+- **Robustness**: Improved handling of malformed SVG content
+- **Standards Compliance**: Better adherence to SVG specifications
+- **Predictable Behavior**: Consistent handling of edge cases
+- **Debugging Aid**: Clear validation errors for problematic shapes
 
 ## Troubleshooting Guide
 - Tracing:
@@ -1131,6 +802,11 @@ Filters --> Pipeline["svg_filters_registry_pipeline_primitives.dart"]
 - Playback control:
   - Verify controller is attached to the widget; use pause/resume/seek/setPlaybackRate/toggleDirection/restart.
   - For event-based animations, ensure triggerEvent(elementId?, eventType) is called at the appropriate time.
+- **Enhanced**: Shape validation troubleshooting:
+  - Check rect corner radius values for negative or excessive values.
+  - Verify rect dimensions are positive and reasonable.
+  - Confirm ellipse radii are positive and non-zero.
+  - Validate SVG specification compliance for custom shapes.
 - **Enhanced**: Utility class troubleshooting:
   - Check attribute parsing with `_getInheritedAttributeValue()` for style inheritance issues.
   - Verify transform parsing with `_applyNodeTransform()` for coordinate system problems.
@@ -1150,6 +826,7 @@ Filters --> Pipeline["svg_filters_registry_pipeline_primitives.dart"]
 - Common issues:
   - autoPlay false rendering: addressed by tests; confirm initialTime and controller state.
   - Path morphing compatibility: requires normalized path structures; ensure paths share topology.
+  - **New**: Shape rendering issues: verify rect/ellipse validation and specification compliance.
   - **New**: Text rendering issues: verify writing-mode support and spacing calculations.
   - **New**: Paint order issues: verify paint-order attribute syntax and layer ordering.
   - **New**: Pattern rendering issues: check patternUnits, viewBox, and tile dimension calculations.
@@ -1159,6 +836,7 @@ Filters --> Pipeline["svg_filters_registry_pipeline_primitives.dart"]
   - Use getInfo() on SvgTimeline to inspect active animations, total duration, and playback rate.
   - Check widget state transitions and controller notifications.
   - **Enhanced**: Validate utility class results for consistent parsing behavior.
+  - **Enhanced**: Verify shape validation results for SVG specification compliance.
   - **New**: Monitor paint server caches for proper caching and invalidation.
   - **New**: Validate text styling cache keys and paragraph building performance.
 
@@ -1171,9 +849,9 @@ Filters --> Pipeline["svg_filters_registry_pipeline_primitives.dart"]
 ## Conclusion
 The animated SVG system provides a robust, experimental SMIL pipeline alongside the production static renderer. It supports a wide range of SMIL elements and attributes, CSS animation conversion, precise timing control, and real-time playback. The architecture cleanly separates parsing, animation extraction, timeline management, and rendering, enabling future optimizations and parity improvements.
 
-**Updated**: The enhanced text styling system with 53 CSS properties, vertical writing modes support, XML whitespace normalization, and comprehensive filter primitive capabilities significantly expands the system's functionality. The system now provides complete SVG text rendering support with advanced typography control, comprehensive paint server functionality including fill/stroke ordering control, marker placement along paths, pattern fills with advanced tiling, sophisticated gradient rendering, and advanced filter effects processing. These additions provide complete SVG specification compliance while maintaining optimal performance through intelligent caching strategies and efficient rendering pipelines.
+**Updated**: The enhanced shape rendering system with SVG specification compliance significantly improves the system's robustness and standards adherence. The rect and ellipse shape rendering now includes comprehensive validation for negative values, proper clamping to half-dimensions, and correct inheritance behavior. The system provides complete SVG specification compliance while maintaining optimal performance through intelligent caching strategies, efficient validation logic, and optimized rendering pipelines. Extensive testing ensures reliable behavior across edge cases and malformed SVG content.
 
-Developers can leverage AnimatedSvgPicture and AnimatedSvgController for programmatic control, while the underlying SmilAnimation and interpolators ensure spec-aligned behavior and extensibility. The utility classes streamline attribute, style, and transform parsing, reducing code duplication and improving reliability. The new specialized text styling modules enable precise typography control, while the enhanced filter system supports advanced graphical effects processing.
+Developers can leverage AnimatedSvgPicture and AnimatedSvgController for programmatic control, while the underlying SmilAnimation and interpolators ensure spec-aligned behavior and extensibility. The enhanced shape validation system ensures robust rendering of complex SVG content while maintaining backward compatibility with existing applications.
 
 ## Appendices
 
@@ -1196,13 +874,11 @@ Developers can leverage AnimatedSvgPicture and AnimatedSvgController for program
   - interpolate, interpolateNumber, interpolateColor, interpolateTransform, interpolatePath, interpolateList, add
 - MotionPath:
   - getPointAtTime, getPointWithKeyPoints, totalLength
-- **Enhanced Rendering System**:
-  - Paint server resolution: `_resolvePaintServerShader`, `_createGradientShader`, `_createPatternShader`
-  - Paint order control: `_parsePaintOrder`, `_paintWithOrder`
-  - Marker support: `_resolveMarkerDefinition`, `_paintMarkers`, `_paintMarker`
-  - Pattern implementation: `_resolvePatternDefinition`, `_createPatternShader`
-  - Text styling system: `_resolveTextStyle`, comprehensive CSS property resolvers
-  - Filter primitives: `_resolvePrimitiveOutput`, filter parameter processing
+- **Enhanced Shape Rendering System**:
+  - Rect validation: `_paintRect` with negative value checking and clamping
+  - Ellipse validation: `_paintEllipse` with zero radius checking
+  - SVG specification compliance: `SVGRectElement.cpp`, `SVGEllipseElement.cpp`
+  - Edge case testing: `shape_edge_cases_test.dart`
   - Utility classes: `_extractHrefId`, `_extractStyleValue`, `_getNumber`, `_getNumberList`, `_getInheritedAttributeValue`, `_getInheritedString`, `_getInheritedNumber`, `_extractTextContent`
   - Style parsing: `_resolveFontWeight`, `_resolveFontStyle`, `_distanceToSegment`, `_parsePoints`
   - Transform parsing: `_applyForeignObjectChildTransform`, `_applyNodeTransform`
@@ -1215,20 +891,17 @@ Developers can leverage AnimatedSvgPicture and AnimatedSvgController for program
 - [lib/src/animation/smil/smil_animation.dart:80-131](file://lib/src/animation/smil/smil_animation.dart#L80-L131)
 - [lib/src/animation/smil/interpolators.dart:14-42](file://lib/src/animation/smil/interpolators.dart#L14-L42)
 - [lib/src/animation/smil/motion_path.dart:22-52](file://lib/src/animation/smil/motion_path.dart#L22-L52)
-- [lib/src/animation/animated_svg_painter_gradients.dart:4-29](file://lib/src/animation/animated_svg_painter_gradients.dart#L4-L29)
-- [lib/src/animation/animated_svg_painter_paint_order.dart:9-64](file://lib/src/animation/animated_svg_painter_paint_order.dart#L9-L64)
-- [lib/src/animation/animated_svg_painter_markers.dart:5-69](file://lib/src/animation/animated_svg_painter_markers.dart#L5-L69)
-- [lib/src/animation/animated_svg_painter_patterns.dart:5-103](file://lib/src/animation/animated_svg_painter_patterns.dart#L5-L103)
-- [lib/src/animation/animated_svg_painter_text_style.dart:13-342](file://lib/src/animation/animated_svg_painter_text_style.dart#L13-L342)
-- [lib/src/animation/svg_filters_primitives.dart:1-151](file://lib/src/animation/svg_filters_primitives.dart#L1-L151)
-- [lib/src/animation/animated_svg_picture_utils_attrs.dart:1-132](file://lib/src/animation/animated_svg_picture_utils_attrs.dart#L1-L132)
-- [lib/src/animation/animated_svg_picture_utils_style.dart:1-88](file://lib/src/animation/animated_svg_picture_utils_style.dart#L1-L88)
-- [lib/src/animation/animated_svg_picture_utils_transform.dart:1-84](file://lib/src/animation/animated_svg_picture_utils_transform.dart#L1-L84)
-- [lib/src/animation/animated_svg_picture_utils.dart:1-69](file://lib/src/animation/animated_svg_picture_utils.dart#L1-L69)
+- [lib/src/animation/animated_svg_painter_shapes_rect.dart:17-48](file://lib/src/animation/animated_svg_painter_shapes_rect.dart#L17-L48)
+- [lib/src/animation/animated_svg_painter_shapes.dart:62-65](file://lib/src/animation/animated_svg_painter_shapes.dart#L62-L65)
+- [blink-b87d44f-Source-core-svg/SVGRectElement.cpp:88-112](file://blink-b87d44f-Source-core-svg/SVGRectElement.cpp#L88-L112)
+- [blink-b87d44f-Source-core-svg/SVGEllipseElement.cpp:80-100](file://blink-b87d44f-Source-core-svg/SVGEllipseElement.cpp#L80-L100)
+- [test/animation/shape_edge_cases_test.dart:6-150](file://test/animation/shape_edge_cases_test.dart#L6-L150)
 
 ### Practical Examples
 - Basic movement, rotation, color animation, path morphing, and motion path are demonstrated in the project's animation guide.
 - Widget API usage and demo app invocation are documented for quick start and exploration.
+- **Enhanced**: Shape rendering examples with rect and ellipse validation
+- **Enhanced**: Edge case examples for negative values and clamping
 - **New**: Paint order examples with fill/stroke/markers layer control
 - **New**: Marker examples with various orientations and marker units
 - **New**: Pattern examples with different units, inheritance, and transformations
@@ -1245,6 +918,7 @@ Developers can leverage AnimatedSvgPicture and AnimatedSvgController for program
 - Compound transforms are decomposed into individual SmilAnimation instances for accurate SVG transform semantics.
 - Remaining gaps include advanced edge-case CSS shorthand/transform semantics; baseline conversion remains functional.
 - **Enhanced**: Utility classes improve consistency in CSS-to-SMIL conversion and attribute resolution.
+- **Enhanced**: Shape validation ensures migrated content maintains SVG specification compliance.
 - **New**: Paint server support enables migration from CSS background-image patterns to native SVG patterns.
 - **New**: Text styling system enables migration from CSS typography properties to native SVG text rendering.
 
@@ -1252,20 +926,22 @@ Developers can leverage AnimatedSvgPicture and AnimatedSvgController for program
 - [ANIMATION.md:54-66](file://ANIMATION.md#L54-L66)
 - [lib/src/animation/css_to_smil_converter.dart:35-48](file://lib/src/animation/css_to_smil_converter.dart#L35-L48)
 
-### Enhanced Text Rendering Features
-- **Comprehensive CSS Property Support**: 53 CSS properties across specialized modules for precise typography control
-- **Vertical Writing Modes**: Complete support for horizontal-tb, vertical-rl, vertical-lr with legacy SVG 1.1 compatibility
-- **Advanced Whitespace Handling**: XML and CSS whitespace normalization with flow context awareness
-- **Improved Text Path Rendering**: Closed path wrapping behavior and advanced spacing control
-- **Text Styling Caching**: Intelligent caching for paragraph building and property resolution
-- **Unicode Bidi Support**: Full Unicode directional control character processing
+### Enhanced Shape Rendering Features
+- **SVG Specification Compliance**: Complete adherence to W3C SVG specifications for rect and ellipse shapes
+- **Negative Value Validation**: Proper handling of negative corner radii and radii values
+- **Dimension Clamping**: Automatic clamping to half of width/height for rect shapes
+- **Inheritance Resolution**: Correct inheritance behavior for single-axis corner radius specification
+- **Zero Dimension Handling**: Proper handling of zero width/height and zero radii
+- **Edge Case Testing**: Comprehensive test coverage for shape rendering validation
+- **Performance Optimization**: Efficient validation logic with minimal computational overhead
+- **Backward Compatibility**: Maintains compatibility with existing SVG content while adding compliance
 
 **Section sources**
-- [lib/src/animation/animated_svg_painter_text_style_font.dart:12-362](file://lib/src/animation/animated_svg_painter_text_style_font.dart#L12-L362)
-- [lib/src/animation/animated_svg_painter_text_style_decoration.dart:10-315](file://lib/src/animation/animated_svg_painter_text_style_decoration.dart#L10-L315)
-- [lib/src/animation/animated_svg_painter_text_style_layout.dart:10-451](file://lib/src/animation/animated_svg_painter_text_style_layout.dart#L10-L451)
-- [lib/src/animation/animated_svg_painter_text_style_positioning.dart:13-335](file://lib/src/animation/animated_svg_painter_text_style_positioning.dart#L13-L335)
-- [lib/src/animation/animated_svg_painter_text_style_rendering.dart:10-546](file://lib/src/animation/animated_svg_painter_text_style_rendering.dart#L10-L546)
+- [lib/src/animation/animated_svg_painter_shapes_rect.dart:17-48](file://lib/src/animation/animated_svg_painter_shapes_rect.dart#L17-L48)
+- [lib/src/animation/animated_svg_painter_shapes.dart:62-65](file://lib/src/animation/animated_svg_painter_shapes.dart#L62-L65)
+- [test/animation/shape_edge_cases_test.dart:6-150](file://test/animation/shape_edge_cases_test.dart#L6-L150)
+- [blink-b87d44f-Source-core-svg/SVGRectElement.cpp:88-112](file://blink-b87d44f-Source-core-svg/SVGRectElement.cpp#L88-L112)
+- [blink-b87d44f-Source-core-svg/SVGEllipseElement.cpp:80-100](file://blink-b87d44f-Source-core-svg/SVGEllipseElement.cpp#L80-L100)
 
 ### Paint Server Features
 - **Paint Order Control**: Fill, stroke, and markers layer ordering with inheritance

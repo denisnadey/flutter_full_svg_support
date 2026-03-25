@@ -3,26 +3,26 @@
 <cite>
 **Referenced Files in This Document**
 - [use_symbol_inheritance_test.dart](file://test/animation/use_symbol_inheritance_test.dart)
+- [css_cascade_specificity_test.dart](file://test/animation/css_cascade_specificity_test.dart)
 - [animated_svg_painter_use.dart](file://lib/src/animation/animated_svg_painter_use.dart)
+- [animated_svg_painter_tree.dart](file://lib/src/animation/animated_svg_painter_tree.dart)
+- [css_cascade.dart](file://lib/src/animation/css_cascade.dart)
+- [css_variables_calc.dart](file://lib/src/animation/css_variables_calc.dart)
 - [animated_svg_picture_hit_test_use.dart](file://lib/src/animation/animated_svg_picture_hit_test_use.dart)
 - [svg_parser.dart](file://lib/src/animation/svg_parser.dart)
 - [svg_dom.dart](file://lib/src/animation/svg_dom.dart)
 - [svg_parser_elements.dart](file://lib/src/animation/svg_parser_elements.dart)
 - [animated_svg_painter.dart](file://lib/src/animation/animated_svg_painter.dart)
-- [css_cascade.dart](file://lib/src/animation/css_cascade.dart)
-- [css_selectors.dart](file://lib/src/animation/css_selectors.dart)
-- [css_variables_calc.dart](file://lib/src/animation/css_variables_calc.dart)
-- [animated_svg_painter_tree.dart](file://lib/src/animation/animated_svg_painter_tree.dart)
-- [svg.dart](file://lib/svg.dart)
 </cite>
 
 ## Update Summary
 **Changes Made**
 - Enhanced CSS cascade behavior with comprehensive testing for CSS class rules, ID rules, element type rules, specificity calculations, and inheritance patterns
 - Improved use element symbol inheritance system with detailed CSS property inheritance tracking
-- Added support for CSS custom properties flowing through use boundaries
-- Expanded attribute propagation rules with proper specificity handling
+- Added support for CSS custom properties flowing through use boundaries with sophisticated resolution mechanisms
+- Expanded attribute propagation rules with proper specificity handling and inheritance context management
 - Enhanced hit testing with use context inheritance for pointer-events
+- Implemented rendering modularity with improved CSS cascade integration
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -89,7 +89,6 @@ R2 --> H1
 - [use_symbol_inheritance_test.dart:1-1202](file://test/animation/use_symbol_inheritance_test.dart#L1-L1202)
 - [css_cascade_specificity_test.dart:255-489](file://test/animation/css_cascade_specificity_test.dart#L255-L489)
 - [css_cascade.dart:1-675](file://lib/src/animation/css_cascade.dart#L1-L675)
-- [css_selectors.dart:1-654](file://lib/src/animation/css_selectors.dart#L1-L654)
 - [css_variables_calc.dart:1-595](file://lib/src/animation/css_variables_calc.dart#L1-L595)
 - [svg_parser.dart:27-65](file://lib/src/animation/svg_parser.dart#L27-L65)
 - [svg_parser_elements.dart:3-138](file://lib/src/animation/svg_parser_elements.dart#L3-L138)

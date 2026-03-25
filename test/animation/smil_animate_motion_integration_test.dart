@@ -20,7 +20,7 @@ void main() {
 
       expect(animations.length, equals(1));
       expect(animations[0].type, equals(SmilAnimationType.animateMotion));
-      expect(animations[0].attributeName, equals('motion'));
+      expect(animations[0].attributeName, equals('transform'));
       expect(animations[0].dur, equals(const Duration(seconds: 5)));
       expect(animations[0].repeatCount, equals(double.infinity));
     });

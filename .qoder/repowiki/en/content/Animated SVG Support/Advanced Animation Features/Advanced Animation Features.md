@@ -26,6 +26,12 @@
 - [lib/src/animation/svg_dom.dart](file://lib/src/animation/svg_dom.dart)
 - [lib/src/animation/css_animations.dart](file://lib/src/animation/css_animations.dart)
 - [lib/src/animation/css_animations_parser.dart](file://lib/src/animation/css_animations_parser.dart)
+- [lib/src/animation/css_to_smil_converter_core.dart](file://lib/src/animation/css_to_smil_converter_core.dart)
+- [lib/src/animation/smil/smil_parser_animation_parsing.dart](file://lib/src/animation/smil/smil_parser_animation_parsing.dart)
+- [lib/src/animation/svg_parser_constants.dart](file://lib/src/animation/svg_parser_constants.dart)
+- [lib/src/animation/animated_svg_painter_gradients.dart](file://lib/src/animation/animated_svg_painter_gradients.dart)
+- [lib/src/animation/animated_svg_painter_gradients_resolver.dart](file://lib/src/animation/animated_svg_painter_gradients_resolver.dart)
+- [lib/src/animation/animated_svg_painter_gradients_values.dart](file://lib/src/animation/animated_svg_painter_gradients_values.dart)
 - [example/lib/advanced_path_morphing.dart](file://example/lib/advanced_path_morphing.dart)
 - [example/lib/path_morphing_example.dart](file://example/lib/path_morphing_example.dart)
 - [test/animation/path_morphing_test.dart](file://test/animation/path_morphing_test.dart)
@@ -42,18 +48,19 @@
 - [test/animation/text_decoration_style_test.dart](file://test/animation/text_decoration_style_test.dart)
 - [test/animation/text_decoration_skip_test.dart](file://test/animation/text_decoration_skip_test.dart)
 - [test/animation/text_decoration_skip_ink_test.dart](file://test/animation/text_decoration_skip_ink_test.dart)
+- [test/animation/gradient_stop_color_animation_test.dart](file://test/animation/gradient_stop_color_animation_test.dart)
+- [test/animation/stop_color_animation_test.dart](file://test/animation/stop_color_animation_test.dart)
+- [test/animation/stroke_dash_stop_color_test.dart](file://test/animation/stroke_dash_stop_color_test.dart)
 </cite>
 
 ## Update Summary
 **Changes Made**
-- Enhanced CSS shorthand expansion system with dedicated files for animation, box model, and font shorthand properties
-- Split the CSS shorthand expansion functionality into modular, specialized components for better maintainability
-- Comprehensive animation shorthand expansion supporting multiple animations with proper comma separation and timing function handling
-- Advanced font shorthand expansion with complete CSS font property parsing including system fonts and complex font families
-- Complete box model shorthand expansion supporting margin, padding, border, border-width, border-style, border-color, border-radius, and background properties
-- SVG-specific marker shorthand expansion for marker-start, marker-mid, and marker-end properties
-- Enhanced CSS processing pipeline with improved property resolution and inheritance support
-- Comprehensive testing coverage for all shorthand expansion scenarios
+- Enhanced CSS shorthand expansion system with dedicated files for animation, font, and box model properties
+- Added comprehensive stop-color animation support for gradient elements, enabling CSS selector animations targeting gradient stop elements
+- Implemented SVGator-compatible ID selector patterns for gradient stop animations
+- Enhanced gradient shader creation with animated stop color support
+- Added specialized gradient stop parsing with CSS variable resolution
+- Comprehensive testing coverage for stop-color animation scenarios
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -65,21 +72,23 @@
 7. [CSS Selector Parsing and Advanced Combinators](#css-selector-parsing-and-advanced-combinators)
 8. [CSS Pseudo-Class State Management](#css-pseudo-class-state-management)
 9. [Enhanced CSS Shorthand Property Expansion System](#enhanced-css-shorthand-property-expansion-system)
-10. [Custom Properties and Calc() Function Support](#custom-properties-and-calcc-function-support)
-11. [3D Transform Capabilities](#3d-transform-capabilities)
-12. [Performance Optimization Through Rendering Cache](#performance-optimization-through-rendering-cache)
-13. [Text Styling and Typography Features](#text-styling-and-typography-features)
-14. [Dependency Analysis](#dependency-analysis)
-15. [Performance Considerations](#performance-considerations)
-16. [Troubleshooting Guide](#troubleshooting-guide)
-17. [Conclusion](#conclusion)
-18. [Appendices](#appendices)
+10. [Stop-Color Animation Support for Gradient Elements](#stop-color-animation-support-for-gradient-elements)
+11. [Custom Properties and Calc() Function Support](#custom-properties-and-calcc-function-support)
+12. [3D Transform Capabilities](#3d-transform-capabilities)
+13. [Performance Optimization Through Rendering Cache](#performance-optimization-through-rendering-cache)
+14. [Text Styling and Typography Features](#text-styling-and-typography-features)
+15. [Dependency Analysis](#dependency-analysis)
+16. [Performance Considerations](#performance-considerations)
+17. [Troubleshooting Guide](#troubleshooting-guide)
+18. [Conclusion](#conclusion)
+19. [Appendices](#appendices)
 
 ## Introduction
 This document explains advanced animation features implemented in the codebase, focusing on:
 - Comprehensive CSS cascade system with specificity calculation and advanced selector parsing
 - CSS pseudo-class support system including :hover, :active, :focus, :first-child, :last-child, :only-child, :empty, :root pseudo-classes
 - **Enhanced CSS shorthand property expansion system with dedicated modular components**
+- **Comprehensive stop-color animation support for gradient elements with SVGator-compatible patterns**
 - Custom properties with calc() function support for dynamic styling
 - Full 3D transform capabilities including Matrix4x4 operations
 - Enhanced rendering cache system for performance optimization
@@ -99,10 +108,11 @@ The animation system is organized into:
 - SMIL engine for time management, parsing, and interpolation
 - Path morphing utilities for shape interpolation
 - Filter runtime for color matrix, blur, and lighting primitives
-- **Enhanced CSS processing pipeline with modular shorthand expansion system**
+- **Enhanced CSS processing pipeline with modular shorthand expansion system and stop-color animation support**
 - 3D transform system with Matrix4x4 operations
 - Rendering cache system for performance optimization
 - Advanced text styling and typography system with CSS property support
+- **Gradient animation system with animated stop color support**
 - Example apps and tests demonstrating advanced scenarios
 
 ```mermaid
@@ -144,23 +154,34 @@ P["animated_svg_painter_text_style.dart"]
 Q["animated_svg_painter_text_paint.dart"]
 R["_ResolvedTextStyle"]
 end
+subgraph "Gradient Animation System"
+S["animated_svg_painter_gradients.dart"]
+T["animated_svg_painter_gradients_resolver.dart"]
+U["animated_svg_painter_gradients_values.dart"]
+V["svg_parser_constants.dart (stop-color support)"]
+W["css_to_smil_converter_core.dart (stop-color parsing)"]
+X["smil_parser_animation_parsing.dart (stop-color type inference)"]
+end
 subgraph "Examples & Tests"
-S["example/lib/path_morphing_example.dart"]
-T["example/lib/advanced_path_morphing.dart"]
-U["test/animation/path_morphing_test.dart"]
-V["test/animation/css_cascade_specificity_test.dart"]
-W["test/animation/css_selectors_combinators_test.dart"]
-X["test/animation/css_variables_calc_test.dart"]
-Y["test/animation/css_shorthand_expansion_test.dart"]
-Z["test/animation/css_3d_transforms_test.dart"]
-AA["test/animation/css_pseudo_classes_view_test.dart"]
-BB["test/animation/font_variant_test.dart"]
-CC["test/animation/text_orientation_test.dart"]
-DD["test/animation/text_underline_position_test.dart"]
-EE["test/animation/text_decoration_thickness_test.dart"]
-FF["test/animation/text_decoration_style_test.dart"]
-GG["test/animation/text_decoration_skip_test.dart"]
-HH["test/animation/text_decoration_skip_ink_test.dart"]
+Y["test/animation/gradient_stop_color_animation_test.dart"]
+Z["test/animation/stop_color_animation_test.dart"]
+AA["test/animation/stroke_dash_stop_color_test.dart"]
+BB["example/lib/path_morphing_example.dart"]
+CC["example/lib/advanced_path_morphing.dart"]
+DD["test/animation/path_morphing_test.dart"]
+EE["test/animation/css_cascade_specificity_test.dart"]
+FF["test/animation/css_selectors_combinators_test.dart"]
+GG["test/animation/css_variables_calc_test.dart"]
+HH["test/animation/css_shorthand_expansion_test.dart"]
+II["test/animation/css_3d_transforms_test.dart"]
+JJ["test/animation/css_pseudo_classes_view_test.dart"]
+KK["test/animation/font_variant_test.dart"]
+LL["test/animation/text_orientation_test.dart"]
+MM["test/animation/text_underline_position_test.dart"]
+NN["test/animation/text_decoration_thickness_test.dart"]
+OO["test/animation/text_decoration_style_test.dart"]
+PP["test/animation/text_decoration_skip_test.dart"]
+QQ["test/animation/text_decoration_skip_ink_test.dart"]
 end
 A --> B
 B --> C
@@ -182,22 +203,28 @@ B --> O
 B --> P
 P --> Q
 P --> R
-S --> F
-T --> F
-U --> F
-V --> I
-W --> J
-X --> K
-Y --> L
-Z --> N
-AA --> M
-BB --> P
-CC --> P
-DD --> P
-EE --> P
-FF --> P
-GG --> P
-HH --> P
+S --> T
+T --> U
+V --> W
+W --> X
+Y --> Z
+Z --> AA
+BB --> F
+CC --> F
+DD --> F
+EE --> I
+FF --> J
+GG --> K
+HH --> L
+II --> N
+JJ --> M
+KK --> P
+LL --> P
+MM --> P
+NN --> P
+OO --> P
+PP --> P
+QQ --> P
 ```
 
 **Diagram sources**
@@ -222,22 +249,15 @@ HH --> P
 - [lib/src/animation/animated_svg_painter_text_style.dart:1-1046](file://lib/src/animation/animated_svg_painter_text_style.dart#L1-L1046)
 - [lib/src/animation/animated_svg_painter_text_paint.dart:1-594](file://lib/src/animation/animated_svg_painter_text_paint.dart#L1-L594)
 - [lib/src/animation/animated_svg_painter.dart:258-460](file://lib/src/animation/animated_svg_painter.dart#L258-L460)
-- [example/lib/path_morphing_example.dart:1-198](file://example/lib/path_morphing_example.dart#L1-L198)
-- [example/lib/advanced_path_morphing.dart:1-317](file://example/lib/advanced_path_morphing.dart#L1-L317)
-- [test/animation/path_morphing_test.dart:1-431](file://test/animation/path_morphing_test.dart#L1-L431)
-- [test/animation/css_cascade_specificity_test.dart:1-583](file://test/animation/css_cascade_specificity_test.dart#L1-L583)
-- [test/animation/css_selectors_combinators_test.dart:1-734](file://test/animation/css_selectors_combinators_test.dart#L1-L734)
-- [test/animation/css_variables_calc_test.dart:1-402](file://test/animation/css_variables_calc_test.dart#L1-L402)
-- [test/animation/css_shorthand_expansion_test.dart:1-619](file://test/animation/css_shorthand_expansion_test.dart#L1-L619)
-- [test/animation/css_3d_transforms_test.dart:1-167](file://test/animation/css_3d_transforms_test.dart#L1-L167)
-- [test/animation/css_pseudo_classes_view_test.dart:1-460](file://test/animation/css_pseudo_classes_view_test.dart#L1-L460)
-- [test/animation/font_variant_test.dart:1-196](file://test/animation/font_variant_test.dart#L1-L196)
-- [test/animation/text_orientation_test.dart:1-85](file://test/animation/text_orientation_test.dart#L1-L85)
-- [test/animation/text_underline_position_test.dart:1-100](file://test/animation/text_underline_position_test.dart#L1-L100)
-- [test/animation/text_decoration_thickness_test.dart:1-100](file://test/animation/text_decoration_thickness_test.dart#L1-L100)
-- [test/animation/text_decoration_style_test.dart:1-87](file://test/animation/text_decoration_style_test.dart#L1-L87)
-- [test/animation/text_decoration_skip_test.dart:1-87](file://test/animation/text_decoration_skip_test.dart#L1-L87)
-- [test/animation/text_decoration_skip_ink_test.dart:1-87](file://test/animation/text_decoration_skip_ink_test.dart#L1-L87)
+- [lib/src/animation/animated_svg_painter_gradients.dart:1-190](file://lib/src/animation/animated_svg_painter_gradients.dart#L1-L190)
+- [lib/src/animation/animated_svg_painter_gradients_resolver.dart:1-157](file://lib/src/animation/animated_svg_painter_gradients_resolver.dart#L1-L157)
+- [lib/src/animation/animated_svg_painter_gradients_values.dart:1-313](file://lib/src/animation/animated_svg_painter_gradients_values.dart#L1-L313)
+- [lib/src/animation/svg_parser_constants.dart:1-47](file://lib/src/animation/svg_parser_constants.dart#L1-L47)
+- [lib/src/animation/css_to_smil_converter_core.dart:1-277](file://lib/src/animation/css_to_smil_converter_core.dart#L1-L277)
+- [lib/src/animation/smil/smil_parser_animation_parsing.dart:1-451](file://lib/src/animation/smil/smil_parser_animation_parsing.dart#L1-L451)
+- [test/animation/gradient_stop_color_animation_test.dart:1-412](file://test/animation/gradient_stop_color_animation_test.dart#L1-L412)
+- [test/animation/stop_color_animation_test.dart:1-433](file://test/animation/stop_color_animation_test.dart#L1-L433)
+- [test/animation/stroke_dash_stop_color_test.dart:1-368](file://test/animation/stroke_dash_stop_color_test.dart#L1-L368)
 
 **Section sources**
 - [lib/src/animation.dart:1-31](file://lib/src/animation.dart#L1-L31)
@@ -253,6 +273,7 @@ HH --> P
 - CSS Cascade System: Comprehensive CSS processing with specificity calculation, selector parsing, pseudo-class state tracking, and property resolution.
 - CSS Pseudo-Class State Manager: Tracks :hover, :active, :focus states and structural pseudo-classes (:first-child, :last-child, :only-child, :empty, :root).
 - **Enhanced CSS Shorthand Expansion System: Modular components for animation, font, and box model shorthand properties**
+- **Stop-Color Animation System: Comprehensive support for gradient stop element animations with CSS selector targeting**
 - 3D Transform System: Full Matrix4x4 support for 3D rotations, translations, scaling, and perspective projections.
 - Rendering Cache System: Performance optimization through intelligent caching of computed values.
 - Text styling system: Comprehensive CSS text property support including underline, overline, line-through, writing-mode, font variants, and advanced typography features.
@@ -274,6 +295,8 @@ HH --> P
 - [lib/src/animation/transform_3d.dart:22-400](file://lib/src/animation/transform_3d.dart#L22-L400)
 - [lib/src/animation/animated_svg_painter.dart:41-130](file://lib/src/animation/animated_svg_painter.dart#L41-L130)
 - [lib/src/animation/animated_svg_painter_text_style.dart:1-1046](file://lib/src/animation/animated_svg_painter_text_style.dart#L1-L1046)
+- [lib/src/animation/animated_svg_painter_gradients.dart:1-190](file://lib/src/animation/animated_svg_painter_gradients.dart#L1-L190)
+- [lib/src/animation/animated_svg_painter_gradients_resolver.dart:1-157](file://lib/src/animation/animated_svg_painter_gradients_resolver.dart#L1-L157)
 
 ## Architecture Overview
 The animated pipeline separates concerns across parsing, CSS processing, animation extraction, timeline management, and rendering. It preserves DOM for SMIL support and provides a CustomPainter-based renderer with comprehensive text styling capabilities, advanced CSS processing with modular shorthand expansion, and performance optimizations through intelligent caching.
@@ -288,6 +311,7 @@ participant ShorthandExpander as "CssShorthandExpander"
 participant PseudoState as "SvgPseudoClassState"
 participant Timeline as "SvgTimeline"
 participant Anim as "SmilAnimation"
+participant GradientResolver as "Gradient Resolver"
 participant TextStyle as "TextStyleResolver"
 participant TextPaint as "TextPainter"
 participant Interp as "Interpolators"
@@ -301,6 +325,9 @@ ShorthandExpander->>ShorthandExpander : Animation/Font/Box model expansion
 CssProcessor->>PseudoState : Track : hover, : active, : focus states
 CssProcessor-->>Picture : Resolved styles with specificity
 Picture->>Timeline : Initialize with animations
+Picture->>GradientResolver : Resolve gradient stops with animated colors
+GradientResolver->>GradientResolver : Extract stop-color from CSS variables
+GradientResolver-->>Picture : Animated gradient stops
 Picture->>TextStyle : Resolve text styles
 TextStyle-->>Picture : _ResolvedTextStyle
 loop Every frame
@@ -325,6 +352,7 @@ end
 - [lib/src/animation/animated_svg_painter_text_style.dart:4-171](file://lib/src/animation/animated_svg_painter_text_style.dart#L4-L171)
 - [lib/src/animation/animated_svg_painter_text_paint.dart:407-456](file://lib/src/animation/animated_svg_painter_text_paint.dart#L407-L456)
 - [lib/src/animation/animated_svg_painter.dart:177-200](file://lib/src/animation/animated_svg_painter.dart#L177-L200)
+- [lib/src/animation/animated_svg_painter_gradients_resolver.dart:69-121](file://lib/src/animation/animated_svg_painter_gradients_resolver.dart#L69-L121)
 
 **Section sources**
 - [ARCHITECTURE.md:146-193](file://ARCHITECTURE.md#L146-L193)
@@ -697,7 +725,7 @@ class CssSelectorMatchContext {
 +String? focusedElementId
 }
 SvgPseudoClassState --> CssPseudoClass : "manages"
-CssPseudoClassState --> CssSelectorMatchContext : "provides"
+SvgPseudoClassState --> CssSelectorMatchContext : "provides"
 ```
 
 **Diagram sources**
@@ -862,6 +890,92 @@ The box model shorthand expansion system covers all CSS box properties:
 - [lib/src/animation/css_shorthand_expansion_font.dart:1-206](file://lib/src/animation/css_shorthand_expansion_font.dart#L1-L206)
 - [lib/src/animation/css_shorthand_expansion_box.dart:1-404](file://lib/src/animation/css_shorthand_expansion_box.dart#L1-L404)
 - [test/animation/css_shorthand_expansion_test.dart:1-619](file://test/animation/css_shorthand_expansion_test.dart#L1-L619)
+
+## Stop-Color Animation Support for Gradient Elements
+
+### Comprehensive Gradient Stop Color Animation System
+The codebase now provides comprehensive support for animating gradient stop colors through CSS selectors, enabling sophisticated animation patterns used by popular animation tools like SVGator.
+
+```mermaid
+classDiagram
+class StopColorAnimationSystem {
++parseStopColorAnimations(svgDocument) SmilAnimation[]
++resolveStopColorFromCSS(stopNode, cssProperty) Object?
++createStopColorAnimation(targetNode, values, keyTimes) SmilAnimation?
++applyStopColorAnimation(stopNode, animatedValue) void
++supportsSVGatorPatterns() bool
+}
+class GradientStopResolver {
++_parseGradientStops(gradientNode) _GradientStop[]
++_extractStyleValue(node, property) String?
++resolveStopColor(stopNode, styleStopColor, stopColorValue) ui.Color?
++applyStopOpacity(stopColor, stopOpacity, opacity) ui.Color
+}
+class AnimatedGradientShader {
++_createGradientShader(gradient, paintBounds) ui.Shader?
++_createLinearRGBInterpolatedStops(stops) _GradientStop[]
++_resolvePaintServerShader(paintValue, paintBounds) ui.Shader?
+}
+StopColorAnimationSystem --> GradientStopResolver : "uses"
+GradientStopResolver --> AnimatedGradientShader : "integrates with"
+```
+
+**Diagram sources**
+- [lib/src/animation/animated_svg_painter_gradients_resolver.dart:69-121](file://lib/src/animation/animated_svg_painter_gradients_resolver.dart#L69-L121)
+- [lib/src/animation/animated_svg_painter_gradients.dart:61-188](file://lib/src/animation/animated_svg_painter_gradients.dart#L61-L188)
+- [lib/src/animation/css_to_smil_converter_core.dart:210-250](file://lib/src/animation/css_to_smil_converter_core.dart#L210-L250)
+
+### CSS Attribute Type Inference for Stop-Color
+The system automatically recognizes and processes stop-color animations through multiple mechanisms:
+
+**Attribute Type Detection**
+- **CSS-to-SMIL Conversion**: CSS stop-color properties are automatically converted to SMIL animations
+- **Direct Attribute Parsing**: stop-color attributes are recognized during SMIL parsing
+- **Type Inference**: The system infers color attribute type for stop elements
+
+**Supported CSS Patterns**
+- **ID Selector Targeting**: `#stop1 { animation: colorAnim 3000ms linear infinite; }`
+- **SVGator-Compatible Patterns**: `#eQVNhIKm4qz3-fill-0 { animation: eQVNhIKm4qz3-fill-0__c ... }`
+- **Multiple Stop Animations**: Independent animations for each gradient stop element
+- **Complex Gradients**: Works with both linear and radial gradients
+
+**Animation Processing Pipeline**
+1. **CSS Parsing**: Extract keyframes and animation declarations
+2. **Target Resolution**: Identify stop elements via CSS selectors
+3. **Value Extraction**: Parse stop-color values from CSS
+4. **SMIL Creation**: Convert CSS animations to SMIL format
+5. **Interpolation Setup**: Configure color interpolation for gradient stops
+6. **Runtime Application**: Apply animated values during rendering
+
+**Section sources**
+- [lib/src/animation/css_to_smil_converter_core.dart:210-250](file://lib/src/animation/css_to_smil_converter_core.dart#L210-L250)
+- [lib/src/animation/smil/smil_parser_animation_parsing.dart:191-217](file://lib/src/animation/smil/smil_parser_animation_parsing.dart#L191-L217)
+- [lib/src/animation/svg_parser_constants.dart:30-36](file://lib/src/animation/svg_parser_constants.dart#L30-L36)
+- [lib/src/animation/animated_svg_painter_gradients_resolver.dart:69-121](file://lib/src/animation/animated_svg_painter_gradients_resolver.dart#L69-L121)
+- [test/animation/gradient_stop_color_animation_test.dart:14-206](file://test/animation/gradient_stop_color_animation_test.dart#L14-L206)
+- [test/animation/stop_color_animation_test.dart:10-433](file://test/animation/stop_color_animation_test.dart#L10-L433)
+- [test/animation/stroke_dash_stop_color_test.dart:115-179](file://test/animation/stroke_dash_stop_color_test.dart#L115-L179)
+
+### SVGator-Compatible Animation Patterns
+The system fully supports the animation patterns commonly used by SVGator and similar animation tools:
+
+**Pattern Recognition**
+- **Hierarchical ID Structure**: `#eQVNhIKm4qz3-fill-0` for gradient stops
+- **Keyframe Naming Convention**: `#elementId { animation: elementId__c ... }`
+- **Multiple Stop Coordination**: Independent animations for each gradient stop
+- **Complex Gradient Support**: Works with userSpaceOnUse gradients and transforms
+
+**Real-World Usage Examples**
+The system has been tested with patterns from the astronaut helmet example, supporting:
+- Multiple gradient stops with independent animations
+- Complex radial gradients with userSpaceOnUse coordinates
+- Gradient transforms and focal points
+- Real-time color interpolation between animated values
+
+**Section sources**
+- [test/animation/gradient_stop_color_animation_test.dart:108-148](file://test/animation/gradient_stop_color_animation_test.dart#L108-L148)
+- [test/animation/stop_color_animation_test.dart:357-395](file://test/animation/stop_color_animation_test.dart#L357-L395)
+- [test/animation/stroke_dash_stop_color_test.dart:331-365](file://test/animation/stroke_dash_stop_color_test.dart#L331-L365)
 
 ## Custom Properties and Calc() Function Support
 
@@ -1165,6 +1279,7 @@ Painter-->>Node : Rendered text
 - Filters depend on Flutter's ui.ImageFilter and color matrices
 - CSS processing depends on CssCascadeResolver, CssSelectorParser, CssVariableResolver, CssCalcEvaluator, and SvgPseudoClassState
 - **Enhanced CSS shorthand expansion depends on modular components: CssShorthandExpansionAnimation, CssShorthandExpansionFont, CssShorthandExpansionBox**
+- **Stop-color animation system depends on css_to_smil_converter_core, smil_parser_animation_parsing, svg_parser_constants, and animated_svg_painter_gradients**
 - 3D transforms depend on Matrix4x4 and Transform3DContext
 - Rendering cache depends on _RenderCache and AnimatedSvgPainter
 - Text styling system depends on Flutter's ui.TextDirection, ui.FontFeature, and ui.ParagraphBuilder
@@ -1197,6 +1312,9 @@ RenderCache --> Painter["AnimatedSvgPainter"]
 Picture --> TextStyle["TextStyleResolver"]
 TextStyle --> TextPaint["TextPainter"]
 TextStyle --> ResolvedStyle["_ResolvedTextStyle"]
+Picture --> StopColorSystem["Stop-Color Animation System"]
+StopColorSystem --> GradientResolver["Gradient Stop Resolver"]
+GradientResolver --> GradientShader["Animated Gradient Shader"]
 ```
 
 **Diagram sources**
@@ -1219,6 +1337,8 @@ TextStyle --> ResolvedStyle["_ResolvedTextStyle"]
 - [lib/src/animation/animated_svg_painter_text_style.dart:1-1046](file://lib/src/animation/animated_svg_painter_text_style.dart#L1-L1046)
 - [lib/src/animation/animated_svg_painter_text_paint.dart:1-594](file://lib/src/animation/animated_svg_painter_text_paint.dart#L1-L594)
 - [lib/src/animation/animated_svg_painter.dart:258-460](file://lib/src/animation/animated_svg_painter.dart#L258-L460)
+- [lib/src/animation/animated_svg_painter_gradients.dart:1-190](file://lib/src/animation/animated_svg_painter_gradients.dart#L1-L190)
+- [lib/src/animation/animated_svg_painter_gradients_resolver.dart:1-157](file://lib/src/animation/animated_svg_painter_gradients_resolver.dart#L1-L157)
 
 **Section sources**
 - [ARCHITECTURE.md:236-281](file://ARCHITECTURE.md#L236-L281)
@@ -1234,6 +1354,7 @@ TextStyle --> ResolvedStyle["_ResolvedTextStyle"]
   - Variable resolution with iteration limits
   - **Enhanced shorthand expansion with modular component architecture**
   - Pseudo-class state tracking with minimal overhead
+  - **Stop-color animation optimization: efficient CSS-to-SMIL conversion and gradient shader caching**
 - 3D transform optimization:
   - Matrix reuse and cloning
   - Perspective matrix caching
@@ -1258,6 +1379,8 @@ Practical tips:
 - **Utilize enhanced shorthand expansion**: Take advantage of modular CSS shorthand components for better performance
 - **Leverage rendering cache**: Enable caching for static content, clear caches on animation changes
 - **Monitor pseudo-class state**: Efficient state tracking minimizes CSS cascade overhead
+- **Optimize stop-color animations**: Use efficient CSS selectors and minimize redundant gradient definitions
+- **Cache gradient shaders**: Take advantage of built-in gradient shader caching for complex animated gradients
 
 **Section sources**
 - [ARCHITECTURE.md:174-193](file://ARCHITECTURE.md#L174-L193)
@@ -1310,12 +1433,19 @@ Common issues and resolutions:
   - Check font feature availability in the selected font
   - Ensure proper inheritance from parent elements
   - Validate unit conversions for text-decoration-thickness and similar properties
+- **Stop-color animation issues**
+  - **CSS selector targeting**: Verify stop elements are properly targeted by CSS selectors
+  - **SVGator patterns**: Ensure ID naming conventions match expected patterns
+  - **Gradient shader creation**: Check that animated gradient stops are properly resolved
+  - **Color interpolation**: Verify stop-color values are correctly parsed and interpolated
+  - **CSS variable resolution**: Ensure CSS variables in stop-color values are properly resolved
 
 Diagnostic utilities:
 - AnimatedSvgPicture exposes trace callbacks and frame tick logging for detailed runtime insights
 - Use test suites to validate normalization and interpolation correctness
 - CSS processing tests provide comprehensive coverage of selector parsing, cascade resolution, and pseudo-class matching
 - **Enhanced shorthand expansion tests**: Validate all shorthand property expansions with comprehensive test coverage
+- **Stop-color animation tests**: Comprehensive validation of gradient stop animation scenarios
 - 3D transform tests validate matrix operations and perspective calculations
 - **Pseudo-class state tests**: Validate hover, active, and focus state tracking
 - **Rendering cache tests**: Monitor cache effectiveness and invalidation behavior
@@ -1333,6 +1463,9 @@ Diagnostic utilities:
 - [test/animation/css_shorthand_expansion_test.dart:1-619](file://test/animation/css_shorthand_expansion_test.dart#L1-L619)
 - [test/animation/font_variant_test.dart:1-196](file://test/animation/font_variant_test.dart#L1-L196)
 - [test/animation/text_orientation_test.dart:1-85](file://test/animation/text_orientation_test.dart#L1-L85)
+- [test/animation/gradient_stop_color_animation_test.dart:1-412](file://test/animation/gradient_stop_color_animation_test.dart#L1-L412)
+- [test/animation/stop_color_animation_test.dart:1-433](file://test/animation/stop_color_animation_test.dart#L1-L433)
+- [test/animation/stroke_dash_stop_color_test.dart:1-368](file://test/animation/stroke_dash_stop_color_test.dart#L1-L368)
 
 ## Conclusion
 The codebase delivers a robust animated SVG pipeline with comprehensive advanced features:
@@ -1342,6 +1475,7 @@ The codebase delivers a robust animated SVG pipeline with comprehensive advanced
 - Filter runtime covering color matrix, blur, and lighting primitives
 - Comprehensive CSS cascade system with specificity calculation, selector parsing, pseudo-class state tracking, and property resolution
 - **Enhanced CSS shorthand expansion system with modular components for animation, font, and box model properties**
+- **Comprehensive stop-color animation support for gradient elements with SVGator-compatible patterns**
 - Custom properties with calc() function support for dynamic styling
 - Full 3D transform capabilities with Matrix4x4 operations
 - **Enhanced rendering cache system** for significant performance improvements
@@ -1349,7 +1483,7 @@ The codebase delivers a robust animated SVG pipeline with comprehensive advanced
 - Advanced typography features including underline, overline, line-through, writing-mode, font variants, and text decoration controls
 - Strong performance strategies and extensible architecture
 
-The addition of comprehensive CSS pseudo-class support enables sophisticated interactive animations with :hover, :active, :focus, and structural pseudo-classes. The enhanced 3D transform system provides professional-grade 3D animation capabilities. The new rendering cache system delivers substantial performance improvements for static content while maintaining proper invalidation for animated elements. **The enhanced CSS shorthand expansion system with dedicated modular components provides comprehensive property expansion capabilities, improving maintainability and performance across animation, font, and box model properties.** Adopt the examples and tests as references for building complex, performant animations while adhering to normalization and interpolation constraints.
+The addition of comprehensive stop-color animation support enables sophisticated gradient animations with precise CSS selector targeting. The system supports both traditional CSS patterns and SVGator-compatible ID naming conventions, making it compatible with popular animation tools. The enhanced gradient shader system efficiently handles animated stop colors through intelligent caching and interpolation. **The enhanced CSS shorthand expansion system with dedicated modular components provides comprehensive property expansion capabilities, improving maintainability and performance across animation, font, and box model properties.** Adopt the examples and tests as references for building complex, performant animations while adhering to normalization and interpolation constraints.
 
 ## Appendices
 
@@ -1359,6 +1493,8 @@ The addition of comprehensive CSS pseudo-class support enables sophisticated int
 - CSS cascade system: specificity calculation, selector parsing, pseudo-class state tracking, property resolution
 - **CSS pseudo-classes**: :hover, :active, :focus, :first-child, :last-child, :only-child, :empty, :root support
 - **Enhanced CSS shorthand expansion**: Modular components for animation, font, and box model properties
+- **Stop-color animation support**: Comprehensive gradient stop element animation with CSS selector targeting
+- **SVGator compatibility**: Support for SVGator-style ID patterns and naming conventions
 - Custom properties: var() resolution with inheritance and fallback
 - Calc() functions: mathematical expression evaluation with unit conversion
 - 3D transforms: Matrix4x4 operations, perspective projection, backface culling
@@ -1383,3 +1519,11 @@ The addition of comprehensive CSS pseudo-class support enables sophisticated int
 - [lib/src/animation/animated_svg_painter_text_paint.dart:400-594](file://lib/src/animation/animated_svg_painter_text_paint.dart#L400-L594)
 - [lib/src/animation/animated_svg_painter.dart:193-460](file://lib/src/animation/animated_svg_painter.dart#L193-L460)
 - [CURRENT_STATUS.md:70-77](file://CURRENT_STATUS.md#L70-L77)
+- [lib/src/animation/animated_svg_painter_gradients.dart:1-190](file://lib/src/animation/animated_svg_painter_gradients.dart#L1-L190)
+- [lib/src/animation/animated_svg_painter_gradients_resolver.dart:1-157](file://lib/src/animation/animated_svg_painter_gradients_resolver.dart#L1-L157)
+- [lib/src/animation/css_to_smil_converter_core.dart:210-250](file://lib/src/animation/css_to_smil_converter_core.dart#L210-L250)
+- [lib/src/animation/smil/smil_parser_animation_parsing.dart:191-217](file://lib/src/animation/smil/smil_parser_animation_parsing.dart#L191-L217)
+- [lib/src/animation/svg_parser_constants.dart:30-36](file://lib/src/animation/svg_parser_constants.dart#L30-L36)
+- [test/animation/gradient_stop_color_animation_test.dart:1-412](file://test/animation/gradient_stop_color_animation_test.dart#L1-L412)
+- [test/animation/stop_color_animation_test.dart:1-433](file://test/animation/stop_color_animation_test.dart#L1-L433)
+- [test/animation/stroke_dash_stop_color_test.dart:1-368](file://test/animation/stroke_dash_stop_color_test.dart#L1-L368)
