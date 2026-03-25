@@ -17,7 +17,7 @@ void main() {
     });
 
     group('SVGator-style translate + scale compound transforms', () {
-      test('decomposes translate(px) + scale into separate animations', () {
+      test('keeps compound transform as single animation with replace', () {
         // SVGator-style animation from astronaut helmet:
         // translate(496.72781px,415.815353px) scale(1,1) → scale(0.89375,0.89375)
         final keyframes = CssKeyframes(
@@ -59,34 +59,19 @@ void main() {
           document,
         );
 
-        // Should have 2 separate animations: one for translate, one for scale
-        expect(smilAnimations.length, equals(2));
+        // Should have 1 animation with full compound transform (not decomposed)
+        expect(smilAnimations.length, equals(1));
 
-        // Find translate animation
-        final translateAnim = smilAnimations.firstWhere(
-          (a) => a.transformType == 'translate',
-          orElse: () => throw StateError('No translate animation found'),
-        );
-        expect(translateAnim.type, equals(SmilAnimationType.animateTransform));
-        expect(translateAnim.attributeName, equals('transform'));
-        expect(translateAnim.values!.length, equals(3));
-        // Translate values should be constant
-        expect(translateAnim.values![0], contains('496.7278'));
-        expect(translateAnim.values![0], contains('415.8154'));
-
-        // Find scale animation
-        final scaleAnim = smilAnimations.firstWhere(
-          (a) => a.transformType == 'scale',
-          orElse: () => throw StateError('No scale animation found'),
-        );
-        expect(scaleAnim.type, equals(SmilAnimationType.animateTransform));
-        expect(scaleAnim.attributeName, equals('transform'));
-        expect(scaleAnim.values!.length, equals(3));
-        // Scale changes: 1,1 → 0.89375,0.89375 → 1,1
-        // Values are formatted with limited precision
-        expect(scaleAnim.values![0], contains('1'));
-        expect(scaleAnim.values![1], contains('0.8938'));
-        expect(scaleAnim.values![2], contains('1'));
+        final anim = smilAnimations[0];
+        expect(anim.type, equals(SmilAnimationType.animateTransform));
+        expect(anim.attributeName, equals('transform'));
+        expect(anim.additive, equals(SmilAdditiveMode.replace));
+        expect(anim.values!.length, equals(3));
+        // Values contain full compound transforms
+        expect(anim.values![0].toString(), contains('translate'));
+        expect(anim.values![0].toString(), contains('scale'));
+        expect(anim.values![1].toString(), contains('translate'));
+        expect(anim.values![1].toString(), contains('scale'));
       });
 
       test('keyTimes match keyframe offsets', () {
@@ -157,7 +142,7 @@ void main() {
     });
 
     group('SVGator-style rotate + scale with per-keyframe timing', () {
-      test('decomposes rotate + scale and extracts cubic-bezier timing', () {
+      test('keeps compound rotate + scale as single animation with timing', () {
         // From astronaut helmet eQVNhIKm4qz63_ts__ts:
         // rotate(464.738819deg) scale(0.632549,0.632549) with cubic-bezier(0.77,0,0.175,1)
         final keyframes = CssKeyframes(
@@ -223,21 +208,20 @@ void main() {
           document,
         );
 
-        expect(smilAnimations.length, equals(2));
+        // Should have 1 animation (not decomposed)
+        expect(smilAnimations.length, equals(1));
 
-        // Check that scale animation has per-keyframe cubic-bezier timing
-        final scaleAnim = smilAnimations.firstWhere(
-          (a) => a.transformType == 'scale',
-          orElse: () => throw StateError('No scale animation found'),
-        );
+        final anim = smilAnimations[0];
+        expect(anim.additive, equals(SmilAdditiveMode.replace));
 
-        expect(scaleAnim.calcMode, equals(SmilCalcMode.spline));
-        expect(scaleAnim.keySplines, isNotNull);
+        // Check that animation has per-keyframe cubic-bezier timing
+        expect(anim.calcMode, equals(SmilCalcMode.spline));
+        expect(anim.keySplines, isNotNull);
         // Should have n-1 keySplines for n keyframes
-        expect(scaleAnim.keySplines!.length, equals(6));
+        expect(anim.keySplines!.length, equals(6));
 
         // Verify the cubic-bezier values
-        for (final spline in scaleAnim.keySplines!) {
+        for (final spline in anim.keySplines!) {
           expect(spline.x1, closeTo(0.77, 0.01));
           expect(spline.y1, closeTo(0.0, 0.01));
           expect(spline.x2, closeTo(0.175, 0.01));
@@ -287,7 +271,7 @@ void main() {
     });
 
     group('translate + rotate compound transforms', () {
-      test('decomposes translate + rotate correctly', () {
+      test('keeps compound translate + rotate as single animation', () {
         // From astronaut helmet eQVNhIKm4qz66_tr__tr:
         // translate(198.465179px,277.487177px) rotate(11.95341deg)
         final keyframes = CssKeyframes(
@@ -331,28 +315,17 @@ void main() {
           document,
         );
 
-        expect(smilAnimations.length, equals(2));
+        // Should have 1 animation with compound transform (not decomposed)
+        expect(smilAnimations.length, equals(1));
 
-        // Translate should be constant
-        final translateAnim = smilAnimations.firstWhere(
-          (a) => a.transformType == 'translate',
-          orElse: () => throw StateError('No translate animation found'),
-        );
-        expect(translateAnim.values!.length, equals(3));
-        // All translate values should be the same
-        expect(translateAnim.values![0], translateAnim.values![1]);
-        expect(translateAnim.values![1], translateAnim.values![2]);
-
-        // Rotate should change
-        final rotateAnim = smilAnimations.firstWhere(
-          (a) => a.transformType == 'rotate',
-          orElse: () => throw StateError('No rotate animation found'),
-        );
-        expect(rotateAnim.values!.length, equals(3));
-        // Rotate values: 11.95341 → -8.46827 → 11.95341
-        expect(rotateAnim.values![0], contains('11.9534'));
-        expect(rotateAnim.values![1], contains('-8.4683'));
-        expect(rotateAnim.values![2], contains('11.9534'));
+        final anim = smilAnimations[0];
+        expect(anim.additive, equals(SmilAdditiveMode.replace));
+        expect(anim.values!.length, equals(3));
+        // Values contain full compound transforms
+        expect(anim.values![0].toString(), contains('translate'));
+        expect(anim.values![0].toString(), contains('rotate'));
+        expect(anim.values![1].toString(), contains('translate'));
+        expect(anim.values![1].toString(), contains('rotate'));
       });
     });
 
@@ -483,7 +456,7 @@ void main() {
     });
 
     group('additive mode for compound transforms', () {
-      test('decomposed transforms use additive sum mode', () {
+      test('compound transforms use additive replace mode', () {
         final keyframes = CssKeyframes(
           name: 'test',
           keyframes: [
@@ -510,10 +483,9 @@ void main() {
           document,
         );
 
-        // Both animations should use additive='sum' to combine correctly
-        for (final anim in smilAnimations) {
-          expect(anim.additive, equals(SmilAdditiveMode.sum));
-        }
+        // Single animation should use additive='replace' for correct CSS semantics
+        expect(smilAnimations.length, equals(1));
+        expect(smilAnimations[0].additive, equals(SmilAdditiveMode.replace));
       });
     });
 

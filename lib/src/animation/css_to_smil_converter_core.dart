@@ -56,7 +56,29 @@ SmilAnimation? _createSmilAnimation({
   List<CubicBezier>? keySplines;
   List<StepTiming>? keySteps;
 
-  if (intervalCount > 0) {
+  // Per SMIL spec: string-type attributes must use discrete calcMode
+  // This includes visibility, display, fill-rule, stroke-linecap, etc.
+  const discreteAttributes = {
+    'visibility',
+    'display',
+    'fill-rule',
+    'stroke-linecap',
+    'stroke-linejoin',
+    'pointer-events',
+    'clip-rule',
+    'text-anchor',
+    'dominant-baseline',
+    'alignment-baseline',
+  };
+
+  final isDiscreteAttribute = discreteAttributes.contains(attributeName) ||
+      attributeType == SvgAttributeType.string ||
+      attributeType == SvgAttributeType.url;
+
+  if (isDiscreteAttribute) {
+    calcMode = SmilCalcMode.discrete;
+    // For discrete mode, we don't use keySplines or keySteps
+  } else if (intervalCount > 0) {
     // Try to detect per-keyframe overrides first.
     final perInterval = <_TimingConversion>[];
     for (int i = 0; i < intervalCount; i++) {

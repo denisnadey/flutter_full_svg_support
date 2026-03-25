@@ -130,9 +130,22 @@ SmilAnimation? _parseAnimationElement(
     final fillMode = _parseFillMode(
       animNode.getAttributeValue('fill')?.toString(),
     );
-    final calcMode = _parseCalcMode(
-      animNode.getAttributeValue('calcMode')?.toString(),
-    );
+
+    // Parse calcMode - auto-set to discrete for string-type attributes per SMIL spec
+    final explicitCalcMode = animNode.getAttributeValue('calcMode')?.toString();
+    SmilCalcMode calcMode;
+    if (explicitCalcMode != null) {
+      // Explicit calcMode specified - use it
+      calcMode = _parseCalcMode(explicitCalcMode);
+    } else if (_discreteAttributes.contains(attributeName) ||
+        attributeType == SvgAttributeType.string ||
+        attributeType == SvgAttributeType.url) {
+      // Per SMIL spec: string-type attributes must use discrete calcMode
+      calcMode = SmilCalcMode.discrete;
+    } else {
+      calcMode = SmilCalcMode.linear;
+    }
+
     final additive = _parseAdditiveMode(
       animNode.getAttributeValue('additive')?.toString(),
     );
@@ -447,4 +460,20 @@ const Set<String> _colorAttributes = {
   'stop-color',
   'flood-color',
   'lighting-color',
+};
+
+/// Properties that must always use discrete calcMode per SMIL spec.
+/// These are non-interpolatable string-type properties.
+/// Reference: Blink SVGAnimateElement.cpp:510-515
+const Set<String> _discreteAttributes = {
+  'visibility',
+  'display',
+  'fill-rule',
+  'stroke-linecap',
+  'stroke-linejoin',
+  'pointer-events',
+  'clip-rule',
+  'text-anchor',
+  'dominant-baseline',
+  'alignment-baseline',
 };

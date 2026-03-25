@@ -266,10 +266,10 @@ void main() {
   });
 
   // ─────────────────────────────────────────────────────────────────────────
-  // Compound CSS transform decomposition
+  // CSS compound transform handling (no decomposition - CSS uses REPLACE semantics)
   // ─────────────────────────────────────────────────────────────────────────
-  group('Compound CSS transform decomposition', () {
-    test('compound transform emits separate SMIL animations per function', () {
+  group('CSS compound transform (no decomposition)', () {
+    test('compound transform produces single SMIL animation with full string', () {
       const svgString = '''
 <svg viewBox="0 0 100 100">
   <style>
@@ -288,16 +288,22 @@ void main() {
           .where((a) => a.attributeName == 'transform')
           .toList();
 
-      // Should have at least one SmilAnimation per distinct transform function.
-      // translate is constant → may be collapsed; scale is changing.
+      // Should have exactly ONE transform animation (not decomposed)
       expect(
-        transformAnims.any((a) => a.transformType == 'scale'),
-        isTrue,
-        reason: 'Expected a scale animateTransform animation',
+        transformAnims.length,
+        equals(1),
+        reason: 'Expected single transform animation, not decomposed',
+      );
+
+      // Should use additive=replace (CSS semantics)
+      expect(
+        transformAnims.first.additive,
+        equals(SmilAdditiveMode.replace),
+        reason: 'CSS transforms should use replace mode',
       );
     });
 
-    test('compound transform: translate+rotate yields separate animations', () {
+    test('compound transform: translate+rotate yields single animation', () {
       const svgString = '''
 <svg viewBox="0 0 100 100">
   <style>
@@ -316,21 +322,24 @@ void main() {
           .where((a) => a.attributeName == 'transform')
           .toList();
 
-      // At least one translate and one rotate.
-      final hasTranslate = transformAnims.any(
-        (a) => a.transformType == 'translate',
-      );
-      final hasRotate = transformAnims.any((a) => a.transformType == 'rotate');
+      // Should produce single animation with compound transform
       expect(
-        hasTranslate || hasRotate,
-        isTrue,
-        reason: 'Expected translate and/or rotate animation',
+        transformAnims.length,
+        equals(1),
+        reason: 'Expected single transform animation for compound CSS',
+      );
+
+      // Transform type is inferred from first function
+      expect(
+        transformAnims.first.transformType,
+        equals('translate'),
+        reason: 'Transform type inferred from first function',
       );
     });
 
-    test('SVGator-style _ts id: scale animation from compound transform', () {
+    test('SVGator-style _ts id: single animation with compound transform', () {
       // Simulates the SVGator pattern where a <g> with a compound transform is
-      // animated by CSS.
+      // animated by CSS. Now uses single animation with REPLACE semantics.
       const svgString = '''
 <svg viewBox="0 0 992 992">
   <style>
@@ -348,20 +357,24 @@ void main() {
       final document = SvgParser.parse(svgString);
       final animations = SmilParser.parseAnimations(document);
 
-      final scaleAnims = animations
-          .where((a) => a.transformType == 'scale')
+      final transformAnims = animations
+          .where((a) => a.attributeName == 'transform')
           .toList();
+
+      // Should have exactly one transform animation (not decomposed)
       expect(
-        scaleAnims,
-        isNotEmpty,
-        reason: 'Expected scale animateTransform from SVGator-style keyframe',
+        transformAnims.length,
+        equals(1),
+        reason: 'Expected single transform animation from SVGator-style keyframe',
       );
 
-      final scaleAnim = scaleAnims.first;
+      final anim = transformAnims.first;
       // Should repeat infinitely.
-      expect(scaleAnim.repeatCount, equals(double.infinity));
+      expect(anim.repeatCount, equals(double.infinity));
       // Should use spline (cubic-bezier per keyframe).
-      expect(scaleAnim.calcMode, equals(SmilCalcMode.spline));
+      expect(anim.calcMode, equals(SmilCalcMode.spline));
+      // Should use replace mode (CSS semantics)
+      expect(anim.additive, equals(SmilAdditiveMode.replace));
     });
   });
 }

@@ -8,8 +8,6 @@ import 'svg_dom.dart';
 part 'css_to_smil_converter_core.dart';
 part 'css_to_smil_converter_timing.dart';
 part 'css_to_smil_converter_transforms.dart';
-part 'css_to_smil_converter_transforms_decompose.dart';
-part 'css_to_smil_converter_transforms_decompose_timing.dart';
 part 'css_to_smil_converter_transforms_values.dart';
 
 /// Конвертер CSS анимаций в SMIL структуру
@@ -33,20 +31,12 @@ class CssToSmilConverter {
       // Определяем тип атрибута
       final attributeType = _inferAttributeType(propertyName, targetNode);
 
-      // Для transform: проверяем не является ли значение compound transform.
-      // SVGator генерирует: translate(Xpx,Ypx) scale(sx,sy) — несколько функций.
-      // Такой compound нужно разложить на отдельные SmilAnimation per-function.
-      if (propertyName == 'transform' &&
-          attributeType == SvgAttributeType.transform) {
-        final decomposed = _decomposeCompoundTransform(
-          keyframes: keyframes,
-          animation: animation,
-          targetNode: targetNode,
-          values: values,
-        );
-        smilAnimations.addAll(decomposed);
-        continue;
-      }
+      // CSS transform animations use REPLACE semantics - each keyframe value
+      // is the complete transform. DO NOT decompose into per-function animations
+      // with additive=sum, as that would cause double-application.
+      // The transform interpolator handles compound transforms via decomposition
+      // internally, and _createSmilAnimation uses additive=replace which matches
+      // CSS semantics. So we let transforms go through the normal path below.
 
       // Создаём SMIL анимацию
       final smilAnim = _createSmilAnimation(

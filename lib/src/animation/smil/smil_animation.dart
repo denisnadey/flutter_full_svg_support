@@ -345,6 +345,16 @@ class SmilAnimation {
       return motionValue;
     }
 
+    // For <set> elements, always return the 'to' value during the active period
+    // Per SMIL spec: <set> provides a simple means of setting the value of an
+    // attribute for a specified duration. It does not interpolate.
+    if (type == SmilAnimationType.set) {
+      // <set> simply sets the attribute to 'to' value
+      final setValue = to;
+      // Применяем additive="sum" (добавляем к базовому значению)
+      return _applyAdditive(setValue);
+    }
+
     // Для discrete calcMode - без интерполяции
     if (calcMode == SmilCalcMode.discrete) {
       final animValue = _computeDiscreteValue(t);

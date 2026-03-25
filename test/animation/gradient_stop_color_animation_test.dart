@@ -6,7 +6,6 @@ import 'package:flutter_svg/src/animation/animated_svg_painter.dart';
 import 'package:flutter_svg/src/animation/animated_svg_picture.dart';
 import 'package:flutter_svg/src/animation/svg_dom.dart';
 import 'package:flutter_svg/src/animation/svg_parser.dart';
-import 'package:flutter_svg/src/animation/smil/smil_animation.dart';
 import 'package:flutter_svg/src/animation/smil/smil_parser.dart';
 
 void main() {
@@ -331,7 +330,8 @@ void main() {
         reason: 'Expected 2 stop-color animations',
       );
 
-      // Create the painter
+      // Create the painter (verifies no error during construction)
+      // ignore: unused_local_variable
       final painter = AnimatedSvgPainter(
         document: document,
         hasAnimations: true,
