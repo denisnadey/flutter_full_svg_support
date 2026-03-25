@@ -15,7 +15,8 @@ void main() {
   group('Image in Complex Contexts', () {
     group('image inside clipPath', () {
       testWidgets('image defines clip region by its bounds', (tester) async {
-        final svg = '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        final svg =
+            '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <clipPath id="imgClip">
               <image x="20" y="20" width="60" height="60"
@@ -39,7 +40,8 @@ void main() {
       });
 
       testWidgets('image in clipPath with transform', (tester) async {
-        final svg = '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        final svg =
+            '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <clipPath id="imgClip">
               <image x="10" y="10" width="40" height="40" transform="rotate(45 30 30)"
@@ -65,7 +67,8 @@ void main() {
 
     group('image inside use', () {
       testWidgets('referenced image renders at use position', (tester) async {
-        final svg = '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        final svg =
+            '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <image id="myImg" x="0" y="0" width="30" height="30"
                    href="data:image/png;base64,$_tinyBluePngBase64"/>
@@ -88,7 +91,8 @@ void main() {
       });
 
       testWidgets('image inside symbol with viewBox', (tester) async {
-        final svg = '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        final svg =
+            '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <symbol id="imgSymbol" viewBox="0 0 50 50">
               <image x="5" y="5" width="40" height="40"
@@ -114,7 +118,8 @@ void main() {
 
     group('image inside mask', () {
       testWidgets('image contributes to mask region', (tester) async {
-        final svg = '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        final svg =
+            '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <mask id="imgMask">
               <image x="20" y="20" width="60" height="60"
@@ -138,7 +143,8 @@ void main() {
       });
 
       testWidgets('image mask with objectBoundingBox units', (tester) async {
-        final svg = '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        final svg =
+            '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <mask id="imgMask" maskContentUnits="objectBoundingBox">
               <rect x="0.1" y="0.1" width="0.8" height="0.8" fill="white"/>
@@ -164,7 +170,8 @@ void main() {
 
     group('image inside pattern', () {
       testWidgets('image tiles correctly within pattern', (tester) async {
-        final svg = '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        final svg =
+            '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <pattern id="imgPattern" x="0" y="0" width="20" height="20" 
                      patternUnits="userSpaceOnUse">
@@ -189,7 +196,8 @@ void main() {
       });
 
       testWidgets('pattern with objectBoundingBox and image', (tester) async {
-        final svg = '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        final svg =
+            '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <pattern id="imgPattern" x="0" y="0" width="0.25" height="0.25" 
                      patternUnits="objectBoundingBox"
@@ -217,7 +225,8 @@ void main() {
 
     group('image with filters', () {
       testWidgets('filter applies to image content', (tester) async {
-        final svg = '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        final svg =
+            '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <filter id="blur">
               <feGaussianBlur stdDeviation="2"/>
@@ -241,7 +250,8 @@ void main() {
       });
 
       testWidgets('color matrix filter on image', (tester) async {
-        final svg = '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        final svg =
+            '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <filter id="grayscale">
               <feColorMatrix type="saturate" values="0"/>
@@ -267,7 +277,8 @@ void main() {
 
     group('image percentage dimensions', () {
       testWidgets('image with percentage width/height', (tester) async {
-        final svg = '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        final svg =
+            '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <image x="10" y="10" width="80%" height="80%"
                  href="data:image/png;base64,$_tinyBluePngBase64"/>
         </svg>''';
@@ -285,8 +296,11 @@ void main() {
         expect(find.byType(AnimatedSvgPicture), findsOneWidget);
       });
 
-      testWidgets('image with percentage width, absolute height', (tester) async {
-        final svg = '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      testWidgets('image with percentage width, absolute height', (
+        tester,
+      ) async {
+        final svg =
+            '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <image x="5" y="5" width="50%" height="40"
                  href="data:image/png;base64,$_wideRedPngBase64"/>
         </svg>''';
@@ -305,7 +319,8 @@ void main() {
       });
 
       testWidgets('image inside foreignObject with percentage', (tester) async {
-        final svg = '''<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+        final svg =
+            '''<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
           <foreignObject x="50" y="50" width="100" height="100">
             <svg viewBox="0 0 100 100">
               <image x="10" y="10" width="80%" height="80%"
@@ -329,8 +344,11 @@ void main() {
     });
 
     group('image intrinsic size fallback', () {
-      testWidgets('image without width/height uses intrinsic size', (tester) async {
-        final svg = '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      testWidgets('image without width/height uses intrinsic size', (
+        tester,
+      ) async {
+        final svg =
+            '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <image x="40" y="40"
                  href="data:image/png;base64,$_tinyBluePngBase64"/>
         </svg>''';
@@ -348,8 +366,11 @@ void main() {
         expect(find.byType(AnimatedSvgPicture), findsOneWidget);
       });
 
-      testWidgets('image with only width uses intrinsic aspect ratio', (tester) async {
-        final svg = '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      testWidgets('image with only width uses intrinsic aspect ratio', (
+        tester,
+      ) async {
+        final svg =
+            '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <image x="10" y="10" width="50"
                  href="data:image/png;base64,$_wideRedPngBase64"/>
         </svg>''';
@@ -372,7 +393,7 @@ void main() {
   group('ForeignObject Custom Builder', () {
     testWidgets('foreignObjectBuilder receives correct info', (tester) async {
       SvgForeignObjectInfo? receivedInfo;
-      
+
       const svgXml = '''
         <svg viewBox="0 0 100 100">
           <foreignObject id="fo1" x="10" y="20" width="80" height="60">
@@ -412,7 +433,9 @@ void main() {
       expect(receivedInfo!.children, isNotEmpty);
     });
 
-    testWidgets('foreignObjectBuilder can return custom widget', (tester) async {
+    testWidgets('foreignObjectBuilder can return custom widget', (
+      tester,
+    ) async {
       const svgXml = '''
         <svg viewBox="0 0 100 100">
           <foreignObject id="fo1" x="10" y="10" width="80" height="80">
@@ -431,9 +454,7 @@ void main() {
                 foreignObjectBuilder: (context, info) {
                   return Container(
                     color: Colors.blue,
-                    child: const Center(
-                      child: Text('Custom Content'),
-                    ),
+                    child: const Center(child: Text('Custom Content')),
                   );
                 },
               ),
@@ -448,7 +469,9 @@ void main() {
       expect(find.byType(Container), findsWidgets);
     });
 
-    testWidgets('foreignObjectBuilder returning null renders nothing', (tester) async {
+    testWidgets('foreignObjectBuilder returning null renders nothing', (
+      tester,
+    ) async {
       const svgXml = '''
         <svg viewBox="0 0 100 100">
           <foreignObject x="10" y="10" width="80" height="80">
@@ -477,9 +500,11 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('foreignObject with requiredExtensions skips builder', (tester) async {
+    testWidgets('foreignObject with requiredExtensions skips builder', (
+      tester,
+    ) async {
       bool builderCalled = false;
-      
+
       const svgXml = '''
         <svg viewBox="0 0 100 100">
           <foreignObject x="10" y="10" width="80" height="80"
@@ -512,9 +537,11 @@ void main() {
       expect(builderCalled, isFalse);
     });
 
-    testWidgets('multiple foreignObjects each get builder call', (tester) async {
+    testWidgets('multiple foreignObjects each get builder call', (
+      tester,
+    ) async {
       final receivedIds = <String?>[];
-      
+
       const svgXml = '''
         <svg viewBox="0 0 100 100">
           <foreignObject id="fo1" x="5" y="5" width="40" height="40">

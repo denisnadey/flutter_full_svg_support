@@ -111,12 +111,20 @@ extension AnimatedSvgPainterGeometryExtension on AnimatedSvgPainter {
         final imgHeight = _getNumber(node, 'height');
         // If width/height are not specified, try to get from loaded image
         final href = _extractImageHref(node);
-        final actualWidth = imgWidth ?? (href != null ? imagesByHref[href]?.width.toDouble() : null);
-        final actualHeight = imgHeight ?? (href != null ? imagesByHref[href]?.height.toDouble() : null);
-        if (actualWidth == null || actualHeight == null || actualWidth <= 0 || actualHeight <= 0) {
+        final actualWidth =
+            imgWidth ??
+            (href != null ? imagesByHref[href]?.width.toDouble() : null);
+        final actualHeight =
+            imgHeight ??
+            (href != null ? imagesByHref[href]?.height.toDouble() : null);
+        if (actualWidth == null ||
+            actualHeight == null ||
+            actualWidth <= 0 ||
+            actualHeight <= 0) {
           return null;
         }
-        return ui.Path()..addRect(ui.Rect.fromLTWH(imgX, imgY, actualWidth, actualHeight));
+        return ui.Path()
+          ..addRect(ui.Rect.fromLTWH(imgX, imgY, actualWidth, actualHeight));
       default:
         return null;
     }

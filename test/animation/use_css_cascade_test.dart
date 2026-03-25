@@ -810,11 +810,11 @@ void main() {
         expect(analysis.pixelCount, greaterThan(1000));
       });
 
-      testWidgets('CSS rules inherit through use boundary for inheritable props', (
-        WidgetTester tester,
-      ) async {
-        // fill is an inheritable property in SVG
-        const svgXml = '''
+      testWidgets(
+        'CSS rules inherit through use boundary for inheritable props',
+        (WidgetTester tester) async {
+          // fill is an inheritable property in SVG
+          const svgXml = '''
           <svg viewBox="0 0 100 100">
             <g fill="red">
               <defs>
@@ -825,22 +825,27 @@ void main() {
           </svg>
         ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+          await tester.pumpWidget(
+            const MaterialApp(
+              home: Scaffold(
+                body: AnimatedSvgPicture.string(
+                  svgXml,
+                  width: 200,
+                  height: 200,
+                ),
+              ),
             ),
-          ),
-        );
+          );
 
-        await tester.pump();
+          await tester.pump();
 
-        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
-        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+          final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+          final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
 
-        // fill should inherit from parent g through use boundary
-        expect(analysis.pixelCount, greaterThan(1000));
-      });
+          // fill should inherit from parent g through use boundary
+          expect(analysis.pixelCount, greaterThan(1000));
+        },
+      );
 
       testWidgets('multiple uses of same symbol with different styles', (
         WidgetTester tester,

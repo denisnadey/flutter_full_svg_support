@@ -535,7 +535,8 @@ void main() {
 
       final document = SvgParser.parse(svgString);
       final filter =
-          document.filters!.getById('distantDefaults') as SvgDiffuseLightingFilter;
+          document.filters!.getById('distantDefaults')
+              as SvgDiffuseLightingFilter;
 
       expect(filter.lightSource, isA<SvgDistantLightSource>());
       final distantLight = filter.lightSource as SvgDistantLightSource;
@@ -558,7 +559,8 @@ void main() {
 
       final document = SvgParser.parse(svgString);
       final filter =
-          document.filters!.getById('pointDefaults') as SvgDiffuseLightingFilter;
+          document.filters!.getById('pointDefaults')
+              as SvgDiffuseLightingFilter;
 
       expect(filter.lightSource, isA<SvgPointLightSource>());
       final pointLight = filter.lightSource as SvgPointLightSource;
@@ -618,8 +620,10 @@ void main() {
       expect(spotLight.specularExponent, 128);
     });
 
-    test('feDistantLight with partial attributes uses defaults for missing', () {
-      final svgString = '''
+    test(
+      'feDistantLight with partial attributes uses defaults for missing',
+      () {
+        final svgString = '''
 <svg viewBox="0 0 100 100">
   <defs>
     <filter id="distantPartial">
@@ -631,14 +635,16 @@ void main() {
 </svg>
 ''';
 
-      final document = SvgParser.parse(svgString);
-      final filter =
-          document.filters!.getById('distantPartial') as SvgDiffuseLightingFilter;
+        final document = SvgParser.parse(svgString);
+        final filter =
+            document.filters!.getById('distantPartial')
+                as SvgDiffuseLightingFilter;
 
-      final distantLight = filter.lightSource as SvgDistantLightSource;
-      expect(distantLight.azimuth, 45);
-      expect(distantLight.elevation, 0); // Default
-    });
+        final distantLight = filter.lightSource as SvgDistantLightSource;
+        expect(distantLight.azimuth, 45);
+        expect(distantLight.elevation, 0); // Default
+      },
+    );
 
     test('fePointLight with partial attributes uses defaults for missing', () {
       final svgString = '''
@@ -757,8 +763,14 @@ void main() {
       final document = SvgParser.parse(svgString);
       final animations = SmilParser.parseAnimations(document);
 
-      expect(animations.where((a) => a.attributeName == 'pointsAtX'), isNotEmpty);
-      expect(animations.where((a) => a.attributeName == 'pointsAtY'), isNotEmpty);
+      expect(
+        animations.where((a) => a.attributeName == 'pointsAtX'),
+        isNotEmpty,
+      );
+      expect(
+        animations.where((a) => a.attributeName == 'pointsAtY'),
+        isNotEmpty,
+      );
     });
 
     test('parses specularExponent animation on feSpotLight', () {
@@ -779,7 +791,9 @@ void main() {
       final document = SvgParser.parse(svgString);
       final animations = SmilParser.parseAnimations(document);
 
-      final expAnim = animations.where((a) => a.attributeName == 'specularExponent');
+      final expAnim = animations.where(
+        (a) => a.attributeName == 'specularExponent',
+      );
       expect(expAnim, isNotEmpty);
     });
 
@@ -801,7 +815,9 @@ void main() {
       final document = SvgParser.parse(svgString);
       final animations = SmilParser.parseAnimations(document);
 
-      final coneAnim = animations.where((a) => a.attributeName == 'limitingConeAngle');
+      final coneAnim = animations.where(
+        (a) => a.attributeName == 'limitingConeAngle',
+      );
       expect(coneAnim, isNotEmpty);
     });
 
@@ -822,7 +838,9 @@ void main() {
       final document = SvgParser.parse(svgString);
       final animations = SmilParser.parseAnimations(document);
 
-      final surfAnim = animations.where((a) => a.attributeName == 'surfaceScale');
+      final surfAnim = animations.where(
+        (a) => a.attributeName == 'surfaceScale',
+      );
       expect(surfAnim, isNotEmpty);
     });
 
@@ -843,7 +861,9 @@ void main() {
       final document = SvgParser.parse(svgString);
       final animations = SmilParser.parseAnimations(document);
 
-      final diffAnim = animations.where((a) => a.attributeName == 'diffuseConstant');
+      final diffAnim = animations.where(
+        (a) => a.attributeName == 'diffuseConstant',
+      );
       expect(diffAnim, isNotEmpty);
     });
 
@@ -864,7 +884,9 @@ void main() {
       final document = SvgParser.parse(svgString);
       final animations = SmilParser.parseAnimations(document);
 
-      final specAnim = animations.where((a) => a.attributeName == 'specularConstant');
+      final specAnim = animations.where(
+        (a) => a.attributeName == 'specularConstant',
+      );
       expect(specAnim, isNotEmpty);
     });
   });
@@ -996,7 +1018,8 @@ void main() {
 
       final document = SvgParser.parse(svgString);
       final filter =
-          document.filters!.getById('spotSpecular') as SvgSpecularLightingFilter;
+          document.filters!.getById('spotSpecular')
+              as SvgSpecularLightingFilter;
 
       expect(filter.lightSource, isA<SvgSpotLightSource>());
       expect(filter.colorFilter(), isNotNull);

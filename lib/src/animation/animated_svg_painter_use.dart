@@ -169,8 +169,10 @@ class _UseInheritanceContext {
     // Check DOM ancestors of the use element
     SvgNode? ancestor = useNode.parent;
     while (ancestor != null) {
-      final ancestorStyleValue =
-          _extractStyleValueFromNode(ancestor, normalizedProp);
+      final ancestorStyleValue = _extractStyleValueFromNode(
+        ancestor,
+        normalizedProp,
+      );
       if (ancestorStyleValue != null) {
         return ancestorStyleValue;
       }

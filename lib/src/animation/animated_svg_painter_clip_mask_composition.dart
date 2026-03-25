@@ -110,11 +110,7 @@ extension AnimatedSvgPainterClipMaskCompositionExtension on AnimatedSvgPainter {
     if (nestedPath == null) return primaryPath;
 
     // Intersect the two clip paths
-    return ui.Path.combine(
-      ui.PathOperation.intersect,
-      primaryPath,
-      nestedPath,
-    );
+    return ui.Path.combine(ui.PathOperation.intersect, primaryPath, nestedPath);
   }
 
   /// Builds a clip-path that handles clip-path references inside the clipPath

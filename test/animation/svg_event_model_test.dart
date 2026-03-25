@@ -311,7 +311,9 @@ void main() {
         );
 
         // Hover over target element
-        final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
+        final gesture = await tester.createGesture(
+          kind: PointerDeviceKind.mouse,
+        );
         await gesture.addPointer(location: center);
         addTearDown(gesture.removePointer);
         await tester.pump();
@@ -369,13 +371,15 @@ void main() {
         final center = tester.getCenter(pictureFinder);
 
         // Enter and then leave the target element
-        final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
+        final gesture = await tester.createGesture(
+          kind: PointerDeviceKind.mouse,
+        );
         await gesture.addPointer(location: center);
         addTearDown(gesture.removePointer);
         await tester.pump();
         await gesture.moveTo(center);
         await tester.pump();
-        
+
         final beforePixels = await VisualTestUtils.captureWidgetPixels(tester);
         final beforeAnalysis = VisualTestUtils.analyzeRedPixels(
           beforePixels,
@@ -443,7 +447,9 @@ void main() {
         final center = tester.getCenter(pictureFinder);
 
         // First hover to trigger mouseover
-        final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
+        final gesture = await tester.createGesture(
+          kind: PointerDeviceKind.mouse,
+        );
         await gesture.addPointer(location: center);
         addTearDown(gesture.removePointer);
         await tester.pump();

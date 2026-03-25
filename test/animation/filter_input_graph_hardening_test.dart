@@ -149,7 +149,7 @@ void main() {
       final document = SvgParser.parse(svgString);
       final filter = document.filters!.getById('customShadowFx');
       expect(filter, isA<SvgDropShadowFilter>());
-      
+
       final dropShadow = filter as SvgDropShadowFilter;
       expect(dropShadow.dx, 5.0);
       expect(dropShadow.dy, 10.0);
@@ -311,7 +311,10 @@ void main() {
 
       expect(passes, hasLength(4));
       expect(passes[0].offset, ui.Offset.zero); // SourceGraphic
-      expect(passes[1].offset, const ui.Offset(5, 0)); // implicit previous (offset)
+      expect(
+        passes[1].offset,
+        const ui.Offset(5, 0),
+      ); // implicit previous (offset)
       expect(passes[2].offset, const ui.Offset(5, 0)); // offsetResult
       expect(passes[3].colorFilter, isNotNull); // SourceAlpha
     });
@@ -371,8 +374,10 @@ void main() {
   });
 
   group('Implicit input resolution edge cases', () {
-    test('Implicit input with no previous (first primitive uses SourceGraphic)', () {
-      final svgString = '''
+    test(
+      'Implicit input with no previous (first primitive uses SourceGraphic)',
+      () {
+        final svgString = '''
 <svg viewBox="0 0 100 100">
   <defs>
     <filter id="firstImplicitFx">
@@ -384,13 +389,14 @@ void main() {
 </svg>
 ''';
 
-      final document = SvgParser.parse(svgString);
-      final passes = document.filters!.resolvePaintPasses('firstImplicitFx');
+        final document = SvgParser.parse(svgString);
+        final passes = document.filters!.resolvePaintPasses('firstImplicitFx');
 
-      expect(passes, hasLength(1));
-      expect(passes.single.imageFilter, isNotNull); // blur
-      expect(passes.single.offset, const ui.Offset(3, 0)); // offset
-    });
+        expect(passes, hasLength(1));
+        expect(passes.single.imageFilter, isNotNull); // blur
+        expect(passes.single.offset, const ui.Offset(3, 0)); // offset
+      },
+    );
 
     test('Implicit input after named result still uses previous', () {
       final svgString = '''
@@ -407,7 +413,9 @@ void main() {
 ''';
 
       final document = SvgParser.parse(svgString);
-      final passes = document.filters!.resolvePaintPasses('implicitAfterNamedFx');
+      final passes = document.filters!.resolvePaintPasses(
+        'implicitAfterNamedFx',
+      );
 
       expect(passes, hasLength(1));
       // Chain: 1 + 2 + 3 = 6
@@ -429,7 +437,9 @@ void main() {
 ''';
 
       final document = SvgParser.parse(svgString);
-      final passes = document.filters!.resolvePaintPasses('explicitOverridesFx');
+      final passes = document.filters!.resolvePaintPasses(
+        'explicitOverridesFx',
+      );
 
       expect(passes, hasLength(1));
       // Last primitive explicitly uses "first" (10), then adds 1 = 11
@@ -656,11 +666,14 @@ void main() {
         if (i == 0) {
           primitives.writeln('<feOffset dx="1" dy="0" result="r$i"/>');
         } else {
-          primitives.writeln('<feOffset in="r${i - 1}" dx="1" dy="0" result="r$i"/>');
+          primitives.writeln(
+            '<feOffset in="r${i - 1}" dx="1" dy="0" result="r$i"/>',
+          );
         }
       }
 
-      final svgString = '''
+      final svgString =
+          '''
 <svg viewBox="0 0 100 100">
   <defs>
     <filter id="deepChainFx">

@@ -64,14 +64,15 @@ class SvgEventTarget {
     if (typeListeners == null) return;
 
     typeListeners.removeWhere(
-      (entry) =>
-          entry.listener == listener &&
-          entry.capture == capture,
+      (entry) => entry.listener == listener && entry.capture == capture,
     );
   }
 
   /// Gets all listeners for a given type and phase.
-  List<SvgEventListenerEntry> getListeners(String type, {required bool capture}) {
+  List<SvgEventListenerEntry> getListeners(
+    String type, {
+    required bool capture,
+  }) {
     final typeListeners = _listeners[type];
     if (typeListeners == null) return const [];
     return typeListeners.where((e) => e.capture == capture).toList();
@@ -81,7 +82,8 @@ class SvgEventTarget {
   /// Returns true if the event was not prevented.
   bool dispatchEvent(SvgEvent event) {
     final typeListeners = _listeners[event.type];
-    if (typeListeners == null || typeListeners.isEmpty) return !event.defaultPrevented;
+    if (typeListeners == null || typeListeners.isEmpty)
+      return !event.defaultPrevented;
 
     final phase = event.eventPhase;
     final useCapture = phase == SvgEventPhase.capturing;

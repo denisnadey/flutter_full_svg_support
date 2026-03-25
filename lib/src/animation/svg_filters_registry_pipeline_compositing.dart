@@ -150,8 +150,8 @@ extension SvgFiltersPipelineCompositingExtension on SvgFilters {
       final normalizedInput = nodeInput?.trim();
       final effectiveInput =
           (normalizedInput == null || normalizedInput.isEmpty)
-              ? null
-              : normalizedInput;
+          ? null
+          : normalizedInput;
 
       final nodePasses = _resolveInputPasses(
         requestedInput: effectiveInput,

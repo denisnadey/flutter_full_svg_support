@@ -139,7 +139,8 @@ class SvgComponentTransferFilter extends SvgFilter {
     final a = effectiveFuncA;
 
     // Only identity and linear can be expressed as a color matrix
-    final canUseMatrix = (r.type == SvgComponentTransferType.identity ||
+    final canUseMatrix =
+        (r.type == SvgComponentTransferType.identity ||
             r.type == SvgComponentTransferType.linear) &&
         (g.type == SvgComponentTransferType.identity ||
             g.type == SvgComponentTransferType.linear) &&
@@ -152,13 +153,21 @@ class SvgComponentTransferFilter extends SvgFilter {
 
     // Extract slope/intercept (identity = slope:1, intercept:0)
     final rSlope = r.type == SvgComponentTransferType.identity ? 1.0 : r.slope;
-    final rInt = r.type == SvgComponentTransferType.identity ? 0.0 : r.intercept;
+    final rInt = r.type == SvgComponentTransferType.identity
+        ? 0.0
+        : r.intercept;
     final gSlope = g.type == SvgComponentTransferType.identity ? 1.0 : g.slope;
-    final gInt = g.type == SvgComponentTransferType.identity ? 0.0 : g.intercept;
+    final gInt = g.type == SvgComponentTransferType.identity
+        ? 0.0
+        : g.intercept;
     final bSlope = b.type == SvgComponentTransferType.identity ? 1.0 : b.slope;
-    final bInt = b.type == SvgComponentTransferType.identity ? 0.0 : b.intercept;
+    final bInt = b.type == SvgComponentTransferType.identity
+        ? 0.0
+        : b.intercept;
     final aSlope = a.type == SvgComponentTransferType.identity ? 1.0 : a.slope;
-    final aInt = a.type == SvgComponentTransferType.identity ? 0.0 : a.intercept;
+    final aInt = a.type == SvgComponentTransferType.identity
+        ? 0.0
+        : a.intercept;
 
     // ColorFilter.matrix expects a 4x5 row-major matrix:
     // [R'] = [m0  m1  m2  m3  m4 ] [R]

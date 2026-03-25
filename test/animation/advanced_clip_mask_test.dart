@@ -418,9 +418,7 @@ void main() {
       expect(analysis.pixelCount, greaterThan(500));
     });
 
-    testWidgets('clipPathUnits objectBoundingBox', (
-      WidgetTester tester,
-    ) async {
+    testWidgets('clipPathUnits objectBoundingBox', (WidgetTester tester) async {
       const svgXml = '''
         <svg viewBox="0 0 100 100">
           <defs>
@@ -737,9 +735,7 @@ void main() {
       expect(analysis.pixelCount, greaterThan(500));
     });
 
-    testWidgets('alpha mask with partial opacity', (
-      WidgetTester tester,
-    ) async {
+    testWidgets('alpha mask with partial opacity', (WidgetTester tester) async {
       const svgXml = '''
         <svg viewBox="0 0 100 100">
           <defs>

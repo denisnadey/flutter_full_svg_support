@@ -54,7 +54,7 @@ void main() {
         );
         // C' = 2.0 * 1.0 + 0.5 = 2.5 -> clamped to 1.0
         expect(func.apply(1.0), 1.0);
-        
+
         const funcNeg = SvgComponentTransferFunction(
           type: SvgComponentTransferType.linear,
           slope: 1.0,
@@ -276,28 +276,31 @@ void main() {
           type: SvgComponentTransferType.identity,
         ),
       );
-      
+
       final input = ui.Color.from(alpha: 1.0, red: 0.8, green: 0.4, blue: 0.5);
       final output = filter.transformPixel(input);
-      
+
       expect(output.r, closeTo(0.4, 0.001)); // 0.8 * 0.5 = 0.4
       expect(output.g, closeTo(0.8, 0.001)); // 0.4 * 2.0 = 0.8
       expect(output.b, closeTo(0.5, 0.001)); // unchanged
       expect(output.a, closeTo(1.0, 0.001)); // unchanged
     });
 
-    test('linearColorFilter returns ColorFilter for linear-only transforms', () {
-      final filter = SvgComponentTransferFilter(
-        id: 'test',
-        funcR: const SvgComponentTransferFunction(
-          type: SvgComponentTransferType.linear,
-          slope: 0.5,
-          intercept: 0.1,
-        ),
-      );
-      final colorFilter = filter.linearColorFilter();
-      expect(colorFilter, isNotNull);
-    });
+    test(
+      'linearColorFilter returns ColorFilter for linear-only transforms',
+      () {
+        final filter = SvgComponentTransferFilter(
+          id: 'test',
+          funcR: const SvgComponentTransferFunction(
+            type: SvgComponentTransferType.linear,
+            slope: 0.5,
+            intercept: 0.1,
+          ),
+        );
+        final colorFilter = filter.linearColorFilter();
+        expect(colorFilter, isNotNull);
+      },
+    );
 
     test('linearColorFilter returns null for non-linear transforms', () {
       final filter = SvgComponentTransferFilter(
@@ -334,7 +337,7 @@ void main() {
       final filter = document.filters!.getById('transfer');
       expect(filter, isA<SvgComponentTransferFilter>());
       final transfer = filter as SvgComponentTransferFilter;
-      
+
       expect(transfer.funcR, isNotNull);
       expect(transfer.funcR!.type, SvgComponentTransferType.linear);
       expect(transfer.funcR!.slope, 0.5);
@@ -356,8 +359,9 @@ void main() {
 </svg>
 ''';
       final document = SvgParser.parse(svgString);
-      final filter = document.filters!.getById('gammaFx') as SvgComponentTransferFilter;
-      
+      final filter =
+          document.filters!.getById('gammaFx') as SvgComponentTransferFilter;
+
       expect(filter.funcG, isNotNull);
       expect(filter.funcG!.type, SvgComponentTransferType.gamma);
       expect(filter.funcG!.amplitude, 1.5);
@@ -378,8 +382,9 @@ void main() {
 </svg>
 ''';
       final document = SvgParser.parse(svgString);
-      final filter = document.filters!.getById('tableFx') as SvgComponentTransferFilter;
-      
+      final filter =
+          document.filters!.getById('tableFx') as SvgComponentTransferFilter;
+
       expect(filter.funcB, isNotNull);
       expect(filter.funcB!.type, SvgComponentTransferType.table);
       expect(filter.funcB!.tableValues, [0.0, 0.5, 1.0]);
@@ -398,8 +403,9 @@ void main() {
 </svg>
 ''';
       final document = SvgParser.parse(svgString);
-      final filter = document.filters!.getById('discreteFx') as SvgComponentTransferFilter;
-      
+      final filter =
+          document.filters!.getById('discreteFx') as SvgComponentTransferFilter;
+
       expect(filter.funcA, isNotNull);
       expect(filter.funcA!.type, SvgComponentTransferType.discrete);
       expect(filter.funcA!.tableValues, [0.0, 0.3, 0.6, 1.0]);
@@ -418,8 +424,9 @@ void main() {
 </svg>
 ''';
       final document = SvgParser.parse(svgString);
-      final filter = document.filters!.getById('identityFx') as SvgComponentTransferFilter;
-      
+      final filter =
+          document.filters!.getById('identityFx') as SvgComponentTransferFilter;
+
       expect(filter.funcR, isNotNull);
       expect(filter.funcR!.type, SvgComponentTransferType.identity);
     });
@@ -440,8 +447,9 @@ void main() {
 </svg>
 ''';
       final document = SvgParser.parse(svgString);
-      final filter = document.filters!.getById('mixedFx') as SvgComponentTransferFilter;
-      
+      final filter =
+          document.filters!.getById('mixedFx') as SvgComponentTransferFilter;
+
       expect(filter.funcR!.type, SvgComponentTransferType.linear);
       expect(filter.funcG!.type, SvgComponentTransferType.table);
       expect(filter.funcB!.type, SvgComponentTransferType.gamma);
@@ -462,12 +470,13 @@ void main() {
 </svg>
 ''';
       final document = SvgParser.parse(svgString);
-      final filter = document.filters!.getById('defaultsFx') as SvgComponentTransferFilter;
-      
+      final filter =
+          document.filters!.getById('defaultsFx') as SvgComponentTransferFilter;
+
       // Linear defaults: slope=1, intercept=0
       expect(filter.funcR!.slope, 1.0);
       expect(filter.funcR!.intercept, 0.0);
-      
+
       // Gamma defaults: amplitude=1, exponent=1, offset=0
       expect(filter.funcG!.amplitude, 1.0);
       expect(filter.funcG!.exponent, 1.0);
@@ -493,7 +502,7 @@ void main() {
 ''';
       final document = SvgParser.parse(svgString);
       final passes = document.filters!.resolvePaintPasses('idFx');
-      
+
       // Identity filter should pass through without modification
       expect(passes, isNotEmpty);
       // Should not create SvgComponentTransferPaintPass for identity
@@ -515,7 +524,7 @@ void main() {
 ''';
       final document = SvgParser.parse(svgString);
       final passes = document.filters!.resolvePaintPasses('linearFx');
-      
+
       expect(passes, isNotEmpty);
       // Linear transforms use ColorFilter, not SvgComponentTransferPaintPass
       expect(passes.first.colorFilter, isNotNull);
@@ -536,7 +545,7 @@ void main() {
 ''';
       final document = SvgParser.parse(svgString);
       final passes = document.filters!.resolvePaintPasses('gammaFx');
-      
+
       expect(passes, isNotEmpty);
       expect(passes.first, isA<SvgComponentTransferPaintPass>());
     });
@@ -555,7 +564,7 @@ void main() {
 ''';
       final document = SvgParser.parse(svgString);
       final passes = document.filters!.resolvePaintPasses('tableFx');
-      
+
       expect(passes, isNotEmpty);
       expect(passes.first, isA<SvgComponentTransferPaintPass>());
     });
@@ -574,7 +583,7 @@ void main() {
 ''';
       final document = SvgParser.parse(svgString);
       final passes = document.filters!.resolvePaintPasses('discreteFx');
-      
+
       expect(passes, isNotEmpty);
       expect(passes.first, isA<SvgComponentTransferPaintPass>());
     });

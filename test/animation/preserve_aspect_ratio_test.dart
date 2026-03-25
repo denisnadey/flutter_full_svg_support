@@ -297,7 +297,8 @@ void main() {
   group('PreserveAspectRatio Image Rendering Tests', () {
     group('All alignment values with meet', () {
       testWidgets('xMinYMin meet', (tester) async {
-        final svg = '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        final svg =
+            '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <image x="0" y="0" width="100" height="100" 
                  preserveAspectRatio="xMinYMin meet"
                  href="data:image/png;base64,$_wideRedPngBase64"/>
@@ -317,7 +318,8 @@ void main() {
       });
 
       testWidgets('xMidYMin meet', (tester) async {
-        final svg = '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        final svg =
+            '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <image x="0" y="0" width="100" height="100" 
                  preserveAspectRatio="xMidYMin meet"
                  href="data:image/png;base64,$_wideRedPngBase64"/>
@@ -337,7 +339,8 @@ void main() {
       });
 
       testWidgets('xMaxYMin meet', (tester) async {
-        final svg = '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        final svg =
+            '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <image x="0" y="0" width="100" height="100" 
                  preserveAspectRatio="xMaxYMin meet"
                  href="data:image/png;base64,$_wideRedPngBase64"/>
@@ -357,7 +360,8 @@ void main() {
       });
 
       testWidgets('xMinYMid meet', (tester) async {
-        final svg = '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        final svg =
+            '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <image x="0" y="0" width="100" height="100" 
                  preserveAspectRatio="xMinYMid meet"
                  href="data:image/png;base64,$_wideRedPngBase64"/>
@@ -377,7 +381,8 @@ void main() {
       });
 
       testWidgets('xMidYMid meet (default)', (tester) async {
-        final svg = '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        final svg =
+            '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <image x="0" y="0" width="100" height="100" 
                  preserveAspectRatio="xMidYMid meet"
                  href="data:image/png;base64,$_wideRedPngBase64"/>
@@ -397,7 +402,8 @@ void main() {
       });
 
       testWidgets('xMaxYMid meet', (tester) async {
-        final svg = '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        final svg =
+            '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <image x="0" y="0" width="100" height="100" 
                  preserveAspectRatio="xMaxYMid meet"
                  href="data:image/png;base64,$_wideRedPngBase64"/>
@@ -417,7 +423,8 @@ void main() {
       });
 
       testWidgets('xMinYMax meet', (tester) async {
-        final svg = '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        final svg =
+            '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <image x="0" y="0" width="100" height="100" 
                  preserveAspectRatio="xMinYMax meet"
                  href="data:image/png;base64,$_wideRedPngBase64"/>
@@ -437,7 +444,8 @@ void main() {
       });
 
       testWidgets('xMidYMax meet', (tester) async {
-        final svg = '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        final svg =
+            '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <image x="0" y="0" width="100" height="100" 
                  preserveAspectRatio="xMidYMax meet"
                  href="data:image/png;base64,$_wideRedPngBase64"/>
@@ -457,7 +465,8 @@ void main() {
       });
 
       testWidgets('xMaxYMax meet', (tester) async {
-        final svg = '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        final svg =
+            '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <image x="0" y="0" width="100" height="100" 
                  preserveAspectRatio="xMaxYMax meet"
                  href="data:image/png;base64,$_wideRedPngBase64"/>
@@ -479,7 +488,8 @@ void main() {
 
     group('Slice mode variations', () {
       testWidgets('xMinYMin slice', (tester) async {
-        final svg = '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        final svg =
+            '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <image x="0" y="0" width="100" height="100" 
                  preserveAspectRatio="xMinYMin slice"
                  href="data:image/png;base64,$_wideRedPngBase64"/>
@@ -499,7 +509,8 @@ void main() {
       });
 
       testWidgets('xMidYMid slice', (tester) async {
-        final svg = '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        final svg =
+            '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <image x="0" y="0" width="100" height="100" 
                  preserveAspectRatio="xMidYMid slice"
                  href="data:image/png;base64,$_wideRedPngBase64"/>
@@ -519,7 +530,8 @@ void main() {
       });
 
       testWidgets('xMaxYMax slice', (tester) async {
-        final svg = '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        final svg =
+            '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <image x="0" y="0" width="100" height="100" 
                  preserveAspectRatio="xMaxYMax slice"
                  href="data:image/png;base64,$_wideRedPngBase64"/>
@@ -541,7 +553,8 @@ void main() {
 
     group('Special values', () {
       testWidgets('preserveAspectRatio="none" stretches image', (tester) async {
-        final svg = '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        final svg =
+            '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <image x="0" y="0" width="100" height="100" 
                  preserveAspectRatio="none"
                  href="data:image/png;base64,$_wideRedPngBase64"/>
@@ -561,7 +574,8 @@ void main() {
       });
 
       testWidgets('no preserveAspectRatio uses default', (tester) async {
-        final svg = '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        final svg =
+            '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <image x="0" y="0" width="100" height="100" 
                  href="data:image/png;base64,$_wideRedPngBase64"/>
         </svg>''';
@@ -580,7 +594,8 @@ void main() {
       });
 
       testWidgets('defer keyword is handled', (tester) async {
-        final svg = '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        final svg =
+            '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <image x="0" y="0" width="100" height="100" 
                  preserveAspectRatio="defer xMidYMid meet"
                  href="data:image/png;base64,$_wideRedPngBase64"/>
@@ -602,7 +617,8 @@ void main() {
 
     group('Tall image in different viewports', () {
       testWidgets('tall image with xMidYMid meet', (tester) async {
-        final svg = '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        final svg =
+            '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <image x="0" y="0" width="100" height="100" 
                  preserveAspectRatio="xMidYMid meet"
                  href="data:image/png;base64,$_tallBluePngBase64"/>
@@ -622,7 +638,8 @@ void main() {
       });
 
       testWidgets('tall image with xMinYMin slice', (tester) async {
-        final svg = '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        final svg =
+            '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <image x="0" y="0" width="100" height="100" 
                  preserveAspectRatio="xMinYMin slice"
                  href="data:image/png;base64,$_tallBluePngBase64"/>

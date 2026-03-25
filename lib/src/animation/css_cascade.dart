@@ -552,10 +552,7 @@ class CssCascadeResolver {
   }
 
   /// Finds an ancestor matching the selector, respecting shadow boundaries.
-  SvgNode? _findMatchingAncestor(
-    SvgNode node,
-    CssSimpleSelector selector,
-  ) {
+  SvgNode? _findMatchingAncestor(SvgNode node, CssSimpleSelector selector) {
     var current = node.parent;
     while (current != null) {
       // Check for shadow DOM boundary - stop at use/symbol

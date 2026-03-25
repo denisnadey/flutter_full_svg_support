@@ -133,8 +133,9 @@ extension _AnimatedSvgPictureStateEventModelExtension
       );
     }
 
-    final foParent =
-        node.tagName == 'foreignObject' ? node : foreignObjectParent;
+    final foParent = node.tagName == 'foreignObject'
+        ? node
+        : foreignObjectParent;
 
     // Traverse children in reverse (last painted is visually on top)
     for (int i = node.children.length - 1; i >= 0; i--) {

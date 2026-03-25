@@ -433,7 +433,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
       // Measure the width of the entire chunk for text-anchor calculation
       final chunkParagraph = _buildTextParagraph(text, style);
       final chunkWidth = chunkParagraph.maxIntrinsicWidth;
-      
+
       // Determine effective anchor based on direction
       // In RTL mode, start becomes end and vice versa
       var effectiveAnchor = style.textAnchor;
@@ -450,7 +450,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
             break;
         }
       }
-      
+
       switch (effectiveAnchor) {
         case _SvgTextAnchor.start:
           anchorOffset = 0.0;
@@ -609,7 +609,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
           break;
       }
     }
-    
+
     switch (effectiveAnchor) {
       case _SvgTextAnchor.start:
         break;
