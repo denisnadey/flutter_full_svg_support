@@ -22,6 +22,8 @@ part 'animated_svg_painter_tree.dart';
 part 'animated_svg_painter_clip_mask.dart';
 part 'animated_svg_painter_clip_mask_geometry.dart';
 part 'animated_svg_painter_clip_mask_units.dart';
+part 'animated_svg_painter_clip_mask_advanced.dart';
+part 'animated_svg_painter_clip_mask_composition.dart';
 part 'animated_svg_painter_shapes.dart';
 part 'animated_svg_painter_shapes_rect.dart';
 part 'animated_svg_painter_shapes_image.dart';

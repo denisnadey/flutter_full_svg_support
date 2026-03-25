@@ -452,6 +452,19 @@ const Set<String> _numberAttributes = {
   'word-spacing',
   'textLength',
   'offset',
+  // Light source attributes (feDistantLight, fePointLight, feSpotLight)
+  'azimuth',
+  'elevation',
+  'z',
+  'pointsAtX',
+  'pointsAtY',
+  'pointsAtZ',
+  'specularExponent',
+  'limitingConeAngle',
+  // Lighting filter attributes
+  'surfaceScale',
+  'diffuseConstant',
+  'specularConstant',
 };
 
 const Set<String> _colorAttributes = {

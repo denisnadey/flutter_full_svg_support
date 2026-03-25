@@ -64,8 +64,8 @@ extension SvgFiltersPipelinePrimitiveResolverExtension on SvgFilters {
         );
 
       case SvgFilterType.componentTransfer:
-        return _resolvePassthroughOutput(
-          requestedInput: (primitive as SvgComponentTransferFilter).input,
+        return _resolveComponentTransferOutput(
+          transfer: primitive as SvgComponentTransferFilter,
           previous: previous,
           namedResults: namedResults,
           sourceGraphic: sourceGraphic,

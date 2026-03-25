@@ -401,6 +401,8 @@ class CssCascadeResolver {
   }
 
   /// Gets all matching CSS rules for a node.
+  /// For shadow DOM contexts (use/symbol), combinator selectors
+  /// should not pierce the shadow boundary.
   List<_MatchedRule> _getMatchingRules(SvgNode node) {
     // Build cache key from node's identifying attributes and pseudo-state
     final id = node.getAttributeValue('id')?.toString();
@@ -447,6 +449,7 @@ class CssCascadeResolver {
   }
 
   /// Checks if a selector matches a node, including pseudo-class state.
+  /// Handles shadow DOM boundaries for combinator selectors.
   bool _selectorMatchesWithPseudo(
     CssSelectorRule rule,
     SvgNode node,
@@ -472,14 +475,145 @@ class CssCascadeResolver {
     }
 
     // For complex selectors with combinators, we need to traverse the DOM
-    // For now, use basic matching for the subject part
-    return _matchSimpleSelector(
-      parsed.subject.selector,
+    // and respect shadow DOM boundaries (use/symbol)
+    return _matchComplexSelector(parsed, node, tagName, id, classes);
+  }
+
+  /// Matches a complex selector with combinators against a node.
+  /// Respects shadow DOM boundaries per SVG spec - combinators
+  /// should not pierce through use/symbol boundaries.
+  bool _matchComplexSelector(
+    CssSelector selector,
+    SvgNode node,
+    String tagName,
+    String? id,
+    Set<String> classes,
+  ) {
+    // First, match the subject (rightmost) part
+    if (!_matchSimpleSelector(
+      selector.subject.selector,
       node,
       tagName,
       id,
       classes,
-    );
+    )) {
+      return false;
+    }
+
+    // If this is a simple selector (single part), we're done
+    if (selector.parts.length == 1) {
+      return true;
+    }
+
+    // For complex selectors, traverse the DOM matching each part
+    // Start from the rightmost (subject) and work left
+    var currentNode = node;
+    for (int i = selector.parts.length - 2; i >= 0; i--) {
+      final part = selector.parts[i];
+      final nextPart = selector.parts[i + 1];
+      final combinator = nextPart.combinator;
+
+      switch (combinator) {
+        case CssCombinator.descendant:
+          // Find any ancestor matching part
+          final matchingAncestor = _findMatchingAncestor(
+            currentNode,
+            part.selector,
+          );
+          if (matchingAncestor == null) return false;
+          currentNode = matchingAncestor;
+        case CssCombinator.child:
+          // Check direct parent
+          final parent = currentNode.parent;
+          if (parent == null) return false;
+          if (!_matchNodeSelector(parent, part.selector)) return false;
+          currentNode = parent;
+        case CssCombinator.adjacentSibling:
+          // Check immediately preceding sibling
+          final sibling = _getPreviousSibling(currentNode);
+          if (sibling == null) return false;
+          if (!_matchNodeSelector(sibling, part.selector)) return false;
+          currentNode = sibling;
+        case CssCombinator.generalSibling:
+          // Check any preceding sibling
+          final matchingSibling = _findMatchingPrecedingSibling(
+            currentNode,
+            part.selector,
+          );
+          if (matchingSibling == null) return false;
+          currentNode = matchingSibling;
+        case CssCombinator.none:
+          // Should not happen for index > 0
+          return false;
+      }
+    }
+
+    return true;
+  }
+
+  /// Finds an ancestor matching the selector, respecting shadow boundaries.
+  SvgNode? _findMatchingAncestor(
+    SvgNode node,
+    CssSimpleSelector selector,
+  ) {
+    var current = node.parent;
+    while (current != null) {
+      // Check for shadow DOM boundary - stop at use/symbol
+      if (_isShadowBoundary(current)) {
+        return null;
+      }
+      if (_matchNodeSelector(current, selector)) {
+        return current;
+      }
+      current = current.parent;
+    }
+    return null;
+  }
+
+  /// Gets the immediately preceding sibling of a node.
+  SvgNode? _getPreviousSibling(SvgNode node) {
+    final parent = node.parent;
+    if (parent == null) return null;
+    final children = parent.children;
+    final index = children.indexOf(node);
+    if (index <= 0) return null;
+    return children[index - 1];
+  }
+
+  /// Finds a preceding sibling matching the selector.
+  SvgNode? _findMatchingPrecedingSibling(
+    SvgNode node,
+    CssSimpleSelector selector,
+  ) {
+    final parent = node.parent;
+    if (parent == null) return null;
+    final children = parent.children;
+    final index = children.indexOf(node);
+    for (int i = index - 1; i >= 0; i--) {
+      if (_matchNodeSelector(children[i], selector)) {
+        return children[i];
+      }
+    }
+    return null;
+  }
+
+  /// Checks if a node represents a shadow DOM boundary.
+  /// Use and symbol elements create shadow-like scopes.
+  bool _isShadowBoundary(SvgNode node) {
+    final tag = node.tagName.toLowerCase();
+    return tag == 'use' || tag == 'symbol';
+  }
+
+  /// Matches a node against a simple selector.
+  bool _matchNodeSelector(SvgNode node, CssSimpleSelector selector) {
+    final tagName = node.tagName;
+    final id = node.getAttributeValue('id')?.toString();
+    final className = node.getAttributeValue('class')?.toString();
+    final classes = (className ?? '')
+        .split(RegExp(r'\s+'))
+        .where((c) => c.isNotEmpty)
+        .toSet();
+    return _matchSimpleSelector(selector, node, tagName, id, classes);
   }
 
   /// Match a simple selector against a node, including pseudo-classes.

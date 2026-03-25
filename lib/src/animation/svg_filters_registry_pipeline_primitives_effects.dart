@@ -238,4 +238,48 @@ extension SvgFiltersPipelinePrimitiveEffectsExtension on SvgFilters {
         )
         .toList(growable: false);
   }
+
+  List<SvgFilterPaintPass> _resolveComponentTransferOutput({
+    required SvgComponentTransferFilter transfer,
+    required List<SvgFilterPaintPass> previous,
+    required Map<String, List<SvgFilterPaintPass>> namedResults,
+    required List<SvgFilterPaintPass> sourceGraphic,
+    required List<SvgFilterPaintPass> sourceAlpha,
+  }) {
+    final input = _resolvePrimitiveInput(
+      requestedInput: transfer.input,
+      previous: previous,
+      namedResults: namedResults,
+      sourceGraphic: sourceGraphic,
+      sourceAlpha: sourceAlpha,
+    );
+
+    // If all channels are identity, pass through unchanged
+    if (transfer.isIdentity) {
+      return input;
+    }
+
+    // Try to use a color matrix for simple linear transforms
+    final linearFilter = transfer.linearColorFilter();
+    if (linearFilter != null) {
+      return input
+          .map((pass) => pass.copyWith(colorFilter: linearFilter))
+          .toList(growable: false);
+    }
+
+    // For table, discrete, or gamma functions, create specialized paint passes
+    return input
+        .map(
+          (pass) => SvgComponentTransferPaintPass(
+            transferFilter: transfer,
+            imageFilter: pass.imageFilter,
+            colorFilter: pass.colorFilter,
+            blendMode: pass.blendMode,
+            offset: pass.offset,
+            paintFill: pass.paintFill,
+            paintStroke: pass.paintStroke,
+          ),
+        )
+        .toList(growable: false);
+  }
 }

@@ -18,11 +18,15 @@
 - [lib/src/animation/css_animations_parser.dart](file://lib/src/animation/css_animations_parser.dart)
 - [lib/src/animation/css_to_smil_converter.dart](file://lib/src/animation/css_to_smil_converter.dart)
 - [lib/src/animation/css_to_smil_converter_core.dart](file://lib/src/animation/css_to_smil_converter_core.dart)
+- [lib/src/animation/css_to_smil_converter_transforms.dart](file://lib/src/animation/css_to_smil_converter_transforms.dart)
+- [lib/src/animation/css_to_smil_converter_transforms_values.dart](file://lib/src/animation/css_to_smil_converter_transforms_values.dart)
 - [lib/src/animation/transform_3d.dart](file://lib/src/animation/transform_3d.dart)
 - [lib/src/animation/animated_svg_painter_matrix.dart](file://lib/src/animation/animated_svg_painter_matrix.dart)
 - [test/animation/controller_test.dart](file://test/animation/controller_test.dart)
 - [test/animation/css_animation_edge_cases_test.dart](file://test/animation/css_animation_edge_cases_test.dart)
 - [test/animation/css_3d_transforms_test.dart](file://test/animation/css_3d_transforms_test.dart)
+- [test/animation/stroke_dash_stop_color_test.dart](file://test/animation/stroke_dash_stop_color_test.dart)
+- [test/animation/css_transform_decomposition_test.dart](file://test/animation/css_transform_decomposition_test.dart)
 - [example/lib/pages/controller_demo_page.dart](file://example/lib/pages/controller_demo_page.dart)
 - [example/lib/pages/custom_svg_viewer_page.dart](file://example/lib/pages/custom_svg_viewer_page.dart)
 - [example/lib/widgets/smil_event_timing_widget.dart](file://example/lib/widgets/smil_event_timing_widget.dart)
@@ -30,12 +34,11 @@
 
 ## Update Summary
 **Changes Made**
-- Enhanced controller lifecycle with improved event-driven animation detection and management
-- Added documentation for dual-mode animation control (autoplay vs event-driven)
-- Documented repeat mode startup mechanism for event-driven animations
-- Improved external controller integration with better state synchronization
-- Enhanced event-driven animation lifecycle with automatic ticker management
-- Added comprehensive event-based animation detection and startup logic
+- Enhanced CSS to SMIL conversion with improved transform decomposition that maintains full transform string formats
+- Updated transform handling to use CSS REPLACE semantics instead of decomposition for compound transforms
+- Improved transform normalization with better support for complex transform strings
+- Enhanced 3D transform projection with automatic 2D extraction
+- Updated animation lifecycle to support compound transform animations with additive replace mode
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -58,10 +61,10 @@
 ## Introduction
 This document explains the animation control and playback mechanisms for animated SVGs in the project. It focuses on the AnimatedSvgController API, programmatic animation control, playback rate adjustment, and timeline manipulation. The system now includes enhanced CSS animation support with improved edge case handling, including multiple animations per element, animation-play-state control, negative animation delays, and comprehensive 3D transform support with automatic 2D/3D fallback. It also covers controller methods for play, pause, stop, reset, and seek operations, along with examples of manual animation control, animation synchronization, state management, lifecycle handling, and performance considerations. Guidance is provided for integrating animations with user interactions and application state.
 
-**Updated** Enhanced with improved controller lifecycle management, dual-mode animation control, and better event-driven animation detection and management.
+**Updated** Enhanced with improved controller lifecycle management, dual-mode animation control, and better event-driven animation detection and management. The CSS to SMIL conversion system now maintains full transform string formats through enhanced transform decomposition that preserves CSS semantics.
 
 ## Project Structure
-The animated SVG pipeline is implemented as a separate rendering path from the static SVG pipeline. The animated pipeline parses SVG into a DOM, extracts SMIL animations, manages time via a timeline, and renders via a CustomPainter. The enhanced system now includes comprehensive CSS animation parsing and conversion capabilities with improved event-driven animation detection.
+The animated SVG pipeline is implemented as a separate rendering path from the static SVG pipeline. The animated pipeline parses SVG into a DOM, extracts SMIL animations, manages time via a timeline, and renders via a CustomPainter. The enhanced system now includes comprehensive CSS animation parsing and conversion capabilities with improved event-driven animation detection and compound transform handling.
 
 ```mermaid
 graph TB
@@ -75,31 +78,37 @@ end
 subgraph "Enhanced CSS Animation Processing"
 G["CssParser<br/>Multiple Animations"]
 H["CssAnimation Models<br/>Play State & Delays"]
-I["Transform Decomposition<br/>2D/3D Fallback"]
+I["Transform Normalization<br/>Full String Formats"]
+J["Compound Transform Handling<br/>REPLACE Semantics"]
 end
 subgraph "Enhanced Controller Lifecycle"
-J["AnimatedSvgPicture<br/>Widget"]
-K["AnimatedSvgController<br/>ChangeNotifier"]
-L["Event Detection<br/>hasEventBasedAnimations()"]
-M["Repeat Mode Startup<br/>_controller!.repeat()"]
+K["AnimatedSvgPicture<br/>Widget"]
+L["AnimatedSvgController<br/>ChangeNotifier"]
+M["Event Detection<br/>hasEventBasedAnimations()"]
+N["Repeat Mode Startup<br/>_controller!.repeat()"]
+O["Additive Replace Mode<br/>CSS Semantics"]
 end
 G --> C
 H --> C
-I --> E
-J --> D
-K -.-> C
-K -.-> J
-L --> M
+I --> C
+J --> C
+K --> D
+L -.-> C
+L -.-> K
+M --> N
+O --> D
 ```
 
 **Diagram sources**
 - [ARCHITECTURE.md:34-48](file://ARCHITECTURE.md#L34-L48)
 - [lib/src/animation/css_animations_parser.dart:28-43](file://lib/src/animation/css_animations_parser.dart#L28-L43)
 - [lib/src/animation/css_to_smil_converter.dart:14-67](file://lib/src/animation/css_to_smil_converter.dart#L14-L67)
+- [lib/src/animation/css_to_smil_converter_core.dart:34-40](file://lib/src/animation/css_to_smil_converter_core.dart#L34-L40)
 - [lib/src/animation/animated_svg_picture.dart:236-269](file://lib/src/animation/animated_svg_picture.dart#L236-L269)
 - [lib/src/animation/animated_svg_controller.dart:25](file://lib/src/animation/animated_svg_controller.dart#L25)
 - [lib/src/animation/animated_svg_picture_lifecycle.dart:111-121](file://lib/src/animation/animated_svg_picture_lifecycle.dart#L111-L121)
 - [lib/src/animation/smil/smil_timeline.dart:211-215](file://lib/src/animation/smil/smil_timeline.dart#L211-L215)
+- [lib/src/animation/smil/smil_animation.dart:110](file://lib/src/animation/smil/smil_animation.dart#L110)
 
 **Section sources**
 - [ARCHITECTURE.md:6-58](file://ARCHITECTURE.md#L6-L58)
@@ -108,11 +117,11 @@ L --> M
 ## Core Components
 - AnimatedSvgController: Provides programmatic control of playback (pause/resume, reverse/forward, seek, setPlaybackRate, restart) and notifies listeners of state changes.
 - AnimatedSvgPicture: The public widget that hosts the animated SVG, integrates with the controller, and drives the render loop with enhanced lifecycle management.
-- SmilAnimation: Describes individual SMIL animations (types, timing, interpolation modes, and runtime state).
+- SmilAnimation: Describes individual SMIL animations (types, timing, interpolation modes, and runtime state) with enhanced additive mode support.
 - SvgTimeline: Manages global time, playback rate, seeks, resets, and event-driven activation; resolves syncbase timing and triggers dependent animations.
-- AnimatedSvgPainter: Renders the DOM tree using effective attribute values computed by the timeline.
+- AnimatedSvgPainter: Renders the DOM tree using effective attribute values computed by the timeline with enhanced transform handling.
 - CssParser: Enhanced CSS animation parser supporting multiple animations, play state control, and negative delays.
-- CssToSmilConverter: Converts CSS animations to SMIL format with comprehensive transform handling.
+- CssToSmilConverter: Converts CSS animations to SMIL format with comprehensive transform handling and compound transform preservation.
 - Transform3DContext: Manages 3D transform contexts with perspective, backface visibility, and transform-style support.
 
 Key capabilities:
@@ -129,6 +138,8 @@ Key capabilities:
 - **Enhanced**: Repeat mode startup for event-driven animations
 - **Enhanced**: Improved event-driven animation detection and management
 - **Enhanced**: Better external controller integration with state synchronization
+- **Enhanced**: Compound transform handling with CSS REPLACE semantics
+- **Enhanced**: Full transform string format preservation in SMIL animations
 
 **Section sources**
 - [lib/src/animation/animated_svg_controller.dart:25-160](file://lib/src/animation/animated_svg_controller.dart#L25-L160)
@@ -159,9 +170,9 @@ Picture->>Lifecycle : "_onControllerUpdate()"
 Lifecycle->>Timeline : "apply controller state (rate, direction)"
 Lifecycle->>Timeline : "tick(delta) or seek(time)"
 CssParser->>Converter : "parseMultipleAnimations()"
-Converter->>Timeline : "create SMIL animations"
-Timeline->>Animation : "updateForTime(time)"
-Animation-->>Timeline : "applies animated values to attributes"
+Converter->>Timeline : "create SMIL animations with REPLACE semantics"
+Timeline->>Animation : "updateForTime(time) with additive replace"
+Animation-->>Timeline : "applies compound transform values"
 Timeline-->>Painter : "updated attribute values"
 Painter-->>User : "rendered frame"
 ```
@@ -366,6 +377,51 @@ Advanced features:
 - [lib/src/animation/css_animations_models.dart:54-103](file://lib/src/animation/css_animations_models.dart#L54-L103)
 - [test/animation/css_animation_edge_cases_test.dart:334-457](file://test/animation/css_animation_edge_cases_test.dart#L334-L457)
 
+### Enhanced CSS to SMIL Conversion with Compound Transform Preservation
+
+**Updated** The CSS to SMIL conversion system now maintains full transform string formats through enhanced transform decomposition that preserves CSS semantics.
+
+#### Compound Transform Handling with REPLACE Semantics
+The system now uses CSS REPLACE semantics for transform animations instead of decomposition:
+
+- **Single animation per transform**: Compound transforms like `translate(50px,50px) scale(0.5,0.5)` create exactly one SMIL animation
+- **Full string preservation**: Transform values maintain their complete string format without decomposition
+- **Additive replace mode**: Transform animations use `additive=replace` to match CSS behavior
+- **Transform type inference**: First transform function determines the SMIL transform type (translate, rotate, scale)
+
+Implementation details:
+- `CssToSmilConverter.convert()` creates single transform animations for compound CSS
+- `_createSmilAnimation()` sets `additive=SmilAdditiveMode.replace` for transform animations
+- Transform type is inferred from the first function in the transform string
+- Compound transforms are preserved as complete strings in SMIL values
+
+**Section sources**
+- [lib/src/animation/css_to_smil_converter.dart:34-40](file://lib/src/animation/css_to_smil_converter.dart#L34-L40)
+- [lib/src/animation/css_to_smil_converter_core.dart:160](file://lib/src/animation/css_to_smil_converter_core.dart#L160)
+- [lib/src/animation/smil/smil_animation.dart:110](file://lib/src/animation/smil/smil_animation.dart#L110)
+- [test/animation/stroke_dash_stop_color_test.dart:272-304](file://test/animation/stroke_dash_stop_color_test.dart#L272-L304)
+
+#### Enhanced Transform Normalization
+The transform normalization system has been improved to handle complex transform strings:
+
+- **Function regex matching**: Enhanced regex pattern for CSS transform function calls including nested functions
+- **Argument parsing**: Handles complex arguments with proper nesting and comma separation
+- **Unit conversion**: Supports calc() expressions and various CSS units (px, em, rem, %, vw, vh, etc.)
+- **Angle parsing**: Converts angles to degrees with support for calc() expressions
+- **Matrix extraction**: Properly handles matrix and matrix3d transform functions
+
+Normalization features:
+- `translate3d`, `translateZ`, `rotate3d`, `rotateX`, `rotateY`, `scale3d`, `scaleZ` functions
+- Perspective and matrix3d normalization with 16-value validation
+- Graceful handling of malformed transform strings
+- Consistent decimal formatting for numerical values
+
+**Section sources**
+- [lib/src/animation/css_to_smil_converter_transforms_values.dart:5-8](file://lib/src/animation/css_to_smil_converter_transforms_values.dart#L5-L8)
+- [lib/src/animation/css_to_smil_converter_transforms_values.dart:25-62](file://lib/src/animation/css_to_smil_converter_transforms_values.dart#L25-L62)
+- [lib/src/animation/css_to_smil_converter_transforms_values.dart:213-273](file://lib/src/animation/css_to_smil_converter_transforms_values.dart#L213-L273)
+- [lib/src/animation/css_to_smil_converter_transforms_values.dart:328-389](file://lib/src/animation/css_to_smil_converter_transforms_values.dart#L328-L389)
+
 ## 3D Transform Support
 
 ### Comprehensive 3D Transform Implementation
@@ -421,7 +477,7 @@ Conversion process:
 
 **Section sources**
 - [lib/src/animation/css_to_smil_converter_core.dart:27-147](file://lib/src/animation/css_to_smil_converter_core.dart#L27-L147)
-- [lib/src/animation/css_to_smil_converter_transforms.dart:3-22](file://lib/src/animation/css_to_smil_converter_transforms.dart#L3-L22)
+- [lib/src/animation/css_to_smil_converter_transforms.dart:3-5](file://lib/src/animation/css_to_smil_converter_transforms.dart#L3-L5)
 
 ## Enhanced Controller Lifecycle
 
@@ -591,6 +647,7 @@ class SmilAnimation {
 +bool isActive
 +updateForTime(time)
 +reset()
++additive : replace
 }
 class CssParser {
 +parseMultipleAnimations()
@@ -599,7 +656,8 @@ class CssParser {
 }
 class CssToSmilConverter {
 +convert(keyframes, animation, node)
-+_decomposeCompoundTransform()
++transform normalization
++compound transform handling
 }
 class LifecycleManager {
 +_onControllerUpdate()
@@ -645,6 +703,8 @@ LifecycleManager --> SvgTimeline : "controls startup"
 - **Enhanced**: Repeat mode startup for event-driven animations ensures responsive event handling.
 - **Enhanced**: External controller integration minimizes state synchronization overhead.
 - **Enhanced**: Conditional startup logic reduces unnecessary AnimationController initialization.
+- **Enhanced**: Compound transform preservation reduces animation count and improves performance.
+- **Enhanced**: CSS REPLACE semantics eliminate double-application issues in transform animations.
 
 ## Troubleshooting Guide
 Common issues and remedies:
@@ -660,6 +720,8 @@ Common issues and remedies:
 - **Enhanced**: Event-driven mode issues: Verify that event-based animations are properly detected and that the repeat mode startup is working.
 - **Enhanced**: External controller integration: Ensure that controller state changes are properly synchronized with the timeline.
 - **Enhanced**: Dual-mode control: Verify that the system is correctly detecting whether to use autoPlay or event-driven mode.
+- **Enhanced**: Compound transform issues: Verify that transform animations use additive replace mode and maintain full string formats.
+- **Enhanced**: Transform normalization problems: Check that CSS transform functions are properly parsed and normalized.
 
 **Section sources**
 - [lib/src/animation/animated_svg_controller.dart:83-91](file://lib/src/animation/animated_svg_controller.dart#L83-L91)
@@ -669,9 +731,11 @@ Common issues and remedies:
 - [test/animation/css_animation_edge_cases_test.dart:459-499](file://test/animation/css_animation_edge_cases_test.dart#L459-L499)
 
 ## Conclusion
-The enhanced animated SVG system provides robust programmatic control via AnimatedSvgController, precise timeline manipulation through SvgTimeline, and comprehensive CSS animation support with improved edge case handling. The system now supports multiple animations per element, animation-play-state control, negative animation delays, and full 3D transform capabilities with automatic 2D/3D fallback. 
+The enhanced animated SVG system provides robust programmatic control via AnimatedSvgController, precise timeline manipulation through SvgTimeline, and comprehensive CSS animation support with improved edge case handling. The system now supports multiple animations per element, animation-play-state control, negative animation delays, and full 3D transform capabilities with automatic 2D/3D fallback.
 
-**Updated** The system now includes enhanced controller lifecycle management with improved event-driven animation detection and management, dual-mode animation control (autoplay vs event-driven), repeat mode startup mechanism for event-driven animations, and better external controller integration. These enhancements provide more sophisticated animation control, better performance optimization, and improved developer experience for complex animation scenarios.
+**Updated** The system now includes enhanced controller lifecycle management with improved event-driven animation detection and management, dual-mode animation control (autoplay vs event-driven), repeat mode startup mechanism for event-driven animations, and better external controller integration. Most significantly, the CSS to SMIL conversion system has been enhanced with improved transform decomposition that maintains full transform string formats, ensuring better compatibility with modern SVG workflows and providing more accurate visual results for complex transform animations.
+
+The compound transform handling now preserves CSS semantics through additive replace mode, eliminating double-application issues and providing more predictable animation behavior. The enhanced transform normalization system properly handles complex transform strings with nested functions, calc() expressions, and various CSS units.
 
 Developers can integrate animations with user interactions, manage playback rates and directions, synchronize animations using event and syncbase mechanisms, and leverage the enhanced CSS parsing capabilities for complex animation scenarios. The architecture cleanly separates parsing, CSS-to-SMIL conversion, timing, and rendering, enabling maintainability, extensibility, and optimal performance across diverse animation requirements.
 
@@ -695,6 +759,7 @@ Developers can integrate animations with user interactions, manage playback rate
   - Detection: hasEventBasedAnimations()
 - SmilAnimation
   - State: isActive, updateForTime(Duration), reset()
+  - Enhanced: additive replace mode for transform animations
 - **Enhanced** CssParser
   - Multiple animations: parseMultipleAnimations(), parseMultipleAnimationsFromStyle()
   - Play state: parseAnimationFromStyle() with animation-play-state support
@@ -702,6 +767,7 @@ Developers can integrate animations with user interactions, manage playback rate
 - **Enhanced** CssToSmilConverter
   - Convert: convert(CssKeyframes, CssAnimation, SvgNode)
   - Transform handling: _decomposeCompoundTransform(), _normalizeCssTransform()
+  - Compound preservation: maintains full transform string formats
 - **Enhanced** Transform3DContext
   - 3D support: perspective, transformStyle, backfaceVisibility
   - Matrix operations: createPerspectiveMatrix(), isBackfacing()

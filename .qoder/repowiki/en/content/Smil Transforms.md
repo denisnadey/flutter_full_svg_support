@@ -22,23 +22,27 @@
 - [SVGParserUtilities.cpp](file://blink-b87d44f-Source-core-svg/SVGParserUtilities.cpp)
 - [svg_transform.dart](file://lib/src/animation/svg_transform.dart)
 - [css_to_smil_converter_transforms_values.dart](file://lib/src/animation/css_to_smil_converter_transforms_values.dart)
+- [css_to_smil_converter_transforms.dart](file://lib/src/animation/css_to_smil_converter_transforms.dart)
+- [css_to_smil_converter_core.dart](file://lib/src/animation/css_to_smil_converter_core.dart)
+- [css_to_smil_converter_timing.dart](file://lib/src/animation/css_to_smil_converter_timing.dart)
+- [css_to_smil_converter.dart](file://lib/src/animation/css_to_smil_converter.dart)
 - [animated_svg_painter_transform.dart](file://lib/src/animation/animated_svg_painter_transform.dart)
 - [text_matrix_transform_test.dart](file://test/animation/text_matrix_transform_test.dart)
 - [css_transform_edge_cases_test.dart](file://test/animation/css_transform_edge_cases_test.dart)
 - [css_transform_calc_test.dart](file://test/animation/css_transform_calc_test.dart)
 - [stroke_dash_stop_color_test.dart](file://test/animation/stroke_dash_stop_color_test.dart)
+- [css_transform_decomposition_test.dart](file://test/animation/css_transform_decomposition_test.dart)
 - [CURRENT_STATUS.md](file://CURRENT_STATUS.md)
 </cite>
 
 ## Update Summary
 **Changes Made**
-- Enhanced transform parsing with sophisticated tokenizer for SVG number lists that correctly handles edge cases like adjacent negative numbers and scientific notation
-- Updated transform-origin parsing with enhanced keyword and unit support
-- Added transform reference box calculations with transform-box property support
-- Enhanced CSS transform normalization with calc() expression support
+- Updated to reflect Applied Changes: Enhanced CSS transform handling with single-animation approach replacing decomposition
+- Updated transform parsing system with sophisticated tokenizer for edge cases and enhanced CSS transform processing capabilities
+- Removed references to old decomposition approach and timing coordination
+- Added comprehensive CSS transform normalization with calc() expression support
+- Enhanced transform-origin parsing with keyword and unit support
 - Updated SMIL transform pipeline to handle CSS transform precedence
-- Added 3D transform support with advanced parsing capabilities
-- Improved number parsing with better scientific notation and decimal point handling
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -85,7 +89,7 @@ end
 subgraph "CSS Transform Processing"
 J["CSS Transform Values<br/>css_to_smil_converter_transforms_values.dart"]
 K["Transform Origin Parser<br/>animated_svg_painter_transform.dart"]
-L["CSS Transform Decomposer<br/>css_to_smil_converter.dart"]
+L["CSS Transform Converter<br/>css_to_smil_converter.dart"]
 end
 subgraph "SVG Integration"
 M["SVGGraphicsElement<br/>SVGGraphicsElement.cpp"]

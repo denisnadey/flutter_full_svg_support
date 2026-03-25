@@ -136,6 +136,23 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
           parentRotateList: rotateList,
           parentStyle: style,
         );
+      } else if (child.tagName == 'tref') {
+        // <tref> element: references another element's text content via xlink:href
+        final consumed = _paintTrefNode(
+          canvas,
+          child,
+          cursor,
+          imageFilter: imageFilter,
+          colorFilter: colorFilter,
+          blendMode: blendMode,
+          parentXList: xList,
+          parentYList: yList,
+          parentDxList: dxList,
+          parentDyList: dyList,
+          parentRotateList: rotateList,
+          parentStyle: style,
+        );
+        cursor.x += consumed;
       } else if (child.tagName == 'textPath') {
         final consumed = _paintTextPathNode(
           canvas,
@@ -147,6 +164,135 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
         cursor.x += consumed;
       }
     }
+  }
+
+  /// Paints a <tref> element that references another element's text content.
+  ///
+  /// The tref element references text content from another element via xlink:href
+  /// and renders it inline with the tref element's own styling applied.
+  /// Per SVG 1.1 spec, tref is deprecated in SVG 2 but still supported for compatibility.
+  double _paintTrefNode(
+    ui.Canvas canvas,
+    SvgNode trefNode,
+    _TextCursor cursor, {
+    ui.ImageFilter? imageFilter,
+    ui.ColorFilter? colorFilter,
+    ui.BlendMode? blendMode,
+    List<double> parentXList = const <double>[],
+    List<double> parentYList = const <double>[],
+    List<double> parentDxList = const <double>[],
+    List<double> parentDyList = const <double>[],
+    List<double> parentRotateList = const <double>[],
+    _ResolvedTextStyle? parentStyle,
+  }) {
+    // Resolve the referenced element's text content
+    final referencedText = _resolveTrefText(trefNode);
+    if (referencedText == null || referencedText.isEmpty) {
+      return 0.0;
+    }
+
+    // Parse position lists from tref node (tref can have its own positioning)
+    final nodeXList = _getNumberList(trefNode, 'x');
+    final nodeYList = _getNumberList(trefNode, 'y');
+    final nodeDxList = _getNumberList(trefNode, 'dx');
+    final nodeDyList = _getNumberList(trefNode, 'dy');
+    final nodeRotateList = _getNumberList(trefNode, 'rotate');
+
+    // Check if tref creates a new text chunk
+    final hasAbsoluteX = nodeXList.isNotEmpty;
+    final hasAbsoluteY = nodeYList.isNotEmpty;
+    final startsNewChunk = hasAbsoluteX || hasAbsoluteY;
+
+    if (startsNewChunk) {
+      cursor.chunkCharIndex = 0;
+    }
+
+    // Merge with parent lists - node lists take precedence
+    final xList = nodeXList.isNotEmpty ? nodeXList : parentXList;
+    final yList = nodeYList.isNotEmpty ? nodeYList : parentYList;
+    final dxList = nodeDxList.isNotEmpty ? nodeDxList : parentDxList;
+    final dyList = nodeDyList.isNotEmpty ? nodeDyList : parentDyList;
+    final rotateList = nodeRotateList.isNotEmpty
+        ? nodeRotateList
+        : parentRotateList;
+
+    // Apply position updates
+    if (hasAbsoluteX && nodeXList.isNotEmpty) {
+      cursor.x = nodeXList[0];
+    }
+    if (hasAbsoluteY && nodeYList.isNotEmpty) {
+      cursor.y = nodeYList[0];
+    }
+    if (dxList.isNotEmpty && cursor.charIndex < dxList.length) {
+      cursor.x += dxList[cursor.charIndex];
+    }
+    if (dyList.isNotEmpty && cursor.charIndex < dyList.length) {
+      cursor.y += dyList[cursor.charIndex];
+    }
+
+    // Resolve tref's own styling
+    final style = _resolveTextStyle(trefNode);
+
+    // Paint the referenced text with tref's styling
+    final consumed = _paintPlainTextWithPositions(
+      canvas,
+      node: trefNode,
+      text: referencedText,
+      style: style,
+      cursor: cursor,
+      xList: xList,
+      yList: yList,
+      dxList: dxList,
+      dyList: dyList,
+      rotateList: rotateList,
+      startsNewChunk: startsNewChunk,
+      imageFilter: imageFilter,
+      colorFilter: colorFilter,
+      blendMode: blendMode,
+      parentStyle: parentStyle,
+    );
+
+    return consumed;
+  }
+
+  /// Resolves the text content referenced by a <tref> element.
+  ///
+  /// The tref element uses xlink:href to reference another element,
+  /// and its text content is extracted from that element.
+  String? _resolveTrefText(SvgNode trefNode) {
+    final hrefId = _extractHrefId(trefNode);
+    if (hrefId == null || hrefId.isEmpty) {
+      return null;
+    }
+
+    // Find the referenced element by ID
+    final referenced = document.root.findById(hrefId);
+    if (referenced == null) {
+      return null;
+    }
+
+    // Extract all text content from the referenced element and its descendants
+    return _extractAllTextContent(referenced);
+  }
+
+  /// Extracts all text content from a node and its descendants recursively.
+  ///
+  /// This is used by tref to get the complete text content of the referenced element.
+  String _extractAllTextContent(SvgNode node) {
+    final buffer = StringBuffer();
+
+    // Get direct text content
+    final directText = _getString(node, '__text');
+    if (directText != null && directText.isNotEmpty) {
+      buffer.write(directText);
+    }
+
+    // Recursively get text from children
+    for (final child in node.children) {
+      buffer.write(_extractAllTextContent(child));
+    }
+
+    return buffer.toString();
   }
 
   double _paintTextPathNode(
@@ -281,12 +427,31 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
     var totalWidth = 0.0;
 
     // Calculate text-anchor offset for this chunk
+    // For RTL text, text-anchor behavior is inverted
     double anchorOffset = 0.0;
     if (startsNewChunk || cursor.chunkCharIndex == 0) {
       // Measure the width of the entire chunk for text-anchor calculation
       final chunkParagraph = _buildTextParagraph(text, style);
       final chunkWidth = chunkParagraph.maxIntrinsicWidth;
-      switch (style.textAnchor) {
+      
+      // Determine effective anchor based on direction
+      // In RTL mode, start becomes end and vice versa
+      var effectiveAnchor = style.textAnchor;
+      if (style.textDirection == ui.TextDirection.rtl) {
+        switch (style.textAnchor) {
+          case _SvgTextAnchor.start:
+            effectiveAnchor = _SvgTextAnchor.end;
+            break;
+          case _SvgTextAnchor.end:
+            effectiveAnchor = _SvgTextAnchor.start;
+            break;
+          case _SvgTextAnchor.middle:
+            effectiveAnchor = _SvgTextAnchor.middle;
+            break;
+        }
+      }
+      
+      switch (effectiveAnchor) {
         case _SvgTextAnchor.start:
           anchorOffset = 0.0;
           break;
@@ -428,7 +593,24 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
     }
 
     var drawX = x;
-    switch (effectiveStyle.textAnchor) {
+    // Determine effective anchor based on direction
+    // In RTL mode, start becomes end and vice versa
+    var effectiveAnchor = effectiveStyle.textAnchor;
+    if (effectiveStyle.textDirection == ui.TextDirection.rtl) {
+      switch (effectiveStyle.textAnchor) {
+        case _SvgTextAnchor.start:
+          effectiveAnchor = _SvgTextAnchor.end;
+          break;
+        case _SvgTextAnchor.end:
+          effectiveAnchor = _SvgTextAnchor.start;
+          break;
+        case _SvgTextAnchor.middle:
+          effectiveAnchor = _SvgTextAnchor.middle;
+          break;
+      }
+    }
+    
+    switch (effectiveAnchor) {
       case _SvgTextAnchor.start:
         break;
       case _SvgTextAnchor.middle:

@@ -3,7 +3,7 @@ part of 'svg_filters.dart';
 extension SvgFiltersInputResolverExtension on SvgFilters {
   /// Resolves input passes for a filter primitive.
   ///
-  /// This method handles the full SVG filter input resolution semantics:
+  /// This method handles the full SVG Filter 1.1 input resolution semantics:
   /// - Built-in inputs: SourceGraphic, SourceAlpha, BackgroundImage,
   ///   BackgroundAlpha, FillPaint, StrokePaint
   /// - Named results from previous primitives via `result` attribute
@@ -11,6 +11,21 @@ extension SvgFiltersInputResolverExtension on SvgFilters {
   /// - Forward reference handling (produces transparent black per spec)
   /// - Multi-hop chain resolution (A→B→C references)
   /// - Nested filter context handling for BackgroundImage
+  ///
+  /// Input resolution precedence (per SVG spec):
+  /// 1. If `in` is null/empty: use previous primitive's result or SourceGraphic
+  /// 2. If `in` is "none": return empty (transparent black)
+  /// 3. If `in` matches a built-in name: return that built-in input
+  /// 4. If `in` matches a named result: return that cached result
+  /// 5. If `in` matches a built-in name (case-insensitive): return that input
+  /// 6. Otherwise: return empty (transparent black for forward/invalid refs)
+  ///
+  /// Edge cases handled:
+  /// - Forward references: produce empty (transparent black)
+  /// - Invalid named references: produce empty (transparent black)
+  /// - Empty string vs null: both treated as "use previous"
+  /// - Case-insensitive built-in names: accepted for compatibility
+  /// - Named result reuse: returns a copy to prevent mutation issues
   List<SvgFilterPaintPass> _resolveInputPasses({
     required String? requestedInput,
     required List<SvgFilterPaintPass> previous,
@@ -19,6 +34,8 @@ extension SvgFiltersInputResolverExtension on SvgFilters {
     required List<SvgFilterPaintPass> sourceAlpha,
     bool fallbackToPreviousOnUnknown = false,
   }) {
+    // HARDENING: Normalize input by trimming whitespace to handle edge cases
+    // where the input might have leading/trailing whitespace.
     final normalized = requestedInput?.trim();
     if (normalized == null || normalized.isEmpty) {
       // Per SVG spec: when `in` is omitted, use the result of the previous
@@ -29,7 +46,8 @@ extension SvgFiltersInputResolverExtension on SvgFilters {
     }
 
     // `in="none"` explicitly requests transparent-black input.
-    // It should never fall back to previous output, including merge-node flow.
+    // HARDENING: This should never fall back to previous output, including
+    // in merge-node flow where implicit fallback would otherwise occur.
     if (normalized.toLowerCase() == 'none') {
       return const <SvgFilterPaintPass>[];
     }
@@ -49,7 +67,9 @@ extension SvgFiltersInputResolverExtension on SvgFilters {
     // Also supports multi-hop chains: A→B→C where C references A's result.
     final named = namedResults[normalized];
     if (named != null && named.isNotEmpty) {
-      // Return a copy to prevent accidental mutation of cached results.
+      // HARDENING: Return a copy to prevent accidental mutation of cached
+      // results by downstream consumers. This is important when the same
+      // named result is referenced by multiple downstream primitives.
       return <SvgFilterPaintPass>[...named];
     }
 
@@ -73,6 +93,7 @@ extension SvgFiltersInputResolverExtension on SvgFilters {
 
     // Explicit unresolved primitive inputs (including forward references)
     // should produce transparent black per SVG spec.
+    // HARDENING: Return const empty list for efficiency.
     return const <SvgFilterPaintPass>[];
   }
 

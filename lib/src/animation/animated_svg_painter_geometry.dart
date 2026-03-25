@@ -98,6 +98,25 @@ extension AnimatedSvgPainterGeometryExtension on AnimatedSvgPainter {
         if (parsed == null) return null;
         _applyPathFillType(parsed, node);
         return parsed;
+      case 'image':
+        // Image geometry is a rectangle defined by x, y, width, height.
+        // Per SVG spec, image in clipPath contributes its bounding rectangle.
+        // The alpha channel of the image content defines the clip region,
+        // but for geometry-based clipping, we use the image bounds.
+        final imgX = _getNumber(node, 'x') ?? 0.0;
+        final imgY = _getNumber(node, 'y') ?? 0.0;
+        // For clip/mask geometry, we need dimensions. If not specified,
+        // we cannot determine the image bounds, so return null.
+        final imgWidth = _getNumber(node, 'width');
+        final imgHeight = _getNumber(node, 'height');
+        // If width/height are not specified, try to get from loaded image
+        final href = _extractImageHref(node);
+        final actualWidth = imgWidth ?? (href != null ? imagesByHref[href]?.width.toDouble() : null);
+        final actualHeight = imgHeight ?? (href != null ? imagesByHref[href]?.height.toDouble() : null);
+        if (actualWidth == null || actualHeight == null || actualWidth <= 0 || actualHeight <= 0) {
+          return null;
+        }
+        return ui.Path()..addRect(ui.Rect.fromLTWH(imgX, imgY, actualWidth, actualHeight));
       default:
         return null;
     }

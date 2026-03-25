@@ -97,9 +97,14 @@ const Set<String> _cssInheritablePropertiesForUse = {
 /// captures those inherited values and makes them available during rendering
 /// of the referenced subtree.
 ///
-/// Specificity rules:
-/// - Referenced element's own styles > use element's inherited styles
-/// - style attribute on use > presentation attributes on use > inherited from parent
+/// Specificity rules (per CSS cascade):
+/// 1. Inline style on referenced element (highest - specificity 1,0,0,0)
+/// 2. !important declarations
+/// 3. CSS rules from <style> (by specificity, then source order)
+/// 4. Presentation attributes on referenced element (specificity 0,0,0,0)
+/// 5. Use element's style attribute
+/// 6. Use element's presentation attributes
+/// 7. Inherited from use's ancestors
 ///
 /// IMPORTANT: Only inheritable CSS properties should flow through <use> boundaries.
 /// Non-inherited properties (opacity, transform, display, clip-path, mask, filter)
@@ -109,6 +114,7 @@ class _UseInheritanceContext {
     required this.useNode,
     this.parentContext,
     this.cssRules,
+    this.shadowRootId,
   });
 
   /// The <use> element providing inherited properties.
@@ -120,6 +126,13 @@ class _UseInheritanceContext {
   /// CSS rules from the document's <style> blocks.
   /// Used to resolve CSS class/id rules on referenced elements.
   final List<CssSelectorRule>? cssRules;
+
+  /// ID of the referenced element (shadow root).
+  /// Used for tracking shadow DOM boundaries in selector matching.
+  final String? shadowRootId;
+
+  /// Gets the depth of nested use contexts.
+  int get depth => parentContext == null ? 1 : 1 + parentContext!.depth;
 
   /// Gets the inherited value for a property, checking the use chain.
   /// Returns null if the property is not inheritable or not set on any
@@ -153,6 +166,21 @@ class _UseInheritanceContext {
       return attrValue;
     }
 
+    // Check DOM ancestors of the use element
+    SvgNode? ancestor = useNode.parent;
+    while (ancestor != null) {
+      final ancestorStyleValue =
+          _extractStyleValueFromNode(ancestor, normalizedProp);
+      if (ancestorStyleValue != null) {
+        return ancestorStyleValue;
+      }
+      final ancestorAttrValue = ancestor.getAttributeValue(property);
+      if (ancestorAttrValue != null) {
+        return ancestorAttrValue;
+      }
+      ancestor = ancestor.parent;
+    }
+
     // Check parent context (for nested use chains)
     return parentContext?.getInheritedValue(property);
   }
@@ -174,6 +202,58 @@ class _UseInheritanceContext {
     final normalizedProperty = property.trim().toLowerCase();
     final resolver = CssCascadeResolver(cssRules: cssRules!);
     return resolver.resolveOwnProperty(node, normalizedProperty);
+  }
+
+  /// Resolves a CSS property with full cascade, including use context.
+  /// This method implements the complete cascade order:
+  /// 1. Inline style on node (with !important check)
+  /// 2. CSS rules matching node (by specificity)
+  /// 3. Presentation attributes on node
+  /// 4. Inherited from use element (for inheritable properties)
+  ///
+  /// Returns null if the property is not set anywhere in the cascade.
+  String? resolvePropertyWithCascade(SvgNode node, String property) {
+    final normalizedProperty = property.trim().toLowerCase();
+
+    // 1. Check inline style on node first (highest priority except !important)
+    final inlineValue = _extractStyleValueFromNode(node, normalizedProperty);
+    if (inlineValue != null) {
+      // Check for !important - it wins everything
+      if (inlineValue.contains('!important')) {
+        return inlineValue
+            .replaceFirst(
+              RegExp(r'\s*!important\s*$', caseSensitive: false),
+              '',
+            )
+            .trim();
+      }
+    }
+
+    // 2. Check CSS rules from <style>
+    String? cssRuleValue;
+    if (cssRules != null && cssRules!.isNotEmpty) {
+      final resolver = CssCascadeResolver(cssRules: cssRules!);
+      cssRuleValue = resolver.resolveOwnProperty(node, normalizedProperty);
+    }
+
+    // 3. Check presentation attribute on node
+    final attrValue = node.getAttributeValue(normalizedProperty)?.toString();
+
+    // Determine winner between inline, CSS rule, and presentation attribute
+    // Inline (non-important) > CSS rule > presentation attribute
+    if (inlineValue != null) {
+      return inlineValue;
+    }
+    if (cssRuleValue != null) {
+      return cssRuleValue;
+    }
+    if (attrValue != null) {
+      return attrValue;
+    }
+
+    // 4. Check inherited from use context (for inheritable properties)
+    final inheritedValue = getInheritedValue(normalizedProperty);
+    return inheritedValue?.toString();
   }
 
   /// Gets a CSS custom property value from the use chain.
@@ -211,6 +291,15 @@ class _UseInheritanceContext {
 
     // Check parent use context (for nested use chains)
     return parentContext?.getCustomProperty(normalizedName);
+  }
+
+  /// Checks if this use context or any parent context already references
+  /// the given ID, which would indicate a circular reference.
+  bool hasCircularReference(String targetId) {
+    if (shadowRootId == targetId) {
+      return true;
+    }
+    return parentContext?.hasCircularReference(targetId) ?? false;
   }
 
   /// Extracts a property value from an inline style attribute.
@@ -401,7 +490,17 @@ extension AnimatedSvgPainterUseExtension on AnimatedSvgPainter {
     _UseInheritanceContext? useContext,
   }) {
     final hrefId = _extractHrefId(node);
-    if (hrefId == null || hrefId.isEmpty || useStack.contains(hrefId)) {
+    if (hrefId == null || hrefId.isEmpty) {
+      return;
+    }
+
+    // Check for circular reference in use stack
+    if (useStack.contains(hrefId)) {
+      return;
+    }
+
+    // Check for circular reference through use context chain
+    if (useContext != null && useContext.hasCircularReference(hrefId)) {
       return;
     }
 
@@ -424,10 +523,12 @@ extension AnimatedSvgPainterUseExtension on AnimatedSvgPainter {
     // Create inheritance context for this use boundary.
     // This allows CSS properties set on <use> to be inherited by referenced content.
     // Also pass CSS rules from document for proper class/id resolution.
+    // Include the shadow root ID for circular reference tracking.
     final currentUseContext = _UseInheritanceContext(
       useNode: node,
       parentContext: useContext,
       cssRules: _currentDocumentCssRules ?? useContext?.cssRules,
+      shadowRootId: hrefId,
     );
 
     final previousParent = referenced.parent;

@@ -6,10 +6,114 @@ part of 'animated_svg_painter.dart';
 /// - font-variant, font-stretch, font-size-adjust, font-kerning
 /// - font-optical-sizing, font-synthesis
 /// - font-variant-* properties
+/// - font-family parsing with fallback chains
 ///
 /// Note: _resolveFontWeight and _resolveFontStyle are defined in
 /// animated_svg_painter_values.dart and shared across extensions.
 extension AnimatedSvgPainterTextStyleFontExtension on AnimatedSvgPainter {
+  /// Resolves font-family CSS property with support for fallback chains.
+  ///
+  /// Parses the font-family property which can contain:
+  /// - Multiple comma-separated font names
+  /// - Quoted font names (e.g., "Helvetica Neue", 'Open Sans')
+  /// - Generic family names (serif, sans-serif, monospace, cursive, fantasy, system-ui)
+  ///
+  /// Returns the parsed font family string suitable for Flutter's TextStyle.
+  /// Flutter handles the fallback chain automatically, so we just need to
+  /// clean up the input and normalize generic family names.
+  String? _resolveFontFamily(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return null;
+    }
+
+    final families = <String>[];
+    final buffer = StringBuffer();
+    var inQuotes = false;
+    var quoteChar = '';
+
+    for (var i = 0; i < value.length; i++) {
+      final char = value[i];
+
+      if (!inQuotes && (char == '"' || char == "'")) {
+        inQuotes = true;
+        quoteChar = char;
+        continue;
+      }
+
+      if (inQuotes && char == quoteChar) {
+        inQuotes = false;
+        quoteChar = '';
+        continue;
+      }
+
+      if (!inQuotes && char == ',') {
+        final family = buffer.toString().trim();
+        if (family.isNotEmpty) {
+          families.add(_normalizeGenericFamily(family));
+        }
+        buffer.clear();
+        continue;
+      }
+
+      buffer.write(char);
+    }
+
+    // Handle last family
+    final lastFamily = buffer.toString().trim();
+    if (lastFamily.isNotEmpty) {
+      families.add(_normalizeGenericFamily(lastFamily));
+    }
+
+    if (families.isEmpty) {
+      return null;
+    }
+
+    return families.join(', ');
+  }
+
+  /// Normalizes generic family names to their standard Flutter equivalents.
+  ///
+  /// CSS generic families:
+  /// - serif -> Flutter uses 'serif' or specific like 'Times New Roman'
+  /// - sans-serif -> Flutter uses 'sans-serif' or specific like 'Roboto'
+  /// - monospace -> Flutter uses 'monospace' or specific like 'Courier'
+  /// - cursive -> Flutter uses 'cursive'
+  /// - fantasy -> Flutter uses 'fantasy'
+  /// - system-ui -> Uses default system font
+  /// - ui-serif, ui-sans-serif, ui-monospace, ui-rounded -> Modern CSS generics
+  /// - math -> For mathematical typesetting
+  /// - emoji -> For emoji rendering
+  String _normalizeGenericFamily(String family) {
+    final normalized = family.toLowerCase().trim();
+    switch (normalized) {
+      case 'serif':
+      case 'ui-serif':
+        return 'serif';
+      case 'sans-serif':
+      case 'ui-sans-serif':
+        return 'sans-serif';
+      case 'monospace':
+      case 'ui-monospace':
+        return 'monospace';
+      case 'cursive':
+        return 'cursive';
+      case 'fantasy':
+        return 'fantasy';
+      case 'system-ui':
+      case '-apple-system':
+      case 'blinkmacsystemfont':
+        return null.toString(); // Use platform default
+      case 'ui-rounded':
+        return 'sans-serif'; // Fallback to sans-serif
+      case 'math':
+        return 'serif'; // Fallback to serif for math
+      case 'emoji':
+        return family; // Keep as-is, Flutter handles emoji fonts
+      default:
+        return family; // Keep original family name
+    }
+  }
+
   /// Resolves font-variant CSS property to Flutter FontFeatures.
   /// Supports: normal, small-caps, all-small-caps, petite-caps, all-petite-caps,
   /// unicase, titling-caps

@@ -38,32 +38,61 @@ extension AnimatedSvgPainterValuesExtension on AnimatedSvgPainter {
     // First check the node itself for inline style or explicit attribute
     final nodeStyleValue = _extractStyleValue(node, normalizedName);
     if (nodeStyleValue != null) {
+      // Check for !important - it wins over everything else
+      if (nodeStyleValue.contains('!important')) {
+        return nodeStyleValue
+            .replaceFirst(
+              RegExp(r'\s*!important\s*$', caseSensitive: false),
+              '',
+            )
+            .trim();
+      }
       return nodeStyleValue;
     }
+
+    // Check CSS rules from document's <style> blocks for this node.
+    // CSS rules have higher specificity than presentation attributes.
+    // This allows CSS class/id rules to apply to use-referenced elements.
+    String? cssRuleValue;
+    if (_currentUseContext != null) {
+      cssRuleValue = _currentUseContext!.resolveCssRuleValue(
+        node,
+        normalizedName,
+      );
+    }
+
+    // Check presentation attribute on the node itself
     final nodeAttrValue = node.getAttributeValue(attributeName);
+
+    // CSS rule > presentation attribute (per CSS cascade spec)
+    if (cssRuleValue != null) {
+      return cssRuleValue;
+    }
     if (nodeAttrValue != null) {
       return nodeAttrValue;
     }
 
-    // Check CSS rules from document's <style> blocks for this node.
-    // This allows CSS class/id rules to apply to use-referenced elements.
-    if (_currentUseContext != null) {
-      final cssValue = _currentUseContext!.resolveCssRuleValue(
-        node,
-        normalizedName,
-      );
-      if (cssValue != null) {
-        return cssValue;
-      }
-    }
-
-    // Walk up the parent chain
+    // Walk up the parent chain looking for inherited values
     current = node.parent;
     while (current != null) {
+      // Check inline style first
       final styleValue = _extractStyleValue(current, normalizedName);
       if (styleValue != null) {
         return styleValue;
       }
+
+      // Check CSS rules for this ancestor
+      if (_currentUseContext != null) {
+        final ancestorCssValue = _currentUseContext!.resolveCssRuleValue(
+          current,
+          normalizedName,
+        );
+        if (ancestorCssValue != null) {
+          return ancestorCssValue;
+        }
+      }
+
+      // Check presentation attribute
       final value = current.getAttributeValue(attributeName);
       if (value != null) {
         return value;

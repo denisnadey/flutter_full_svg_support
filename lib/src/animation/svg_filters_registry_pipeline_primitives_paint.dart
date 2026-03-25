@@ -54,7 +54,7 @@ extension SvgFiltersPipelinePrimitivePaintExtension on SvgFilters {
   /// Resolves feDropShadow output for complex filter chains.
   ///
   /// feDropShadow is a convenience primitive that expands to the following
-  /// filter primitive sub-graph per SVG spec:
+  /// filter primitive sub-graph per SVG Filter 1.1 spec:
   /// 1. feGaussianBlur - blur the input with stdDeviation
   /// 2. feOffset - offset by dx/dy
   /// 3. feFlood - fill with shadow color (flood-color * flood-opacity)
@@ -69,6 +69,12 @@ extension SvgFiltersPipelinePrimitivePaintExtension on SvgFilters {
   /// - If feDropShadow has a result name, downstream primitives can reference it
   /// - The result contains both shadow passes and source passes (merged)
   /// - When chained, subsequent primitives process all output passes
+  ///
+  /// Input validation and edge cases:
+  /// - Empty/unresolved input: returns empty passes (transparent black)
+  /// - stdDeviation=0: skips blur filter but still applies offset/color
+  /// - flood-opacity=0: produces fully transparent shadow (still layered)
+  /// - Multiple downstream references: each gets a copy of all passes
   List<SvgFilterPaintPass> _resolveDropShadowOutput({
     required SvgDropShadowFilter shadow,
     required List<SvgFilterPaintPass> previous,
@@ -85,7 +91,9 @@ extension SvgFiltersPipelinePrimitivePaintExtension on SvgFilters {
       sourceAlpha: sourceAlpha,
     );
 
-    // If input is empty (e.g., unresolved reference), produce no shadow.
+    // HARDENING: If input is empty (e.g., unresolved reference), produce no
+    // shadow. This matches the SVG spec behavior where invalid/forward
+    // references produce transparent black output.
     if (input.isEmpty) {
       return const <SvgFilterPaintPass>[];
     }
@@ -94,6 +102,7 @@ extension SvgFiltersPipelinePrimitivePaintExtension on SvgFilters {
     final shadowFilter = shadow.apply();
 
     // Check for zero blur (optimization: skip blur composition).
+    // HARDENING: Check both X and Y independently for asymmetric blur cases.
     final hasBlur = shadow.stdDeviationX > 0 || shadow.stdDeviationY > 0;
 
     // Create shadow passes from input, applying blur + offset + color.
@@ -124,6 +133,9 @@ extension SvgFiltersPipelinePrimitivePaintExtension on SvgFilters {
     // Merge shadow passes (first/bottom) with original input (last/top).
     // This matches the SVG spec behavior where the shadow appears behind.
     // The resulting list is: [shadow_pass_0, ..., shadow_pass_n, input_0, ..., input_n]
+    //
+    // HARDENING: Return a new list to prevent any mutation issues when this
+    // result is cached and referenced by multiple downstream primitives.
     return <SvgFilterPaintPass>[...shadowPasses, ...input];
   }
 

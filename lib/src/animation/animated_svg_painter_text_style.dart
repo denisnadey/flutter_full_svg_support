@@ -30,7 +30,9 @@ extension AnimatedSvgPainterTextStyleExtension on AnimatedSvgPainter {
     final fillOpacity = (_getInheritedNumber(node, 'fill-opacity') ?? 1.0)
         .clamp(0.0, 1.0);
     final color = _applyOpacity(fillColor, opacity * fillOpacity);
-    final fontFamily = _getInheritedString(node, 'font-family');
+    final fontFamily = _resolveFontFamily(
+      _getInheritedString(node, 'font-family'),
+    );
     final fontWeight = _resolveFontWeight(
       _getInheritedString(node, 'font-weight'),
     );

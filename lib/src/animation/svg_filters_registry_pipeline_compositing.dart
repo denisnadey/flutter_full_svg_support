@@ -102,13 +102,20 @@ extension SvgFiltersPipelineCompositingExtension on SvgFilters {
   /// - Built-in inputs (SourceGraphic, SourceAlpha, BackgroundImage, etc.)
   /// - Implicit previous output (when `in` is omitted)
   ///
-  /// Per SVG spec:
+  /// Per SVG Filter 1.1 spec:
   /// - Layer ordering follows declaration: first feMergeNode is bottom layer,
   ///   last feMergeNode is top layer.
-  /// - When feMergeNode omits `in`, it uses the previous primitive's result
-  ///   (or SourceGraphic for the first reference in the filter chain).
-  /// - Forward references produce transparent black.
+  /// - When feMergeNode omits `in`, it uses the result of the previous
+  ///   primitive (or SourceGraphic for the first primitive in the chain).
+  /// - Forward/invalid references produce transparent black (empty passes).
   /// - If all nodes resolve to empty, the result is identity (no filtering).
+  /// - The same named result can be referenced by multiple feMergeNode children.
+  ///
+  /// Input validation:
+  /// - Null/empty `in` attribute: falls back to previous primitive's result
+  /// - Non-existent named reference: produces empty (transparent black)
+  /// - Forward reference: produces empty (transparent black per spec)
+  /// - `in="none"`: explicitly produces empty (no fallback)
   List<SvgFilterPaintPass> _resolveMergeOutput({
     required SvgMergeFilter merge,
     required List<SvgFilterPaintPass> previous,
@@ -137,9 +144,14 @@ extension SvgFiltersPipelineCompositingExtension on SvgFilters {
       // Per SVG spec: when `in` is omitted (null/empty), use the previous
       // primitive's result. For feMergeNode specifically, if `in` is null,
       // it inherits from the implicit previous chain.
-      final effectiveInput = (nodeInput == null || nodeInput.trim().isEmpty)
-          ? null
-          : nodeInput;
+      //
+      // HARDENING: Normalize empty strings to null to ensure consistent
+      // fallback behavior regardless of how the parser represents empty attrs.
+      final normalizedInput = nodeInput?.trim();
+      final effectiveInput =
+          (normalizedInput == null || normalizedInput.isEmpty)
+              ? null
+              : normalizedInput;
 
       final nodePasses = _resolveInputPasses(
         requestedInput: effectiveInput,
@@ -153,6 +165,9 @@ extension SvgFiltersPipelineCompositingExtension on SvgFilters {
         hasContributions = true;
         merged.addAll(nodePasses);
       }
+      // Note: When nodePasses is empty (forward ref, invalid ref, or in="none"),
+      // we intentionally skip adding anything - this is correct per SVG spec
+      // where invalid/forward refs produce transparent black (empty layer).
     }
 
     // If all nodes resolved to empty (e.g., all forward references),

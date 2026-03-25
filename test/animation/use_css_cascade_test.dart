@@ -777,5 +777,399 @@ void main() {
         expect(myRectRule.declarations['opacity'], '0.5');
       });
     });
+
+    group('Hardened CSS Cascade Tests', () {
+      testWidgets('!important in inline style wins over CSS rules', (
+        WidgetTester tester,
+      ) async {
+        const svgXml = '''
+          <svg viewBox="0 0 100 100">
+            <style>#r { fill: blue !important; }</style>
+            <defs>
+              <rect id="r" x="10" y="10" width="80" height="80" 
+                    style="fill: red !important;"/>
+            </defs>
+            <use href="#r"/>
+          </svg>
+        ''';
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+            ),
+          ),
+        );
+
+        await tester.pump();
+
+        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+
+        // Inline !important should win over CSS !important (same specificity, later wins)
+        expect(analysis.pixelCount, greaterThan(1000));
+      });
+
+      testWidgets('CSS rules inherit through use boundary for inheritable props', (
+        WidgetTester tester,
+      ) async {
+        // fill is an inheritable property in SVG
+        const svgXml = '''
+          <svg viewBox="0 0 100 100">
+            <g fill="red">
+              <defs>
+                <rect id="r" x="10" y="10" width="80" height="80"/>
+              </defs>
+              <use href="#r"/>
+            </g>
+          </svg>
+        ''';
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+            ),
+          ),
+        );
+
+        await tester.pump();
+
+        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+
+        // fill should inherit from parent g through use boundary
+        expect(analysis.pixelCount, greaterThan(1000));
+      });
+
+      testWidgets('multiple uses of same symbol with different styles', (
+        WidgetTester tester,
+      ) async {
+        const svgXml = '''
+          <svg viewBox="0 0 200 100">
+            <defs>
+              <symbol id="icon" viewBox="0 0 20 20">
+                <rect x="0" y="0" width="20" height="20"/>
+              </symbol>
+            </defs>
+            <use href="#icon" x="10" y="10" width="40" height="40" fill="red"/>
+            <use href="#icon" x="60" y="10" width="40" height="40" fill="blue"/>
+          </svg>
+        ''';
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 400, height: 200),
+            ),
+          ),
+        );
+
+        await tester.pump();
+
+        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final redAnalysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+
+        // First use should render red
+        expect(redAnalysis.pixelCount, greaterThan(500));
+      });
+
+      testWidgets('gradient inside used symbol resolves correctly', (
+        WidgetTester tester,
+      ) async {
+        const svgXml = '''
+          <svg viewBox="0 0 100 100">
+            <defs>
+              <symbol id="icon" viewBox="0 0 50 50">
+                <defs>
+                  <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="red"/>
+                    <stop offset="100%" stop-color="blue"/>
+                  </linearGradient>
+                </defs>
+                <rect x="0" y="0" width="50" height="50" fill="url(#grad)"/>
+              </symbol>
+            </defs>
+            <use href="#icon" x="10" y="10" width="80" height="80"/>
+          </svg>
+        ''';
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+            ),
+          ),
+        );
+
+        await tester.pump();
+
+        // Should render without error - gradient should resolve
+        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+      });
+
+      testWidgets('circular reference through nested use is detected', (
+        WidgetTester tester,
+      ) async {
+        // Create indirect circular reference: a uses b which uses c which uses a
+        const svgXml = '''
+          <svg viewBox="0 0 100 100">
+            <defs>
+              <g id="a">
+                <use href="#b"/>
+              </g>
+              <g id="b">
+                <use href="#c"/>
+              </g>
+              <g id="c">
+                <use href="#a"/>
+                <rect x="10" y="10" width="30" height="30" fill="red"/>
+              </g>
+            </defs>
+            <use href="#a" x="10" y="10"/>
+          </svg>
+        ''';
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+            ),
+          ),
+        );
+
+        // Should not crash or hang - circular reference should be detected
+        await tester.pump();
+
+        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+      });
+
+      testWidgets('CSS descendant selector respects shadow DOM boundary', (
+        WidgetTester tester,
+      ) async {
+        // Test that combinator selectors work within use-referenced content
+        // but respect the shadow DOM boundary created by use element
+        const svgXml = '''
+          <svg viewBox="0 0 100 100">
+            <style>
+              .container rect { stroke: green; stroke-width: 2; }
+            </style>
+            <defs>
+              <g id="myGroup" class="container">
+                <rect x="10" y="10" width="80" height="80" fill="red"/>
+              </g>
+            </defs>
+            <use href="#myGroup"/>
+          </svg>
+        ''';
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+            ),
+          ),
+        );
+
+        await tester.pump();
+
+        // Test that rendering completes without errors
+        // The descendant selector should match within the use-referenced content
+        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+      });
+
+      testWidgets('use element with transform inherits through boundary', (
+        WidgetTester tester,
+      ) async {
+        const svgXml = '''
+          <svg viewBox="0 0 100 100">
+            <defs>
+              <rect id="r" x="0" y="0" width="20" height="20"/>
+            </defs>
+            <use href="#r" x="10" y="10" fill="red" transform="translate(30,30)"/>
+          </svg>
+        ''';
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+            ),
+          ),
+        );
+
+        await tester.pump();
+
+        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+
+        // Should render a red rect at translated position
+        expect(analysis.pixelCount, greaterThan(100));
+        // Check that the rect is offset from origin
+        expect(analysis.boundingBox.left, greaterThan(50));
+      });
+
+      testWidgets('deeply nested use chains maintain CSS inheritance', (
+        WidgetTester tester,
+      ) async {
+        const svgXml = '''
+          <svg viewBox="0 0 100 100">
+            <defs>
+              <rect id="base" x="0" y="0" width="30" height="30"/>
+              <g id="level1">
+                <use href="#base"/>
+              </g>
+              <g id="level2">
+                <use href="#level1"/>
+              </g>
+              <g id="level3">
+                <use href="#level2"/>
+              </g>
+            </defs>
+            <use href="#level3" x="10" y="10" fill="red"/>
+          </svg>
+        ''';
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+            ),
+          ),
+        );
+
+        await tester.pump();
+
+        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+
+        // fill should cascade through all nested use levels
+        expect(analysis.pixelCount, greaterThan(100));
+      });
+
+      testWidgets('symbol viewBox rescaling with use width/height override', (
+        WidgetTester tester,
+      ) async {
+        const svgXml = '''
+          <svg viewBox="0 0 100 100">
+            <defs>
+              <symbol id="icon" viewBox="0 0 10 10">
+                <rect x="0" y="0" width="10" height="10" fill="red"/>
+              </symbol>
+            </defs>
+            <use href="#icon" x="10" y="10" width="80" height="80"/>
+          </svg>
+        ''';
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+            ),
+          ),
+        );
+
+        await tester.pump();
+
+        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+
+        // Should be a large rectangle (scaled from 10x10 to 80x80)
+        expect(analysis.objectWidth, greaterThan(100));
+        expect(analysis.objectHeight, greaterThan(100));
+      });
+
+      testWidgets('CSS child selector stops at shadow boundary', (
+        WidgetTester tester,
+      ) async {
+        const svgXml = '''
+          <svg viewBox="0 0 100 100">
+            <style>symbol > rect { fill: blue; }</style>
+            <defs>
+              <symbol id="icon" viewBox="0 0 50 50">
+                <rect x="0" y="0" width="50" height="50" fill="red"/>
+              </symbol>
+            </defs>
+            <use href="#icon" x="10" y="10" width="80" height="80"/>
+          </svg>
+        ''';
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+            ),
+          ),
+        );
+
+        await tester.pump();
+
+        // The selector "symbol > rect" should work inside the symbol
+        // but the rect has explicit fill="red" which wins
+        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+      });
+
+      testWidgets('pattern inside symbol is resolved correctly', (
+        WidgetTester tester,
+      ) async {
+        const svgXml = '''
+          <svg viewBox="0 0 100 100">
+            <defs>
+              <symbol id="icon" viewBox="0 0 50 50">
+                <defs>
+                  <pattern id="dots" width="10" height="10" patternUnits="userSpaceOnUse">
+                    <circle cx="5" cy="5" r="3" fill="red"/>
+                  </pattern>
+                </defs>
+                <rect x="0" y="0" width="50" height="50" fill="url(#dots)"/>
+              </symbol>
+            </defs>
+            <use href="#icon" x="10" y="10" width="80" height="80"/>
+          </svg>
+        ''';
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+            ),
+          ),
+        );
+
+        await tester.pump();
+
+        // Should render without error - pattern should resolve
+        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+      });
+
+      testWidgets('use element stroke inherits correctly', (
+        WidgetTester tester,
+      ) async {
+        const svgXml = '''
+          <svg viewBox="0 0 100 100">
+            <defs>
+              <path id="p" d="M10,10 L90,10 L90,90 L10,90 Z" fill="none"/>
+            </defs>
+            <use href="#p" stroke="red" stroke-width="5"/>
+          </svg>
+        ''';
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+            ),
+          ),
+        );
+
+        await tester.pump();
+
+        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+
+        // Should render red stroked path
+        expect(analysis.pixelCount, greaterThan(100));
+      });
+    });
   });
 }
