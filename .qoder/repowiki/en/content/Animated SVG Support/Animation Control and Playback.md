@@ -7,6 +7,7 @@
 - [lib/src/animation.dart](file://lib/src/animation.dart)
 - [lib/src/animation/animated_svg_controller.dart](file://lib/src/animation/animated_svg_controller.dart)
 - [lib/src/animation/animated_svg_picture.dart](file://lib/src/animation/animated_svg_picture.dart)
+- [lib/src/animation/animated_svg_picture_lifecycle.dart](file://lib/src/animation/animated_svg_picture_lifecycle.dart)
 - [lib/src/animation/smil/smil_animation.dart](file://lib/src/animation/smil/smil_animation.dart)
 - [lib/src/animation/smil/smil_timeline.dart](file://lib/src/animation/smil/smil_timeline.dart)
 - [lib/src/animation/smil/smil_animation_runtime.dart](file://lib/src/animation/smil/smil_animation_runtime.dart)
@@ -23,16 +24,18 @@
 - [test/animation/css_animation_edge_cases_test.dart](file://test/animation/css_animation_edge_cases_test.dart)
 - [test/animation/css_3d_transforms_test.dart](file://test/animation/css_3d_transforms_test.dart)
 - [example/lib/pages/controller_demo_page.dart](file://example/lib/pages/controller_demo_page.dart)
+- [example/lib/pages/custom_svg_viewer_page.dart](file://example/lib/pages/custom_svg_viewer_page.dart)
+- [example/lib/widgets/smil_event_timing_widget.dart](file://example/lib/widgets/smil_event_timing_widget.dart)
 </cite>
 
 ## Update Summary
 **Changes Made**
-- Enhanced CSS animation edge case support documentation including multiple animations per element
-- Added animation-play-state control documentation with paused state handling
-- Documented negative animation delay support and implementation details
-- Expanded 3D transform support documentation with automatic 2D/3D fallback
-- Updated CSS animation parsing capabilities and cascade handling
-- Added comprehensive transform decomposition and conversion documentation
+- Enhanced controller lifecycle with improved event-driven animation detection and management
+- Added documentation for dual-mode animation control (autoplay vs event-driven)
+- Documented repeat mode startup mechanism for event-driven animations
+- Improved external controller integration with better state synchronization
+- Enhanced event-driven animation lifecycle with automatic ticker management
+- Added comprehensive event-based animation detection and startup logic
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -42,17 +45,23 @@
 5. [Detailed Component Analysis](#detailed-component-analysis)
 6. [Enhanced CSS Animation System](#enhanced-css-animation-system)
 7. [3D Transform Support](#3d-transform-support)
-8. [Dependency Analysis](#dependency-analysis)
-9. [Performance Considerations](#performance-considerations)
-10. [Troubleshooting Guide](#troubleshooting-guide)
-11. [Conclusion](#conclusion)
-12. [Appendices](#appendices)
+8. [Enhanced Controller Lifecycle](#enhanced-controller-lifecycle)
+9. [Dual-Mode Animation Control](#dual-mode-animation-control)
+10. [Event-Driven Animation Management](#event-driven-animation-management)
+11. [External Controller Integration](#external-controller-integration)
+12. [Dependency Analysis](#dependency-analysis)
+13. [Performance Considerations](#performance-considerations)
+14. [Troubleshooting Guide](#troubleshooting-guide)
+15. [Conclusion](#conclusion)
+16. [Appendices](#appendices)
 
 ## Introduction
 This document explains the animation control and playback mechanisms for animated SVGs in the project. It focuses on the AnimatedSvgController API, programmatic animation control, playback rate adjustment, and timeline manipulation. The system now includes enhanced CSS animation support with improved edge case handling, including multiple animations per element, animation-play-state control, negative animation delays, and comprehensive 3D transform support with automatic 2D/3D fallback. It also covers controller methods for play, pause, stop, reset, and seek operations, along with examples of manual animation control, animation synchronization, state management, lifecycle handling, and performance considerations. Guidance is provided for integrating animations with user interactions and application state.
 
+**Updated** Enhanced with improved controller lifecycle management, dual-mode animation control, and better event-driven animation detection and management.
+
 ## Project Structure
-The animated SVG pipeline is implemented as a separate rendering path from the static SVG pipeline. The animated pipeline parses SVG into a DOM, extracts SMIL animations, manages time via a timeline, and renders via a CustomPainter. The enhanced system now includes comprehensive CSS animation parsing and conversion capabilities.
+The animated SVG pipeline is implemented as a separate rendering path from the static SVG pipeline. The animated pipeline parses SVG into a DOM, extracts SMIL animations, manages time via a timeline, and renders via a CustomPainter. The enhanced system now includes comprehensive CSS animation parsing and conversion capabilities with improved event-driven animation detection.
 
 ```mermaid
 graph TB
@@ -63,14 +72,16 @@ C --> D["SvgTimeline<br/>Time management"]
 D --> E["AnimatedSvgPainter<br/>CustomPainter"]
 E --> F["Canvas rendering"]
 end
-subgraph "CSS Animation Processing"
+subgraph "Enhanced CSS Animation Processing"
 G["CssParser<br/>Multiple Animations"]
 H["CssAnimation Models<br/>Play State & Delays"]
 I["Transform Decomposition<br/>2D/3D Fallback"]
 end
-subgraph "Public API"
+subgraph "Enhanced Controller Lifecycle"
 J["AnimatedSvgPicture<br/>Widget"]
 K["AnimatedSvgController<br/>ChangeNotifier"]
+L["Event Detection<br/>hasEventBasedAnimations()"]
+M["Repeat Mode Startup<br/>_controller!.repeat()"]
 end
 G --> C
 H --> C
@@ -78,6 +89,7 @@ I --> E
 J --> D
 K -.-> C
 K -.-> J
+L --> M
 ```
 
 **Diagram sources**
@@ -86,6 +98,8 @@ K -.-> J
 - [lib/src/animation/css_to_smil_converter.dart:14-67](file://lib/src/animation/css_to_smil_converter.dart#L14-L67)
 - [lib/src/animation/animated_svg_picture.dart:236-269](file://lib/src/animation/animated_svg_picture.dart#L236-L269)
 - [lib/src/animation/animated_svg_controller.dart:25](file://lib/src/animation/animated_svg_controller.dart#L25)
+- [lib/src/animation/animated_svg_picture_lifecycle.dart:111-121](file://lib/src/animation/animated_svg_picture_lifecycle.dart#L111-L121)
+- [lib/src/animation/smil/smil_timeline.dart:211-215](file://lib/src/animation/smil/smil_timeline.dart#L211-L215)
 
 **Section sources**
 - [ARCHITECTURE.md:6-58](file://ARCHITECTURE.md#L6-L58)
@@ -93,7 +107,7 @@ K -.-> J
 
 ## Core Components
 - AnimatedSvgController: Provides programmatic control of playback (pause/resume, reverse/forward, seek, setPlaybackRate, restart) and notifies listeners of state changes.
-- AnimatedSvgPicture: The public widget that hosts the animated SVG, integrates with the controller, and drives the render loop.
+- AnimatedSvgPicture: The public widget that hosts the animated SVG, integrates with the controller, and drives the render loop with enhanced lifecycle management.
 - SmilAnimation: Describes individual SMIL animations (types, timing, interpolation modes, and runtime state).
 - SvgTimeline: Manages global time, playback rate, seeks, resets, and event-driven activation; resolves syncbase timing and triggers dependent animations.
 - AnimatedSvgPainter: Renders the DOM tree using effective attribute values computed by the timeline.
@@ -111,24 +125,29 @@ Key capabilities:
 - Negative animation delay handling
 - Comprehensive 3D transform support with automatic 2D/3D fallback
 - Freeze vs remove fill behavior
+- **Enhanced**: Dual-mode animation control (autoplay vs event-driven)
+- **Enhanced**: Repeat mode startup for event-driven animations
+- **Enhanced**: Improved event-driven animation detection and management
+- **Enhanced**: Better external controller integration with state synchronization
 
 **Section sources**
-- [lib/src/animation/animated_svg_controller.dart:25-131](file://lib/src/animation/animated_svg_controller.dart#L25-L131)
-- [lib/src/animation/animated_svg_picture.dart:108-295](file://lib/src/animation/animated_svg_picture.dart#L108-L295)
+- [lib/src/animation/animated_svg_controller.dart:25-160](file://lib/src/animation/animated_svg_controller.dart#L25-L160)
+- [lib/src/animation/animated_svg_picture.dart:108-434](file://lib/src/animation/animated_svg_picture.dart#L108-L434)
 - [lib/src/animation/smil/smil_animation.dart:80-453](file://lib/src/animation/smil/smil_animation.dart#L80-L453)
-- [lib/src/animation/smil/smil_timeline.dart:20-256](file://lib/src/animation/smil/smil_timeline.dart#L20-L256)
+- [lib/src/animation/smil/smil_timeline.dart:20-262](file://lib/src/animation/smil/smil_timeline.dart#L20-L262)
 - [lib/src/animation/css_animations_parser.dart:28-43](file://lib/src/animation/css_animations_parser.dart#L28-L43)
 - [lib/src/animation/css_to_smil_converter_core.dart:27-147](file://lib/src/animation/css_to_smil_converter_core.dart#L27-L147)
 - [lib/src/animation/transform_3d.dart:333-373](file://lib/src/animation/transform_3d.dart#L333-L373)
 
 ## Architecture Overview
-The enhanced animated pipeline separates concerns across parsing, CSS-to-SMIL conversion, timeline management, and rendering with comprehensive 3D transform support:
+The enhanced animated pipeline separates concerns across parsing, CSS-to-SMIL conversion, timeline management, and rendering with comprehensive 3D transform support and improved controller lifecycle management:
 
 ```mermaid
 sequenceDiagram
 participant User as "User"
 participant Controller as "AnimatedSvgController"
 participant Picture as "AnimatedSvgPicture"
+participant Lifecycle as "Lifecycle Manager"
 participant CssParser as "CssParser"
 participant Converter as "CssToSmilConverter"
 participant Timeline as "SvgTimeline"
@@ -136,8 +155,9 @@ participant Animation as "SmilAnimation"
 participant Painter as "AnimatedSvgPainter"
 User->>Controller : "seek()/pause()/resume()/setPlaybackRate()"
 Controller-->>Picture : "notifyListeners()"
-Picture->>Timeline : "apply controller state (rate, direction)"
-Picture->>Timeline : "tick(delta) or seek(time)"
+Picture->>Lifecycle : "_onControllerUpdate()"
+Lifecycle->>Timeline : "apply controller state (rate, direction)"
+Lifecycle->>Timeline : "tick(delta) or seek(time)"
 CssParser->>Converter : "parseMultipleAnimations()"
 Converter->>Timeline : "create SMIL animations"
 Timeline->>Animation : "updateForTime(time)"
@@ -147,7 +167,8 @@ Painter-->>User : "rendered frame"
 ```
 
 **Diagram sources**
-- [lib/src/animation/animated_svg_controller.dart:25-131](file://lib/src/animation/animated_svg_controller.dart#L25-L131)
+- [lib/src/animation/animated_svg_controller.dart:25-160](file://lib/src/animation/animated_svg_controller.dart#L25-L160)
+- [lib/src/animation/animated_svg_picture_lifecycle.dart:226-309](file://lib/src/animation/animated_svg_picture_lifecycle.dart#L226-L309)
 - [lib/src/animation/animated_svg_picture.dart:166-220](file://lib/src/animation/animated_svg_picture.dart#L166-L220)
 - [lib/src/animation/css_animations_parser.dart:28-43](file://lib/src/animation/css_animations_parser.dart#L28-L43)
 - [lib/src/animation/css_to_smil_converter_core.dart:27-147](file://lib/src/animation/css_to_smil_converter_core.dart#L27-L147)
@@ -175,8 +196,8 @@ Integration:
 - AnimatedSvgPicture subscribes to controller changes and applies state to the underlying AnimationController and timeline.
 
 **Section sources**
-- [lib/src/animation/animated_svg_controller.dart:25-131](file://lib/src/animation/animated_svg_controller.dart#L25-L131)
-- [lib/src/animation/animated_svg_picture.dart:178-220](file://lib/src/animation/animated_svg_picture.dart#L178-L220)
+- [lib/src/animation/animated_svg_controller.dart:25-160](file://lib/src/animation/animated_svg_controller.dart#L25-L160)
+- [lib/src/animation/animated_svg_picture_lifecycle.dart:226-309](file://lib/src/animation/animated_svg_picture_lifecycle.dart#L226-L309)
 - [test/animation/controller_test.dart:26-140](file://test/animation/controller_test.dart#L26-L140)
 
 ### Programmatic Animation Control
@@ -257,7 +278,8 @@ Events:
 - Programmatic: triggerEvent(elementId?, eventType) activates event-listening animations and resolves dependent syncbase conditions.
 
 **Section sources**
-- [lib/src/animation/animated_svg_picture.dart:166-220](file://lib/src/animation/animated_svg_picture.dart#L166-L220)
+- [lib/src/animation/animated_svg_picture_lifecycle.dart:111-152](file://lib/src/animation/animated_svg_picture_lifecycle.dart#L111-L152)
+- [lib/src/animation/animated_svg_picture_lifecycle.dart:200-224](file://lib/src/animation/animated_svg_picture_lifecycle.dart#L200-L224)
 - [lib/src/animation/animated_svg_picture.dart:246-257](file://lib/src/animation/animated_svg_picture.dart#L246-L257)
 - [lib/src/animation/smil/smil_timeline.dart:128-158](file://lib/src/animation/smil/smil_timeline.dart#L128-L158)
 
@@ -401,8 +423,135 @@ Conversion process:
 - [lib/src/animation/css_to_smil_converter_core.dart:27-147](file://lib/src/animation/css_to_smil_converter_core.dart#L27-L147)
 - [lib/src/animation/css_to_smil_converter_transforms.dart:3-22](file://lib/src/animation/css_to_smil_converter_transforms.dart#L3-L22)
 
+## Enhanced Controller Lifecycle
+
+### Improved Event-Driven Animation Detection
+The controller lifecycle now includes sophisticated event-driven animation detection and management:
+
+- **Event-based animation detection**: The system can detect when animations are configured to start on events (click, mouseover, etc.)
+- **Automatic ticker management**: When event-driven animations are present, the system automatically starts the AnimationController in repeat mode to keep the timeline ticking
+- **Conditional startup logic**: The initialization process checks for event-based animations and adjusts startup behavior accordingly
+
+Startup behavior:
+- **Auto-play mode**: When `autoPlay=true`, the system starts playback normally with forward/reverse support
+- **Event-driven mode**: When `autoPlay=false` but event-based animations exist, the system starts the controller in repeat mode to continuously update frames
+- **No animations mode**: When no animations are detected, the system remains idle
+
+**Section sources**
+- [lib/src/animation/animated_svg_picture_lifecycle.dart:111-127](file://lib/src/animation/animated_svg_picture_lifecycle.dart#L111-L127)
+- [lib/src/animation/smil/smil_timeline.dart:211-215](file://lib/src/animation/smil/smil_timeline.dart#L211-L215)
+
+### Repeat Mode Startup Mechanism
+The enhanced system implements a repeat mode startup mechanism for event-driven animations:
+
+- **Continuous ticking**: Event-driven animations require the timeline to continue updating even when no animations are actively playing
+- **Repeat mode activation**: The system calls `_controller!.repeat()` to keep the AnimationController running in a loop
+- **Frame updates**: Even though no animations are active, the timeline continues to update attribute values for event-driven animations
+- **Performance optimization**: This approach ensures responsive event handling without requiring manual animation management
+
+**Section sources**
+- [lib/src/animation/animated_svg_picture_lifecycle.dart:114-121](file://lib/src/animation/animated_svg_picture_lifecycle.dart#L114-L121)
+
+### Enhanced External Controller Integration
+The controller lifecycle now provides better integration with external controllers:
+
+- **State synchronization**: The system monitors controller state changes and synchronizes them with the AnimationController
+- **Direction changes**: When the controller's direction changes, the system restarts playback with the new direction
+- **Pause/resume handling**: The system properly handles pause/resume state changes from external controllers
+- **Seek synchronization**: When seeking occurs, the system updates both the timeline and the AnimationController value
+
+**Section sources**
+- [lib/src/animation/animated_svg_picture_lifecycle.dart:226-309](file://lib/src/animation/animated_svg_picture_lifecycle.dart#L226-L309)
+
+## Dual-Mode Animation Control
+
+### AutoPlay vs Event-Driven Control
+The system now supports dual-mode animation control with intelligent startup logic:
+
+- **AutoPlay mode**: When `autoPlay=true`, animations start automatically and follow normal playback patterns
+- **Event-driven mode**: When `autoPlay=false`, animations wait for explicit events to start
+- **Smart detection**: The system automatically detects which mode to use based on animation configuration
+
+Mode selection criteria:
+- **Has event-based animations**: If animations are configured to start on events, the system uses event-driven mode
+- **Has infinite animations**: If animations are configured to repeat infinitely, the system uses autoPlay mode
+- **No animations detected**: If no animations are found, the system remains idle
+
+**Section sources**
+- [lib/src/animation/animated_svg_picture_lifecycle.dart:111-127](file://lib/src/animation/animated_svg_picture_lifecycle.dart#L111-L127)
+- [lib/src/animation/smil/smil_timeline.dart:154-157](file://lib/src/animation/smil/smil_timeline.dart#L154-L157)
+
+### Conditional Startup Logic
+The enhanced startup logic provides conditional behavior based on animation configuration:
+
+- **Event-based detection**: The system checks for animations with event-based begin conditions using `hasEventBasedAnimations()`
+- **Infinite animation detection**: The system checks for animations with infinite repeat counts using `_hasInfiniteAnimations()`
+- **Fallback behavior**: When neither condition is met, the system logs a warning and remains idle
+
+Startup decision flow:
+1. Parse animations and build timeline
+2. Check if animations exist
+3. If animations exist:
+   - Check if autoPlay is enabled
+   - If autoPlay=true: start normal playback
+   - If autoPlay=false: check for event-based animations
+4. If event-based animations exist: start in repeat mode
+5. If no animations exist: log warning and remain idle
+
+**Section sources**
+- [lib/src/animation/animated_svg_picture_lifecycle.dart:111-152](file://lib/src/animation/animated_svg_picture_lifecycle.dart#L111-L152)
+
+## Event-Driven Animation Management
+
+### Enhanced Event Detection and Management
+The system now provides comprehensive event-driven animation management:
+
+- **Event listener registration**: The timeline registers event listeners for animations that start on events
+- **Event key generation**: Events are identified using element IDs and event types in the format `elementId:eventType`
+- **Automatic activation**: When events occur, the system automatically activates waiting animations
+- **Dependency graph building**: The system builds dependency graphs to handle complex event chains
+
+Event handling flow:
+1. **Registration**: Event listeners are registered during timeline initialization
+2. **Detection**: The system detects when events occur (click, hover, etc.)
+3. **Activation**: Waiting animations are activated with appropriate timing offsets
+4. **Propagation**: Activated animations trigger their dependent animations through syncbase events
+
+**Section sources**
+- [lib/src/animation/smil/smil_timeline.dart:142-158](file://lib/src/animation/smil/smil_timeline.dart#L142-L158)
+- [lib/src/animation/smil/smil_timeline_syncbase.dart:47-84](file://lib/src/animation/smil/smil_timeline_syncbase.dart#L47-L84)
+
+### Improved Event-Based Animation Lifecycle
+The enhanced lifecycle management provides better handling of event-driven animations:
+
+- **Continuous ticking**: Event-driven animations require continuous timeline updates even when inactive
+- **State transition detection**: The system tracks animation state transitions to trigger syncbase events
+- **Automatic dependency resolution**: Dependencies between event-driven animations are resolved automatically
+- **Performance monitoring**: The system tracks active animation counts and performance metrics
+
+State transition detection:
+- **Previous state tracking**: The system maintains previous animation states to detect transitions
+- **Begin/end detection**: The system detects when animations start or finish
+- **Syncbase triggering**: When transitions occur, the system triggers dependent animations
+- **Immediate updates**: Dependent animations are updated immediately with current timeline time
+
+**Section sources**
+- [lib/src/animation/smil/smil_timeline_runtime.dart:41-68](file://lib/src/animation/smil/smil_timeline_runtime.dart#L41-L68)
+- [lib/src/animation/smil/smil_timeline_syncbase.dart:3-45](file://lib/src/animation/smil/smil_timeline_syncbase.dart#L3-L45)
+
+### External Controller Integration for Event-Driven Animations
+The system provides enhanced integration with external controllers for event-driven scenarios:
+
+- **Controller state monitoring**: The system monitors external controller state changes
+- **Event-driven state synchronization**: When external controllers change state, the system updates event-driven animations
+- **Performance-aware updates**: The system optimizes updates for event-driven scenarios
+- **Error handling**: The system handles errors gracefully in event-driven contexts
+
+**Section sources**
+- [example/lib/pages/custom_svg_viewer_page.dart:278-285](file://example/lib/pages/custom_svg_viewer_page.dart#L278-L285)
+
 ## Dependency Analysis
-High-level dependencies among core components with enhanced CSS animation support:
+High-level dependencies among core components with enhanced CSS animation support and improved controller lifecycle:
 
 ```mermaid
 classDiagram
@@ -436,6 +585,7 @@ class SvgTimeline {
 +seek(time)
 +reset()
 +triggerEvent(elementId, eventType)
++hasEventBasedAnimations()
 }
 class SmilAnimation {
 +bool isActive
@@ -451,6 +601,12 @@ class CssToSmilConverter {
 +convert(keyframes, animation, node)
 +_decomposeCompoundTransform()
 }
+class LifecycleManager {
++_onControllerUpdate()
++_startPlayback()
++_controller!.repeat()
++hasEventBasedAnimations()
+}
 AnimatedSvgPicture --> AnimatedSvgController : "subscribes to"
 AnimatedSvgPicture --> SvgTimeline : "drives"
 SvgTimeline --> SmilAnimation : "updates"
@@ -458,15 +614,18 @@ AnimatedSvgPicture --> CssParser : "parses CSS"
 CssParser --> CssToSmilConverter : "converts to SMIL"
 CssToSmilConverter --> SvgTimeline : "creates animations"
 AnimatedSvgController --> SvgTimeline : "controls rate/direction"
+LifecycleManager --> AnimatedSvgController : "manages state"
+LifecycleManager --> SvgTimeline : "controls startup"
 ```
 
 **Diagram sources**
-- [lib/src/animation/animated_svg_controller.dart:25-131](file://lib/src/animation/animated_svg_controller.dart#L25-L131)
-- [lib/src/animation/animated_svg_picture.dart:108-295](file://lib/src/animation/animated_svg_picture.dart#L108-L295)
-- [lib/src/animation/smil/smil_timeline.dart:20-256](file://lib/src/animation/smil/smil_timeline.dart#L20-L256)
+- [lib/src/animation/animated_svg_controller.dart:25-160](file://lib/src/animation/animated_svg_controller.dart#L25-L160)
+- [lib/src/animation/animated_svg_picture.dart:108-434](file://lib/src/animation/animated_svg_picture.dart#L108-L434)
+- [lib/src/animation/smil/smil_timeline.dart:20-262](file://lib/src/animation/smil/smil_timeline.dart#L20-L262)
 - [lib/src/animation/smil/smil_animation.dart:80-453](file://lib/src/animation/smil/smil_animation.dart#L80-L453)
 - [lib/src/animation/css_animations_parser.dart:28-43](file://lib/src/animation/css_animations_parser.dart#L28-L43)
 - [lib/src/animation/css_to_smil_converter_core.dart:27-147](file://lib/src/animation/css_to_smil_converter_core.dart#L27-L147)
+- [lib/src/animation/animated_svg_picture_lifecycle.dart:111-152](file://lib/src/animation/animated_svg_picture_lifecycle.dart#L111-L152)
 
 **Section sources**
 - [lib/src/animation.dart:21-31](file://lib/src/animation.dart#L21-L31)
@@ -482,6 +641,10 @@ AnimatedSvgController --> SvgTimeline : "controls rate/direction"
 - **Enhanced**: CSS animation parsing caches parsed results to avoid redundant processing.
 - **Enhanced**: 3D transform decomposition pre-computes matrix operations for better performance.
 - **Enhanced**: Automatic 2D/3D fallback reduces computational overhead for simple transforms.
+- **Enhanced**: Event-driven animation detection optimizes startup behavior based on animation configuration.
+- **Enhanced**: Repeat mode startup for event-driven animations ensures responsive event handling.
+- **Enhanced**: External controller integration minimizes state synchronization overhead.
+- **Enhanced**: Conditional startup logic reduces unnecessary AnimationController initialization.
 
 ## Troubleshooting Guide
 Common issues and remedies:
@@ -494,15 +657,23 @@ Common issues and remedies:
 - **Enhanced**: Play state issues: Check that `animation-play-state: paused` is properly parsed and applied.
 - **Enhanced**: Negative delays: Ensure delay values are correctly calculated and don't exceed animation duration.
 - **Enhanced**: 3D transform problems: Verify perspective values are positive and transform matrices are properly formed.
+- **Enhanced**: Event-driven mode issues: Verify that event-based animations are properly detected and that the repeat mode startup is working.
+- **Enhanced**: External controller integration: Ensure that controller state changes are properly synchronized with the timeline.
+- **Enhanced**: Dual-mode control: Verify that the system is correctly detecting whether to use autoPlay or event-driven mode.
 
 **Section sources**
 - [lib/src/animation/animated_svg_controller.dart:83-91](file://lib/src/animation/animated_svg_controller.dart#L83-L91)
 - [lib/src/animation/animated_svg_picture.dart:287-295](file://lib/src/animation/animated_svg_picture.dart#L287-L295)
 - [lib/src/animation/smil/smil_timeline.dart:128-158](file://lib/src/animation/smil/smil_timeline.dart#L128-L158)
+- [lib/src/animation/animated_svg_picture_lifecycle.dart:111-127](file://lib/src/animation/animated_svg_picture_lifecycle.dart#L111-L127)
 - [test/animation/css_animation_edge_cases_test.dart:459-499](file://test/animation/css_animation_edge_cases_test.dart#L459-L499)
 
 ## Conclusion
-The enhanced animated SVG system provides robust programmatic control via AnimatedSvgController, precise timeline manipulation through SvgTimeline, and comprehensive CSS animation support with improved edge case handling. The system now supports multiple animations per element, animation-play-state control, negative animation delays, and full 3D transform capabilities with automatic 2D/3D fallback. Developers can integrate animations with user interactions, manage playback rates and directions, synchronize animations using event and syncbase mechanisms, and leverage the enhanced CSS parsing capabilities for complex animation scenarios. The architecture cleanly separates parsing, CSS-to-SMIL conversion, timing, and rendering, enabling maintainability, extensibility, and optimal performance across diverse animation requirements.
+The enhanced animated SVG system provides robust programmatic control via AnimatedSvgController, precise timeline manipulation through SvgTimeline, and comprehensive CSS animation support with improved edge case handling. The system now supports multiple animations per element, animation-play-state control, negative animation delays, and full 3D transform capabilities with automatic 2D/3D fallback. 
+
+**Updated** The system now includes enhanced controller lifecycle management with improved event-driven animation detection and management, dual-mode animation control (autoplay vs event-driven), repeat mode startup mechanism for event-driven animations, and better external controller integration. These enhancements provide more sophisticated animation control, better performance optimization, and improved developer experience for complex animation scenarios.
+
+Developers can integrate animations with user interactions, manage playback rates and directions, synchronize animations using event and syncbase mechanisms, and leverage the enhanced CSS parsing capabilities for complex animation scenarios. The architecture cleanly separates parsing, CSS-to-SMIL conversion, timing, and rendering, enabling maintainability, extensibility, and optimal performance across diverse animation requirements.
 
 ## Appendices
 
@@ -521,6 +692,7 @@ The enhanced animated SVG system provides robust programmatic control via Animat
   - Controls: tick(Duration), seek(Duration), reset()
   - Events: triggerEvent(String?, String)
   - Rate: playbackRate getter/setter
+  - Detection: hasEventBasedAnimations()
 - SmilAnimation
   - State: isActive, updateForTime(Duration), reset()
 - **Enhanced** CssParser
@@ -533,12 +705,17 @@ The enhanced animated SVG system provides robust programmatic control via Animat
 - **Enhanced** Transform3DContext
   - 3D support: perspective, transformStyle, backfaceVisibility
   - Matrix operations: createPerspectiveMatrix(), isBackfacing()
+- **Enhanced** LifecycleManager
+  - Event detection: hasEventBasedAnimations()
+  - Startup control: _startPlayback(), _controller!.repeat()
+  - State synchronization: _onControllerUpdate()
 
 **Section sources**
-- [lib/src/animation/animated_svg_controller.dart:25-131](file://lib/src/animation/animated_svg_controller.dart#L25-L131)
-- [lib/src/animation/animated_svg_picture.dart:108-295](file://lib/src/animation/animated_svg_picture.dart#L108-L295)
-- [lib/src/animation/smil/smil_timeline.dart:20-256](file://lib/src/animation/smil/smil_timeline.dart#L20-L256)
+- [lib/src/animation/animated_svg_controller.dart:25-160](file://lib/src/animation/animated_svg_controller.dart#L25-L160)
+- [lib/src/animation/animated_svg_picture.dart:108-434](file://lib/src/animation/animated_svg_picture.dart#L108-L434)
+- [lib/src/animation/smil/smil_timeline.dart:20-262](file://lib/src/animation/smil/smil_timeline.dart#L20-L262)
 - [lib/src/animation/smil/smil_animation.dart:80-453](file://lib/src/animation/smil/smil_animation.dart#L80-L453)
 - [lib/src/animation/css_animations_parser.dart:28-43](file://lib/src/animation/css_animations_parser.dart#L28-L43)
 - [lib/src/animation/css_to_smil_converter_core.dart:27-147](file://lib/src/animation/css_to_smil_converter_core.dart#L27-L147)
 - [lib/src/animation/transform_3d.dart:333-373](file://lib/src/animation/transform_3d.dart#L333-L373)
+- [lib/src/animation/animated_svg_picture_lifecycle.dart:111-152](file://lib/src/animation/animated_svg_picture_lifecycle.dart#L111-L152)
