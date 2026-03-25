@@ -106,11 +106,9 @@ class SvgTransform {
     for (final match in regex.allMatches(transformString)) {
       final type = match.group(1)!.toLowerCase();
       final valuesStr = match.group(2)!;
-      final values = valuesStr
-          .split(RegExp(r'[\s,]+'))
-          .where((s) => s.isNotEmpty)
-          .map((s) => _parseValueWithUnit(s))
-          .toList();
+      final values = _tokenizeSvgNumbers(
+        valuesStr,
+      ).map((s) => _parseValueWithUnit(s)).toList();
 
       final transformType = switch (type) {
         'translate' => SvgTransformType.translate,
@@ -139,6 +137,80 @@ class SvgTransform {
     }
 
     return transforms;
+  }
+
+  /// Tokenizes SVG number list values, handling adjacent negative numbers.
+  ///
+  /// SVG allows numbers to be separated by:
+  /// - Whitespace
+  /// - Comma (with optional surrounding whitespace)
+  /// - Sign character (- or +) when it starts a new number
+  ///
+  /// This handles cases like "0-1" which means "0" followed by "-1",
+  /// and "10.5-3.2" which means "10.5" followed by "-3.2".
+  static List<String> _tokenizeSvgNumbers(String input) {
+    final result = <String>[];
+    final buffer = StringBuffer();
+
+    for (var i = 0; i < input.length; i++) {
+      final char = input[i];
+
+      // Skip whitespace and commas as separators
+      if (char == ' ' ||
+          char == '\t' ||
+          char == '\n' ||
+          char == '\r' ||
+          char == ',') {
+        if (buffer.isNotEmpty) {
+          result.add(buffer.toString());
+          buffer.clear();
+        }
+        continue;
+      }
+
+      // Handle sign characters (- or +)
+      if (char == '-' || char == '+') {
+        if (buffer.isEmpty) {
+          // Start of number with sign
+          buffer.write(char);
+        } else {
+          // Check if this is an exponent sign (e.g., "1e-5")
+          final lastChar = buffer.toString()[buffer.length - 1].toLowerCase();
+          if (lastChar == 'e') {
+            // Part of exponent notation
+            buffer.write(char);
+          } else {
+            // New number starting with sign
+            result.add(buffer.toString());
+            buffer.clear();
+            buffer.write(char);
+          }
+        }
+        continue;
+      }
+
+      // Handle decimal point
+      if (char == '.') {
+        // Check if we already have a decimal point in the current number
+        if (buffer.toString().contains('.')) {
+          // New number starting with decimal
+          result.add(buffer.toString());
+          buffer.clear();
+        }
+        buffer.write(char);
+        continue;
+      }
+
+      // All other characters (digits, letters for units)
+      buffer.write(char);
+    }
+
+    // Add remaining buffer content
+    if (buffer.isNotEmpty) {
+      result.add(buffer.toString());
+    }
+
+    return result;
   }
 
   /// Parses a value that may include units (deg, rad, px, em, etc.)

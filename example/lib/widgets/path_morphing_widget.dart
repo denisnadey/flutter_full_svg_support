@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 
-import '../widgets/animation_theme.dart';
+import 'animation_theme.dart';
 
 /// Reusable Path Morphing Widget for unified examples
 class PathMorphingWidget extends StatefulWidget {

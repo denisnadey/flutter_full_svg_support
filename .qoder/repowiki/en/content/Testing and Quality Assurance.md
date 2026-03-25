@@ -33,6 +33,11 @@
 - [white_space_test.dart](file://test/animation/white_space_test.dart)
 - [stroke_dash_stop_color_test.dart](file://test/animation/stroke_dash_stop_color_test.dart)
 - [widget_svg_test.dart](file://test/widget_svg_test.dart)
+- [hit_test_precision_test.dart](file://test/animation/hit_test_precision_test.dart)
+- [text_multirun_paragraph_test.dart](file://test/animation/text_multirun_paragraph_test.dart)
+- [text_path_precision_test.dart](file://test/animation/text_path_precision_test.dart)
+- [filter_fe_image_test.dart](file://test/animation/filter_fe_image_test.dart)
+- [use_css_cascade_test.dart](file://test/animation/use_css_cascade_test.dart)
 - [pubspec.yaml](file://pubspec.yaml)
 - [animated_svg_painter_text_style.dart](file://lib/src/animation/animated_svg_painter_text_style.dart)
 - [css_to_smil_converter_transforms_decompose.dart](file://lib/src/animation/css_to_smil_converter_transforms_decompose.dart)
@@ -40,15 +45,24 @@
 - [svg_transform.dart](file://lib/src/animation/svg_transform.dart)
 - [css_variables_calc.dart](file://lib/src/animation/css_variables_calc.dart)
 - [transform_3d.dart](file://lib/src/animation/transform_3d.dart)
+- [animated_svg_picture_hit_test_geometry.dart](file://lib/src/animation/animated_svg_picture_hit_test_geometry.dart)
+- [animated_svg_picture_hit_test_text_layout.dart](file://lib/src/animation/animated_svg_picture_hit_test_text_layout.dart)
+- [animated_svg_picture_hit_test_text_path_segments.dart](file://lib/src/animation/animated_svg_picture_hit_test_text_path_segments.dart)
+- [animated_svg_picture_hit_test_text_runs.dart](file://lib/src/animation/animated_svg_picture_hit_test_text_runs.dart)
+- [animated_svg_picture_hit_test_traversal.dart](file://lib/src/animation/animated_svg_picture_hit_test_traversal.dart)
+- [animated_svg_picture_hit_test_use.dart](file://lib/src/animation/animated_svg_picture_hit_test_use.dart)
+- [animated_svg_picture_hit_test_visibility.dart](file://lib/src/animation/animated_svg_picture_hit_test_visibility.dart)
 </cite>
 
 ## Update Summary
 **Changes Made**
-- Added comprehensive CSS transform calculation testing with support for calc() expressions, angle unit conversions, length unit conversions, and complex transform sequences
-- Integrated 3 new test files validating CSS transform parsing, unit conversions, and 3D transform handling
-- Enhanced CSS variables and calc() evaluation testing with 402 lines of comprehensive unit tests
-- Updated architecture overview to include new transform decomposition and unit conversion systems
-- Expanded testing framework to cover advanced CSS transform features including transform-origin, transform-box, and matrix decomposition
+- Added comprehensive hit testing precision tests with 1000 lines covering clipPath, mask, use element, and text character-level precision
+- Added extensive text multirun paragraph handling tests with 508 lines validating tspans, baseline-shift, and mixed text layouts
+- Added detailed text path precision tests with 688 lines covering startOffset, method, spacing, and edge cases
+- Added comprehensive feImage filter primitive tests with 491 lines validating element references, external images, and filter chains
+- Added CSS cascade behavior tests for use-referenced elements with 782 lines validating inheritance and styling resolution
+- Updated architecture overview to include new precision testing components and filter primitive validation
+- Enhanced testing framework to cover advanced SVG rendering precision and filter system validation
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -63,15 +77,18 @@
 10. [Appendices](#appendices)
 
 ## Introduction
-This document explains the comprehensive testing and quality assurance framework for the flutter_svg package with a focus on visual testing, automated animation testing, and validation approaches. The framework now includes extensive widget-level testing for advanced SVG features including marker rendering, paint order validation, pattern fills, comprehensive text styling capabilities, and **comprehensive CSS transform calculation testing** with support for calc() expressions, angle unit conversions, length unit conversions, and complex transform sequences.
+This document explains the comprehensive testing and quality assurance framework for the flutter_svg package with a focus on visual testing, automated animation testing, and validation approaches. The framework now includes extensive widget-level testing for advanced SVG features including marker rendering, paint order validation, pattern fills, comprehensive text styling capabilities, **comprehensive hit testing precision validation**, **extensive text multirun paragraph handling**, **detailed text path precision testing**, **comprehensive feImage filter primitive validation**, and **CSS cascade behavior for use-referenced elements**.
 
 Key areas covered:
 - Visual testing methodology for SMIL animations and complex SVG rendering
 - Automated pixel-based verification of transforms, motion, and advanced styling
 - Comprehensive widget-level testing for marker elements, paint ordering, and pattern fills
 - Extensive text styling validation including text-rendering, decorations, thickness, shadows, wrapping, alignment, and advanced typography features
-- **Advanced CSS transform calculation testing** including calc() expression evaluation, unit conversions, and 3D transform handling
-- **CSS variables and calc() evaluation system** with comprehensive testing for var() resolution and calc() arithmetic
+- **Advanced hit testing precision validation** with clipPath, mask, use element, and text character-level accuracy
+- **Comprehensive text multirun paragraph handling** with tspans, baseline-shift, and mixed text layouts
+- **Detailed text path precision testing** with startOffset, method, spacing, and edge cases
+- **Extensive feImage filter primitive validation** with element references, external images, and filter chains
+- **CSS cascade behavior testing** for use-referenced elements with inheritance and styling resolution
 - Quality assurance processes, configuration, and CI considerations
 - Relationships between the animation system, rendering pipeline, and advanced SVG features
 - Best practices, debugging techniques, and performance validation
@@ -79,15 +96,18 @@ Key areas covered:
 The goal is to help developers implement robust tests, maintain the existing infrastructure, and extend it confidently with comprehensive validation of advanced SVG rendering features.
 
 ## Project Structure
-The testing surface is primarily under the test/animation directory, with supporting utilities and cross-cutting guidelines. The framework now includes extensive widget-level tests for advanced SVG features alongside traditional animation and visual testing, **plus comprehensive CSS transform calculation testing**:
+The testing surface is primarily under the test/animation directory, with supporting utilities and cross-cutting guidelines. The framework now includes extensive widget-level tests for advanced SVG features alongside traditional animation and visual testing, **plus comprehensive precision testing for hit detection, text layout, and filter primitives**:
 
 - Animation logic and parsing tests (SMIL, CSS-to-SMIL conversion, path morphing)
 - Widget-level integration tests for AnimatedSvgPicture with comprehensive feature coverage
 - Visual testing utilities and golden-style pixel analysis
 - Controller-level tests for playback control and seek/pause/forward/reverse
 - Advanced rendering tests for markers, paint order, patterns, and text styling
-- **CSS transform calculation tests** for calc() expressions, unit conversions, and complex transform sequences
-- **CSS variables and calc() evaluation tests** for var() resolution and calc() arithmetic
+- **Precision testing for hit detection** including clipPath, mask, use element, and text character-level accuracy
+- **Text multirun paragraph handling** validation with tspans, baseline-shift, and mixed layouts
+- **Text path precision testing** with startOffset, method, spacing, and edge cases
+- **feImage filter primitive validation** with element references, external images, and filter chains
+- **CSS cascade behavior testing** for use-referenced elements with inheritance and styling resolution
 - CI configuration and platform constraints
 
 ```mermaid
@@ -122,6 +142,11 @@ A25["white_space_test.dart"]
 A26["css_transform_calc_test.dart"]
 A27["css_transform_edge_cases_test.dart"]
 A28["css_variables_calc_test.dart"]
+A29["hit_test_precision_test.dart"]
+A30["text_multirun_paragraph_test.dart"]
+A31["text_path_precision_test.dart"]
+A32["filter_fe_image_test.dart"]
+A33["use_css_cascade_test.dart"]
 end
 subgraph "Widget Tests"
 W["test/widget_svg_test.dart"]
@@ -160,6 +185,11 @@ A --> A25
 A --> A26
 A --> A27
 A --> A28
+A --> A29
+A --> A30
+A --> A31
+A --> A32
+A --> A33
 W --> A10
 G --> A1
 C --> A
@@ -196,6 +226,11 @@ C --> W
 - [css_transform_calc_test.dart](file://test/animation/css_transform_calc_test.dart)
 - [css_transform_edge_cases_test.dart](file://test/animation/css_transform_edge_cases_test.dart)
 - [css_variables_calc_test.dart](file://test/animation/css_variables_calc_test.dart)
+- [hit_test_precision_test.dart](file://test/animation/hit_test_precision_test.dart)
+- [text_multirun_paragraph_test.dart](file://test/animation/text_multirun_paragraph_test.dart)
+- [text_path_precision_test.dart](file://test/animation/text_path_precision_test.dart)
+- [filter_fe_image_test.dart](file://test/animation/filter_fe_image_test.dart)
+- [use_css_cascade_test.dart](file://test/animation/use_css_cascade_test.dart)
 - [widget_svg_test.dart](file://test/widget_svg_test.dart)
 - [dart_test.yaml](file://dart_test.yaml)
 
@@ -214,6 +249,11 @@ C --> W
 - **Text styling resolution system**: Processes and validates CSS text properties including thickness, shadows, wrapping, alignment, and advanced typography.
 - **CSS transform calculation system**: **Validates calc() expression evaluation, unit conversions, and complex transform parsing**.
 - **CSS variables and calc() evaluation system**: **Processes CSS variables and calc() expressions with comprehensive unit conversion support**.
+- **Precision hit testing system**: **Validates hit detection accuracy for clipPath, mask, use elements, and text character-level precision**.
+- **Text multirun paragraph system**: **Validates tspans, baseline-shift, and mixed text layouts with comprehensive styling**.
+- **Text path precision system**: **Validates startOffset, method, spacing, and edge cases for text along paths**.
+- **feImage filter primitive system**: **Validates element references, external images, preserveAspectRatio, and filter chain integration**.
+- **CSS cascade behavior system**: **Validates inheritance and styling resolution for use-referenced elements**.
 
 **Section sources**
 - [visual_test_utils.dart](file://test/animation/visual_test_utils.dart)
@@ -231,13 +271,20 @@ C --> W
 - [css_transform_calc_test.dart](file://test/animation/css_transform_calc_test.dart)
 - [css_transform_edge_cases_test.dart](file://test/animation/css_transform_edge_cases_test.dart)
 - [css_variables_calc_test.dart](file://test/animation/css_variables_calc_test.dart)
+- [hit_test_precision_test.dart](file://test/animation/hit_test_precision_test.dart)
+- [text_multirun_paragraph_test.dart](file://test/animation/text_multirun_paragraph_test.dart)
+- [text_path_precision_test.dart](file://test/animation/text_path_precision_test.dart)
+- [filter_fe_image_test.dart](file://test/animation/filter_fe_image_test.dart)
+- [use_css_cascade_test.dart](file://test/animation/use_css_cascade_test.dart)
 
 ## Architecture Overview
-The testing architecture separates concerns across four layers with enhanced coverage of advanced SVG rendering features, **including comprehensive CSS transform calculation testing**:
+The testing architecture separates concerns across five layers with enhanced coverage of advanced SVG rendering features, **including comprehensive precision testing for hit detection, text layout, and filter primitives**:
 - **Logic tests**: Validate SMIL parsing, interpolation, and timeline mechanics.
 - **Rendering tests**: Validate widget-level rendering and animation progression.
 - **Visual tests**: Validate actual pixel output and geometric changes.
-- **Advanced feature tests**: Validate markers, paint order, patterns, text styling, and **comprehensive CSS transform calculation testing**.
+- **Advanced feature tests**: Validate markers, paint order, patterns, text styling, and **comprehensive precision testing**.
+- **Precision testing layer**: Validate hit detection accuracy, text layout precision, and filter primitive behavior.
+- **CSS cascade system tests**: Validate inheritance and styling resolution for use-referenced elements.
 - **CSS transform system tests**: Validate calc() expressions, unit conversions, and 3D transform handling.
 - **CSS variables and calc() system tests**: Validate var() resolution and calc() arithmetic evaluation.
 
@@ -262,6 +309,13 @@ end
 subgraph "Visual Layer"
 V1["VisualTestUtils"]
 V2["PixelAnalysis"]
+end
+subgraph "Precision Testing Layer"
+PT1["Hit Test Precision<br/>ClipPath/Mask/Use"]
+PT2["Text Multirun<br/>Paragraph Layout"]
+PT3["Text Path Precision<br/>StartOffset/Method"]
+PT4["feImage Filter Primitives<br/>Element References"]
+PT5["CSS Cascade Behavior<br/>Use-Referenced Elements"]
 end
 subgraph "Advanced Feature Tests"
 AF1["Marker Rendering"]
@@ -292,6 +346,11 @@ AF4 --> R3
 AF5 --> R3
 AF6 --> L5
 AF7 --> L6
+PT1 --> R1
+PT2 --> R3
+PT3 --> R3
+PT4 --> R1
+PT5 --> R1
 ```
 
 **Diagram sources**
@@ -316,6 +375,11 @@ AF7 --> L6
 - [svg_transform.dart](file://lib/src/animation/svg_transform.dart)
 - [css_variables_calc.dart](file://lib/src/animation/css_variables_calc.dart)
 - [transform_3d.dart](file://lib/src/animation/transform_3d.dart)
+- [hit_test_precision_test.dart](file://test/animation/hit_test_precision_test.dart)
+- [text_multirun_paragraph_test.dart](file://test/animation/text_multirun_paragraph_test.dart)
+- [text_path_precision_test.dart](file://test/animation/text_path_precision_test.dart)
+- [filter_fe_image_test.dart](file://test/animation/filter_fe_image_test.dart)
+- [use_css_cascade_test.dart](file://test/animation/use_css_cascade_test.dart)
 
 ## Detailed Component Analysis
 
@@ -704,6 +768,310 @@ The system also resolves numerous other CSS text properties including:
 **Section sources**
 - [widget_svg_test.dart](file://test/widget_svg_test.dart)
 
+### Hit Testing Precision Tests
+**New** The framework now includes comprehensive hit testing precision validation with 1000 lines covering:
+
+#### ClipPath Precision Testing
+- **Element hit detection**: Validates that clicks inside clipPath regions trigger animations
+- **Boundary accuracy**: Tests precision at clipPath boundaries with points just inside/outside
+- **ObjectBoundingBox units**: Validates clipPath with clipPathUnits="objectBoundingBox" scaling
+- **Nested clipPath scenarios**: Tests complex nested clipPath compositions
+
+#### Mask Precision Testing
+- **Mask region detection**: Validates hit testing accuracy within mask regions
+- **Transparent content handling**: Tests behavior with fill:none mask content
+- **Mask coordinate systems**: Validates mask positioning and scaling
+
+#### Use Element Precision Testing
+- **Transformed position accuracy**: Validates hit testing at use element x/y offset positions
+- **Symbol viewport transformation**: Tests hit detection with symbol viewBox scaling
+- **Pointer-events blocking**: Validates pointer-events="none" behavior
+
+#### Text Character-Level Precision Testing
+- **Per-character dx offsets**: Validates hit testing with text dx attribute positioning
+- **Rotated text accuracy**: Tests hit detection with text rotate attribute
+- **TextPath character positioning**: Validates hit testing along textPath segments
+
+**Section sources**
+- [hit_test_precision_test.dart](file://test/animation/hit_test_precision_test.dart)
+
+### Text Multirun Paragraph Handling Tests
+**New** The framework includes comprehensive text multirun paragraph validation with 508 lines covering:
+
+#### Basic tspan Layout Tests
+- **Same-line rendering**: Validates multiple tspans render on the same line with different styles
+- **Font-weight variations**: Tests bold/normal combinations within paragraphs
+- **Font-size mixing**: Validates different font sizes on the same line
+- **Color variations**: Tests colored tspans within text
+
+#### Whitespace and Formatting Tests
+- **Whitespace preservation**: Validates xml:space="preserve" behavior
+- **Mixed whitespace handling**: Tests spaces, tabs, and newlines between tspans
+- **Empty tspan handling**: Validates empty tspans don't break layout
+- **Nested tspan inheritance**: Tests inheritance of parent styles to nested tspans
+
+#### Baseline-Shift Interaction Tests
+- **Subscript positioning**: Validates baseline-shift="sub" for chemical formulas
+- **Superscript positioning**: Tests baseline-shift="super" for exponents
+- **Percentage values**: Validates baseline-shift with percentage-based positioning
+- **Length values**: Tests baseline-shift with em-based positioning
+- **Cumulative effects**: Validates nested baseline-shift combinations
+
+#### Vertical Text Layout Tests
+- **Vertical-rl writing mode**: Tests mixed tspan styles in vertical text
+- **Vertical-lr writing mode**: Validates font-size variations in vertical layout
+- **Mixed vertical text**: Tests complex vertical text with multiple styles
+
+#### Edge Case Handling Tests
+- **Empty tspan with dx**: Validates spacing behavior with empty tspans containing offsets
+- **Whitespace-only tspans**: Tests collapse behavior of tspans with only whitespace
+- **Newline-only tspans**: Validates collapse of tspans with only newlines
+
+**Section sources**
+- [text_multirun_paragraph_test.dart](file://test/animation/text_multirun_paragraph_test.dart)
+
+### Text Path Precision Tests
+**New** The framework includes detailed text path precision validation with 688 lines covering:
+
+#### StartOffset Precision Tests
+- **Percentage values**: Validates startOffset with percentage-based positioning
+- **Absolute values**: Tests startOffset with absolute distance measurements
+- **Edge cases**: Validates startOffset at 0%, 50%, and 100% positions
+- **Text-anchor interaction**: Tests startOffset with different text-anchor values
+
+#### Text Exceeding Path Length Tests
+- **Clipping behavior**: Validates text longer than path is properly clipped
+- **Graceful truncation**: Tests behavior when startOffset pushes text beyond path end
+- **Overflow handling**: Validates graceful handling of oversized text
+
+#### Closed Path Precision Tests
+- **Circular paths**: Validates text positioning along circular path elements
+- **Rectangular paths**: Tests text along rectangular path boundaries
+- **Elliptical paths**: Validates text positioning on elliptical path shapes
+
+#### Method Attribute Precision Tests
+- **Align method**: Validates default text-alignment along path
+- **Stretch method**: Tests text stretching to fill path length
+- **Method selection**: Validates appropriate method behavior for different paths
+
+#### Spacing Attribute Precision Tests
+- **Auto spacing**: Validates normal spacing behavior
+- **Exact spacing**: Tests glyph-width based spacing
+- **Spacing interaction**: Validates spacing with different path methods
+
+#### Edge Case Precision Tests
+- **Empty path references**: Validates behavior with empty path href attributes
+- **Nonexistent references**: Tests fallback behavior for missing path references
+- **Zero-length paths**: Validates behavior with point-only paths
+- **Very short paths**: Tests precision with tiny path segments
+
+#### tspan Children Precision Tests
+- **Color variations**: Validates multiple colored tspans along textPath
+- **Font-size variations**: Tests different font sizes within textPath
+- **Font-weight variations**: Validates bold/normal combinations along path
+
+#### Text Length and Anchor Precision Tests
+- **Text length stretching**: Validates textLength attribute behavior
+- **Length adjust modes**: Tests lengthAdjust="spacing" and "spacingAndGlyphs"
+- **Text anchor positioning**: Validates text-anchor interaction with startOffset
+
+**Section sources**
+- [text_path_precision_test.dart](file://test/animation/text_path_precision_test.dart)
+
+### feImage Filter Primitive Tests
+**New** The framework includes comprehensive feImage filter primitive validation with 491 lines covering:
+
+#### Element Reference Tests
+- **Basic element references**: Validates href="#elementId" functionality
+- **XLink namespace support**: Tests xlink:href attribute compatibility
+- **Nested element references**: Validates references to groups and complex elements
+- **Reference resolution**: Ensures proper element lookup and rendering
+
+#### preserveAspectRatio Handling Tests
+- **None scaling**: Validates preserveAspectRatio="none" behavior
+- **Meet scaling**: Tests preserveAspectRatio="xMidYMid meet" functionality
+- **Slice scaling**: Validates preserveAspectRatio="xMinYMin slice" behavior
+- **Max positioning**: Tests preserveAspectRatio="xMaxYMax meet" positioning
+
+#### External Image Handling Tests
+- **Data URI support**: Validates base64 encoded image data
+- **HTTP URL support**: Tests remote image loading
+- **Relative path support**: Validates local file path handling
+- **Image format support**: Tests various image formats and encodings
+
+#### Unresolvable Reference Tests
+- **Empty href fallback**: Validates SourceGraphic fallback for empty references
+- **Missing href behavior**: Tests fallback when href attribute is omitted
+- **Whitespace-only references**: Validates fallback for whitespace-only href values
+
+#### Subregion and Positioning Tests
+- **Subregion parsing**: Validates x, y, width, height positioning
+- **Default subregion behavior**: Tests zero-sized subregions
+- **Coordinate system handling**: Validates positioning within filter regions
+
+#### Filter Chain Integration Tests
+- **Sequential filter chains**: Validates feImage followed by other filters
+- **feMerge composition**: Tests feImage integration with feMerge
+- **Input attribute override**: Validates feImage behavior when 'in' attribute is specified
+- **Result attribute handling**: Tests result naming and downstream reference
+
+#### Result Attribute Tests
+- **Named result references**: Validates result="name" functionality
+- **Downstream filter integration**: Tests result usage in subsequent filters
+- **Result chaining**: Validates multiple result-based filter chains
+
+**Section sources**
+- [filter_fe_image_test.dart](file://test/animation/filter_fe_image_test.dart)
+
+### CSS Cascade Behavior Tests
+**New** The framework includes comprehensive CSS cascade behavior validation for use-referenced elements with 782 lines covering:
+
+#### Inheritance Behavior Tests
+- **Property inheritance**: Validates CSS properties inherited by use-referenced elements
+- **Style resolution**: Tests cascading style resolution for referenced elements
+- **Specificity handling**: Validates CSS specificity with use-referenced elements
+- **Fallback behavior**: Tests inheritance fallback when properties are not defined
+
+#### Style Application Tests
+- **Direct styling**: Validates direct CSS styles applied to use elements
+- **Inherited styles**: Tests CSS styles inherited from parent elements
+- **Combined styling**: Validates interaction between inherited and direct styles
+- **Override behavior**: Tests precedence of direct styles over inherited styles
+
+#### Complex Cascade Scenarios Tests
+- **Nested use elements**: Validates cascade behavior with deeply nested use references
+- **Multiple inheritance levels**: Tests cascade through multiple inheritance levels
+- **Conflicting style resolution**: Validates resolution of conflicting CSS declarations
+- **Media query integration**: Tests cascade behavior with media queries affecting use elements
+
+#### Edge Case Handling Tests
+- **Invalid references**: Validates cascade behavior with broken use references
+- **Circular references**: Tests cascade behavior with circular use element references
+- **Dynamic style changes**: Validates cascade behavior with runtime CSS changes
+- **Animation integration**: Tests cascade behavior during CSS animations
+
+**Section sources**
+- [use_css_cascade_test.dart](file://test/animation/use_css_cascade_test.dart)
+
+### Precision Hit Testing System
+**New** The framework includes a comprehensive precision hit testing system with specialized components:
+
+#### Geometry-Based Hit Testing
+- **ClipPath accuracy**: Validates precise hit detection within clipPath boundaries
+- **Mask region precision**: Tests hit detection accuracy within mask regions
+- **Use element transformation**: Validates transformed hit detection for use elements
+
+#### Text-Based Hit Testing
+- **Character-level precision**: Tests hit detection at individual character positions
+- **TextPath segment accuracy**: Validates hit detection along textPath segments
+- **Baseline alignment**: Tests hit detection with baseline-shift positioning
+
+#### Visibility-Based Hit Testing
+- **Pointer-events control**: Validates pointer-events="none" blocking behavior
+- **Visibility inheritance**: Tests hit detection through visibility properties
+- **Opacity-based hit testing**: Validates hit detection through transparent regions
+
+**Section sources**
+- [animated_svg_picture_hit_test_geometry.dart](file://lib/src/animation/animated_svg_picture_hit_test_geometry.dart)
+- [animated_svg_picture_hit_test_text_layout.dart](file://lib/src/animation/animated_svg_picture_hit_test_text_layout.dart)
+- [animated_svg_picture_hit_test_text_path_segments.dart](file://lib/src/animation/animated_svg_picture_hit_test_text_path_segments.dart)
+- [animated_svg_picture_hit_test_text_runs.dart](file://lib/src/animation/animated_svg_picture_hit_test_text_runs.dart)
+- [animated_svg_picture_hit_test_traversal.dart](file://lib/src/animation/animated_svg_picture_hit_test_traversal.dart)
+- [animated_svg_picture_hit_test_use.dart](file://lib/src/animation/animated_svg_picture_hit_test_use.dart)
+- [animated_svg_picture_hit_test_visibility.dart](file://lib/src/animation/animated_svg_picture_hit_test_visibility.dart)
+
+### Text Multirun System
+**New** The framework includes comprehensive text multirun paragraph handling:
+
+#### tspan Layout Engine
+- **Inline layout**: Validates tspans render inline within text elements
+- **Baseline alignment**: Tests proper baseline alignment across different font sizes
+- **Whitespace handling**: Validates whitespace behavior between tspans
+- **Empty span handling**: Tests layout behavior with empty tspans
+
+#### Style Inheritance System
+- **Parent style inheritance**: Validates tspans inherit parent text styles
+- **Nested inheritance**: Tests inheritance through multiple tspan nesting levels
+- **Style override behavior**: Validates tspans can override inherited styles
+- **Inheritance precedence**: Tests precedence of direct vs inherited styles
+
+#### Mixed Text Layout System
+- **Vertical text support**: Validates tspans in vertical writing modes
+- **Mixed script support**: Tests tspans with different writing systems
+- **Complex layout scenarios**: Validates complex text layouts with multiple styles
+
+**Section sources**
+- [text_multirun_paragraph_test.dart](file://test/animation/text_multirun_paragraph_test.dart)
+
+### Text Path Precision System
+**New** The framework includes detailed text path precision validation:
+
+#### Path Positioning System
+- **StartOffset calculation**: Validates precise text positioning along paths
+- **Path length measurement**: Tests accurate measurement of path lengths
+- **Edge case handling**: Validates positioning at path start, middle, and end
+- **Text-anchor interaction**: Tests interaction between startOffset and text-anchor
+
+#### Path Method System
+- **Align method precision**: Validates text-alignment along curved paths
+- **Stretch method behavior**: Tests text stretching to fill path length
+- **Method selection logic**: Validates appropriate method selection for different paths
+
+#### Spacing and Adjustment System
+- **Spacing attribute precision**: Validates spacing="auto" and spacing="exact" behavior
+- **Text length adjustment**: Tests textLength and lengthAdjust interaction
+- **Glyph width calculation**: Validates precise glyph width measurements
+
+**Section sources**
+- [text_path_precision_test.dart](file://test/animation/text_path_precision_test.dart)
+
+### feImage Filter Primitive System
+**New** The framework includes comprehensive feImage filter primitive validation:
+
+#### Element Reference System
+- **ID-based references**: Validates href="#elementId" functionality
+- **Namespace support**: Tests xlink:href attribute compatibility
+- **Complex element support**: Validates references to groups and nested elements
+- **Reference resolution**: Ensures proper element lookup and rendering
+
+#### External Image System
+- **Data URI handling**: Validates base64 encoded image data processing
+- **URL resolution**: Tests HTTP URL and relative path handling
+- **Image format support**: Validates various image formats and encodings
+- **Loading behavior**: Tests asynchronous image loading and rendering
+
+#### Filter Integration System
+- **Sequential filter chains**: Validates feImage integration with other filter primitives
+- **Result attribute handling**: Tests result naming and downstream filter integration
+- **Input override behavior**: Validates feImage when 'in' attribute is specified
+- **Subregion positioning**: Tests precise positioning within filter regions
+
+**Section sources**
+- [filter_fe_image_test.dart](file://test/animation/filter_fe_image_test.dart)
+
+### CSS Cascade Behavior System
+**New** The framework includes comprehensive CSS cascade behavior validation:
+
+#### Inheritance Resolution System
+- **Property inheritance**: Validates CSS property inheritance for use-referenced elements
+- **Style resolution algorithm**: Tests cascading style resolution process
+- **Specificity calculation**: Validates CSS specificity handling with use elements
+- **Fallback mechanism**: Tests inheritance fallback behavior
+
+#### Complex Cascade Scenarios
+- **Nested use references**: Validates cascade behavior through multiple use levels
+- **Conflicting declarations**: Tests resolution of conflicting CSS declarations
+- **Dynamic style changes**: Validates cascade behavior with runtime CSS modifications
+- **Animation integration**: Tests cascade behavior during CSS animations
+
+#### Edge Case Handling
+- **Invalid references**: Validates cascade behavior with broken use references
+- **Circular references**: Tests cascade behavior with circular use element references
+- **Performance optimization**: Validates efficient cascade resolution algorithms
+
+**Section sources**
+- [use_css_cascade_test.dart](file://test/animation/use_css_cascade_test.dart)
+
 ## Dependency Analysis
 - **Test runtime and SDK constraints** are defined in pubspec.yaml.
 - **dart_test.yaml restricts tests** to VM to avoid issues with certain comparators on web.
@@ -714,6 +1082,11 @@ The system also resolves numerous other CSS text properties including:
 - **Text styling tests depend** on the comprehensive text resolution system in animated_svg_painter_text_style.dart.
 - **CSS transform tests depend** on the transform calculation system in css_to_smil_converter_transforms_values.dart and svg_transform.dart.
 - **CSS variables and calc() tests depend** on the comprehensive evaluation system in css_variables_calc.dart.
+- **Precision hit testing depends** on specialized hit testing components in animated_svg_picture_hit_test_* files.
+- **Text multirun paragraph tests depend** on the text layout system and tspan handling.
+- **Text path precision tests depend** on the text path positioning and measurement systems.
+- **feImage filter tests depend** on the filter primitive system and image loading mechanisms.
+- **CSS cascade tests depend** on the inheritance resolution and style application systems.
 
 ```mermaid
 graph LR
@@ -746,6 +1119,11 @@ T --> WS["widget_svg_test.dart"]
 T --> CTC["css_transform_calc_test.dart"]
 T --> CTEC["css_transform_edge_cases_test.dart"]
 T --> CVC["css_variables_calc_test.dart"]
+T --> HTP["hit_test_precision_test.dart"]
+T --> TMP["text_multirun_paragraph_test.dart"]
+T --> TPP["text_path_precision_test.dart"]
+T --> FFI["filter_fe_image_test.dart"]
+T --> UCC["use_css_cascade_test.dart"]
 V --> VT["visual_*_test.dart"]
 MK --> AP
 PO --> AP
@@ -766,6 +1144,11 @@ ASTS --> AP
 CTC --> CTC
 CTEC --> CTEC
 CVC --> CVC
+HTP --> HTP
+TMP --> TMP
+TPP --> TPP
+FFI --> FFI
+UCC --> UCC
 ```
 
 **Diagram sources**
@@ -798,6 +1181,11 @@ CVC --> CVC
 - [css_transform_calc_test.dart](file://test/animation/css_transform_calc_test.dart)
 - [css_transform_edge_cases_test.dart](file://test/animation/css_transform_edge_cases_test.dart)
 - [css_variables_calc_test.dart](file://test/animation/css_variables_calc_test.dart)
+- [hit_test_precision_test.dart](file://test/animation/hit_test_precision_test.dart)
+- [text_multirun_paragraph_test.dart](file://test/animation/text_multirun_paragraph_test.dart)
+- [text_path_precision_test.dart](file://test/animation/text_path_precision_test.dart)
+- [filter_fe_image_test.dart](file://test/animation/filter_fe_image_test.dart)
+- [use_css_cascade_test.dart](file://test/animation/use_css_cascade_test.dart)
 
 **Section sources**
 - [dart_test.yaml](file://dart_test.yaml)
@@ -813,6 +1201,11 @@ CVC --> CVC
 - **Text styling resolution** optimizes CSS property processing with efficient parsing and caching mechanisms.
 - **CSS transform calculation** efficiently processes calc() expressions and unit conversions with caching mechanisms.
 - **CSS variables and calc() evaluation** optimizes variable resolution with iterative evaluation and fallback handling.
+- **Precision hit testing** uses optimized hit detection algorithms for clipPath, mask, and text elements.
+- **Text multirun paragraph handling** optimizes tspan layout with efficient baseline alignment and whitespace processing.
+- **Text path precision** uses optimized path measurement and positioning algorithms.
+- **feImage filter validation** optimizes element reference resolution and image loading.
+- **CSS cascade behavior** optimizes inheritance resolution with efficient style application.
 
 ## Troubleshooting Guide
 Common issues and resolutions:
@@ -844,11 +1237,33 @@ Common issues and resolutions:
   - Check fallback value handling for missing variables.
   - Validate calc() expression evaluation with nested calc() support.
   - Ensure proper unit context handling for font-size and container-size.
+- **Precision hit testing issues**:
+  - Verify clipPath boundary calculations and coordinate transformations.
+  - Check mask region detection and transparency handling.
+  - Validate use element transformation matrices and hit detection.
+  - Ensure text character-level positioning accuracy.
+- **Text multirun paragraph issues**:
+  - Verify tspan layout engine and baseline alignment calculations.
+  - Check whitespace handling and empty tspan processing.
+  - Validate nested tspan inheritance and style resolution.
+- **Text path precision issues**:
+  - Verify path length measurement and startOffset calculations.
+  - Check textPath method and spacing attribute behavior.
+  - Validate edge case handling for empty and short paths.
+- **feImage filter primitive issues**:
+  - Verify element reference resolution and ID matching.
+  - Check external image loading and format support.
+  - Validate filter chain integration and result attribute handling.
+- **CSS cascade behavior issues**:
+  - Verify inheritance resolution and style application order.
+  - Check specificity calculation and conflict resolution.
+  - Validate dynamic style change handling and performance optimization.
 - **Large test suite performance**:
   - Use selective testing for specific feature areas.
   - Leverage visual analysis for quick regression detection.
   - Optimize text styling resolution with cached property values.
   - Cache CSS transform calculations and unit conversions.
+  - Use precision testing components for targeted validation.
 
 **Section sources**
 - [VISUAL_TESTING_GUIDELINES.md](file://VISUAL_TESTING_GUIDELINES.md)
@@ -861,9 +1276,14 @@ Common issues and resolutions:
 - [css_transform_calc_test.dart](file://test/animation/css_transform_calc_test.dart)
 - [css_transform_edge_cases_test.dart](file://test/animation/css_transform_edge_cases_test.dart)
 - [css_variables_calc_test.dart](file://test/animation/css_variables_calc_test.dart)
+- [hit_test_precision_test.dart](file://test/animation/hit_test_precision_test.dart)
+- [text_multirun_paragraph_test.dart](file://test/animation/text_multirun_paragraph_test.dart)
+- [text_path_precision_test.dart](file://test/animation/text_path_precision_test.dart)
+- [filter_fe_image_test.dart](file://test/animation/filter_fe_image_test.dart)
+- [use_css_cascade_test.dart](file://test/animation/use_css_cascade_test.dart)
 
 ## Conclusion
-The flutter_svg testing framework combines logic validation, widget integration, and robust visual verification to ensure accurate SMIL animation rendering and comprehensive advanced SVG feature support. With the addition of extensive tests covering marker functionality, paint order validation, pattern rendering, comprehensive text styling features, and **comprehensive CSS transform calculation testing**, the suite now provides complete coverage of advanced SVG rendering capabilities.
+The flutter_svg testing framework combines logic validation, widget integration, and robust visual verification to ensure accurate SMIL animation rendering and comprehensive advanced SVG feature support. With the addition of extensive tests covering marker functionality, paint order validation, pattern rendering, comprehensive text styling features, **comprehensive precision hit testing**, **extensive text multirun paragraph handling**, **detailed text path precision testing**, **comprehensive feImage filter primitive validation**, and **CSS cascade behavior for use-referenced elements**, the suite now provides complete coverage of advanced SVG rendering capabilities.
 
 The expanded framework includes:
 - **40 new test files** validating expanded CSS text styling features
@@ -878,8 +1298,13 @@ The expanded framework includes:
 - **402 lines of CSS variables and calc() evaluation tests** validating var() resolution and calc() arithmetic
 - **Advanced CSS transform parsing and decomposition system** with 3D transform support
 - **Comprehensive unit conversion system** supporting px, em, rem, %, vw, vh, vmin, vmax, cm, mm, in, pt, pc, and deg, rad, turn, grad
+- **1000 lines of precision hit testing** validating clipPath, mask, use element, and text character-level accuracy
+- **508 lines of text multirun paragraph handling** validating tspans, baseline-shift, and mixed layouts
+- **688 lines of text path precision testing** validating startOffset, method, spacing, and edge cases
+- **491 lines of feImage filter primitive validation** validating element references, external images, and filter chains
+- **782 lines of CSS cascade behavior testing** validating inheritance and styling resolution for use-referenced elements
 
-By leveraging pixel-based geometry analysis, deterministic timelines, and careful controller-driven playback, the comprehensive suite provides reliable regression protection and clear debugging signals. The extensive advanced feature testing ensures backward compatibility while supporting modern SVG rendering features. The new comprehensive text styling coverage validates complex typography scenarios including font-relative sizing, inheritance behavior, and international text handling. **The new CSS transform calculation testing validates complex transform scenarios including calc() expressions, unit conversions, and 3D transforms with proper decomposition and interpolation.** Adhering to the documented guidelines and patterns ensures maintainability and extensibility of the testing infrastructure.
+By leveraging pixel-based geometry analysis, deterministic timelines, and careful controller-driven playback, the comprehensive suite provides reliable regression protection and clear debugging signals. The extensive advanced feature testing ensures backward compatibility while supporting modern SVG rendering features. The new comprehensive text styling coverage validates complex typography scenarios including font-relative sizing, inheritance behavior, and international text handling. **The new precision testing validates hit detection accuracy across clipPath, mask, use elements, and text elements with mathematical precision.** **The new text multirun paragraph handling validates complex tspans, baseline-shift, and mixed text layouts with comprehensive styling support.** **The new text path precision testing validates startOffset, method, spacing, and edge cases for text along paths with detailed path measurement and positioning.** **The new feImage filter primitive validation covers element references, external images, preserveAspectRatio, and filter chain integration with comprehensive testing.** **The new CSS cascade behavior testing validates inheritance and styling resolution for use-referenced elements with complex cascade scenarios.** Adhering to the documented guidelines and patterns ensures maintainability and extensibility of the testing infrastructure.
 
 ## Appendices
 
@@ -910,6 +1335,11 @@ By leveraging pixel-based geometry analysis, deterministic timelines, and carefu
   - **Validate CSS variables and calc() evaluation** with inheritance, fallbacks, and nested expressions.
   - **Test 3D transform handling** with perspective, transform-style, and backface-visibility.
   - **Validate transform-origin and transform-box** properties with keywords and units.
+  - **Test precision hit detection** scenarios including clipPath boundaries, mask regions, use element transformations, and text character-level accuracy.
+  - **Validate text multirun paragraph layouts** with tspans, baseline-shift, and mixed text styles.
+  - **Test text path precision** with startOffset, method, spacing, and edge cases.
+  - **Validate feImage filter primitives** with element references, external images, and filter chains.
+  - **Test CSS cascade behavior** for use-referenced elements with inheritance and styling resolution.
 
 **Section sources**
 - [VISUAL_TESTING_GUIDELINES.md](file://VISUAL_TESTING_GUIDELINES.md)
@@ -934,3 +1364,8 @@ By leveraging pixel-based geometry analysis, deterministic timelines, and carefu
 - [css_transform_calc_test.dart](file://test/animation/css_transform_calc_test.dart)
 - [css_transform_edge_cases_test.dart](file://test/animation/css_transform_edge_cases_test.dart)
 - [css_variables_calc_test.dart](file://test/animation/css_variables_calc_test.dart)
+- [hit_test_precision_test.dart](file://test/animation/hit_test_precision_test.dart)
+- [text_multirun_paragraph_test.dart](file://test/animation/text_multirun_paragraph_test.dart)
+- [text_path_precision_test.dart](file://test/animation/text_path_precision_test.dart)
+- [filter_fe_image_test.dart](file://test/animation/filter_fe_image_test.dart)
+- [use_css_cascade_test.dart](file://test/animation/use_css_cascade_test.dart)

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/src/animation/animated_svg_picture.dart';
 
-import '../widgets/animation_theme.dart';
+import 'animation_theme.dart';
 
 /// Reusable Metrics Widget for unified examples
 class MetricsWidget extends StatelessWidget {

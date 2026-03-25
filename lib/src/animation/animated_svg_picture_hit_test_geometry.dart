@@ -25,8 +25,34 @@ extension _AnimatedSvgPictureStateHitTestGeometryExtension
         if (pointerEvents == 'bounding-box') {
           return Rect.fromLTWH(x, y, width, height).contains(point);
         }
-        final rx = _getNumber(node, 'rx') ?? 0.0;
-        final ry = _getNumber(node, 'ry') ?? rx;
+
+        // SVG spec: rx/ry handling
+        final rxRaw = _getNumber(node, 'rx');
+        final ryRaw = _getNumber(node, 'ry');
+
+        double rx;
+        double ry;
+        if (rxRaw == null && ryRaw == null) {
+          rx = 0.0;
+          ry = 0.0;
+        } else if (rxRaw != null && ryRaw == null) {
+          rx = rxRaw;
+          ry = rxRaw;
+        } else if (rxRaw == null && ryRaw != null) {
+          rx = ryRaw;
+          ry = ryRaw;
+        } else {
+          rx = rxRaw!;
+          ry = ryRaw!;
+        }
+
+        // Negative rx/ry is an error
+        if (rx < 0 || ry < 0) return false;
+
+        // Clamp rx/ry to half of width/height
+        rx = rx.clamp(0.0, width / 2);
+        ry = ry.clamp(0.0, height / 2);
+
         final rect = Rect.fromLTWH(x, y, width, height);
         final rectPath = Path();
         if (rx > 0 || ry > 0) {

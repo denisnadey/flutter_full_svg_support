@@ -8,8 +8,34 @@ extension AnimatedSvgPainterGeometryExtension on AnimatedSvgPainter {
         final y = _getNumber(node, 'y') ?? 0.0;
         final width = _getNumber(node, 'width') ?? 0.0;
         final height = _getNumber(node, 'height') ?? 0.0;
-        final rx = _getNumber(node, 'rx') ?? 0.0;
-        final ry = _getNumber(node, 'ry') ?? rx;
+
+        // SVG spec: rx/ry handling
+        final rxRaw = _getNumber(node, 'rx');
+        final ryRaw = _getNumber(node, 'ry');
+
+        double rx;
+        double ry;
+        if (rxRaw == null && ryRaw == null) {
+          rx = 0.0;
+          ry = 0.0;
+        } else if (rxRaw != null && ryRaw == null) {
+          rx = rxRaw;
+          ry = rxRaw;
+        } else if (rxRaw == null && ryRaw != null) {
+          rx = ryRaw;
+          ry = ryRaw;
+        } else {
+          rx = rxRaw!;
+          ry = ryRaw!;
+        }
+
+        // Negative rx/ry is an error
+        if (rx < 0 || ry < 0) return null;
+
+        // Clamp rx/ry to half of width/height
+        rx = rx.clamp(0.0, width / 2);
+        ry = ry.clamp(0.0, height / 2);
+
         if (width <= 0 || height <= 0) return null;
         final rect = ui.Rect.fromLTWH(x, y, width, height);
         if (rx > 0 || ry > 0) {
@@ -78,9 +104,10 @@ extension AnimatedSvgPainterGeometryExtension on AnimatedSvgPainter {
   }
 
   void _applyPathFillType(ui.Path path, SvgNode node) {
+    // clip-rule and fill-rule are inheritable properties
     final fillRule =
-        _getString(node, 'clip-rule')?.toLowerCase() ??
-        _getString(node, 'fill-rule')?.toLowerCase();
+        _getInheritedString(node, 'clip-rule')?.toLowerCase() ??
+        _getInheritedString(node, 'fill-rule')?.toLowerCase();
     path.fillType = fillRule == 'evenodd'
         ? ui.PathFillType.evenOdd
         : ui.PathFillType.nonZero;
@@ -192,15 +219,16 @@ extension AnimatedSvgPainterGeometryExtension on AnimatedSvgPainter {
           previousCommand = quadratic;
 
         case ArcCommand():
-          if (absoluteCommand.rx <= 0 || absoluteCommand.ry <= 0) {
+          // SVG spec: If rx or ry is 0, treat as straight line
+          // If rx or ry is negative, use absolute value
+          final rx = absoluteCommand.rx.abs();
+          final ry = absoluteCommand.ry.abs();
+          if (rx == 0 || ry == 0) {
             path.lineTo(absoluteCommand.x, absoluteCommand.y);
           } else {
             path.arcToPoint(
               ui.Offset(absoluteCommand.x, absoluteCommand.y),
-              radius: ui.Radius.elliptical(
-                absoluteCommand.rx.abs(),
-                absoluteCommand.ry.abs(),
-              ),
+              radius: ui.Radius.elliptical(rx, ry),
               rotation: absoluteCommand.rotation,
               largeArc: absoluteCommand.largeArc,
               clockwise: absoluteCommand.sweep,

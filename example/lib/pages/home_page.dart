@@ -39,181 +39,138 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 600;
-    final padding = isMobile ? 16.0 : 24.0;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Flutter SVG Animations')),
+      appBar: AppBar(
+        title: const Text('Flutter SVG Animations'),
+        centerTitle: true,
+        elevation: 0,
+      ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(padding),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            const SizedBox(height: 16),
-            // Logo
-            Hero(
-              tag: 'flutter_logo',
-              child: SvgPicture.string(
-                svgString,
-                width: isMobile ? 150 : 200,
-                height: isMobile ? 150 : 200,
-              ),
-            ),
-            SizedBox(height: isMobile ? 24 : 32),
-
-            // Title
-            Text(
-              'SMIL Animation Examples',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                fontSize: isMobile ? 20 : null,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: isMobile ? 12 : 16),
-
-            // Subtitle
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: isMobile ? 0 : 24),
-              child: Text(
-                'Explore animated SVG with SMIL support in Flutter',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Colors.grey[600],
-                  fontSize: isMobile ? 14 : null,
+            // Hero section with gradient background
+            Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: isDark
+                      ? [
+                          theme.colorScheme.primaryContainer.withValues(
+                            alpha: 0.3,
+                          ),
+                          theme.colorScheme.surface,
+                        ]
+                      : [
+                          theme.colorScheme.primaryContainer.withValues(
+                            alpha: 0.5,
+                          ),
+                          theme.colorScheme.surface,
+                        ],
                 ),
-                textAlign: TextAlign.center,
               ),
-            ),
-            const SizedBox(height: 48),
-
-            // Buttons
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final isMobile = constraints.maxWidth < 600;
-                return Wrap(
-                  spacing: isMobile ? 12 : 16,
-                  runSpacing: isMobile ? 12 : 16,
-                  alignment: WrapAlignment.center,
-                  children: [
-                    _buildNavigationCard(
-                      context,
-                      title: 'Gallery',
-                      icon: Icons.grid_view,
-                      color: Colors.green,
-                      isMobile: isMobile,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ListenableBuilder(
-                              listenable: appState,
-                              builder: (context, _) =>
-                                  ExamplesPage(state: appState),
-                            ),
+              padding: EdgeInsets.symmetric(
+                horizontal: isMobile ? 16 : 32,
+                vertical: isMobile ? 24 : 48,
+              ),
+              child: Column(
+                children: [
+                  // Logo with glow effect
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: theme.colorScheme.primary.withValues(
+                            alpha: 0.3,
                           ),
-                        );
-                      },
-                    ),
-                    _buildNavigationCard(
-                      context,
-                      title: 'Unified Examples',
-                      icon: Icons.animation,
-                      color: Colors.blue,
-                      isMobile: isMobile,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const UnifiedExamplesPage(),
-                          ),
-                        );
-                      },
-                    ),
-                    _buildNavigationCard(
-                      context,
-                      title: 'SVG Playground',
-                      icon: Icons.code,
-                      color: Colors.deepPurple,
-                      isMobile: isMobile,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const CustomSvgViewerPage(),
-                          ),
-                        );
-                      },
-                    ),
-                    _buildNavigationCard(
-                      context,
-                      title: 'Controller Demo',
-                      icon: Icons.control_camera,
-                      color: Colors.orange,
-                      isMobile: isMobile,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const ControllerDemoPage(),
-                          ),
-                        );
-                      },
-                    ),
-                    _buildNavigationCard(
-                      context,
-                      title: 'Helmet Demo',
-                      icon: Icons.rocket_launch,
-                      color: Colors.teal,
-                      isMobile: isMobile,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const AstronautHelmetPage(),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                );
-              },
-            ),
-            const SizedBox(height: 32),
-
-            // Info
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.info_outline,
-                          color: Theme.of(context).primaryColor,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Features',
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.bold),
+                          blurRadius: 30,
+                          spreadRadius: 5,
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
-                    _buildFeature('✓ SMIL Animations'),
-                    _buildFeature(
-                      '✓ Transform Animations (rotate, translate, scale, skew, matrix)',
+                    child: Hero(
+                      tag: 'flutter_logo',
+                      child: SvgPicture.string(
+                        svgString,
+                        width: isMobile ? 120 : 160,
+                        height: isMobile ? 120 : 160,
+                      ),
                     ),
-                    _buildFeature('✓ Path Morphing (shape interpolation)'),
-                    _buildFeature('✓ Color Animations'),
-                    _buildFeature('✓ Real-time FPS Monitoring'),
-                    _buildFeature('✓ Detailed Performance Metrics'),
-                    _buildFeature('✓ Unified Design System'),
-                    _buildFeature('✓ Tab-based Navigation'),
-                    _buildFeature('✓ Multilingual Support (English/Russian)'),
-                  ],
-                ),
+                  ),
+                  SizedBox(height: isMobile ? 20 : 32),
+
+                  // Title with gradient text effect
+                  ShaderMask(
+                    shaderCallback: (bounds) => LinearGradient(
+                      colors: [
+                        theme.colorScheme.primary,
+                        theme.colorScheme.tertiary,
+                      ],
+                    ).createShader(bounds),
+                    child: Text(
+                      'SMIL Animation Engine',
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        fontSize: isMobile ? 22 : 28,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Subtitle
+                  Text(
+                    'Full SVG animation support for Flutter',
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                      fontSize: isMobile ? 14 : 16,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+
+            // Navigation section
+            Padding(
+              padding: EdgeInsets.all(isMobile ? 16 : 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Demo Section Header
+                  _buildSectionHeader(
+                    context,
+                    icon: Icons.play_circle_outline,
+                    title: 'Demos',
+                    subtitle: 'Interactive animation showcases',
+                  ),
+                  const SizedBox(height: 16),
+                  _buildDemoCards(context, isMobile),
+
+                  const SizedBox(height: 32),
+
+                  // Tools Section Header
+                  _buildSectionHeader(
+                    context,
+                    icon: Icons.build_outlined,
+                    title: 'Tools',
+                    subtitle: 'Development & testing utilities',
+                  ),
+                  const SizedBox(height: 16),
+                  _buildToolCards(context, isMobile),
+
+                  const SizedBox(height: 32),
+
+                  // Features Section
+                  _buildFeaturesCard(context, isMobile),
+                ],
               ),
             ),
           ],
@@ -222,57 +179,351 @@ class HomePage extends StatelessWidget {
     );
   }
 
+  Widget _buildSectionHeader(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
+    final theme = Theme.of(context);
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primaryContainer,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: theme.colorScheme.primary, size: 20),
+        ),
+        const SizedBox(width: 12),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Text(
+              subtitle,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDemoCards(BuildContext context, bool isMobile) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final crossAxisCount = constraints.maxWidth > 800
+            ? 3
+            : constraints.maxWidth > 500
+            ? 2
+            : 1;
+        return GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: crossAxisCount,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: isMobile ? 2.5 : 2.2,
+          children: [
+            _buildNavigationCard(
+              context,
+              title: 'Animation Gallery',
+              subtitle: 'Browse all SMIL animations',
+              icon: Icons.collections_outlined,
+              color: Colors.blue,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const UnifiedExamplesPage(),
+                ),
+              ),
+            ),
+            _buildNavigationCard(
+              context,
+              title: 'SVG Examples',
+              subtitle: 'Categorized SVG demos',
+              icon: Icons.grid_view_rounded,
+              color: Colors.green,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ListenableBuilder(
+                    listenable: appState,
+                    builder: (context, _) => ExamplesPage(state: appState),
+                  ),
+                ),
+              ),
+            ),
+            _buildNavigationCard(
+              context,
+              title: 'Astronaut Helmet',
+              subtitle: 'Complex CSS animation',
+              icon: Icons.rocket_launch_outlined,
+              color: Colors.teal,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AstronautHelmetPage(),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildToolCards(BuildContext context, bool isMobile) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final crossAxisCount = constraints.maxWidth > 600 ? 2 : 1;
+        return GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: crossAxisCount,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: isMobile ? 2.5 : 3,
+          children: [
+            _buildNavigationCard(
+              context,
+              title: 'SVG Playground',
+              subtitle: 'Test custom SVG code',
+              icon: Icons.code_rounded,
+              color: Colors.deepPurple,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const CustomSvgViewerPage(),
+                ),
+              ),
+            ),
+            _buildNavigationCard(
+              context,
+              title: 'Controller Demo',
+              subtitle: 'Animation control API',
+              icon: Icons.tune_rounded,
+              color: Colors.orange,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ControllerDemoPage(),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Widget _buildNavigationCard(
     BuildContext context, {
     required String title,
+    required String subtitle,
     required IconData icon,
     required Color color,
     required VoidCallback onTap,
-    required bool isMobile,
   }) {
-    final cardWidth = isMobile ? 160.0 : 200.0;
-    final iconSize = isMobile ? 40.0 : 48.0;
-    final padding = isMobile ? 16.0 : 24.0;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
-    return SizedBox(
-      width: cardWidth,
-      child: Card(
-        elevation: 4,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: EdgeInsets.all(padding),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, size: iconSize, color: color),
-                SizedBox(height: isMobile ? 12 : 16),
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    fontSize: isMobile ? 14 : null,
-                  ),
-                  textAlign: TextAlign.center,
+    return Card(
+      elevation: isDark ? 0 : 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: isDark
+            ? BorderSide(
+                color: theme.colorScheme.outline.withValues(alpha: 0.3),
+              )
+            : BorderSide.none,
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: isDark ? 0.2 : 0.1),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-              ],
-            ),
+                child: Icon(icon, size: 28, color: color),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      title,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.6,
+                        ),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 16,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _buildFeature(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+  Widget _buildFeaturesCard(BuildContext context, bool isMobile) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final features = [
+      _FeatureItem(Icons.animation, 'SMIL Animations', 'Full SMIL support'),
+      _FeatureItem(
+        Icons.transform,
+        'Transforms',
+        'rotate, scale, translate, skew',
+      ),
+      _FeatureItem(Icons.shape_line, 'Path Morphing', 'Shape interpolation'),
+      _FeatureItem(Icons.palette, 'Color Animation', 'Fill & stroke colors'),
+      _FeatureItem(Icons.speed, 'FPS Monitor', 'Real-time performance'),
+      _FeatureItem(Icons.language, 'i18n', 'English & Russian'),
+    ];
+
+    return Card(
+      elevation: isDark ? 0 : 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: isDark
+            ? BorderSide(
+                color: theme.colorScheme.outline.withValues(alpha: 0.3),
+              )
+            : BorderSide.none,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.secondaryContainer,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.star_outline_rounded,
+                    color: theme.colorScheme.secondary,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Features',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final crossAxisCount = constraints.maxWidth > 500 ? 3 : 2;
+                return GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: crossAxisCount,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  childAspectRatio: isMobile ? 2.0 : 2.5,
+                  children: features
+                      .map((f) => _buildFeatureItem(context, f))
+                      .toList(),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFeatureItem(BuildContext context, _FeatureItem feature) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Row(
         children: [
+          Icon(feature.icon, size: 20, color: theme.colorScheme.primary),
           const SizedBox(width: 8),
-          Expanded(child: Text(text, style: const TextStyle(fontSize: 14))),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  feature.title,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  feature.subtitle,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                    fontSize: 11,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
+}
+
+class _FeatureItem {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  const _FeatureItem(this.icon, this.title, this.subtitle);
 }

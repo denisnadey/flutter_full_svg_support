@@ -12,7 +12,10 @@
 - [svg_filters_registry_pipeline_primitives_paint.dart](file://lib/src/animation/svg_filters_registry_pipeline_primitives_paint.dart)
 - [svg_filters_registry_pipeline_primitives_effects.dart](file://lib/src/animation/svg_filters_registry_pipeline_primitives_effects.dart)
 - [svg_filters_primitives_convolve_matrix.dart](file://lib/src/animation/svg_filters_primitives_convolve_matrix.dart)
+- [svg_filters_types.dart](file://lib/src/animation/svg_filters_types.dart)
+- [svg_filters_primitives.dart](file://lib/src/animation/svg_filters_primitives.dart)
 - [filter_advanced_graph_test.dart](file://test/animation/filter_advanced_graph_test.dart)
+- [filter_fe_image_test.dart](file://test/animation/filter_fe_image_test.dart)
 - [fe_convolve_matrix_test.dart](file://test/animation/fe_convolve_matrix_test.dart)
 - [SVGFEBlendElement.cpp](file://blink-b87d44f-Source-core-svg/SVGFEBlendElement.cpp)
 - [SVGFEColorMatrixElement.cpp](file://blink-b87d44f-Source-core-svg/SVGFEColorMatrixElement.cpp)
@@ -28,6 +31,9 @@
 - [SVGFEDistantLightElement.h](file://blink-b87d44f-Source-core-svg/SVGFEDistantLightElement.h)
 - [SVGFELightElement.cpp](file://blink-b87d44f-Source-core-svg/SVGFELightElement.cpp)
 - [SVGFELightElement.h](file://blink-b87d44f-Source-core-svg/SVGFELightElement.h)
+- [SVGFEImage.h](file://blink-b87d44f-Source-core-svg/graphics/filters/SVGFEImage.h)
+- [SVGFEImage.cpp](file://blink-b87d44f-Source-core-svg/graphics/filters/SVGFEImage.cpp)
+- [SVGFEImageElement.cpp](file://blink-b87d44f-Source-core-svg/SVGFEImageElement.cpp)
 - [svg_filters_primitives_lighting.dart](file://lib/src/animation/svg_filters_primitives_lighting.dart)
 - [svg_filters_primitives_lighting_math.dart](file://lib/src/animation/svg_filters_primitives_lighting_math.dart)
 </cite>
@@ -37,7 +43,9 @@
 - Enhanced filter registry system with comprehensive pipeline processing improvements
 - Added advanced compositing capabilities including arithmetic composite mode handling
 - Implemented sophisticated primitive paint handling with pass composition
-- Introduced comprehensive filter graph complexity testing with multi-hop chains
+- Introduced comprehensive SvgFeImagePaintPass for feImage filter primitive support including element reference rendering, external image handling, and preserveAspectRatio configuration
+- Enhanced filter registry system with improved pipeline processing and advanced compositing capabilities
+- Added comprehensive filter graph complexity testing with multi-hop chains
 - Enhanced convolution matrix processing with identity kernel detection and edge mode support
 - Added advanced lighting system with multiple light source types and mathematical calculations
 
@@ -49,21 +57,23 @@
 5. [Enhanced Pipeline Processing](#enhanced-pipeline-processing)
 6. [Advanced Compositing Capabilities](#advanced-compositing-capabilities)
 7. [Primitive Paint Handling](#primitive-paint-handling)
-8. [Filter Graph Complexity Testing](#filter-graph-complexity-testing)
-9. [Detailed Component Analysis](#detailed-component-analysis)
-10. [Performance Considerations](#performance-considerations)
-11. [Troubleshooting Guide](#troubleshooting-guide)
-12. [Conclusion](#conclusion)
-13. [Appendices](#appendices)
+8. [SvgFeImagePaintPass Implementation](#svgfeimagepaintpass-implementation)
+9. [Filter Graph Complexity Testing](#filter-graph-complexity-testing)
+10. [Detailed Component Analysis](#detailed-component-analysis)
+11. [Performance Considerations](#performance-considerations)
+12. [Troubleshooting Guide](#troubleshooting-guide)
+13. [Conclusion](#conclusion)
+14. [Appendices](#appendices)
 
 ## Introduction
-This document explains the enhanced SVG filter system and effects implemented in the codebase. The system has been significantly upgraded with an improved filter registry system featuring enhanced pipeline processing, advanced composite operations, and sophisticated primitive paint handling. It covers comprehensive filter graph complexity testing and advanced compositing capabilities. The architecture now includes sophisticated filter primitive resolution, named result caching, circular reference detection, and comprehensive edge case handling for complex filter chains.
+This document explains the enhanced SVG filter system and effects implemented in the codebase. The system has been significantly upgraded with an improved filter registry system featuring enhanced pipeline processing, advanced composite operations, and sophisticated primitive paint handling. It covers comprehensive filter graph complexity testing and advanced compositing capabilities. The architecture now includes sophisticated filter primitive resolution, named result caching, circular reference detection, and comprehensive edge case handling for complex filter chains. **Updated** to include comprehensive SvgFeImagePaintPass implementation for feImage filter primitive support with element reference rendering, external image handling, and preserveAspectRatio configuration.
 
 ## Project Structure
 The enhanced filter system is organized around:
 - A comprehensive filter registry with pipeline processing and named result caching
 - Advanced compositing extensions supporting blend modes, composite operations, and arithmetic modes
 - Sophisticated primitive paint handling with pass composition and chaining
+- **New** SvgFeImagePaintPass for feImage filter primitive support with element reference rendering and external image handling
 - Comprehensive filter graph complexity testing with multi-hop chains and edge cases
 - Enhanced convolution matrix processing with identity kernel detection and edge mode support
 - Advanced lighting system with multiple light source types and mathematical calculations
@@ -85,11 +95,13 @@ PrimitivePaint["_resolvePrimitiveOutput()"]
 DropShadow["_resolveDropShadowOutput()"]
 ColorMatrix["_resolveColorMatrixOutput()"]
 Passthrough["_resolvePassthroughOutput()"]
+FeImage["_resolveImagePrimitiveOutput()<br/>SvgFeImagePaintPass"]
 end
 subgraph "Advanced Features"
 ConvolveProc["ConvolveMatrixProcessor<br/>identity detection + edge modes"]
 GraphTest["filter_advanced_graph_test.dart<br/>complex chains + edge cases"]
 ConvolveTest["fe_convolve_matrix_test.dart<br/>kernel testing"]
+FeImageTest["filter_fe_image_test.dart<br/>element reference + preserveAspectRatio"]
 end
 Pipeline --> Context
 Pipeline --> Blend
@@ -103,23 +115,27 @@ Merge --> PrimitivePaint
 PrimitivePaint --> DropShadow
 PrimitivePaint --> ColorMatrix
 PrimitivePaint --> Passthrough
-PrimitivePaint --> ConvolveProc
+PrimitivePaint --> FeImage
 Context --> GraphTest
 ConvolveProc --> ConvolveTest
+FeImage --> FeImageTest
 ```
 
 **Diagram sources**
 - [svg_filters_registry_pipeline.dart:60-175](file://lib/src/animation/svg_filters_registry_pipeline.dart#L60-L175)
 - [svg_filters_registry_pipeline_compositing.dart:3-460](file://lib/src/animation/svg_filters_registry_pipeline_compositing.dart#L3-L460)
 - [svg_filters_registry_pipeline_primitives_paint.dart:3-169](file://lib/src/animation/svg_filters_registry_pipeline_primitives_paint.dart#L3-L169)
+- [svg_filters_registry_pipeline_primitives_effects.dart:97-141](file://lib/src/animation/svg_filters_registry_pipeline_primitives_effects.dart#L97-L141)
 - [svg_filters_primitives_convolve_matrix.dart:1-52](file://lib/src/animation/svg_filters_primitives_convolve_matrix.dart#L1-L52)
 - [filter_advanced_graph_test.dart:1-1297](file://test/animation/filter_advanced_graph_test.dart#L1-L1297)
+- [filter_fe_image_test.dart:1-491](file://test/animation/filter_fe_image_test.dart#L1-L491)
 - [fe_convolve_matrix_test.dart:146-449](file://test/animation/fe_convolve_matrix_test.dart#L146-L449)
 
 **Section sources**
 - [svg_filters_registry_pipeline.dart:60-175](file://lib/src/animation/svg_filters_registry_pipeline.dart#L60-L175)
 - [svg_filters_registry_pipeline_compositing.dart:3-460](file://lib/src/animation/svg_filters_registry_pipeline_compositing.dart#L3-L460)
 - [svg_filters_registry_pipeline_primitives_paint.dart:3-169](file://lib/src/animation/svg_filters_registry_pipeline_primitives_paint.dart#L3-L169)
+- [svg_filters_registry_pipeline_primitives_effects.dart:97-141](file://lib/src/animation/svg_filters_registry_pipeline_primitives_effects.dart#L97-L141)
 
 ## Core Components
 The enhanced filter system introduces several key components:
@@ -132,13 +148,16 @@ The enhanced filter system introduces several key components:
 
 **SvgFiltersPipelinePrimitivePaintExtension**: Manages primitive-specific paint pass resolution with input chaining, offset handling, and specialized primitive processing.
 
-**SvgFiltersPipelinePrimitiveEffectsExtension**: Processes effect-specific primitives including blur, morphology, displacement map, lighting, and convolution matrix operations.
+**SvgFiltersPipelinePrimitiveEffectsExtension**: Processes effect-specific primitives including blur, morphology, displacement map, lighting, convolution matrix operations, and **NEW** feImage filter primitive support.
+
+**SvgFeImagePaintPass**: **New** specialized paint pass for feImage filter primitive that carries element reference configuration and preserveAspectRatio settings for rendering referenced content.
 
 **Section sources**
 - [svg_filters_registry_pipeline.dart:60-187](file://lib/src/animation/svg_filters_registry_pipeline.dart#L60-L187)
 - [svg_filters_registry_pipeline_compositing.dart:3-460](file://lib/src/animation/svg_filters_registry_pipeline_compositing.dart#L3-L460)
 - [svg_filters_registry_pipeline_primitives_paint.dart:3-169](file://lib/src/animation/svg_filters_registry_pipeline_primitives_paint.dart#L3-L169)
 - [svg_filters_registry_pipeline_primitives_effects.dart:3-224](file://lib/src/animation/svg_filters_registry_pipeline_primitives_effects.dart#L3-L224)
+- [svg_filters_types.dart:171-235](file://lib/src/animation/svg_filters_types.dart#L171-L235)
 
 ## Architecture Overview
 The enhanced filter pipeline architecture provides comprehensive filter chain resolution with sophisticated input handling, named result caching, and edge case management. The system processes filter primitives in order, handling implicit input chaining, explicit named references, and complex multi-hop chains with proper caching and circular reference detection.
@@ -150,15 +169,20 @@ participant Pipeline as "SvgFiltersPipelineExtension"
 participant Context as "_FilterPipelineContext"
 participant Primitive as "Primitive Resolver"
 participant Compositor as "Compositing Extension"
+participant FeImage as "SvgFeImagePaintPass"
 Parser->>Pipeline : "resolvePaintPasses(id)"
 Pipeline->>Context : "create pipeline context"
 loop For each primitive in chain
 Pipeline->>Context : "beginResolve(resultName)"
 Pipeline->>Primitive : "_resolvePrimitiveOutput(primitive)"
 Primitive->>Context : "resolve input references"
-Context-->>Primitive : "namedResults + previous"
+alt feImage primitive with href
+Primitive->>FeImage : "create SvgFeImagePaintPass"
+FeImage-->>Primitive : "element reference + preserveAspectRatio"
+else Other primitives
 Primitive->>Compositor : "apply primitive-specific processing"
 Compositor-->>Primitive : "paint passes"
+end
 Primitive-->>Pipeline : "output passes"
 Pipeline->>Context : "cache named result"
 Pipeline->>Context : "endResolve(resultName)"
@@ -169,6 +193,7 @@ Pipeline-->>Parser : "final paint passes"
 **Diagram sources**
 - [svg_filters_registry_pipeline.dart:74-175](file://lib/src/animation/svg_filters_registry_pipeline.dart#L74-L175)
 - [svg_filters_registry_pipeline_compositing.dart:45-95](file://lib/src/animation/svg_filters_registry_pipeline_compositing.dart#L45-L95)
+- [svg_filters_registry_pipeline_primitives_effects.dart:97-141](file://lib/src/animation/svg_filters_registry_pipeline_primitives_effects.dart#L97-L141)
 
 ## Enhanced Pipeline Processing
 The enhanced pipeline processing system provides sophisticated filter chain resolution with comprehensive input handling and caching mechanisms.
@@ -212,6 +237,50 @@ The primitive paint handling system provides sophisticated pass composition and 
 - [svg_filters_registry_pipeline_primitives_paint.dart:20-128](file://lib/src/animation/svg_filters_registry_pipeline_primitives_paint.dart#L20-L128)
 - [svg_filters_registry_pipeline_primitives_paint.dart:130-169](file://lib/src/animation/svg_filters_registry_pipeline_primitives_paint.dart#L130-L169)
 
+## SvgFeImagePaintPass Implementation
+**New** The SvgFeImagePaintPass provides comprehensive support for feImage filter primitive with element reference rendering, external image handling, and preserveAspectRatio configuration.
+
+**Element Reference Rendering**: Creates specialized paint passes for SVG element references using href attributes with ID-based targeting (e.g., `#myRect`).
+
+**External Image Handling**: Supports external image sources including data URIs, HTTP URLs, and relative paths with proper URL parsing and validation.
+
+**PreserveAspectRatio Configuration**: Carries preserveAspectRatio settings from feImage primitives to control aspect ratio handling during rendering.
+
+**Subregion Management**: Provides precise control over the primitive subregion through x, y, width, and height attributes for targeted rendering.
+
+**Reference Type Detection**: Automatically detects whether the reference is an element reference (ID-based) or external image (URL-based) for appropriate handling.
+
+```mermaid
+classDiagram
+class SvgFeImagePaintPass {
++feImageFilter SvgFeImageFilter
++isElementReference bool
++referencedElementId String?
++isExternalImage bool
++subregion Rect
++copyWith() SvgFeImagePaintPass
+}
+class SvgFeImageFilter {
++href String?
++x double
++y double
++width double
++height double
++preserveAspectRatio String?
++apply() ImageFilter?
+}
+SvgFeImagePaintPass --> SvgFeImageFilter : "contains"
+```
+
+**Diagram sources**
+- [svg_filters_types.dart:171-235](file://lib/src/animation/svg_filters_types.dart#L171-L235)
+- [svg_filters_primitives.dart:35-62](file://lib/src/animation/svg_filters_primitives.dart#L35-L62)
+
+**Section sources**
+- [svg_filters_types.dart:171-235](file://lib/src/animation/svg_filters_types.dart#L171-L235)
+- [svg_filters_primitives.dart:35-62](file://lib/src/animation/svg_filters_primitives.dart#L35-L62)
+- [svg_filters_registry_pipeline_primitives_effects.dart:97-141](file://lib/src/animation/svg_filters_registry_pipeline_primitives_effects.dart#L97-L141)
+
 ## Filter Graph Complexity Testing
 The comprehensive filter graph complexity testing validates the enhanced pipeline system with extensive scenarios covering multi-hop chains, complex dependencies, and edge cases.
 
@@ -225,12 +294,20 @@ The comprehensive filter graph complexity testing validates the enhanced pipelin
 
 **Forward Reference Handling**: Validates proper handling of forward references producing transparent black output as per SVG specifications.
 
+**FeImage Filter Testing**: **New** Comprehensive testing of feImage filter primitive with element references, external images, preserveAspectRatio handling, and subregion management.
+
 **Section sources**
 - [filter_advanced_graph_test.dart:17-92](file://test/animation/filter_advanced_graph_test.dart#L17-L92)
 - [filter_advanced_graph_test.dart:125-238](file://test/animation/filter_advanced_graph_test.dart#L125-L238)
 - [filter_advanced_graph_test.dart:244-347](file://test/animation/filter_advanced_graph_test.dart#L244-L347)
 - [filter_advanced_graph_test.dart:352-453](file://test/animation/filter_advanced_graph_test.dart#L352-L453)
 - [filter_advanced_graph_test.dart:780-842](file://test/animation/filter_advanced_graph_test.dart#L780-L842)
+- [filter_fe_image_test.dart:17-91](file://test/animation/filter_fe_image_test.dart#L17-L91)
+- [filter_fe_image_test.dart:97-184](file://test/animation/filter_fe_image_test.dart#L97-L184)
+- [filter_fe_image_test.dart:190-262](file://test/animation/filter_fe_image_test.dart#L190-L262)
+- [filter_fe_image_test.dart:267-327](file://test/animation/filter_fe_image_test.dart#L267-L327)
+- [filter_fe_image_test.dart:332-386](file://test/animation/filter_fe_image_test.dart#L332-L386)
+- [filter_fe_image_test.dart:391-490](file://test/animation/filter_fe_image_test.dart#L391-L490)
 
 ## Detailed Component Analysis
 
@@ -340,6 +417,22 @@ The enhanced convolution matrix processing system includes identity kernel detec
 - [svg_filters_registry_pipeline_primitives_effects.dart:177-222](file://lib/src/animation/svg_filters_registry_pipeline_primitives_effects.dart#L177-L222)
 - [svg_filters_primitives_convolve_matrix.dart:1-52](file://lib/src/animation/svg_filters_primitives_convolve_matrix.dart#L1-L52)
 
+### FeImage Filter Primitive Integration
+**New** The feImage filter primitive integration provides comprehensive support for external image sources and element references within the filter pipeline.
+
+**Href Resolution**: Processes href attributes to determine whether they reference SVG elements (ID-based) or external images (URL-based).
+
+**Element Reference Handling**: Creates SvgFeImagePaintPass instances for element references, carrying preserveAspectRatio settings and subregion information.
+
+**External Image Support**: Handles external images including data URIs, HTTP URLs, and relative paths with proper URL parsing and validation.
+
+**Integration with Pipeline**: FeImage primitives start new output chains instead of inheriting previous state, enabling complex filter compositions with external sources.
+
+**Section sources**
+- [svg_filters_registry_pipeline_primitives_effects.dart:97-141](file://lib/src/animation/svg_filters_registry_pipeline_primitives_effects.dart#L97-L141)
+- [svg_filters_types.dart:171-235](file://lib/src/animation/svg_filters_types.dart#L171-L235)
+- [svg_filters_primitives.dart:35-62](file://lib/src/animation/svg_filters_primitives.dart#L35-L62)
+
 ## Performance Considerations
 The enhanced filter system includes several performance optimizations and considerations:
 
@@ -353,10 +446,13 @@ The enhanced filter system includes several performance optimizations and consid
 
 **Circular Reference Prevention**: Depth tracking and circular reference detection prevent infinite loops and excessive memory usage.
 
+**FeImage Optimization**: SvgFeImagePaintPass instances are lightweight containers that defer actual rendering to the painter, avoiding unnecessary computation until needed.
+
 **Section sources**
 - [svg_filters_registry_pipeline.dart:177-186](file://lib/src/animation/svg_filters_registry_pipeline.dart#L177-L186)
 - [svg_filters_registry_pipeline_primitives_effects.dart:192-206](file://lib/src/animation/svg_filters_registry_pipeline_primitives_effects.dart#L192-L206)
 - [svg_filters_registry_pipeline.dart:26-58](file://lib/src/animation/svg_filters_registry_pipeline.dart#L26-L58)
+- [svg_filters_types.dart:171-235](file://lib/src/animation/svg_filters_types.dart#L171-L235)
 
 ## Troubleshooting Guide
 Common issues and remedies for the enhanced filter system:
@@ -371,13 +467,18 @@ Common issues and remedies for the enhanced filter system:
 
 **Performance Issues**: Complex filter chains with many intermediate results can impact performance. Use named results judiciously and avoid excessive nesting.
 
+**FeImage Reference Issues**: **New** For feImage primitives, verify href attributes are properly formatted and accessible. Element references must point to existing IDs in the defs section, while external images must be valid URLs or data URIs.
+
+**PreserveAspectRatio Problems**: **New** Ensure preserveAspectRatio values are valid SVG values (e.g., "xMidYMid meet", "xMinYMin slice", "none"). Invalid values may cause unexpected rendering behavior.
+
 **Section sources**
 - [svg_filters_registry_pipeline.dart:128-132](file://lib/src/animation/svg_filters_registry_pipeline.dart#L128-L132)
 - [svg_filters_registry_pipeline_compositing.dart:187-189](file://lib/src/animation/svg_filters_registry_pipeline_compositing.dart#L187-L189)
 - [filter_advanced_graph_test.dart:780-842](file://test/animation/filter_advanced_graph_test.dart#L780-L842)
+- [filter_fe_image_test.dart:267-327](file://test/animation/filter_fe_image_test.dart#L267-L327)
 
 ## Conclusion
-The enhanced SVG filter system provides a comprehensive and sophisticated architecture for filter chain processing with advanced pipeline capabilities, comprehensive compositing support, and extensive testing validation. The system successfully handles complex filter graphs with multi-hop chains, named result caching, circular reference prevention, and sophisticated edge case handling. The enhanced convolution matrix processing, advanced lighting system, and comprehensive testing framework ensure reliable and performant filter operations across diverse use cases.
+The enhanced SVG filter system provides a comprehensive and sophisticated architecture for filter chain processing with advanced pipeline capabilities, comprehensive compositing support, and extensive testing validation. The system successfully handles complex filter graphs with multi-hop chains, named result caching, circular reference prevention, and sophisticated edge case handling. **Updated** with comprehensive SvgFeImagePaintPass implementation that adds robust feImage filter primitive support including element reference rendering, external image handling, and preserveAspectRatio configuration. The enhanced convolution matrix processing, advanced lighting system, and comprehensive testing framework ensure reliable and performant filter operations across diverse use cases.
 
 ## Appendices
 
@@ -387,6 +488,7 @@ The enhanced SVG filter system provides a comprehensive and sophisticated archit
 - **Background Context Usage**: Background image and alpha integration, fill and stroke paint scope handling, and context propagation through filter chains.
 - **Convolution Matrix Applications**: Identity kernel detection optimization, edge mode testing with duplicate/wrap/none, and comprehensive kernel validation.
 - **Lighting Combinations**: Multiple light sources with different types, complex illumination scenarios, and performance optimization techniques.
+- **FeImage Filter Usage**: **New** Element reference rendering with preserveAspectRatio, external image handling with data URIs and HTTP URLs, and subregion-based targeting.
 
 ### Advanced Optimization Techniques
 - **Named Result Caching**: Strategic use of result attributes to cache intermediate computations and avoid redundant processing.
@@ -394,6 +496,7 @@ The enhanced SVG filter system provides a comprehensive and sophisticated archit
 - **Early Exit Conditions**: Utilizing early exit for empty outputs and invalid parameter combinations.
 - **Memory Management**: Efficient pass composition and proper memory management for large filter chains.
 - **Circular Reference Prevention**: Designing filter chains to avoid circular dependencies and ensure proper execution order.
+- **FeImage Lazy Evaluation**: **New** SvgFeImagePaintPass defers actual rendering until needed, optimizing performance for complex filter chains.
 
 ### Comprehensive Testing Coverage
 - **Multi-hop Chain Validation**: Extensive testing of complex chains with shared intermediate results and cross-references.
@@ -401,3 +504,20 @@ The enhanced SVG filter system provides a comprehensive and sophisticated archit
 - **Fill/Stroke Paint Scope**: Testing of paint scope handling for different rendering contexts.
 - **Arithmetic Mode Precision**: Comprehensive testing of arithmetic composite modes with various coefficient combinations.
 - **Edge Case Handling**: Validation of forward reference handling, unknown reference fallback, and circular reference detection.
+- **FeImage Filter Testing**: **New** Comprehensive testing of element references, external images, preserveAspectRatio handling, subregion management, and filter chain integration.
+
+### FeImage Filter Implementation Details
+**New** The SvgFeImagePaintPass implementation provides:
+
+- **Element Reference Detection**: Automatic identification of element references vs external images
+- **PreserveAspectRatio Support**: Full support for all SVG preserveAspectRatio values
+- **Subregion Control**: Precise control over rendering area through x, y, width, height attributes
+- **Integration Points**: Seamless integration with existing filter pipeline and result caching
+- **Fallback Handling**: Proper handling of unresolvable references with transparent black output
+- **Performance Optimization**: Lightweight pass container that defers actual rendering to painter
+
+**Section sources**
+- [svg_filters_types.dart:171-235](file://lib/src/animation/svg_filters_types.dart#L171-L235)
+- [svg_filters_primitives.dart:35-62](file://lib/src/animation/svg_filters_primitives.dart#L35-L62)
+- [svg_filters_registry_pipeline_primitives_effects.dart:97-141](file://lib/src/animation/svg_filters_registry_pipeline_primitives_effects.dart#L97-L141)
+- [filter_fe_image_test.dart:1-491](file://test/animation/filter_fe_image_test.dart#L1-L491)

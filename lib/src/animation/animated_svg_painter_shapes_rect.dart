@@ -13,8 +13,37 @@ extension AnimatedSvgPainterShapesRectExtension on AnimatedSvgPainter {
     final y = _getNumber(node, 'y') ?? 0.0;
     final width = _getNumber(node, 'width') ?? 0.0;
     final height = _getNumber(node, 'height') ?? 0.0;
-    final rx = _getNumber(node, 'rx') ?? 0.0;
-    final ry = _getNumber(node, 'ry') ?? rx;
+
+    // SVG spec: rx/ry handling
+    // - If neither rx nor ry are specified, both default to 0
+    // - If rx is specified but not ry, ry = rx (and vice versa)
+    // - Negative values are an error (don't render)
+    // - Values greater than half width/height are clamped
+    final rxRaw = _getNumber(node, 'rx');
+    final ryRaw = _getNumber(node, 'ry');
+
+    double rx;
+    double ry;
+    if (rxRaw == null && ryRaw == null) {
+      rx = 0.0;
+      ry = 0.0;
+    } else if (rxRaw != null && ryRaw == null) {
+      rx = rxRaw;
+      ry = rxRaw;
+    } else if (rxRaw == null && ryRaw != null) {
+      rx = ryRaw;
+      ry = ryRaw;
+    } else {
+      rx = rxRaw!;
+      ry = ryRaw!;
+    }
+
+    // Negative rx/ry is an error - don't render
+    if (rx < 0 || ry < 0) return;
+
+    // Clamp rx/ry to half of width/height
+    rx = rx.clamp(0.0, width / 2);
+    ry = ry.clamp(0.0, height / 2);
 
     if (width <= 0 || height <= 0) return;
 

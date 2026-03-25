@@ -15,7 +15,8 @@ extension AnimatedSvgPainterShapesPathExtension on AnimatedSvgPainter {
     final path = _buildPath(pathData);
     if (path == null) return;
 
-    final fillRule = _getString(node, 'fill-rule')?.toLowerCase();
+    // fill-rule is an inheritable property
+    final fillRule = _getInheritedString(node, 'fill-rule')?.toLowerCase();
     path.fillType = fillRule == 'evenodd'
         ? ui.PathFillType.evenOdd
         : ui.PathFillType.nonZero;
@@ -79,7 +80,8 @@ extension AnimatedSvgPainterShapesPathExtension on AnimatedSvgPainter {
     }
     path.close();
 
-    final fillRule = _getString(node, 'fill-rule')?.toLowerCase();
+    // fill-rule is an inheritable property
+    final fillRule = _getInheritedString(node, 'fill-rule')?.toLowerCase();
     path.fillType = fillRule == 'evenodd'
         ? ui.PathFillType.evenOdd
         : ui.PathFillType.nonZero;

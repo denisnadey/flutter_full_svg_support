@@ -508,6 +508,77 @@ void main() {
       expect(filter!.type.toString(), contains('colorMatrix'));
     });
 
+    test('Parse feColorMatrix filter with hueRotate', () {
+      final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="hueRotateFx">
+      <feColorMatrix type="hueRotate" values="90"/>
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="50" height="50" fill="blue" filter="url(#hueRotateFx)"/>
+</svg>
+''';
+
+      final document = SvgParser.parse(svgString);
+      expect(document.filters, isNotNull);
+      expect(document.filters!.hasFilter('hueRotateFx'), isTrue);
+
+      final filter = document.filters!.getById('hueRotateFx');
+      expect(filter, isNotNull);
+      expect(filter, isA<SvgColorMatrixFilter>());
+      final colorMatrix = filter as SvgColorMatrixFilter;
+      expect(colorMatrix.matrixType, SvgColorMatrixType.hueRotate);
+      expect(colorMatrix.values, <double>[90.0]);
+    });
+
+    test('Parse feColorMatrix filter with luminanceToAlpha', () {
+      final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="luminanceToAlphaFx">
+      <feColorMatrix type="luminanceToAlpha"/>
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="50" height="50" fill="blue" filter="url(#luminanceToAlphaFx)"/>
+</svg>
+''';
+
+      final document = SvgParser.parse(svgString);
+      expect(document.filters, isNotNull);
+      expect(document.filters!.hasFilter('luminanceToAlphaFx'), isTrue);
+
+      final filter = document.filters!.getById('luminanceToAlphaFx');
+      expect(filter, isNotNull);
+      expect(filter, isA<SvgColorMatrixFilter>());
+      final colorMatrix = filter as SvgColorMatrixFilter;
+      expect(colorMatrix.matrixType, SvgColorMatrixType.luminanceToAlpha);
+    });
+
+    test('Parse feColorMatrix filter with custom matrix', () {
+      final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="customMatrixFx">
+      <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 1 0"/>
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="50" height="50" fill="blue" filter="url(#customMatrixFx)"/>
+</svg>
+''';
+
+      final document = SvgParser.parse(svgString);
+      expect(document.filters, isNotNull);
+      expect(document.filters!.hasFilter('customMatrixFx'), isTrue);
+
+      final filter = document.filters!.getById('customMatrixFx');
+      expect(filter, isNotNull);
+      expect(filter, isA<SvgColorMatrixFilter>());
+      final colorMatrix = filter as SvgColorMatrixFilter;
+      expect(colorMatrix.matrixType, SvgColorMatrixType.matrix);
+      expect(colorMatrix.values, hasLength(20));
+    });
+
     test('Parse feFlood filter', () {
       final svgString = '''
 <svg viewBox="0 0 100 100">
@@ -627,6 +698,56 @@ void main() {
       final composite = filter as SvgCompositeFilter;
       expect(composite.operatorType, 'xor');
       expect(composite.mode, ui.BlendMode.xor);
+    });
+
+    test('Parse feComposite filter with operator="out"', () {
+      final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="compOutFx">
+      <feComposite in="SourceGraphic" in2="SourceAlpha" operator="out"/>
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="50" height="50" fill="blue" filter="url(#compOutFx)"/>
+</svg>
+''';
+
+      final document = SvgParser.parse(svgString);
+      expect(document.filters, isNotNull);
+      expect(document.filters!.hasFilter('compOutFx'), isTrue);
+
+      final filter = document.filters!.getById('compOutFx');
+      expect(filter, isNotNull);
+      expect(filter, isA<SvgCompositeFilter>());
+      final composite = filter as SvgCompositeFilter;
+      expect(composite.operatorType, 'out');
+      expect(composite.mode, ui.BlendMode.srcOut);
+      expect(composite.input, 'SourceGraphic');
+      expect(composite.input2, 'SourceAlpha');
+    });
+
+    test('Parse feComposite filter with operator="lighter"', () {
+      final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="compLighterFx">
+      <feComposite in="SourceGraphic" in2="SourceAlpha" operator="lighter"/>
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="50" height="50" fill="blue" filter="url(#compLighterFx)"/>
+</svg>
+''';
+
+      final document = SvgParser.parse(svgString);
+      expect(document.filters, isNotNull);
+      expect(document.filters!.hasFilter('compLighterFx'), isTrue);
+
+      final filter = document.filters!.getById('compLighterFx');
+      expect(filter, isNotNull);
+      expect(filter, isA<SvgCompositeFilter>());
+      final composite = filter as SvgCompositeFilter;
+      expect(composite.operatorType, 'lighter');
+      expect(composite.mode, ui.BlendMode.plus);
     });
 
     test('Parse feComposite arithmetic filter coefficients', () {
@@ -2211,8 +2332,14 @@ void main() {
 
       // Merge combines: shifted (x2) + SourceGraphic
       expect(passes, hasLength(3));
-      expect(passes[0].offset, const ui.Offset(5, 0)); // first shifted reference
-      expect(passes[1].offset, const ui.Offset(5, 0)); // second shifted reference
+      expect(
+        passes[0].offset,
+        const ui.Offset(5, 0),
+      ); // first shifted reference
+      expect(
+        passes[1].offset,
+        const ui.Offset(5, 0),
+      ); // second shifted reference
       expect(passes[2].offset, ui.Offset.zero); // SourceGraphic
     });
 
@@ -2237,7 +2364,10 @@ void main() {
       expect(passes[0].offset, const ui.Offset(4, 4)); // shadow with offset
       expect(passes[0].imageFilter, isNotNull); // combined blur filters
       expect(passes[0].colorFilter, isNotNull); // shadow color
-      expect(passes[1].offset, ui.Offset.zero); // original blurred input (no offset)
+      expect(
+        passes[1].offset,
+        ui.Offset.zero,
+      ); // original blurred input (no offset)
     });
 
     test('feDropShadow with unresolved input produces no output', () {
@@ -2439,8 +2569,14 @@ void main() {
       // All references to "shared" should produce identical blur effect
       expect(passes, hasLength(3));
       expect(passes[0].imageFilter, isNotNull); // comp1 base (shared with blur)
-      expect(passes[1].imageFilter, isNotNull); // comp1 top (shared with blur + xor)
-      expect(passes[2].imageFilter, isNotNull); // shared with blur and screen blend
+      expect(
+        passes[1].imageFilter,
+        isNotNull,
+      ); // comp1 top (shared with blur + xor)
+      expect(
+        passes[2].imageFilter,
+        isNotNull,
+      ); // shared with blur and screen blend
       expect(passes[2].blendMode, ui.BlendMode.screen);
     });
   });

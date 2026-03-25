@@ -186,6 +186,14 @@ class AnimatedSvgPainter extends CustomPainter {
     // Prepare cache for this frame
     _renderCache.prepareFrame(animationTime, hasAnimations);
 
+    // Clear definition caches when animation time changes, so animated
+    // stop-color, marker, and pattern values are re-read from DOM nodes.
+    if (hasAnimations) {
+      _gradientCache.clear();
+      _markerCache.clear();
+      _patternCache.clear();
+    }
+
     // Set up CSS rules from document for use-referenced content resolution
     _currentDocumentCssRules = document.cssSelectorRules;
 

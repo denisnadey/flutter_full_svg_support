@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'dart:ui' as ui;
 
-import '../widgets/animation_theme.dart';
 import '../widgets/path_morphing_widget.dart';
 import '../widgets/metrics_widget.dart';
 import '../widgets/smil_path_morphing_widget.dart';
@@ -10,6 +9,21 @@ import '../widgets/smil_animate_motion_widget.dart';
 import '../widgets/smil_syncbase_widget.dart';
 import '../widgets/smil_event_timing_widget.dart';
 import '../animated_svg_demo.dart';
+
+/// Tab item data class
+class _TabItem {
+  final IconData icon;
+  final String label;
+  final String shortLabel;
+  final String description;
+
+  const _TabItem({
+    required this.icon,
+    required this.label,
+    required this.shortLabel,
+    required this.description,
+  });
+}
 
 /// Unified examples page with tabs and FPS monitor
 class UnifiedExamplesPage extends StatefulWidget {
@@ -24,10 +38,55 @@ class _UnifiedExamplesPageState extends State<UnifiedExamplesPage>
   late TabController _tabController;
   bool _showFPS = false;
 
+  static const _tabs = [
+    _TabItem(
+      icon: Icons.animation,
+      label: 'SMIL Animations',
+      shortLabel: 'SMIL',
+      description: 'Basic SMIL animation examples',
+    ),
+    _TabItem(
+      icon: Icons.auto_fix_high,
+      label: 'Path Morphing',
+      shortLabel: 'Morph',
+      description: 'Shape interpolation demos',
+    ),
+    _TabItem(
+      icon: Icons.transform,
+      label: 'SMIL Path',
+      shortLabel: 'Path',
+      description: 'Path-based animations',
+    ),
+    _TabItem(
+      icon: Icons.moving,
+      label: 'Motion Path',
+      shortLabel: 'Motion',
+      description: 'animateMotion examples',
+    ),
+    _TabItem(
+      icon: Icons.sync_alt,
+      label: 'Syncbase',
+      shortLabel: 'Sync',
+      description: 'Synchronized animations',
+    ),
+    _TabItem(
+      icon: Icons.touch_app,
+      label: 'Events',
+      shortLabel: 'Events',
+      description: 'Event-triggered animations',
+    ),
+    _TabItem(
+      icon: Icons.analytics_outlined,
+      label: 'Metrics',
+      shortLabel: 'Stats',
+      description: 'Performance metrics',
+    ),
+  ];
+
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 8, vsync: this);
+    _tabController = TabController(length: _tabs.length, vsync: this);
   }
 
   @override
@@ -40,80 +99,62 @@ class _UnifiedExamplesPageState extends State<UnifiedExamplesPage>
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 600;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'SMIL Animation Examples',
-          style: TextStyle(fontSize: isMobile ? 18 : null),
+          'Animation Gallery',
+          style: TextStyle(
+            fontSize: isMobile ? 18 : 20,
+            fontWeight: FontWeight.w600,
+          ),
         ),
+        centerTitle: true,
+        elevation: 0,
         actions: [
           // FPS Toggle
-          IconButton(
-            icon: Icon(_showFPS ? Icons.speed : Icons.speed_outlined),
-            tooltip: _showFPS ? 'Hide FPS' : 'Show FPS',
-            onPressed: () {
-              setState(() {
-                _showFPS = !_showFPS;
-              });
-            },
+          Container(
+            margin: const EdgeInsets.only(right: 8),
+            decoration: BoxDecoration(
+              color: _showFPS
+                  ? theme.colorScheme.primaryContainer
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: IconButton(
+              icon: Icon(
+                _showFPS ? Icons.speed : Icons.speed_outlined,
+                color: _showFPS ? theme.colorScheme.primary : null,
+              ),
+              tooltip: _showFPS ? 'Hide FPS Monitor' : 'Show FPS Monitor',
+              onPressed: () => setState(() => _showFPS = !_showFPS),
+            ),
           ),
         ],
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(48),
-          child: TabBar(
-            controller: _tabController,
-            isScrollable: true,
-            tabAlignment: TabAlignment.start,
-            labelPadding: EdgeInsets.symmetric(horizontal: isMobile ? 12 : 16),
-            indicatorSize: TabBarIndicatorSize.label,
-            tabs: [
-              Tab(
-                icon: Icon(Icons.animation, size: isMobile ? 20 : 24),
-                text: isMobile ? 'SMIL' : 'SMIL Animations',
-                height: 48,
+          preferredSize: const Size.fromHeight(60),
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: isDark
+                      ? theme.colorScheme.outline.withValues(alpha: 0.3)
+                      : theme.colorScheme.outline.withValues(alpha: 0.2),
+                ),
               ),
-              Tab(
-                icon: Icon(Icons.auto_fix_high, size: isMobile ? 20 : 24),
-                text: isMobile ? 'Morph' : 'Path Morphing',
-                height: 48,
-              ),
-              Tab(
-                icon: Icon(Icons.transform, size: isMobile ? 20 : 24),
-                text: 'SMIL Path',
-                height: 48,
-              ),
-              Tab(
-                icon: Icon(Icons.directions, size: isMobile ? 20 : 24),
-                text: 'Motion',
-                height: 48,
-              ),
-              Tab(
-                icon: Icon(Icons.sync, size: isMobile ? 20 : 24),
-                text: 'Syncbase',
-                height: 48,
-              ),
-              Tab(
-                icon: Icon(Icons.touch_app, size: isMobile ? 20 : 24),
-                text: 'Events',
-                height: 48,
-              ),
-              Tab(
-                icon: Icon(Icons.touch_app, size: isMobile ? 20 : 24),
-                text: 'Events',
-                height: 48,
-              ),
-              Tab(
-                icon: Icon(Icons.show_chart, size: isMobile ? 20 : 24),
-                text: isMobile ? 'Stats' : 'Metrics',
-                height: 48,
-              ),
-              Tab(
-                icon: Icon(Icons.format_shapes, size: isMobile ? 20 : 24),
-                text: 'Custom',
-                height: 48,
-              ),
-            ],
+            ),
+            child: TabBar(
+              controller: _tabController,
+              isScrollable: true,
+              tabAlignment: TabAlignment.start,
+              labelPadding: EdgeInsets.symmetric(horizontal: isMobile ? 8 : 12),
+              indicatorSize: TabBarIndicatorSize.tab,
+              indicatorWeight: 3,
+              dividerColor: Colors.transparent,
+              tabs: _tabs.map((tab) => _buildTab(tab, isMobile)).toList(),
+            ),
           ),
         ),
       ),
@@ -129,10 +170,29 @@ class _UnifiedExamplesPageState extends State<UnifiedExamplesPage>
               _SyncbaseTab(showFPS: _showFPS),
               _EventTimingTab(showFPS: _showFPS),
               _MetricsTab(showFPS: _showFPS),
-              _CustomTab(showFPS: _showFPS),
             ],
           ),
-          if (_showFPS) Positioned(top: 8, right: 8, child: const FPSMonitor()),
+          if (_showFPS) const Positioned(top: 8, right: 8, child: FPSMonitor()),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTab(_TabItem tab, bool isMobile) {
+    return Tab(
+      height: 56,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(tab.icon, size: isMobile ? 18 : 20),
+          const SizedBox(width: 8),
+          Text(
+            isMobile ? tab.shortLabel : tab.label,
+            style: TextStyle(
+              fontSize: isMobile ? 12 : 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ],
       ),
     );
@@ -185,33 +245,49 @@ class _FPSMonitorState extends State<FPSMonitor> {
         : _fpsHistory.reduce((a, b) => a + b) / _fpsHistory.length;
 
     Color fpsColor;
+    String fpsStatus;
     if (avgFPS >= 55) {
       fpsColor = Colors.green;
+      fpsStatus = 'Excellent';
     } else if (avgFPS >= 30) {
       fpsColor = Colors.orange;
+      fpsStatus = 'Good';
     } else {
       fpsColor = Colors.red;
+      fpsStatus = 'Low';
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AnimationTheme.spacingMedium,
-        vertical: AnimationTheme.spacingSmall,
-      ),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.8),
-        borderRadius: BorderRadius.circular(AnimationTheme.radiusSmall),
-        border: Border.all(color: fpsColor, width: 2),
+        color: Colors.black.withValues(alpha: 0.85),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: fpsColor.withValues(alpha: 0.6), width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: fpsColor.withValues(alpha: 0.3),
+            blurRadius: 12,
+            spreadRadius: 1,
+          ),
+        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // FPS Header
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.speed, color: fpsColor, size: 16),
-              const SizedBox(width: AnimationTheme.spacingSmall),
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: fpsColor.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Icon(Icons.speed, color: fpsColor, size: 14),
+              ),
+              const SizedBox(width: 8),
               Text(
                 '${avgFPS.toStringAsFixed(1)} FPS',
                 style: TextStyle(
@@ -222,18 +298,43 @@ class _FPSMonitorState extends State<FPSMonitor> {
               ),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
+          // FPS Graph
           SizedBox(
             width: 120,
-            height: 30,
+            height: 32,
             child: CustomPaint(
               painter: _FPSGraphPainter(_fpsHistory, fpsColor),
             ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            'Frame: $_frameCount',
-            style: const TextStyle(color: Colors.white70, fontSize: 10),
+          const SizedBox(height: 6),
+          // Status row
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 6,
+                height: 6,
+                decoration: BoxDecoration(
+                  color: fpsColor,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                fpsStatus,
+                style: TextStyle(
+                  color: fpsColor,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Frame: $_frameCount',
+                style: const TextStyle(color: Colors.white54, fontSize: 9),
+              ),
+            ],
           ),
         ],
       ),
@@ -252,7 +353,7 @@ class _FPSGraphPainter extends CustomPainter {
     if (history.isEmpty) return;
 
     final paint = Paint()
-      ..color = color.withValues(alpha: 0.3)
+      ..color = color.withValues(alpha: 0.2)
       ..style = PaintingStyle.fill;
 
     final linePaint = Paint()
@@ -290,7 +391,7 @@ class _FPSGraphPainter extends CustomPainter {
 
     // Draw 60 FPS line
     final targetLinePaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.3)
+      ..color = Colors.white.withValues(alpha: 0.2)
       ..strokeWidth = 1
       ..style = PaintingStyle.stroke;
     canvas.drawLine(Offset(0, 0), Offset(size.width, 0), targetLinePaint);
@@ -381,38 +482,5 @@ class _MetricsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const MetricsWidget();
-  }
-}
-
-/// Custom Tab
-class _CustomTab extends StatelessWidget {
-  const _CustomTab({required this.showFPS});
-
-  final bool showFPS;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.psychology, size: 64, color: Colors.grey.shade400),
-          const SizedBox(height: 16),
-          Text(
-            'Custom Examples',
-            style: Theme.of(
-              context,
-            ).textTheme.headlineSmall?.copyWith(color: Colors.grey.shade600),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Add your own animations here',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.grey.shade500),
-          ),
-        ],
-      ),
-    );
   }
 }

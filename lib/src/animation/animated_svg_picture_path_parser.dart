@@ -3,10 +3,8 @@ part of 'animated_svg_picture.dart';
 extension _AnimatedSvgPictureStatePathParserExtension
     on _AnimatedSvgPictureState {
   void _applyPathFillType(Path path, SvgNode node) {
-    final fillRule = node
-        .getAttributeValue('fill-rule')
-        ?.toString()
-        .toLowerCase();
+    // fill-rule is an inheritable property
+    final fillRule = _getInheritedString(node, 'fill-rule')?.toLowerCase();
     path.fillType = fillRule == 'evenodd'
         ? PathFillType.evenOdd
         : PathFillType.nonZero;
@@ -118,15 +116,16 @@ extension _AnimatedSvgPictureStatePathParserExtension
           previousCommand = quadratic;
 
         case ArcCommand():
-          if (absoluteCommand.rx <= 0 || absoluteCommand.ry <= 0) {
+          // SVG spec: If rx or ry is 0, treat as straight line
+          // If rx or ry is negative, use absolute value
+          final rx = absoluteCommand.rx.abs();
+          final ry = absoluteCommand.ry.abs();
+          if (rx == 0 || ry == 0) {
             path.lineTo(absoluteCommand.x, absoluteCommand.y);
           } else {
             path.arcToPoint(
               Offset(absoluteCommand.x, absoluteCommand.y),
-              radius: Radius.elliptical(
-                absoluteCommand.rx.abs(),
-                absoluteCommand.ry.abs(),
-              ),
+              radius: Radius.elliptical(rx, ry),
               rotation: absoluteCommand.rotation,
               largeArc: absoluteCommand.largeArc,
               clockwise: absoluteCommand.sweep,
