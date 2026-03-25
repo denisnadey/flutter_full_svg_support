@@ -168,8 +168,9 @@ SmilAnimation? _buildTransformAnimationForFunction({
 
   for (final offset in sortedOffsets) {
     final raw = functionOffsets[offset]!;
-    final inner = RegExp(r'\(([^)]+)\)').firstMatch(raw)?.group(1) ?? raw;
-    smilValues.add(inner);
+    // Keep full transform string (e.g., "scale(1,1)") instead of just arguments.
+    // The interpolator and renderer expect full transform strings.
+    smilValues.add(raw);
     smilKeyTimes.add(offset);
   }
 

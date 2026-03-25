@@ -55,12 +55,13 @@
 
 ## Update Summary
 **Changes Made**
-- Enhanced CSS shorthand expansion system with dedicated files for animation, font, and box model properties
-- Added comprehensive stop-color animation support for gradient elements, enabling CSS selector animations targeting gradient stop elements
-- Implemented SVGator-compatible ID selector patterns for gradient stop animations
-- Enhanced gradient shader creation with animated stop color support
-- Added specialized gradient stop parsing with CSS variable resolution
-- Comprehensive testing coverage for stop-color animation scenarios
+- Enhanced stop-color animation support for gradient elements with comprehensive CSS selector targeting
+- Added SVGator-compatible ID selector patterns for gradient stop animations
+- Improved gradient shader creation with animated stop color support
+- Enhanced gradient stop parsing with CSS variable resolution
+- Added extensive testing coverage for gradient stop color animations
+- Updated CSS attribute type inference to recognize stop-color as color type
+- Enhanced gradient resolver to handle animated stop colors during shader creation
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -161,8 +162,6 @@ U["animated_svg_painter_gradients_values.dart"]
 V["svg_parser_constants.dart (stop-color support)"]
 W["css_to_smil_converter_core.dart (stop-color parsing)"]
 X["smil_parser_animation_parsing.dart (stop-color type inference)"]
-end
-subgraph "Examples & Tests"
 Y["test/animation/gradient_stop_color_animation_test.dart"]
 Z["test/animation/stop_color_animation_test.dart"]
 AA["test/animation/stroke_dash_stop_color_test.dart"]
@@ -977,6 +976,25 @@ The system has been tested with patterns from the astronaut helmet example, supp
 - [test/animation/stop_color_animation_test.dart:357-395](file://test/animation/stop_color_animation_test.dart#L357-L395)
 - [test/animation/stroke_dash_stop_color_test.dart:331-365](file://test/animation/stroke_dash_stop_color_test.dart#L331-L365)
 
+### Enhanced Gradient Shader Creation with Animated Stop Colors
+The gradient shader system has been enhanced to properly handle animated stop colors during shader creation:
+
+**Animated Stop Color Processing**
+- **Stop Color Resolution**: Gradient stops now properly resolve animated stop-color values
+- **Shader Caching**: Gradient shaders are cached with animated stop color support
+- **Linear RGB Interpolation**: Maintains LinearRGB color interpolation for animated gradients
+- **User Space OnUse Coordinates**: Supports animated gradients with userSpaceOnUse coordinates and transforms
+
+**Integration Points**
+- **Gradient Resolver**: Enhanced to extract animated stop colors from CSS variables and style properties
+- **Shader Creation**: Modified to use animated stop colors when creating gradient shaders
+- **Paint Server Resolution**: Updated to handle animated gradient fills in url() references
+
+**Section sources**
+- [lib/src/animation/animated_svg_painter_gradients_resolver.dart:69-157](file://lib/src/animation/animated_svg_painter_gradients_resolver.dart#L69-L157)
+- [lib/src/animation/animated_svg_painter_gradients.dart:31-190](file://lib/src/animation/animated_svg_painter_gradients.dart#L31-L190)
+- [lib/src/animation/animated_svg_painter_gradients_values.dart:1-200](file://lib/src/animation/animated_svg_painter_gradients_values.dart#L1-L200)
+
 ## Custom Properties and Calc() Function Support
 
 ### CSS Custom Properties and Calc() Integration
@@ -1382,10 +1400,6 @@ Practical tips:
 - **Optimize stop-color animations**: Use efficient CSS selectors and minimize redundant gradient definitions
 - **Cache gradient shaders**: Take advantage of built-in gradient shader caching for complex animated gradients
 
-**Section sources**
-- [ARCHITECTURE.md:174-193](file://ARCHITECTURE.md#L174-L193)
-- [CURRENT_STATUS.md:70-77](file://CURRENT_STATUS.md#L70-L77)
-
 ## Troubleshooting Guide
 Common issues and resolutions:
 - Path morphing fails due to incompatible structures
@@ -1439,6 +1453,7 @@ Common issues and resolutions:
   - **Gradient shader creation**: Check that animated gradient stops are properly resolved
   - **Color interpolation**: Verify stop-color values are correctly parsed and interpolated
   - **CSS variable resolution**: Ensure CSS variables in stop-color values are properly resolved
+  - **Animation clearing**: Verify stop-color animations properly clear with remove fill mode
 
 Diagnostic utilities:
 - AnimatedSvgPicture exposes trace callbacks and frame tick logging for detailed runtime insights

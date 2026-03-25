@@ -108,6 +108,8 @@ void _collectTextContent(XmlElement element, StringBuffer buffer) {
   for (final child in element.children) {
     if (child is XmlText) {
       buffer.write(child.value);
+    } else if (child is XmlCDATA) {
+      buffer.write(child.value);
     } else if (child is XmlElement) {
       _collectTextContent(child, buffer);
     }
@@ -115,7 +117,10 @@ void _collectTextContent(XmlElement element, StringBuffer buffer) {
 }
 
 String? _extractDirectText(XmlElement element) {
-  final raw = element.children.whereType<XmlText>().map((n) => n.value).join();
+  final raw = element.children
+      .where((n) => n is XmlText || n is XmlCDATA)
+      .map((n) => n.value ?? '')
+      .join();
   if (raw.trim().isEmpty) {
     return null;
   }

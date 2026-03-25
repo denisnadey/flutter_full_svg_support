@@ -253,8 +253,9 @@ circle, rect {
         expect(transformAnim.keySplines, hasLength(1));
         expect(transformAnim.transformType, equals('rotate'));
         expect(transformAnim.values, isNotNull);
-        expect(transformAnim.values![0], equals('0'));
-        expect(transformAnim.values![1], equals('360'));
+        // Values are full transform strings for proper interpolation and rendering
+        expect(transformAnim.values![0], equals('rotate(0)'));
+        expect(transformAnim.values![1], equals('rotate(360)'));
       },
     );
 

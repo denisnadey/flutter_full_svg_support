@@ -14,9 +14,17 @@
 - [smil_parser_motion.dart](file://lib/src/animation/smil/smil_parser_motion.dart)
 - [motion_path.dart](file://lib/src/animation/smil/motion_path.dart)
 - [distance_calculator.dart](file://lib/src/animation/smil/distance_calculator.dart)
+- [smil_animation_value_computation.dart](file://lib/src/animation/smil/smil_animation_value_computation.dart)
 - [smil_animate_motion_integration_test.dart](file://test/animation/smil_animate_motion_integration_test.dart)
 - [motion_path_test.dart](file://test/animation/motion_path_test.dart)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Updated animateMotion element section to reflect the change from using 'motion' to 'transform' as attributeName for better renderer compatibility
+- Added new section explaining the attributeName change and its impact on renderer recognition
+- Updated architecture overview to show how transform attribute is now processed
+- Enhanced troubleshooting guide with renderer compatibility considerations
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -38,6 +46,7 @@ This document explains the SMIL motion animation implementation with a focus on 
 - Examples of complex paths, circular arcs, and custom animations
 - Path normalization, coordinate system handling, and validation
 - Builder utilities and debugging techniques for motion animation issues
+- **Updated**: Enhanced renderer compatibility through transform attribute processing
 
 ## Project Structure
 The motion animation implementation spans two layers:
@@ -57,12 +66,14 @@ subgraph "Flutter SMIL Parser (Dart)"
 DParser["smil_parser_motion.dart<br/>parse animateMotion"]
 DPath["motion_path.dart<br/>MotionPath sampling"]
 DDist["distance_calculator.dart<br/>paced distances"]
+DComp["smil_animation_value_computation.dart<br/>transform computation"]
 end
 AME --> MP
 AME --> PU
 PU --> PP
 PU --> PB
 DParser --> DPath
+DParser --> DComp
 DDist --> DPath
 ```
 
@@ -75,6 +86,7 @@ DDist --> DPath
 - [smil_parser_motion.dart:121-156](file://lib/src/animation/smil/smil_parser_motion.dart#L121-L156)
 - [motion_path.dart:23-52](file://lib/src/animation/smil/motion_path.dart#L23-L52)
 - [distance_calculator.dart:117-146](file://lib/src/animation/smil/distance_calculator.dart#L117-L146)
+- [smil_animation_value_computation.dart:102-173](file://lib/src/animation/smil/smil_animation_value_computation.dart#L102-L173)
 
 **Section sources**
 - [SVGAnimateMotionElement.cpp:104-154](file://blink-b87d44f-Source-core-svg/SVGAnimateMotionElement.cpp#L104-L154)
@@ -85,6 +97,7 @@ DDist --> DPath
 - [smil_parser_motion.dart:121-156](file://lib/src/animation/smil/smil_parser_motion.dart#L121-L156)
 - [motion_path.dart:23-52](file://lib/src/animation/smil/motion_path.dart#L23-L52)
 - [distance_calculator.dart:117-146](file://lib/src/animation/smil/distance_calculator.dart#L117-L146)
+- [smil_animation_value_computation.dart:102-173](file://lib/src/animation/smil/smil_animation_value_computation.dart#L102-L173)
 
 ## Core Components
 - animateMotion element: validates targets, parses path attribute, resolves mpath, computes per-frame transforms, and applies rotation modes
@@ -95,6 +108,7 @@ DDist --> DPath
 - Flutter SMIL parser: extract path data from inline or referenced sources and feed into motion utilities
 - Motion path sampling: compute position and rotation angle at time t, support keyPoints/keyTimes pacing
 - Distance calculator: provide paced distances between paths for timing
+- **Updated**: Transform computation: generates transform strings for renderer compatibility
 
 **Section sources**
 - [SVGAnimateMotionElement.cpp:121-131](file://blink-b87d44f-Source-core-svg/SVGAnimateMotionElement.cpp#L121-L131)
@@ -106,9 +120,10 @@ DDist --> DPath
 - [smil_parser_motion.dart:121-156](file://lib/src/animation/smil/smil_parser_motion.dart#L121-L156)
 - [motion_path.dart:97-145](file://lib/src/animation/smil/motion_path.dart#L97-L145)
 - [distance_calculator.dart:117-146](file://lib/src/animation/smil/distance_calculator.dart#L117-L146)
+- [smil_animation_value_computation.dart:102-173](file://lib/src/animation/smil/smil_animation_value_computation.dart#L102-L173)
 
 ## Architecture Overview
-The motion animation pipeline integrates parsing, path normalization, and per-frame transform computation.
+The motion animation pipeline integrates parsing, path normalization, and per-frame transform computation with enhanced renderer compatibility through transform attribute processing.
 
 ```mermaid
 sequenceDiagram
@@ -129,6 +144,7 @@ PU-->>AM : "Animation path ready"
 AM->>AM : "calculateAnimatedValue(t)"
 AM->>PU : "pointAndNormalAtLength"
 AM-->>AM : "translate + optional rotate"
+AM->>AM : "Apply transform to supplementalTransform"
 ```
 
 **Diagram sources**
@@ -238,7 +254,7 @@ Out --> Metrics["computeMetrics()<br/>length + tangents"]
 - [SVGPathParser.cpp:409-493](file://blink-b87d44f-Source-core-svg/SVGPathParser.cpp#L409-L493)
 
 ### Flutter Motion Path Sampling
-The Dart-side MotionPath mirrors the engine’s sampling:
+The Dart-side MotionPath mirrors the engine's sampling:
 - Parse path string into commands and build a Flutter Path
 - Precompute cumulative segment lengths for O(1) lookup
 - Interpolate position and tangent angle at time t
@@ -267,6 +283,19 @@ MotionPath --> MotionPathPoint : "returns"
 - [motion_path.dart:77-95](file://lib/src/animation/smil/motion_path.dart#L77-L95)
 - [motion_path.dart:97-145](file://lib/src/animation/smil/motion_path.dart#L97-L145)
 - [motion_path.dart:147-217](file://lib/src/animation/smil/motion_path.dart#L147-L217)
+
+### Transform Attribute Processing
+**Updated**: The animateMotion element now uses 'transform' as the attributeName to improve renderer compatibility. This change ensures that motion animations are properly recognized and processed by the renderer.
+
+Key aspects:
+- attributeName is set to 'transform' in the SMIL parser
+- The motion value computation generates transform strings (translate + optional rotate)
+- Renderer receives transform values that can be properly applied to SVG elements
+- This approach aligns with how other SVG transforms are handled by the renderer
+
+**Section sources**
+- [smil_parser_motion.dart:183-185](file://lib/src/animation/smil/smil_parser_motion.dart#L183-L185)
+- [smil_animation_value_computation.dart:148-173](file://lib/src/animation/smil/smil_animation_value_computation.dart#L148-L173)
 
 ### Path Attribute Handling and Validation
 - Inline path: path attribute on animateMotion
@@ -318,7 +347,7 @@ Validation and integration tests demonstrate these scenarios end-to-end.
 High-level dependencies:
 - animateMotion depends on mpath resolution and path utilities
 - Path utilities depend on path parser and builder
-- Flutter SMIL parser depends on motion path sampling
+- Flutter SMIL parser depends on motion path sampling and transform computation
 - Distance calculator depends on MotionPath
 
 ```mermaid
@@ -328,6 +357,7 @@ AM --> PU["SVGPathUtilities"]
 PU --> PP["SVGPathParser"]
 PU --> PB["SVGPathBuilder"]
 DParser["smil_parser_motion.dart"] --> DPath["motion_path.dart"]
+DParser --> DComp["smil_animation_value_computation.dart"]
 DDist["distance_calculator.dart"] --> DPath
 ```
 
@@ -340,6 +370,7 @@ DDist["distance_calculator.dart"] --> DPath
 - [smil_parser_motion.dart:121-156](file://lib/src/animation/smil/smil_parser_motion.dart#L121-L156)
 - [motion_path.dart:23-52](file://lib/src/animation/smil/motion_path.dart#L23-L52)
 - [distance_calculator.dart:117-146](file://lib/src/animation/smil/distance_calculator.dart#L117-L146)
+- [smil_animation_value_computation.dart:102-173](file://lib/src/animation/smil/smil_animation_value_computation.dart#L102-L173)
 
 **Section sources**
 - [SVGAnimateMotionElement.cpp:133-154](file://blink-b87d44f-Source-core-svg/SVGAnimateMotionElement.cpp#L133-L154)
@@ -350,14 +381,14 @@ DDist["distance_calculator.dart"] --> DPath
 - [smil_parser_motion.dart:121-156](file://lib/src/animation/smil/smil_parser_motion.dart#L121-L156)
 - [motion_path.dart:23-52](file://lib/src/animation/smil/motion_path.dart#L23-L52)
 - [distance_calculator.dart:117-146](file://lib/src/animation/smil/distance_calculator.dart#L117-L146)
+- [smil_animation_value_computation.dart:102-173](file://lib/src/animation/smil/smil_animation_value_computation.dart#L102-L173)
 
 ## Performance Considerations
 - Path normalization: parsing and arc decomposition occur once during initialization; reuse normalized Path for repeated sampling
 - Segment precomputation: cumulative lengths enable O(1) segment lookup for motion sampling
 - Paced timing: distance sampling across many points is bounded; keep sample count reasonable for smoothness vs. cost
 - Rendering updates: transforms are applied incrementally; avoid unnecessary recomputation by caching path metrics
-
-[No sources needed since this section provides general guidance]
+- **Updated**: Transform attribute processing: using 'transform' as attributeName allows for better renderer optimization and caching
 
 ## Troubleshooting Guide
 Common issues and remedies:
@@ -374,17 +405,20 @@ Common issues and remedies:
   - Ensure arcs are properly decomposed into cubics during parsing
 - Zero-length paths
   - Empty or invalid path data results in zero-length path; validate input and handle gracefully
+- **Updated**: Renderer compatibility issues
+  - Ensure animateMotion uses 'transform' as attributeName for proper renderer recognition
+  - Verify transform values are being applied to the element's transform property
+  - Check that the renderer properly processes transform strings generated by motion animation
 
 **Section sources**
 - [SVGAnimateMotionElement.cpp:57-88](file://blink-b87d44f-Source-core-svg/SVGAnimateMotionElement.cpp#L57-L88)
 - [SVGAnimateMotionElement.cpp:121-131](file://blink-b87d44f-Source-core-svg/SVGAnimateMotionElement.cpp#L121-L131)
 - [SVGPathParser.cpp:237-282](file://blink-b87d44f-Source-core-svg/SVGPathParser.cpp#L237-L282)
 - [motion_path_test.dart:174-187](file://test/animation/motion_path_test.dart#L174-L187)
+- [smil_parser_motion.dart:183-185](file://lib/src/animation/smil/smil_parser_motion.dart#L183-L185)
 
 ## Conclusion
-The SMIL motion animation implementation combines robust path parsing and normalization with efficient per-frame sampling and rotation logic. It supports inline and referenced paths, orientation modes, and paced timing via keyPoints/keyTimes. The architecture cleanly separates concerns between the core engine and Flutter utilities, enabling reliable and performant motion animations across diverse SVG paths.
-
-[No sources needed since this section summarizes without analyzing specific files]
+The SMIL motion animation implementation combines robust path parsing and normalization with efficient per-frame sampling and rotation logic. It supports inline and referenced paths, orientation modes, and paced timing via keyPoints/keyTimes. The architecture cleanly separates concerns between the core engine and Flutter utilities, enabling reliable and performant motion animations across diverse SVG paths. **Updated**: The recent enhancement of using 'transform' as the attributeName significantly improves renderer compatibility and ensures proper processing of motion animations by the underlying graphics system.
 
 ## Appendices
 
@@ -409,11 +443,24 @@ The SMIL motion animation implementation combines robust path parsing and normal
 - [motion_path.dart:77-95](file://lib/src/animation/smil/motion_path.dart#L77-L95)
 - [motion_path.dart:97-145](file://lib/src/animation/smil/motion_path.dart#L97-L145)
 
+### Transform Computation and Renderer Compatibility
+**Updated**: The transform computation process generates renderer-ready transform strings:
+- Motion values are computed as transform strings (translate + optional rotate)
+- The 'transform' attribute name ensures proper renderer recognition
+- Transform strings are applied to the element's supplementalTransform
+- This approach maintains compatibility with existing SVG transform processing
+
+**Section sources**
+- [smil_animation_value_computation.dart:102-173](file://lib/src/animation/smil/smil_animation_value_computation.dart#L102-L173)
+- [smil_parser_motion.dart:183-185](file://lib/src/animation/smil/smil_parser_motion.dart#L183-L185)
+
 ### Debugging Techniques
 - Visual testing: capture frames at key timepoints and compare expected geometry
 - Pixel analysis: verify transform effects and rendering outcomes
 - Deterministic timelines: use controlled initial times and explicit pump durations
 - Golden tests: complement with pixel-level checks for accuracy
+- **Updated**: Renderer compatibility testing: verify that transform attribute values are properly recognized and applied by the renderer
 
 **Section sources**
 - [smil_animate_motion_integration_test.dart:278-302](file://test/animation/smil_animate_motion_integration_test.dart#L278-L302)
+- [smil_parser_motion.dart:183-185](file://lib/src/animation/smil/smil_parser_motion.dart#L183-L185)
