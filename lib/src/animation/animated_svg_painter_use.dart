@@ -177,22 +177,22 @@ class _UseInheritanceContext {
   /// Each level adds its own x/y offset.
   Matrix4 get accumulatedTransform {
     final matrix = Matrix4.identity();
-    
+
     // Start with parent context transform if nested
     if (parentContext != null) {
       matrix.multiply(parentContext!.accumulatedTransform);
     }
-    
+
     // Add this use's x/y offset
     final x = useNode.getAttributeValue('x');
     final y = useNode.getAttributeValue('y');
     final xVal = x is num ? x.toDouble() : double.tryParse(x?.toString() ?? '');
     final yVal = y is num ? y.toDouble() : double.tryParse(y?.toString() ?? '');
-    
+
     if (xVal != null || yVal != null) {
       matrix.translateByDouble(xVal ?? 0.0, yVal ?? 0.0, 0.0, 1.0);
     }
-    
+
     return matrix;
   }
 
@@ -338,10 +338,7 @@ class _UseInheritanceContext {
     if (inlineValue != null) {
       final hasImportant = inlineValue.contains('!important');
       final cleanValue = inlineValue
-          .replaceFirst(
-            RegExp(r'\s*!important\s*$', caseSensitive: false),
-            '',
-          )
+          .replaceFirst(RegExp(r'\s*!important\s*$', caseSensitive: false), '')
           .trim();
       if (cleanValue.isNotEmpty && hasImportant) {
         return cleanValue;
@@ -491,12 +488,12 @@ class _UseInheritanceContext {
   /// Each symbol in the chain may have its own viewBox transform.
   Matrix4 get accumulatedViewBoxTransform {
     final matrix = Matrix4.identity();
-    
+
     // Start with parent context viewBox transform if nested
     if (parentContext != null) {
       matrix.multiply(parentContext!.accumulatedViewBoxTransform);
     }
-    
+
     return matrix;
   }
 

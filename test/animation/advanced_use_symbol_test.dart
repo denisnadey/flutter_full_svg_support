@@ -44,11 +44,11 @@ void main() {
       expect(analysis.pixelCount, greaterThan(1000));
     });
 
-    testWidgets(
-      'style rules from original definition context are preserved',
-      (WidgetTester tester) async {
-        // CSS class in <style> should still apply to referenced elements
-        const svgXml = '''
+    testWidgets('style rules from original definition context are preserved', (
+      WidgetTester tester,
+    ) async {
+      // CSS class in <style> should still apply to referenced elements
+      const svgXml = '''
           <svg viewBox="0 0 100 100">
             <style>.highlight { fill: red; }</style>
             <defs>
@@ -58,23 +58,22 @@ void main() {
           </svg>
         ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-            ),
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
           ),
-        );
+        ),
+      );
 
-        await tester.pump();
+      await tester.pump();
 
-        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
-        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+      final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
 
-        // CSS class rule should apply through use boundary
-        expect(analysis.pixelCount, greaterThan(1000));
-      },
-    );
+      // CSS class rule should apply through use boundary
+      expect(analysis.pixelCount, greaterThan(1000));
+    });
 
     testWidgets(
       'inline styles on referenced elements take precedence over use pres attrs',
@@ -251,13 +250,13 @@ void main() {
   });
 
   group('Event Retargeting', () {
-    testWidgets('use element with ID renders referenced content at correct position', (
-      WidgetTester tester,
-    ) async {
-      // Test that the use element's ID is properly preserved for event handling
-      // While we can't directly test hit-testing without callbacks,
-      // we verify the structure supports retargeting
-      const svgXml = '''
+    testWidgets(
+      'use element with ID renders referenced content at correct position',
+      (WidgetTester tester) async {
+        // Test that the use element's ID is properly preserved for event handling
+        // While we can't directly test hit-testing without callbacks,
+        // we verify the structure supports retargeting
+        const svgXml = '''
         <svg viewBox="0 0 100 100">
           <defs>
             <rect id="innerRect" x="0" y="0" width="50" height="50" fill="red"/>
@@ -266,24 +265,25 @@ void main() {
         </svg>
       ''';
 
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+            ),
           ),
-        ),
-      );
+        );
 
-      await tester.pump();
+        await tester.pump();
 
-      final pixels = await VisualTestUtils.captureWidgetPixels(tester);
-      final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
 
-      // Rect should be positioned at (25,25) per use x/y
-      expect(analysis.pixelCount, greaterThan(1000));
-      expect(analysis.boundingBox.left, greaterThan(40));
-      expect(analysis.boundingBox.top, greaterThan(40));
-    });
+        // Rect should be positioned at (25,25) per use x/y
+        expect(analysis.pixelCount, greaterThan(1000));
+        expect(analysis.boundingBox.left, greaterThan(40));
+        expect(analysis.boundingBox.top, greaterThan(40));
+      },
+    );
 
     testWidgets('nested use with IDs renders at combined position', (
       WidgetTester tester,
@@ -522,9 +522,7 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('missing href handled gracefully', (
-      WidgetTester tester,
-    ) async {
+    testWidgets('missing href handled gracefully', (WidgetTester tester) async {
       const svgXml = '''
         <svg viewBox="0 0 100 100">
           <rect x="10" y="10" width="30" height="30" fill="red"/>
@@ -620,7 +618,7 @@ void main() {
       // Parsing should not crash or hang
       final document = SvgParser.parse(svgXml);
       expect(document.root.tagName, 'svg');
-      
+
       // The self-referencing use element should be parsed
       final useElement = document.root.children.firstWhere(
         (n) => n.tagName == 'use',
@@ -628,7 +626,7 @@ void main() {
       );
       expect(useElement.id, 'self');
       expect(useElement.getAttributeValue('href'), '#self');
-      
+
       // Rect should also be parsed
       final rect = document.root.children.firstWhere(
         (n) => n.tagName == 'rect',

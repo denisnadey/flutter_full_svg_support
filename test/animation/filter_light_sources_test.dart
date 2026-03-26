@@ -26,7 +26,8 @@ void main() {
 
       final document = SvgParser.parse(svgString);
       final filter =
-          document.filters!.getById('distantDiffuse') as SvgDiffuseLightingFilter;
+          document.filters!.getById('distantDiffuse')
+              as SvgDiffuseLightingFilter;
 
       expect(filter.lightSource, isA<SvgDistantLightSource>());
       final light = filter.lightSource as SvgDistantLightSource;
@@ -67,7 +68,8 @@ void main() {
 
       final document = SvgParser.parse(svgString);
       final filter =
-          document.filters!.getById('distantSpecular') as SvgSpecularLightingFilter;
+          document.filters!.getById('distantSpecular')
+              as SvgSpecularLightingFilter;
 
       expect(filter.lightSource, isA<SvgDistantLightSource>());
       expect(filter.specularConstant, 1.5);
@@ -131,7 +133,8 @@ void main() {
 
       final document = SvgParser.parse(svgString);
       final filter =
-          document.filters!.getById('pointSpecular') as SvgSpecularLightingFilter;
+          document.filters!.getById('pointSpecular')
+              as SvgSpecularLightingFilter;
 
       expect(filter.lightSource, isA<SvgPointLightSource>());
       expect(filter.colorFilter(), isNotNull);
@@ -187,7 +190,8 @@ void main() {
 
       final document = SvgParser.parse(svgString);
       final filter =
-          document.filters!.getById('spotSpecular') as SvgSpecularLightingFilter;
+          document.filters!.getById('spotSpecular')
+              as SvgSpecularLightingFilter;
 
       expect(filter.lightSource, isA<SvgSpotLightSource>());
       expect(filter.colorFilter(), isNotNull);
@@ -210,7 +214,8 @@ void main() {
 
       final document = SvgParser.parse(svgString);
       final filter =
-          document.filters!.getById('distantDefaults') as SvgDiffuseLightingFilter;
+          document.filters!.getById('distantDefaults')
+              as SvgDiffuseLightingFilter;
 
       final light = filter.lightSource as SvgDistantLightSource;
       expect(light.azimuth, 0);
@@ -232,7 +237,8 @@ void main() {
 
       final document = SvgParser.parse(svgString);
       final filter =
-          document.filters!.getById('pointDefaults') as SvgDiffuseLightingFilter;
+          document.filters!.getById('pointDefaults')
+              as SvgDiffuseLightingFilter;
 
       final light = filter.lightSource as SvgPointLightSource;
       expect(light.x, 0);
@@ -240,8 +246,10 @@ void main() {
       expect(light.z, 0);
     });
 
-    test('feSpotLight uses default specularExponent=1 and limitingConeAngle=0', () {
-      final svgString = '''
+    test(
+      'feSpotLight uses default specularExponent=1 and limitingConeAngle=0',
+      () {
+        final svgString = '''
 <svg viewBox="0 0 100 100">
   <defs>
     <filter id="spotDefaults">
@@ -253,14 +261,16 @@ void main() {
 </svg>
 ''';
 
-      final document = SvgParser.parse(svgString);
-      final filter =
-          document.filters!.getById('spotDefaults') as SvgDiffuseLightingFilter;
+        final document = SvgParser.parse(svgString);
+        final filter =
+            document.filters!.getById('spotDefaults')
+                as SvgDiffuseLightingFilter;
 
-      final spot = filter.lightSource as SvgSpotLightSource;
-      expect(spot.specularExponent, 1);
-      expect(spot.limitingConeAngle, 0);
-    });
+        final spot = filter.lightSource as SvgSpotLightSource;
+        expect(spot.specularExponent, 1);
+        expect(spot.limitingConeAngle, 0);
+      },
+    );
 
     test('lighting-color defaults to white', () {
       final svgString = '''
@@ -303,8 +313,12 @@ void main() {
       final document = SvgParser.parse(svgString);
       final animations = SmilParser.parseAnimations(document);
 
-      final azimuthAnim = animations.where((a) => a.attributeName == 'azimuth').toList();
-      final elevAnim = animations.where((a) => a.attributeName == 'elevation').toList();
+      final azimuthAnim = animations
+          .where((a) => a.attributeName == 'azimuth')
+          .toList();
+      final elevAnim = animations
+          .where((a) => a.attributeName == 'elevation')
+          .toList();
 
       expect(azimuthAnim, isNotEmpty);
       expect(elevAnim, isNotEmpty);
@@ -359,10 +373,22 @@ void main() {
       final document = SvgParser.parse(svgString);
       final animations = SmilParser.parseAnimations(document);
 
-      expect(animations.where((a) => a.attributeName == 'pointsAtX'), isNotEmpty);
-      expect(animations.where((a) => a.attributeName == 'pointsAtY'), isNotEmpty);
-      expect(animations.where((a) => a.attributeName == 'specularExponent'), isNotEmpty);
-      expect(animations.where((a) => a.attributeName == 'limitingConeAngle'), isNotEmpty);
+      expect(
+        animations.where((a) => a.attributeName == 'pointsAtX'),
+        isNotEmpty,
+      );
+      expect(
+        animations.where((a) => a.attributeName == 'pointsAtY'),
+        isNotEmpty,
+      );
+      expect(
+        animations.where((a) => a.attributeName == 'specularExponent'),
+        isNotEmpty,
+      );
+      expect(
+        animations.where((a) => a.attributeName == 'limitingConeAngle'),
+        isNotEmpty,
+      );
     });
   });
 
@@ -385,7 +411,8 @@ void main() {
 
       final document = SvgParser.parse(svgString);
       final filter =
-          document.filters!.getById('multipleLight') as SvgDiffuseLightingFilter;
+          document.filters!.getById('multipleLight')
+              as SvgDiffuseLightingFilter;
 
       // Should use the first light source (feDistantLight)
       expect(filter.lightSource, isA<SvgDistantLightSource>());
@@ -419,9 +446,12 @@ void main() {
 
       final document = SvgParser.parse(svgString);
 
-      final f1 = document.filters!.getById('filter1') as SvgDiffuseLightingFilter;
-      final f2 = document.filters!.getById('filter2') as SvgDiffuseLightingFilter;
-      final f3 = document.filters!.getById('filter3') as SvgSpecularLightingFilter;
+      final f1 =
+          document.filters!.getById('filter1') as SvgDiffuseLightingFilter;
+      final f2 =
+          document.filters!.getById('filter2') as SvgDiffuseLightingFilter;
+      final f3 =
+          document.filters!.getById('filter3') as SvgSpecularLightingFilter;
 
       expect(f1.lightSource, isA<SvgDistantLightSource>());
       expect(f2.lightSource, isA<SvgPointLightSource>());

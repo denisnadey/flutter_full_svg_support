@@ -21,7 +21,8 @@ void main() {
 ''';
 
         final document = SvgParser.parse(svgString);
-        final filter = document.filters!.getById('morphDup') as SvgMorphologyFilter;
+        final filter =
+            document.filters!.getById('morphDup') as SvgMorphologyFilter;
         expect(filter.edgeMode, SvgConvolveEdgeMode.duplicate);
         expect(filter.operatorType, SvgMorphologyOperator.dilate);
         expect(filter.radiusX, 2.0);
@@ -41,7 +42,8 @@ void main() {
 ''';
 
         final document = SvgParser.parse(svgString);
-        final filter = document.filters!.getById('morphWrap') as SvgMorphologyFilter;
+        final filter =
+            document.filters!.getById('morphWrap') as SvgMorphologyFilter;
         expect(filter.edgeMode, SvgConvolveEdgeMode.wrap);
         expect(filter.operatorType, SvgMorphologyOperator.erode);
         expect(filter.radiusX, 3.0);
@@ -61,16 +63,50 @@ void main() {
 ''';
 
         final document = SvgParser.parse(svgString);
-        final filter = document.filters!.getById('morphNone') as SvgMorphologyFilter;
+        final filter =
+            document.filters!.getById('morphNone') as SvgMorphologyFilter;
         expect(filter.edgeMode, SvgConvolveEdgeMode.none);
       });
 
       test('MorphologyProcessor erode with duplicate edge mode', () {
         // 3x3 image with white center
         final pixels = Uint8List.fromList([
-          0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255,
-          0, 0, 0, 255, 255, 255, 255, 255, 0, 0, 0, 255,
-          0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255,
+          0,
+          0,
+          0,
+          255,
+          0,
+          0,
+          0,
+          255,
+          0,
+          0,
+          0,
+          255,
+          0,
+          0,
+          0,
+          255,
+          255,
+          255,
+          255,
+          255,
+          0,
+          0,
+          0,
+          255,
+          0,
+          0,
+          0,
+          255,
+          0,
+          0,
+          0,
+          255,
+          0,
+          0,
+          0,
+          255,
         ]);
 
         final result = MorphologyProcessor.applyMorphology(
@@ -93,9 +129,42 @@ void main() {
       test('MorphologyProcessor dilate with wrap edge mode', () {
         // 3x3 image with single white corner pixel
         final pixels = Uint8List.fromList([
-          255, 255, 255, 255, 0, 0, 0, 255, 0, 0, 0, 255,
-          0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255,
-          0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255,
+          255,
+          255,
+          255,
+          255,
+          0,
+          0,
+          0,
+          255,
+          0,
+          0,
+          0,
+          255,
+          0,
+          0,
+          0,
+          255,
+          0,
+          0,
+          0,
+          255,
+          0,
+          0,
+          0,
+          255,
+          0,
+          0,
+          0,
+          255,
+          0,
+          0,
+          0,
+          255,
+          0,
+          0,
+          0,
+          255,
         ]);
 
         final result = MorphologyProcessor.applyMorphology(
@@ -116,8 +185,22 @@ void main() {
       test('MorphologyProcessor dilate with none edge mode', () {
         // 2x2 image
         final pixels = Uint8List.fromList([
-          255, 0, 0, 255, 0, 255, 0, 255,
-          0, 0, 255, 255, 128, 128, 128, 255,
+          255,
+          0,
+          0,
+          255,
+          0,
+          255,
+          0,
+          255,
+          0,
+          0,
+          255,
+          255,
+          128,
+          128,
+          128,
+          255,
         ]);
 
         final result = MorphologyProcessor.applyMorphology(
@@ -152,7 +235,8 @@ void main() {
 ''';
 
         final document = SvgParser.parse(svgString);
-        final filter = document.filters!.getById('convKUL') as SvgConvolveMatrixFilter;
+        final filter =
+            document.filters!.getById('convKUL') as SvgConvolveMatrixFilter;
         expect(filter.kernelUnitLengthX, 2.0);
         expect(filter.kernelUnitLengthY, 3.0);
         expect(filter.edgeMode, SvgConvolveEdgeMode.wrap);
@@ -209,7 +293,8 @@ void main() {
 ''';
 
         final document = SvgParser.parse(svgString);
-        final filter = document.filters!.getById('convPA') as SvgConvolveMatrixFilter;
+        final filter =
+            document.filters!.getById('convPA') as SvgConvolveMatrixFilter;
         expect(filter.preserveAlpha, isTrue);
         expect(filter.edgeMode, SvgConvolveEdgeMode.none);
       });
@@ -264,7 +349,8 @@ void main() {
 ''';
 
         final document = SvgParser.parse(svgString);
-        final filter = document.filters!.getById('turbAnim') as SvgTurbulenceFilter;
+        final filter =
+            document.filters!.getById('turbAnim') as SvgTurbulenceFilter;
         expect(filter.baseFrequencyX, 0.05);
         expect(filter.baseFrequencyY, 0.02);
         expect(filter.numOctaves, 3);
@@ -287,7 +373,8 @@ void main() {
 ''';
 
         final document = SvgParser.parse(svgString);
-        final filter = document.filters!.getById('turbOct') as SvgTurbulenceFilter;
+        final filter =
+            document.filters!.getById('turbOct') as SvgTurbulenceFilter;
         expect(filter.numOctaves, 5);
       });
 
@@ -306,7 +393,8 @@ void main() {
 ''';
 
         final document = SvgParser.parse(svgString);
-        final filter = document.filters!.getById('turbSeed') as SvgTurbulenceFilter;
+        final filter =
+            document.filters!.getById('turbSeed') as SvgTurbulenceFilter;
         expect(filter.seed, 123.0);
       });
 
@@ -320,22 +408,28 @@ void main() {
         expect(value1, value2);
       });
 
-      test('TurbulenceNoiseGenerator different seeds produce different output', () {
-        final gen1 = TurbulenceNoiseGenerator(42.0);
-        final gen2 = TurbulenceNoiseGenerator(12345.0);
+      test(
+        'TurbulenceNoiseGenerator different seeds produce different output',
+        () {
+          final gen1 = TurbulenceNoiseGenerator(42.0);
+          final gen2 = TurbulenceNoiseGenerator(12345.0);
 
-        // Test at multiple coordinates to ensure different patterns
-        final value1a = gen1.noise2D(1.5, 2.5);
-        final value2a = gen2.noise2D(1.5, 2.5);
+          // Test at multiple coordinates to ensure different patterns
+          final value1a = gen1.noise2D(1.5, 2.5);
+          final value2a = gen2.noise2D(1.5, 2.5);
 
-        final value1b = gen1.noise2D(3.7, 4.2);
-        final value2b = gen2.noise2D(3.7, 4.2);
+          final value1b = gen1.noise2D(3.7, 4.2);
+          final value2b = gen2.noise2D(3.7, 4.2);
 
-        // At least one of the coordinate pairs should have different values
-        final hasDifference = value1a != value2a || value1b != value2b;
-        expect(hasDifference, isTrue,
-            reason: 'Different seeds should produce different noise patterns');
-      });
+          // At least one of the coordinate pairs should have different values
+          final hasDifference = value1a != value2a || value1b != value2b;
+          expect(
+            hasDifference,
+            isTrue,
+            reason: 'Different seeds should produce different noise patterns',
+          );
+        },
+      );
     });
 
     group('feTile Advanced Tiling', () {
@@ -352,7 +446,8 @@ void main() {
 ''';
 
         final document = SvgParser.parse(svgString);
-        final filter = document.filters!.getById('tileSubregion') as SvgTileFilter;
+        final filter =
+            document.filters!.getById('tileSubregion') as SvgTileFilter;
         expect(filter.x, 10.0);
         expect(filter.y, 10.0);
         expect(filter.width, 50.0);
@@ -380,8 +475,22 @@ void main() {
       test('TileProcessor tiles smaller input to larger output', () {
         // 2x2 input image
         final input = Uint8List.fromList([
-          255, 0, 0, 255, 0, 255, 0, 255,
-          0, 0, 255, 255, 255, 255, 0, 255,
+          255,
+          0,
+          0,
+          255,
+          0,
+          255,
+          0,
+          255,
+          0,
+          0,
+          255,
+          255,
+          255,
+          255,
+          0,
+          255,
         ]);
 
         // Tile to 4x4
@@ -405,8 +514,22 @@ void main() {
       test('TileProcessor tiles with offset', () {
         // 2x2 input
         final input = Uint8List.fromList([
-          255, 0, 0, 255, 0, 255, 0, 255,
-          0, 0, 255, 255, 255, 255, 255, 255,
+          255,
+          0,
+          0,
+          255,
+          0,
+          255,
+          0,
+          255,
+          0,
+          0,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
         ]);
 
         // Tile to 4x4 with offset
@@ -463,7 +586,8 @@ void main() {
 ''';
 
         final document = SvgParser.parse(svgString);
-        final filter = document.filters!.getById('dispScale') as SvgDisplacementMapFilter;
+        final filter =
+            document.filters!.getById('dispScale') as SvgDisplacementMapFilter;
         expect(filter.scale, 20.0);
         expect(filter.xChannelSelector, SvgChannelSelector.r);
         expect(filter.yChannelSelector, SvgChannelSelector.g);
@@ -484,19 +608,48 @@ void main() {
 ''';
 
         final document = SvgParser.parse(svgString);
-        final filter = document.filters!.getById('dispAnim') as SvgDisplacementMapFilter;
+        final filter =
+            document.filters!.getById('dispAnim') as SvgDisplacementMapFilter;
         expect(filter.scale, 10.0);
       });
 
       test('DisplacementMapProcessor with zero scale is identity', () {
         final pixels = Uint8List.fromList([
-          255, 0, 0, 255, 0, 255, 0, 255,
-          0, 0, 255, 255, 128, 128, 128, 255,
+          255,
+          0,
+          0,
+          255,
+          0,
+          255,
+          0,
+          255,
+          0,
+          0,
+          255,
+          255,
+          128,
+          128,
+          128,
+          255,
         ]);
 
         final mapPixels = Uint8List.fromList([
-          128, 128, 128, 255, 128, 128, 128, 255,
-          128, 128, 128, 255, 128, 128, 128, 255,
+          128,
+          128,
+          128,
+          255,
+          128,
+          128,
+          128,
+          255,
+          128,
+          128,
+          128,
+          255,
+          128,
+          128,
+          128,
+          255,
         ]);
 
         final result = DisplacementMapProcessor.applyDisplacement(
@@ -516,14 +669,42 @@ void main() {
 
       test('DisplacementMapProcessor with clamp edge mode', () {
         final pixels = Uint8List.fromList([
-          255, 0, 0, 255, 0, 255, 0, 255,
-          0, 0, 255, 255, 128, 128, 128, 255,
+          255,
+          0,
+          0,
+          255,
+          0,
+          255,
+          0,
+          255,
+          0,
+          0,
+          255,
+          255,
+          128,
+          128,
+          128,
+          255,
         ]);
 
         // Map with values that cause displacement outside bounds
         final mapPixels = Uint8List.fromList([
-          255, 255, 0, 255, 0, 0, 0, 255,
-          128, 128, 0, 255, 128, 128, 0, 255,
+          255,
+          255,
+          0,
+          255,
+          0,
+          0,
+          0,
+          255,
+          128,
+          128,
+          0,
+          255,
+          128,
+          128,
+          0,
+          255,
         ]);
 
         final result = DisplacementMapProcessor.applyDisplacement(
@@ -543,13 +724,41 @@ void main() {
 
       test('DisplacementMapProcessor with wrap edge mode', () {
         final pixels = Uint8List.fromList([
-          255, 0, 0, 255, 0, 255, 0, 255,
-          0, 0, 255, 255, 128, 128, 128, 255,
+          255,
+          0,
+          0,
+          255,
+          0,
+          255,
+          0,
+          255,
+          0,
+          0,
+          255,
+          255,
+          128,
+          128,
+          128,
+          255,
         ]);
 
         final mapPixels = Uint8List.fromList([
-          255, 255, 0, 255, 128, 128, 0, 255,
-          128, 128, 0, 255, 128, 128, 0, 255,
+          255,
+          255,
+          0,
+          255,
+          128,
+          128,
+          0,
+          255,
+          128,
+          128,
+          0,
+          255,
+          128,
+          128,
+          0,
+          255,
         ]);
 
         final result = DisplacementMapProcessor.applyDisplacement(
@@ -566,29 +775,32 @@ void main() {
         expect(result.length, pixels.length);
       });
 
-      test('DisplacementMapProcessor with none edge mode returns transparent black', () {
-        // Single pixel
-        final pixels = Uint8List.fromList([255, 0, 0, 255]);
-        // Map causes large displacement
-        final mapPixels = Uint8List.fromList([255, 255, 0, 255]);
+      test(
+        'DisplacementMapProcessor with none edge mode returns transparent black',
+        () {
+          // Single pixel
+          final pixels = Uint8List.fromList([255, 0, 0, 255]);
+          // Map causes large displacement
+          final mapPixels = Uint8List.fromList([255, 255, 0, 255]);
 
-        final result = DisplacementMapProcessor.applyDisplacement(
-          inputPixels: pixels,
-          mapPixels: mapPixels,
-          width: 1,
-          height: 1,
-          scale: 100.0, // Large scale to ensure out-of-bounds
-          xChannel: SvgChannelSelector.r,
-          yChannel: SvgChannelSelector.g,
-          edgeMode: SvgDisplacementEdgeMode.none,
-        );
+          final result = DisplacementMapProcessor.applyDisplacement(
+            inputPixels: pixels,
+            mapPixels: mapPixels,
+            width: 1,
+            height: 1,
+            scale: 100.0, // Large scale to ensure out-of-bounds
+            xChannel: SvgChannelSelector.r,
+            yChannel: SvgChannelSelector.g,
+            edgeMode: SvgDisplacementEdgeMode.none,
+          );
 
-        // Out-of-bounds should return transparent black
-        expect(result[0], 0); // R
-        expect(result[1], 0); // G
-        expect(result[2], 0); // B
-        expect(result[3], 0); // A
-      });
+          // Out-of-bounds should return transparent black
+          expect(result[0], 0); // R
+          expect(result[1], 0); // G
+          expect(result[2], 0); // B
+          expect(result[3], 0); // A
+        },
+      );
 
       test('feDisplacementMap channel selectors', () {
         final svgString = '''
@@ -604,7 +816,9 @@ void main() {
 ''';
 
         final document = SvgParser.parse(svgString);
-        final filter = document.filters!.getById('dispChannels') as SvgDisplacementMapFilter;
+        final filter =
+            document.filters!.getById('dispChannels')
+                as SvgDisplacementMapFilter;
         expect(filter.xChannelSelector, SvgChannelSelector.b);
         expect(filter.yChannelSelector, SvgChannelSelector.a);
       });

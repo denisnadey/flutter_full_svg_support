@@ -488,9 +488,11 @@ extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
     paintContent();
 
     // Apply mask
-    final maskPaint = maskType == _SvgMaskType.luminance
-        ? _createLuminanceMaskPaint()
-        : ui.Paint()..blendMode = ui.BlendMode.dstIn;
+    final maskPaint =
+        maskType == _SvgMaskType.luminance
+              ? _createLuminanceMaskPaint()
+              : ui.Paint()
+          ..blendMode = ui.BlendMode.dstIn;
 
     canvas.saveLayer(maskBounds, maskPaint);
 
@@ -751,7 +753,10 @@ extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
     required SvgNode clipPathNode,
     required Set<String> useStack,
   }) {
-    final clipUnits = _getString(clipPathNode, 'clipPathUnits')?.trim().toLowerCase();
+    final clipUnits = _getString(
+      clipPathNode,
+      'clipPathUnits',
+    )?.trim().toLowerCase();
     final isObjectBoundingBox = clipUnits == 'objectboundingbox';
 
     // Build the base clip path
@@ -841,7 +846,10 @@ extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
     }
 
     // Determine units for this clipPath
-    final units = _getString(clipPathNode, 'clipPathUnits')?.trim().toLowerCase();
+    final units = _getString(
+      clipPathNode,
+      'clipPathUnits',
+    )?.trim().toLowerCase();
     final isObjectBoundingBox = units == 'objectboundingbox';
 
     // Build primary clip path with correct coordinate system
@@ -935,6 +943,6 @@ extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
   bool _isZeroAreaClipPath(ui.Path clipPath) {
     final bounds = clipPath.getBounds();
     return bounds.width.abs() < _kMinBoundingBoxDimension ||
-           bounds.height.abs() < _kMinBoundingBoxDimension;
+        bounds.height.abs() < _kMinBoundingBoxDimension;
   }
 }

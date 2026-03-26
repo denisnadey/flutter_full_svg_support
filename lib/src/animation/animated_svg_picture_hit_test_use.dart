@@ -132,7 +132,8 @@ extension _AnimatedSvgPictureStateHitTestUseExtension
 
     // Create context for pointer-events inheritance and event retargeting.
     // Pass the use element ID for event retargeting.
-    final useContext = context?.copyWith(
+    final useContext =
+        context?.copyWith(
           inheritedPointerEvents: usePointerEvents,
           useElementId: useNode.id,
           useNode: useNode,
@@ -196,9 +197,7 @@ extension _AnimatedSvgPictureStateHitTestUseExtension
           useContext: useContext,
         );
         // Apply event retargeting
-        return hitResult != null
-            ? useContext.getRetargetedId(hitResult)
-            : null;
+        return hitResult != null ? useContext.getRetargetedId(hitResult) : null;
       }
 
       final hitResult = _hitTestNodeWithUseContext(

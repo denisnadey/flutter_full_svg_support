@@ -77,8 +77,9 @@ extension AnimatedSvgPainterTextStyleFontExtension on AnimatedSvgPainter {
 
     // Remove duplicates while preserving order
     final seen = <String>{};
-    final uniqueFamilies =
-        families.where((f) => seen.add(f.toLowerCase())).toList();
+    final uniqueFamilies = families
+        .where((f) => seen.add(f.toLowerCase()))
+        .toList();
 
     return uniqueFamilies.join(', ');
   }
@@ -139,13 +140,28 @@ extension AnimatedSvgPainterTextStyleFontExtension on AnimatedSvgPainter {
           'sans-serif',
         ];
       case 'ui-rounded':
-        return <String>['SF Pro Rounded', 'Nunito', 'Varela Round', 'sans-serif'];
+        return <String>[
+          'SF Pro Rounded',
+          'Nunito',
+          'Varela Round',
+          'sans-serif',
+        ];
       case 'math':
         // Fonts suitable for mathematical typesetting
-        return <String>['Cambria Math', 'STIX Two Math', 'Latin Modern Math', 'serif'];
+        return <String>[
+          'Cambria Math',
+          'STIX Two Math',
+          'Latin Modern Math',
+          'serif',
+        ];
       case 'emoji':
         // Emoji fonts
-        return <String>['Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', family];
+        return <String>[
+          'Apple Color Emoji',
+          'Segoe UI Emoji',
+          'Noto Color Emoji',
+          family,
+        ];
       default:
         // Keep original family name
         return <String>[family];

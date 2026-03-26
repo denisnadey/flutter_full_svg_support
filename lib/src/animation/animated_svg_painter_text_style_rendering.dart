@@ -353,12 +353,9 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
         // Start new run
         currentStart = i;
         currentDirection = charDirection;
-        runs.add(_BidiRun(
-          text: '',
-          direction: charDirection,
-          start: i,
-          end: i,
-        ));
+        runs.add(
+          _BidiRun(text: '', direction: charDirection, start: i, end: i),
+        );
       }
 
       i++;
@@ -373,12 +370,14 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
         end: text.length,
       );
     } else {
-      runs.add(_BidiRun(
-        text: text,
-        direction: baseDirection,
-        start: 0,
-        end: text.length,
-      ));
+      runs.add(
+        _BidiRun(
+          text: text,
+          direction: baseDirection,
+          start: 0,
+          end: text.length,
+        ),
+      );
     }
 
     return runs;

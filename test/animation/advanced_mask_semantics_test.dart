@@ -9,11 +9,11 @@ import 'visual_test_utils.dart';
 /// and animated mask morphing.
 void main() {
   group('Luminosity Masking', () {
-    testWidgets('luminance mask converts colored content to grayscale opacity', (
-      WidgetTester tester,
-    ) async {
-      // White has luminance 1.0, black has 0.0, red has ~0.2126
-      const svgXml = '''
+    testWidgets(
+      'luminance mask converts colored content to grayscale opacity',
+      (WidgetTester tester) async {
+        // White has luminance 1.0, black has 0.0, red has ~0.2126
+        const svgXml = '''
         <svg viewBox="0 0 100 100">
           <defs>
             <mask id="lumMask" type="luminance">
@@ -27,23 +27,24 @@ void main() {
         </svg>
       ''';
 
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+            ),
           ),
-        ),
-      );
+        );
 
-      await tester.pump();
+        await tester.pump();
 
-      final pixels = await VisualTestUtils.captureWidgetPixels(tester);
-      final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
 
-      // White region should show red, black region should be transparent
-      expect(analysis.pixelCount, greaterThan(100));
-      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-    });
+        // White region should show red, black region should be transparent
+        expect(analysis.pixelCount, greaterThan(100));
+        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+      },
+    );
 
     testWidgets('mask-type attribute alpha uses alpha channel', (
       WidgetTester tester,
@@ -282,11 +283,11 @@ void main() {
       expect(analysis.pixelCount, greaterThan(200));
     });
 
-    testWidgets('maskContentUnits userSpaceOnUse uses absolute content coords', (
-      WidgetTester tester,
-    ) async {
-      // Default: mask content in absolute user space coordinates
-      const svgXml = '''
+    testWidgets(
+      'maskContentUnits userSpaceOnUse uses absolute content coords',
+      (WidgetTester tester) async {
+        // Default: mask content in absolute user space coordinates
+        const svgXml = '''
         <svg viewBox="0 0 100 100">
           <defs>
             <mask id="mask" maskContentUnits="userSpaceOnUse">
@@ -298,21 +299,22 @@ void main() {
         </svg>
       ''';
 
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+            ),
           ),
-        ),
-      );
+        );
 
-      await tester.pump();
+        await tester.pump();
 
-      final pixels = await VisualTestUtils.captureWidgetPixels(tester);
-      final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
 
-      expect(analysis.pixelCount, greaterThan(200));
-    });
+        expect(analysis.pixelCount, greaterThan(200));
+      },
+    );
 
     testWidgets('mixed maskUnits and maskContentUnits', (
       WidgetTester tester,
@@ -420,9 +422,7 @@ void main() {
   });
 
   group('Animated Mask Morphing', () {
-    testWidgets('animated mask content via SMIL', (
-      WidgetTester tester,
-    ) async {
+    testWidgets('animated mask content via SMIL', (WidgetTester tester) async {
       // Mask content can be animated
       const svgXml = '''
         <svg viewBox="0 0 100 100">
@@ -457,9 +457,7 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('animated mask region attributes', (
-      WidgetTester tester,
-    ) async {
+    testWidgets('animated mask region attributes', (WidgetTester tester) async {
       // Mask region (x, y, width, height) can be animated
       const svgXml = '''
         <svg viewBox="0 0 100 100">

@@ -98,7 +98,11 @@ extension AnimatedSvgPainterClipMaskExtension on AnimatedSvgPainter {
     }
 
     // Intersect both clip paths for the cascading effect
-    return ui.Path.combine(ui.PathOperation.intersect, primaryPath, cascadePath);
+    return ui.Path.combine(
+      ui.PathOperation.intersect,
+      primaryPath,
+      cascadePath,
+    );
   }
 
   void _applyMask(

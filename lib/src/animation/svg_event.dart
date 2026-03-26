@@ -337,12 +337,7 @@ class SvgWheelEvent extends SvgMouseEvent {
     required this.deltaY,
     this.deltaZ = 0.0,
     this.deltaMode = SvgWheelDeltaMode.pixel,
-  }) : super(
-          type: 'wheel',
-          bubbles: true,
-          cancelable: true,
-          composed: false,
-        );
+  }) : super(type: 'wheel', bubbles: true, cancelable: true, composed: false);
 
   /// Horizontal scroll amount.
   final double deltaX;
@@ -381,11 +376,11 @@ class SvgContextMenuEvent extends SvgMouseEvent {
     super.metaKey = false,
     super.shiftKey = false,
   }) : super(
-          type: 'contextmenu',
-          bubbles: true,
-          cancelable: true,
-          composed: false,
-        );
+         type: 'contextmenu',
+         bubbles: true,
+         cancelable: true,
+         composed: false,
+       );
 }
 
 /// Offset class for position information.

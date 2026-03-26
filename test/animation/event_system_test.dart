@@ -60,9 +60,10 @@ void main() {
         expect(find.byType(AnimatedSvgPicture), findsOneWidget);
       });
 
-      testWidgets('nested element event flow follows capture -> target -> bubble',
-          (WidgetTester tester) async {
-        const svgXml = '''
+      testWidgets(
+        'nested element event flow follows capture -> target -> bubble',
+        (WidgetTester tester) async {
+          const svgXml = '''
           <svg viewBox="0 0 100 100">
             <g id="level1">
               <g id="level2">
@@ -76,52 +77,55 @@ void main() {
           </svg>
         ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: Center(
-                child: AnimatedSvgPicture.string(
-                  svgXml,
-                  width: 200,
-                  height: 200,
-                  autoPlay: true,
+          await tester.pumpWidget(
+            const MaterialApp(
+              home: Scaffold(
+                body: Center(
+                  child: AnimatedSvgPicture.string(
+                    svgXml,
+                    width: 200,
+                    height: 200,
+                    autoPlay: true,
+                  ),
                 ),
               ),
             ),
-          ),
-        );
+          );
 
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 100));
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 100));
 
-        final pictureFinder = find.byType(AnimatedSvgPicture);
-        final center = tester.getCenter(pictureFinder);
+          final pictureFinder = find.byType(AnimatedSvgPicture);
+          final center = tester.getCenter(pictureFinder);
 
-        final beforePixels = await VisualTestUtils.captureWidgetPixels(tester);
-        final beforeAnalysis = VisualTestUtils.analyzeRedPixels(
-          beforePixels,
-          800,
-          600,
-        );
+          final beforePixels = await VisualTestUtils.captureWidgetPixels(
+            tester,
+          );
+          final beforeAnalysis = VisualTestUtils.analyzeRedPixels(
+            beforePixels,
+            800,
+            600,
+          );
 
-        // Click on target - event should bubble to level1
-        await tester.tapAt(center);
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 500));
+          // Click on target - event should bubble to level1
+          await tester.tapAt(center);
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 500));
 
-        final afterPixels = await VisualTestUtils.captureWidgetPixels(tester);
-        final afterAnalysis = VisualTestUtils.analyzeRedPixels(
-          afterPixels,
-          800,
-          600,
-        );
+          final afterPixels = await VisualTestUtils.captureWidgetPixels(tester);
+          final afterAnalysis = VisualTestUtils.analyzeRedPixels(
+            afterPixels,
+            800,
+            600,
+          );
 
-        // Animation should have started (event bubbled through levels)
-        expect(
-          (afterAnalysis.centroid.dx - beforeAnalysis.centroid.dx).abs(),
-          greaterThan(5),
-        );
-      });
+          // Animation should have started (event bubbled through levels)
+          expect(
+            (afterAnalysis.centroid.dx - beforeAnalysis.centroid.dx).abs(),
+            greaterThan(5),
+          );
+        },
+      );
     });
 
     group('stopPropagation and stopImmediatePropagation', () {
@@ -143,27 +147,33 @@ void main() {
         expect(event.immediatePropagationStopped, isTrue);
       });
 
-      test('stopImmediatePropagation stops remaining handlers on same element',
-          () {
-        int handler1Called = 0;
-        int handler2Called = 0;
+      test(
+        'stopImmediatePropagation stops remaining handlers on same element',
+        () {
+          int handler1Called = 0;
+          int handler2Called = 0;
 
-        final eventTarget = SvgEventTarget();
-        eventTarget.addEventListener('click', (event) {
-          handler1Called++;
-          event.stopImmediatePropagation();
-        });
-        eventTarget.addEventListener('click', (event) {
-          handler2Called++;
-        });
+          final eventTarget = SvgEventTarget();
+          eventTarget.addEventListener('click', (event) {
+            handler1Called++;
+            event.stopImmediatePropagation();
+          });
+          eventTarget.addEventListener('click', (event) {
+            handler2Called++;
+          });
 
-        final event = SvgEvent(type: 'click', bubbles: true, cancelable: true);
-        event.setEventPhaseInternal(SvgEventPhase.atTarget);
-        eventTarget.dispatchEvent(event);
+          final event = SvgEvent(
+            type: 'click',
+            bubbles: true,
+            cancelable: true,
+          );
+          event.setEventPhaseInternal(SvgEventPhase.atTarget);
+          eventTarget.dispatchEvent(event);
 
-        expect(handler1Called, equals(1));
-        expect(handler2Called, equals(0)); // Should not be called
-      });
+          expect(handler1Called, equals(1));
+          expect(handler2Called, equals(0)); // Should not be called
+        },
+      );
     });
 
     group('preventDefault', () {
@@ -319,23 +329,41 @@ void main() {
       });
 
       test('element with tabindex=0 is focusable', () {
-        final node = SvgNode(tagName: 'rect', attributes: {
-          'tabindex': AnimatableSvgAttribute(name: 'tabindex', baseValue: '0'),
-        });
+        final node = SvgNode(
+          tagName: 'rect',
+          attributes: {
+            'tabindex': AnimatableSvgAttribute(
+              name: 'tabindex',
+              baseValue: '0',
+            ),
+          },
+        );
         expect(isFocusableElement(node), isTrue);
       });
 
       test('element with tabindex=-1 is focusable', () {
-        final node = SvgNode(tagName: 'rect', attributes: {
-          'tabindex': AnimatableSvgAttribute(name: 'tabindex', baseValue: '-1'),
-        });
+        final node = SvgNode(
+          tagName: 'rect',
+          attributes: {
+            'tabindex': AnimatableSvgAttribute(
+              name: 'tabindex',
+              baseValue: '-1',
+            ),
+          },
+        );
         expect(isFocusableElement(node), isTrue);
       });
 
       test('element with invalid tabindex is not focusable', () {
-        final node = SvgNode(tagName: 'rect', attributes: {
-          'tabindex': AnimatableSvgAttribute(name: 'tabindex', baseValue: 'abc'),
-        });
+        final node = SvgNode(
+          tagName: 'rect',
+          attributes: {
+            'tabindex': AnimatableSvgAttribute(
+              name: 'tabindex',
+              baseValue: 'abc',
+            ),
+          },
+        );
         expect(isFocusableElement(node), isFalse);
       });
     });
@@ -395,10 +423,7 @@ void main() {
 
     group('Context Menu Event', () {
       test('SvgContextMenuEvent has correct properties', () {
-        final event = SvgContextMenuEvent(
-          clientX: 100.0,
-          clientY: 100.0,
-        );
+        final event = SvgContextMenuEvent(clientX: 100.0, clientY: 100.0);
 
         expect(event.type, equals('contextmenu'));
         expect(event.bubbles, isTrue);
@@ -552,12 +577,18 @@ void main() {
       });
 
       test('event target retargeting for non-composed events', () {
-        final useElement = SvgNode(tagName: 'use', attributes: {
-          'id': AnimatableSvgAttribute(name: 'id', baseValue: 'use1'),
-        });
-        final target = SvgNode(tagName: 'rect', attributes: {
-          'id': AnimatableSvgAttribute(name: 'id', baseValue: 'rect1'),
-        });
+        final useElement = SvgNode(
+          tagName: 'use',
+          attributes: {
+            'id': AnimatableSvgAttribute(name: 'id', baseValue: 'use1'),
+          },
+        );
+        final target = SvgNode(
+          tagName: 'rect',
+          attributes: {
+            'id': AnimatableSvgAttribute(name: 'id', baseValue: 'rect1'),
+          },
+        );
 
         final event = SvgEvent(
           type: 'click',
@@ -574,12 +605,18 @@ void main() {
       });
 
       test('composed events do not retarget', () {
-        final useElement = SvgNode(tagName: 'use', attributes: {
-          'id': AnimatableSvgAttribute(name: 'id', baseValue: 'use1'),
-        });
-        final target = SvgNode(tagName: 'rect', attributes: {
-          'id': AnimatableSvgAttribute(name: 'id', baseValue: 'rect1'),
-        });
+        final useElement = SvgNode(
+          tagName: 'use',
+          attributes: {
+            'id': AnimatableSvgAttribute(name: 'id', baseValue: 'use1'),
+          },
+        );
+        final target = SvgNode(
+          tagName: 'rect',
+          attributes: {
+            'id': AnimatableSvgAttribute(name: 'id', baseValue: 'rect1'),
+          },
+        );
 
         final event = SvgEvent(
           type: 'click',
@@ -682,11 +719,7 @@ void main() {
           hoverCount++;
         });
 
-        final event = SvgEvent(
-          type: 'click',
-          bubbles: true,
-          cancelable: true,
-        );
+        final event = SvgEvent(type: 'click', bubbles: true, cancelable: true);
         event.setEventPhaseInternal(SvgEventPhase.atTarget);
         target.dispatchEvent(event);
 

@@ -510,7 +510,9 @@ void main() {
   });
 
   group('Edge Cases', () {
-    testWidgets('zero-size viewport renders nothing visible', (WidgetTester tester) async {
+    testWidgets('zero-size viewport renders nothing visible', (
+      WidgetTester tester,
+    ) async {
       // An SVG element with zero width should produce an empty viewport.
       // Per SVG spec, the content may still exist but is clipped to nothing.
       // The test verifies that effectively no red is visible in the output.

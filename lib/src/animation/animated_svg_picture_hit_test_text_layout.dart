@@ -98,15 +98,17 @@ extension _AnimatedSvgPictureStateHitTestTextLayoutExtension
     double offset = 0.0;
     for (final run in runs) {
       final measure = _measureText(run.text, node);
-      measures.add(_BidiTextMeasure(
-        text: run.text,
-        direction: run.direction,
-        start: run.start,
-        end: run.end,
-        width: measure.width,
-        height: measure.height,
-        offset: offset,
-      ));
+      measures.add(
+        _BidiTextMeasure(
+          text: run.text,
+          direction: run.direction,
+          start: run.start,
+          end: run.end,
+          width: measure.width,
+          height: measure.height,
+          offset: offset,
+        ),
+      );
       offset += measure.width;
     }
 
@@ -120,8 +122,9 @@ extension _AnimatedSvgPictureStateHitTestTextLayoutExtension
     }
 
     final directionAttr = _getInheritedString(node, 'direction');
-    final baseDirection =
-        directionAttr == 'rtl' ? TextDirection.rtl : TextDirection.ltr;
+    final baseDirection = directionAttr == 'rtl'
+        ? TextDirection.rtl
+        : TextDirection.ltr;
 
     final runs = <_HitTestBidiRun>[];
     var currentStart = 0;
@@ -160,12 +163,9 @@ extension _AnimatedSvgPictureStateHitTestTextLayoutExtension
         }
         currentStart = i;
         currentDirection = charDirection;
-        runs.add(_HitTestBidiRun(
-          text: '',
-          direction: charDirection,
-          start: i,
-          end: i,
-        ));
+        runs.add(
+          _HitTestBidiRun(text: '', direction: charDirection, start: i, end: i),
+        );
       }
 
       i++;
@@ -180,12 +180,14 @@ extension _AnimatedSvgPictureStateHitTestTextLayoutExtension
         end: text.length,
       );
     } else {
-      runs.add(_HitTestBidiRun(
-        text: text,
-        direction: baseDirection,
-        start: 0,
-        end: text.length,
-      ));
+      runs.add(
+        _HitTestBidiRun(
+          text: text,
+          direction: baseDirection,
+          start: 0,
+          end: text.length,
+        ),
+      );
     }
 
     return runs;

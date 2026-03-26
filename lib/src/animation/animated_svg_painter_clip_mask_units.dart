@@ -58,13 +58,13 @@ extension AnimatedSvgPainterClipMaskUnitsExtension on AnimatedSvgPainter {
     final height = _parseObjectBoundingBoxValue(
       maskNode.getAttributeValue('height'),
     );
-    
+
     // Default: -10% for x/y, 120% for width/height (10% extension per side)
     final resolvedX = x ?? -_kDefaultMaskExtension;
     final resolvedY = y ?? -_kDefaultMaskExtension;
     final resolvedWidth = width ?? (1.0 + 2 * _kDefaultMaskExtension);
     final resolvedHeight = height ?? (1.0 + 2 * _kDefaultMaskExtension);
-    
+
     if (resolvedWidth <= 0 || resolvedHeight <= 0) {
       return null;
     }
@@ -89,9 +89,7 @@ extension AnimatedSvgPainterClipMaskUnitsExtension on AnimatedSvgPainter {
   ///
   /// Uses the current user coordinate system, resolving percentage values
   /// against the viewport.
-  ui.Path? _buildMaskRegionPathUserSpaceOnUse({
-    required SvgNode maskNode,
-  }) {
+  ui.Path? _buildMaskRegionPathUserSpaceOnUse({required SvgNode maskNode}) {
     final x = _resolveMaskUserSpaceLength(
       maskNode: maskNode,
       attributeName: 'x',
@@ -280,7 +278,10 @@ extension AnimatedSvgPainterClipMaskUnitsExtension on AnimatedSvgPainter {
   /// When clipPaths are cascaded, each may have different units.
   /// This determines the correct coordinate system for each level.
   String _resolveClipPathUnits(SvgNode clipPathNode) {
-    final units = _getString(clipPathNode, 'clipPathUnits')?.trim().toLowerCase();
+    final units = _getString(
+      clipPathNode,
+      'clipPathUnits',
+    )?.trim().toLowerCase();
     return units ?? 'userspaceonuse';
   }
 

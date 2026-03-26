@@ -216,7 +216,11 @@ extension AnimatedSvgPainterShapesImageExtension on AnimatedSvgPainter {
     // Check if property should cross the foreignObject boundary
     if (!_isForeignObjectInheritableProperty(property)) {
       // Non-inherited property - only check from foreignObject down
-      return _getAttributeValueWithinForeignObject(node, property, foreignObjectBoundary);
+      return _getAttributeValueWithinForeignObject(
+        node,
+        property,
+        foreignObjectBoundary,
+      );
     }
 
     // Inherited property - allow full inheritance chain

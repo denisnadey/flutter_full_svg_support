@@ -70,7 +70,7 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
             !_isUseReferenceAllowedTag(referenced.tagName)) {
           return;
         }
-        
+
         // Apply use element's x/y translation first
         final x = _getNumber(node, 'x') ?? 0.0;
         final y = _getNumber(node, 'y') ?? 0.0;
@@ -80,7 +80,7 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
               ..setEntry(0, 3, x)
               ..setEntry(1, 3, y),
           );
-        
+
         // Apply use element's own transform attribute if present
         final useTransformStr = node.getAttributeValue('transform')?.toString();
         if (useTransformStr != null && useTransformStr.isNotEmpty) {
@@ -89,7 +89,7 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
             translated.multiply(useTransform);
           }
         }
-        
+
         // Apply viewport transform for symbol/svg references with viewBox
         if (_isUseViewportReferenceTag(referenced.tagName)) {
           final viewportTransform = _resolveUseViewportTransform(
@@ -100,7 +100,7 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
             translated.multiply(viewportTransform.matrix);
           }
         }
-        
+
         final nextUseStack = <String>{...useStack, hrefId};
         _appendClipGeometry(
           target: target,

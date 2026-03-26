@@ -250,14 +250,16 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
 
       // Determine if we should use per-character hit-testing
       // Now also check for forceCharacterPrecise flag for precise selection
-      final usePerCharHit = forceCharacterPrecise || _shouldUsePerCharacterHitTesting(
-        glyphCount,
-        xList: xList,
-        yList: yList,
-        dxList: dxList,
-        dyList: dyList,
-        rotateList: rotateList,
-      );
+      final usePerCharHit =
+          forceCharacterPrecise ||
+          _shouldUsePerCharacterHitTesting(
+            glyphCount,
+            xList: xList,
+            yList: yList,
+            dxList: dxList,
+            dyList: dyList,
+            rotateList: rotateList,
+          );
 
       if (usePerCharHit) {
         _appendPerCharacterHitRunsWithGraphemes(

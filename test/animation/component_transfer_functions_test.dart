@@ -324,8 +324,9 @@ void main() {
 </svg>
 ''';
       final document = SvgParser.parse(svgString);
-      final filter = document.filters!.getById('emptyTransfer')
-          as SvgComponentTransferFilter;
+      final filter =
+          document.filters!.getById('emptyTransfer')
+              as SvgComponentTransferFilter;
 
       expect(filter.funcR, isNull);
       expect(filter.funcG, isNull);
@@ -355,8 +356,9 @@ void main() {
 </svg>
 ''';
       final document = SvgParser.parse(svgString);
-      final filter = document.filters!.getById('partialTransfer')
-          as SvgComponentTransferFilter;
+      final filter =
+          document.filters!.getById('partialTransfer')
+              as SvgComponentTransferFilter;
 
       expect(filter.funcR, isNotNull);
       expect(filter.funcG, isNull);
@@ -474,8 +476,9 @@ void main() {
 </svg>
 ''';
       final document = SvgParser.parse(svgString);
-      final filter = document.filters!.getById('separatorTest')
-          as SvgComponentTransferFilter;
+      final filter =
+          document.filters!.getById('separatorTest')
+              as SvgComponentTransferFilter;
 
       expect(filter.funcR!.tableValues, [0.0, 0.25, 0.5, 0.75, 1.0]);
       expect(filter.funcG!.tableValues, [0.0, 0.25, 0.5, 0.75, 1.0]);
@@ -501,8 +504,9 @@ void main() {
       final document = SvgParser.parse(svgString);
       final animations = SmilParser.parseAnimations(document);
 
-      final slopeAnims =
-          animations.where((a) => a.attributeName == 'slope').toList();
+      final slopeAnims = animations
+          .where((a) => a.attributeName == 'slope')
+          .toList();
       expect(slopeAnims, isNotEmpty);
       // Animation values may be stored as strings or doubles depending on parser
       expect(slopeAnims.first.from.toString(), '1');
@@ -526,8 +530,9 @@ void main() {
       final document = SvgParser.parse(svgString);
       final animations = SmilParser.parseAnimations(document);
 
-      final ampAnims =
-          animations.where((a) => a.attributeName == 'amplitude').toList();
+      final ampAnims = animations
+          .where((a) => a.attributeName == 'amplitude')
+          .toList();
       expect(ampAnims, isNotEmpty);
       expect(ampAnims.first.from.toString(), '0.5');
       expect(ampAnims.first.to.toString(), '1.5');
@@ -550,8 +555,9 @@ void main() {
       final document = SvgParser.parse(svgString);
       final animations = SmilParser.parseAnimations(document);
 
-      final expAnims =
-          animations.where((a) => a.attributeName == 'exponent').toList();
+      final expAnims = animations
+          .where((a) => a.attributeName == 'exponent')
+          .toList();
       expect(expAnims, isNotEmpty);
       expect(expAnims.first.values!.length, 3);
       // Values are parsed as doubles for number attributes
@@ -579,8 +585,9 @@ void main() {
       final document = SvgParser.parse(svgString);
       final animations = SmilParser.parseAnimations(document);
 
-      final intAnims =
-          animations.where((a) => a.attributeName == 'intercept').toList();
+      final intAnims = animations
+          .where((a) => a.attributeName == 'intercept')
+          .toList();
       expect(intAnims, isNotEmpty);
       expect(intAnims.first.from.toString(), '0');
       expect(intAnims.first.to.toString(), '0.5');
@@ -603,8 +610,9 @@ void main() {
       final document = SvgParser.parse(svgString);
       final animations = SmilParser.parseAnimations(document);
 
-      final offsetAnims =
-          animations.where((a) => a.attributeName == 'offset').toList();
+      final offsetAnims = animations
+          .where((a) => a.attributeName == 'offset')
+          .toList();
       expect(offsetAnims, isNotEmpty);
       // Offset is recognized as number attribute, so values are doubles
       expect(double.parse(offsetAnims.first.from.toString()), equals(0.0));
