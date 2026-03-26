@@ -1,6 +1,6 @@
 # Documentation Index
 
-**Updated:** March 16, 2026
+**Updated:** March 27, 2026
 
 This is the central navigation page for project docs.
 

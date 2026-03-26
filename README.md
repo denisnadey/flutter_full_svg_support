@@ -6,19 +6,53 @@
 <img src="https://raw.githubusercontent.com/dnfield/flutter_svg/7d374d7107561cbd906d7c0ca26fef02cc01e7c8/example/assets/flutter_logo.svg?sanitize=true" width="200px" alt="Flutter Logo which can be rendered by this package!">
 <!-- markdownlint-enable MD033 -->
 
-Draw SVG files using Flutter with **~74% Blink SVG parity** - the most comprehensive Flutter SVG implementation available.
+Draw SVG files using Flutter with **~74% Blink SVG parity**, **3099+ tests**, **0 analyzer warnings** - the most comprehensive Flutter SVG implementation available.
 
-## Feature Highlights
+Two rendering pipelines: a fast **static pipeline** (`SvgPicture`) for production use, and an **animated pipeline** (`AnimatedSvgPicture`) with full DOM preservation, SMIL animations, CSS interop, filters, interaction, and accessibility.
 
-- **Full SMIL Animation**: `<animate>`, `<animateTransform>`, `<animateMotion>`, `<set>` with timing, syncbase, and event-based triggers
-- **CSS Animation & Keyframes**: `@keyframes`, `animation-*` properties, CSS transitions, 3D transforms
-- **17/25 Filter Primitives**: Gaussian blur, color matrix, blend, composite, morphology, displacement, lighting (diffuse/specular), convolution, turbulence, and more
+## Parity Snapshot
+
+| Category | Coverage | Key Details |
+|---|---|---|
+| Geometry Rendering | ~95% | All 8 shapes + markers + patterns + gradients |
+| SMIL Animation | ~88% | 5 elements, full timing/interpolation, paced/spline/event-based |
+| CSS Animation Interop | ~85% | Selectors, cascade, variables, calc(), 3D transforms, @media |
+| Interaction & Events | ~80% | Hit-testing (12 element types), pointer-events, `<a>`, `<view>` |
+| Accessibility | ~80% | title/desc, ARIA attributes, Flutter Semantics integration |
+| Structural Elements | ~80% | use/symbol/defs/view/a/switch/foreignObject |
+| Text & Typography | ~70% | Multi-position, textPath, writing-mode, decorations, bidi |
+| Clipping & Masking | ~70% | Baseline clip-path/mask with hit-testing gates |
+| Filter Effects | ~68% | 17/25 Blink FE primitives with actual math (lighting, convolution) |
+| External Content | ~60% | image (data/network/bundle), foreignObject viewport |
+
+## What's Implemented
+
+- **SMIL Animation Engine**: `<animate>`, `<animateTransform>`, `<animateMotion>`, `<set>`, `<animateColor>` with offset/syncbase/event timing (`id.click`, `id.mouseover+200ms`), `calcMode` (linear/discrete/spline/paced), additive/accumulate, `keyPoints`/`rotate`, `<mpath>` references
+- **CSS Animation & Keyframes**: `@keyframes`, `animation-*` properties, CSS transitions, 3D transforms (`translate3d`, `rotate3d`, `matrix3d`, `perspective`), `calc()`, CSS custom properties (`var()`), `@media` queries (prefers-color-scheme, viewport)
+- **CSS Selectors & Cascade**: Combinators (descendant/child/sibling), attribute selectors, pseudo-classes (`:hover`, `:active`, `:focus`, `:not()`, `:first-child`, `:last-child`, `:only-child`, `:empty`, `:root`), full specificity resolution, `!important`, shorthand expansion
+- **17/25 Filter Primitives**: feGaussianBlur, feColorMatrix, feBlend (SVG2 modes), feComposite (arithmetic), feMorphology, feDisplacementMap, feDiffuseLighting (Lambertian), feSpecularLighting (Blinn-Phong), feConvolveMatrix (actual kernel), feTurbulence, feComponentTransfer, feOffset, feFlood, feMerge, feTile, feDropShadow, feImage
 - **All 8 Geometry Shapes**: rect, circle, ellipse, line, path, polygon, polyline, image
-- **Paint Servers**: Linear/radial gradients, patterns, markers with full coordinate unit support
-- **Clipping & Masking**: `clip-path`, `mask` with advanced composition and hit-testing
-- **Advanced Text**: Multi-position (`x`, `y`, `dx`, `dy` lists), rotation, `textLength`, `writing-mode`, `textPath`, text decorations
-- **Interactive Hit-Testing**: Pointer events, `<a>` anchor links, per-element event targeting
-- **ARIA Accessibility**: `<title>`, `<desc>`, `aria-label`, `aria-describedby`, `role` attributes
+- **Paint Servers**: Linear/radial gradients (`gradientUnits`, focal point, stop animation), patterns (`patternUnits`/`patternContentUnits`/`patternTransform`), markers (`orient`/`markerUnits`/`viewBox`)
+- **Advanced Text**: Multi-position `x`/`y`/`dx`/`dy` lists, per-character `rotate`, `textLength`/`lengthAdjust`, `writing-mode`, `text-decoration`, `textPath`, per-chunk `text-anchor`, `letter-spacing`/`word-spacing`/`baseline-shift`
+- **Clipping & Masking**: `clip-path`, `mask` with geometric intersection, alpha-based visibility, hit-testing gates
+- **Interactive Hit-Testing**: `pointer-events` attribute (fill/stroke/painted/all/bounding-box/none), `<a>` anchor links with `onLinkTap`, `<view>` element with fragment identifiers, per-character text hit regions, stroke-width expansion
+- **Accessibility**: `<title>`/`<desc>` → Semantics label/hint, ARIA (`aria-label`, `aria-describedby`, `role`) → Flutter Semantics flags
+- **Performance Caching**: Gradient shaders, pattern images, text paragraphs, hit-test geometry, smart cache invalidation on animation time change
+- **30+ CSS/SVG Presentation Attributes**: `paint-order`, `vector-effect`, `shape-rendering`, `overflow`, `mix-blend-mode`, `currentColor`, `transform-origin`, `color-interpolation`, `font-variant`, `xml:space`, `direction`, `pathLength`, `cursor`, `white-space`, `unicode-bidi`, `font-stretch`, and more
+
+## What's Remaining (Gaps to Close)
+
+7 active P0 priorities to reach higher Blink parity:
+
+1. **Advanced Filter Graph** - Non-source/background input chain semantics, advanced feDropShadow/feMerge composition, 8 remaining FE primitives
+2. **Advanced Typography** - Glyph positioning edge cases, ligatures, OpenType features beyond baseline
+3. **Advanced Clipping** - Complex clip-path compositions, nested clip-paths, clipPathUnits edge cases
+4. **Advanced Masking** - Luminance masks, alpha channel handling, maskUnits/maskContentUnits
+5. **use/symbol Inheritance** - Style and attribute inheritance edge cases in nested references
+6. **Light Sources** - Advanced feSpecularLighting/feDiffuseLighting positioning and attenuation
+7. **Component Transfer** - Extended feComponentTransfer channel functions (table, discrete, linear, gamma)
+
+See [CURRENT_STATUS.md](CURRENT_STATUS.md) for full details and [docs/BLINK_PARITY_AUDIT.md](docs/BLINK_PARITY_AUDIT.md) for the gap matrix.
 
 ## Getting Started
 
@@ -201,15 +235,18 @@ dart run vector_graphics_compiler -i $SVG_FILE -o $TEMPORARY_OUTPUT_TO_BE_DELETE
 
 See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for development guidelines, testing workflows, and architecture details.
 
-### Development Roadmap
+### Project Navigation
 
-For contributors interested in advanced animation features:
-- 📋 [ROADMAP.md](ROADMAP.md) - Detailed development plan with priorities
-- 🚀 [NEXT_STEPS.md](NEXT_STEPS.md) - Quick start guide with code examples
-- 📝 [PLAN_SUMMARY.md](PLAN_SUMMARY.md) - Executive summary
-- ✅ [CURRENT_STATUS.md](CURRENT_STATUS.md) - Single source of truth for current implementation status
-
-See [ANIMATION.md](ANIMATION.md) for animation usage guide.
+| Document | Purpose |
+|---|---|
+| [CURRENT_STATUS.md](CURRENT_STATUS.md) | Single source of truth for project state |
+| [ROADMAP.md](ROADMAP.md) | Living roadmap with priorities and milestones |
+| [NEXT_STEPS.md](NEXT_STEPS.md) | 7 P0 priorities and execution order |
+| [TODO.md](TODO.md) | Active work queue (P0-P4 items) |
+| [ANIMATION.md](ANIMATION.md) | SMIL/CSS animation usage guide with examples |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | Dual pipeline design rationale |
+| [docs/BLINK_PARITY_AUDIT.md](docs/BLINK_PARITY_AUDIT.md) | Gap matrix vs Blink SVG features |
+| [DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md) | Full documentation navigation |
 
 ## SVG sample attribution
 
