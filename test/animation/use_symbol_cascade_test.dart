@@ -7,12 +7,12 @@ import 'visual_test_utils.dart';
 void main() {
   group('Use/Symbol CSS Cascade Tests', () {
     // Test 1: Use element with fill attribute overriding inherited fill
-    testWidgets('use fill attribute overrides inherited fill in referenced content', (
-      WidgetTester tester,
-    ) async {
-      // Parent has fill="blue", use has fill="red", referenced rect has no fill
-      // Expected: rect should be red (use's presentation attr overrides inherited)
-      const svgXml = '''
+    testWidgets(
+      'use fill attribute overrides inherited fill in referenced content',
+      (WidgetTester tester) async {
+        // Parent has fill="blue", use has fill="red", referenced rect has no fill
+        // Expected: rect should be red (use's presentation attr overrides inherited)
+        const svgXml = '''
         <svg viewBox="0 0 100 100">
           <defs>
             <rect id="r" x="10" y="10" width="80" height="80"/>
@@ -23,30 +23,31 @@ void main() {
         </svg>
       ''';
 
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+            ),
           ),
-        ),
-      );
+        );
 
-      await tester.pump();
+        await tester.pump();
 
-      final pixels = await VisualTestUtils.captureWidgetPixels(tester);
-      final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
 
-      // The rect should be red from use's fill attribute
-      expect(analysis.pixelCount, greaterThan(1000));
-    });
+        // The rect should be red from use's fill attribute
+        expect(analysis.pixelCount, greaterThan(1000));
+      },
+    );
 
     // Test 2: Use inline style NOT overriding style-block rules on referenced element
-    testWidgets('use inline style does NOT override style-block rules on referenced element', (
-      WidgetTester tester,
-    ) async {
-      // CSS style rule applies to referenced element with higher specificity
-      // Use's inherited values should not override CSS rules on referenced element
-      const svgXml = '''
+    testWidgets(
+      'use inline style does NOT override style-block rules on referenced element',
+      (WidgetTester tester) async {
+        // CSS style rule applies to referenced element with higher specificity
+        // Use's inherited values should not override CSS rules on referenced element
+        const svgXml = '''
         <svg viewBox="0 0 100 100">
           <style>#myRect { fill: red; }</style>
           <defs>
@@ -56,31 +57,32 @@ void main() {
         </svg>
       ''';
 
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+            ),
           ),
-        ),
-      );
+        );
 
-      await tester.pump();
+        await tester.pump();
 
-      final pixels = await VisualTestUtils.captureWidgetPixels(tester);
-      final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
 
-      // The rect should be red from CSS rule (CSS rule wins over use's inherited fill)
-      expect(analysis.pixelCount, greaterThan(1000));
-    });
+        // The rect should be red from CSS rule (CSS rule wins over use's inherited fill)
+        expect(analysis.pixelCount, greaterThan(1000));
+      },
+    );
 
     // Test 3: Presentation attrs on use override inherited but not inline
-    testWidgets('presentation attrs on use override inherited but not inline on referenced', (
-      WidgetTester tester,
-    ) async {
-      // Referenced element has inline style fill="red"
-      // Use has fill="blue" presentation attribute
-      // Inline style on referenced element should win
-      const svgXml = '''
+    testWidgets(
+      'presentation attrs on use override inherited but not inline on referenced',
+      (WidgetTester tester) async {
+        // Referenced element has inline style fill="red"
+        // Use has fill="blue" presentation attribute
+        // Inline style on referenced element should win
+        const svgXml = '''
         <svg viewBox="0 0 100 100">
           <defs>
             <rect id="r" x="10" y="10" width="80" height="80" style="fill: red"/>
@@ -89,22 +91,23 @@ void main() {
         </svg>
       ''';
 
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+            ),
           ),
-        ),
-      );
+        );
 
-      await tester.pump();
+        await tester.pump();
 
-      final pixels = await VisualTestUtils.captureWidgetPixels(tester);
-      final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
 
-      // The rect should be red from inline style (inline wins over use attr)
-      expect(analysis.pixelCount, greaterThan(1000));
-    });
+        // The rect should be red from inline style (inline wins over use attr)
+        expect(analysis.pixelCount, greaterThan(1000));
+      },
+    );
 
     // Test 4: Nested use-in-use with coordinate stacking
     testWidgets('nested use-in-use stacks coordinates correctly', (
@@ -287,9 +290,7 @@ void main() {
     });
 
     // Test 9: Use inside mask
-    testWidgets('use inside mask works correctly', (
-      WidgetTester tester,
-    ) async {
+    testWidgets('use inside mask works correctly', (WidgetTester tester) async {
       // mask references a use element
       const svgXml = '''
         <svg viewBox="0 0 100 100">
@@ -359,7 +360,9 @@ void main() {
       // Tap on the use element content (the inner rect at 35-65, 35-65)
       await tester.tapAt(const Offset(100, 100)); // Center of use
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 600)); // Wait for animation
+      await tester.pump(
+        const Duration(milliseconds: 600),
+      ); // Wait for animation
 
       // Capture after state
       final afterPixels = await VisualTestUtils.captureWidgetPixels(tester);
@@ -471,12 +474,12 @@ void main() {
     });
 
     // Test 14: fill="none" on use overriding referenced element's default
-    testWidgets('fill none on use overrides inherited fill in referenced content', (
-      WidgetTester tester,
-    ) async {
-      // Parent has fill="red", use has fill="none"
-      // The referenced content should have no fill
-      const svgXml = '''
+    testWidgets(
+      'fill none on use overrides inherited fill in referenced content',
+      (WidgetTester tester) async {
+        // Parent has fill="red", use has fill="none"
+        // The referenced content should have no fill
+        const svgXml = '''
         <svg viewBox="0 0 100 100">
           <defs>
             <rect id="r" x="10" y="10" width="80" height="80"/>
@@ -487,48 +490,50 @@ void main() {
         </svg>
       ''';
 
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+            ),
           ),
-        ),
-      );
+        );
 
-      await tester.pump();
+        await tester.pump();
 
-      final pixels = await VisualTestUtils.captureWidgetPixels(tester);
-      final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
 
-      // The rect should have no fill, so no red pixels
-      expect(analysis.pixelCount, equals(0));
-    });
+        // The rect should have no fill, so no red pixels
+        expect(analysis.pixelCount, equals(0));
+      },
+    );
 
     // Test 15: Empty use (href to non-existent ID) renders nothing, no crash
-    testWidgets('empty use with non-existent href renders nothing without crash', (
-      WidgetTester tester,
-    ) async {
-      // Use references a non-existent ID
-      const svgXml = '''
+    testWidgets(
+      'empty use with non-existent href renders nothing without crash',
+      (WidgetTester tester) async {
+        // Use references a non-existent ID
+        const svgXml = '''
         <svg viewBox="0 0 100 100">
           <rect x="0" y="0" width="100" height="100" fill="blue"/>
           <use href="#nonExistent"/>
         </svg>
       ''';
 
-      // Should not throw
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+        // Should not throw
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+            ),
           ),
-        ),
-      );
+        );
 
-      await tester.pump();
+        await tester.pump();
 
-      // Should render without crashing
-      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-    });
+        // Should render without crashing
+        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+      },
+    );
   });
 }

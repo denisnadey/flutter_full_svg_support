@@ -91,7 +91,9 @@ void main() {
     });
 
     group('text-anchor with RTL direction', () {
-      testWidgets('text-anchor="start" with RTL (right-aligned)', (tester) async {
+      testWidgets('text-anchor="start" with RTL (right-aligned)', (
+        tester,
+      ) async {
         const svg = '''
           <svg viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg">
             <text x="190" y="30" font-size="16" direction="rtl" text-anchor="start">שלום</text>
@@ -138,7 +140,9 @@ void main() {
     });
 
     group('unicode-bidi attribute', () {
-      testWidgets('unicode-bidi="bidi-override" forcing direction', (tester) async {
+      testWidgets('unicode-bidi="bidi-override" forcing direction', (
+        tester,
+      ) async {
         // Force all characters to display as RTL
         const svg = '''
           <svg viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg">
@@ -224,8 +228,9 @@ void main() {
     });
 
     group('Combining marks and Unicode normalization', () {
-      testWidgets('Text with combining marks (é as e + combining accent)',
-          (tester) async {
+      testWidgets('Text with combining marks (é as e + combining accent)', (
+        tester,
+      ) async {
         // Using decomposed form: e + combining acute accent (U+0301)
         const svg = '''
           <svg viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg">
@@ -333,8 +338,9 @@ void main() {
         expect(find.byType(AnimatedSvgPicture), findsOneWidget);
       });
 
-      testWidgets('SVG with mixed direction tspans renders correctly',
-          (tester) async {
+      testWidgets('SVG with mixed direction tspans renders correctly', (
+        tester,
+      ) async {
         const svg = '''
           <svg viewBox="0 0 500 100" xmlns="http://www.w3.org/2000/svg">
             <text x="10" y="50" font-size="18">

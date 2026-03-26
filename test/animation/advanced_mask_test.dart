@@ -322,11 +322,11 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('10. maskContentUnits="userSpaceOnUse" (default) uses user coords', (
-      WidgetTester tester,
-    ) async {
-      // Default: mask content in absolute user space coordinates
-      const svgXml = '''
+    testWidgets(
+      '10. maskContentUnits="userSpaceOnUse" (default) uses user coords',
+      (WidgetTester tester) async {
+        // Default: mask content in absolute user space coordinates
+        const svgXml = '''
         <svg viewBox="0 0 100 100">
           <defs>
             <mask id="contentUserMask" maskContentUnits="userSpaceOnUse">
@@ -338,23 +338,24 @@ void main() {
         </svg>
       ''';
 
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+            ),
           ),
-        ),
-      );
+        );
 
-      await tester.pump();
+        await tester.pump();
 
-      final pixels = await VisualTestUtils.captureWidgetPixels(tester);
-      final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
 
-      // Central 50x50 area should be visible
-      expect(analysis.pixelCount, greaterThan(100));
-      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-    });
+        // Central 50x50 area should be visible
+        expect(analysis.pixelCount, greaterThan(100));
+        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+      },
+    );
   });
 
   group('Advanced Mask Features', () {
@@ -396,9 +397,7 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('12. Mask on filtered element', (
-      WidgetTester tester,
-    ) async {
+    testWidgets('12. Mask on filtered element', (WidgetTester tester) async {
       // Mask should be applied after filter
       const svgXml = '''
         <svg viewBox="0 0 100 100">
@@ -433,9 +432,7 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('13. Mask on group element', (
-      WidgetTester tester,
-    ) async {
+    testWidgets('13. Mask on group element', (WidgetTester tester) async {
       // Mask on group should apply to all children
       const svgXml = '''
         <svg viewBox="0 0 100 100">

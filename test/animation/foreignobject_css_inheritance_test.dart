@@ -33,11 +33,7 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: Center(
-              child: AnimatedSvgPicture.string(
-                svgXml,
-                width: 200,
-                height: 200,
-              ),
+              child: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
             ),
           ),
         ),
@@ -73,11 +69,7 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: Center(
-              child: AnimatedSvgPicture.string(
-                svgXml,
-                width: 200,
-                height: 200,
-              ),
+              child: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
             ),
           ),
         ),
@@ -120,11 +112,7 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: Center(
-              child: AnimatedSvgPicture.string(
-                svgXml,
-                width: 200,
-                height: 200,
-              ),
+              child: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
             ),
           ),
         ),
@@ -164,11 +152,7 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: Center(
-              child: AnimatedSvgPicture.string(
-                svgXml,
-                width: 200,
-                height: 200,
-              ),
+              child: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
             ),
           ),
         ),
@@ -206,11 +190,7 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: Center(
-              child: AnimatedSvgPicture.string(
-                svgXml,
-                width: 200,
-                height: 200,
-              ),
+              child: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
             ),
           ),
         ),
@@ -247,11 +227,7 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: Center(
-              child: AnimatedSvgPicture.string(
-                svgXml,
-                width: 200,
-                height: 200,
-              ),
+              child: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
             ),
           ),
         ),
@@ -296,11 +272,7 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: Center(
-              child: AnimatedSvgPicture.string(
-                svgXml,
-                width: 200,
-                height: 200,
-              ),
+              child: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
             ),
           ),
         ),
@@ -332,9 +304,7 @@ void main() {
       final document = SvgParser.parse(svgXml);
 
       // Find the groups and verify transforms
-      final outerG = document.root.children.firstWhere(
-        (n) => n.tagName == 'g',
-      );
+      final outerG = document.root.children.firstWhere((n) => n.tagName == 'g');
       expect(outerG.getAttributeValue('transform'), 'translate(50, 50)');
 
       final innerG = outerG.children.firstWhere((n) => n.tagName == 'g');
@@ -345,11 +315,7 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: Center(
-              child: AnimatedSvgPicture.string(
-                svgXml,
-                width: 200,
-                height: 200,
-              ),
+              child: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
             ),
           ),
         ),
@@ -379,11 +345,7 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: Center(
-              child: AnimatedSvgPicture.string(
-                svgXml,
-                width: 200,
-                height: 200,
-              ),
+              child: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
             ),
           ),
         ),
@@ -411,11 +373,7 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: Center(
-              child: AnimatedSvgPicture.string(
-                svgXml,
-                width: 200,
-                height: 200,
-              ),
+              child: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
             ),
           ),
         ),
@@ -449,11 +407,7 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: Center(
-              child: AnimatedSvgPicture.string(
-                svgXml,
-                width: 200,
-                height: 200,
-              ),
+              child: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
             ),
           ),
         ),
@@ -489,11 +443,7 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: Center(
-              child: AnimatedSvgPicture.string(
-                svgXml,
-                width: 200,
-                height: 200,
-              ),
+              child: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
             ),
           ),
         ),

@@ -362,7 +362,10 @@ extension AnimatedSvgPainterGeometryExtension on AnimatedSvgPainter {
       if (propName == normalizedProp) {
         return decl
             .substring(colonIndex + 1)
-            .replaceFirst(RegExp(r'\s*!important\s*$', caseSensitive: false), '')
+            .replaceFirst(
+              RegExp(r'\s*!important\s*$', caseSensitive: false),
+              '',
+            )
             .trim();
       }
     }
@@ -627,7 +630,9 @@ extension AnimatedSvgPainterGeometryExtension on AnimatedSvgPainter {
   /// This creates a snapshot of inherited CSS properties from SVG ancestors
   /// that should propagate into the foreign content.
   // ignore: unused_element
-  Map<String, String> _resolveForeignObjectCssContext(SvgNode foreignObjectNode) {
+  Map<String, String> _resolveForeignObjectCssContext(
+    SvgNode foreignObjectNode,
+  ) {
     final context = <String, String>{};
 
     // Collect all inheritable CSS properties from ancestors

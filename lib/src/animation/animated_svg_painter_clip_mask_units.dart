@@ -660,10 +660,12 @@ extension AnimatedSvgPainterClipMaskUnitsExtension on AnimatedSvgPainter {
     // Parse relative coordinates (fractions of bbox)
     final x = _parseObjectBoundingBoxValue(maskNode.getAttributeValue('x'));
     final y = _parseObjectBoundingBoxValue(maskNode.getAttributeValue('y'));
-    final width =
-        _parseObjectBoundingBoxValue(maskNode.getAttributeValue('width'));
-    final height =
-        _parseObjectBoundingBoxValue(maskNode.getAttributeValue('height'));
+    final width = _parseObjectBoundingBoxValue(
+      maskNode.getAttributeValue('width'),
+    );
+    final height = _parseObjectBoundingBoxValue(
+      maskNode.getAttributeValue('height'),
+    );
 
     // Default: -10% for x/y, 120% for width/height
     final resolvedX = x ?? -0.1;

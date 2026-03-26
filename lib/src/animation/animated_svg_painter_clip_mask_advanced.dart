@@ -986,10 +986,10 @@ extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
 
     // Transform from objectBoundingBox coordinates (0-1) to user space
     return Matrix4.identity()
-      ..setEntry(0, 0, safeWidth)  // Scale X
+      ..setEntry(0, 0, safeWidth) // Scale X
       ..setEntry(1, 1, safeHeight) // Scale Y
-      ..setEntry(0, 3, bounds.left)  // Translate X
-      ..setEntry(1, 3, bounds.top);  // Translate Y
+      ..setEntry(0, 3, bounds.left) // Translate X
+      ..setEntry(1, 3, bounds.top); // Translate Y
   }
 
   /// Handles empty clipPath edge case.

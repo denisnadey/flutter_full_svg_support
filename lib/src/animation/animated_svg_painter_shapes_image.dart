@@ -299,12 +299,14 @@ extension AnimatedSvgPainterShapesImageExtension on AnimatedSvgPainter {
     final y = _getNumber(imageNode, 'y') ?? 0.0;
     final viewportSize = _getImageViewportSize(imageNode);
     final width = _resolveImageLength(imageNode, 'width', viewportSize.width);
-    final height =
-        _resolveImageLength(imageNode, 'height', viewportSize.height);
+    final height = _resolveImageLength(
+      imageNode,
+      'height',
+      viewportSize.height,
+    );
 
     // Image element transform (position only, dimensions affect viewport)
-    final imageTransform = Matrix4.identity()
-      ..translateByDouble(x, y, 0, 1);
+    final imageTransform = Matrix4.identity()..translateByDouble(x, y, 0, 1);
 
     // Compute inner viewBox transform if applicable
     var innerTransform = Matrix4.identity();
@@ -335,9 +337,9 @@ extension AnimatedSvgPainterShapesImageExtension on AnimatedSvgPainter {
     }
 
     // Compose: ancestor → image position → inner viewBox
-    return ancestorTransform.multiplied(imageTransform).multiplied(
-      innerTransform,
-    );
+    return ancestorTransform
+        .multiplied(imageTransform)
+        .multiplied(innerTransform);
   }
 
   /// Resolves inner SVG viewBox from a data URI containing SVG content.

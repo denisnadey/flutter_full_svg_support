@@ -361,7 +361,10 @@ class _UseInheritanceContext {
       // Non-important inline beats CSS rules (inline has higher specificity)
       if (inlineValue != null) {
         final cleanInlineValue = inlineValue
-            .replaceFirst(RegExp(r'\s*!important\s*$', caseSensitive: false), '')
+            .replaceFirst(
+              RegExp(r'\s*!important\s*$', caseSensitive: false),
+              '',
+            )
             .trim();
         if (cleanInlineValue.isNotEmpty) {
           return cleanInlineValue;
@@ -398,7 +401,10 @@ class _UseInheritanceContext {
       );
       if (useStyleValue != null) {
         return useStyleValue
-            .replaceFirst(RegExp(r'\s*!important\s*$', caseSensitive: false), '')
+            .replaceFirst(
+              RegExp(r'\s*!important\s*$', caseSensitive: false),
+              '',
+            )
             .trim();
       }
 

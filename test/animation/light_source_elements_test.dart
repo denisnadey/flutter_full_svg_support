@@ -49,7 +49,8 @@ void main() {
       ''';
 
       final svgDoc = SvgParser.parse(svg);
-      final lighting = svgDoc.filters!.getAllById('f1').first as SvgDiffuseLightingFilter;
+      final lighting =
+          svgDoc.filters!.getAllById('f1').first as SvgDiffuseLightingFilter;
       final distant = lighting.lightSource as SvgDistantLightSource;
       expect(distant.azimuth, equals(45.0));
       expect(distant.elevation, equals(30.0));
@@ -70,7 +71,8 @@ void main() {
       ''';
 
       final svgDoc = SvgParser.parse(svg);
-      final lighting = svgDoc.filters!.getAllById('f1').first as SvgDiffuseLightingFilter;
+      final lighting =
+          svgDoc.filters!.getAllById('f1').first as SvgDiffuseLightingFilter;
       final distant = lighting.lightSource as SvgDistantLightSource;
       expect(distant.azimuth, equals(-90.0));
       expect(distant.elevation, equals(-45.0));
@@ -93,7 +95,8 @@ void main() {
       ''';
 
       final svgDoc = SvgParser.parse(svg);
-      final lighting = svgDoc.filters!.getAllById('f1').first as SvgDiffuseLightingFilter;
+      final lighting =
+          svgDoc.filters!.getAllById('f1').first as SvgDiffuseLightingFilter;
       final light = lighting.lightSource;
       expect(light, isA<SvgPointLightSource>());
       final point = light as SvgPointLightSource;
@@ -117,7 +120,8 @@ void main() {
       ''';
 
       final svgDoc = SvgParser.parse(svg);
-      final lighting = svgDoc.filters!.getAllById('f1').first as SvgDiffuseLightingFilter;
+      final lighting =
+          svgDoc.filters!.getAllById('f1').first as SvgDiffuseLightingFilter;
       final point = lighting.lightSource as SvgPointLightSource;
       expect(point.x, equals(50.0));
       expect(point.y, equals(50.0));
@@ -139,7 +143,8 @@ void main() {
       ''';
 
       final svgDoc = SvgParser.parse(svg);
-      final lighting = svgDoc.filters!.getAllById('f1').first as SvgDiffuseLightingFilter;
+      final lighting =
+          svgDoc.filters!.getAllById('f1').first as SvgDiffuseLightingFilter;
       final point = lighting.lightSource as SvgPointLightSource;
       expect(point.x, equals(-25.5));
       expect(point.y, equals(-10.0));
@@ -163,7 +168,8 @@ void main() {
       ''';
 
       final svgDoc = SvgParser.parse(svg);
-      final lighting = svgDoc.filters!.getAllById('f1').first as SvgSpecularLightingFilter;
+      final lighting =
+          svgDoc.filters!.getAllById('f1').first as SvgSpecularLightingFilter;
       final light = lighting.lightSource;
       expect(light, isA<SvgSpotLightSource>());
       final spot = light as SvgSpotLightSource;
@@ -192,7 +198,8 @@ void main() {
       ''';
 
       final svgDoc = SvgParser.parse(svg);
-      final lighting = svgDoc.filters!.getAllById('f1').first as SvgDiffuseLightingFilter;
+      final lighting =
+          svgDoc.filters!.getAllById('f1').first as SvgDiffuseLightingFilter;
       final spot = lighting.lightSource as SvgSpotLightSource;
       expect(spot.specularExponent, equals(1.0));
       expect(spot.limitingConeAngle, equals(0.0));
@@ -213,7 +220,8 @@ void main() {
       ''';
 
       final svgDoc = SvgParser.parse(svg);
-      final lighting = svgDoc.filters!.getAllById('f1').first as SvgDiffuseLightingFilter;
+      final lighting =
+          svgDoc.filters!.getAllById('f1').first as SvgDiffuseLightingFilter;
       final spot = lighting.lightSource as SvgSpotLightSource;
       expect(spot.specularExponent, equals(128.0));
     });
@@ -234,20 +242,27 @@ void main() {
       expect(lz, closeTo(0.0, 0.0001));
     });
 
-    test('azimuth=0, elevation=90 points in +Z direction (light from above)', () {
-      final (lx, ly, lz) = computeDistantLightVector(0, 90);
-      expect(lx, closeTo(0.0, 0.0001));
-      expect(ly, closeTo(0.0, 0.0001));
-      expect(lz, closeTo(1.0, 0.0001));
-    });
+    test(
+      'azimuth=0, elevation=90 points in +Z direction (light from above)',
+      () {
+        final (lx, ly, lz) = computeDistantLightVector(0, 90);
+        expect(lx, closeTo(0.0, 0.0001));
+        expect(ly, closeTo(0.0, 0.0001));
+        expect(lz, closeTo(1.0, 0.0001));
+      },
+    );
 
     test('azimuth=45, elevation=45 has correct components', () {
       final (lx, ly, lz) = computeDistantLightVector(45, 45);
-      final expectedLx = math.cos(45 * math.pi / 180) * math.cos(45 * math.pi / 180);
-      final expectedLy = math.sin(45 * math.pi / 180) * math.cos(45 * math.pi / 180);
+      final expectedLx =
+          math.cos(45 * math.pi / 180) * math.cos(45 * math.pi / 180);
+      final expectedLy =
+          math.sin(45 * math.pi / 180) * math.cos(45 * math.pi / 180);
       final expectedLz = math.sin(45 * math.pi / 180);
       final len = math.sqrt(
-        expectedLx * expectedLx + expectedLy * expectedLy + expectedLz * expectedLz,
+        expectedLx * expectedLx +
+            expectedLy * expectedLy +
+            expectedLz * expectedLz,
       );
       expect(lx, closeTo(expectedLx / len, 0.0001));
       expect(ly, closeTo(expectedLy / len, 0.0001));
@@ -301,9 +316,15 @@ void main() {
   group('Spot light cone attenuation', () {
     test('surface point inside cone has positive intensity', () {
       final ((lx, ly, lz), intensity) = computeSpotLightVector(
-        0, 0, 100,
-        0, 0, 0,
-        0, 0, 0,
+        0,
+        0,
+        100,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
         specularExponent: 1.0,
         limitingConeAngleDegrees: 45.0,
       );
@@ -313,9 +334,15 @@ void main() {
 
     test('surface point outside cone has zero intensity', () {
       final (_, intensity) = computeSpotLightVector(
-        0, 0, 100,
-        0, 0, 0,
-        1000, 0, 0,
+        0,
+        0,
+        100,
+        0,
+        0,
+        0,
+        1000,
+        0,
+        0,
         specularExponent: 1.0,
         limitingConeAngleDegrees: 10.0,
       );
@@ -327,9 +354,15 @@ void main() {
       final surfaceZ = math.cos(45 * math.pi / 180) * 100;
 
       final (_, intensityInside) = computeSpotLightVector(
-        0, 0, 0,
-        0, 0, 100,
-        surfaceX * 0.99, 0, surfaceZ,
+        0,
+        0,
+        0,
+        0,
+        0,
+        100,
+        surfaceX * 0.99,
+        0,
+        surfaceZ,
         specularExponent: 1.0,
         limitingConeAngleDegrees: 45.0,
       );
@@ -338,16 +371,28 @@ void main() {
 
     test('specularExponent affects falloff', () {
       final (_, intensity1) = computeSpotLightVector(
-        0, 0, 100,
-        0, 0, 0,
-        20, 20, 0,
+        0,
+        0,
+        100,
+        0,
+        0,
+        0,
+        20,
+        20,
+        0,
         specularExponent: 1.0,
         limitingConeAngleDegrees: 90.0,
       );
       final (_, intensity2) = computeSpotLightVector(
-        0, 0, 100,
-        0, 0, 0,
-        20, 20, 0,
+        0,
+        0,
+        100,
+        0,
+        0,
+        0,
+        20,
+        20,
+        0,
         specularExponent: 4.0,
         limitingConeAngleDegrees: 90.0,
       );
@@ -356,9 +401,15 @@ void main() {
 
     test('no cone cutoff when limitingConeAngle is 0', () {
       final (_, intensity) = computeSpotLightVector(
-        0, 0, 100,
-        0, 0, 0,
-        500, 500, 0,
+        0,
+        0,
+        100,
+        0,
+        0,
+        0,
+        500,
+        500,
+        0,
         specularExponent: 1.0,
         limitingConeAngleDegrees: 0.0,
       );
@@ -382,11 +433,7 @@ void main() {
       ''';
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SvgPicture.string(svg),
-          ),
-        ),
+        MaterialApp(home: Scaffold(body: SvgPicture.string(svg))),
       );
 
       expect(tester.takeException(), isNull);
@@ -407,11 +454,7 @@ void main() {
       ''';
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SvgPicture.string(svg),
-          ),
-        ),
+        MaterialApp(home: Scaffold(body: SvgPicture.string(svg))),
       );
 
       expect(tester.takeException(), isNull);
@@ -434,11 +477,7 @@ void main() {
       ''';
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SvgPicture.string(svg),
-          ),
-        ),
+        MaterialApp(home: Scaffold(body: SvgPicture.string(svg))),
       );
 
       expect(tester.takeException(), isNull);
@@ -459,11 +498,7 @@ void main() {
       ''';
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SvgPicture.string(svg),
-          ),
-        ),
+        MaterialApp(home: Scaffold(body: SvgPicture.string(svg))),
       );
 
       expect(tester.takeException(), isNull);
@@ -486,7 +521,8 @@ void main() {
       ''';
 
       final svgDoc = SvgParser.parse(svg);
-      final lighting = svgDoc.filters!.getAllById('f1').first as SvgDiffuseLightingFilter;
+      final lighting =
+          svgDoc.filters!.getAllById('f1').first as SvgDiffuseLightingFilter;
       final distant = lighting.lightSource as SvgDistantLightSource;
       expect(distant.azimuth, equals(0.0));
       expect(distant.elevation, equals(0.0));
@@ -507,7 +543,8 @@ void main() {
       ''';
 
       final svgDoc = SvgParser.parse(svg);
-      final lighting = svgDoc.filters!.getAllById('f1').first as SvgDiffuseLightingFilter;
+      final lighting =
+          svgDoc.filters!.getAllById('f1').first as SvgDiffuseLightingFilter;
       final point = lighting.lightSource as SvgPointLightSource;
       expect(point.x, equals(0.0));
       expect(point.y, equals(0.0));
@@ -529,7 +566,8 @@ void main() {
       ''';
 
       final svgDoc = SvgParser.parse(svg);
-      final lighting = svgDoc.filters!.getAllById('f1').first as SvgDiffuseLightingFilter;
+      final lighting =
+          svgDoc.filters!.getAllById('f1').first as SvgDiffuseLightingFilter;
       final spot = lighting.lightSource as SvgSpotLightSource;
       expect(spot.pointsAtX, equals(0.0));
       expect(spot.pointsAtY, equals(0.0));
@@ -557,7 +595,8 @@ void main() {
       ''';
 
       final svgDoc = SvgParser.parse(svg);
-      final lighting = svgDoc.filters!.getAllById('f1').first as SvgDiffuseLightingFilter;
+      final lighting =
+          svgDoc.filters!.getAllById('f1').first as SvgDiffuseLightingFilter;
       // Parser returns first light source found (per SVG spec)
       expect(lighting.lightSource, isA<SvgDistantLightSource>());
     });

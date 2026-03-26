@@ -7,9 +7,10 @@ import 'package:flutter_svg/src/animation/svg_filters.dart';
 
 void main() {
   group('feDisplacementMap Edge Cases', () {
-    test('feDisplacementMap with xChannelSelector="R", yChannelSelector="G"',
-        () {
-      final svgString = '''
+    test(
+      'feDisplacementMap with xChannelSelector="R", yChannelSelector="G"',
+      () {
+        final svgString = '''
 <svg viewBox="0 0 100 100">
   <defs>
     <filter id="dispRG">
@@ -21,17 +22,19 @@ void main() {
 </svg>
 ''';
 
-      final document = SvgParser.parse(svgString);
-      final filter =
-          document.filters!.getById('dispRG') as SvgDisplacementMapFilter;
-      expect(filter.xChannelSelector, SvgChannelSelector.r);
-      expect(filter.yChannelSelector, SvgChannelSelector.g);
-      expect(filter.scale, 10.0);
-    });
+        final document = SvgParser.parse(svgString);
+        final filter =
+            document.filters!.getById('dispRG') as SvgDisplacementMapFilter;
+        expect(filter.xChannelSelector, SvgChannelSelector.r);
+        expect(filter.yChannelSelector, SvgChannelSelector.g);
+        expect(filter.scale, 10.0);
+      },
+    );
 
-    test('feDisplacementMap with xChannelSelector="B", yChannelSelector="A"',
-        () {
-      final svgString = '''
+    test(
+      'feDisplacementMap with xChannelSelector="B", yChannelSelector="A"',
+      () {
+        final svgString = '''
 <svg viewBox="0 0 100 100">
   <defs>
     <filter id="dispBA">
@@ -43,13 +46,14 @@ void main() {
 </svg>
 ''';
 
-      final document = SvgParser.parse(svgString);
-      final filter =
-          document.filters!.getById('dispBA') as SvgDisplacementMapFilter;
-      expect(filter.xChannelSelector, SvgChannelSelector.b);
-      expect(filter.yChannelSelector, SvgChannelSelector.a);
-      expect(filter.scale, 20.0);
-    });
+        final document = SvgParser.parse(svgString);
+        final filter =
+            document.filters!.getById('dispBA') as SvgDisplacementMapFilter;
+        expect(filter.xChannelSelector, SvgChannelSelector.b);
+        expect(filter.yChannelSelector, SvgChannelSelector.a);
+        expect(filter.scale, 20.0);
+      },
+    );
 
     test('feDisplacementMap with default channel selectors (A, A)', () {
       final svgString = '''
@@ -103,46 +107,56 @@ void main() {
     });
 
     test(
-        'feDisplacementMap with large scale causes out-of-bounds (transparent black)',
-        () {
-      // 3x3 solid blue image
-      final inputPixels = Uint8List.fromList([
-        0, 0, 255, 255, 0, 0, 255, 255, 0, 0, 255, 255, // Row 0
-        0, 0, 255, 255, 0, 0, 255, 255, 0, 0, 255, 255, // Row 1
-        0, 0, 255, 255, 0, 0, 255, 255, 0, 0, 255, 255, // Row 2
-      ]);
+      'feDisplacementMap with large scale causes out-of-bounds (transparent black)',
+      () {
+        // 3x3 solid blue image
+        final inputPixels = Uint8List.fromList([
+          0, 0, 255, 255, 0, 0, 255, 255, 0, 0, 255, 255, // Row 0
+          0, 0, 255, 255, 0, 0, 255, 255, 0, 0, 255, 255, // Row 1
+          0, 0, 255, 255, 0, 0, 255, 255, 0, 0, 255, 255, // Row 2
+        ]);
 
-      // Displacement map with maximum R and G values
-      // This will cause maximum displacement in both directions
-      final mapPixels = Uint8List.fromList([
-        255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, // Row 0
-        255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, // Row 1
-        255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, // Row 2
-      ]);
+        // Displacement map with maximum R and G values
+        // This will cause maximum displacement in both directions
+        final mapPixels = Uint8List.fromList([
+          255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, // Row 0
+          255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, // Row 1
+          255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, // Row 2
+        ]);
 
-      final result = DisplacementMapProcessor.applyDisplacement(
-        inputPixels: inputPixels,
-        mapPixels: mapPixels,
-        width: 3,
-        height: 3,
-        scale: 100.0, // Very large scale to push outside bounds
-        xChannel: SvgChannelSelector.r,
-        yChannel: SvgChannelSelector.g,
-        edgeMode: SvgDisplacementEdgeMode.none,
-      );
+        final result = DisplacementMapProcessor.applyDisplacement(
+          inputPixels: inputPixels,
+          mapPixels: mapPixels,
+          width: 3,
+          height: 3,
+          scale: 100.0, // Very large scale to push outside bounds
+          xChannel: SvgChannelSelector.r,
+          yChannel: SvgChannelSelector.g,
+          edgeMode: SvgDisplacementEdgeMode.none,
+        );
 
-      // With edge mode 'none', out-of-bounds samples should be transparent black
-      // Every pixel will be displaced way outside the image
-      for (int i = 0; i < result.length; i += 4) {
-        expect(result[i], 0, reason: 'Red channel should be 0 (transparent)');
-        expect(result[i + 1], 0,
-            reason: 'Green channel should be 0 (transparent)');
-        expect(result[i + 2], 0,
-            reason: 'Blue channel should be 0 (transparent)');
-        expect(result[i + 3], 0,
-            reason: 'Alpha channel should be 0 (transparent)');
-      }
-    });
+        // With edge mode 'none', out-of-bounds samples should be transparent black
+        // Every pixel will be displaced way outside the image
+        for (int i = 0; i < result.length; i += 4) {
+          expect(result[i], 0, reason: 'Red channel should be 0 (transparent)');
+          expect(
+            result[i + 1],
+            0,
+            reason: 'Green channel should be 0 (transparent)',
+          );
+          expect(
+            result[i + 2],
+            0,
+            reason: 'Blue channel should be 0 (transparent)',
+          );
+          expect(
+            result[i + 3],
+            0,
+            reason: 'Alpha channel should be 0 (transparent)',
+          );
+        }
+      },
+    );
   });
 
   group('feTile Edge Cases', () {
@@ -181,10 +195,18 @@ void main() {
 
       // Row 2 should be same as row 0
       final row2Start = 4 * 4 * 2;
-      expect(result.sublist(row2Start, row2Start + 4),
-          [255, 0, 0, 255]); // (0,2) = Red
-      expect(result.sublist(row2Start + 4, row2Start + 8),
-          [0, 255, 0, 255]); // (1,2) = Green
+      expect(result.sublist(row2Start, row2Start + 4), [
+        255,
+        0,
+        0,
+        255,
+      ]); // (0,2) = Red
+      expect(result.sublist(row2Start + 4, row2Start + 8), [
+        0,
+        255,
+        0,
+        255,
+      ]); // (1,2) = Green
     });
 
     test('feTile with input matching filter region (single tile)', () {

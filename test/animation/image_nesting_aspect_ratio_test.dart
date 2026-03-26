@@ -24,7 +24,8 @@ void main() {
         (tester) async {
           // Test: landscape image (4x2) in square viewport (100x100)
           // Expected: image scaled to fit (100x50), positioned at top-left (0,0)
-          final svg = '''
+          final svg =
+              '''
             <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
               <image x="0" y="0" width="100" height="100" 
                      preserveAspectRatio="xMinYMin meet"
@@ -64,7 +65,8 @@ void main() {
         'xMidYMid meet (default) - centers image and fits within viewport',
         (tester) async {
           // Test: landscape image in square viewport, centered
-          final svg = '''
+          final svg =
+              '''
             <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
               <image x="0" y="0" width="100" height="100" 
                      preserveAspectRatio="xMidYMid meet"
@@ -104,7 +106,8 @@ void main() {
         'xMaxYMax slice - aligns to bottom-right and clips overflow',
         (tester) async {
           // Test: landscape image scaled to cover (slice), aligned bottom-right
-          final svg = '''
+          final svg =
+              '''
             <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
               <image x="0" y="0" width="100" height="100" 
                      preserveAspectRatio="xMaxYMax slice"
@@ -142,11 +145,12 @@ void main() {
         },
       );
 
-      testWidgets(
-        'none - stretches image non-uniformly to fill viewport',
-        (tester) async {
-          // Test: preserveAspectRatio="none" ignores aspect ratio
-          final svg = '''
+      testWidgets('none - stretches image non-uniformly to fill viewport', (
+        tester,
+      ) async {
+        // Test: preserveAspectRatio="none" ignores aspect ratio
+        final svg =
+            '''
             <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
               <image x="10" y="20" width="80" height="60" 
                      preserveAspectRatio="none"
@@ -154,33 +158,32 @@ void main() {
             </svg>
           ''';
 
-          await tester.pumpWidget(
-            MaterialApp(
-              home: Scaffold(
-                body: AnimatedSvgPicture.string(svg, width: 200, height: 200),
-              ),
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svg, width: 200, height: 200),
             ),
-          );
-          await tester.pump();
-          await tester.pump(const Duration(milliseconds: 100));
+          ),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
 
-          expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
 
-          // Verify unit test behavior
-          final layout = resolveSvgViewportLayout(
-            viewport: ui.Rect.fromLTWH(10, 20, 80, 60),
-            sourceSize: const ui.Size(4, 2),
-            preserveAspectRatio: 'none',
-          );
+        // Verify unit test behavior
+        final layout = resolveSvgViewportLayout(
+          viewport: ui.Rect.fromLTWH(10, 20, 80, 60),
+          sourceSize: const ui.Size(4, 2),
+          preserveAspectRatio: 'none',
+        );
 
-          // none: exact viewport dimensions, no aspect preservation
-          expect(layout.destinationRect.left, 10.0);
-          expect(layout.destinationRect.top, 20.0);
-          expect(layout.destinationRect.width, 80.0);
-          expect(layout.destinationRect.height, 60.0);
-          expect(layout.clipToViewport, false);
-        },
-      );
+        // none: exact viewport dimensions, no aspect preservation
+        expect(layout.destinationRect.left, 10.0);
+        expect(layout.destinationRect.top, 20.0);
+        expect(layout.destinationRect.width, 80.0);
+        expect(layout.destinationRect.height, 60.0);
+        expect(layout.clipToViewport, false);
+      });
     });
 
     group('aspect ratio with different image orientations', () {
@@ -189,7 +192,8 @@ void main() {
         (tester) async {
           // Landscape image (200x100) in portrait viewport (50x100)
           // Scale = min(50/200, 100/100) = 0.25 → dest: 50x25, centered
-          final svg = '''
+          final svg =
+              '''
             <svg viewBox="0 0 50 100" xmlns="http://www.w3.org/2000/svg">
               <image x="0" y="0" width="50" height="100" 
                      preserveAspectRatio="xMidYMid meet"
@@ -230,7 +234,8 @@ void main() {
         (tester) async {
           // Portrait image (2x4) in landscape viewport (100x50)
           // Scale = max(100/2, 50/4) = 50 → dest: 100x200, centered
-          final svg = '''
+          final svg =
+              '''
             <svg viewBox="0 0 100 50" xmlns="http://www.w3.org/2000/svg">
               <image x="0" y="0" width="100" height="50" 
                      preserveAspectRatio="xMidYMid slice"
@@ -269,12 +274,13 @@ void main() {
     });
 
     group('SVG-in-SVG nesting', () {
-      testWidgets(
-        'nested SVG with viewBox transforms correctly',
-        (tester) async {
-          // Outer SVG has image element, which could reference nested SVG
-          // This tests the nested viewport transform chain
-          final svg = '''
+      testWidgets('nested SVG with viewBox transforms correctly', (
+        tester,
+      ) async {
+        // Outer SVG has image element, which could reference nested SVG
+        // This tests the nested viewport transform chain
+        final svg =
+            '''
             <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
               <svg x="50" y="50" width="100" height="100" viewBox="0 0 50 50">
                 <image x="5" y="5" width="40" height="40"
@@ -283,22 +289,21 @@ void main() {
             </svg>
           ''';
 
-          await tester.pumpWidget(
-            MaterialApp(
-              home: Scaffold(
-                body: AnimatedSvgPicture.string(svg, width: 400, height: 400),
-              ),
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svg, width: 400, height: 400),
             ),
-          );
-          await tester.pump();
-          await tester.pump(const Duration(milliseconds: 100));
+          ),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
 
-          expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-          // The nested SVG's viewBox (0 0 50 50) maps to viewport (100x100)
-          // Scale factor = 2x, so image at (5,5)-(45,45) maps to (10,10)-(90,90)
-          // Plus outer offset (50,50) = final position (60,60)-(140,140)
-        },
-      );
+        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+        // The nested SVG's viewBox (0 0 50 50) maps to viewport (100x100)
+        // Scale factor = 2x, so image at (5,5)-(45,45) maps to (10,10)-(90,90)
+        // Plus outer offset (50,50) = final position (60,60)-(140,140)
+      });
     });
 
     group('image dimension edge cases', () {
@@ -307,7 +312,8 @@ void main() {
         (tester) async {
           // When image has explicit width/height, those define the viewport
           // preserveAspectRatio then places the image within that viewport
-          final svg = '''
+          final svg =
+              '''
             <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
               <image x="10" y="10" width="80" height="80"
                      preserveAspectRatio="xMidYMid meet"
@@ -344,35 +350,34 @@ void main() {
     });
 
     group('data URI handling', () {
-      testWidgets(
-        'data URI with base64 PNG renders correctly',
-        (tester) async {
-          final svg = '''
+      testWidgets('data URI with base64 PNG renders correctly', (tester) async {
+        final svg =
+            '''
             <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
               <image x="25" y="25" width="50" height="50"
                      href="data:image/png;base64,$_tinyBluePngBase64"/>
             </svg>
           ''';
 
-          await tester.pumpWidget(
-            MaterialApp(
-              home: Scaffold(
-                body: AnimatedSvgPicture.string(svg, width: 200, height: 200),
-              ),
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svg, width: 200, height: 200),
             ),
-          );
-          await tester.pump();
-          await tester.pump(const Duration(milliseconds: 100));
+          ),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
 
-          expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-        },
-      );
+        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+      });
 
-      testWidgets(
-        'malformed/missing href handles gracefully without crash',
-        (tester) async {
-          // Test various malformed href scenarios
-          final svg = '''
+      testWidgets('malformed/missing href handles gracefully without crash', (
+        tester,
+      ) async {
+        // Test various malformed href scenarios
+        final svg =
+            '''
             <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
               <!-- Missing href entirely -->
               <image x="0" y="0" width="20" height="20"/>
@@ -400,20 +405,19 @@ void main() {
             </svg>
           ''';
 
-          await tester.pumpWidget(
-            MaterialApp(
-              home: Scaffold(
-                body: AnimatedSvgPicture.string(svg, width: 200, height: 200),
-              ),
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svg, width: 200, height: 200),
             ),
-          );
-          await tester.pump();
-          await tester.pump(const Duration(milliseconds: 100));
+          ),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
 
-          // Should not crash, valid image should still render
-          expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-        },
-      );
+        // Should not crash, valid image should still render
+        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+      });
     });
   });
 }

@@ -20,9 +20,9 @@ class _W3CEventDispatchResult {
 
   /// Creates a result indicating no handler modifications.
   const _W3CEventDispatchResult.none()
-      : defaultPrevented = false,
-        propagationStopped = false,
-        immediatePropagationStopped = false;
+    : defaultPrevented = false,
+      propagationStopped = false,
+      immediatePropagationStopped = false;
 }
 
 /// Mutable event context for tracking propagation state during dispatch.
@@ -49,10 +49,10 @@ class _EventDispatchContext {
 
   /// Converts to an immutable result.
   _W3CEventDispatchResult toResult() => _W3CEventDispatchResult(
-        defaultPrevented: defaultPrevented,
-        propagationStopped: propagationStopped,
-        immediatePropagationStopped: immediatePropagationStopped,
-      );
+    defaultPrevented: defaultPrevented,
+    propagationStopped: propagationStopped,
+    immediatePropagationStopped: immediatePropagationStopped,
+  );
 }
 
 extension _AnimatedSvgPictureStateEventsExtension on _AnimatedSvgPictureState {
@@ -184,8 +184,11 @@ extension _AnimatedSvgPictureStateEventsExtension on _AnimatedSvgPictureState {
     String eventType,
     void Function(_EventDispatchContext) handler,
   ) {
-    _SvgEventHandlerRegistry.instance
-        .removeHandler(elementId, eventType, handler);
+    _SvgEventHandlerRegistry.instance.removeHandler(
+      elementId,
+      eventType,
+      handler,
+    );
   }
 }
 
@@ -197,7 +200,7 @@ class _SvgEventHandlerRegistry {
   static final instance = _SvgEventHandlerRegistry._();
 
   final Map<String, Map<String, List<void Function(_EventDispatchContext)>>>
-      _handlers = {};
+  _handlers = {};
 
   /// Gets handlers for an element.
   Map<String, List<void Function(_EventDispatchContext)>>? getHandlers(
@@ -681,11 +684,13 @@ extension _AnimatedSvgPictureStateFocusEventsExtension
   ) {
     if (node.id != null && isFocusableElement(node)) {
       final tabindex = _getTabindex(node);
-      result.add(_FocusableElementInfo(
-        elementId: node.id!,
-        tabindex: tabindex,
-        documentOrder: documentOrder,
-      ));
+      result.add(
+        _FocusableElementInfo(
+          elementId: node.id!,
+          tabindex: tabindex,
+          documentOrder: documentOrder,
+        ),
+      );
     }
 
     var order = documentOrder;

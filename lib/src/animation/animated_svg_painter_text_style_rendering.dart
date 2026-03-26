@@ -25,7 +25,10 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
     final normalizedText = _normalizeTextNfc(text);
 
     // Apply text-transform before any other processing
-    var transformedText = _applyTextTransform(normalizedText, style.textTransform);
+    var transformedText = _applyTextTransform(
+      normalizedText,
+      style.textTransform,
+    );
 
     // Apply font-size-adjust if specified
     // font-size-adjust preserves x-height when font-fallback occurs

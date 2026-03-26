@@ -332,9 +332,7 @@ extension SvgFiltersPipelinePrimitivePaintExtension on SvgFilters {
       ];
     }
     // No specific color: use identity pass with paintFill flag.
-    return const <SvgFilterPaintPass>[
-      SvgFillPaintSourcePass(),
-    ];
+    return const <SvgFilterPaintPass>[SvgFillPaintSourcePass()];
   }
 
   /// Creates StrokePaint source passes for use as filter input.
@@ -361,8 +359,6 @@ extension SvgFiltersPipelinePrimitivePaintExtension on SvgFilters {
       ];
     }
     // No specific color: use identity pass with paintStroke flag.
-    return const <SvgFilterPaintPass>[
-      SvgStrokePaintSourcePass(),
-    ];
+    return const <SvgFilterPaintPass>[SvgStrokePaintSourcePass()];
   }
 }

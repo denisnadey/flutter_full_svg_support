@@ -1460,7 +1460,11 @@ void main() {
       expect(
         (color.a * 255).round(),
         equals(
-          [(color.r * 255).round(), (color.g * 255).round(), (color.b * 255).round()].reduce((a, b) => a > b ? a : b),
+          [
+            (color.r * 255).round(),
+            (color.g * 255).round(),
+            (color.b * 255).round(),
+          ].reduce((a, b) => a > b ? a : b),
         ),
       );
     });
@@ -1475,7 +1479,10 @@ void main() {
       final lowKd = sampler.sampleDiffuse(0.2);
       final highKd = sampler.sampleDiffuse(1.0);
 
-      expect((highKd.r * 255).round(), greaterThanOrEqualTo((lowKd.r * 255).round()));
+      expect(
+        (highKd.r * 255).round(),
+        greaterThanOrEqualTo((lowKd.r * 255).round()),
+      );
     });
 
     test('specular exponent affects highlight sharpness', () {

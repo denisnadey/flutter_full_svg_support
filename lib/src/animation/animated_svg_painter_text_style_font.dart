@@ -171,7 +171,9 @@ extension AnimatedSvgPainterTextStyleFontExtension on AnimatedSvgPainter {
 
     return FontFallbackResult(
       primaryFont: families.first,
-      fallbackFonts: families.length > 1 ? families.sublist(1) : const <String>[],
+      fallbackFonts: families.length > 1
+          ? families.sublist(1)
+          : const <String>[],
     );
   }
 
@@ -235,9 +237,7 @@ extension AnimatedSvgPainterTextStyleFontExtension on AnimatedSvgPainter {
 
     // Remove duplicates while preserving order
     final seen = <String>{};
-    return families
-        .where((f) => seen.add(f.toLowerCase()))
-        .toList();
+    return families.where((f) => seen.add(f.toLowerCase())).toList();
   }
 
   /// Parses font-family without expanding generic families.
@@ -291,9 +291,7 @@ extension AnimatedSvgPainterTextStyleFontExtension on AnimatedSvgPainter {
 
     // Remove duplicates while preserving order
     final seen = <String>{};
-    return families
-        .where((f) => seen.add(f.toLowerCase()))
-        .toList();
+    return families.where((f) => seen.add(f.toLowerCase())).toList();
   }
 
   /// Gets the primary font from a font-family value.

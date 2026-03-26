@@ -953,14 +953,16 @@ class UseCascadeContext {
 
     // 1. Check inline style on node (highest priority except !important)
     final inlineValue = _extractInlineStyleValue(node, normalizedProperty);
-    final bool inlineHasImportant = inlineValue != null &&
-        inlineValue.contains('!important');
+    final bool inlineHasImportant =
+        inlineValue != null && inlineValue.contains('!important');
     final String? cleanInlineValue = inlineValue != null
         ? _stripImportant(inlineValue)
         : null;
 
     // If inline has !important, it wins everything
-    if (inlineHasImportant && cleanInlineValue != null && cleanInlineValue.isNotEmpty) {
+    if (inlineHasImportant &&
+        cleanInlineValue != null &&
+        cleanInlineValue.isNotEmpty) {
       return cleanInlineValue;
     }
 
@@ -1049,7 +1051,9 @@ class UseCascadeContext {
       if (ancestorStyleValue != null) {
         return _stripImportant(ancestorStyleValue);
       }
-      final ancestorAttrValue = ancestor.getAttributeValue(property)?.toString();
+      final ancestorAttrValue = ancestor
+          .getAttributeValue(property)
+          ?.toString();
       if (ancestorAttrValue != null && ancestorAttrValue.trim().isNotEmpty) {
         return ancestorAttrValue.trim();
       }

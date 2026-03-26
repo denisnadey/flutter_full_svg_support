@@ -123,8 +123,7 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
       return;
     }
     final referenced = document.root.findById(hrefId);
-    if (referenced == null ||
-        !_isUseReferenceAllowedTag(referenced.tagName)) {
+    if (referenced == null || !_isUseReferenceAllowedTag(referenced.tagName)) {
       return;
     }
 
@@ -251,8 +250,10 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
     final textWidth = textContent.length * estimatedCharWidth;
 
     // Handle text-anchor for horizontal alignment
-    final textAnchor =
-        _getInheritedString(textNode, 'text-anchor')?.toLowerCase();
+    final textAnchor = _getInheritedString(
+      textNode,
+      'text-anchor',
+    )?.toLowerCase();
     double adjustedX = x;
     if (textAnchor == 'middle') {
       adjustedX = x - textWidth / 2;

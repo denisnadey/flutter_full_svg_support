@@ -1123,10 +1123,10 @@ void main() {
       });
 
       // Test 11: pointer-events="visiblePainted" default behavior
-      testWidgets('pointer-events visiblePainted only fires on visible painted areas', (
-        WidgetTester tester,
-      ) async {
-        const svgXml = '''
+      testWidgets(
+        'pointer-events visiblePainted only fires on visible painted areas',
+        (WidgetTester tester) async {
+          const svgXml = '''
           <svg viewBox="0 0 100 100">
             <rect id="paintedRect" pointer-events="visiblePainted" 
                   x="20" y="20" width="60" height="60" fill="blue"/>
@@ -1137,34 +1137,35 @@ void main() {
           </svg>
         ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: Center(
-                child: AnimatedSvgPicture.string(
-                  svgXml,
-                  width: 200,
-                  height: 200,
-                  autoPlay: true,
+          await tester.pumpWidget(
+            const MaterialApp(
+              home: Scaffold(
+                body: Center(
+                  child: AnimatedSvgPicture.string(
+                    svgXml,
+                    width: 200,
+                    height: 200,
+                    autoPlay: true,
+                  ),
                 ),
               ),
             ),
-          ),
-        );
+          );
 
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 100));
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 100));
 
-        final pictureFinder = find.byType(AnimatedSvgPicture);
-        final center = tester.getCenter(pictureFinder);
+          final pictureFinder = find.byType(AnimatedSvgPicture);
+          final center = tester.getCenter(pictureFinder);
 
-        // Click on painted, visible rect
-        await tester.tapAt(center);
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 300));
+          // Click on painted, visible rect
+          await tester.tapAt(center);
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 300));
 
-        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-      });
+          expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+        },
+      );
     });
   });
 }

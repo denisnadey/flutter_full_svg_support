@@ -521,7 +521,8 @@ void main() {
 
         final document2 = SvgParser.parse(svgString2);
         final filter2 =
-            document2.filters!.getById('convZeroSum') as SvgConvolveMatrixFilter;
+            document2.filters!.getById('convZeroSum')
+                as SvgConvolveMatrixFilter;
         // Sum of edge detection kernel is 0, so divisor should be 1
         expect(filter2.divisor, 1.0);
       });

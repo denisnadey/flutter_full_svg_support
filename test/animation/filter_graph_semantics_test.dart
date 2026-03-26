@@ -529,13 +529,13 @@ void main() {
       const originalPass = SvgFillPaintSourcePass(
         fillColor: ui.Color(0xFF00FF00),
       );
-      final copiedPass = originalPass.copyWith(
-        offset: const ui.Offset(5, 5),
-      );
+      final copiedPass = originalPass.copyWith(offset: const ui.Offset(5, 5));
 
       expect(copiedPass, isA<SvgFillPaintSourcePass>());
-      expect((copiedPass as SvgFillPaintSourcePass).fillColor,
-          const ui.Color(0xFF00FF00));
+      expect(
+        (copiedPass as SvgFillPaintSourcePass).fillColor,
+        const ui.Color(0xFF00FF00),
+      );
       expect(copiedPass.offset, const ui.Offset(5, 5));
     });
 
@@ -555,34 +555,40 @@ void main() {
       );
 
       expect(copiedPass, isA<SvgStrokePaintSourcePass>());
-      expect((copiedPass as SvgStrokePaintSourcePass).strokeColor,
-          const ui.Color(0xFFFF0000));
+      expect(
+        (copiedPass as SvgStrokePaintSourcePass).strokeColor,
+        const ui.Color(0xFFFF0000),
+      );
       expect(copiedPass.blendMode, ui.BlendMode.multiply);
     });
 
     test('createFillPaintSourcePasses with color', () {
       final passes =
           SvgFiltersPipelinePrimitivePaintExtension.createFillPaintSourcePasses(
-        fillColor: const ui.Color(0xFF0000FF),
-      );
+            fillColor: const ui.Color(0xFF0000FF),
+          );
 
       expect(passes, hasLength(1));
       expect(passes[0], isA<SvgFillPaintSourcePass>());
-      expect((passes[0] as SvgFillPaintSourcePass).fillColor,
-          const ui.Color(0xFF0000FF));
+      expect(
+        (passes[0] as SvgFillPaintSourcePass).fillColor,
+        const ui.Color(0xFF0000FF),
+      );
       expect(passes[0].colorFilter, isNotNull);
     });
 
     test('createStrokePaintSourcePasses with color', () {
-      final passes = SvgFiltersPipelinePrimitivePaintExtension
-          .createStrokePaintSourcePasses(
-        strokeColor: const ui.Color(0xFFFF0000),
-      );
+      final passes =
+          SvgFiltersPipelinePrimitivePaintExtension.createStrokePaintSourcePasses(
+            strokeColor: const ui.Color(0xFFFF0000),
+          );
 
       expect(passes, hasLength(1));
       expect(passes[0], isA<SvgStrokePaintSourcePass>());
-      expect((passes[0] as SvgStrokePaintSourcePass).strokeColor,
-          const ui.Color(0xFFFF0000));
+      expect(
+        (passes[0] as SvgStrokePaintSourcePass).strokeColor,
+        const ui.Color(0xFFFF0000),
+      );
       expect(passes[0].colorFilter, isNotNull);
     });
   });

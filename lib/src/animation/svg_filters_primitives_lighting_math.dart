@@ -91,7 +91,9 @@ part of 'svg_filters.dart';
   final spotDx = pointsAtX - lightX;
   final spotDy = pointsAtY - lightY;
   final spotDz = pointsAtZ - lightZ;
-  final spotLen = math.sqrt(spotDx * spotDx + spotDy * spotDy + spotDz * spotDz);
+  final spotLen = math.sqrt(
+    spotDx * spotDx + spotDy * spotDy + spotDz * spotDz,
+  );
   final spotDirX = spotLen > 0.000001 ? spotDx / spotLen : 0.0;
   final spotDirY = spotLen > 0.000001 ? spotDy / spotLen : 0.0;
   final spotDirZ = spotLen > 0.000001 ? spotDz / spotLen : 1.0;
@@ -103,9 +105,15 @@ part of 'svg_filters.dart';
   final toSurfaceLen = math.sqrt(
     toSurfaceX * toSurfaceX + toSurfaceY * toSurfaceY + toSurfaceZ * toSurfaceZ,
   );
-  final toSurfaceDirX = toSurfaceLen > 0.000001 ? toSurfaceX / toSurfaceLen : 0.0;
-  final toSurfaceDirY = toSurfaceLen > 0.000001 ? toSurfaceY / toSurfaceLen : 0.0;
-  final toSurfaceDirZ = toSurfaceLen > 0.000001 ? toSurfaceZ / toSurfaceLen : 1.0;
+  final toSurfaceDirX = toSurfaceLen > 0.000001
+      ? toSurfaceX / toSurfaceLen
+      : 0.0;
+  final toSurfaceDirY = toSurfaceLen > 0.000001
+      ? toSurfaceY / toSurfaceLen
+      : 0.0;
+  final toSurfaceDirZ = toSurfaceLen > 0.000001
+      ? toSurfaceZ / toSurfaceLen
+      : 1.0;
 
   // Direction from surface to light (for lighting calculation)
   final lightDirX = toSurfaceLen > 0.000001 ? -toSurfaceDirX : 0.0;
@@ -114,7 +122,9 @@ part of 'svg_filters.dart';
 
   // Dot product: direction from light to surface · spot direction
   final spotDot =
-      toSurfaceDirX * spotDirX + toSurfaceDirY * spotDirY + toSurfaceDirZ * spotDirZ;
+      toSurfaceDirX * spotDirX +
+      toSurfaceDirY * spotDirY +
+      toSurfaceDirZ * spotDirZ;
 
   // Cone cutoff check
   double cosConeAngle = -1.0;
@@ -128,7 +138,9 @@ part of 'svg_filters.dart';
   }
 
   // Compute attenuation: (spotDot)^specularExponent
-  final attenuation = math.pow(spotDot.clamp(0.0, 1.0), specularExponent).toDouble();
+  final attenuation = math
+      .pow(spotDot.clamp(0.0, 1.0), specularExponent)
+      .toDouble();
   return ((lightDirX, lightDirY, lightDirZ), attenuation);
 }
 
