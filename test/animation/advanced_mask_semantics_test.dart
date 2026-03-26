@@ -762,9 +762,7 @@ void main() {
       expect(analysis.pixelCount, greaterThan(100));
     });
 
-    testWidgets('mask combined with clip-path', (
-      WidgetTester tester,
-    ) async {
+    testWidgets('mask combined with clip-path', (WidgetTester tester) async {
       // Element with both clip-path and mask
       const svgXml = '''
         <svg viewBox="0 0 100 100">
@@ -837,12 +835,13 @@ void main() {
       final analysisT1 = VisualTestUtils.analyzeRedPixels(pixelsT1, 800, 600);
 
       // Mask should have grown - more red pixels visible
-      expect(analysisT1.pixelCount, greaterThanOrEqualTo(analysisT0.pixelCount));
+      expect(
+        analysisT1.pixelCount,
+        greaterThanOrEqualTo(analysisT0.pixelCount),
+      );
     });
 
-    testWidgets('mask with animated fill color', (
-      WidgetTester tester,
-    ) async {
+    testWidgets('mask with animated fill color', (WidgetTester tester) async {
       // Fill color animation affects mask opacity
       const svgXml = '''
         <svg viewBox="0 0 100 100">
@@ -1011,9 +1010,7 @@ void main() {
       expect(analysis.pixelCount, greaterThan(200));
     });
 
-    testWidgets('mask with use element reference', (
-      WidgetTester tester,
-    ) async {
+    testWidgets('mask with use element reference', (WidgetTester tester) async {
       // Mask content using <use> element
       const svgXml = '''
         <svg viewBox="0 0 100 100">

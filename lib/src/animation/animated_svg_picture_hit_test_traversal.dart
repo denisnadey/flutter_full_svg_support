@@ -2,10 +2,7 @@ part of 'animated_svg_picture.dart';
 
 /// Result of hit testing that includes both the element ID and anchor info.
 class _HitTestResult {
-  const _HitTestResult({
-    this.elementId,
-    this.anchorInfo,
-  });
+  const _HitTestResult({this.elementId, this.anchorInfo});
 
   /// The ID of the hit element, if any.
   final String? elementId;
@@ -16,7 +13,6 @@ class _HitTestResult {
 
 extension _AnimatedSvgPictureStateHitTestTraversalExtension
     on _AnimatedSvgPictureState {
-
   /// Extracts link info from an anchor node.
   SvgLinkInfo? _extractAnchorInfo(SvgNode node) {
     if (node.tagName != 'a') return null;
@@ -296,5 +292,4 @@ extension _AnimatedSvgPictureStateHitTestTraversalExtension
         tagName == 'filter' ||
         tagName == 'marker';
   }
-
 }

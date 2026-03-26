@@ -293,7 +293,7 @@ const Set<String> cssInheritableProperties = {
 /// - The shadow root ID can be tracked to properly scope selector matching
 class CssCascadeResolver {
   CssCascadeResolver({required this.cssRules, this.shadowBoundaryId})
-      : _ruleCache = {};
+    : _ruleCache = {};
 
   /// All CSS rules from <style> elements.
   final List<CssSelectorRule> cssRules;
@@ -310,10 +310,8 @@ class CssCascadeResolver {
 
   /// Creates a new resolver with shadow boundary for use content.
   CssCascadeResolver withShadowBoundary(String? boundaryId) {
-    return CssCascadeResolver(
-      cssRules: cssRules,
-      shadowBoundaryId: boundaryId,
-    )..pseudoClassState = pseudoClassState;
+    return CssCascadeResolver(cssRules: cssRules, shadowBoundaryId: boundaryId)
+      ..pseudoClassState = pseudoClassState;
   }
 
   /// Clear the rule cache (call when pseudo-class state changes).

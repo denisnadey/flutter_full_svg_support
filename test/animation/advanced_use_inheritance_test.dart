@@ -9,12 +9,12 @@ import 'visual_test_utils.dart';
 void main() {
   group('Advanced Use/Symbol Inheritance Tests', () {
     group('CSS Cascade Through Use Boundary', () {
-      testWidgets('!important on use element overrides when element has no value', (
-        WidgetTester tester,
-      ) async {
-        // Per SVG spec: !important on use element should apply when
-        // referenced content has no explicit value for that property
-        const svgXml = '''
+      testWidgets(
+        '!important on use element overrides when element has no value',
+        (WidgetTester tester) async {
+          // Per SVG spec: !important on use element should apply when
+          // referenced content has no explicit value for that property
+          const svgXml = '''
           <svg viewBox="0 0 100 100">
             <defs>
               <rect id="myRect" x="10" y="10" width="80" height="80"/>
@@ -23,22 +23,31 @@ void main() {
           </svg>
         ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+          await tester.pumpWidget(
+            const MaterialApp(
+              home: Scaffold(
+                body: AnimatedSvgPicture.string(
+                  svgXml,
+                  width: 200,
+                  height: 200,
+                ),
+              ),
             ),
-          ),
-        );
+          );
 
-        await tester.pump();
+          await tester.pump();
 
-        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
-        final redAnalysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+          final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+          final redAnalysis = VisualTestUtils.analyzeRedPixels(
+            pixels,
+            800,
+            600,
+          );
 
-        // The !important on use should apply since referenced element has no fill
-        expect(redAnalysis.pixelCount, greaterThan(1000));
-      });
+          // The !important on use should apply since referenced element has no fill
+          expect(redAnalysis.pixelCount, greaterThan(1000));
+        },
+      );
 
       testWidgets('CSS rule with !important overrides use presentation attr', (
         WidgetTester tester,
@@ -383,9 +392,7 @@ void main() {
         expect(analysis.boundingBox.top, greaterThan(50));
       });
 
-      testWidgets('use inside mask clips content', (
-        WidgetTester tester,
-      ) async {
+      testWidgets('use inside mask clips content', (WidgetTester tester) async {
         const svgXml = '''
           <svg viewBox="0 0 100 100">
             <defs>

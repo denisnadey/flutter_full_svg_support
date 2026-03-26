@@ -350,9 +350,10 @@ void main() {
     });
 
     // Test 11: Edge case - zero-size bounding box handling
-    testWidgets('11. Edge case: zero-size element with objectBoundingBox clip',
-        (WidgetTester tester) async {
-      const svgXml = '''
+    testWidgets(
+      '11. Edge case: zero-size element with objectBoundingBox clip',
+      (WidgetTester tester) async {
+        const svgXml = '''
         <svg viewBox="0 0 100 100">
           <defs>
             <clipPath id="clip" clipPathUnits="objectBoundingBox">
@@ -364,19 +365,20 @@ void main() {
         </svg>
       ''';
 
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+            ),
           ),
-        ),
-      );
+        );
 
-      await tester.pump();
+        await tester.pump();
 
-      // Should not crash with zero-size element
-      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-    });
+        // Should not crash with zero-size element
+        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+      },
+    );
 
     // Test 12: Edge case - empty clipPath hides content
     testWidgets('12. Edge case: empty clipPath behavior', (

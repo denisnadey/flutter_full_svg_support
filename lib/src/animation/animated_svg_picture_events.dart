@@ -617,6 +617,4 @@ extension _AnimatedSvgPictureStateFocusEventsExtension
     // Path is target -> ... -> root, reverse for capture phase order
     return path.reversed.toList();
   }
-
-
 }

@@ -731,11 +731,15 @@ void main() {
       buffer.writeln('    <filter id="deepChainFx">');
       buffer.writeln('      <feOffset dx="1" dy="0" result="r0"/>');
       for (int i = 1; i < 50; i++) {
-        buffer.writeln('      <feOffset in="r${i - 1}" dx="1" dy="0" result="r$i"/>');
+        buffer.writeln(
+          '      <feOffset in="r${i - 1}" dx="1" dy="0" result="r$i"/>',
+        );
       }
       buffer.writeln('    </filter>');
       buffer.writeln('  </defs>');
-      buffer.writeln('  <rect x="10" y="10" width="50" height="50" fill="blue" filter="url(#deepChainFx)"/>');
+      buffer.writeln(
+        '  <rect x="10" y="10" width="50" height="50" fill="blue" filter="url(#deepChainFx)"/>',
+      );
       buffer.writeln('</svg>');
 
       final document = SvgParser.parse(buffer.toString());
@@ -768,9 +772,7 @@ void main() {
       final passes = document.filters!.resolvePaintPasses(
         'fillGradientFx',
         sourceContext: const SvgFilterSourceContext(
-          fillPaint: <SvgFilterPaintPass>[
-            SvgFillPaintSourcePass(),
-          ],
+          fillPaint: <SvgFilterPaintPass>[SvgFillPaintSourcePass()],
         ),
       );
 
@@ -796,9 +798,7 @@ void main() {
         'strokeBlurOffsetFx',
         sourceContext: const SvgFilterSourceContext(
           strokePaint: <SvgFilterPaintPass>[
-            SvgStrokePaintSourcePass(
-              strokeColor: ui.Color(0xFFFF0000),
-            ),
+            SvgStrokePaintSourcePass(strokeColor: ui.Color(0xFFFF0000)),
           ],
         ),
       );
