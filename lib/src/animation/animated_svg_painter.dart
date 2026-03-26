@@ -65,6 +65,14 @@ class _RenderCache {
   /// Cached hit-test paths keyed by element ID + geometry hash.
   final Map<String, ui.Path> hitTestPaths = <String, ui.Path>{};
 
+  /// Cached mask bounds keyed by mask ID + masked element bounds hash.
+  /// Used to avoid recomputing mask regions every frame.
+  final Map<String, ui.Rect> maskBounds = <String, ui.Rect>{};
+
+  /// Cached mask content animation state keyed by mask ID.
+  /// True if mask content is animated and needs per-frame invalidation.
+  final Map<String, bool> maskAnimationState = <String, bool>{};
+
   /// Last animation time when cache was valid.
   double? _lastAnimationTime;
 
@@ -76,8 +84,21 @@ class _RenderCache {
       patternImages.clear();
       textParagraphs.clear();
       hitTestPaths.clear();
+      // Only clear animated mask bounds, preserve static ones
+      _invalidateAnimatedMaskCaches();
     }
     _lastAnimationTime = animationTime;
+  }
+
+  /// Invalidates mask caches that contain animated content.
+  void _invalidateAnimatedMaskCaches() {
+    final animatedMasks = maskAnimationState.entries
+        .where((e) => e.value)
+        .map((e) => e.key)
+        .toList();
+    for (final maskId in animatedMasks) {
+      maskBounds.removeWhere((key, _) => key.startsWith('m:$maskId|'));
+    }
   }
 
   /// Clears all caches.
@@ -86,6 +107,8 @@ class _RenderCache {
     patternImages.clear();
     textParagraphs.clear();
     hitTestPaths.clear();
+    maskBounds.clear();
+    maskAnimationState.clear();
     _lastAnimationTime = null;
   }
 
@@ -135,6 +158,22 @@ class _RenderCache {
         'ff:${fontFamily ?? "def"}|fw:$fontWeightIndex|'
         'fst:$fontStyleIndex|ls:${letterSpacing.toStringAsFixed(2)}|'
         'c:$colorValue';
+  }
+
+  /// Generate a cache key for mask bounds.
+  // ignore: unused_element
+  static String maskKey(
+    String maskId,
+    ui.Rect elementBounds,
+    String maskUnits,
+    String maskContentUnits,
+  ) {
+    final boundsHash =
+        '${elementBounds.left.toStringAsFixed(2)}_'
+        '${elementBounds.top.toStringAsFixed(2)}_'
+        '${elementBounds.width.toStringAsFixed(2)}_'
+        '${elementBounds.height.toStringAsFixed(2)}';
+    return 'm:$maskId|b:$boundsHash|mu:$maskUnits|mcu:$maskContentUnits';
   }
 }
 

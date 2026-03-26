@@ -27,46 +27,68 @@
 - [filter_advanced_semantics_test.dart](file://test/animation/filter_advanced_semantics_test.dart)
 - [fe_lighting_test.dart](file://test/animation/fe_lighting_test.dart)
 - [fe_convolve_matrix_test.dart](file://test/animation/fe_convolve_matrix_test.dart)
+- [filter_displacement_tile_test.dart](file://test/animation/filter_displacement_tile_test.dart)
+- [filter_primitive_edge_cases_test.dart](file://test/animation/filter_primitive_edge_cases_test.dart)
 - [SVGFEComponentTransferElement.cpp](file://blink-b87d44f-Source-core-svg/SVGFEComponentTransferElement.cpp)
 - [SVGFEComponentTransferElement.h](file://blink-b87d44f-Source-core-svg/SVGFEComponentTransferElement.h)
+- [SVGFEDisplacementMapElement.cpp](file://blink-b87d44f-Source-core-svg/SVGFEDisplacementMapElement.cpp)
+- [SVGFEDisplacementMapElement.h](file://blink-b87d44f-Source-core-svg/SVGFEDisplacementMapElement.h)
+- [SVGFEDiffuseLightingElement.cpp](file://blink-b87d44f-Source-core-svg/SVGFEDiffuseLightingElement.cpp)
+- [SVGFEDiffuseLightingElement.h](file://blink-b87d44f-Source-core-svg/SVGFEDiffuseLightingElement.h)
+- [SVGFESpecularLightingElement.cpp](file://blink-b87d44f-Source-core-svg/SVGFESpecularLightingElement.cpp)
+- [SVGFESpecularLightingElement.h](file://blink-b87d44f-Source-core-svg/SVGFESpecularLightingElement.h)
 </cite>
 
 ## Update Summary
 **Changes Made**
-- Enhanced lighting calculations with comprehensive 3D vector mathematics, surface normal computation, and advanced light source modeling
-- Improved color matrix operations with full SVG matrix conversion support and specialized transformation types
-- Expanded filter registry pipeline with advanced compositing intelligence and arithmetic mode optimization
-- Enhanced component transfer functions with mathematical precision and optimized processing paths
-- Added comprehensive testing framework validating all filter primitive types and edge cases
-- Improved filter primitive resolution with better identity kernel detection and caching mechanisms
-- Integrated advanced lighting system with diffuse and specular lighting primitives
-- Enhanced filter architecture with dedicated pipeline primitives for effects and paint operations
+- Enhanced filter system with comprehensive displacement map support including channel selectors, scale animation, and edge mode handling
+- Added robust tile primitive implementation with subregion support and advanced tiling algorithms
+- Expanded filter graph semantics testing with comprehensive edge case validation
+- Enhanced lighting system with improved surface normal computation and edge handling modes
+- Strengthened filter primitive implementations with better error handling and optimization
+- Improved filter pipeline with enhanced input resolution and named result caching
+- Added comprehensive testing framework for displacement map, tiling, and lighting edge cases
 
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
-5. [Enhanced Lighting Calculations](#enhanced-lighting-calculations)
-6. [Advanced Color Matrix Operations](#advanced-color-matrix-operations)
-7. [Enhanced Filter Registry Pipeline](#enhanced-filter-registry-pipeline)
-8. [Enhanced Component Transfer Functions](#enhanced-component-transfer-functions)
-9. [Built-in Filter Primitives](#built-in-filter-primitives)
-10. [Filter Animation Support](#filter-animation-support)
-11. [Comprehensive Testing Framework](#comprehensive-testing-framework)
-12. [Performance Optimizations](#performance-optimizations)
-13. [Troubleshooting Guide](#troubleshooting-guide)
-14. [Conclusion](#conclusion)
-15. [Appendices](#appendices)
+5. [Enhanced Displacement Map System](#enhanced-displacement-map-system)
+6. [Advanced Tile Primitive Implementation](#advanced-tile-primitive-implementation)
+7. [Enhanced Lighting Calculations](#enhanced-lighting-calculations)
+8. [Advanced Color Matrix Operations](#advanced-color-matrix-operations)
+9. [Enhanced Filter Registry Pipeline](#enhanced-filter-registry-pipeline)
+10. [Enhanced Component Transfer Functions](#enhanced-component-transfer-functions)
+11. [Built-in Filter Primitives](#built-in-filter-primitives)
+12. [Filter Animation Support](#filter-animation-support)
+13. [Comprehensive Testing Framework](#comprehensive-testing-framework)
+14. [Performance Optimizations](#performance-optimizations)
+15. [Troubleshooting Guide](#troubleshooting-guide)
+16. [Conclusion](#conclusion)
+17. [Appendices](#appendices)
 
 ## Introduction
-This document explains the enhanced SVG filter system and effects implemented in the codebase. The system has been comprehensively upgraded with improved lighting calculations featuring advanced 3D vector mathematics, better color matrix operations with full SVG matrix conversion support, enhanced filter registry pipeline with advanced compositing intelligence, and sophisticated component transfer functions with mathematical precision. The enhanced system now provides comprehensive transfer function implementations including identity, linear, gamma, table, and discrete types with optimized processing paths, advanced lighting models with realistic surface normal computation, and expanded testing coverage validating all filter primitive types and edge cases.
+This document explains the enhanced SVG filter system and effects implemented in the codebase. The system has been comprehensively upgraded with improved lighting calculations featuring advanced 3D vector mathematics, better color matrix operations with full SVG matrix conversion support, enhanced filter registry pipeline with advanced compositing intelligence, and sophisticated component transfer functions with mathematical precision. The enhanced system now provides comprehensive transfer function implementations including identity, linear, gamma, table, and discrete types with optimized processing paths, advanced lighting models with realistic surface normal computation, and expanded testing coverage validating all filter primitive types and edge cases. Recent enhancements include comprehensive displacement map support with channel selectors and edge modes, robust tile primitive implementation with subregion handling, and strengthened filter graph semantics testing.
 
 ## Project Structure
 The enhanced filter system is organized around comprehensive lighting calculations, advanced color matrix operations, enhanced pipeline optimization, and specialized component transfer processing:
 
 ```mermaid
 graph TB
+subgraph "Enhanced Displacement Map System"
+DisplacementMapFilter["SvgDisplacementMapFilter<br/>Scale animation, channel selectors, edge modes"]
+DisplacementProcessor["DisplacementMapProcessor<br/>Pixel-level displacement with edge handling"]
+EdgeModes["Edge Modes<br/>none (transparent), clamp, wrap"]
+ChannelSelectors["Channel Selectors<br/>R, G, B, A for X/Y displacement"]
+DisplacementPipeline["_resolveDisplacementMapOutput<br/>Pipeline integration"]
+end
+subgraph "Advanced Tile Primitive"
+TileFilter["SvgTileFilter<br/>Subregion support, x/y/width/height"]
+TileProcessor["TileProcessor<br/>Advanced tiling with offset handling"]
+SubregionSupport["Subregion Support<br/>Custom tile regions per SVG spec"]
+TilingAlgorithms["Tiling Algorithms<br/>Modulo wrapping, boundary handling"]
+end
 subgraph "Enhanced Lighting System"
 LightSources["Light Sources<br/>Distant, Point, Spot"]
 VectorMath["3D Vector Mathematics<br/>LightingVector3, calculations"]
@@ -85,6 +107,7 @@ IdentityDetection["Identity Kernel Detection<br/>Convolution optimization"]
 CacheResults["Named Result Caching<br/>Multi-hop chain optimization"]
 CircularDetection["Circular Reference Detection<br/>Depth tracking + state management"]
 ArithmeticOptimization["Arithmetic Mode Optimization<br/>Coefficient approximation"]
+EnhancedInputResolution["Enhanced Input Resolution<br/>FillPaint/StrokePaint sources"]
 end
 subgraph "Enhanced Component Transfer"
 TransferFunctions["Transfer Functions<br/>Identity, Linear, Gamma, Table, Discrete"]
@@ -92,6 +115,12 @@ LinearOptimization["Linear Optimization<br/>Color matrix generation"]
 PixelProcessing["Pixel-by-Pixel Processing<br/>Specialized paint passes"]
 IdentityDetectionCTF["Identity Detection<br/>Mathematical verification"]
 end
+DisplacementMapFilter --> DisplacementProcessor
+DisplacementProcessor --> EdgeModes
+DisplacementProcessor --> ChannelSelectors
+TileFilter --> TileProcessor
+TileProcessor --> SubregionSupport
+TileProcessor --> TilingAlgorithms
 LightSources --> LightingModels
 VectorMath --> SurfaceNormals
 SurfaceNormals --> LightingProcessor
@@ -100,25 +129,35 @@ MatrixConversion --> ColorMatrixFilter
 IdentityDetection --> CacheResults
 CircularDetection --> CacheResults
 ArithmeticOptimization --> CacheResults
+EnhancedInputResolution --> CacheResults
 TransferFunctions --> LinearOptimization
 LinearOptimization --> PixelProcessing
 IdentityDetectionCTF --> LinearOptimization
 ```
 
 **Diagram sources**
+- [svg_filters_primitives.dart:7-47](file://lib/src/animation/svg_filters_primitives.dart#L7-L47)
 - [svg_filters_primitives_lighting_math.dart:16-65](file://lib/src/animation/svg_filters_primitives_lighting_math.dart#L16-L65)
 - [svg_filters_color_matrix.dart:99-242](file://lib/src/animation/svg_filters_color_matrix.dart#L99-L242)
 - [svg_filters_registry_pipeline.dart:178-186](file://lib/src/animation/svg_filters_registry_pipeline.dart#L178-L186)
 - [svg_filters_primitives_component_transfer.dart:27-86](file://lib/src/animation/svg_filters_primitives_component_transfer.dart#L27-L86)
+- [svg_filters_base.dart:152-180](file://lib/src/animation/svg_filters_base.dart#L152-L180)
+- [svg_filters_base.dart:186-271](file://lib/src/animation/svg_filters_base.dart#L186-L271)
 
 **Section sources**
-- [svg_filters_primitives_lighting_math.dart:1-905](file://lib/src/animation/svg_filters_primitives_lighting_math.dart#L1-L905)
+- [svg_filters_primitives_lighting_math.dart:1-1049](file://lib/src/animation/svg_filters_primitives_lighting_math.dart#L1-L1049)
 - [svg_filters_color_matrix.dart:1-242](file://lib/src/animation/svg_filters_color_matrix.dart#L1-L242)
 - [svg_filters_registry_pipeline.dart:1-188](file://lib/src/animation/svg_filters_registry_pipeline.dart#L1-L188)
 - [svg_filters_primitives_component_transfer.dart:1-237](file://lib/src/animation/svg_filters_primitives_component_transfer.dart#L1-L237)
+- [svg_filters_primitives.dart:1-569](file://lib/src/animation/svg_filters_primitives.dart#L1-L569)
+- [svg_filters_base.dart:1-375](file://lib/src/animation/svg_filters_base.dart#L1-L375)
 
 ## Core Components
 The enhanced filter system introduces several key components with improved functionality:
+
+**Enhanced Displacement Map System**: Comprehensive displacement map support with channel selectors (R, G, B, A), scale animation, and three edge modes (none, clamp, wrap) for handling pixels outside the image bounds. The system includes pixel-level displacement processing with proper coordinate calculation and edge handling.
+
+**Advanced Tile Primitive**: Robust tile implementation with subregion support (x, y, width, height), modulo-based tiling algorithms, and proper boundary handling for cases where tile regions exceed input dimensions.
 
 **Enhanced Lighting System**: Comprehensive 3D vector mathematics with LightingVector3 class, surface normal computation using Sobel operators, and advanced light source modeling including distant, point, and spot lights with proper edge handling modes.
 
@@ -133,6 +172,8 @@ The enhanced filter system introduces several key components with improved funct
 - [svg_filters_color_matrix.dart:99-242](file://lib/src/animation/svg_filters_color_matrix.dart#L99-L242)
 - [svg_filters_registry_pipeline.dart:9-58](file://lib/src/animation/svg_filters_registry_pipeline.dart#L9-L58)
 - [svg_filters_primitives_component_transfer.dart:4-86](file://lib/src/animation/svg_filters_primitives_component_transfer.dart#L4-L86)
+- [svg_filters_primitives.dart:7-47](file://lib/src/animation/svg_filters_primitives.dart#L7-L47)
+- [svg_filters_base.dart:152-180](file://lib/src/animation/svg_filters_base.dart#L152-L180)
 
 ## Architecture Overview
 The enhanced filter pipeline architecture provides sophisticated filter chain resolution with comprehensive input handling, named result caching, and edge case management. The system now includes optimized component transfer processing with intelligent decision-making between color matrix operations and pixel-by-pixel processing, advanced lighting calculations with realistic surface normal computation, and comprehensive arithmetic mode optimization.
@@ -141,12 +182,20 @@ The enhanced filter pipeline architecture provides sophisticated filter chain re
 sequenceDiagram
 participant Parser as "SVG Parser"
 participant Pipeline as "Enhanced Pipeline"
+participant Displacement as "Displacement Map"
+participant Tile as "Tile Processor"
 participant Lighting as "Lighting Calculator"
 participant ColorMatrix as "Color Matrix Processor"
 participant CTProcessor as "Component Transfer Processor"
 participant Cache as "Result Cache"
 Parser->>Pipeline : "resolvePaintPasses(id)"
 Pipeline->>Cache : "check named results"
+Pipeline->>Displacement : "process displacement maps"
+Displacement->>Displacement : "apply channel selectors"
+Displacement->>Displacement : "handle edge modes"
+Pipeline->>Tile : "apply tiling with subregions"
+Tile->>Tile : "modulus wrapping"
+Tile->>Tile : "boundary handling"
 Pipeline->>Lighting : "compute surface normals"
 Lighting->>Lighting : "apply Sobel operator"
 Lighting->>Lighting : "calculate lighting intensities"
@@ -169,10 +218,45 @@ Pipeline-->>Parser : "final paint passes"
 ```
 
 **Diagram sources**
-- [svg_filters_registry_pipeline_primitives_effects.dart:143-193](file://lib/src/animation/svg_filters_registry_pipeline_primitives_effects.dart#L143-L193)
+- [svg_filters_registry_pipeline_primitives_effects.dart:85-121](file://lib/src/animation/svg_filters_registry_pipeline_primitives_effects.dart#L85-L121)
+- [svg_filters_registry_pipeline_primitives_paint.dart:182-270](file://lib/src/animation/svg_filters_registry_pipeline_primitives_paint.dart#L182-L270)
 - [svg_filters_color_matrix.dart:114-143](file://lib/src/animation/svg_filters_color_matrix.dart#L114-L143)
 - [svg_filters_primitives_component_transfer.dart:242-284](file://lib/src/animation/svg_filters_primitives_component_transfer.dart#L242-L284)
 - [svg_filters_registry_pipeline.dart:178-186](file://lib/src/animation/svg_filters_registry_pipeline.dart#L178-L186)
+
+## Enhanced Displacement Map System
+The enhanced displacement map system provides comprehensive spatial displacement capabilities with advanced channel selection and edge handling.
+
+**Displacement Map Filter**: The SvgDisplacementMapFilter class supports scale animation, channel selectors for both X and Y displacement channels, and configurable edge modes. The filter can reference secondary input (in2) for displacement maps and handles scale=0 as identity displacement.
+
+**Displacement Processing**: The DisplacementMapProcessor implements the core displacement algorithm with proper coordinate calculation using the formula P'(x,y) = P(x + scale*(XC(x,y) - 0.5), y + scale*(YC(x,y) - 0.5)). It supports four channel selectors (R, G, B, A) and three edge modes: none (transparent black), clamp (edge clamping), and wrap (modulus wrapping).
+
+**Edge Mode Handling**: Advanced edge handling ensures proper behavior when displaced coordinates fall outside the image bounds. The system maintains SVG compliance by producing transparent black pixels for out-of-bounds samples when using the none mode.
+
+**Pipeline Integration**: The _resolveDisplacementMapOutput method integrates displacement processing into the filter pipeline, handling scale=0 optimization, in2 input resolution, and proper output generation.
+
+**Section sources**
+- [svg_filters_primitives.dart:7-47](file://lib/src/animation/svg_filters_primitives.dart#L7-L47)
+- [svg_filters_primitives.dart:68-190](file://lib/src/animation/svg_filters_primitives.dart#L68-L190)
+- [svg_filters_registry_pipeline_primitives_effects.dart:85-121](file://lib/src/animation/svg_filters_registry_pipeline_primitives_effects.dart#L85-L121)
+
+## Advanced Tile Primitive Implementation
+The advanced tile primitive implementation provides comprehensive tiling capabilities with subregion support and robust boundary handling.
+
+**Tile Filter**: The SvgTileFilter class supports subregion specification through x, y, width, and height properties. It includes a hasSubregion property to distinguish between standard tiling and custom subregion tiling scenarios.
+
+**Tiling Algorithm**: The TileProcessor.applyTiling method implements the SVG-compliant tiling algorithm with proper modulus wrapping and boundary handling. It supports tile origin alignment with filter region origin and handles cases where tile regions exceed input dimensions.
+
+**Subregion Support**: Advanced subregion handling allows tiling within custom rectangular regions. The algorithm calculates source coordinates using modulus arithmetic and handles boundary conditions appropriately.
+
+**Boundary Handling**: The system properly handles edge cases including empty inputs, zero-sized outputs, and tile regions that extend beyond input boundaries. Empty inputs produce transparent black output as per SVG specification.
+
+**Pipeline Integration**: The tile primitive integrates seamlessly into the filter pipeline as a pass-through primitive that can be combined with other filter operations.
+
+**Section sources**
+- [svg_filters_base.dart:152-180](file://lib/src/animation/svg_filters_base.dart#L152-L180)
+- [svg_filters_base.dart:206-271](file://lib/src/animation/svg_filters_base.dart#L206-L271)
+- [svg_filters_registry_pipeline_primitives_paint.dart:278-311](file://lib/src/animation/svg_filters_registry_pipeline_primitives_paint.dart#L278-L311)
 
 ## Enhanced Lighting Calculations
 The enhanced lighting system provides comprehensive 3D vector mathematics and surface normal computation with realistic lighting models.
@@ -185,11 +269,13 @@ The enhanced lighting system provides comprehensive 3D vector mathematics and su
 
 **Lighting Models**: Realistic lighting calculations using Lambertian diffuse reflection and Blinn-Phong specular reflection models with proper vector normalization and intensity computation.
 
+**Edge Mode Handling**: Enhanced edge mode support for surface normal computation including duplicate (Blink default), wrap (modulus wrapping), and none (transparent black) modes for border pixel handling.
+
 **Section sources**
 - [svg_filters_primitives_lighting_math.dart:16-230](file://lib/src/animation/svg_filters_primitives_lighting_math.dart#L16-L230)
 - [svg_filters_primitives_lighting_math.dart:232-418](file://lib/src/animation/svg_filters_primitives_lighting_math.dart#L232-L418)
 - [svg_filters_primitives_lighting_math.dart:420-528](file://lib/src/animation/svg_filters_primitives_lighting_math.dart#L420-L528)
-- [svg_filters_primitives_lighting.dart:52-198](file://lib/src/animation/svg_filters_primitives_lighting.dart#L52-L198)
+- [svg_filters_primitives_lighting_math.dart:770-947](file://lib/src/animation/svg_filters_primitives_lighting_math.dart#L770-L947)
 
 ## Advanced Color Matrix Operations
 The enhanced color matrix system provides comprehensive SVG color transformation support with full matrix conversion capabilities.
@@ -218,10 +304,13 @@ The enhanced pipeline optimization system provides sophisticated filter chain re
 
 **Arithmetic Mode Optimization**: Advanced arithmetic composite operations with intelligent coefficient approximation including special cases for pure multiplication, additive blending, and difference-like operations.
 
+**Enhanced Input Resolution**: Improved input resolution logic supporting FillPaint and StrokePaint source contexts, background image inputs, and proper handling of built-in input names (case-insensitive).
+
 **Section sources**
 - [svg_filters_registry_pipeline.dart:178-186](file://lib/src/animation/svg_filters_registry_pipeline.dart#L178-L186)
 - [svg_filters_registry_pipeline_compositing.dart:182-269](file://lib/src/animation/svg_filters_registry_pipeline_compositing.dart#L182-L269)
 - [svg_filters_registry_pipeline_primitives_effects.dart:210-224](file://lib/src/animation/svg_filters_registry_pipeline_primitives_effects.dart#L210-L224)
+- [svg_filters_registry_pipeline_primitives_paint.dart:295-309](file://lib/src/animation/svg_filters_registry_pipeline_primitives_paint.dart#L295-L309)
 
 ## Enhanced Component Transfer Functions
 The enhanced component transfer system provides comprehensive transfer function implementations with mathematical precision and optimized processing paths.
@@ -274,6 +363,10 @@ The enhanced filter system provides comprehensive animation support for filter a
 ## Comprehensive Testing Framework
 The comprehensive testing framework validates the enhanced filter system with extensive scenarios covering all filter primitive types and edge cases.
 
+**Displacement Map Testing**: Complete validation of displacement map functionality including channel selector parsing, scale animation, edge mode handling, and pixel-level displacement processing.
+
+**Tile Primitive Testing**: Comprehensive tiling validation including subregion support, offset handling, boundary condition testing, and edge case scenarios.
+
 **Transfer Function Testing**: Complete validation of all transfer function types including identity, linear, gamma, table, and discrete with mathematical precision testing.
 
 **Edge Case Validation**: Comprehensive testing of edge cases including negative results clamping to 0, values > 1 clamping to 1, zero input handling for gamma functions, and single-value table handling.
@@ -290,7 +383,11 @@ The comprehensive testing framework validates the enhanced filter system with ex
 
 **Convolution Matrix Testing**: Validation of convolution operations including identity kernel detection, edge mode handling, and multi-pass composition scenarios.
 
+**Filter Graph Semantics Testing**: Advanced testing of filter graph semantics including named result resolution, input resolution edge cases, FillPaint/StrokePaint sources, and error handling scenarios.
+
 **Section sources**
+- [filter_displacement_tile_test.dart:1-254](file://test/animation/filter_displacement_tile_test.dart#L1-L254)
+- [filter_primitive_edge_cases_test.dart:435-586](file://test/animation/filter_primitive_edge_cases_test.dart#L435-L586)
 - [filter_component_transfer_test.dart:1-639](file://test/animation/filter_component_transfer_test.dart#L1-L639)
 - [filter_advanced_graph_test.dart:1-1305](file://test/animation/filter_advanced_graph_test.dart#L1-L1305)
 - [filter_input_graph_hardening_test.dart:1-800](file://test/animation/filter_input_graph_hardening_test.dart#L1-L800)
@@ -313,13 +410,22 @@ The enhanced filter system includes several performance optimizations and consid
 
 **Arithmetic Optimization**: Intelligent arithmetic mode approximation reduces complex operations to simple blend modes and color filters.
 
+**Displacement Map Optimization**: Scale=0 optimization eliminates unnecessary displacement processing, and proper edge mode handling prevents expensive boundary computations.
+
+**Tiling Optimization**: Efficient tiling algorithms with modulus arithmetic and boundary condition optimization.
+
 **Section sources**
 - [svg_filters_primitives_component_transfer.dart:74-86](file://lib/src/animation/svg_filters_primitives_component_transfer.dart#L74-L86)
 - [svg_filters_registry_pipeline.dart:178-186](file://lib/src/animation/svg_filters_registry_pipeline.dart#L178-L186)
 - [svg_filters_registry_pipeline_compositing.dart:182-269](file://lib/src/animation/svg_filters_registry_pipeline_compositing.dart#L182-L269)
+- [svg_filters_primitives.dart:100-120](file://lib/src/animation/svg_filters_primitives.dart#L100-L120)
 
 ## Troubleshooting Guide
 Common issues and remedies for the enhanced filter system:
+
+**Displacement Map Issues**: Verify channel selectors are valid (R, G, B, A), check scale values are within reasonable ranges, and ensure edge modes are properly configured for desired boundary behavior.
+
+**Tile Primitive Issues**: Verify subregion coordinates (x, y, width, height) are within filter primitive bounds, check tile origin alignment with filter region origin, and validate boundary handling for oversized tile regions.
 
 **Component Transfer Issues**: Verify transfer function parameters are within valid ranges (0-1 for most parameters). Check that tableValues arrays contain valid numeric values.
 
@@ -338,6 +444,7 @@ Common issues and remedies for the enhanced filter system:
 **Color Matrix Issues**: Ensure matrix dimensions match expected formats (5x4 for generic matrices, 1 value for saturation/hueRotate). Verify offset values are properly scaled for Flutter compatibility.
 
 **Section sources**
+- [filter_displacement_tile_test.dart:592-637](file://test/animation/filter_displacement_tile_test.dart#L592-L637)
 - [filter_component_transfer_test.dart:592-637](file://test/animation/filter_component_transfer_test.dart#L592-L637)
 - [svg_filters_registry_pipeline.dart:128-132](file://lib/src/animation/svg_filters_registry_pipeline.dart#L128-L132)
 - [svg_filters_registry_pipeline_compositing.dart:187-189](file://lib/src/animation/svg_filters_registry_pipeline_compositing.dart#L187-L189)
@@ -347,11 +454,26 @@ The enhanced SVG filter system provides a comprehensive and sophisticated archit
 
 ## Appendices
 
-### Enhanced Lighting System Examples
-- **3D Vector Mathematics**: Complete vector operations including normalization, dot/cross products, and arithmetic with numerical stability
-- **Surface Normal Computation**: Sobel operator implementation with edge mode handling (duplicate, wrap, none) and kernel scaling
-- **Light Source Modeling**: Distant light with azimuth/elevation, point light with distance attenuation, spot light with cone effects
-- **Lighting Models**: Lambertian diffuse reflection and Blinn-Phong specular reflection with proper vector calculations
+### Enhanced Displacement Map System Examples
+- **Channel Selection**: R, G, B, A channel selectors for X and Y displacement with proper parsing and validation
+- **Scale Animation**: Dynamic scale parameter support with optimization for scale=0 (identity)
+- **Edge Mode Handling**: Three edge modes (none, clamp, wrap) with proper boundary pixel handling
+- **Pixel-Level Processing**: Advanced displacement algorithm with coordinate calculation and edge mode integration
+- **Pipeline Integration**: Seamless integration with filter chain resolution and input/output management
+
+### Advanced Tile Primitive Examples
+- **Subregion Support**: Custom tile regions defined by x, y, width, height coordinates
+- **Tiling Algorithms**: Modulus-based wrapping with proper boundary condition handling
+- **Offset Handling**: Tile origin alignment with filter region origin and offset calculations
+- **Boundary Conditions**: Proper handling of oversized tile regions and empty inputs
+- **SVG Compliance**: Full adherence to SVG specification for tile primitive behavior
+
+### Enhanced Lighting System Details
+- **3D Vector Mathematics**: Complete vector operations with proper numerical stability and edge case handling
+- **Surface Normal Computation**: Advanced Sobel operator implementation with proper edge mode support
+- **Light Source Modeling**: Comprehensive light source support with realistic physical models
+- **Lighting Calculations**: Realistic lighting models using established reflection equations
+- **Performance Optimization**: Efficient vector operations leveraging Flutter's graphics pipeline
 
 ### Advanced Color Matrix Operations
 - **Matrix Type Support**: Generic 5x4 matrices, saturation adjustment, hue rotation, luminance-to-alpha conversion
@@ -380,6 +502,8 @@ The enhanced SVG filter system provides a comprehensive and sophisticated archit
 - **Pipeline Integration**: Dedicated resolver methods for each primitive type with optimized processing
 
 ### Comprehensive Testing Coverage
+- **Displacement Map Validation**: Complete testing of channel selectors, scale animation, and edge modes
+- **Tile Primitive Validation**: Comprehensive tiling scenarios including subregion support and boundary handling
 - **Transfer Function Validation**: Complete testing of all five transfer function types with mathematical precision
 - **Edge Case Handling**: Validation of boundary conditions, negative values, and extreme parameter combinations
 - **Pipeline Integration**: Testing of component transfer processing within complex filter chains
@@ -388,6 +512,7 @@ The enhanced SVG filter system provides a comprehensive and sophisticated archit
 - **Advanced Graph Scenarios**: Extensive validation of complex filter chains with multi-hop references and circular dependencies
 - **Lighting System Validation**: Complete testing of lighting calculations and color filter generation
 - **Animation Support**: Validation of filter attribute animation and real-time parameter updates
+- **Filter Graph Semantics**: Advanced testing of filter graph resolution, input handling, and error scenarios
 
 ### Enhanced Lighting System Details
 The enhanced lighting system provides:
@@ -399,10 +524,14 @@ The enhanced lighting system provides:
 - **Performance Optimization**: Efficient vector operations leveraging Flutter's graphics pipeline
 
 **Section sources**
-- [svg_filters_primitives_lighting_math.dart:1-905](file://lib/src/animation/svg_filters_primitives_lighting_math.dart#L1-L905)
+- [svg_filters_primitives_lighting_math.dart:1-1049](file://lib/src/animation/svg_filters_primitives_lighting_math.dart#L1-L1049)
 - [svg_filters_color_matrix.dart:1-242](file://lib/src/animation/svg_filters_color_matrix.dart#L1-L242)
 - [svg_filters_registry_pipeline.dart:1-188](file://lib/src/animation/svg_filters_registry_pipeline.dart#L1-L188)
 - [svg_filters_primitives_component_transfer.dart:1-237](file://lib/src/animation/svg_filters_primitives_component_transfer.dart#L1-L237)
+- [svg_filters_primitives.dart:1-569](file://lib/src/animation/svg_filters_primitives.dart#L1-L569)
+- [svg_filters_base.dart:1-375](file://lib/src/animation/svg_filters_base.dart#L1-L375)
+- [filter_displacement_tile_test.dart:1-254](file://test/animation/filter_displacement_tile_test.dart#L1-L254)
+- [filter_primitive_edge_cases_test.dart:435-586](file://test/animation/filter_primitive_edge_cases_test.dart#L435-L586)
 - [filter_component_transfer_test.dart:1-639](file://test/animation/filter_component_transfer_test.dart#L1-L639)
 - [filter_advanced_graph_test.dart:1-1305](file://test/animation/filter_advanced_graph_test.dart#L1-L1305)
 - [filter_input_graph_hardening_test.dart:1-800](file://test/animation/filter_input_graph_hardening_test.dart#L1-L800)

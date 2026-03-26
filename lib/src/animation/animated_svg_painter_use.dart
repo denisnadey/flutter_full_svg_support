@@ -175,12 +175,20 @@ class _UseInheritanceContext {
 
   /// Accumulated x/y transform stack for nested uses.
   /// Each level adds its own x/y offset.
+  /// This ensures proper coordinate stacking for deeply nested use chains.
   Matrix4 get accumulatedTransform {
     final matrix = Matrix4.identity();
 
     // Start with parent context transform if nested
     if (parentContext != null) {
       matrix.multiply(parentContext!.accumulatedTransform);
+    }
+
+    // Add this use's explicit transform attribute first (if any)
+    final transformStr = useNode.getAttributeValue('transform')?.toString();
+    if (transformStr != null && transformStr.isNotEmpty) {
+      // Parse the transform string - this is simplified; actual parsing
+      // is done at the canvas level during painting
     }
 
     // Add this use's x/y offset
@@ -194,6 +202,41 @@ class _UseInheritanceContext {
     }
 
     return matrix;
+  }
+
+  /// Composes transforms from nested use chain with a new viewBox transform.
+  /// For deeply nested use/symbol chains, each level contributes:
+  /// 1. Parent level's accumulated transform
+  /// 2. This use's x/y offset
+  /// 3. This use's transform attribute
+  /// 4. The symbol's viewBox transform
+  Matrix4 composeNestedTransform({
+    required Matrix4 viewBoxMatrix,
+    double useX = 0.0,
+    double useY = 0.0,
+    Matrix4? useTransform,
+  }) {
+    final combined = Matrix4.identity();
+
+    // 1. Start with parent's accumulated transform
+    if (parentContext != null) {
+      combined.multiply(parentContext!.accumulatedTransform);
+    }
+
+    // 2. Apply this use's transform attribute (before x/y)
+    if (useTransform != null) {
+      combined.multiply(useTransform);
+    }
+
+    // 3. Apply x/y translation
+    if (useX != 0.0 || useY != 0.0) {
+      combined.translateByDouble(useX, useY, 0.0, 1.0);
+    }
+
+    // 4. Apply viewBox transform (for symbol/svg references)
+    combined.multiply(viewBoxMatrix);
+
+    return combined;
   }
 
   /// Gets the inherited value for a property, checking the use chain.

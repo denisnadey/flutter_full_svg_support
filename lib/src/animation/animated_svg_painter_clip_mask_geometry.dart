@@ -43,11 +43,16 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
         // Symbol elements must apply their viewBox transform when used in clip/mask.
         // This is critical for proper coordinate mapping of nested symbols.
         // The viewBox transform is handled when use references the symbol.
+        final symbolViewBoxTransform = _computeSymbolViewBoxTransform(node);
+        final symbolMatrix = Matrix4.copy(matrix);
+        if (symbolViewBoxTransform != null) {
+          symbolMatrix.multiply(symbolViewBoxTransform);
+        }
         for (final child in node.children) {
           _appendClipGeometry(
             target: target,
             node: child,
-            currentTransform: matrix,
+            currentTransform: symbolMatrix,
             useStack: useStack,
           );
         }
@@ -82,6 +87,14 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
         final textPath = _buildTextClipPath(node);
         if (textPath != null) {
           target.addPath(textPath.transform(matrix.storage), ui.Offset.zero);
+        }
+        return;
+      case 'line':
+        // Line as clip child: explicit support for line elements
+        // Per SVG spec, line contributes its geometry to clip region
+        final linePath = _buildGeometryPath(node);
+        if (linePath != null) {
+          target.addPath(linePath.transform(matrix.storage), ui.Offset.zero);
         }
         return;
       case 'image':
@@ -294,6 +307,40 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
 
   bool _isUseViewportReferenceTag(String tagName) {
     return tagName == 'symbol' || tagName == 'svg';
+  }
+
+  /// Computes the viewBox transform for a symbol element.
+  ///
+  /// Symbol elements may have viewBox attributes that need to be applied
+  /// when their content is used in clip paths.
+  Matrix4? _computeSymbolViewBoxTransform(SvgNode symbolNode) {
+    final viewBox = _parseViewBox(_getString(symbolNode, 'viewBox'));
+    if (viewBox == null || viewBox.width <= 0 || viewBox.height <= 0) {
+      return null;
+    }
+
+    // Get symbol's width/height if specified, otherwise use viewBox dimensions
+    final width = _getNumber(symbolNode, 'width') ?? viewBox.width;
+    final height = _getNumber(symbolNode, 'height') ?? viewBox.height;
+    if (width <= 0 || height <= 0) {
+      return null;
+    }
+
+    final viewport = ui.Rect.fromLTWH(0, 0, width, height);
+    final layout = resolveSvgViewportLayout(
+      viewport: viewport,
+      sourceSize: viewBox.size,
+      preserveAspectRatio: _getString(symbolNode, 'preserveAspectRatio'),
+    );
+
+    final scaleX = layout.destinationRect.width / viewBox.width;
+    final scaleY = layout.destinationRect.height / viewBox.height;
+    final translateX = layout.destinationRect.left - viewBox.left * scaleX;
+    final translateY = layout.destinationRect.top - viewBox.top * scaleY;
+
+    return Matrix4.identity()
+      ..translateByDouble(translateX, translateY, 0, 1)
+      ..scaleByDouble(scaleX, scaleY, 1, 1);
   }
 
   bool _isUseReferenceAllowedTag(String tagName) {

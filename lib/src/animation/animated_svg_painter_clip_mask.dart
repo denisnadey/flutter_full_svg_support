@@ -27,82 +27,17 @@ extension AnimatedSvgPainterClipMaskExtension on AnimatedSvgPainter {
     }
 
     // Build clip path with cascading support (clipPath on clipPath)
-    final clipPath = _buildCascadingClipPath(
+    // Using enhanced method that handles clipPathUnits correctly at each cascade level
+    final clipPath = _buildCascadingClipPathWithUnits(
       clippedNode: node,
       clipPathNode: clipNode,
       useStack: useStack,
     );
-    if (clipPath == null) {
+    if (clipPath == null || _isZeroAreaClipPath(clipPath)) {
       return;
     }
 
     canvas.clipPath(clipPath, doAntiAlias: true);
-  }
-
-  /// Builds a clip path with support for cascading clipPaths.
-  ///
-  /// When a clipPath element itself has a clip-path attribute, the result
-  /// is the intersection of both clip regions. This supports N-level cascading.
-  ui.Path? _buildCascadingClipPath({
-    required SvgNode clippedNode,
-    required SvgNode clipPathNode,
-    required Set<String> useStack,
-    int depth = 0,
-  }) {
-    // Prevent infinite recursion
-    const maxCascadeDepth = 10;
-    if (depth > maxCascadeDepth) {
-      return null;
-    }
-
-    // Build the primary clip path
-    final primaryPath = _buildClipPathForNode(
-      clippedNode: clippedNode,
-      clipPathNode: clipPathNode,
-      useStack: useStack,
-    );
-
-    if (primaryPath == null) {
-      return null;
-    }
-
-    // Check if the clipPath element itself has a clip-path (cascading)
-    final cascadeClipId = _extractPaintServerId(
-      _getStyleOrAttributeValue(clipPathNode, 'clip-path'),
-    );
-
-    if (cascadeClipId == null || cascadeClipId.isEmpty) {
-      return primaryPath;
-    }
-
-    // Prevent circular references
-    if (useStack.contains(cascadeClipId)) {
-      return primaryPath;
-    }
-
-    final cascadeClipNode = document.root.findById(cascadeClipId);
-    if (cascadeClipNode == null || cascadeClipNode.tagName != 'clipPath') {
-      return primaryPath;
-    }
-
-    // Recursively build the cascading clip path
-    final cascadePath = _buildCascadingClipPath(
-      clippedNode: clipPathNode,
-      clipPathNode: cascadeClipNode,
-      useStack: {...useStack, cascadeClipId},
-      depth: depth + 1,
-    );
-
-    if (cascadePath == null) {
-      return primaryPath;
-    }
-
-    // Intersect both clip paths for the cascading effect
-    return ui.Path.combine(
-      ui.PathOperation.intersect,
-      primaryPath,
-      cascadePath,
-    );
   }
 
   void _applyMask(
@@ -132,58 +67,6 @@ extension AnimatedSvgPainterClipMaskExtension on AnimatedSvgPainter {
     }
 
     canvas.clipPath(maskPath, doAntiAlias: true);
-  }
-
-  ui.Path? _buildClipPathForNode({
-    required SvgNode clippedNode,
-    required SvgNode clipPathNode,
-    required Set<String> useStack,
-  }) {
-    final clipPath = ui.Path();
-
-    Matrix4 rootMatrix = Matrix4.identity();
-    final clipUnits = _getString(
-      clipPathNode,
-      'clipPathUnits',
-    )?.trim().toLowerCase();
-    if (clipUnits == 'objectboundingbox') {
-      final localBounds = _computeNodeLocalBoundsWithStroke(clippedNode);
-      if (localBounds == null) {
-        return null;
-      }
-      // Edge case: zero width or height - nothing to clip
-      if (localBounds.width.abs() < _kMinBoundingBoxDimension ||
-          localBounds.height.abs() < _kMinBoundingBoxDimension) {
-        return null;
-      }
-      // Edge case: very small dimensions - clamp scaling to prevent issues
-      final safeWidth = localBounds.width.abs() < _kMinSafeScaleDimension
-          ? _kMinSafeScaleDimension
-          : localBounds.width;
-      final safeHeight = localBounds.height.abs() < _kMinSafeScaleDimension
-          ? _kMinSafeScaleDimension
-          : localBounds.height;
-      rootMatrix = Matrix4.identity()
-        ..setEntry(0, 0, safeWidth)
-        ..setEntry(1, 1, safeHeight)
-        ..setEntry(0, 3, localBounds.left)
-        ..setEntry(1, 3, localBounds.top);
-    }
-
-    _appendClipGeometry(
-      target: clipPath,
-      node: clipPathNode,
-      currentTransform: rootMatrix,
-      useStack: useStack,
-    );
-
-    final bounds = clipPath.getBounds();
-    if (bounds.width.abs() < _kMinBoundingBoxDimension ||
-        bounds.height.abs() < _kMinBoundingBoxDimension) {
-      return null;
-    }
-
-    return clipPath;
   }
 
   ui.Path? _buildMaskPathForNode({

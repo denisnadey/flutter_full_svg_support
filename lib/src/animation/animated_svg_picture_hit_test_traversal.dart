@@ -5,7 +5,6 @@ class _HitTestResult {
   const _HitTestResult({
     this.elementId,
     this.anchorInfo,
-    this.boundaryType = _EventBoundaryType.none,
   });
 
   /// The ID of the hit element, if any.
@@ -13,56 +12,10 @@ class _HitTestResult {
 
   /// Link info from the nearest <a> ancestor, if the hit element is inside an anchor.
   final SvgLinkInfo? anchorInfo;
-
-  /// The type of event boundary the hit is inside, if any.
-  final _EventBoundaryType boundaryType;
-
-  /// Whether events should propagate outside this hit's boundary.
-  bool get shouldPropagateEvents => boundaryType == _EventBoundaryType.none;
-}
-
-/// Types of event boundaries that block event propagation.
-enum _EventBoundaryType {
-  /// No boundary - events propagate normally.
-  none,
-
-  /// Inside a <use> shadow tree - events are retargeted to the <use> element.
-  useShadow,
-
-  /// Inside a <mask> - events should not propagate outside the mask.
-  mask,
-
-  /// Inside a <clipPath> - events should not propagate outside the clip path.
-  clipPath,
 }
 
 extension _AnimatedSvgPictureStateHitTestTraversalExtension
     on _AnimatedSvgPictureState {
-  /// Performs hit testing and returns both element ID and anchor info.
-  _HitTestResult _hitTestWithAnchorInfo(Offset localPosition) {
-    final renderObject = context.findRenderObject();
-    if (renderObject is! RenderBox || !renderObject.hasSize) {
-      return const _HitTestResult();
-    }
-
-    // Prepare hit-test cache for this frame
-    _prepareHitTestCache(_timeline?.currentTime.inMicroseconds.toDouble());
-
-    final documentPoint = _localToDocumentPoint(
-      localPosition,
-      renderObject.size,
-    );
-    if (documentPoint == null) return const _HitTestResult();
-
-    return _hitTestNodeWithAnchor(
-      _document.root,
-      documentPoint,
-      Matrix4.identity(),
-      useStack: const <String>{},
-      foreignObjectParent: null,
-      currentAnchor: null,
-    );
-  }
 
   /// Extracts link info from an anchor node.
   SvgLinkInfo? _extractAnchorInfo(SvgNode node) {
@@ -344,106 +297,4 @@ extension _AnimatedSvgPictureStateHitTestTraversalExtension
         tagName == 'marker';
   }
 
-  /// Checks if a node establishes an event boundary.
-  /// Events from inside these boundaries should not propagate outside.
-  _EventBoundaryType _getEventBoundaryType(SvgNode node) {
-    switch (node.tagName) {
-      case 'mask':
-        return _EventBoundaryType.mask;
-      case 'clipPath':
-        return _EventBoundaryType.clipPath;
-      case 'use':
-        return _EventBoundaryType.useShadow;
-      default:
-        return _EventBoundaryType.none;
-    }
-  }
-
-  /// Checks if a node is inside a mask definition.
-  bool _isInsideMaskDefinition(SvgNode? node) {
-    SvgNode? current = node;
-    while (current != null) {
-      if (current.tagName == 'mask') return true;
-      current = current.parent;
-    }
-    return false;
-  }
-
-  /// Checks if a node is inside a clipPath definition.
-  bool _isInsideClipPathDefinition(SvgNode? node) {
-    SvgNode? current = node;
-    while (current != null) {
-      if (current.tagName == 'clipPath') return true;
-      current = current.parent;
-    }
-    return false;
-  }
-
-  /// Determines the event boundary for an element.
-  /// Returns the boundary type and the boundary element ID (for retargeting).
-  _EventBoundaryInfo _getEventBoundaryInfo(SvgNode node) {
-    SvgNode? current = node.parent;
-    while (current != null) {
-      final boundaryType = _getEventBoundaryType(current);
-      if (boundaryType != _EventBoundaryType.none) {
-        return _EventBoundaryInfo(
-          type: boundaryType,
-          boundaryElementId: current.id,
-        );
-      }
-      current = current.parent;
-    }
-    return const _EventBoundaryInfo(
-      type: _EventBoundaryType.none,
-      boundaryElementId: null,
-    );
-  }
-
-  /// Filters the composed path to exclude elements outside the event boundary.
-  /// For mask/clipPath boundaries, events should not propagate outside.
-  List<String> _filterComposedPathForBoundary(
-    List<String> composedPath,
-    _EventBoundaryType boundaryType,
-    String? boundaryElementId,
-  ) {
-    if (boundaryType == _EventBoundaryType.none) {
-      return composedPath;
-    }
-
-    if (boundaryType == _EventBoundaryType.mask ||
-        boundaryType == _EventBoundaryType.clipPath) {
-      // Events from mask/clipPath content should not propagate outside
-      // Return only the target element (no bubbling)
-      if (composedPath.isNotEmpty) {
-        return [composedPath.last];
-      }
-      return composedPath;
-    }
-
-    // For use shadow, we allow normal propagation but events are retargeted
-    return composedPath;
-  }
-
-  /// Checks if events should be blocked for content inside a boundary.
-  bool _shouldBlockEventsForBoundary(_EventBoundaryType boundaryType) {
-    return boundaryType == _EventBoundaryType.mask ||
-        boundaryType == _EventBoundaryType.clipPath;
-  }
-}
-
-/// Information about an event boundary.
-class _EventBoundaryInfo {
-  const _EventBoundaryInfo({
-    required this.type,
-    required this.boundaryElementId,
-  });
-
-  /// The type of boundary.
-  final _EventBoundaryType type;
-
-  /// The ID of the boundary element (for retargeting).
-  final String? boundaryElementId;
-
-  /// Whether this is an active boundary.
-  bool get isBoundary => type != _EventBoundaryType.none;
 }

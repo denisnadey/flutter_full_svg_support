@@ -1,11 +1,23 @@
 # TODO - Animation Work Queue
 
-**Last Updated:** March 17, 2026  
-**Status Source:** `/Users/denisnadey/apps/flutter_full_svg_support/CURRENT_STATUS.md`
+**Last Updated:** March 26, 2026  
+**Status Source:** `/Users/denisnadey/apps/flutter_full_svg_support/CURRENT_STATUS.md`  
 **Closed Issues Registry:** `/Users/denisnadey/apps/flutter_full_svg_support/docs/RESOLVED_ISSUES.md`
+
+**Current Status:** ~74% Blink SVG parity | 3099 tests passing | 0 analyzer warnings
 
 This file tracks actionable implementation tasks.
 For factual project status, use `CURRENT_STATUS.md` only.
+
+## Current Sprint (P0 - Active)
+
+- [ ] **Light Sources** - Advanced feSpecularLighting/feDiffuseLighting light source positioning
+- [ ] **Component Transfer** - Extended feComponentTransfer channel functions
+- [ ] **Filter Input-Graph** - Advanced non-source/background input chain semantics
+- [ ] **use/symbol Inheritance** - Style and attribute inheritance edge cases
+- [ ] **Advanced Clipping** - Complex clip-path compositions and interactions
+- [ ] **Advanced Masking** - Luminance masks and alpha channel handling
+- [ ] **Advanced Typography** - Remaining text layout edge cases for full Blink parity
 
 ## Completed Recently
 

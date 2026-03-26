@@ -1254,10 +1254,6 @@ void main() {
         final result = processor.processDiffuse(imageData, 10, 10, 1.0);
 
         // Light at (5, 5) should result in higher intensity at center
-        // Get center pixel (5, 5) and corner pixel (0, 0)
-        final centerIdx = (5 * 10 + 5) * 4;
-        final cornerIdx = 0;
-
         // Center should be brighter or equal (depending on normal computation)
         expect(result.length, equals(400));
       },
@@ -1297,7 +1293,6 @@ void main() {
   group('Surface Normal Computation', () {
     test('flat surface produces up-facing normals', () {
       // 3x3 uniform alpha (flat surface)
-      final alphaValues = <double>[128, 128, 128, 128, 128, 128, 128, 128, 128];
 
       // The normal should point straight up (0, 0, 1) for flat surface
       // This is verified by the lighting producing maximum intensity
@@ -1352,11 +1347,9 @@ void main() {
     test('distant light direction varies with azimuth', () {
       final light0 = const SvgDistantLightSource(azimuth: 0, elevation: 0);
       final light90 = const SvgDistantLightSource(azimuth: 90, elevation: 0);
-      final light180 = const SvgDistantLightSource(azimuth: 180, elevation: 0);
 
       final (dir0, _) = light0.getDirectionAndIntensityAt(0, 0, 0);
       final (dir90, _) = light90.getDirectionAndIntensityAt(0, 0, 0);
-      final (dir180, _) = light180.getDirectionAndIntensityAt(0, 0, 0);
 
       // Directions should be different based on azimuth
       expect(dir0.x, isNot(equals(dir90.x)));

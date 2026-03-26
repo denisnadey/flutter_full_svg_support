@@ -500,9 +500,6 @@ void main() {
 
       await tester.pump();
 
-      final pixels = await VisualTestUtils.captureWidgetPixels(tester);
-      final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
-
       // Should show clipped circle with 50% opacity
       // (red at half opacity appears as lighter red or mixed color)
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);

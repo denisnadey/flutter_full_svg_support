@@ -1,26 +1,39 @@
 # Current Development Status
 
-**Last Updated:** March 17, 2026  
+**Last Updated:** March 26, 2026  
 **Authority:** This file is the single source of truth for current project state.
 
 ## Snapshot
 
 - Branch: `main`
-- Flutter SDK: `3.38.1` (via `./.fvm/flutter_sdk/bin/flutter`)
-- Dart SDK: `3.10.0`
+- Flutter SDK: `3.32.0-1.0.pre` (via `.fvm/versions/3.32.0-1.0.pre/bin/flutter`)
+- Version: `2.2.2`
+- **Blink SVG Parity:** ~74%
 
-## Verified Health (March 17, 2026)
+## Verified Health (March 26, 2026)
 
 Commands run in `/Users/denisnadey/apps/flutter_full_svg_support`:
 
 ```bash
-./.fvm/flutter_sdk/bin/flutter test
-./.fvm/flutter_sdk/bin/flutter analyze
+.fvm/versions/3.32.0-1.0.pre/bin/dart analyze lib/ test/
+.fvm/versions/3.32.0-1.0.pre/bin/flutter test
 ```
 
 Result:
-- `flutter test`: **All tests passed** (`+1322`)
+- `flutter test`: **All 3099 tests passed**
 - `flutter analyze`: **0 errors**, **0 warnings**
+
+## In-Progress Work
+
+Active development areas targeting higher Blink parity:
+
+1. **Light Sources** - Advanced feSpecularLighting/feDiffuseLighting light source positioning
+2. **Component Transfer** - Extended feComponentTransfer channel functions
+3. **Filter Input-Graph** - Advanced non-source/background input chain semantics
+4. **use/symbol Inheritance** - Style and attribute inheritance edge cases
+5. **Advanced Clipping** - Complex clip-path compositions and interactions
+6. **Advanced Masking** - Luminance masks and alpha channel handling
+7. **Advanced Typography** - Remaining text layout edge cases for full Blink parity
 
 ## Documentation Cleanup (March 16, 2026)
 

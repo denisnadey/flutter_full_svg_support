@@ -46,6 +46,23 @@
 - [svg_event_model_test.dart](file://test/animation/svg_event_model_test.dart)
 - [filter_component_transfer_test.dart](file://test/animation/filter_component_transfer_test.dart)
 - [image_contexts_test.dart](file://test/animation/image_contexts_test.dart)
+- [advanced_mask_test.dart](file://test/animation/advanced_mask_test.dart)
+- [filters_test.dart](file://test/animation/filters_test.dart)
+- [foreignobject_css_inheritance_test.dart](file://test/animation/foreignobject_css_inheritance_test.dart)
+- [image_foreignobject_edge_cases_test.dart](file://test/animation/image_foreignobject_edge_cases_test.dart)
+- [clip_mask_advanced_composition_test.dart](file://test/animation/clip_mask_advanced_composition_test.dart)
+- [clip_mask_use_verification_test.dart](file://test/animation/clip_mask_use_verification_test.dart)
+- [advanced_mask_semantics_test.dart](file://test/animation/advanced_mask_semantics_test.dart)
+- [filter_advanced_graph_test.dart](file://test/animation/filter_advanced_graph_test.dart)
+- [filter_advanced_semantics_test.dart](file://test/animation/filter_advanced_semantics_test.dart)
+- [filter_displacement_tile_test.dart](file://test/animation/filter_displacement_tile_test.dart)
+- [filter_drop_shadow_advanced_test.dart](file://test/animation/filter_drop_shadow_advanced_test.dart)
+- [filter_graph_semantics_test.dart](file://test/animation/filter_graph_semantics_test.dart)
+- [filter_input_graph_hardening_test.dart](file://test/animation/filter_input_graph_hardening_test.dart)
+- [filter_input_graph_test.dart](file://test/animation/filter_input_graph_test.dart)
+- [filter_light_sources_test.dart](file://test/animation/filter_light_sources_test.dart)
+- [filter_morphology_convolve_turbulence_test.dart](file://test/animation/filter_morphology_convolve_turbulence_test.dart)
+- [filter_primitive_edge_cases_test.dart](file://test/animation/filter_primitive_edge_cases_test.dart)
 - [pubspec.yaml](file://pubspec.yaml)
 - [animated_svg_painter_text_style.dart](file://lib/src/animation/animated_svg_painter_text_style.dart)
 - [css_to_smil_converter_transforms_decompose.dart](file://lib/src/animation/css_to_smil_converter_transforms_decompose.dart)
@@ -68,12 +85,15 @@
 ## Update Summary
 **Changes Made**
 - Added significantly expanded test infrastructure with new comprehensive test suites
-- Integrated advanced clip mask testing (765 lines) covering luminosity masking, nested composition chains, and edge feathering
-- Added SVG event model compliance testing (797 lines) validating W3C event retargeting, bubbling, and mouseenter/mouseleave behavior
+- Integrated advanced clip mask testing (766 lines) covering luminosity masking, nested composition chains, and edge feathering
+- Added SVG event model compliance testing (457 lines) validating W3C event retargeting, bubbling, and mouseenter/mouseleave behavior
 - Added filter component transfer testing (639 lines) validating feComponentTransfer parsing and pixel transformation
-- Added image contexts testing (606 lines) covering complex image usage within clipPath, masks, patterns, and foreignObject
+- Added image contexts testing (663 lines) covering complex image usage within clipPath, masks, patterns, and foreignObject
+- Added foreignObject CSS inheritance testing (457 lines) validating CSS property inheritance and boundary crossing
 - Enhanced visual regression testing capabilities with golden file comparisons and pixel-based analysis
 - Expanded testing framework to cover advanced SVG rendering precision and complex rendering scenarios
+- Added comprehensive filter testing suite with 2589 lines covering all filter primitives and parsing
+- Integrated advanced semantics testing for masks and filters
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -88,7 +108,7 @@
 10. [Appendices](#appendices)
 
 ## Introduction
-This document explains the comprehensive testing and quality assurance framework for the flutter_svg package with a focus on visual testing, automated animation testing, and validation approaches. The framework now includes extensive widget-level testing for advanced SVG features including marker rendering, paint order validation, pattern fills, comprehensive text styling capabilities, **advanced clip mask testing**, **SVG event model compliance testing**, **filter component transfer testing**, and **image contexts testing**.
+This document explains the comprehensive testing and quality assurance framework for the flutter_svg package with a focus on visual testing, automated animation testing, and validation approaches. The framework now includes extensive widget-level testing for advanced SVG features including marker rendering, paint order validation, pattern fills, comprehensive text styling capabilities, **advanced clip mask testing**, **SVG event model compliance testing**, **filter component transfer testing**, **image contexts testing**, and **foreignObject CSS inheritance testing**.
 
 Key areas covered:
 - Visual testing methodology for SMIL animations and complex SVG rendering
@@ -98,7 +118,9 @@ Key areas covered:
 - **Advanced clip mask testing** with luminosity masking, nested composition chains, and edge feathering
 - **SVG event model compliance testing** with W3C event retargeting, bubbling, and mouseenter/mouseleave behavior
 - **Filter component transfer testing** with feComponentTransfer parsing and pixel transformation
-- **Image contexts testing** with complex image usage within clipPath, masks, patterns, and foreignObject
+- **Image contexts testing** with complex image usage scenarios
+- **ForeignObject CSS inheritance testing** with property boundary crossing and inheritance rules
+- **Comprehensive filter testing suite** with 2589 lines covering all filter primitives and parsing
 - Quality assurance processes, configuration, and CI considerations
 - Relationships between the animation system, rendering pipeline, and advanced SVG features
 - Best practices, debugging techniques, and performance validation
@@ -106,17 +128,19 @@ Key areas covered:
 The goal is to help developers implement robust tests, maintain the existing infrastructure, and extend it confidently with comprehensive validation of advanced SVG rendering features.
 
 ## Project Structure
-The testing surface is primarily under the test/animation directory, with supporting utilities and cross-cutting guidelines. The framework now includes extensive widget-level tests for advanced SVG features alongside traditional animation and visual testing, **plus comprehensive verification tests for advanced clip masks, SVG event model compliance, filter component transfer, and image contexts**:
+The testing surface is primarily under the test/animation directory, with supporting utilities and cross-cutting guidelines. The framework now includes extensive widget-level tests for advanced SVG features alongside traditional animation and visual testing, **plus comprehensive verification tests for advanced clip masks, SVG event model compliance, filter component transfer, image contexts, foreignObject CSS inheritance, and a complete filter testing suite**:
 
 - Animation logic and parsing tests (SMIL, CSS-to-SMIL conversion, path morphing)
 - Widget-level integration tests for AnimatedSvgPicture with comprehensive feature coverage
 - Visual testing utilities and golden-style pixel analysis
 - Controller-level tests for playback control and seek/pause/forward/reverse
 - Advanced rendering tests for markers, paint order, patterns, and text styling
-- **Advanced clip mask testing** with luminosity masking, nested composition chains, and edge feathering
-- **SVG event model compliance testing** with W3C event retargeting and bubbling behavior
-- **Filter component transfer testing** with feComponentTransfer parsing and pixel transformation
-- **Image contexts testing** with complex image usage scenarios
+- **Advanced clip mask testing** with luminosity masking, nested composition chains, and edge feathering (766 lines)
+- **SVG event model compliance testing** with W3C event retargeting and bubbling behavior (457 lines)
+- **Filter component transfer testing** with feComponentTransfer parsing and pixel transformation (639 lines)
+- **Image contexts testing** with complex image usage scenarios (663 lines)
+- **ForeignObject CSS inheritance testing** with property boundary crossing and inheritance rules (457 lines)
+- **Comprehensive filter testing suite** with 2589 lines covering all filter primitives and parsing
 - CI configuration and platform constraints
 
 ```mermaid
@@ -141,14 +165,14 @@ A15["stroke_styling_test.dart"]
 A16["text_rendering_test.dart"]
 A17["text_decoration_style_test.dart"]
 A18["text_decoration_thickness_test.dart"]
-A19["stroke_dash_stop_color_test.dart"]
-A20["text_shadow_test.dart"]
-A21["text_wrap_test.dart"]
-A22["vertical_align_test.dart"]
-A23["line_height_test.dart"]
-A24["text_spacing_test.dart"]
-A25["text_justify_test.dart"]
-A26["white_space_test.dart"]
+A19["text_shadow_test.dart"]
+A20["text_wrap_test.dart"]
+A21["vertical_align_test.dart"]
+A22["line_height_test.dart"]
+A23["text_spacing_test.dart"]
+A24["text_justify_test.dart"]
+A25["white_space_test.dart"]
+A26["stroke_dash_stop_color_test.dart"]
 A27["css_transform_calc_test.dart"]
 A28["css_transform_edge_cases_test.dart"]
 A29["css_variables_calc_test.dart"]
@@ -156,6 +180,23 @@ A30["advanced_clip_mask_test.dart"]
 A31["svg_event_model_test.dart"]
 A32["filter_component_transfer_test.dart"]
 A33["image_contexts_test.dart"]
+A34["advanced_mask_test.dart"]
+A35["filters_test.dart"]
+A36["foreignobject_css_inheritance_test.dart"]
+A37["image_foreignobject_edge_cases_test.dart"]
+A38["clip_mask_advanced_composition_test.dart"]
+A39["clip_mask_use_verification_test.dart"]
+A40["advanced_mask_semantics_test.dart"]
+A41["filter_advanced_graph_test.dart"]
+A42["filter_advanced_semantics_test.dart"]
+A43["filter_displacement_tile_test.dart"]
+A44["filter_drop_shadow_advanced_test.dart"]
+A45["filter_graph_semantics_test.dart"]
+A46["filter_input_graph_hardening_test.dart"]
+A47["filter_input_graph_test.dart"]
+A48["filter_light_sources_test.dart"]
+A49["filter_morphology_convolve_turbulence_test.dart"]
+A50["filter_primitive_edge_cases_test.dart"]
 end
 subgraph "Widget Tests"
 W["test/widget_svg_test.dart"]
@@ -199,6 +240,23 @@ A --> A30
 A --> A31
 A --> A32
 A --> A33
+A --> A34
+A --> A35
+A --> A36
+A --> A37
+A --> A38
+A --> A39
+A --> A40
+A --> A41
+A --> A42
+A --> A43
+A --> A44
+A --> A45
+A --> A46
+A --> A47
+A --> A48
+A --> A49
+A --> A50
 W --> A10
 G --> A1
 C --> A
@@ -225,7 +283,6 @@ C --> W
 - [text_rendering_test.dart](file://test/animation/text_rendering_test.dart)
 - [text_decoration_style_test.dart](file://test/animation/text_decoration_style_test.dart)
 - [text_decoration_thickness_test.dart](file://test/animation/text_decoration_thickness_test.dart)
-- [stroke_dash_stop_color_test.dart](file://test/animation/stroke_dash_stop_color_test.dart)
 - [text_shadow_test.dart](file://test/animation/text_shadow_test.dart)
 - [text_wrap_test.dart](file://test/animation/text_wrap_test.dart)
 - [vertical_align_test.dart](file://test/animation/vertical_align_test.dart)
@@ -240,6 +297,23 @@ C --> W
 - [svg_event_model_test.dart](file://test/animation/svg_event_model_test.dart)
 - [filter_component_transfer_test.dart](file://test/animation/filter_component_transfer_test.dart)
 - [image_contexts_test.dart](file://test/animation/image_contexts_test.dart)
+- [advanced_mask_test.dart](file://test/animation/advanced_mask_test.dart)
+- [filters_test.dart](file://test/animation/filters_test.dart)
+- [foreignobject_css_inheritance_test.dart](file://test/animation/foreignobject_css_inheritance_test.dart)
+- [image_foreignobject_edge_cases_test.dart](file://test/animation/image_foreignobject_edge_cases_test.dart)
+- [clip_mask_advanced_composition_test.dart](file://test/animation/clip_mask_advanced_composition_test.dart)
+- [clip_mask_use_verification_test.dart](file://test/animation/clip_mask_use_verification_test.dart)
+- [advanced_mask_semantics_test.dart](file://test/animation/advanced_mask_semantics_test.dart)
+- [filter_advanced_graph_test.dart](file://test/animation/filter_advanced_graph_test.dart)
+- [filter_advanced_semantics_test.dart](file://test/animation/filter_advanced_semantics_test.dart)
+- [filter_displacement_tile_test.dart](file://test/animation/filter_displacement_tile_test.dart)
+- [filter_drop_shadow_advanced_test.dart](file://test/animation/filter_drop_shadow_advanced_test.dart)
+- [filter_graph_semantics_test.dart](file://test/animation/filter_graph_semantics_test.dart)
+- [filter_input_graph_hardening_test.dart](file://test/animation/filter_input_graph_hardening_test.dart)
+- [filter_input_graph_test.dart](file://test/animation/filter_input_graph_test.dart)
+- [filter_light_sources_test.dart](file://test/animation/filter_light_sources_test.dart)
+- [filter_morphology_convolve_turbulence_test.dart](file://test/animation/filter_morphology_convolve_turbulence_test.dart)
+- [filter_primitive_edge_cases_test.dart](file://test/animation/filter_primitive_edge_cases_test.dart)
 - [widget_svg_test.dart](file://test/widget_svg_test.dart)
 - [dart_test.yaml](file://dart_test.yaml)
 
@@ -258,10 +332,12 @@ C --> W
 - **Text styling resolution system**: Processes and validates CSS text properties including thickness, shadows, wrapping, alignment, and advanced typography.
 - **CSS transform calculation system**: **Validates calc() expression evaluation, unit conversions, and complex transform parsing**.
 - **CSS variables and calc() evaluation system**: **Processes CSS variables and calc() expressions with comprehensive unit conversion support**.
-- **Advanced clip mask testing system**: **Validates luminosity masking, nested composition chains, and edge feathering with 765 lines of comprehensive testing**.
-- **SVG event model compliance system**: **Validates W3C event retargeting, bubbling, and mouseenter/mouseleave behavior with 797 lines of testing**.
+- **Advanced clip mask testing system**: **Validates luminosity masking, nested composition chains, and edge feathering with 766 lines of comprehensive testing**.
+- **SVG event model compliance system**: **Validates W3C event retargeting, bubbling, and mouseenter/mouseleave behavior with 457 lines of testing**.
 - **Filter component transfer system**: **Validates feComponentTransfer parsing and pixel transformation with 639 lines of testing**.
-- **Image contexts testing system**: **Validates complex image usage within clipPath, masks, patterns, and foreignObject with 606 lines of testing**.
+- **Image contexts testing system**: **Validates complex image usage within clipPath, masks, patterns, and foreignObject with 663 lines of testing**.
+- **ForeignObject CSS inheritance system**: **Validates CSS property inheritance and boundary crossing with 457 lines of testing**.
+- **Comprehensive filter testing suite**: **Validates all SVG filter primitives and parsing with 2589 lines of testing**.
 - **Visual regression testing**: **Supports golden file comparisons and pixel-based analysis for animation verification**.
 
 **Section sources**
@@ -284,15 +360,20 @@ C --> W
 - [svg_event_model_test.dart](file://test/animation/svg_event_model_test.dart)
 - [filter_component_transfer_test.dart](file://test/animation/filter_component_transfer_test.dart)
 - [image_contexts_test.dart](file://test/animation/image_contexts_test.dart)
+- [advanced_mask_test.dart](file://test/animation/advanced_mask_test.dart)
+- [filters_test.dart](file://test/animation/filters_test.dart)
+- [foreignobject_css_inheritance_test.dart](file://test/animation/foreignobject_css_inheritance_test.dart)
+- [image_foreignobject_edge_cases_test.dart](file://test/animation/image_foreignobject_edge_cases_test.dart)
 - [rotation_golden_test.dart](file://test/animation/rotation_golden_test.dart)
 
 ## Architecture Overview
-The testing architecture separates concerns across seven layers with enhanced coverage of advanced SVG rendering features, **including comprehensive testing for advanced clip masks, SVG event model compliance, filter component transfer, and image contexts**:
+The testing architecture separates concerns across eight layers with enhanced coverage of advanced SVG rendering features, **including comprehensive testing for advanced clip masks, SVG event model compliance, filter component transfer, image contexts, foreignObject CSS inheritance, and a complete filter testing suite**:
 - **Logic tests**: Validate SMIL parsing, interpolation, and timeline mechanics.
 - **Rendering tests**: Validate widget-level rendering and animation progression.
 - **Visual tests**: Validate actual pixel output and geometric changes.
 - **Advanced feature tests**: Validate markers, paint order, patterns, text styling, and **advanced testing components**.
-- **Advanced testing layer**: Validate clip masks, event models, filter components, and image contexts.
+- **Advanced testing layer**: Validate clip masks, event models, filter components, image contexts, and foreignObject CSS inheritance.
+- **Filter testing layer**: Validate all SVG filter primitives and parsing with comprehensive coverage.
 - **CSS cascade system tests**: Validate inheritance and styling resolution for use-referenced elements.
 - **CSS transform system tests**: Validate calc() expressions, unit conversions, and 3D transform handling.
 - **CSS variables and calc() system tests**: Validate var() resolution and calc() arithmetic evaluation.
@@ -321,10 +402,16 @@ V2["PixelAnalysis"]
 V3["Golden File Testing"]
 end
 subgraph "Advanced Testing Layer"
-AT1["Advanced Clip Mask Testing<br/>Luminosity/Masks/Nested Chains"]
-AT2["SVG Event Model Testing<br/>Retargeting/Bubbling/Mouse Events"]
-AT3["Filter Component Transfer Testing<br/>feComponentTransfer Parsing"]
-AT4["Image Contexts Testing<br/>clipPath/Masks/Patterns/ForeignObject"]
+AT1["Advanced Clip Mask Testing<br/>Luminosity/Masks/Nested Chains<br/>766 lines"]
+AT2["SVG Event Model Testing<br/>Retargeting/Bubbling/Mouse Events<br/>457 lines"]
+AT3["Filter Component Transfer Testing<br/>feComponentTransfer Parsing<br/>639 lines"]
+AT4["Image Contexts Testing<br/>clipPath/Masks/Patterns/ForeignObject<br/>663 lines"]
+AT5["ForeignObject CSS Inheritance Testing<br/>Property Boundary Crossing<br/>457 lines"]
+end
+subgraph "Filter Testing Layer"
+FT1["Comprehensive Filter Testing<br/>2589 lines"]
+FT2["Filter Primitives<br/>Parsing & Validation"]
+FT3["Filter Semantics Testing<br/>Graph & Pipeline"]
 end
 subgraph "Advanced Feature Tests"
 AF1["Marker Rendering"]
@@ -360,6 +447,10 @@ AT1 --> R1
 AT2 --> R1
 AT3 --> R1
 AT4 --> R1
+AT5 --> R1
+FT1 --> R1
+FT2 --> FT1
+FT3 --> FT1
 ```
 
 **Diagram sources**
@@ -388,6 +479,23 @@ AT4 --> R1
 - [svg_event_model_test.dart](file://test/animation/svg_event_model_test.dart)
 - [filter_component_transfer_test.dart](file://test/animation/filter_component_transfer_test.dart)
 - [image_contexts_test.dart](file://test/animation/image_contexts_test.dart)
+- [advanced_mask_test.dart](file://test/animation/advanced_mask_test.dart)
+- [filters_test.dart](file://test/animation/filters_test.dart)
+- [foreignobject_css_inheritance_test.dart](file://test/animation/foreignobject_css_inheritance_test.dart)
+- [image_foreignobject_edge_cases_test.dart](file://test/animation/image_foreignobject_edge_cases_test.dart)
+- [clip_mask_advanced_composition_test.dart](file://test/animation/clip_mask_advanced_composition_test.dart)
+- [clip_mask_use_verification_test.dart](file://test/animation/clip_mask_use_verification_test.dart)
+- [advanced_mask_semantics_test.dart](file://test/animation/advanced_mask_semantics_test.dart)
+- [filter_advanced_graph_test.dart](file://test/animation/filter_advanced_graph_test.dart)
+- [filter_advanced_semantics_test.dart](file://test/animation/filter_advanced_semantics_test.dart)
+- [filter_displacement_tile_test.dart](file://test/animation/filter_displacement_tile_test.dart)
+- [filter_drop_shadow_advanced_test.dart](file://test/animation/filter_drop_shadow_advanced_test.dart)
+- [filter_graph_semantics_test.dart](file://test/animation/filter_graph_semantics_test.dart)
+- [filter_input_graph_hardening_test.dart](file://test/animation/filter_input_graph_hardening_test.dart)
+- [filter_input_graph_test.dart](file://test/animation/filter_input_graph_test.dart)
+- [filter_light_sources_test.dart](file://test/animation/filter_light_sources_test.dart)
+- [filter_morphology_convolve_turbulence_test.dart](file://test/animation/filter_morphology_convolve_turbulence_test.dart)
+- [filter_primitive_edge_cases_test.dart](file://test/animation/filter_primitive_edge_cases_test.dart)
 - [rotation_golden_test.dart](file://test/animation/rotation_golden_test.dart)
 
 ## Detailed Component Analysis
@@ -789,7 +897,7 @@ The system also resolves numerous other CSS text properties including:
 - [widget_svg_test.dart](file://test/widget_svg_test.dart)
 
 ### Advanced Clip Mask Testing
-**New** The framework includes comprehensive clip mask testing with 765 lines covering:
+**New** The framework includes comprehensive clip mask testing with 766 lines covering:
 
 #### Luminosity Masking
 - **RGB to Grayscale Conversion**: Validates mask-type luminance converts RGB content to grayscale opacity
@@ -828,7 +936,7 @@ The system also resolves numerous other CSS text properties including:
 - [advanced_clip_mask_test.dart](file://test/animation/advanced_clip_mask_test.dart)
 
 ### SVG Event Model Compliance Testing
-**New** The framework includes comprehensive SVG event model testing with 797 lines covering:
+**New** The framework includes comprehensive SVG event model testing with 457 lines covering:
 
 #### Event Retargeting Through <use>
 - **Direct Element Click Retargeting**: Validates click on element inside use retargets to use element
@@ -913,7 +1021,7 @@ The system also resolves numerous other CSS text properties including:
 - [filter_component_transfer_test.dart](file://test/animation/filter_component_transfer_test.dart)
 
 ### Image Contexts Testing
-**New** The framework includes comprehensive image contexts testing with 606 lines covering:
+**New** The framework includes comprehensive image contexts testing with 663 lines covering:
 
 #### Image in Complex Contexts
 - **Image Inside Clip-Path**: Validates image defines clip region by its bounds
@@ -961,6 +1069,73 @@ The system also resolves numerous other CSS text properties including:
 **Section sources**
 - [image_contexts_test.dart](file://test/animation/image_contexts_test.dart)
 
+### ForeignObject CSS Inheritance Testing
+**New** The framework includes comprehensive ForeignObject CSS inheritance testing with 457 lines covering:
+
+#### CSS Property Inheritance
+- **Font Family Inheritance**: Validates CSS font-family flows through foreignObject boundary
+- **Font Size Inheritance**: Tests CSS font-size inheritance into foreignObject content
+- **Color Property Flow**: Validates CSS color property inheritance through foreignObject
+- **Text Decoration Inheritance**: Tests partial text-decoration inheritance behavior
+
+#### Property Boundary Crossing
+- **SVG Fill Exclusion**: Validates fill property does NOT inherit into foreignObject content
+- **Transform Exclusion**: Tests transform property exclusion through foreignObject boundary
+- **Opacity Exclusion**: Validates opacity property does NOT inherit through foreignObject
+- **Stroke Exclusion**: Tests stroke property exclusion from foreignObject content
+
+#### ForeignObject Layout Properties
+- **Overflow Property Testing**: Validates overflow=hidden and overflow=visible behavior
+- **Viewport Positioning**: Tests x/y offset positioning within foreignObject
+- **Dimension Constraints**: Validates width/height constraint application
+- **Transform Propagation**: Tests parent group transform propagation
+
+#### Complex Inheritance Scenarios
+- **Nested ForeignObject Testing**: Validates inheritance through multiple foreignObject levels
+- **Mixed Property Sets**: Tests combination of inherited and non-inherited properties
+- **CSS Cascade Resolution**: Validates proper CSS cascade resolution within foreignObject
+- **Inheritance Priority**: Tests inheritance priority over direct properties
+
+**Section sources**
+- [foreignobject_css_inheritance_test.dart](file://test/animation/foreignobject_css_inheritance_test.dart)
+
+### Comprehensive Filter Testing Suite
+**New** The framework includes a comprehensive filter testing suite with 2589 lines covering all SVG filter primitives and parsing:
+
+#### Filter Primitive Parsing
+- **feGaussianBlur Testing**: Validates stdDeviation parsing and blur effect application
+- **feMorphology Testing**: Tests dilate and erode operations with radius parameters
+- **feDisplacementMap Testing**: Validates channel selector parsing and scale parameter handling
+- **feImage Testing**: Tests element reference parsing and external image handling
+- **feConvolveMatrix Testing**: Validates kernel matrix parsing and convolution operations
+- **feTurbulence Testing**: Tests noise generation with base frequency and octaves
+- **feComponentTransfer Testing**: Validates component transfer function parsing
+- **feDiffuseLighting Testing**: Tests lighting model parsing and material properties
+- **feSpecularLighting Testing**: Validates specular lighting with light source parameters
+- **feDropShadow Testing**: Tests shadow effect parsing and styling fallbacks
+- **feOffset Testing**: Validates offset parameter parsing
+- **feColorMatrix Testing**: Tests matrix type parsing and color transformation
+- **feFlood Testing**: Validates flood color and opacity parsing
+- **feBlend Testing**: Tests blend mode parsing and SVG2 mode variants
+- **feComposite Testing**: Validates operator parsing and arithmetic coefficients
+- **feMerge Testing**: Tests merge node parsing and composition
+
+#### Filter Pipeline Integration
+- **Filter Chain Resolution**: Validates resolvePaintPasses method for complex filter chains
+- **Result Attribute Handling**: Tests result naming and downstream primitive referencing
+- **Input/Output Binding**: Validates proper input/output binding between filter primitives
+- **Pipeline Optimization**: Tests identity filter optimization and ColorFilter usage
+
+#### Advanced Filter Features
+- **Light Source Parsing**: Validates point, distant, and spot light source parsing
+- **Channel Selector Testing**: Tests R, G, B, A channel selector parsing
+- **Edge Mode Testing**: Validates wrap and duplicate edge mode handling
+- **Kernel Unit Length Testing**: Tests kernel unit length parameter parsing
+- **Preserve Aspect Ratio Testing**: Validates preserveAspectRatio in feImage filters
+
+**Section sources**
+- [filters_test.dart](file://test/animation/filters_test.dart)
+
 ### Precision Hit Testing System
 **Updated** The framework now includes comprehensive precision hit testing with specialized components:
 
@@ -988,6 +1163,30 @@ The system also resolves numerous other CSS text properties including:
 - [animated_svg_picture_hit_test_use.dart](file://lib/src/animation/animated_svg_picture_hit_test_use.dart)
 - [animated_svg_picture_hit_test_visibility.dart](file://lib/src/animation/animated_svg_picture_hit_test_visibility.dart)
 
+### Advanced Mask Semantics Testing
+**New** The framework includes comprehensive mask semantics testing with specialized components:
+
+#### Semantic Mask Testing
+- **Mask Semantics Validation**: Tests semantic mask processing and accessibility
+- **Mask Content Semantics**: Validates mask content semantics for assistive technologies
+- **Mask Composition Semantics**: Tests semantics for nested mask compositions
+- **Mask Transformation Semantics**: Validates semantics for transformed mask content
+
+**Section sources**
+- [advanced_mask_semantics_test.dart](file://test/animation/advanced_mask_semantics_test.dart)
+
+### Advanced Filter Semantics Testing
+**New** The framework includes comprehensive filter semantics testing with specialized components:
+
+#### Filter Semantics Validation
+- **Filter Graph Semantics**: Tests semantic filter graph processing
+- **Filter Primitive Semantics**: Validates semantics for individual filter primitives
+- **Filter Pipeline Semantics**: Tests semantics for complex filter pipelines
+- **Filter Result Semantics**: Validates semantics for filter result processing
+
+**Section sources**
+- [filter_advanced_semantics_test.dart](file://test/animation/filter_advanced_semantics_test.dart)
+
 ## Dependency Analysis
 - **Test runtime and SDK constraints** are defined in pubspec.yaml.
 - **dart_test.yaml restricts tests** to VM to avoid issues with certain comparators on web.
@@ -1002,6 +1201,8 @@ The system also resolves numerous other CSS text properties including:
 - **SVG event model tests depend** on the event handling system and DOM simulation components.
 - **Filter component transfer tests depend** on the filter parsing and pixel transformation systems.
 - **Image contexts tests depend** on the image loading and rendering pipeline.
+- **ForeignObject CSS inheritance tests depend** on CSS inheritance resolution and property boundary crossing.
+- **Comprehensive filter tests depend** on the complete filter parsing and pipeline systems.
 - **Visual regression tests depend** on golden file comparison utilities.
 - **Precision hit testing depends** on specialized hit testing components in animated_svg_picture_hit_test_* files.
 - **CSS cascade behavior tests depend** on the inheritance resolution and style application systems.
@@ -1041,7 +1242,23 @@ T --> ACM["advanced_clip_mask_test.dart"]
 T --> SEM["svg_event_model_test.dart"]
 T --> FCT["filter_component_transfer_test.dart"]
 T --> ICT["image_contexts_test.dart"]
-T --> RG["rotation_golden_test.dart"]
+T --> AMT["advanced_mask_test.dart"]
+T --> FT["filters_test.dart"]
+T --> FOCSIT["foreignobject_css_inheritance_test.dart"]
+T --> IFOT["image_foreignobject_edge_cases_test.dart"]
+T --> CMAC["clip_mask_advanced_composition_test.dart"]
+T --> CMUVT["clip_mask_use_verification_test.dart"]
+T --> AMS["advanced_mask_semantics_test.dart"]
+T --> FAGT["filter_advanced_graph_test.dart"]
+T --> FAST["filter_advanced_semantics_test.dart"]
+T --> FDT["filter_displacement_tile_test.dart"]
+T --> FDST["filter_drop_shadow_advanced_test.dart"]
+T --> FGST["filter_graph_semantics_test.dart"]
+T --> FIGHT["filter_input_graph_hardening_test.dart"]
+T --> FIGT["filter_input_graph_test.dart"]
+T --> FLST["filter_light_sources_test.dart"]
+T --> FMCT["filter_morphology_convolve_turbulence_test.dart"]
+T --> FPET["filter_primitive_edge_cases_test.dart"]
 V --> VT["visual_*_test.dart"]
 MK --> AP
 PO --> AP
@@ -1066,7 +1283,23 @@ ACM --> ACM
 SEM --> SEM
 FCT --> FCT
 ICT --> ICT
-RG --> RG
+AMT --> AMT
+FT --> FT
+FOCSIT --> FOCSIT
+IFOT --> IFOT
+CMAC --> CMAC
+CMUVT --> CMUVT
+AMS --> AMS
+FAGT --> FAGT
+FAST --> FAST
+FDT --> FDT
+FDST --> FDST
+FGST --> FGST
+FIGHT --> FIGHT
+FIGT --> FIGT
+FLST --> FLST
+FMCT --> FMCT
+FPET --> FPET
 ```
 
 **Diagram sources**
@@ -1103,6 +1336,23 @@ RG --> RG
 - [svg_event_model_test.dart](file://test/animation/svg_event_model_test.dart)
 - [filter_component_transfer_test.dart](file://test/animation/filter_component_transfer_test.dart)
 - [image_contexts_test.dart](file://test/animation/image_contexts_test.dart)
+- [advanced_mask_test.dart](file://test/animation/advanced_mask_test.dart)
+- [filters_test.dart](file://test/animation/filters_test.dart)
+- [foreignobject_css_inheritance_test.dart](file://test/animation/foreignobject_css_inheritance_test.dart)
+- [image_foreignobject_edge_cases_test.dart](file://test/animation/image_foreignobject_edge_cases_test.dart)
+- [clip_mask_advanced_composition_test.dart](file://test/animation/clip_mask_advanced_composition_test.dart)
+- [clip_mask_use_verification_test.dart](file://test/animation/clip_mask_use_verification_test.dart)
+- [advanced_mask_semantics_test.dart](file://test/animation/advanced_mask_semantics_test.dart)
+- [filter_advanced_graph_test.dart](file://test/animation/filter_advanced_graph_test.dart)
+- [filter_advanced_semantics_test.dart](file://test/animation/filter_advanced_semantics_test.dart)
+- [filter_displacement_tile_test.dart](file://test/animation/filter_displacement_tile_test.dart)
+- [filter_drop_shadow_advanced_test.dart](file://test/animation/filter_drop_shadow_advanced_test.dart)
+- [filter_graph_semantics_test.dart](file://test/animation/filter_graph_semantics_test.dart)
+- [filter_input_graph_hardening_test.dart](file://test/animation/filter_input_graph_hardening_test.dart)
+- [filter_input_graph_test.dart](file://test/animation/filter_input_graph_test.dart)
+- [filter_light_sources_test.dart](file://test/animation/filter_light_sources_test.dart)
+- [filter_morphology_convolve_turbulence_test.dart](file://test/animation/filter_morphology_convolve_turbulence_test.dart)
+- [filter_primitive_edge_cases_test.dart](file://test/animation/filter_primitive_edge_cases_test.dart)
 - [rotation_golden_test.dart](file://test/animation/rotation_golden_test.dart)
 
 **Section sources**
@@ -1123,6 +1373,8 @@ RG --> RG
 - **SVG event model testing** validates event handling performance with efficient DOM simulation.
 - **Filter component transfer testing** optimizes pixel transformation with ColorFilter optimization for linear functions.
 - **Image contexts testing** validates rendering performance with efficient image loading and caching.
+- **ForeignObject CSS inheritance testing** validates property resolution with efficient inheritance traversal.
+- **Comprehensive filter testing** validates filter parsing performance with optimized filter graph resolution.
 - **Visual regression testing** benefits from golden file caching and incremental comparison algorithms.
 - **Precision hit testing** optimizes hit detection with spatial indexing and efficient coordinate transformation.
 
@@ -1176,6 +1428,16 @@ Common issues and resolutions:
   - Check clipPath, mask, and pattern integration with image data.
   - Validate foreignObject custom builder information passing.
   - Ensure proper filter application to image content.
+- **ForeignObject CSS inheritance issues**:
+  - Verify CSS property inheritance boundary crossing accuracy.
+  - Check property exclusion behavior for SVG-specific properties.
+  - Validate transform and opacity inheritance exclusion.
+  - Ensure proper foreignObject layout property handling.
+- **Comprehensive filter testing issues**:
+  - Verify filter primitive parsing accuracy for all SVG filter types.
+  - Check filter pipeline resolution and result attribute handling.
+  - Validate complex filter chain integration.
+  - Ensure proper filter graph optimization and ColorFilter usage.
 - **Visual regression testing issues**:
   - Verify golden file generation and comparison accuracy.
   - Check background color consistency for pixel comparison.
@@ -1204,16 +1466,22 @@ Common issues and resolutions:
 - [svg_event_model_test.dart](file://test/animation/svg_event_model_test.dart)
 - [filter_component_transfer_test.dart](file://test/animation/filter_component_transfer_test.dart)
 - [image_contexts_test.dart](file://test/animation/image_contexts_test.dart)
+- [advanced_mask_test.dart](file://test/animation/advanced_mask_test.dart)
+- [filters_test.dart](file://test/animation/filters_test.dart)
+- [foreignobject_css_inheritance_test.dart](file://test/animation/foreignobject_css_inheritance_test.dart)
+- [image_foreignobject_edge_cases_test.dart](file://test/animation/image_foreignobject_edge_cases_test.dart)
 - [rotation_golden_test.dart](file://test/animation/rotation_golden_test.dart)
 
 ## Conclusion
-The flutter_svg testing framework combines logic validation, widget integration, and robust visual verification to ensure accurate SMIL animation rendering and comprehensive advanced SVG feature support. With the addition of extensive tests covering marker functionality, paint order validation, pattern rendering, comprehensive text styling features, **advanced clip mask testing**, **SVG event model compliance testing**, **filter component transfer testing**, and **image contexts testing**, the suite now provides complete coverage of advanced SVG rendering capabilities.
+The flutter_svg testing framework combines logic validation, widget integration, and robust visual verification to ensure accurate SMIL animation rendering and comprehensive advanced SVG feature support. With the addition of extensive tests covering marker functionality, paint order validation, pattern rendering, comprehensive text styling features, **advanced clip mask testing**, **SVG event model compliance testing**, **filter component transfer testing**, **image contexts testing**, **foreignObject CSS inheritance testing**, and **a comprehensive filter testing suite**, the suite now provides complete coverage of advanced SVG rendering capabilities.
 
 The expanded framework includes:
-- **765 lines of comprehensive advanced clip mask testing** validating luminosity masking, nested composition chains, and edge feathering
-- **797 lines of SVG event model compliance testing** validating W3C event retargeting, bubbling, and mouseenter/mouseleave behavior
+- **766 lines of comprehensive advanced clip mask testing** validating luminosity masking, nested composition chains, and edge feathering
+- **457 lines of SVG event model compliance testing** validating W3C event retargeting, bubbling, and mouseenter/mouseleave behavior
 - **639 lines of filter component transfer testing** validating feComponentTransfer parsing and pixel transformation
-- **606 lines of image contexts testing** validating complex image usage within clipPath, masks, patterns, and foreignObject
+- **663 lines of image contexts testing** validating complex image usage within clipPath, masks, patterns, and foreignObject
+- **457 lines of ForeignObject CSS inheritance testing** validating CSS property inheritance and boundary crossing
+- **2589 lines of comprehensive filter testing** validating all SVG filter primitives and parsing
 - **Enhanced visual regression testing** with golden file comparisons and pixel-based analysis
 - **40 new test files** validating expanded CSS text styling features
 - **Comprehensive text decoration thickness testing** with auto/from-font and unit-based values
@@ -1228,8 +1496,9 @@ The expanded framework includes:
 - **Advanced CSS transform parsing and decomposition system** with 3D transform support
 - **Comprehensive unit conversion system** supporting px, em, rem, %, vw, vh, vmin, vmax, cm, mm, in, pt, pc, and deg, rad, turn, grad
 - **Visual regression testing capabilities** with golden file comparisons and pixel analysis
+- **Advanced semantics testing** for masks, filters, and complex rendering scenarios
 
-By leveraging pixel-based geometry analysis, deterministic timelines, and careful controller-driven playback, the comprehensive suite provides reliable regression protection and clear debugging signals. The extensive advanced feature testing ensures backward compatibility while supporting modern SVG rendering features. The new comprehensive testing infrastructure validates complex rendering scenarios including advanced clip masks, SVG event model compliance, filter component transfer, and image contexts with mathematical precision. **The new advanced clip mask testing validates luminosity masking, nested composition chains, and edge feathering with detailed geometric analysis.** **The new SVG event model compliance testing validates W3C event retargeting, bubbling, and mouseenter/mouseleave behavior with comprehensive event handling.** **The new filter component transfer testing validates feComponentTransfer parsing and pixel transformation with mathematical accuracy.** **The new image contexts testing validates complex image usage within clipPath, masks, patterns, and foreignObject with proper rendering pipeline integration.** Adhering to the documented guidelines and patterns ensures maintainability and extensibility of the testing infrastructure.
+By leveraging pixel-based geometry analysis, deterministic timelines, and careful controller-driven playback, the comprehensive suite provides reliable regression protection and clear debugging signals. The extensive advanced feature testing ensures backward compatibility while supporting modern SVG rendering features. The new comprehensive testing infrastructure validates complex rendering scenarios including advanced clip masks, SVG event model compliance, filter component transfer, image contexts, foreignObject CSS inheritance, and a complete filter testing suite with mathematical precision. **The new advanced clip mask testing validates luminosity masking, nested composition chains, and edge feathering with detailed geometric analysis.** **The new SVG event model compliance testing validates W3C event retargeting, bubbling, and mouseenter/mouseleave behavior with comprehensive event handling.** **The new filter component transfer testing validates feComponentTransfer parsing and pixel transformation with mathematical accuracy.** **The new image contexts testing validates complex image usage within clipPath, masks, patterns, and foreignObject with proper rendering pipeline integration.** **The new ForeignObject CSS inheritance testing validates CSS property boundary crossing with inheritance rules and property exclusions.** **The new comprehensive filter testing suite validates all SVG filter primitives and parsing with 2589 lines of coverage.** Adhering to the documented guidelines and patterns ensures maintainability and extensibility of the testing infrastructure.
 
 ## Appendices
 
@@ -1267,6 +1536,10 @@ By leveraging pixel-based geometry analysis, deterministic timelines, and carefu
   - **Test visual regression testing** with golden file comparisons and pixel analysis.
   - **Test foreignObject custom builder functionality** with proper information passing and widget rendering.
   - **Validate preserveAspectRatio parsing** for image geometry extraction and clipPath bounds calculation.
+  - **Test ForeignObject CSS inheritance** with property boundary crossing and inheritance rules.
+  - **Validate comprehensive filter primitive parsing** with all SVG filter types and parameters.
+  - **Test filter pipeline integration** with complex filter chains and result attribute handling.
+  - **Validate advanced semantics testing** for masks, filters, and complex rendering scenarios.
 
 **Section sources**
 - [VISUAL_TESTING_GUIDELINES.md](file://VISUAL_TESTING_GUIDELINES.md)
@@ -1295,4 +1568,8 @@ By leveraging pixel-based geometry analysis, deterministic timelines, and carefu
 - [svg_event_model_test.dart](file://test/animation/svg_event_model_test.dart)
 - [filter_component_transfer_test.dart](file://test/animation/filter_component_transfer_test.dart)
 - [image_contexts_test.dart](file://test/animation/image_contexts_test.dart)
+- [advanced_mask_test.dart](file://test/animation/advanced_mask_test.dart)
+- [filters_test.dart](file://test/animation/filters_test.dart)
+- [foreignobject_css_inheritance_test.dart](file://test/animation/foreignobject_css_inheritance_test.dart)
+- [image_foreignobject_edge_cases_test.dart](file://test/animation/image_foreignobject_edge_cases_test.dart)
 - [rotation_golden_test.dart](file://test/animation/rotation_golden_test.dart)

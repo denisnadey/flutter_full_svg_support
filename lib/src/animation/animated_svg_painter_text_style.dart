@@ -83,10 +83,14 @@ extension AnimatedSvgPainterTextStyleExtension on AnimatedSvgPainter {
     final textRenderingFeatures = _resolveTextRenderingFeatures(
       _getInheritedString(node, 'text-rendering'),
     );
-    // Merge font features from font-variant and text-rendering
+    final fontFeatureSettings = _resolveFontFeatureSettings(
+      _getInheritedString(node, 'font-feature-settings'),
+    );
+    // Merge font features from font-variant, text-rendering, and font-feature-settings
     final allFontFeatures = <ui.FontFeature>[
       ...fontFeatures,
       ...textRenderingFeatures,
+      ...fontFeatureSettings,
     ];
     final textDirection = _resolveTextDirection(
       _getInheritedString(node, 'direction'),

@@ -240,516 +240,156 @@ extension AnimatedSvgPainterClipMaskUnitsExtension on AnimatedSvgPainter {
       ..setEntry(1, 3, bounds.top);
   }
 
-  /// Computes the accumulated transform for userSpaceOnUse with nested transforms.
-  ///
-  /// When clipPathUnits="userSpaceOnUse", the clip path coordinates are in the
-  /// current user coordinate system. This method accumulates all ancestor
-  /// transforms to properly position the clip.
-  Matrix4 _computeUserSpaceTransformStack(SvgNode node) {
-    final transforms = <Matrix4>[];
-
-    // Collect transforms from ancestors (excluding the node itself)
-    var current = node.parent;
-    while (current != null) {
-      final transform = _buildTransformMatrixFromValue(
-        current.getAttributeValue('transform'),
-      );
-      if (transform != null) {
-        transforms.add(transform);
-      }
-      current = current.parent;
-    }
-
-    if (transforms.isEmpty) {
-      return Matrix4.identity();
-    }
-
-    // Compose transforms in reverse order (from root to parent)
-    final result = Matrix4.identity();
-    for (int i = transforms.length - 1; i >= 0; i--) {
-      result.multiply(transforms[i]);
-    }
-
-    return result;
-  }
-
-  /// Resolves clipPathUnits for cascaded clipPaths.
-  ///
-  /// When clipPaths are cascaded, each may have different units.
-  /// This determines the correct coordinate system for each level.
-  String _resolveClipPathUnits(SvgNode clipPathNode) {
-    final units = _getString(
-      clipPathNode,
-      'clipPathUnits',
-    )?.trim().toLowerCase();
-    return units ?? 'userspaceonuse';
-  }
-
-  /// Transforms a clip path based on clipPathUnits setting and nested transforms.
-  ///
-  /// For objectBoundingBox: scales clip coordinates to target element bounds
-  /// For userSpaceOnUse: uses current user coordinate system with nested transforms
-  ui.Path? _transformClipPathForUnits({
-    required ui.Path clipPath,
-    required SvgNode targetNode,
-    required SvgNode clipPathNode,
-    Matrix4? additionalTransform,
-  }) {
-    final units = _resolveClipPathUnits(clipPathNode);
-
-    Matrix4 transform = Matrix4.identity();
-
-    if (units == 'objectboundingbox') {
-      final obbTransform = _computeObjectBoundingBoxTransform(targetNode);
-      if (obbTransform == null) {
-        return null;
-      }
-      transform = obbTransform;
-    } else {
-      // userSpaceOnUse - accumulate nested transforms if needed
-      transform = _computeUserSpaceTransformStack(targetNode);
-    }
-
-    // Apply any additional transform (e.g., from cascading clipPaths)
-    if (additionalTransform != null) {
-      transform.multiply(additionalTransform);
-    }
-
-    // Transform the clip path
-    return clipPath.transform(transform.storage);
-  }
-
   /// Computes the transform matrix for maskContentUnits="objectBoundingBox".
   ///
-  /// When maskContentUnits="objectBoundingBox", the mask content is in a
-  /// coordinate space where (0,0) is the top-left of the masked element's
-  /// bounding box and (1,1) is the bottom-right.
-  ///
-  /// Handles non-uniform scaling when width != height.
-  Matrix4? _computeMaskContentTransform(
+  /// Similar to clipPathUnits but specifically for mask content coordinates.
+  /// Handles edge cases including:
+  /// - Zero-size bounding box
+  /// - Non-uniform scaling (different width/height ratios)
+  /// - Percentage values in mask content
+  Matrix4? _computeMaskContentObjectBoundingBoxTransform(
     SvgNode maskedNode, {
-    bool preserveAspectRatio = false,
+    bool clampToSafe = true,
   }) {
     final bounds = _computeNodeLocalBoundsWithStroke(maskedNode);
     if (bounds == null) {
       return null;
     }
 
-    // Edge case: zero width or height
+    // Edge case: zero width or height - mask content becomes invisible
     if (bounds.width.abs() < _kMinBoundingBoxDimension ||
         bounds.height.abs() < _kMinBoundingBoxDimension) {
       return null;
     }
 
-    // Use safe dimensions to prevent extreme scaling
-    final safeWidth = bounds.width.abs() < _kMinSafeScaleDimension
-        ? _kMinSafeScaleDimension
-        : bounds.width;
-    final safeHeight = bounds.height.abs() < _kMinSafeScaleDimension
-        ? _kMinSafeScaleDimension
-        : bounds.height;
+    double safeWidth = bounds.width;
+    double safeHeight = bounds.height;
 
-    if (preserveAspectRatio) {
-      // Use uniform scale (smaller of the two)
-      final scale = safeWidth < safeHeight ? safeWidth : safeHeight;
-      return Matrix4.identity()
-        ..setEntry(0, 0, scale)
-        ..setEntry(1, 1, scale)
-        ..setEntry(0, 3, bounds.left)
-        ..setEntry(1, 3, bounds.top);
+    // Optionally clamp to safe dimensions to prevent extreme scaling
+    if (clampToSafe) {
+      safeWidth = bounds.width.abs() < _kMinSafeScaleDimension
+          ? _kMinSafeScaleDimension
+          : bounds.width;
+      safeHeight = bounds.height.abs() < _kMinSafeScaleDimension
+          ? _kMinSafeScaleDimension
+          : bounds.height;
     }
 
-    // Non-uniform scaling (allows stretching)
+    // Transform from objectBoundingBox coordinates (0-1) to user space
+    // (0,0) maps to top-left of masked element's bbox
+    // (1,1) maps to bottom-right of masked element's bbox
     return Matrix4.identity()
-      ..setEntry(0, 0, safeWidth)
-      ..setEntry(1, 1, safeHeight)
-      ..setEntry(0, 3, bounds.left)
-      ..setEntry(1, 3, bounds.top);
+      ..setEntry(0, 0, safeWidth) // Scale X
+      ..setEntry(1, 1, safeHeight) // Scale Y
+      ..setEntry(0, 3, bounds.left) // Translate X
+      ..setEntry(1, 3, bounds.top); // Translate Y
   }
 
-  /// Gets animated mask attribute value with SMIL animation support.
+  /// Handles zero-area mask region edge case.
   ///
-  /// Supports animation of mask region attributes (x, y, width, height)
-  /// via SMIL <animate> elements. The SMIL system updates attribute values
-  /// automatically, so we just need to read the current value.
-  double? _getAnimatedMaskAttribute(
+  /// Per SVG spec, a mask region with zero width or height results in
+  /// nothing being rendered (completely transparent).
+  // ignore: unused_element
+  bool _isZeroAreaMaskRegion(ui.Rect maskRegion) {
+    return maskRegion.width.abs() < _kMinBoundingBoxDimension ||
+        maskRegion.height.abs() < _kMinBoundingBoxDimension;
+  }
+
+  /// Handles degenerate bounding box for mask calculations.
+  ///
+  /// Returns a fallback rect if the element has a degenerate bbox,
+  /// or null if no fallback is possible.
+  // ignore: unused_element
+  ui.Rect? _handleDegenerateMaskBoundingBox(
+    SvgNode maskedNode,
     SvgNode maskNode,
-    String attributeName, {
-    double? defaultValue,
-  }) {
-    // Read the attribute value (SMIL system updates these during animation)
-    final staticValue = maskNode.getAttributeValue(attributeName);
-    if (staticValue != null) {
-      final parsed = _parseObjectBoundingBoxValue(staticValue);
-      if (parsed != null) {
-        return parsed;
-      }
+  ) {
+    final bounds = _computeNodeLocalBoundsWithStroke(maskedNode);
+    if (bounds == null) {
+      return null;
     }
 
-    return defaultValue;
+    // Check for zero or negative dimensions
+    if (bounds.width <= 0 || bounds.height <= 0) {
+      // Try to use viewport as fallback
+      final viewport = _resolveMaskUnitsViewportRect();
+      if (viewport != null && viewport.width > 0 && viewport.height > 0) {
+        return viewport;
+      }
+      return null;
+    }
+
+    return bounds;
   }
 
-  /// Computes animated mask bounds for mask attribute animation.
+  /// Computes mask content transform considering animation state.
   ///
-  /// When mask attributes (x, y, width, height) are animated via SMIL,
-  /// this method returns the current animated bounds.
-  ui.Rect? _computeAnimatedMaskBounds({
-    required SvgNode maskedNode,
-    required SvgNode maskNode,
-  }) {
-    final units = (_getString(maskNode, 'maskUnits') ?? 'objectBoundingBox')
-        .trim()
-        .toLowerCase();
+  /// When mask content is animated, the transform may change over time.
+  /// This method ensures proper recalculation during animation.
+  // ignore: unused_element
+  Matrix4? _computeAnimatedMaskContentTransform(
+    SvgNode maskedNode,
+    SvgNode maskNode,
+  ) {
+    final contentUnits =
+        (_getString(maskNode, 'maskContentUnits') ?? 'userSpaceOnUse')
+            .trim()
+            .toLowerCase();
 
-    if (units == 'objectboundingbox') {
-      final targetBounds = _computeNodeLocalBoundsWithStroke(maskedNode);
-      if (targetBounds == null) return null;
-
-      if (targetBounds.width.abs() < _kMinBoundingBoxDimension ||
-          targetBounds.height.abs() < _kMinBoundingBoxDimension) {
-        return null;
-      }
-
-      // Get animated attribute values
-      final x = _getAnimatedMaskAttribute(
-        maskNode,
-        'x',
-        defaultValue: -_kDefaultMaskExtension,
-      );
-      final y = _getAnimatedMaskAttribute(
-        maskNode,
-        'y',
-        defaultValue: -_kDefaultMaskExtension,
-      );
-      final width = _getAnimatedMaskAttribute(
-        maskNode,
-        'width',
-        defaultValue: 1.0 + 2 * _kDefaultMaskExtension,
-      );
-      final height = _getAnimatedMaskAttribute(
-        maskNode,
-        'height',
-        defaultValue: 1.0 + 2 * _kDefaultMaskExtension,
-      );
-
-      if (x == null || y == null || width == null || height == null) {
-        return null;
-      }
-      if (width <= 0 || height <= 0) return null;
-
-      final safeWidth = targetBounds.width.abs() < _kMinSafeScaleDimension
-          ? _kMinSafeScaleDimension
-          : targetBounds.width;
-      final safeHeight = targetBounds.height.abs() < _kMinSafeScaleDimension
-          ? _kMinSafeScaleDimension
-          : targetBounds.height;
-
-      return ui.Rect.fromLTWH(
-        targetBounds.left + x * safeWidth,
-        targetBounds.top + y * safeHeight,
-        safeWidth * width,
-        safeHeight * height,
-      );
+    if (contentUnits != 'objectboundingbox') {
+      return null; // userSpaceOnUse uses identity transform
     }
 
-    // userSpaceOnUse - animation with viewport-relative values
-    return _computeMaskBoundsUserSpaceOnUse(
-      maskedNode: maskedNode,
-      maskNode: maskNode,
+    return _computeMaskContentObjectBoundingBoxTransform(
+      maskedNode,
+      clampToSafe: true,
     );
   }
 
-  /// Checks if mask attributes are being animated.
-  bool _hasMaskAttributeAnimation(SvgNode maskNode) {
-    for (final child in maskNode.children) {
-      if (child.tagName == 'animate' || child.tagName == 'set') {
-        final attributeName = _getString(child, 'attributeName');
-        if (attributeName == 'x' ||
-            attributeName == 'y' ||
-            attributeName == 'width' ||
-            attributeName == 'height' ||
-            attributeName == 'maskUnits' ||
-            attributeName == 'maskContentUnits') {
-          return true;
+  /// Resolves percentage values in mask region attributes.
+  ///
+  /// Handles both objectBoundingBox percentages (relative to bbox)
+  /// and userSpaceOnUse percentages (relative to viewport).
+  // ignore: unused_element
+  double? _resolveMaskPercentageValue(
+    SvgNode maskNode,
+    String attributeName,
+    bool isObjectBoundingBox,
+    ui.Rect? targetBounds,
+    bool isHorizontal,
+  ) {
+    final rawValue = maskNode.getAttributeValue(attributeName);
+    if (rawValue == null) {
+      return null;
+    }
+
+    final raw = rawValue.toString().trim();
+    if (raw.isEmpty) {
+      return null;
+    }
+
+    // Check for percentage
+    if (raw.endsWith('%')) {
+      final percent = double.tryParse(raw.substring(0, raw.length - 1));
+      if (percent == null) {
+        return null;
+      }
+
+      if (isObjectBoundingBox) {
+        // Percentage relative to objectBoundingBox is already in 0-1 range
+        return percent / 100.0;
+      } else {
+        // Percentage relative to viewport
+        final viewport = _resolveMaskUnitsViewportRect();
+        if (viewport == null) {
+          return null;
         }
+        final dimension = isHorizontal ? viewport.width : viewport.height;
+        return dimension * percent / 100.0;
       }
     }
-    return false;
-  }
 
-  /// Checks if mask content elements are being animated.
-  bool _hasMaskContentAnimation(SvgNode maskNode) {
-    for (final child in maskNode.children) {
-      if (_hasAnyAnimation(child)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  /// Checks if a node or its descendants have any SMIL animation.
-  bool _hasAnyAnimation(SvgNode node) {
-    // Check direct animation children
-    for (final child in node.children) {
-      if (child.tagName == 'animate' ||
-          child.tagName == 'animateTransform' ||
-          child.tagName == 'animateColor' ||
-          child.tagName == 'animateMotion' ||
-          child.tagName == 'set') {
-        return true;
-      }
-      // Recursively check descendants
-      if (_hasAnyAnimation(child)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  // ============================================================================
-  // Enhanced maskUnits Support
-  // ============================================================================
-
-  /// Gets the maskUnits value with proper default handling.
-  ///
-  /// Per SVG spec:
-  /// - `objectBoundingBox` (default): mask region is relative to element bbox
-  /// - `userSpaceOnUse`: mask region is in user coordinates
-  String _getMaskUnits(SvgNode maskNode) {
-    final units = _getString(maskNode, 'maskUnits');
-    if (units == null) return 'objectBoundingBox';
-    final normalized = units.trim().toLowerCase();
-    if (normalized == 'userspaceonuse') return 'userSpaceOnUse';
-    return 'objectBoundingBox';
-  }
-
-  /// Gets the maskContentUnits value with proper default handling.
-  ///
-  /// Per SVG spec:
-  /// - `userSpaceOnUse` (default): mask content uses user coordinates
-  /// - `objectBoundingBox`: mask content uses element bbox coordinates (0-1)
-  String _getMaskContentUnits(SvgNode maskNode) {
-    final units = _getString(maskNode, 'maskContentUnits');
-    if (units == null) return 'userSpaceOnUse';
-    final normalized = units.trim().toLowerCase();
-    if (normalized == 'objectboundingbox') return 'objectBoundingBox';
-    return 'userSpaceOnUse';
-  }
-
-  /// Computes default mask region bounds per SVG spec.
-  ///
-  /// Default mask region:
-  /// - x = -10% of element bbox width
-  /// - y = -10% of element bbox height
-  /// - width = 120% of element bbox width
-  /// - height = 120% of element bbox height
-  ui.Rect? _computeDefaultMaskRegion(SvgNode maskedNode) {
-    final bounds = _computeNodeLocalBoundsWithStroke(maskedNode);
-    if (bounds == null) return null;
-
-    if (bounds.width.abs() < _kMinBoundingBoxDimension ||
-        bounds.height.abs() < _kMinBoundingBoxDimension) {
-      return null;
-    }
-
-    // Default: -10% for x/y, 120% for width/height
-    return ui.Rect.fromLTWH(
-      bounds.left - bounds.width * 0.1,
-      bounds.top - bounds.height * 0.1,
-      bounds.width * 1.2,
-      bounds.height * 1.2,
-    );
-  }
-
-  /// Builds the complete mask region considering maskUnits.
-  ///
-  /// Handles both objectBoundingBox and userSpaceOnUse units.
-  ui.Rect? _buildMaskRegion({
-    required SvgNode maskedNode,
-    required SvgNode maskNode,
-  }) {
-    final units = _getMaskUnits(maskNode);
-
-    if (units == 'userSpaceOnUse') {
-      return _buildMaskRegionUserSpaceOnUse(maskNode: maskNode);
-    }
-
-    return _buildMaskRegionObjectBoundingBox(
-      maskedNode: maskedNode,
-      maskNode: maskNode,
-    );
-  }
-
-  /// Builds mask region for userSpaceOnUse units.
-  ui.Rect? _buildMaskRegionUserSpaceOnUse({required SvgNode maskNode}) {
-    final viewport = _resolveMaskUnitsViewportRect();
-    if (viewport == null) return null;
-
-    // Get explicit coordinates or use defaults
-    final xAttr = maskNode.getAttributeValue('x');
-    final yAttr = maskNode.getAttributeValue('y');
-    final widthAttr = maskNode.getAttributeValue('width');
-    final heightAttr = maskNode.getAttributeValue('height');
-
-    // Default: -10% to +110% of viewport
-    double x = viewport.left - viewport.width * 0.1;
-    double y = viewport.top - viewport.height * 0.1;
-    double width = viewport.width * 1.2;
-    double height = viewport.height * 1.2;
-
-    // Parse x
-    if (xAttr != null) {
-      final parsed = _parseLengthOrPercentage(
-        xAttr,
-        viewport.width,
-        viewport.left,
-      );
-      if (parsed != null) x = parsed;
-    }
-
-    // Parse y
-    if (yAttr != null) {
-      final parsed = _parseLengthOrPercentage(
-        yAttr,
-        viewport.height,
-        viewport.top,
-      );
-      if (parsed != null) y = parsed;
-    }
-
-    // Parse width
-    if (widthAttr != null) {
-      final parsed = _parseLengthOrPercentage(
-        widthAttr,
-        viewport.width,
-        0,
-        isSize: true,
-      );
-      if (parsed != null) width = parsed;
-    }
-
-    // Parse height
-    if (heightAttr != null) {
-      final parsed = _parseLengthOrPercentage(
-        heightAttr,
-        viewport.height,
-        0,
-        isSize: true,
-      );
-      if (parsed != null) height = parsed;
-    }
-
-    if (width <= 0 || height <= 0) return null;
-
-    return ui.Rect.fromLTWH(x, y, width, height);
-  }
-
-  /// Builds mask region for objectBoundingBox units.
-  ui.Rect? _buildMaskRegionObjectBoundingBox({
-    required SvgNode maskedNode,
-    required SvgNode maskNode,
-  }) {
-    final bounds = _computeNodeLocalBoundsWithStroke(maskedNode);
-    if (bounds == null) return null;
-
-    if (bounds.width.abs() < _kMinBoundingBoxDimension ||
-        bounds.height.abs() < _kMinBoundingBoxDimension) {
-      return null;
-    }
-
-    // Parse relative coordinates (fractions of bbox)
-    final x = _parseObjectBoundingBoxValue(maskNode.getAttributeValue('x'));
-    final y = _parseObjectBoundingBoxValue(maskNode.getAttributeValue('y'));
-    final width = _parseObjectBoundingBoxValue(
-      maskNode.getAttributeValue('width'),
-    );
-    final height = _parseObjectBoundingBoxValue(
-      maskNode.getAttributeValue('height'),
-    );
-
-    // Default: -10% for x/y, 120% for width/height
-    final resolvedX = x ?? -0.1;
-    final resolvedY = y ?? -0.1;
-    final resolvedWidth = width ?? 1.2;
-    final resolvedHeight = height ?? 1.2;
-
-    if (resolvedWidth <= 0 || resolvedHeight <= 0) return null;
-
-    return ui.Rect.fromLTWH(
-      bounds.left + resolvedX * bounds.width,
-      bounds.top + resolvedY * bounds.height,
-      bounds.width * resolvedWidth,
-      bounds.height * resolvedHeight,
-    );
-  }
-
-  /// Parses a length or percentage value.
-  double? _parseLengthOrPercentage(
-    Object? value,
-    double referenceDimension,
-    double referenceOrigin, {
-    bool isSize = false,
-  }) {
-    if (value == null) return null;
-
-    if (value is num) return value.toDouble();
-
-    final str = value.toString().trim();
-    if (str.isEmpty) return null;
-
-    // Handle percentage
-    if (str.endsWith('%')) {
-      final percent = double.tryParse(str.substring(0, str.length - 1));
-      if (percent == null) return null;
-      final result = referenceDimension * percent / 100.0;
-      return isSize ? result : referenceOrigin + result;
-    }
-
-    // Handle units (px, em, etc.) - strip unit suffix
-    final cleaned = str.replaceAll(RegExp(r'[a-zA-Z]+$'), '');
-    return double.tryParse(cleaned);
-  }
-
-  // ============================================================================
-  // Enhanced maskContentUnits Support
-  // ============================================================================
-
-  /// Computes the transform matrix for mask content based on maskContentUnits.
-  ///
-  /// For objectBoundingBox:
-  /// - Content coordinates (0,0) map to element bbox top-left
-  /// - Content coordinates (1,1) map to element bbox bottom-right
-  ///
-  /// For userSpaceOnUse:
-  /// - Content uses the current user coordinate system (no transform)
-  Matrix4? _computeMaskContentUnitsTransform({
-    required SvgNode maskedNode,
-    required SvgNode maskNode,
-  }) {
-    final units = _getMaskContentUnits(maskNode);
-
-    if (units == 'userSpaceOnUse') {
-      // No transform needed for userSpaceOnUse
-      return null;
-    }
-
-    // objectBoundingBox - scale content to element bounds
-    return _computeMaskContentTransform(maskedNode);
-  }
-
-  /// Applies the mask content transform to the canvas.
-  void _applyMaskContentUnitsTransform(
-    ui.Canvas canvas, {
-    required SvgNode maskedNode,
-    required SvgNode maskNode,
-  }) {
-    final transform = _computeMaskContentUnitsTransform(
-      maskedNode: maskedNode,
-      maskNode: maskNode,
-    );
-
-    if (transform != null) {
-      canvas.transform(transform.storage);
-    }
+    // Try parsing as number
+    return double.tryParse(raw);
   }
 }

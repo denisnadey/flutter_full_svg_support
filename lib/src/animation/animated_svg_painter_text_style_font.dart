@@ -143,199 +143,6 @@ extension AnimatedSvgPainterTextStyleFontExtension on AnimatedSvgPainter {
     return uniqueFamilies.join(', ');
   }
 
-  /// Parses font-family CSS value and returns structured fallback result.
-  ///
-  /// This method properly separates the primary font (first in chain) from
-  /// the fallback fonts, suitable for use with Flutter's TextStyle:
-  ///
-  /// ```dart
-  /// final result = painter._resolveFontFamilyWithFallbacks('Helvetica, Arial, sans-serif');
-  /// TextStyle(
-  ///   fontFamily: result.primaryFont,
-  ///   fontFamilyFallback: result.fallbackFonts,
-  /// );
-  /// ```
-  ///
-  /// The method handles:
-  /// - Comma-separated font family lists
-  /// - Quoted font names (double or single quotes): `"Times New Roman"`, `'Courier New'`
-  /// - Unquoted font names: `Arial`, `Helvetica`
-  /// - Generic family names: `serif`, `sans-serif`, `monospace`, `cursive`, `fantasy`, `system-ui`
-  /// - Whitespace trimming around font names
-  /// - Deduplication while preserving order
-  FontFallbackResult _resolveFontFamilyWithFallbacks(String? value) {
-    final families = _parseFontFamilyList(value);
-    if (families.isEmpty) {
-      return const FontFallbackResult();
-    }
-
-    return FontFallbackResult(
-      primaryFont: families.first,
-      fallbackFonts: families.length > 1
-          ? families.sublist(1)
-          : const <String>[],
-    );
-  }
-
-  /// Parses a font-family CSS value into a list of font families.
-  ///
-  /// Returns a list of font family names in priority order, with:
-  /// - Generic families expanded to platform-specific font stacks
-  /// - Duplicates removed (preserving first occurrence)
-  /// - Whitespace trimmed
-  /// - Quotes stripped from quoted names
-  ///
-  /// Returns an empty list if value is null or empty.
-  List<String> _parseFontFamilyList(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return const <String>[];
-    }
-
-    final families = <String>[];
-    final buffer = StringBuffer();
-    var inQuotes = false;
-    var quoteChar = '';
-
-    for (var i = 0; i < value.length; i++) {
-      final char = value[i];
-
-      if (!inQuotes && (char == '"' || char == "'")) {
-        inQuotes = true;
-        quoteChar = char;
-        continue;
-      }
-
-      if (inQuotes && char == quoteChar) {
-        inQuotes = false;
-        quoteChar = '';
-        continue;
-      }
-
-      if (!inQuotes && char == ',') {
-        final family = buffer.toString().trim();
-        if (family.isNotEmpty) {
-          final resolved = _resolveAndExpandFontFamily(family);
-          families.addAll(resolved);
-        }
-        buffer.clear();
-        continue;
-      }
-
-      buffer.write(char);
-    }
-
-    // Handle last family
-    final lastFamily = buffer.toString().trim();
-    if (lastFamily.isNotEmpty) {
-      final resolved = _resolveAndExpandFontFamily(lastFamily);
-      families.addAll(resolved);
-    }
-
-    if (families.isEmpty) {
-      return const <String>[];
-    }
-
-    // Remove duplicates while preserving order
-    final seen = <String>{};
-    return families.where((f) => seen.add(f.toLowerCase())).toList();
-  }
-
-  /// Parses font-family without expanding generic families.
-  ///
-  /// Returns raw font names as specified, with quotes removed.
-  /// Generic family names are included as-is without expansion.
-  ///
-  /// Useful when you need the exact font names specified in the CSS.
-  List<String> _parseFontFamilyListRaw(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return const <String>[];
-    }
-
-    final families = <String>[];
-    final buffer = StringBuffer();
-    var inQuotes = false;
-    var quoteChar = '';
-
-    for (var i = 0; i < value.length; i++) {
-      final char = value[i];
-
-      if (!inQuotes && (char == '"' || char == "'")) {
-        inQuotes = true;
-        quoteChar = char;
-        continue;
-      }
-
-      if (inQuotes && char == quoteChar) {
-        inQuotes = false;
-        quoteChar = '';
-        continue;
-      }
-
-      if (!inQuotes && char == ',') {
-        final family = buffer.toString().trim();
-        if (family.isNotEmpty) {
-          families.add(family);
-        }
-        buffer.clear();
-        continue;
-      }
-
-      buffer.write(char);
-    }
-
-    // Handle last family
-    final lastFamily = buffer.toString().trim();
-    if (lastFamily.isNotEmpty) {
-      families.add(lastFamily);
-    }
-
-    // Remove duplicates while preserving order
-    final seen = <String>{};
-    return families.where((f) => seen.add(f.toLowerCase())).toList();
-  }
-
-  /// Gets the primary font from a font-family value.
-  ///
-  /// Returns the first font in the chain after expansion,
-  /// or null if no fonts are specified.
-  String? _getPrimaryFont(String? value) {
-    final families = _parseFontFamilyList(value);
-    return families.isNotEmpty ? families.first : null;
-  }
-
-  /// Gets the fallback fonts from a font-family value.
-  ///
-  /// Returns all fonts after the first one in the chain.
-  /// Returns an empty list if there are no fallbacks.
-  List<String> _getFontFallbacks(String? value) {
-    final families = _parseFontFamilyList(value);
-    return families.length > 1 ? families.sublist(1) : const <String>[];
-  }
-
-  /// Checks if a font family name is a CSS generic family.
-  ///
-  /// Generic families are: serif, sans-serif, monospace, cursive, fantasy,
-  /// system-ui, ui-serif, ui-sans-serif, ui-monospace, ui-rounded, math, emoji.
-  bool _isGenericFontFamily(String family) {
-    final normalized = family.toLowerCase().trim();
-    return const <String>{
-      'serif',
-      'sans-serif',
-      'monospace',
-      'cursive',
-      'fantasy',
-      'system-ui',
-      'ui-serif',
-      'ui-sans-serif',
-      'ui-monospace',
-      'ui-rounded',
-      'math',
-      'emoji',
-      '-apple-system',
-      'blinkmacsystemfont',
-    }.contains(normalized);
-  }
-
   /// Resolves a single font family and expands to fallback variants.
   ///
   /// For generic families, returns platform-specific font stacks.
@@ -420,47 +227,58 @@ extension AnimatedSvgPainterTextStyleFontExtension on AnimatedSvgPainter {
     }
   }
 
-  /// Normalizes generic family names to their standard Flutter equivalents.
+  /// Resolves font-feature-settings CSS property.
   ///
-  /// CSS generic families:
-  /// - serif -> Flutter uses 'serif' or specific like 'Times New Roman'
-  /// - sans-serif -> Flutter uses 'sans-serif' or specific like 'Roboto'
-  /// - monospace -> Flutter uses 'monospace' or specific like 'Courier'
-  /// - cursive -> Flutter uses 'cursive'
-  /// - fantasy -> Flutter uses 'fantasy'
-  /// - system-ui -> Uses default system font
-  /// - ui-serif, ui-sans-serif, ui-monospace, ui-rounded -> Modern CSS generics
-  /// - math -> For mathematical typesetting
-  /// - emoji -> For emoji rendering
-  String _normalizeGenericFamily(String family) {
-    final normalized = family.toLowerCase().trim();
-    switch (normalized) {
-      case 'serif':
-      case 'ui-serif':
-        return 'serif';
-      case 'sans-serif':
-      case 'ui-sans-serif':
-        return 'sans-serif';
-      case 'monospace':
-      case 'ui-monospace':
-        return 'monospace';
-      case 'cursive':
-        return 'cursive';
-      case 'fantasy':
-        return 'fantasy';
-      case 'system-ui':
-      case '-apple-system':
-      case 'blinkmacsystemfont':
-        return 'sans-serif'; // Platform default maps to sans-serif
-      case 'ui-rounded':
-        return 'sans-serif'; // Fallback to sans-serif
-      case 'math':
-        return 'serif'; // Fallback to serif for math
-      case 'emoji':
-        return family; // Keep as-is, Flutter handles emoji fonts
-      default:
-        return family; // Keep original family name
+  /// Parses the CSS font-feature-settings property and returns a list
+  /// of Flutter FontFeatures. Supports:
+  /// - Four-letter OpenType feature tags: 'liga', 'kern', 'smcp', etc.
+  /// - Feature values: 'kern' 1, 'liga' on/off, 'ss01' 2
+  ///
+  /// Example: 'kern' 1, 'liga' off, 'smcp' on
+  List<ui.FontFeature> _resolveFontFeatureSettings(String? value) {
+    if (value == null ||
+        value.trim().isEmpty ||
+        value.trim().toLowerCase() == 'normal') {
+      return const <ui.FontFeature>[];
     }
+
+    final features = <ui.FontFeature>[];
+    final settings = value.split(',');
+
+    for (final setting in settings) {
+      final trimmed = setting.trim();
+      if (trimmed.isEmpty) continue;
+
+      // Parse feature tag and value
+      // Format: "'tag'" or "'tag' value" or '"tag" value'
+      final match = RegExp(
+        r'''['"]([a-zA-Z0-9]{4})['"](?:\s+(\d+|on|off))?''',
+      ).firstMatch(trimmed);
+
+      if (match != null) {
+        final tag = match.group(1)!;
+        final valueStr = match.group(2);
+
+        int featureValue = 1; // Default is enabled
+        if (valueStr != null) {
+          if (valueStr.toLowerCase() == 'off') {
+            featureValue = 0;
+          } else if (valueStr.toLowerCase() == 'on') {
+            featureValue = 1;
+          } else {
+            featureValue = int.tryParse(valueStr) ?? 1;
+          }
+        }
+
+        if (featureValue > 0) {
+          features.add(ui.FontFeature(tag, featureValue));
+        } else {
+          features.add(ui.FontFeature(tag, 0));
+        }
+      }
+    }
+
+    return features;
   }
 
   /// Resolves font-variant CSS property to Flutter FontFeatures.

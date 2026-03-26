@@ -19,24 +19,21 @@
 
 ## Update Summary
 **Changes Made**
-- Enhanced font family resolution with complex fallback chains including platform-specific font stacks
-- Comprehensive generic family mapping (serif, sans-serif, monospace, cursive, fantasy, system-ui, ui-serif, ui-sans-serif, ui-monospace, ui-rounded)
-- Added emoji font support with Apple Color Emoji, Segoe UI Emoji, and Noto Color Emoji
-- Implemented math font support with Cambria Math, STIX Two Math, and Latin Modern Math
-- Enhanced metric-compatible font selection for consistent typography
-- Added FontFallbackResult class for structured font family handling
-- Expanded font variant support including modern CSS generic families
+- Enhanced font family resolution with comprehensive platform-specific font stacks including modern CSS generic families (ui-serif, ui-sans-serif, ui-monospace, ui-rounded)
+- Added comprehensive emoji font support with Apple Color Emoji, Segoe UI Emoji, and Noto Color Emoji fallback chains
+- Implemented math font support with Cambria Math, STIX Two Math, and Latin Modern Math for mathematical typesetting
+- Enhanced metric-compatible font selection for consistent typography across platforms
+- Added FontFallbackResult class for structured font family handling with primary/fallback separation
+- Expanded font variant support including small caps, numeric variants, ligatures, position variants, and East Asian font features
 - Enhanced text decoration system with comprehensive thickness control, underline positioning, and skip-ink features
 - Improved baseline alignment system with sophisticated baseline reference calculation
 - Enhanced text-indent handling with percentage and unit conversion support
 - Added comprehensive cursor management system for character-by-character text positioning
 - Implemented advanced text path spacing calculations and hit testing
 - Enhanced modern CSS integration with content-visibility optimization and will-change properties
-- Added extensive font variant support including small caps, numeric variants, ligatures, and position variants
-- Implemented comprehensive text transformation and whitespace handling
-- Enhanced text rendering features including font-size-adjust and variable font support
-- Improved text geometry handling including stroke width and decorations expansion
-- Added comprehensive emphasis marks system with character-by-character rendering support
+- Added extensive emphasis marks system with character-by-character rendering support
+- Enhanced internationalization support with comprehensive Unicode bidirectional text processing
+- Improved text geometry handling including stroke width and decoration expansion calculations
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -47,10 +44,11 @@
 6. [Text Rendering Pipeline](#text-rendering-pipeline)
 7. [Performance Optimization](#performance-optimization)
 8. [Advanced Features](#advanced-features)
-9. [Modern CSS Integration](#modern-css-integration)
-10. [Integration Points](#integration-points)
-11. [Troubleshooting Guide](#troubleshooting-guide)
-12. [Conclusion](#conclusion)
+9. [Internationalization and Localization](#internationalization-and-localization)
+10. [Modern CSS Integration](#modern-css-integration)
+11. [Integration Points](#integration-points)
+12. [Troubleshooting Guide](#troubleshooting-guide)
+13. [Conclusion](#conclusion)
 
 ## Introduction
 
@@ -505,6 +503,30 @@ TextGeometryExpansion --> Rect : "expands"
 
 **Section sources**
 - [animated_svg_painter_clip_mask.dart:231-266](file://lib/src/animation/animated_svg_painter_clip_mask.dart#L231-L266)
+
+## Internationalization and Localization
+
+### Comprehensive Unicode Support
+
+The Enhanced Text Styling System provides extensive internationalization support through sophisticated Unicode processing and bidirectional text handling:
+
+- **Bidirectional Algorithm Implementation**: Full Unicode Bidi algorithm compliance with support for embedding, isolation, and override controls
+- **Combining Mark Processing**: Proper handling of diacritical marks and character composition
+- **Locale-Aware Text Direction**: Automatic detection and application of text direction based on content
+- **Multi-script Support**: Comprehensive coverage of Latin, Cyrillic, Arabic, Hebrew, Devanagari, and other writing systems
+- **Text Transformation**: Support for case conversion, full-width characters, and script-specific transformations
+
+### Language System Integration
+
+The system integrates with Flutter's localization framework to provide:
+
+- **Dynamic Language Switching**: Seamless switching between languages without reinitialization
+- **RTL/LTR Adaptation**: Automatic adaptation of layout and positioning for right-to-left languages
+- **Font Selection**: Intelligent font selection based on language requirements and script availability
+- **Text Metrics**: Accurate measurement and layout calculations for different scripts and languages
+
+**Section sources**
+- [animated_svg_painter_text_style_rendering.dart:580-779](file://lib/src/animation/animated_svg_painter_text_style_rendering.dart#L580-L779)
 
 ## Modern CSS Integration
 

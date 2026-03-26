@@ -6,11 +6,34 @@
 <img src="https://raw.githubusercontent.com/dnfield/flutter_svg/7d374d7107561cbd906d7c0ca26fef02cc01e7c8/example/assets/flutter_logo.svg?sanitize=true" width="200px" alt="Flutter Logo which can be rendered by this package!">
 <!-- markdownlint-enable MD033 -->
 
-Draw SVG files using Flutter.
+Draw SVG files using Flutter with **~74% Blink SVG parity** - the most comprehensive Flutter SVG implementation available.
+
+## Feature Highlights
+
+- **Full SMIL Animation**: `<animate>`, `<animateTransform>`, `<animateMotion>`, `<set>` with timing, syncbase, and event-based triggers
+- **CSS Animation & Keyframes**: `@keyframes`, `animation-*` properties, CSS transitions, 3D transforms
+- **17/25 Filter Primitives**: Gaussian blur, color matrix, blend, composite, morphology, displacement, lighting (diffuse/specular), convolution, turbulence, and more
+- **All 8 Geometry Shapes**: rect, circle, ellipse, line, path, polygon, polyline, image
+- **Paint Servers**: Linear/radial gradients, patterns, markers with full coordinate unit support
+- **Clipping & Masking**: `clip-path`, `mask` with advanced composition and hit-testing
+- **Advanced Text**: Multi-position (`x`, `y`, `dx`, `dy` lists), rotation, `textLength`, `writing-mode`, `textPath`, text decorations
+- **Interactive Hit-Testing**: Pointer events, `<a>` anchor links, per-element event targeting
+- **ARIA Accessibility**: `<title>`, `<desc>`, `aria-label`, `aria-describedby`, `role` attributes
 
 ## Getting Started
 
-Basic usage (to create an SVG rendering widget from an asset):
+### Installation
+
+Add to your `pubspec.yaml`:
+
+```yaml
+dependencies:
+  flutter_svg: ^2.2.2
+```
+
+### Basic Usage
+
+Create an SVG rendering widget from an asset:
 
 <?code-excerpt "example/lib/readme_excerpts.dart (SimpleAsset)"?>
 ```dart

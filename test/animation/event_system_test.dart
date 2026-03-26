@@ -827,18 +827,12 @@ void main() {
 
       // Test 3: stopPropagation prevents further bubbling
       test('stopPropagation prevents event from bubbling further', () {
-        final parentTarget = SvgEventTarget();
         final childTarget = SvgEventTarget();
-        int parentCalled = 0;
         int childCalled = 0;
 
         childTarget.addEventListener('click', (event) {
           childCalled++;
           event.stopPropagation();
-        });
-
-        parentTarget.addEventListener('click', (event) {
-          parentCalled++;
         });
 
         // Simulate child target phase

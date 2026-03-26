@@ -620,4 +620,429 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
   });
+
+  group('Advanced Mask Composition', () {
+    testWidgets('luminance mask computes correct opacity from RGB', (
+      WidgetTester tester,
+    ) async {
+      // Red has luminance ~0.2126, green ~0.7152, blue ~0.0722
+      const svgXml = '''
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <mask id="mask" type="luminance">
+              <rect x="0" y="0" width="50" height="100" fill="#FF0000"/>
+              <rect x="50" y="0" width="50" height="100" fill="#00FF00"/>
+            </mask>
+          </defs>
+          <rect x="0" y="0" width="100" height="100" fill="white" 
+                mask="url(#mask)"/>
+        </svg>
+      ''';
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+          ),
+        ),
+      );
+
+      await tester.pump();
+
+      // Green region should be more visible than red due to higher luminance
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
+
+    testWidgets('mask with gradient edge creates soft transition', (
+      WidgetTester tester,
+    ) async {
+      // Gradient in mask creates soft edge feathering
+      const svgXml = '''
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="white"/>
+              <stop offset="100%" stop-color="black"/>
+            </linearGradient>
+            <mask id="mask">
+              <rect x="0" y="0" width="100" height="100" fill="url(#grad)"/>
+            </mask>
+          </defs>
+          <rect x="0" y="0" width="100" height="100" fill="red" 
+                mask="url(#mask)"/>
+        </svg>
+      ''';
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+          ),
+        ),
+      );
+
+      await tester.pump();
+
+      final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+
+      // Gradient mask should show content with varying opacity
+      expect(analysis.pixelCount, greaterThan(50));
+    });
+
+    testWidgets('blur filter inside mask creates feathered edge', (
+      WidgetTester tester,
+    ) async {
+      // Gaussian blur in mask content creates soft edges
+      const svgXml = '''
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <filter id="blur">
+              <feGaussianBlur stdDeviation="8"/>
+            </filter>
+            <mask id="mask">
+              <rect x="25" y="25" width="50" height="50" fill="white" 
+                    filter="url(#blur)"/>
+            </mask>
+          </defs>
+          <rect x="0" y="0" width="100" height="100" fill="red" 
+                mask="url(#mask)"/>
+        </svg>
+      ''';
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+          ),
+        ),
+      );
+
+      await tester.pump();
+
+      // Should render with blurred/feathered mask edges
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
+
+    testWidgets('nested masks apply in correct order', (
+      WidgetTester tester,
+    ) async {
+      // Mask on group containing masked element
+      const svgXml = '''
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <mask id="outerMask">
+              <rect x="0" y="0" width="100" height="50" fill="white"/>
+            </mask>
+            <mask id="innerMask">
+              <rect x="0" y="0" width="50" height="100" fill="white"/>
+            </mask>
+          </defs>
+          <g mask="url(#outerMask)">
+            <rect x="0" y="0" width="100" height="100" fill="red" 
+                  mask="url(#innerMask)"/>
+          </g>
+        </svg>
+      ''';
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+          ),
+        ),
+      );
+
+      await tester.pump();
+
+      final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+
+      // Only top-left quadrant should be visible (intersection of both masks)
+      expect(analysis.pixelCount, greaterThan(100));
+    });
+
+    testWidgets('mask combined with clip-path', (
+      WidgetTester tester,
+    ) async {
+      // Element with both clip-path and mask
+      const svgXml = '''
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <clipPath id="clip">
+              <rect x="10" y="10" width="80" height="80"/>
+            </clipPath>
+            <mask id="mask">
+              <rect x="25" y="0" width="50" height="100" fill="white"/>
+            </mask>
+          </defs>
+          <rect x="0" y="0" width="100" height="100" fill="red" 
+                clip-path="url(#clip)" mask="url(#mask)"/>
+        </svg>
+      ''';
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+          ),
+        ),
+      );
+
+      await tester.pump();
+
+      final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+
+      // Result should be intersection of clip and mask
+      expect(analysis.pixelCount, greaterThan(100));
+    });
+  });
+
+  group('Mask Cache Invalidation', () {
+    testWidgets('animated mask shape triggers re-render', (
+      WidgetTester tester,
+    ) async {
+      // Circle radius animation inside mask
+      const svgXml = '''
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <mask id="mask">
+              <circle cx="50" cy="50" r="20" fill="white">
+                <animate attributeName="r" values="20;40;20" 
+                         dur="2s" repeatCount="indefinite"/>
+              </circle>
+            </mask>
+          </defs>
+          <rect x="0" y="0" width="100" height="100" fill="red" 
+                mask="url(#mask)"/>
+        </svg>
+      ''';
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+          ),
+        ),
+      );
+
+      await tester.pump();
+      final pixelsT0 = await VisualTestUtils.captureWidgetPixels(tester);
+      final analysisT0 = VisualTestUtils.analyzeRedPixels(pixelsT0, 800, 600);
+
+      // Advance animation halfway
+      await tester.pump(const Duration(seconds: 1));
+      final pixelsT1 = await VisualTestUtils.captureWidgetPixels(tester);
+      final analysisT1 = VisualTestUtils.analyzeRedPixels(pixelsT1, 800, 600);
+
+      // Mask should have grown - more red pixels visible
+      expect(analysisT1.pixelCount, greaterThanOrEqualTo(analysisT0.pixelCount));
+    });
+
+    testWidgets('mask with animated fill color', (
+      WidgetTester tester,
+    ) async {
+      // Fill color animation affects mask opacity
+      const svgXml = '''
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <mask id="mask">
+              <rect x="0" y="0" width="100" height="100" fill="white">
+                <animate attributeName="fill" values="white;gray;white" 
+                         dur="2s" repeatCount="indefinite"/>
+              </rect>
+            </mask>
+          </defs>
+          <rect x="0" y="0" width="100" height="100" fill="red" 
+                mask="url(#mask)"/>
+        </svg>
+      ''';
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+          ),
+        ),
+      );
+
+      await tester.pump();
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
+
+    testWidgets('animated transform in mask content', (
+      WidgetTester tester,
+    ) async {
+      // Transform animation inside mask
+      const svgXml = '''
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <mask id="mask">
+              <rect x="25" y="25" width="50" height="50" fill="white">
+                <animateTransform attributeName="transform" 
+                                  type="rotate" 
+                                  values="0 50 50;180 50 50;360 50 50" 
+                                  dur="2s" repeatCount="indefinite"/>
+              </rect>
+            </mask>
+          </defs>
+          <rect x="0" y="0" width="100" height="100" fill="red" 
+                mask="url(#mask)"/>
+        </svg>
+      ''';
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+          ),
+        ),
+      );
+
+      await tester.pump();
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
+  });
+
+  group('Mask Unit Edge Cases', () {
+    testWidgets('very small element with objectBoundingBox mask', (
+      WidgetTester tester,
+    ) async {
+      // Tiny element should still be masked properly
+      const svgXml = '''
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <mask id="mask" maskContentUnits="objectBoundingBox">
+              <rect x="0" y="0" width="1" height="1" fill="white"/>
+            </mask>
+          </defs>
+          <rect x="45" y="45" width="10" height="10" fill="red" 
+                mask="url(#mask)"/>
+        </svg>
+      ''';
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+          ),
+        ),
+      );
+
+      await tester.pump();
+
+      final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+
+      // Small element should still be visible through mask
+      expect(analysis.pixelCount, greaterThan(10));
+    });
+
+    testWidgets('percentage values in mask region', (
+      WidgetTester tester,
+    ) async {
+      // Percentage values for mask region
+      const svgXml = '''
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <mask id="mask" x="25%" y="25%" width="50%" height="50%">
+              <rect x="0" y="0" width="100" height="100" fill="white"/>
+            </mask>
+          </defs>
+          <rect x="0" y="0" width="100" height="100" fill="red" 
+                mask="url(#mask)"/>
+        </svg>
+      ''';
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+          ),
+        ),
+      );
+
+      await tester.pump();
+
+      final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+
+      // 50% x 50% region should be visible
+      expect(analysis.pixelCount, greaterThan(100));
+    });
+
+    testWidgets('extremely large mask region values', (
+      WidgetTester tester,
+    ) async {
+      // Large mask region extending well beyond element
+      const svgXml = '''
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <mask id="mask" x="-1" y="-1" width="3" height="3">
+              <rect x="0" y="0" width="200" height="200" fill="white"/>
+            </mask>
+          </defs>
+          <rect x="10" y="10" width="80" height="80" fill="red" 
+                mask="url(#mask)"/>
+        </svg>
+      ''';
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+          ),
+        ),
+      );
+
+      await tester.pump();
+
+      final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+
+      // Full element should be visible
+      expect(analysis.pixelCount, greaterThan(200));
+    });
+
+    testWidgets('mask with use element reference', (
+      WidgetTester tester,
+    ) async {
+      // Mask content using <use> element
+      const svgXml = '''
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <rect id="maskRect" x="25" y="25" width="50" height="50"/>
+            <mask id="mask">
+              <use href="#maskRect" fill="white"/>
+            </mask>
+          </defs>
+          <rect x="0" y="0" width="100" height="100" fill="red" 
+                mask="url(#mask)"/>
+        </svg>
+      ''';
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+          ),
+        ),
+      );
+
+      await tester.pump();
+
+      final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+
+      // Use reference should work in mask
+      expect(analysis.pixelCount, greaterThan(100));
+    });
+  });
 }

@@ -338,6 +338,7 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
   }
 
   /// Checks if a code point is a combining mark for hit-testing purposes.
+  /// Includes comprehensive Unicode combining mark ranges.
   bool _isHitTestCombiningMark(int codePoint) {
     // Combining Diacritical Marks (0300-036F)
     if (codePoint >= 0x0300 && codePoint <= 0x036F) {
@@ -351,8 +352,28 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
     if (codePoint >= 0x1DC0 && codePoint <= 0x1DFF) {
       return true;
     }
+    // Combining Diacritical Marks for Symbols (20D0-20FF)
+    if (codePoint >= 0x20D0 && codePoint <= 0x20FF) {
+      return true;
+    }
     // Combining Half Marks (FE20-FE2F)
     if (codePoint >= 0xFE20 && codePoint <= 0xFE2F) {
+      return true;
+    }
+    // Hebrew combining marks (0591-05BD, 05BF, 05C1-05C2, 05C4-05C5, 05C7)
+    if (codePoint >= 0x0591 && codePoint <= 0x05BD) {
+      return true;
+    }
+    if (codePoint == 0x05BF ||
+        codePoint == 0x05C1 ||
+        codePoint == 0x05C2 ||
+        codePoint == 0x05C4 ||
+        codePoint == 0x05C5 ||
+        codePoint == 0x05C7) {
+      return true;
+    }
+    // Arabic combining marks (064B-065F, 0670)
+    if ((codePoint >= 0x064B && codePoint <= 0x065F) || codePoint == 0x0670) {
       return true;
     }
     // Thai combining marks
@@ -365,6 +386,18 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
     if (codePoint == 0x093C ||
         (codePoint >= 0x0941 && codePoint <= 0x0948) ||
         codePoint == 0x094D) {
+      return true;
+    }
+    // Bengali combining marks
+    if ((codePoint >= 0x09C1 && codePoint <= 0x09C4) || codePoint == 0x09CD) {
+      return true;
+    }
+    // Zero Width Joiner (for emoji sequences)
+    if (codePoint == 0x200D) {
+      return true;
+    }
+    // Variation Selectors
+    if (codePoint >= 0xFE00 && codePoint <= 0xFE0F) {
       return true;
     }
     return false;

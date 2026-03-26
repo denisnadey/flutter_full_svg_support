@@ -3,6 +3,9 @@
 <cite>
 **Referenced Files in This Document**
 - [animated_svg_picture.dart](file://lib/src/animation/animated_svg_picture.dart)
+- [animated_svg_picture_events.dart](file://lib/src/animation/animated_svg_picture_events.dart)
+- [animated_svg_picture_pointer_events.dart](file://lib/src/animation/animated_svg_picture_pointer_events.dart)
+- [animated_svg_picture_event_model.dart](file://lib/src/animation/animated_svg_picture_event_model.dart)
 - [animated_svg_picture_hit_test_traversal.dart](file://lib/src/animation/animated_svg_picture_hit_test_traversal.dart)
 - [animated_svg_picture_hit_test_visibility.dart](file://lib/src/animation/animated_svg_picture_hit_test_visibility.dart)
 - [animated_svg_picture_hit_test_use.dart](file://lib/src/animation/animated_svg_picture_hit_test_use.dart)
@@ -11,10 +14,10 @@
 - [animated_svg_picture_hit_test_text_layout.dart](file://lib/src/animation/animated_svg_picture_hit_test_text_layout.dart)
 - [animated_svg_picture_hit_test_text_path_segments.dart](file://lib/src/animation/animated_svg_picture_hit_test_text_path_segments.dart)
 - [animated_svg_picture_hit_test_advanced.dart](file://lib/src/animation/animated_svg_picture_hit_test_advanced.dart)
-- [animated_svg_picture_pointer_events.dart](file://lib/src/animation/animated_svg_picture_pointer_events.dart)
 - [animated_svg_picture_utils.dart](file://lib/src/animation/animated_svg_picture_utils.dart)
 - [animated_svg_picture_path_parser.dart](file://lib/src/animation/animated_svg_picture_path_parser.dart)
 - [svg_event_dispatcher.dart](file://lib/src/animation/svg_event_dispatcher.dart)
+- [svg_event.dart](file://lib/src/animation/svg_event.dart)
 - [hit_test_advanced_features_test.dart](file://test/animation/hit_test_advanced_features_test.dart)
 - [hit_test_advanced_test.dart](file://test/animation/hit_test_advanced_test.dart)
 - [hit_test_precision_test.dart](file://test/animation/hit_test_precision_test.dart)
@@ -22,15 +25,13 @@
 
 ## Update Summary
 **Changes Made**
-- Enhanced glyph-precision text hit testing with per-character bounding boxes and font metrics
-- Implemented advanced tolerance-based stroke detection with improved accuracy
-- Added comprehensive pointer events semantics supporting all major SVG elements
-- Expanded supported element types to include rect, circle, ellipse, line, image, foreignObject, path, polygon, polyline, text, tspan, textPath
-- Enhanced evenodd fill-rule handling with robust edge case detection
-- Improved marker hit testing with precise angle calculations and orientation support
-- Added advanced use element event delegation with shadow DOM integration
-- Implemented comprehensive hit test caching and performance optimizations
-- Added advanced precision testing capabilities for clipPath, mask, and combined scenarios
+- Enhanced pointer events system with comprehensive mode resolution and semantic interpretation
+- Improved hit testing traversal with event boundary detection and filtering
+- Advanced event handling capabilities with W3C DOM compliance and shadow DOM integration
+- Expanded pointer events semantics supporting all major SVG elements with tolerance-based algorithms
+- Enhanced use element event delegation with proper event retargeting and shadow path construction
+- Advanced precision testing capabilities for clipPath, mask, and combined scenarios
+- Comprehensive event model implementation with capture/bubble phases and propagation control
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -39,14 +40,16 @@
 4. [Architecture Overview](#architecture-overview)
 5. [Detailed Component Analysis](#detailed-component-analysis)
 6. [Enhanced Pointer Events System](#enhanced-pointer-events-system)
-7. [Stroke and Fill Hit-Testing with Tolerance](#stroke-and-fill-hit-testing-with-tolerance)
-8. [Comprehensive Element Support](#comprehensive-element-support)
-9. [Advanced Text Hit Testing](#advanced-text-hit-testing)
-10. [Advanced Precision Testing](#advanced-precision-testing)
-11. [Dependency Analysis](#dependency-analysis)
-12. [Performance Considerations](#performance-considerations)
-13. [Troubleshooting Guide](#troubleshooting-guide)
-14. [Conclusion](#conclusion)
+7. [Advanced Event Handling Model](#advanced-event-handling-model)
+8. [Improved Hit Testing Traversal](#improved-hit-testing-traversal)
+9. [Stroke and Fill Hit-Testing with Tolerance](#stroke-and-fill-hit-testing-with-tolerance)
+10. [Comprehensive Element Support](#comprehensive-element-support)
+11. [Advanced Text Hit Testing](#advanced-text-hit-testing)
+12. [Advanced Precision Testing](#advanced-precision-testing)
+13. [Dependency Analysis](#dependency-analysis)
+14. [Performance Considerations](#performance-considerations)
+15. [Troubleshooting Guide](#troubleshooting-guide)
+16. [Conclusion](#conclusion)
 
 ## Introduction
 
@@ -89,6 +92,9 @@ G --> G3[Advanced Fill Rules]
 I --> I1[Pointer Events Resolution]
 I --> I2[Fill/Stroke Detection]
 I --> I3[Tolerance Calculation]
+H --> H1[W3C Event Flow]
+H --> H2[Shadow DOM Integration]
+H --> H3[Event Path Construction]
 end
 ```
 
@@ -392,6 +398,76 @@ The pointer events system supports all standard SVG modes:
 **Section sources**
 - [animated_svg_picture_pointer_events.dart:1-128](file://lib/src/animation/animated_svg_picture_pointer_events.dart#L1-L128)
 
+## Advanced Event Handling Model
+
+The event handling system implements comprehensive W3C DOM event flow with advanced features:
+
+```mermaid
+flowchart TD
+EventInput["User Event Input"] --> HitTest["Hit Test with Event Model"]
+HitTest --> EventPath["Build Event Path"]
+EventPath --> EventDispatch["Dispatch Event with W3C Flow"]
+EventDispatch --> CapturePhase["Capture Phase<br/>(Root → Target Parent)"]
+CapturePhase --> TargetPhase["Target Phase<br/>(Target Element)"]
+TargetPhase --> BubblePhase["Bubble Phase<br/>(Target Parent → Root)"]
+BubblePhase --> DocumentFallback["Document Level Fallback"]
+DocumentFallback --> TimelineTrigger["Trigger SMIL Timeline"]
+TimelineTrigger --> AnimationUpdate["Animation Updates"]
+AnimationUpdate --> VisualFeedback["Visual Feedback"]
+```
+
+**Diagram sources**
+- [animated_svg_picture_events.dart:104-150](file://lib/src/animation/animated_svg_picture_events.dart#L104-L150)
+- [svg_event_dispatcher.dart:218-315](file://lib/src/animation/svg_event_dispatcher.dart#L218-L315)
+
+The system supports:
+- **Full W3C event flow** with capture, target, and bubble phases
+- **Event propagation control** with stopPropagation and stopImmediatePropagation
+- **Event context tracking** for preventDefault functionality
+- **Shadow DOM integration** with proper event retargeting
+- **Composed path construction** for non-bubbling events
+
+**Section sources**
+- [animated_svg_picture_events.dart:58-193](file://lib/src/animation/animated_svg_picture_events.dart#L58-L193)
+- [svg_event_dispatcher.dart:140-375](file://lib/src/animation/svg_event_dispatcher.dart#L140-L375)
+
+## Improved Hit Testing Traversal
+
+The hit testing traversal system provides enhanced event boundary detection and filtering:
+
+```mermaid
+flowchart TD
+TraversalStart["Traversal Start"] --> DefinitionCheck["Check Definition Tags"]
+DefinitionCheck --> DisplayCheck["Check Display None"]
+DisplayCheck --> ForeignObjectCheck["Check ForeignObject Extensions"]
+ForeignObjectCheck --> AnchorUpdate["Update Anchor Context"]
+AnchorUpdate --> TransformApply["Apply Node Transforms"]
+TransformApply --> VisibilityCheck["Check Point Visibility"]
+VisibilityCheck --> EventBoundary["Check Event Boundary"]
+EventBoundary --> BoundaryType{"Boundary Type?"}
+BoundaryType --> |None| ChildTraversal["Traverse Children"]
+BoundaryType --> |Use Shadow| UseTraversal["Handle Use Reference"]
+BoundaryType --> |Mask/ClipPath| BoundaryFilter["Filter Composed Path"]
+ChildTraversal --> NodeContains["Check Node Contains Point"]
+UseTraversal --> UseResult["Return Use Result"]
+BoundaryFilter --> BoundaryResult["Return Boundary Result"]
+NodeContains --> HitResult["Return Hit Result"]
+```
+
+**Diagram sources**
+- [animated_svg_picture_hit_test_traversal.dart:112-224](file://lib/src/animation/animated_svg_picture_hit_test_traversal.dart#L112-L224)
+- [animated_svg_picture_hit_test_traversal.dart:347-431](file://lib/src/animation/animated_svg_picture_hit_test_traversal.dart#L347-L431)
+
+The traversal system handles:
+- **Event boundary detection** for mask, clipPath, and use shadow contexts
+- **Composed path filtering** to prevent event propagation outside boundaries
+- **Anchor tracking** through nested anchor elements
+- **Use element recursion** with depth limiting and shadow path construction
+- **ForeignObject context management** with proper transform application
+
+**Section sources**
+- [animated_svg_picture_hit_test_traversal.dart:1-450](file://lib/src/animation/animated_svg_picture_hit_test_traversal.dart#L1-L450)
+
 ## Stroke and Fill Hit-Testing with Tolerance
 
 The system implements sophisticated tolerance-based hit testing for stroke and fill operations:
@@ -578,21 +654,10 @@ A --> J[event_dispatcher.dart]
 A --> K[pointer_events.dart]
 A --> L[utils.dart]
 A --> M[path_parser.dart]
+A --> N[event_model.dart]
 end
 subgraph "Shared Utilities"
-N[svg_dom.dart] --> B
-N --> C
-N --> D
-N --> E
-N --> F
-N --> G
-N --> H
-N --> I
-N --> J
-N --> K
-N --> L
-N --> M
-O[svg_transform.dart] --> B
+O[svg_dom.dart] --> B
 O --> C
 O --> D
 O --> E
@@ -600,17 +665,29 @@ O --> F
 O --> G
 O --> H
 O --> I
+O --> J
+O --> K
+O --> L
 O --> M
-P[path_parser.dart] --> D
+O --> N
+P[svg_transform.dart] --> B
+P --> C
+P --> D
+P --> E
 P --> F
+P --> G
 P --> H
 P --> I
-P --> L
-end
-subgraph "Event System"
-J --> Q[svg_event.dart]
-R[svg_event_target_registry] --> J
-S[pointer_events_system] --> J
+P --> M
+Q[path_parser.dart] --> D
+Q --> F
+Q --> H
+Q --> I
+Q --> L
+R[svg_event.dart] --> J
+R --> S[event_dispatcher.dart]
+T[pointer_events_system] --> J
+U[event_model.dart] --> N
 end
 ```
 
@@ -707,9 +784,10 @@ Key achievements include:
 - **Extensive test coverage** validating real-world scenarios
 - **Comprehensive element support** covering all major SVG elements
 - **Advanced pointer events semantics** with tolerance-based hit testing
-- **Stroke and fill hit-testing** with configurable tolerance algorithms
-- **Precision testing capabilities** for complex interaction scenarios
+- **Enhanced event handling capabilities** with W3C DOM compliance
+- **Improved hit testing traversal** with event boundary detection
+- **Advanced precision testing capabilities** for complex interaction scenarios
 
 The implementation serves as a foundation for building highly interactive SVG experiences while maintaining compatibility with existing Flutter and SVG ecosystems.
 
-**Updated** Enhanced with comprehensive pointer events semantics, stroke/fill tolerance-based hit testing, glyph-precision text hit testing, advanced use element event delegation, and comprehensive precision testing capabilities for modern SVG workflows.
+**Updated** Enhanced with comprehensive pointer events semantics, stroke/fill tolerance-based hit testing, glyph-precision text hit testing, advanced use element event delegation, comprehensive precision testing capabilities, and advanced W3C DOM event handling with shadow DOM integration.

@@ -1,6 +1,8 @@
 # Flutter SVG Animation Roadmap (Living)
 
-**Last Updated:** March 16, 2026
+**Last Updated:** March 26, 2026
+
+**Current Status:** ~74% Blink SVG parity | 3099 tests passing | 0 analyzer warnings
 
 This roadmap reflects the current state. Legacy stage-by-stage plans are historical context only.
 
@@ -15,24 +17,39 @@ Authoritative references:
 1. `autoPlay: false` rendering issue.
 2. `calcMode="paced"` distance support for `path`/`transform`.
 3. Large-file modularization milestones:
-   - `smil_animation`
-   - `smil_parser`
-   - `smil_timeline`
-   - `css_to_smil_converter`
+   - `smil_animation`, `smil_parser`, `smil_timeline`, `css_to_smil_converter`
+   - `path_data`, `path_parser`, `path_normalizer`, `path_interpolation`
+   - `css_animations`, `svg_parser_filters_primitives`, `svg_filters_registry_pipeline`
+   - `animated_svg_painter_gradients`, `animated_svg_painter_clip_mask`, `smil/interpolators`
+4. Full SMIL animation engine (animate, animateTransform, animateMotion, set).
+5. CSS animation/keyframes support with cubic-bezier to SMIL conversion.
+6. 17/25 filter primitives implemented.
+7. All 8 geometry shapes with hit-testing.
+8. Gradient/pattern/marker paint servers.
+9. Clip-path and mask baseline support.
+10. Advanced text: multi-position, rotation, textLength, writing-mode.
+11. SVG `<a>` anchor element, `<view>` element.
+12. CSS pseudo-classes, combinators, attribute selectors.
+13. ARIA accessibility integration.
+14. Performance caching (gradients, patterns, text, hit-test).
 
 ## Current Priorities
 
-### P0 - Parity Foundations
+### P0 - Parity Foundations (In Progress)
 
-1. Advanced filter input-graph semantics (`feDropShadow`, `feMerge`, background/non-source chains).
-2. Advanced hit-testing parity (`clipPath`/`mask`/`use`/text geometry).
-3. Advanced `<use>`/`<symbol>` inheritance behavior.
+1. **Light Sources** - Advanced feSpecularLighting/feDiffuseLighting positioning.
+2. **Component Transfer** - Extended feComponentTransfer channel functions.
+3. **Filter Input-Graph** - Advanced non-source/background input chain semantics.
+4. **use/symbol Inheritance** - Style and attribute inheritance edge cases.
+5. **Advanced Clipping** - Complex clip-path compositions.
+6. **Advanced Masking** - Luminance masks and alpha channel handling.
+7. **Advanced Typography** - Remaining text layout edge cases.
 
 ### P1 - Core Feature Expansion
 
-1. Advanced text typography/positioning parity.
-2. `foreignObject` and `image` semantics beyond baseline.
-3. `animateMotion` parity beyond current baseline behavior.
+1. ~~Advanced text typography/positioning parity.~~ (Baseline complete)
+2. ~~`foreignObject` and `image` semantics beyond baseline.~~ (Complete)
+3. ~~`animateMotion` parity beyond current baseline behavior.~~ (Complete)
 
 ### P2 - CSS/Timing Fidelity
 
@@ -63,4 +80,4 @@ Validation commands:
 
 ## Latest Baseline
 
-- March 13, 2026: `flutter test` passed (`+691 ~1`), `flutter analyze` returned 26 info / 0 errors / 0 warnings.
+- March 26, 2026: `flutter test` passed (+3099), `flutter analyze` returned 0 errors / 0 warnings.
