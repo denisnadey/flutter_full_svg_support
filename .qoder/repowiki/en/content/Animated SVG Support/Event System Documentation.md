@@ -9,17 +9,22 @@
 - [animated_svg_picture_pointer_events.dart](file://lib/src/animation/animated_svg_picture_pointer_events.dart)
 - [animated_svg_picture_utils.dart](file://lib/src/animation/animated_svg_picture_utils.dart)
 - [animated_svg_picture.dart](file://lib/src/animation/animated_svg_picture.dart)
+- [animated_svg_picture_hit_test_advanced.dart](file://lib/src/animation/animated_svg_picture_hit_test_advanced.dart)
+- [animated_svg_picture_hit_test_use.dart](file://lib/src/animation/animated_svg_picture_hit_test_use.dart)
+- [animated_svg_picture_hit_test_traversal.dart](file://lib/src/animation/animated_svg_picture_hit_test_traversal.dart)
 - [event_system_test.dart](file://test/animation/event_system_test.dart)
+- [hit_test_precision_test.dart](file://test/animation/hit_test_precision_test.dart)
 </cite>
 
 ## Update Summary
 **Changes Made**
-- Enhanced pointer event support with comprehensive W3C DOM pointer event model compliance
-- Added gesture recognition system with longpress, panstart, panupdate, panend events
-- Unified SvgPointerEvent and SvgGestureEvent classes for comprehensive event handling
-- Implemented full event capturing/bubbling/retargeting support with W3C DOM specification compliance
-- Added comprehensive event tracing system for debugging and monitoring
-- Expanded event model implementation with enhanced use element shadow DOM support
+- Enhanced event handling with full W3C DOM event flow implementation including capture, target, and bubble phases
+- Implemented comprehensive shadow DOM integration with event retargeting for `<use>` elements
+- Added advanced precision hit testing capabilities for clipPath, mask, text, and marker elements
+- Integrated event delegation system with proper event bubbling and capturing support
+- Enhanced pointer events system with comprehensive pointer event mode resolution
+- Added event tracing and debugging capabilities for monitoring event flow
+- Implemented advanced gesture recognition with unified event handling
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -28,26 +33,27 @@
 4. [Event Dispatch Pipeline](#event-dispatch-pipeline)
 5. [Event Model Implementation](#event-model-implementation)
 6. [Enhanced Pointer Event Handling](#enhanced-pointer-event-handling)
-7. [Gesture Recognition System](#gesture-recognition-system)
-8. [Event Tracing and Debugging](#event-tracing-and-debugging)
-9. [Focus and State Management](#focus-and-state-management)
-10. [Event Timing and Animation Integration](#event-timing-and-animation-integration)
-11. [Testing and Validation](#testing-and-validation)
-12. [Performance Considerations](#performance-considerations)
-13. [Troubleshooting Guide](#troubleshooting-guide)
-14. [Conclusion](#conclusion)
+7. [Advanced Hit Testing System](#advanced-hit-testing-system)
+8. [Event Delegation and Flow Control](#event-delegation-and-flow-control)
+9. [Event Tracing and Debugging](#event-tracing-and-debugging)
+10. [Focus and State Management](#focus-and-state-management)
+11. [Event Timing and Animation Integration](#event-timing-and-animation-integration)
+12. [Testing and Validation](#testing-and-validation)
+13. [Performance Considerations](#performance-considerations)
+14. [Troubleshooting Guide](#troubleshooting-guide)
+15. [Conclusion](#conclusion)
 
 ## Introduction
 
-The Event System in Flutter SVG represents a comprehensive implementation of the W3C DOM Event model specifically designed for SVG graphics. This system provides full event bubbling, capturing, and retargeting capabilities, enabling developers to create interactive SVG experiences with native-like event handling.
+The Flutter SVG Event System represents a comprehensive implementation of the W3C DOM Event model specifically designed for SVG graphics. This system provides full event bubbling, capturing, and retargeting capabilities, enabling developers to create interactive SVG experiences with native-like event handling.
 
-**Updated** The system now features enhanced W3C DOM event model compliance with comprehensive pointer event support, gesture recognition capabilities, unified event classes, and a complete event tracing system for debugging and monitoring.
+**Updated** The system now features enhanced W3C DOM event model compliance with comprehensive pointer event support, advanced precision hit testing, gesture recognition capabilities, unified event classes, and a complete event tracing system for debugging and monitoring.
 
-The system integrates seamlessly with Flutter's gesture detection while maintaining strict adherence to web standards for event propagation, timing, and behavior. It supports all major SVG event types including mouse events, pointer events, keyboard events, focus events, gesture events, and custom events.
+The system integrates seamlessly with Flutter's gesture detection while maintaining strict adherence to web standards for event propagation, timing, and behavior. It supports all major SVG event types including mouse events, pointer events, keyboard events, focus events, gesture events, and custom events with enhanced precision testing capabilities.
 
 ## Event System Architecture
 
-The event system is built around several core components that work together to provide robust event handling with comprehensive W3C DOM compliance:
+The event system is built around several core components that work together to provide robust event handling with comprehensive W3C DOM compliance and advanced precision testing:
 
 ```mermaid
 graph TB
@@ -56,43 +62,51 @@ A[User Interaction]
 B[Flutter Gesture Detectors]
 C[W3C Pointer Events]
 D[High-Level Gestures]
+E[Advanced Hit Testing]
 end
 subgraph "Event Processing Layer"
-E[Enhanced Hit Testing Engine]
-F[Event Model Implementation]
-G[Event Registry]
-H[Event Tracing System]
+F[Enhanced Hit Testing Engine]
+G[Event Model Implementation]
+H[Event Registry]
+I[Event Tracing System]
+J[Shadow DOM Integration]
 end
 subgraph "Event Dispatch Layer"
-I[Event Dispatcher]
-J[Listener Registry]
-K[SMIL Timeline]
-L[Gesture Recognizers]
+K[Event Dispatcher]
+L[Listener Registry]
+M[SMIL Timeline]
+N[Gesture Recognizers]
+O[Event Delegation]
 end
 subgraph "Event Consumption Layer"
-M[Animation System]
-N[UI Updates]
-O[Custom Handlers]
-P[Event Tracing Output]
+P[Animation System]
+Q[UI Updates]
+R[Custom Handlers]
+S[Event Tracing Output]
+T[Precision Testing Results]
 end
 A --> B
 B --> E
 E --> F
 F --> G
-G --> H
+G --> J
+J --> H
 H --> I
-I --> J
-J --> K
+I --> K
 K --> L
 L --> M
 M --> N
 N --> O
 O --> P
+P --> Q
+Q --> R
+R --> S
+S --> T
 ```
 
 **Diagram sources**
-- [animated_svg_picture_events.dart:490-564](file://lib/src/animation/animated_svg_picture_events.dart#L490-L564)
-- [svg_event_dispatcher.dart:141-315](file://lib/src/animation/svg_event_dispatcher.dart#L141-L315)
+- [animated_svg_picture_events.dart:88-144](file://lib/src/animation/animated_svg_picture_events.dart#L88-L144)
+- [svg_event_dispatcher.dart:218-315](file://lib/src/animation/svg_event_dispatcher.dart#L218-L315)
 - [svg_event.dart:226-323](file://lib/src/animation/svg_event.dart#L226-L323)
 
 **Section sources**
@@ -271,7 +285,7 @@ G --> H[Apply Enhanced Event Model]
 
 ## Event Model Implementation
 
-The event model implementation provides comprehensive support for SVG-specific features with enhanced W3C DOM compliance:
+The event model implementation provides comprehensive support for SVG-specific features with enhanced W3C DOM compliance and advanced shadow DOM integration:
 
 ### Enhanced Use Element Shadow DOM Support
 
@@ -373,50 +387,107 @@ The system supports all SVG pointer-events modes with comprehensive context awar
 **Section sources**
 - [animated_svg_picture_pointer_events.dart:1-208](file://lib/src/animation/animated_svg_picture_pointer_events.dart#L1-L208)
 
-## Gesture Recognition System
+## Advanced Hit Testing System
 
-The system provides comprehensive gesture recognition with unified event handling for high-level interactions:
+The system provides comprehensive precision hit testing capabilities for complex SVG elements with enhanced accuracy:
 
-### Gesture Event Types and Handling
+### Precision Hit Testing Capabilities
 
 ```mermaid
 flowchart TD
-A[User Input Detected] --> B{Input Type?}
-B --> |Touch/Mouse| C[Pointer Event]
-B --> |Long Press| D[Long Press Gesture]
-B --> |Drag/Pan| E[Panning Gesture]
-C --> F[Unified SvgPointerEvent]
-D --> G[Long Press Gesture]
-E --> H[Panning Gesture]
-F --> I[Dispatch pointerdown/pointermove/pointerup]
-G --> J[Dispatch longpress event]
-H --> K[Dispatch panstart/panupdate/panend]
-I --> L[Event Bubbling & Capturing]
-J --> L
-K --> L
-L --> M[SMIL Timeline Integration]
+A[Hit Test Request] --> B{Element Type?}
+B --> |ClipPath/Mask| C[Advanced Geometry Testing]
+B --> |Text| D[Glyph Precision Testing]
+B --> |Markers| E[Marker Geometry Testing]
+B --> |Paths| F[Path Containment Testing]
+B --> |Use| G[Shadow DOM Testing]
+C --> H[Return Precise Hit Result]
+D --> H
+E --> H
+F --> H
+G --> H
 ```
 
 **Diagram sources**
-- [animated_svg_picture_events.dart:402-486](file://lib/src/animation/animated_svg_picture_events.dart#L402-L486)
+- [animated_svg_picture_hit_test_advanced.dart:1-800](file://lib/src/animation/animated_svg_picture_hit_test_advanced.dart#L1-L800)
 
-### Gesture Event Lifecycle
+### Advanced Precision Testing Features
 
-The system handles comprehensive gesture recognition with proper event sequencing:
+The system includes sophisticated hit testing for complex SVG elements:
 
-| Gesture Phase | Event Type | Trigger Conditions | Event Properties |
-|---------------|------------|-------------------|------------------|
-| Initial Contact | `pointerdown` | First contact with surface | `pointerId`, `width`, `height`, `pressure` |
-| Movement | `pointermove` | Pointer moved while contacting | `deltaX`, `deltaY`, `velocity` |
-| Release | `pointerup` | Pointer released from surface | `pointerId`, `globalPosition` |
-| Cancellation | `pointercancel` | Interaction cancelled | `pointerId` |
-| Long Press | `longpress` | Hold beyond threshold | `duration`, `position` |
-| Pan Start | `panstart` | Significant movement detected | `velocity`, `globalPosition` |
-| Pan Update | `panupdate` | Continuous movement | `delta`, `velocity` |
-| Pan End | `panend` | Movement ended | `velocity`, `displacement` |
+#### ClipPath and Mask Precision Testing
+- Accurate hit testing within clipPath boundaries with objectBoundingBox units support
+- Mask-based hit testing with proper alpha channel consideration
+- Nested clipPath and mask composition handling
+
+#### Text Element Precision Testing
+- Glyph-level precision for individual characters in text elements
+- Support for dx, dy, and rotate attributes for character positioning
+- TextPath hit testing along curved paths
+- Per-character bounding box calculation
+
+#### Marker Precision Testing
+- Marker start, middle, and end position detection
+- Rotation and scaling calculations for marker geometry
+- Complex marker shapes with viewBox support
+
+#### Path Precision Testing
+- EvenOdd fill rule handling for complex paths
+- Degenerate case detection and robust containment testing
+- Collinear edge and zero-length segment handling
 
 **Section sources**
-- [animated_svg_picture_events.dart:402-564](file://lib/src/animation/animated_svg_picture_events.dart#L402-L564)
+- [animated_svg_picture_hit_test_advanced.dart:1-800](file://lib/src/animation/animated_svg_picture_hit_test_advanced.dart#L1-L800)
+- [hit_test_precision_test.dart:1-1006](file://test/animation/hit_test_precision_test.dart#L1-L1006)
+
+## Event Delegation and Flow Control
+
+The system provides comprehensive event delegation with proper W3C DOM compliance and enhanced flow control:
+
+### Event Delegation Architecture
+
+```mermaid
+classDiagram
+class _SvgEventHandlerRegistry {
++Map~String,Map~String,List~~ handlers
++getHandlers(elementId) Map
++addHandler(elementId, eventType, handler)
++removeHandler(elementId, eventType, handler)
++clear()
+}
+class _EventDispatchContext {
++bool defaultPrevented
++bool propagationStopped
++bool immediatePropagationStopped
++stopPropagation()
++stopImmediatePropagation()
++preventDefault()
++_W3CEventDispatchResult toResult()
+}
+class _W3CEventDispatchResult {
++bool defaultPrevented
++bool propagationStopped
++bool immediatePropagationStopped
+}
+_SvgEventHandlerRegistry --> _EventDispatchContext : manages
+_EventDispatchContext --> _W3CEventDispatchResult : produces
+```
+
+**Diagram sources**
+- [animated_svg_picture_events.dart:167-209](file://lib/src/animation/animated_svg_picture_events.dart#L167-L209)
+
+### Enhanced Event Flow Control
+
+The system provides sophisticated event flow control with comprehensive stopPropagation and preventDefault support:
+
+| Control Method | Effect | Scope |
+|----------------|--------|-------|
+| `stopPropagation()` | Stops event from propagating further | Current phase only |
+| `stopImmediatePropagation()` | Stops all remaining handlers on current element | Current element handlers only |
+| `preventDefault()` | Prevents default browser action | Cancelable events only |
+
+**Section sources**
+- [animated_svg_picture_events.dart:22-165](file://lib/src/animation/animated_svg_picture_events.dart#L22-L165)
 
 ## Event Tracing and Debugging
 
@@ -604,9 +675,11 @@ The system includes extensive validation of enhanced event model compliance:
 | Gesture Events | All gesture types | Gesture recognition and event flow validation |
 | Event Tracing | All categories | Trace event emission and categorization |
 | Focus Management | :hover, :active, :focus | State verification through pseudo-class checks |
+| Precision Hit Testing | ClipPath, Mask, Text, Markers | Accuracy validation through visual testing |
 
 **Section sources**
 - [event_system_test.dart:1-732](file://test/animation/event_system_test.dart#L1-L732)
+- [hit_test_precision_test.dart:1-1006](file://test/animation/hit_test_precision_test.dart#L1-L1006)
 
 ## Performance Considerations
 
@@ -631,6 +704,10 @@ The hit testing engine uses spatial indexing, early termination, and shadow DOM-
 ### Gesture Recognition Optimization
 
 The gesture recognition system uses efficient algorithms for pointer tracking and gesture detection, with optimized event dispatch for gesture sequences.
+
+### Precision Testing Optimization
+
+The precision hit testing system uses optimized algorithms for complex geometries, with caching mechanisms for frequently accessed elements and paths.
 
 ## Troubleshooting Guide
 
@@ -672,6 +749,12 @@ The gesture recognition system uses efficient algorithms for pointer tracking an
 - Ensure trace categories are properly categorized
 - Validate trace data payload formatting
 
+**Issue: Precision hit testing not working correctly**
+- Verify element has proper geometry for precision testing
+- Check clipPath and mask definitions are valid
+- Ensure text elements have proper font and positioning
+- Validate marker definitions and orientations
+
 **Section sources**
 - [svg_event_dispatcher.dart:334-375](file://lib/src/animation/svg_event_dispatcher.dart#L334-L375)
 - [animated_svg_picture_pointer_events.dart:1-208](file://lib/src/animation/animated_svg_picture_pointer_events.dart#L1-L208)
@@ -680,16 +763,18 @@ The gesture recognition system uses efficient algorithms for pointer tracking an
 
 The Flutter SVG Event System provides a comprehensive, standards-compliant implementation of the W3C DOM Event model tailored specifically for SVG graphics. The system successfully bridges the gap between Flutter's gesture detection and web standards for event handling, enabling developers to create rich, interactive SVG experiences.
 
-**Updated** Key enhancements include comprehensive W3C DOM pointer event model compliance, gesture recognition system with unified event handling, enhanced event tracing capabilities, and full shadow DOM support with proper event retargeting.
+**Updated** Key enhancements include comprehensive W3C DOM pointer event model compliance, advanced precision hit testing for complex SVG elements, gesture recognition system with unified event handling, enhanced event tracing capabilities, and full shadow DOM support with proper event retargeting.
 
 The system's integration with the SMIL animation timeline enables sophisticated event-driven animation control, making it possible to create complex interactive SVG experiences that respond naturally to user input while maintaining predictable behavior and performance characteristics.
 
 **Key Strengths:**
 - **Standards Compliance**: Full adherence to W3C DOM Event specification with enhanced pointer support
 - **Comprehensive Gesture Support**: Unified gesture recognition with longpress, pan, and pointer events
+- **Advanced Precision Testing**: Sophisticated hit testing for clipPath, mask, text, and marker elements
 - **Enhanced Shadow DOM Handling**: Proper event retargeting with comprehensive context tracking
 - **Advanced Debugging**: Complete event tracing system with categorized logging
 - **Performance Optimization**: Efficient event dispatch with caching and gesture optimization
 - **Robust Testing**: Extensive test suite validating all aspects of the enhanced implementation
+- **Event Delegation**: Comprehensive event delegation with proper flow control
 
 The system continues to evolve with comprehensive support for modern web standards while maintaining backward compatibility and performance characteristics essential for production SVG applications.

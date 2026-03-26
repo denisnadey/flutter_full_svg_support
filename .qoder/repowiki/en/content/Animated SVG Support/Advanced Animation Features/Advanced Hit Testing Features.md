@@ -21,17 +21,19 @@
 - [hit_test_advanced_features_test.dart](file://test/animation/hit_test_advanced_features_test.dart)
 - [hit_test_advanced_test.dart](file://test/animation/hit_test_advanced_test.dart)
 - [hit_test_precision_test.dart](file://test/animation/hit_test_precision_test.dart)
+- [animated_svg_painter_clip_mask_advanced.dart](file://lib/src/animation/animated_svg_painter_clip_mask_advanced.dart)
+- [animated_svg_painter_clip_mask.dart](file://lib/src/animation/animated_svg_painter_clip_mask.dart)
 </cite>
 
 ## Update Summary
 **Changes Made**
-- Enhanced pointer events system with comprehensive mode resolution and semantic interpretation
-- Improved hit testing traversal with event boundary detection and filtering
-- Advanced event handling capabilities with W3C DOM compliance and shadow DOM integration
-- Expanded pointer events semantics supporting all major SVG elements with tolerance-based algorithms
-- Enhanced use element event delegation with proper event retargeting and shadow path construction
-- Advanced precision testing capabilities for clipPath, mask, and combined scenarios
-- Comprehensive event model implementation with capture/bubble phases and propagation control
+- Enhanced clipPath precision with advanced coordinate transformation handling for objectBoundingBox units
+- Improved mask hit testing with luminance alpha support and nested mask recursion prevention
+- Strengthened use element event delegation with comprehensive pointer-events inheritance
+- Enhanced pointer events system with robust mode resolution and semantic interpretation
+- Advanced precision testing capabilities for complex geometric scenarios with tolerance-based algorithms
+- Comprehensive event model implementation with W3C DOM compliance and shadow DOM integration
+- Enhanced visibility checking with recursive clipPath/mask handling and transform stacking
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -57,7 +59,7 @@ The Advanced Hit Testing Features represent a sophisticated system for precise e
 
 The system implements W3C DOM event model compliance with advanced features like marker hit-testing, glyph-precision text selection, robust evenodd fill-rule handling, and seamless integration with SMIL animation event targeting. These features enable developers to create highly interactive SVG experiences with precise user interaction mapping.
 
-**Updated** Enhanced with comprehensive pointer events semantics supporting all major SVG elements with stroke and fill hit-testing using tolerance-based algorithms, glyph-precision text hit testing, advanced use element event delegation, and comprehensive precision testing capabilities.
+**Updated** Enhanced with comprehensive pointer events semantics supporting all major SVG elements with stroke and fill hit-testing using tolerance-based algorithms, glyph-precision text hit testing, advanced use element event delegation, and comprehensive precision testing capabilities for clipPath, mask, and complex geometric scenarios.
 
 ## Project Structure
 
@@ -218,6 +220,119 @@ EventDispatch --> End([Interaction Complete])
 
 ## Detailed Component Analysis
 
+### Enhanced ClipPath Precision System
+
+The clipPath precision system provides advanced coordinate transformation handling for complex clipPath scenarios:
+
+```mermaid
+classDiagram
+class _ClipPathPrecision {
++bool _isPointInsideClipPath(SvgNode node, Offset localPoint, Set<String> visitedClipPaths)
++Path _buildCascadingClipPathWithUnits(SvgNode clippedNode, SvgNode clipPathNode, Set<String> useStack, int depth)
++Matrix4 _buildClipPathTransformStack(SvgNode targetNode, SvgNode clipPathNode)
++bool _isEmptyClipPath(SvgNode clipPathNode)
++bool _isZeroAreaClipPath(Path clipPath)
+}
+class ClipPathUnitsHandling {
++bool objectBoundingBox
++bool userSpaceOnUse
++Matrix4 computeTransformForUnits(SvgNode targetNode, String units)
+}
+_ClipPathPrecision --> ClipPathUnitsHandling : "uses"
+```
+
+**Diagram sources**
+- [animated_svg_picture_hit_test_visibility.dart:41-91](file://lib/src/animation/animated_svg_picture_hit_test_visibility.dart#L41-L91)
+- [animated_svg_painter_clip_mask_advanced.dart:488-581](file://lib/src/animation/animated_svg_painter_clip_mask_advanced.dart#L488-L581)
+
+The enhanced clipPath system supports:
+- **Nested clipPath references** with recursion depth prevention
+- **ObjectBoundingBox units** with proper transform computation
+- **UserSpaceOnUse units** with direct coordinate mapping
+- **Cascade clipPath scenarios** with intersection operations
+- **Empty clipPath edge cases** with zero-area handling
+
+**Section sources**
+- [animated_svg_picture_hit_test_visibility.dart:1-606](file://lib/src/animation/animated_svg_picture_hit_test_visibility.dart#L1-L606)
+- [animated_svg_painter_clip_mask_advanced.dart:1-671](file://lib/src/animation/animated_svg_painter_clip_mask_advanced.dart#L1-L671)
+
+### Advanced Mask Hit Testing System
+
+The mask hit testing system provides comprehensive alpha channel and luminance-based precision:
+
+```mermaid
+flowchart TD
+MaskTest["Mask Hit Test"] --> CheckMaskRef["Extract Mask Reference"]
+CheckMaskRef --> ResolveMaskNode["Resolve Mask Node"]
+ResolveMaskNode --> CheckRecursion{"Circular Reference?"}
+CheckRecursion --> |Yes| AllowHit["Allow Hit (prevents crash)"]
+CheckRecursion --> |No| CheckMaskUnits["Check Mask Units"]
+CheckMaskUnits --> ObjectBoundingBox{"objectBoundingBox?"}
+ObjectBoundingBox --> |Yes| ComputeOBBClip["Compute OBB Region"]
+ObjectBoundingBox --> |No| ComputeUSOClsip["Compute User Space Region"]
+ComputeOBBClip --> BuildMaskPath["Build Mask Geometry Path"]
+ComputeUSOClsip --> BuildMaskPath
+BuildMaskPath --> CheckVisiblePaint["Check Visible Paint Contribution"]
+CheckVisiblePaint --> HasFillStroke{"Has Fill/Stroke?"}
+HasFillStroke --> |No| AllowHit
+HasFillStroke --> |Yes| PathContains["Path Contains Point"]
+PathContains --> HitResult["Hit Detected"]
+AllowHit --> HitResult
+```
+
+**Diagram sources**
+- [animated_svg_picture_hit_test_visibility.dart:201-259](file://lib/src/animation/animated_svg_picture_hit_test_visibility.dart#L201-L259)
+- [animated_svg_painter_clip_mask_advanced.dart:17-66](file://lib/src/animation/animated_svg_painter_clip_mask_advanced.dart#L17-L66)
+
+The advanced mask system includes:
+- **Luminance alpha support** with ITU-R BT.709 coefficients
+- **Nested mask recursion prevention** with depth tracking
+- **ObjectBoundingBox units** with proper viewport computation
+- **UserSpaceOnUse units** with percentage handling
+- **Visible paint contribution analysis** excluding transparent elements
+
+**Section sources**
+- [animated_svg_picture_hit_test_visibility.dart:198-395](file://lib/src/animation/animated_svg_picture_hit_test_visibility.dart#L198-L395)
+- [animated_svg_painter_clip_mask_advanced.dart:17-66](file://lib/src/animation/animated_svg_painter_clip_mask_advanced.dart#L17-L66)
+
+### Enhanced Use Element Event Delegation
+
+The use element system enables event delegation through shadow DOM boundaries with comprehensive pointer-events inheritance:
+
+```mermaid
+sequenceDiagram
+participant User as "User"
+participant UseElement as "<use> Element"
+participant ShadowTree as "Shadow Tree"
+participant Referenced as "Referenced Element"
+participant EventSystem as "Event System"
+User->>UseElement : Click Event
+UseElement->>ShadowTree : Check Shadow Content
+ShadowTree->>Referenced : Find Actual Element
+Referenced->>EventSystem : Event Target Resolution
+Note over UseElement,EventSystem : W3C Event Retargeting
+EventSystem->>UseElement : Retarget Event to Shadow Host
+UseElement->>EventSystem : Dispatch Event Through DOM
+EventSystem->>UseElement : Capture Phase
+EventSystem->>UseElement : Target Phase
+EventSystem->>UseElement : Bubble Phase
+```
+
+**Diagram sources**
+- [animated_svg_picture_hit_test_use.dart:24-124](file://lib/src/animation/animated_svg_picture_hit_test_use.dart#L24-L124)
+- [svg_event_dispatcher.dart:202-216](file://lib/src/animation/svg_event_dispatcher.dart#L202-L216)
+
+The system enforces W3C standards for event delegation:
+- **Event retargeting** through shadow boundaries with proper ID inheritance
+- **Pointer-events inheritance** across use boundaries with context-aware resolution
+- **Proper event path construction** including shadow elements and use chains
+- **Circular reference prevention** with use stack tracking and depth limits
+- **Viewport clipping** for use-referenced content with transform stacking
+
+**Section sources**
+- [animated_svg_picture_hit_test_use.dart:1-486](file://lib/src/animation/animated_svg_picture_hit_test_use.dart#L1-L486)
+- [svg_event_dispatcher.dart:140-216](file://lib/src/animation/svg_event_dispatcher.dart#L140-L216)
+
 ### Marker Hit-Testing System
 
 The marker hit-testing system provides precise selection of marker elements positioned along paths:
@@ -304,43 +419,6 @@ The system handles edge cases including:
 
 **Section sources**
 - [animated_svg_picture_hit_test_advanced.dart:607-750](file://lib/src/animation/animated_svg_picture_hit_test_advanced.dart#L607-L750)
-
-### Use Element Event Delegation
-
-The use element system enables event delegation through shadow DOM boundaries:
-
-```mermaid
-sequenceDiagram
-participant User as "User"
-participant UseElement as "<use> Element"
-participant ShadowTree as "Shadow Tree"
-participant Referenced as "Referenced Element"
-participant EventSystem as "Event System"
-User->>UseElement : Click Event
-UseElement->>ShadowTree : Check Shadow Content
-ShadowTree->>Referenced : Find Actual Element
-Referenced->>EventSystem : Event Target Resolution
-Note over UseElement,EventSystem : W3C Event Retargeting
-EventSystem->>UseElement : Retarget Event to Shadow Host
-UseElement->>EventSystem : Dispatch Event Through DOM
-EventSystem->>UseElement : Capture Phase
-EventSystem->>UseElement : Target Phase
-EventSystem->>UseElement : Bubble Phase
-```
-
-**Diagram sources**
-- [animated_svg_picture_hit_test_use.dart:24-124](file://lib/src/animation/animated_svg_picture_hit_test_use.dart#L24-L124)
-- [svg_event_dispatcher.dart:202-216](file://lib/src/animation/svg_event_dispatcher.dart#L202-L216)
-
-The system enforces W3C standards for event delegation:
-- **Event retargeting** through shadow boundaries
-- **Proper event path construction** including shadow elements
-- **Pointer-events inheritance** across use boundaries
-- **Viewport clipping** for use-referenced content
-
-**Section sources**
-- [animated_svg_picture_hit_test_use.dart:1-339](file://lib/src/animation/animated_svg_picture_hit_test_use.dart#L1-L339)
-- [svg_event_dispatcher.dart:140-216](file://lib/src/animation/svg_event_dispatcher.dart#L140-L216)
 
 ## Enhanced Pointer Events System
 
@@ -627,7 +705,7 @@ CombinedValidation --> TestResult
 
 The precision testing covers:
 - **ClipPath scenarios** with objectBoundingBox units and nested clip paths
-- **Mask precision** with alpha channel validation
+- **Mask precision** with alpha channel validation and luminance support
 - **Use element transformations** including viewBox scaling and pointer-events inheritance
 - **Text character-level precision** with dx offsets and rotation
 - **Combined effects** where multiple precision factors interact
@@ -764,9 +842,10 @@ The advanced hit testing system implements several optimization strategies:
 
 **Issue: Precision testing failures**
 - Validate clipPath units (objectBoundingBox vs userspaceonuse)
-- Check mask alpha channel values
+- Check mask alpha channel values and luminance support
 - Verify use element transformations and viewBox scaling
 - Test text character positioning with dx/rotate attributes
+- Ensure circular reference prevention in nested clipPath/mask scenarios
 
 **Section sources**
 - [hit_test_advanced_features_test.dart:1-604](file://test/animation/hit_test_advanced_features_test.dart#L1-L604)
@@ -787,7 +866,10 @@ Key achievements include:
 - **Enhanced event handling capabilities** with W3C DOM compliance
 - **Improved hit testing traversal** with event boundary detection
 - **Advanced precision testing capabilities** for complex interaction scenarios
+- **Enhanced clipPath precision** with objectBoundingBox coordinate transformation
+- **Advanced mask hit testing** with luminance alpha support and recursion prevention
+- **Strengthened use element delegation** with comprehensive pointer-events inheritance
 
 The implementation serves as a foundation for building highly interactive SVG experiences while maintaining compatibility with existing Flutter and SVG ecosystems.
 
-**Updated** Enhanced with comprehensive pointer events semantics, stroke/fill tolerance-based hit testing, glyph-precision text hit testing, advanced use element event delegation, comprehensive precision testing capabilities, and advanced W3C DOM event handling with shadow DOM integration.
+**Updated** Enhanced with comprehensive pointer events semantics, stroke/fill tolerance-based hit testing, glyph-precision text hit testing, advanced use element event delegation, comprehensive precision testing capabilities, advanced clipPath precision with coordinate transformation, advanced mask hit testing with luminance support, and strengthened event delegation with pointer-events inheritance for complex geometric scenarios.

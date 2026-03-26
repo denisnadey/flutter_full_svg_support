@@ -11,7 +11,18 @@
 - [css_property_rendering_test.dart](file://test/animation/css_property_rendering_test.dart)
 - [css_pseudo_classes_view_test.dart](file://test/animation/css_pseudo_classes_view_test.dart)
 - [svg.dart](file://lib/svg.dart)
+- [svg_parser_css.dart](file://lib/src/animation/svg_parser_css.dart)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Enhanced CSS specificity calculation with complete 4-part tuple implementation
+- Added comprehensive !important declaration support with proper precedence rules
+- Implemented advanced CSS variable resolution with cascade integration
+- Expanded selector parsing with shadow DOM boundary awareness
+- Added support for CSS math functions (min, max, clamp) in calc() expressions
+- Enhanced inheritance system with proper shadow DOM boundary handling
+- Improved performance optimizations with intelligent caching mechanisms
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -32,6 +43,8 @@
 The CSS Cascade System in Flutter SVG Support provides a comprehensive implementation of CSS cascading rules specifically designed for SVG documents. This system ensures that CSS properties are resolved correctly according to the CSS specification, taking into account selector specificity, inheritance, and the unique characteristics of SVG elements.
 
 The system implements a sophisticated cascade resolution engine that handles inline styles, CSS rules from `<style>` blocks, presentation attributes, and inheritance through SVG's `<use>` elements. It supports advanced CSS selectors including pseudo-classes, nth-child selectors, and complex combinators while maintaining optimal performance through intelligent caching mechanisms.
+
+**Updated** Enhanced with comprehensive CSS cascade and inheritance engine improvements including complete specificity calculation, advanced inheritance rules, !important declaration support, CSS variable resolution, and selector parsing with shadow DOM integration.
 
 ## System Architecture
 
@@ -70,7 +83,7 @@ N --> I
 - [svg_dom.dart:124-297](file://lib/src/animation/svg_dom.dart#L124-L297)
 
 **Section sources**
-- [css_cascade.dart:1-1146](file://lib/src/animation/css_cascade.dart#L1-L1146)
+- [css_cascade.dart:1-1216](file://lib/src/animation/css_cascade.dart#L1-L1216)
 - [svg_dom.dart:1-574](file://lib/src/animation/svg_dom.dart#L1-L574)
 
 ## Core Components
@@ -94,7 +107,7 @@ Calculates CSS specificity values for selectors according to the CSS specificati
 Provide the DOM structure for SVG elements with specialized methods for CSS property resolution and inheritance traversal.
 
 **Section sources**
-- [css_cascade.dart:288-406](file://lib/src/animation/css_cascade.dart#L288-L406)
+- [css_cascade.dart:294-406](file://lib/src/animation/css_cascade.dart#L294-L406)
 - [css_cascade.dart:111-179](file://lib/src/animation/css_cascade.dart#L111-L179)
 - [svg_dom.dart:124-297](file://lib/src/animation/svg_dom.dart#L124-L297)
 
@@ -385,3 +398,5 @@ Key strengths of the implementation include:
 - **Robust Testing**: Comprehensive test suite covering edge cases
 
 This system enables developers to create sophisticated SVG-based user interfaces with full CSS styling capabilities while maintaining optimal performance and reliability.
+
+**Updated** The system now features comprehensive CSS cascade and inheritance engine enhancements including complete specificity calculation, advanced inheritance rules, !important declaration support, CSS variable resolution, and selector parsing with shadow DOM integration, providing a fully standards-compliant solution for SVG CSS processing.
