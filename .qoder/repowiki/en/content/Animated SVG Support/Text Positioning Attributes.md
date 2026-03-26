@@ -7,6 +7,7 @@
 - [SVGTextElement.cpp](file://blink-b87d44f-Source-core-svg/SVGTextElement.cpp)
 - [SVGTextPathElement.h](file://blink-b87d44f-Source-core-svg/SVGTextPathElement.h)
 - [SVGTextPathElement.cpp](file://blink-b87d44f-Source-core-svg/SVGTextPathElement.cpp)
+- [SVGTRefElement.cpp](file://blink-b87d44f-Source-core-svg/SVGTRefElement.cpp)
 - [SVGFontData.cpp](file://blink-b87d44f-Source-core-svg/SVGFontData.cpp)
 - [SVGFontFaceElement.cpp](file://blink-b87d44f-Source-core-svg/SVGFontFaceElement.cpp)
 - [animated_svg_painter.dart](file://lib/src/animation/animated_svg_painter.dart)
@@ -24,6 +25,7 @@
 - [animated_svg_picture_hit_test_text_path_segments.dart](file://lib/src/animation/animated_svg_picture_hit_test_text_path_segments.dart)
 - [text_position_list_test.dart](file://test/animation/text_position_list_test.dart)
 - [text_advanced_typography_test.dart](file://test/animation/text_advanced_typography_test.dart)
+- [text_advanced_features_test.dart](file://test/animation/text_advanced_features_test.dart)
 - [text_decoration_style_test.dart](file://test/animation/text_decoration_style_test.dart)
 - [text_combine_upright_test.dart](file://test/animation/text_combine_upright_test.dart)
 - [text_indent_test.dart](file://test/animation/text_indent_test.dart)
@@ -39,15 +41,17 @@
 - [text_typography_precision_test.dart](file://test/animation/text_typography_precision_test.dart)
 - [text_rendering_test.dart](file://test/animation/text_rendering_test.dart)
 - [css_variables_calc_test.dart](file://test/animation/css_variables_calc_test.dart)
+- [text_multirun_paragraph_test.dart](file://test/animation/text_multirun_paragraph_test.dart)
 </cite>
 
 ## Update Summary
 **Changes Made**
-- Enhanced vertical writing modes support with comprehensive `_SvgWritingMode` variations (`horizontalTb`, `verticalRl`, `verticalLr`)
-- Improved baseline calculations specifically designed for vertical text rendering with enhanced vertical baseline models
-- Added comprehensive text positioning attributes for internationalization support with proper rotation and stacking
-- Enhanced text rendering pipeline with dedicated vertical text painting capabilities
-- Improved text anchor handling for vertical writing modes with proper positioning calculations
+- Enhanced text-indent handling with comprehensive unit support (px, em, %) and inheritance patterns
+- Improved baseline alignment for mixed font-size scenarios with proper baseline offset calculations
+- Added comprehensive typography parity validation through enhanced test coverage
+- Strengthened per-character positioning with better text-indent integration
+- Enhanced mixed font-size tspan alignment with alphabetic baseline preservation
+- Improved text rendering optimization with better baseline shift handling
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -73,13 +77,13 @@
 ## Introduction
 This document explains how SVG text positioning attributes and CSS text styling capabilities are implemented and processed in the Flutter SVG library. It focuses on the x, y, dx, dy, and rotate attributes for precise per-character placement, alongside comprehensive CSS text styling support including text-decoration, writing-mode, font-feature-settings, glyph-orientation-vertical, unicode-bidi, font-stretch, font-size-adjust, tab-size, text-indent, word-break, overflow-wrap, text-transform, hyphens, line-break, hanging-punctuation, text-combine-upright, and the newly added 53 advanced CSS text styling properties. The documentation covers both the native Blink-based parsing and the Flutter rendering pipeline, showing how attribute lists and CSS properties are parsed, merged, and applied during text drawing with enhanced unit conversion and inheritance patterns.
 
-**Updated** Enhanced with comprehensive documentation for advanced typography features including per-character hit-testing capabilities, sophisticated tspan absolute positioning handling with independent text chunks, intelligent textLength conflict resolution, advanced text-anchor handling that applies independently to each text chunk, enhanced textPath method attribute support with align and stretch modes, comprehensive font-size-adjust property support, variable font integration, expanded baseline calculation system with vertical writing mode support, enhanced unicode-bidi handling, CSS variables and calc() expression support, advanced text-rendering optimization capabilities, and comprehensive vertical writing modes support for internationalization.
+**Updated** Enhanced with comprehensive documentation for advanced typography features including per-character hit-testing capabilities, sophisticated tspan absolute positioning handling with independent text chunks, intelligent textLength conflict resolution, advanced text-anchor handling that applies independently to each text chunk, enhanced textPath method attribute support with align and stretch modes, comprehensive font-size-adjust property support, variable font integration, expanded baseline calculation system with vertical writing mode support, enhanced unicode-bidi handling, CSS variables and calc() expression support, advanced text-rendering optimization capabilities, comprehensive vertical writing modes support for internationalization, enhanced text-indent handling with comprehensive unit support, improved baseline alignment for mixed font-size scenarios, and comprehensive typography parity validation.
 
 ## Project Structure
 The text positioning and styling functionality spans four main areas:
 - Native Blink SVG engine: Defines and parses the text positioning attributes on SVG elements, including enhanced textPath method and spacing support.
 - Comprehensive CSS text styling resolver: Processes extensive CSS text styling properties and converts them to Flutter-compatible formats with advanced unit conversions.
-- SVG text element hierarchy: Extends the base text positioning capabilities to concrete SVG elements like `<text>`, `<tspan>`, and `<textPath>`.
+- SVG text element hierarchy: Extends the base text positioning capabilities to concrete SVG elements like `<text>`, `<tspan>`, `<tref>`, and `<textPath>`.
 - Flutter rendering pipeline: Consumes parsed attribute lists and CSS styles, rendering text with per-character positioning, rotation, and advanced typography features.
 
 ```mermaid
@@ -88,49 +92,52 @@ subgraph "Native Blink Engine"
 A["SVGTextPositioningElement<br/>Defines x,y,dx,dy,rotate lists"]
 B["SVGTextElement<br/>Concrete text element"]
 C["SVGTextPathElement<br/>Enhanced method and spacing support"]
-D["SVGFontData<br/>Font metrics with x-height support"]
+D["SVGTRefElement<br/>Text reference element support"]
+E["SVGFontData<br/>Font metrics with x-height support"]
 end
 subgraph "Enhanced CSS Text Styling Resolver"
-E["_ResolvedTextStyle<br/>53+ CSS properties including:<br/>text-decoration-thickness,<br/>text-underline-position,<br/>text-emphasis, ruby-align,<br/>font-variation-settings,<br/>content-visibility,<br/>will-change, hyphenate-character,<br/>font-size-adjust, font-stretch mapping"]
-F["Advanced Text Decoration<br/>Enhanced underline positioning,<br/>decoration thickness,<br/>skip-ink control"]
-G["Modern Typography Features<br/>Font variants, paint order,<br/>text emphasis, ruby alignment,<br/>variable font support"]
-H["Performance Optimization<br/>Text rendering hints,<br/>visibility controls,<br/>blend modes"]
+F["_ResolvedTextStyle<br/>53+ CSS properties including:<br/>text-decoration-thickness,<br/>text-underline-position,<br/>text-emphasis, ruby-align,<br/>font-variation-settings,<br/>content-visibility,<br/>will-change, hyphenate-character,<br/>font-size-adjust, font-stretch mapping"]
+G["Advanced Text Decoration<br/>Enhanced underline positioning,<br/>decoration thickness,<br/>skip-ink control"]
+H["Modern Typography Features<br/>Font variants, paint order,<br/>text emphasis, ruby alignment,<br/>variable font support"]
+I["Performance Optimization<br/>Text rendering hints,<br/>visibility controls,<br/>blend modes"]
 end
 subgraph "Enhanced Vertical Writing Modes"
-I["_SvgWritingMode Enum<br/>horizontalTb, verticalRl, verticalLr"]
-J["Vertical Baseline Calculator<br/>Enhanced vertical baseline models"]
-K["Vertical Text Painter<br/>90-degree rotation and stacking"]
-L["Internationalization Support<br/>Vertical text rendering for CJK,<br/>Arabic, and other scripts"]
+J["_SvgWritingMode Enum<br/>horizontalTb, verticalRl, verticalLr"]
+K["Vertical Baseline Calculator<br/>Enhanced vertical baseline models"]
+L["Vertical Text Painter<br/>90-degree rotation and stacking"]
+M["Internationalization Support<br/>Vertical text rendering for CJK,<br/>Arabic, and other scripts"]
 end
 subgraph "CSS Variables and Calc System"
-M["CssVariableResolver<br/>var(--name, fallback) resolution"]
-N["CssCalcEvaluator<br/>calc() expression evaluation"]
-O["CssCustomProperties<br/>Custom property store and inheritance"]
-P["CssValueResolver<br/>Combined var() and calc() support"]
+N["CssVariableResolver<br/>var(--name, fallback) resolution"]
+O["CssCalcEvaluator<br/>calc() expression evaluation"]
+P["CssCustomProperties<br/>Custom property store and inheritance"]
+Q["CssValueResolver<br/>Combined var() and calc() support"]
 end
 subgraph "Flutter Rendering Pipeline"
-Q["AnimatedSvgPainter<br/>Enhanced text painting logic"]
-R["Advanced Text Styles<br/>x,y,dx,dy,rotate + 53 CSS properties"]
-S["Sophisticated Typography<br/>Vertical text, combining,<br/>emphasis marks, ruby text"]
-T["Independent Text Chunks<br/>tspan absolute positioning,<br/>chunkCharIndex management"]
-U["Intelligent Text Length<br/>Conflict resolution,<br/>explicit position handling"]
-V["Per-Character Hit Testing<br/>Individual bounding boxes,<br/>rotation-aware hit regions"]
-W["Enhanced TextPath Rendering<br/>Align and stretch modes,<br/>overflow handling, endpoint clamping"]
-X["Text Rendering Optimization<br/>Cache system, performance hints,<br/>text-rendering modes"]
+R["AnimatedSvgPainter<br/>Enhanced text painting logic"]
+S["Advanced Text Styles<br/>x,y,dx,dy,rotate + 53 CSS properties"]
+T["Sophisticated Typography<br/>Vertical text, combining,<br/>emphasis marks, ruby text"]
+U["Independent Text Chunks<br/>tspan absolute positioning,<br/>chunkCharIndex management"]
+V["Intelligent Text Length<br/>Conflict resolution,<br/>explicit position handling"]
+W["Per-Character Hit Testing<br/>Individual bounding boxes,<br/>rotation-aware hit regions"]
+X["Enhanced TextPath Rendering<br/>Align and stretch modes,<br/>overflow handling, endpoint clamping"]
+Y["Text Rendering Optimization<br/>Cache system, performance hints,<br/>text-rendering modes"]
+Z["Enhanced Text-Indent System<br/>Comprehensive unit support,<br/>inheritance patterns, mixed font-size alignment"]
 end
 A --> B
 B --> C
-C --> D
+B --> D
+C --> E
 D --> E
-E --> Q
-F --> Q
-G --> Q
-H --> Q
-I --> J
+E --> F
+F --> R
+G --> R
+H --> R
+I --> R
 J --> K
 K --> L
-L --> Q
-M --> N
+L --> M
+M --> R
 N --> O
 O --> P
 P --> Q
@@ -141,12 +148,15 @@ T --> U
 U --> V
 V --> W
 W --> X
+X --> Y
+Y --> Z
 ```
 
 **Diagram sources**
 - [SVGTextPositioningElement.h:30-48](file://blink-b87d44f-Source-core-svg/SVGTextPositioningElement.h#L30-L48)
 - [SVGTextElement.cpp:33-37](file://blink-b87d44f-Source-core-svg/SVGTextElement.cpp#L33-L37)
 - [SVGTextPathElement.h:29-42](file://blink-b87d44f-Source-core-svg/SVGTextPathElement.h#L29-L42)
+- [SVGTRefElement.cpp:134-148](file://blink-b87d44f-Source-core-svg/SVGTRefElement.cpp#L134-L148)
 - [SVGFontData.cpp:71-130](file://blink-b87d44f-Source-core-svg/SVGFontData.cpp#L71-L130)
 - [animated_svg_painter.dart:350-351](file://lib/src/animation/animated_svg_painter.dart#L350-L351)
 - [animated_svg_painter_text_style_positioning.dart:228-241](file://lib/src/animation/animated_svg_painter_text_style_positioning.dart#L228-L241)
@@ -160,6 +170,7 @@ W --> X
 - [SVGTextPositioningElement.h:21-53](file://blink-b87d44f-Source-core-svg/SVGTextPositioningElement.h#L21-L53)
 - [SVGTextElement.cpp:33-43](file://blink-b87d44f-Source-core-svg/SVGTextElement.cpp#L33-L43)
 - [SVGTextPathElement.h:1-152](file://blink-b87d44f-Source-core-svg/SVGTextPathElement.h#L1-L152)
+- [SVGTRefElement.cpp:134-148](file://blink-b87d44f-Source-core-svg/SVGTRefElement.cpp#L134-L148)
 - [SVGFontData.cpp:71-130](file://blink-b87d44f-Source-core-svg/SVGFontData.cpp#L71-L130)
 - [animated_svg_painter.dart:350-351](file://lib/src/animation/animated_svg_painter.dart#L350-L351)
 - [animated_svg_painter_text_style_positioning.dart:228-241](file://lib/src/animation/animated_svg_painter_text_style_positioning.dart#L228-L241)
@@ -176,14 +187,16 @@ This section outlines the primary components involved in text positioning and CS
 - **_ResolvedTextStyle**: Comprehensive text style container that includes all CSS text styling properties including text-decoration, writing-mode, font-stretch, font-size-adjust, tab-size, text-indent, word-break, overflow-wrap, text-transform, hyphens, line-break, hanging-punctuation, text-combine-upright, and 53 additional advanced CSS properties such as text-decoration-thickness, text-underline-position, text-emphasis, ruby-align, font-variation-settings, content-visibility, will-change, hyphenate-character, paint-order, text-align-last, font-synthesis, font-variant-position, font-variant-east-asian, quotes, initial-letter, text-spacing, font-language-override, font-variant-alternates, text-wrap, font-palette, forced-color-adjust, print-color-adjust, text-decoration-line, css-text-decoration-color, css-direction, and css-mix-blend-mode.
 - **SVGTextElement**: A concrete SVG element that inherits positioning capabilities and creates the appropriate renderer for text.
 - **SVGTextPathElement**: Enhanced text path element with comprehensive method and spacing attribute support for sophisticated glyph positioning along paths.
+- **SVGTRefElement**: Text reference element that allows referencing text content from other elements via href attributes.
 - **SVGFontData**: Font metrics provider with x-height support for font-size-adjust calculations and baseline positioning.
 - **AnimatedSvgPainter text painting extension**: Parses and merges position lists from nodes and children, applies per-character adjustments, resolves CSS styles with advanced unit conversions, and draws rotated glyphs on the canvas with enhanced textPath support.
 - **Independent Text Chunk System**: Manages sophisticated tspan absolute positioning with independent text chunks, chunkCharIndex for per-chunk text-anchor calculations, and intelligent textLength conflict resolution.
 - **Enhanced Vertical Writing Modes**: Comprehensive support for horizontal-tb, vertical-rl, and vertical-lr writing modes with dedicated vertical baseline calculations and text rendering.
 - **CSS Variables and Calc System**: Provides comprehensive support for CSS custom properties (var(--name, fallback)) and calc() expression evaluation with unit conversion and inheritance patterns.
 - **Text Rendering Optimization**: Implements advanced text-rendering modes (optimizeSpeed, optimizeLegibility, geometricPrecision) and comprehensive caching system for improved performance.
+- **Enhanced Text-Indent System**: Comprehensive text-indent handling with support for px, em, %, and plain number units, inheritance patterns, and mixed font-size alignment.
 
-**Updated** Enhanced with SVGTextPathElement for advanced textPath method and spacing support, SVGFontData for font-size-adjust integration, comprehensive textPath rendering capabilities, CSS variables and calc() expression support, advanced text rendering optimization with text-rendering modes, and comprehensive vertical writing modes support with dedicated vertical baseline calculations and text rendering.
+**Updated** Enhanced with SVGTextPathElement for advanced textPath method and spacing support, SVGFontData for font-size-adjust integration, comprehensive textPath rendering capabilities, CSS variables and calc() expression support, advanced text rendering optimization with text-rendering modes, comprehensive vertical writing modes support with dedicated vertical baseline calculations and text rendering, enhanced text-indent system with comprehensive unit support and inheritance patterns, improved baseline alignment for mixed font-size scenarios with alphabetic baseline preservation, and comprehensive typography parity validation through enhanced test coverage.
 
 Key responsibilities:
 - **Attribute parsing**: Converts comma/space-separated strings into typed lists for x, y, dx, dy, and rotate.
@@ -197,12 +210,14 @@ Key responsibilities:
 - **Vertical baseline calculations**: Implements enhanced vertical baseline models for proper vertical text positioning.
 - **CSS variables**: Resolves CSS custom properties with fallback mechanisms and supports calc() expression evaluation.
 - **Text rendering optimization**: Implements text-rendering modes and comprehensive caching for performance.
+- **Text-indent handling**: Comprehensive text-indent support with unit conversion, inheritance, and mixed font-size alignment.
 
 **Section sources**
 - [SVGTextPositioningElement.h:30-48](file://blink-b87d44f-Source-core-svg/SVGTextPositioningElement.h#L30-L48)
 - [SVGTextPositioningElement.cpp:34-118](file://blink-b87d44f-Source-core-svg/SVGTextPositioningElement.cpp#L34-L118)
 - [SVGTextElement.cpp:33-37](file://blink-b87d44f-Source-core-svg/SVGTextElement.cpp#L33-L37)
 - [SVGTextPathElement.h:29-42](file://blink-b87d44f-Source-core-svg/SVGTextPathElement.h#L29-L42)
+- [SVGTRefElement.cpp:134-148](file://blink-b87d44f-Source-core-svg/SVGTRefElement.cpp#L134-L148)
 - [SVGFontData.cpp:71-130](file://blink-b87d44f-Source-core-svg/SVGFontData.cpp#L71-L130)
 - [animated_svg_painter.dart:350-351](file://lib/src/animation/animated_svg_painter.dart#L350-L351)
 - [animated_svg_painter_text_style_positioning.dart:228-241](file://lib/src/animation/animated_svg_painter_text_style_positioning.dart#L228-L241)
@@ -219,6 +234,7 @@ The enhanced text positioning and styling pipeline follows a comprehensive flow 
 sequenceDiagram
 participant Parser as "SVGTextPositioningElement"
 participant TextPath as "SVGTextPathElement"
+participant TRef as "SVGTRefElement"
 participant CSSResolver as "_ResolvedTextStyle (53+ properties)"
 participant CSSVars as "CSS Variables System"
 participant Writer as "_SvgWritingMode System"
@@ -228,6 +244,7 @@ participant HitTester as "Per-Character Hit Tester"
 participant Canvas as "ui.Canvas"
 Parser->>Parser : "parseAttribute(x,y,dx,dy,rotate)"
 TextPath->>TextPath : "parseAttribute(method,spacing,startOffset)"
+TRef->>TRef : "resolveTrefText() with href reference"
 TextPath->>Renderer : "Resolve textPath method and spacing"
 Writer->>Writer : "Resolve writing-mode (horizontalTb, vertical-rl, vertical-lr)"
 Writer->>Writer : "Calculate vertical baseline offsets"
@@ -245,11 +262,14 @@ Renderer->>Canvas : "Draw rotated glyphs with advanced typography"
 Renderer->>Canvas : "Handle vertical text rendering<br/>with 90-degree rotation and stacking"
 Renderer->>Canvas : "Handle textPath align/stretch modes<br/>with overflow and endpoint clamping"
 Renderer->>Canvas : "Apply text-rendering optimization<br/>with cache system"
+Renderer->>Canvas : "Apply enhanced text-indent<br/>with comprehensive unit support"
+Renderer->>Canvas : "Handle mixed font-size baseline<br/>alignment with alphabetic preservation"
 ```
 
 **Diagram sources**
 - [SVGTextPositioningElement.cpp:70-149](file://blink-b87d44f-Source-core-svg/SVGTextPositioningElement.cpp#L70-L149)
 - [SVGTextPathElement.cpp:87-108](file://blink-b87d44f-Source-core-svg/SVGTextPathElement.cpp#L87-L108)
+- [SVGTRefElement.cpp:134-148](file://blink-b87d44f-Source-core-svg/SVGTRefElement.cpp#L134-L148)
 - [animated_svg_painter_text_style_positioning.dart:15-33](file://lib/src/animation/animated_svg_painter_text_style_positioning.dart#L15-L33)
 - [animated_svg_painter_text_style_positioning.dart:228-241](file://lib/src/animation/animated_svg_painter_text_style_positioning.dart#L228-L241)
 - [animated_svg_painter_text_paint.dart:391-406](file://lib/src/animation/animated_svg_painter_text_paint.dart#L391-L406)
@@ -320,6 +340,25 @@ This enhanced class extends text content elements with comprehensive textPath me
 - [SVGTextPathElement.cpp:87-108](file://blink-b87d44f-Source-core-svg/SVGTextPathElement.cpp#L87-L108)
 - [SVGTextPathElement.cpp:131-155](file://blink-b87d44f-Source-core-svg/SVGTextPathElement.cpp#L131-L155)
 
+### SVGTRefElement
+This element extends text content elements with comprehensive text reference support:
+
+**Reference Functionality:**
+- **href**: References text content from another element by ID
+- **xlink:href**: Alternative namespace-based reference support
+- **Styling inheritance**: Applies tref's own styling to referenced text content
+- **Positioning support**: Can specify its own positioning attributes (x, y, dx, dy, rotate)
+
+**Enhanced Functionality:**
+- Full support for both href and xlink:href attributes
+- Recursive text content extraction from referenced elements
+- Independent text chunk management for tref elements
+- Graceful handling of missing references with fallback rendering
+
+**Section sources**
+- [SVGTRefElement.cpp:134-148](file://blink-b87d44f-Source-core-svg/SVGTRefElement.cpp#L134-L148)
+- [SVGTRefElement.cpp:107-148](file://blink-b87d44f-Source-core-svg/SVGTRefElement.cpp#L107-L148)
+
 ### _ResolvedTextStyle - Enhanced CSS Properties
 The `_ResolvedTextStyle` class now encompasses comprehensive CSS text styling capabilities with 53+ properties and advanced unit conversion mechanisms:
 
@@ -349,7 +388,7 @@ The `_ResolvedTextStyle` class now encompasses comprehensive CSS text styling ca
 - `fontStretch`: Width percentage (50-200%, keywords) with inheritance
 - `fontSizeAdjust`: Aspect ratio for cross-font consistency with fallback mechanisms
 - `tabSize`: Number of spaces tab equals (default 8) with unit conversion
-- `textIndent`: Indentation in user units with percentage and em support
+- `textIndent`: Indentation in user units with comprehensive unit support (px, em, %, plain number) and inheritance
 - `wordBreak`: Normal, break-all, keep-all, break-word with inheritance
 - `overflowWrap`: Normal, break-word, anywhere with legacy fallback support
 - `textTransform`: None, capitalize, uppercase, lowercase, full-width, full-size-kana
@@ -443,8 +482,10 @@ The Flutter side consumes parsed lists and CSS styles, rendering text with per-c
 - **Independent chunk management**: Handles tspan absolute positioning with independent text chunks and per-chunk text-anchor calculations.
 - **TextPath overflow handling**: Implements sophisticated overflow handling with endpoint clamping and glyph positioning beyond path boundaries.
 - **Text rendering optimization**: Applies text-rendering modes (optimizeSpeed, optimizeLegibility, geometricPrecision) with cache system integration.
+- **Enhanced text-indent handling**: Comprehensive text-indent support with unit conversion, inheritance patterns, and mixed font-size alignment.
+- **Mixed font-size baseline alignment**: Calculates baseline offsets for proper alignment when child tspan elements have different font sizes.
 
-**Updated** Enhanced with independent chunk management system that detects tspan absolute positioning, creates independent text chunks, manages chunkCharIndex for per-chunk text-anchor calculations, implements intelligent textLength conflict resolution, adds comprehensive textPath rendering support with align and stretch modes, integrates CSS variables and calc() expression support, implements advanced text rendering optimization with text-rendering modes, and adds comprehensive vertical writing modes support with dedicated vertical text painting capabilities.
+**Updated** Enhanced with independent chunk management system that detects tspan absolute positioning, creates independent text chunks, manages chunkCharIndex for per-chunk text-anchor calculations, implements intelligent textLength conflict resolution, adds comprehensive textPath rendering support with align and stretch modes, integrates CSS variables and calc() expression support, implements advanced text rendering optimization with text-rendering modes, adds comprehensive vertical writing modes support with dedicated vertical text painting capabilities, enhances text-indent handling with comprehensive unit support (px, em, %, plain number), improves baseline alignment for mixed font-size scenarios with alphabetic baseline preservation, and adds comprehensive typography parity validation through enhanced test coverage.
 
 ```mermaid
 flowchart TD
@@ -465,7 +506,9 @@ VerticalCheck --> |Yes| VerticalPaint["Handle vertical text rendering<br/>with 9
 VerticalCheck --> |No| Loop["For each glyph"]
 Loop --> ApplyPos["Apply x/y and add dx/dy"]
 ApplyPos --> CSSApply["Apply CSS styles<br/>writing-mode, transforms,<br/>spacing, decorations,<br/>emphasis, ruby, variations<br/>with fallback mechanisms"]
-CSSApply --> RenderOpt["Apply text-rendering optimization<br/>with cache system"]
+CSSApply --> TextIndent["Apply enhanced text-indent<br/>with comprehensive unit support"]
+TextIndent --> MixedFont["Handle mixed font-size<br/>baseline alignment"]
+MixedFont --> RenderOpt["Apply text-rendering optimization<br/>with cache system"]
 RenderOpt --> Rotate["Get rotation (repeat last)"]
 Rotate --> Anchor["Apply text-anchor to first glyph<br/>of each chunk"]
 Anchor --> Draw["Draw rotated glyph with effects"]
@@ -519,7 +562,7 @@ The enhanced text styling system provides comprehensive CSS text property suppor
 - **Directional control**: Comprehensive css-direction and unicode-bidi handling with inheritance patterns
 
 ### Layout and Spacing Control
-- **Text indentation**: Supports px, em, and percentage values with inheritance and font-size dependent calculations
+- **Text indentation**: Comprehensive support for px, em, %, and plain number units with inheritance and font-size dependent calculations
 - **Tab sizing**: Configurable tab stops with inheritance and unit conversion support
 - **Word wrapping**: Break-all, keep-all, and break-word strategies with legacy fallback support
 - **Overflow handling**: Ellipsis and custom overflow strings with fallback mechanisms
@@ -877,7 +920,7 @@ The enhanced system provides comprehensive support for vertical writing modes wi
 
 ### Internationalization Support
 - **CJK text support**: Proper vertical text rendering for Chinese, Japanese, and Korean scripts
-- **Arabic script support**: Vertical text rendering for Arabic and other RTL scripts
+- **Arabic and RTL support**: Vertical text rendering for Arabic and other RTL scripts
 - **Complex script handling**: Support for Indic, Thai, and other complex scripts in vertical mode
 - **Text orientation integration**: Works with text-orientation and text-combine-upright properties
 
@@ -952,8 +995,10 @@ The enhanced system provides comprehensive internationalization support with imp
 - **Vertical writing modes**: Dedicated vertical text rendering pipeline adds computational overhead but enables proper internationalization support.
 - **Text rendering optimization**: Text rendering modes and cache system provide significant performance improvements for repeated rendering.
 - **Cache system**: Comprehensive cache system for gradients, patterns, text paragraphs, and hit-test paths with proper invalidation handling.
+- **Enhanced text-indent**: Comprehensive text-indent handling with unit conversion and inheritance patterns adds minimal overhead while enabling precise text positioning.
+- **Mixed font-size alignment**: Baseline offset calculations for mixed font-size scenarios add computational overhead but ensure proper text alignment.
 
-**Updated** Added performance considerations for the new CSS variables and calc() expression support, enhanced text rendering optimization with text-rendering modes, comprehensive cache system improvements, advanced textPath rendering capabilities, enhanced baseline calculation system with vertical writing mode support, comprehensive vertical writing modes support with dedicated rendering pipeline, and internationalization text positioning with optimized performance.
+**Updated** Added performance considerations for the new CSS variables and calc() expression support, enhanced text rendering optimization with text-rendering modes, comprehensive cache system improvements, advanced textPath rendering capabilities, enhanced baseline calculation system with vertical writing mode support, comprehensive vertical writing modes support with dedicated rendering pipeline, internationalization text positioning with optimized performance, enhanced text-indent system with comprehensive unit support, improved baseline alignment for mixed font-size scenarios, and comprehensive typography parity validation through enhanced test coverage.
 
 ## Troubleshooting Guide
 Common issues and resolutions with the enhanced feature set and robust fallback mechanisms:
@@ -1012,6 +1057,12 @@ Common issues and resolutions with the enhanced feature set and robust fallback 
 - **Rotation not applied**:
   - Verify that rotate list values exist and that the canvas rotation is applied around the correct baseline coordinates.
   - Check inheritance patterns when using parent rotation values.
+
+- **Text-indent not working properly**:
+  - Verify text-indent units (px, em, %, plain number) are correctly parsed and applied.
+  - Check inheritance patterns when text-indent is specified on parent elements.
+  - Ensure text-indent is applied only to the first line in per-character positioning scenarios.
+  - Verify mixed font-size scenarios properly handle baseline alignment with alphabetic preservation.
 
 ### Advanced Typography Issues
 - **Vertical text rendering problems**:
@@ -1156,7 +1207,39 @@ Common issues and resolutions with the enhanced feature set and robust fallback 
   - Verify that cache invalidation is working correctly with animation changes.
   - Check for memory leaks in custom property stores and variable resolution.
 
-**Updated** Added troubleshooting guidance for the new CSS variables and calc() expression support, enhanced text rendering optimization with text-rendering modes, comprehensive cache system improvements, advanced textPath rendering capabilities, enhanced baseline calculation system with vertical writing mode support, comprehensive vertical writing modes support with dedicated rendering pipeline, internationalization text positioning with cross-cultural typography features, and vertical text rendering issues with proper debugging approaches.
+### New Text Advanced Features Issues
+- **tref element not working**:
+  - Verify that href or xlink:href attributes are properly formatted with valid element IDs.
+  - Check that referenced elements exist in the document and are text elements.
+  - Ensure proper inheritance of styling from tref to referenced text content.
+
+- **RTL text rendering problems**:
+  - Verify direction="rtl" attribute is properly applied to text elements.
+  - Check that text-anchor behavior is correctly inverted for RTL contexts.
+  - Ensure proper inheritance patterns for RTL text properties.
+
+- **Font fallback chain issues**:
+  - Verify font-family property contains valid comma-separated font names.
+  - Check that quoted font names with spaces are properly handled.
+  - Ensure generic family names are normalized to Flutter equivalents.
+
+- **Per-character positioning edge cases**:
+  - Verify that shorter position lists properly repeat last values.
+  - Check that dx/dy accumulation works correctly across characters.
+  - Ensure proper handling of nested tspan positioning overrides.
+
+- **Enhanced text-indent issues**:
+  - Verify text-indent units (px, em, %, plain number) are correctly parsed and applied.
+  - Check inheritance patterns when text-indent is specified on parent elements.
+  - Ensure text-indent is applied only to the first line in per-character positioning scenarios.
+  - Verify mixed font-size scenarios properly handle baseline alignment with alphabetic preservation.
+
+- **Mixed font-size baseline alignment problems**:
+  - Verify that baseline offset calculations properly align child tspan elements with different font sizes.
+  - Check that alphabetic baseline preservation maintains proper text alignment.
+  - Ensure proper inheritance patterns for font-size properties in mixed scenarios.
+
+**Updated** Added troubleshooting guidance for the new CSS variables and calc() expression support, enhanced text rendering optimization with text-rendering modes, comprehensive cache system improvements, advanced textPath rendering capabilities, enhanced baseline calculation system with vertical writing mode support, comprehensive vertical writing modes support with dedicated rendering pipeline, internationalization text positioning with cross-cultural typography features, vertical text rendering issues with proper debugging approaches, comprehensive coverage of the new text advanced features including tref elements, RTL/BiDi text rendering, font fallback chains, per-character positioning edge cases, enhanced text-indent system with comprehensive unit support, improved baseline alignment for mixed font-size scenarios, and comprehensive typography parity validation through enhanced test coverage.
 
 **Section sources**
 - [SVGTextPositioningElement.cpp:70-149](file://blink-b87d44f-Source-core-svg/SVGTextPositioningElement.cpp#L70-L149)
@@ -1171,6 +1254,7 @@ Common issues and resolutions with the enhanced feature set and robust fallback 
 - [css_variables_calc.dart:100-173](file://lib/src/animation/css_variables_calc.dart#L100-L173)
 - [text_position_list_test.dart](file://test/animation/text_position_list_test.dart)
 - [text_advanced_typography_test.dart](file://test/animation/text_advanced_typography_test.dart)
+- [text_advanced_features_test.dart](file://test/animation/text_advanced_features_test.dart)
 - [text_decoration_style_test.dart](file://test/animation/text_decoration_style_test.dart)
 - [text_combine_upright_test.dart](file://test/animation/text_combine_upright_test.dart)
 - [text_indent_test.dart](file://test/animation/text_indent_test.dart)
@@ -1186,12 +1270,13 @@ Common issues and resolutions with the enhanced feature set and robust fallback 
 - [text_typography_precision_test.dart](file://test/animation/text_typography_precision_test.dart)
 - [text_rendering_test.dart](file://test/animation/text_rendering_test.dart)
 - [css_variables_calc_test.dart](file://test/animation/css_variables_calc_test.dart)
+- [text_multirun_paragraph_test.dart](file://test/animation/text_multirun_paragraph_test.dart)
 
 ## Conclusion
 The enhanced text positioning and CSS styling system provides comprehensive control over character placement, orientation, and typography in SVG text rendering. The system now supports the full spectrum of CSS text styling properties alongside traditional positioning attributes, with the addition of 53+ advanced features including enhanced text decoration, variable fonts, text emphasis, ruby alignment, modern CSS properties, performance optimizations, CSS variables and calc() expressions, comprehensive text rendering optimization, and comprehensive vertical writing modes support with dedicated rendering pipeline and enhanced baseline calculations.
 
 The Blink engine parses and validates positioning attributes with inheritance support, while the Flutter rendering pipeline resolves CSS properties with advanced unit conversions and fallback mechanisms during drawing, supporting both simple and complex layouts. The enhanced vertical writing modes system provides proper internationalization support with dedicated rendering capabilities, 90-degree character rotation, vertical stacking, and specialized baseline calculations for vertical text rendering.
 
-Understanding the list merging, per-character iteration, CSS property resolution with inheritance patterns, independent chunk management, per-character hit testing, advanced typography behavior with fallback mechanisms, textPath rendering with sophisticated glyph scaling, comprehensive baseline calculation system with vertical writing mode support, font-size-adjust processing, enhanced unicode-bidi handling, CSS variables and calc() expression support, comprehensive vertical writing modes with dedicated rendering pipeline, internationalization text positioning with cross-cultural typography features, and advanced text rendering optimization helps achieve predictable and performant text positioning and styling results with the expanded feature set.
+Understanding the list merging, per-character iteration, CSS property resolution with inheritance patterns, independent chunk management, per-character hit testing, advanced typography behavior with fallback mechanisms, textPath rendering with sophisticated glyph scaling, comprehensive baseline calculation system with vertical writing mode support, font-size-adjust processing, enhanced unicode-bidi handling, CSS variables and calc() expression support, comprehensive vertical writing modes with dedicated rendering pipeline, internationalization text positioning with cross-cultural typography features, enhanced text-indent system with comprehensive unit support, improved baseline alignment for mixed font-size scenarios, and comprehensive typography parity validation helps achieve predictable and performant text positioning and styling results with the expanded feature set.
 
-**Updated** The system now includes sophisticated independent text chunk management for tspan absolute positioning, per-character hit testing with individual bounding boxes, intelligent textLength conflict resolution, advanced textPath method attribute support with align and stretch modes, comprehensive font-size-adjust property support for preserving x-height during font fallback, variable font integration through font-stretch mapping to wdth variation axis, expanded baseline calculation system supporting new SVG 2 baseline types including hanging, mathematical, and ideographic baselines with vertical writing mode adaptations, enhanced unicode-bidi handling with embed, bidi-override, isolate, isolate-override, and plaintext modes, comprehensive CSS variables and calc() expression support with variable resolution and mathematical evaluation, advanced text rendering optimization with text-rendering modes and cache system integration, comprehensive vertical writing modes support with dedicated rendering pipeline and enhanced baseline calculations, and comprehensive internationalization text positioning with cross-cultural typography features and optimized performance for global scripts and languages. These enhancements enable precise control over complex text layouts while maintaining backward compatibility and performance optimization through selective use of advanced features.
+**Updated** The system now includes sophisticated independent text chunk management for tspan absolute positioning, per-character hit testing with individual bounding boxes, intelligent textLength conflict resolution, advanced textPath method attribute support with align and stretch modes, comprehensive font-size-adjust property support for preserving x-height during font fallback, variable font integration through font-stretch mapping to wdth variation axis, expanded baseline calculation system supporting new SVG 2 baseline types including hanging, mathematical, and ideographic baselines with vertical writing mode adaptations, enhanced unicode-bidi handling with embed, bidi-override, isolate, isolate-override, and plaintext modes, comprehensive CSS variables and calc() expression support with variable resolution and mathematical evaluation, advanced text rendering optimization with text-rendering modes and cache system integration, comprehensive vertical writing modes support with dedicated rendering pipeline and enhanced baseline calculations, comprehensive internationalization text positioning with cross-cultural typography features and optimized performance for global scripts and languages, enhanced text-indent system with comprehensive unit support (px, em, %, plain number), improved baseline alignment for mixed font-size scenarios with alphabetic baseline preservation, and comprehensive typography parity validation through enhanced test coverage. These enhancements enable precise control over complex text layouts while maintaining backward compatibility and performance optimization through selective use of advanced features.

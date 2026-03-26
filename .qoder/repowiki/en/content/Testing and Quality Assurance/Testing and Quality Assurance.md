@@ -8,6 +8,7 @@
 - [visual_rotation_test.dart](file://test/animation/visual_rotation_test.dart)
 - [visual_scale_test.dart](file://test/animation/visual_scale_test.dart)
 - [visual_translation_test.dart](file://test/animation/visual_translation_test.dart)
+- [rotation_golden_test.dart](file://test/animation/rotation_golden_test.dart)
 - [animated_svg_picture_test.dart](file://test/animation/animated_svg_picture_test.dart)
 - [smil_test.dart](file://test/animation/smil_test.dart)
 - [path_morphing_test.dart](file://test/animation/path_morphing_test.dart)
@@ -41,7 +42,10 @@
 - [gradient_stop_color_animation_test.dart](file://test/animation/gradient_stop_color_animation_test.dart)
 - [shape_edge_cases_test.dart](file://test/animation/shape_edge_cases_test.dart)
 - [text_matrix_transform_test.dart](file://test/animation/text_matrix_transform_test.dart)
-- [clip_mask_use_verification_test.dart](file://test/animation/clip_mask_use_verification_test.dart)
+- [advanced_clip_mask_test.dart](file://test/animation/advanced_clip_mask_test.dart)
+- [svg_event_model_test.dart](file://test/animation/svg_event_model_test.dart)
+- [filter_component_transfer_test.dart](file://test/animation/filter_component_transfer_test.dart)
+- [image_contexts_test.dart](file://test/animation/image_contexts_test.dart)
 - [pubspec.yaml](file://pubspec.yaml)
 - [animated_svg_painter_text_style.dart](file://lib/src/animation/animated_svg_painter_text_style.dart)
 - [css_to_smil_converter_transforms_decompose.dart](file://lib/src/animation/css_to_smil_converter_transforms_decompose.dart)
@@ -63,13 +67,13 @@
 
 ## Update Summary
 **Changes Made**
-- Added comprehensive clip-path verification tests with 977 lines covering basic shapes, units, CSS vs attribute usage, nested clip-paths, and combined clip-path/mask/use scenarios
-- Added extensive mask functionality tests with 977 lines validating mask rendering, units, gradient masks, and internal use element references
-- Added gradient stop color animation tests with 412 lines validating CSS selector targeting, animation updates, and shader creation
-- Added shape edge cases tests with 321 lines covering rect rx/ry clamping, circle/ellipse negative radius handling, path arc edge cases, fill-rule inheritance, stroke-dasharray behavior, and polygon/polyline differences
-- Added text matrix transform tests with 146 lines validating matrix parsing edge cases, text rendering with transforms, letter-spacing, and font fallback
-- Updated architecture overview to include new comprehensive verification components for clip-path, mask, gradient animations, shape edge cases, and text matrix transforms
-- Enhanced testing framework to cover advanced SVG rendering precision and complex rendering scenarios
+- Added significantly expanded test infrastructure with new comprehensive test suites
+- Integrated advanced clip mask testing (765 lines) covering luminosity masking, nested composition chains, and edge feathering
+- Added SVG event model compliance testing (797 lines) validating W3C event retargeting, bubbling, and mouseenter/mouseleave behavior
+- Added filter component transfer testing (639 lines) validating feComponentTransfer parsing and pixel transformation
+- Added image contexts testing (606 lines) covering complex image usage within clipPath, masks, patterns, and foreignObject
+- Enhanced visual regression testing capabilities with golden file comparisons and pixel-based analysis
+- Expanded testing framework to cover advanced SVG rendering precision and complex rendering scenarios
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -84,18 +88,17 @@
 10. [Appendices](#appendices)
 
 ## Introduction
-This document explains the comprehensive testing and quality assurance framework for the flutter_svg package with a focus on visual testing, automated animation testing, and validation approaches. The framework now includes extensive widget-level testing for advanced SVG features including marker rendering, paint order validation, pattern fills, comprehensive text styling capabilities, **comprehensive clip-path verification**, **extensive mask functionality validation**, **gradient stop color animation testing**, **shape edge cases coverage**, and **text matrix transform validation**.
+This document explains the comprehensive testing and quality assurance framework for the flutter_svg package with a focus on visual testing, automated animation testing, and validation approaches. The framework now includes extensive widget-level testing for advanced SVG features including marker rendering, paint order validation, pattern fills, comprehensive text styling capabilities, **advanced clip mask testing**, **SVG event model compliance testing**, **filter component transfer testing**, and **image contexts testing**.
 
 Key areas covered:
 - Visual testing methodology for SMIL animations and complex SVG rendering
 - Automated pixel-based verification of transforms, motion, and advanced styling
 - Comprehensive widget-level testing for marker elements, paint ordering, and pattern fills
 - Extensive text styling validation including text-rendering, decorations, thickness, shadows, wrapping, alignment, and advanced typography features
-- **Advanced clip-path verification** with shape types, units, CSS vs attribute usage, nested clip-paths, and combined scenarios
-- **Extensive mask functionality validation** with rendering, units, gradient masks, and internal use element references
-- **Gradient stop color animation testing** with CSS selector targeting, animation updates, and shader creation
-- **Shape edge cases coverage** with rect/ellipse/circle handling, path arc edge cases, fill-rule inheritance, and stroke-dasharray behavior
-- **Text matrix transform validation** with parsing edge cases, text rendering, letter-spacing, and font fallback
+- **Advanced clip mask testing** with luminosity masking, nested composition chains, and edge feathering
+- **SVG event model compliance testing** with W3C event retargeting, bubbling, and mouseenter/mouseleave behavior
+- **Filter component transfer testing** with feComponentTransfer parsing and pixel transformation
+- **Image contexts testing** with complex image usage within clipPath, masks, patterns, and foreignObject
 - Quality assurance processes, configuration, and CI considerations
 - Relationships between the animation system, rendering pipeline, and advanced SVG features
 - Best practices, debugging techniques, and performance validation
@@ -103,18 +106,17 @@ Key areas covered:
 The goal is to help developers implement robust tests, maintain the existing infrastructure, and extend it confidently with comprehensive validation of advanced SVG rendering features.
 
 ## Project Structure
-The testing surface is primarily under the test/animation directory, with supporting utilities and cross-cutting guidelines. The framework now includes extensive widget-level tests for advanced SVG features alongside traditional animation and visual testing, **plus comprehensive verification tests for clip-path, mask, gradient animations, shape edge cases, and text matrix transforms**:
+The testing surface is primarily under the test/animation directory, with supporting utilities and cross-cutting guidelines. The framework now includes extensive widget-level tests for advanced SVG features alongside traditional animation and visual testing, **plus comprehensive verification tests for advanced clip masks, SVG event model compliance, filter component transfer, and image contexts**:
 
 - Animation logic and parsing tests (SMIL, CSS-to-SMIL conversion, path morphing)
 - Widget-level integration tests for AnimatedSvgPicture with comprehensive feature coverage
 - Visual testing utilities and golden-style pixel analysis
 - Controller-level tests for playback control and seek/pause/forward/reverse
 - Advanced rendering tests for markers, paint order, patterns, and text styling
-- **Comprehensive clip-path verification tests** with shape types, units, and combined scenarios
-- **Extensive mask functionality tests** with rendering, units, and gradient masks
-- **Gradient stop color animation tests** with CSS selector targeting and shader creation
-- **Shape edge cases tests** with rect/ellipse/circle handling and path arc validation
-- **Text matrix transform tests** with parsing edge cases and text rendering
+- **Advanced clip mask testing** with luminosity masking, nested composition chains, and edge feathering
+- **SVG event model compliance testing** with W3C event retargeting and bubbling behavior
+- **Filter component transfer testing** with feComponentTransfer parsing and pixel transformation
+- **Image contexts testing** with complex image usage scenarios
 - CI configuration and platform constraints
 
 ```mermaid
@@ -125,34 +127,35 @@ A1["visual_test_utils.dart"]
 A2["visual_rotation_test.dart"]
 A3["visual_scale_test.dart"]
 A4["visual_translation_test.dart"]
-A5["animated_svg_picture_test.dart"]
-A6["smil_test.dart"]
-A7["path_morphing_test.dart"]
-A8["controller_test.dart"]
-A9["css_animations_test.dart"]
-A10["text_position_list_test.dart"]
-A11["marker_test.dart"]
-A12["paint_order_test.dart"]
-A13["pattern_test.dart"]
-A14["stroke_styling_test.dart"]
-A15["text_rendering_test.dart"]
-A16["text_decoration_style_test.dart"]
-A17["text_decoration_thickness_test.dart"]
-A18["stroke_dash_stop_color_test.dart"]
-A19["text_shadow_test.dart"]
-A20["text_wrap_test.dart"]
-A21["vertical_align_test.dart"]
-A22["line_height_test.dart"]
-A23["text_spacing_test.dart"]
-A24["text_justify_test.dart"]
-A25["white_space_test.dart"]
-A26["css_transform_calc_test.dart"]
-A27["css_transform_edge_cases_test.dart"]
-A28["css_variables_calc_test.dart"]
-A29["clip_mask_use_verification_test.dart"]
-A30["gradient_stop_color_animation_test.dart"]
-A31["shape_edge_cases_test.dart"]
-A32["text_matrix_transform_test.dart"]
+A5["rotation_golden_test.dart"]
+A6["animated_svg_picture_test.dart"]
+A7["smil_test.dart"]
+A8["path_morphing_test.dart"]
+A9["controller_test.dart"]
+A10["css_animations_test.dart"]
+A11["text_position_list_test.dart"]
+A12["marker_test.dart"]
+A13["paint_order_test.dart"]
+A14["pattern_test.dart"]
+A15["stroke_styling_test.dart"]
+A16["text_rendering_test.dart"]
+A17["text_decoration_style_test.dart"]
+A18["text_decoration_thickness_test.dart"]
+A19["stroke_dash_stop_color_test.dart"]
+A20["text_shadow_test.dart"]
+A21["text_wrap_test.dart"]
+A22["vertical_align_test.dart"]
+A23["line_height_test.dart"]
+A24["text_spacing_test.dart"]
+A25["text_justify_test.dart"]
+A26["white_space_test.dart"]
+A27["css_transform_calc_test.dart"]
+A28["css_transform_edge_cases_test.dart"]
+A29["css_variables_calc_test.dart"]
+A30["advanced_clip_mask_test.dart"]
+A31["svg_event_model_test.dart"]
+A32["filter_component_transfer_test.dart"]
+A33["image_contexts_test.dart"]
 end
 subgraph "Widget Tests"
 W["test/widget_svg_test.dart"]
@@ -195,6 +198,7 @@ A --> A29
 A --> A30
 A --> A31
 A --> A32
+A --> A33
 W --> A10
 G --> A1
 C --> A
@@ -207,6 +211,7 @@ C --> W
 - [visual_rotation_test.dart](file://test/animation/visual_rotation_test.dart)
 - [visual_scale_test.dart](file://test/animation/visual_scale_test.dart)
 - [visual_translation_test.dart](file://test/animation/visual_translation_test.dart)
+- [rotation_golden_test.dart](file://test/animation/rotation_golden_test.dart)
 - [animated_svg_picture_test.dart](file://test/animation/animated_svg_picture_test.dart)
 - [smil_test.dart](file://test/animation/smil_test.dart)
 - [path_morphing_test.dart](file://test/animation/path_morphing_test.dart)
@@ -231,10 +236,10 @@ C --> W
 - [css_transform_calc_test.dart](file://test/animation/css_transform_calc_test.dart)
 - [css_transform_edge_cases_test.dart](file://test/animation/css_transform_edge_cases_test.dart)
 - [css_variables_calc_test.dart](file://test/animation/css_variables_calc_test.dart)
-- [clip_mask_use_verification_test.dart](file://test/animation/clip_mask_use_verification_test.dart)
-- [gradient_stop_color_animation_test.dart](file://test/animation/gradient_stop_color_animation_test.dart)
-- [shape_edge_cases_test.dart](file://test/animation/shape_edge_cases_test.dart)
-- [text_matrix_transform_test.dart](file://test/animation/text_matrix_transform_test.dart)
+- [advanced_clip_mask_test.dart](file://test/animation/advanced_clip_mask_test.dart)
+- [svg_event_model_test.dart](file://test/animation/svg_event_model_test.dart)
+- [filter_component_transfer_test.dart](file://test/animation/filter_component_transfer_test.dart)
+- [image_contexts_test.dart](file://test/animation/image_contexts_test.dart)
 - [widget_svg_test.dart](file://test/widget_svg_test.dart)
 - [dart_test.yaml](file://dart_test.yaml)
 
@@ -253,11 +258,11 @@ C --> W
 - **Text styling resolution system**: Processes and validates CSS text properties including thickness, shadows, wrapping, alignment, and advanced typography.
 - **CSS transform calculation system**: **Validates calc() expression evaluation, unit conversions, and complex transform parsing**.
 - **CSS variables and calc() evaluation system**: **Processes CSS variables and calc() expressions with comprehensive unit conversion support**.
-- **Comprehensive clip-path verification system**: **Validates clip-path rendering with shapes, units, CSS vs attribute usage, nested clip-paths, and combined scenarios**.
-- **Extensive mask functionality system**: **Validates mask rendering, units, gradient masks, and internal use element references**.
-- **Gradient stop color animation system**: **Validates CSS selector targeting, animation updates, and shader creation for gradient stops**.
-- **Shape edge cases system**: **Validates rect/ellipse/circle handling, path arc edge cases, fill-rule inheritance, and stroke-dasharray behavior**.
-- **Text matrix transform system**: **Validates matrix parsing edge cases, text rendering, letter-spacing, and font fallback**.
+- **Advanced clip mask testing system**: **Validates luminosity masking, nested composition chains, and edge feathering with 765 lines of comprehensive testing**.
+- **SVG event model compliance system**: **Validates W3C event retargeting, bubbling, and mouseenter/mouseleave behavior with 797 lines of testing**.
+- **Filter component transfer system**: **Validates feComponentTransfer parsing and pixel transformation with 639 lines of testing**.
+- **Image contexts testing system**: **Validates complex image usage within clipPath, masks, patterns, and foreignObject with 606 lines of testing**.
+- **Visual regression testing**: **Supports golden file comparisons and pixel-based analysis for animation verification**.
 
 **Section sources**
 - [visual_test_utils.dart](file://test/animation/visual_test_utils.dart)
@@ -275,18 +280,19 @@ C --> W
 - [css_transform_calc_test.dart](file://test/animation/css_transform_calc_test.dart)
 - [css_transform_edge_cases_test.dart](file://test/animation/css_transform_edge_cases_test.dart)
 - [css_variables_calc_test.dart](file://test/animation/css_variables_calc_test.dart)
-- [clip_mask_use_verification_test.dart](file://test/animation/clip_mask_use_verification_test.dart)
-- [gradient_stop_color_animation_test.dart](file://test/animation/gradient_stop_color_animation_test.dart)
-- [shape_edge_cases_test.dart](file://test/animation/shape_edge_cases_test.dart)
-- [text_matrix_transform_test.dart](file://test/animation/text_matrix_transform_test.dart)
+- [advanced_clip_mask_test.dart](file://test/animation/advanced_clip_mask_test.dart)
+- [svg_event_model_test.dart](file://test/animation/svg_event_model_test.dart)
+- [filter_component_transfer_test.dart](file://test/animation/filter_component_transfer_test.dart)
+- [image_contexts_test.dart](file://test/animation/image_contexts_test.dart)
+- [rotation_golden_test.dart](file://test/animation/rotation_golden_test.dart)
 
 ## Architecture Overview
-The testing architecture separates concerns across six layers with enhanced coverage of advanced SVG rendering features, **including comprehensive verification tests for clip-path, mask, gradient animations, shape edge cases, and text matrix transforms**:
+The testing architecture separates concerns across seven layers with enhanced coverage of advanced SVG rendering features, **including comprehensive testing for advanced clip masks, SVG event model compliance, filter component transfer, and image contexts**:
 - **Logic tests**: Validate SMIL parsing, interpolation, and timeline mechanics.
 - **Rendering tests**: Validate widget-level rendering and animation progression.
 - **Visual tests**: Validate actual pixel output and geometric changes.
-- **Advanced feature tests**: Validate markers, paint order, patterns, text styling, and **comprehensive verification testing**.
-- **Verification testing layer**: Validate clip-path, mask, gradient animations, shape edge cases, and text matrix transforms.
+- **Advanced feature tests**: Validate markers, paint order, patterns, text styling, and **advanced testing components**.
+- **Advanced testing layer**: Validate clip masks, event models, filter components, and image contexts.
 - **CSS cascade system tests**: Validate inheritance and styling resolution for use-referenced elements.
 - **CSS transform system tests**: Validate calc() expressions, unit conversions, and 3D transform handling.
 - **CSS variables and calc() system tests**: Validate var() resolution and calc() arithmetic evaluation.
@@ -312,13 +318,13 @@ end
 subgraph "Visual Layer"
 V1["VisualTestUtils"]
 V2["PixelAnalysis"]
+V3["Golden File Testing"]
 end
-subgraph "Verification Testing Layer"
-VT1["Clip-path Verification<br/>Shapes/Units/CSS Attributes"]
-VT2["Mask Functionality<br/>Rendering/Units/Gradients"]
-VT3["Gradient Animation<br/>Stop Color/CSS Selectors"]
-VT4["Shape Edge Cases<br/>Rect/Ellipse/Circle/Path"]
-VT5["Text Matrix Transforms<br/>Parsing/Letter-spacing/Fonts"]
+subgraph "Advanced Testing Layer"
+AT1["Advanced Clip Mask Testing<br/>Luminosity/Masks/Nested Chains"]
+AT2["SVG Event Model Testing<br/>Retargeting/Bubbling/Mouse Events"]
+AT3["Filter Component Transfer Testing<br/>feComponentTransfer Parsing"]
+AT4["Image Contexts Testing<br/>clipPath/Masks/Patterns/ForeignObject"]
 end
 subgraph "Advanced Feature Tests"
 AF1["Marker Rendering"]
@@ -342,6 +348,7 @@ R5 --> R1
 R6 --> R1
 R1 --> V1
 V1 --> V2
+V2 --> V3
 AF1 --> R5
 AF2 --> R1
 AF3 --> R4
@@ -349,11 +356,10 @@ AF4 --> R3
 AF5 --> R3
 AF6 --> L5
 AF7 --> L6
-VT1 --> R1
-VT2 --> R1
-VT3 --> R1
-VT4 --> R1
-VT5 --> R3
+AT1 --> R1
+AT2 --> R1
+AT3 --> R1
+AT4 --> R1
 ```
 
 **Diagram sources**
@@ -378,10 +384,11 @@ VT5 --> R3
 - [svg_transform.dart](file://lib/src/animation/svg_transform.dart)
 - [css_variables_calc.dart](file://lib/src/animation/css_variables_calc.dart)
 - [transform_3d.dart](file://lib/src/animation/transform_3d.dart)
-- [clip_mask_use_verification_test.dart](file://test/animation/clip_mask_use_verification_test.dart)
-- [gradient_stop_color_animation_test.dart](file://test/animation/gradient_stop_color_animation_test.dart)
-- [shape_edge_cases_test.dart](file://test/animation/shape_edge_cases_test.dart)
-- [text_matrix_transform_test.dart](file://test/animation/text_matrix_transform_test.dart)
+- [advanced_clip_mask_test.dart](file://test/animation/advanced_clip_mask_test.dart)
+- [svg_event_model_test.dart](file://test/animation/svg_event_model_test.dart)
+- [filter_component_transfer_test.dart](file://test/animation/filter_component_transfer_test.dart)
+- [image_contexts_test.dart](file://test/animation/image_contexts_test.dart)
+- [rotation_golden_test.dart](file://test/animation/rotation_golden_test.dart)
 
 ## Detailed Component Analysis
 
@@ -464,6 +471,17 @@ T->>A : "assert geometry metrics"
 - [visual_scale_test.dart](file://test/animation/visual_scale_test.dart)
 - [visual_translation_test.dart](file://test/animation/visual_translation_test.dart)
 - [VISUAL_TESTING_GUIDELINES.md](file://VISUAL_TESTING_GUIDELINES.md)
+
+### Visual Regression Testing with Golden Files
+- **Purpose**: Provide pixel-perfect regression testing using golden file comparisons.
+- **Key capabilities**:
+  - Golden file testing for animation frame verification at specific time points.
+  - Sequential animation frame testing to verify smooth transitions.
+  - Background color control for consistent pixel comparison.
+- **Usage pattern**: Set up animation, advance to specific time, compare with golden reference.
+
+**Section sources**
+- [rotation_golden_test.dart](file://test/animation/rotation_golden_test.dart)
 
 ### AnimatedSvgPicture Integration Tests
 - **Validates** rendering of shapes, gradients, text, images, and complex SVG constructs.
@@ -770,145 +788,178 @@ The system also resolves numerous other CSS text properties including:
 **Section sources**
 - [widget_svg_test.dart](file://test/widget_svg_test.dart)
 
-### Comprehensive Clip-path Verification Tests
-**New** The framework includes extensive clip-path verification with 977 lines covering:
+### Advanced Clip Mask Testing
+**New** The framework includes comprehensive clip mask testing with 765 lines covering:
 
-#### Basic Clip-path Shapes
-- **Rectangular clip-paths**: Validates clip-path with rect shapes and proper pixel counting
-- **Circular clip-paths**: Tests circular clip-path rendering with expected circular output
-- **Path-based clip-paths**: Validates complex path shapes as clip-path definitions
-- **Bounding box validation**: Ensures clipped regions produce expected bounding boxes
+#### Luminosity Masking
+- **RGB to Grayscale Conversion**: Validates mask-type luminance converts RGB content to grayscale opacity
+- **Alpha Channel Behavior**: Tests mask-type alpha uses alpha channel (default behavior)
+- **Colored Content Processing**: Validates red/blue content processing with luminance calculations
+- **Gradient Masking**: Tests linear gradients as luminance masks for smooth opacity transitions
 
-#### Clip-path Units and Coordinate Systems
-- **userSpaceOnUse units**: Validates absolute coordinate clipping within SVG viewport
-- **objectBoundingBox units**: Tests relative coordinate clipping based on element bounds
-- **Unit conversion accuracy**: Ensures proper scaling between different unit systems
+#### Nested Composition Chains
+- **Clip-Path Inside Mask**: Validates clip-path inside mask applies both clipping and masking
+- **Mask Inside Clip-Path**: Tests mask inside clip-path with proper operation sequencing
+- **Deep Nesting Levels**: Validates 2-3 level deep nesting with proper intersection calculations
+- **Mixed Nesting Patterns**: Tests clip -> mask -> clip compositions with complex boundaries
 
-#### CSS vs Presentation Attribute Usage
-- **CSS style attribute**: Validates clip-path from style="clip-path: url(#clip)"
-- **Presentation attribute**: Tests clip-path="url(#clip)" attribute usage
-- **Attribute precedence**: Validates proper attribute resolution order
+#### ClipPathUnits and MaskUnits
+- **userSpaceOnUse Units**: Validates absolute coordinate clipping and masking
+- **objectBoundingBox Units**: Tests relative coordinate clipping and masking based on element bounds
+- **Coordinate System Accuracy**: Ensures proper scaling and positioning across different unit systems
 
-#### Nested and Combined Clip-paths
-- **Multiple shapes in clipPath**: Tests union of multiple shapes within single clipPath
-- **Group-level clip-paths**: Validates clip-path applied to g elements with multiple children
-- **Combined clip-path/mask/use**: Tests complex scenarios with multiple compositing operations
+#### Edge Feathering
+- **Anti-Aliased Edges**: Validates smooth edge rendering for clip-path operations
+- **Diagonal Edge Processing**: Tests diagonal clip-path edges with proper anti-aliasing
+- **Complex Shape Feathering**: Validates feathering for complex polygon and curved shapes
 
-**Section sources**
-- [clip_mask_use_verification_test.dart](file://test/animation/clip_mask_use_verification_test.dart)
+#### Complex Composition Scenarios
+- **Group with Clip-Path Containing Masked Elements**: Tests hierarchical composition with proper inheritance
+- **Use Element with Clip-Path and Mask**: Validates use element references within complex compositions
+- **Clip-Path Referencing Use Elements**: Tests clipPath definitions referencing use elements
+- **Mask Referencing Use Elements**: Validates mask definitions with use element references
 
-### Extensive Mask Functionality Tests
-**New** The framework includes comprehensive mask validation with 977 lines covering:
-
-#### Basic Mask Rendering
-- **White fill masks**: Validates that white areas allow content rendering
-- **Empty mask handling**: Tests behavior when mask contains no visible content
-- **Mask content validation**: Ensures proper mask content processing
-
-#### Mask Units and Coordinate Systems
-- **maskUnits defaults**: Validates objectBoundingBox as default mask coordinate system
-- **maskContentUnits**: Tests maskContentUnits="objectBoundingBox" scaling
-- **Coordinate system accuracy**: Ensures proper positioning and scaling within mask bounds
-
-#### Gradient Mask Support
-- **Linear gradient masks**: Validates gradient-based masking with fade effects
-- **Black/white gradient behavior**: Tests black areas as fully transparent, white as fully opaque
-- **Gradient interpolation**: Ensures smooth alpha transitions in gradient masks
-
-#### Internal Use Element References
-- **use elements in masks**: Validates mask definitions referencing other elements
-- **Nested use within masks**: Tests complex mask structures with multiple use references
-- **Transformed masks**: Validates masks with use elements that have positioning transforms
+#### Alpha Mask Preservation
+- **White Fill Rendering**: Validates white mask content allows full content visibility
+- **Partial Opacity Handling**: Tests fill-opacity for alpha mask content with proper transparency
+- **Mask Content Validation**: Ensures proper mask content processing regardless of content type
 
 **Section sources**
-- [clip_mask_use_verification_test.dart](file://test/animation/clip_mask_use_verification_test.dart)
+- [advanced_clip_mask_test.dart](file://test/animation/advanced_clip_mask_test.dart)
 
-### Gradient Stop Color Animation Tests
-**New** The framework includes comprehensive gradient animation validation with 412 lines covering:
+### SVG Event Model Compliance Testing
+**New** The framework includes comprehensive SVG event model testing with 797 lines covering:
 
-#### CSS Selector Targeting
-- **ID selector targeting**: Validates CSS ID selectors targeting stop elements inside gradients
-- **Animation discovery**: Ensures stop-color animations are properly parsed from CSS
-- **Target node validation**: Tests that animations target correct stop elements by ID
+#### Event Retargeting Through <use>
+- **Direct Element Click Retargeting**: Validates click on element inside use retargets to use element
+- **Nested Use Element Propagation**: Tests nested use element click propagation through parent groups
+- **Event Target Resolution**: Ensures proper event target resolution for use element hierarchies
+- **Animation Triggering**: Validates animation triggering through use element retargeting
 
-#### Animation Value Updates
-- **Timeline progression**: Validates stop-color values update correctly over animation duration
-- **Color interpolation**: Tests proper color interpolation between keyframes
-- **Midpoint values**: Ensures 50% progress produces expected intermediate colors
+#### Event Bubbling
+- **Child to Parent Bubbling**: Tests click event bubbling from child to parent element
+- **Deep Nesting Bubble Propagation**: Validates event bubbling through multiple levels of nesting
+- **Bubble Chain Integrity**: Ensures proper event bubbling chain through complex hierarchies
+- **Animation Cascade Effects**: Tests animation triggering through bubbling event chains
 
-#### Shader Creation and Rendering
-- **Gradient shader creation**: Validates AnimatedSvgPainter creates shaders for animated gradients
-- **Real-time updates**: Tests that shader values update during animation playback
-- **Complex gradient patterns**: Validates astronaut helmet pattern with multiple animated stops
+#### Mouseenter/Mouseleave (Non-Bubbling)
+- **mouseenter Event Firing**: Validates mouseenter fires on target element without bubbling
+- **mouseleave Event Firing**: Tests mouseleave fires when pointer leaves element
+- **Hover State Management**: Ensures proper hover state management for mouse events
+- **Event Isolation**: Validates non-bubbling nature of mouseenter/mouseleave events
 
-#### Specific Gradient Types
-- **Radial gradients**: Tests userSpaceOnUse gradients with matrix transforms
-- **Linear gradients**: Validates stop animations in linear gradient contexts
-- **Spread method handling**: Tests animation with different gradient spread methods
+#### Multiple Events on Same Element
+- **Concurrent Event Types**: Tests multiple event types triggering different animations simultaneously
+- **Event Priority Handling**: Validates proper handling of concurrent event triggers
+- **Animation Coordination**: Ensures multiple animations coordinate properly on single element
 
-**Section sources**
-- [gradient_stop_color_animation_test.dart](file://test/animation/gradient_stop_color_animation_test.dart)
+#### Events on Transformed Elements
+- **Rotated Element Click**: Validates click events work correctly on rotated elements
+- **Scaled Element Click**: Tests click events on scaled and transformed elements
+- **Transform-Aware Hit Testing**: Ensures proper hit testing through transform matrices
+- **Coordinate System Accuracy**: Validates event coordinates through transformation chains
 
-### Shape Edge Cases Tests
-**New** The framework includes comprehensive shape edge case validation with 321 lines covering:
+#### Events on Clipped/Masked Elements
+- **Clip-Path Boundary Respecting**: Tests click events respect clip-path boundaries
+- **Outside Clip-Path Non-Triggering**: Validates clicks outside clip-path don't trigger events
+- **Clipped Element Interaction**: Ensures proper interaction with clipped and masked elements
+- **Hit Testing Accuracy**: Validates precise hit testing through complex clipping operations
 
-#### Rectangle Edge Cases
-- **rx/ry clamping**: Validates rx clamped to half width, ry clamped to half height
-- **Single axis specification**: Tests that ry without rx defaults to ry value
-- **Negative radius handling**: Validates negative rx/ry values don't render rectangles
-- **Zero dimension handling**: Tests zero width/height rectangles don't render
-
-#### Circle and Ellipse Edge Cases
-- **Negative radius validation**: Validates negative r values in circle don't render
-- **Zero radius handling**: Tests r=0 circles don't render
-- **Ellipse negative radii**: Validates negative rx/ry in ellipse don't render
-- **Zero dimension ellipses**: Tests ry=0 ellipses don't render
-
-#### Path Arc Command Edge Cases
-- **Zero radius arcs**: Validates A command with rx=0 renders as lineTo
-- **Negative radius arcs**: Tests A command with negative rx uses absolute value
-- **Arc command parsing**: Ensures proper path segment generation
-
-#### Fill Rule Inheritance
-- **Group-level fill-rule**: Validates fill-rule="evenodd" inherited by child paths
-- **Polygon-specific fill-rule**: Tests fill-rule on polygon elements
-- **Inheritance precedence**: Ensures proper inheritance through element hierarchy
-
-#### Stroke-dasharray Edge Cases
-- **Odd-length arrays**: Validates odd-length arrays are doubled automatically
-- **Negative dashoffset**: Tests negative stroke-dashoffset wrapping behavior
-- **All-zero arrays**: Validates stroke-dasharray="0,0" renders solid stroke
-
-#### Polygon vs Polyline Behavior
-- **Auto-closing polygons**: Validates polygon automatically closes shape
-- **Open polylines**: Tests polyline doesn't auto-close
-- **Minimum vertex count**: Validates polygons with fewer than 3 points don't render
+#### Event Delegation Pattern
+- **Parent Event Handling**: Tests parent elements handling events for multiple child elements
+- **Button Group Interaction**: Validates group-level event handling for multiple buttons
+- **Event Delegation Efficiency**: Ensures efficient event delegation patterns
+- **Animation Group Control**: Tests group-level animation control through delegation
 
 **Section sources**
-- [shape_edge_cases_test.dart](file://test/animation/shape_edge_cases_test.dart)
+- [svg_event_model_test.dart](file://test/animation/svg_event_model_test.dart)
 
-### Text Matrix Transform Tests
-**New** The framework includes comprehensive text matrix transform validation with 146 lines covering:
+### Filter Component Transfer Testing
+**New** The framework includes comprehensive filter component transfer testing with 639 lines covering:
 
-#### Matrix Parsing Edge Cases
-- **Adjacent negative numbers**: Validates "matrix(0-1 1 0...)" format parsing
-- **Decimal point parsing**: Tests ".5.3" format meaning "0.5" followed by "0.3"
-- **Exponent notation**: Validates "1e-5" and "2e+3" parsing without treating exponents as separators
-- **Comma-separated format**: Tests standard "matrix(0, -1, 1, 0, 136.353074, 431.758938)" format
+#### SvgComponentTransferFunction Testing
+- **Identity Type Validation**: Tests identity type returns input unchanged with proper clamping
+- **Linear Type Application**: Validates slope and intercept parameter application
+- **Gamma Type Processing**: Tests amplitude, exponent, and offset parameter handling
+- **Table Type Interpolation**: Validates table value interpolation and boundary conditions
+- **Discrete Type Mapping**: Tests discrete value mapping and interval calculations
 
-#### Text Rendering with Transforms
-- **90-degree rotation**: Validates matrix-based rotation rendering
-- **Scaled rotation**: Tests combined scale and rotation matrix transforms
-- **Letter-spacing**: Validates letter-spacing attribute with multiple tspans
-- **Font fallback**: Tests namespaced font-family fallback to system fonts
+#### Result Clamping and Edge Cases
+- **Result Clamping**: Validates all function results clamped to [0,1] range
+- **Input Clamping**: Tests input value clamping for out-of-range values
+- **Negative Value Handling**: Validates proper handling of negative inputs and outputs
+- **Zero Input Processing**: Tests gamma function zero input offset behavior
 
-#### Complex Text Layouts
-- **Multiple tspans**: Validates different letter-spacing values across multiple tspans
-- **Transform inheritance**: Tests transform application to text elements
-- **Matrix coordinate systems**: Validates proper coordinate transformation for text positioning
+#### SvgComponentTransferFilter Testing
+- **Default Identity Behavior**: Validates filter defaults to identity when no functions specified
+- **isIdentity Property**: Tests isIdentity property for different function combinations
+- **Pixel Transformation**: Validates transformPixel method for RGBA color processing
+- **ColorFilter Generation**: Tests linearColorFilter method for linear-only transforms
+
+#### feComponentTransfer Parsing
+- **feFuncR Linear Parsing**: Validates linear function parsing with slope and intercept
+- **feFuncG Gamma Parsing**: Tests gamma function parsing with amplitude, exponent, and offset
+- **feFuncB Table Parsing**: Validates table function parsing with tableValues array
+- **feFuncA Discrete Parsing**: Tests discrete function parsing with multiple values
+- **Mixed Function Parsing**: Validates parsing of mixed transfer function types
+
+#### Pipeline Integration Testing
+- **Identity Filter Optimization**: Tests identity filter optimization to skip processing
+- **Linear Filter ColorFilter**: Validates linear-only filters use ColorFilter optimization
+- **Non-Linear Filter Passes**: Tests non-linear filters create SvgComponentTransferPaintPass
+- **Pipeline Resolution**: Validates resolvePaintPasses method for different filter configurations
 
 **Section sources**
-- [text_matrix_transform_test.dart](file://test/animation/text_matrix_transform_test.dart)
+- [filter_component_transfer_test.dart](file://test/animation/filter_component_transfer_test.dart)
+
+### Image Contexts Testing
+**New** The framework includes comprehensive image contexts testing with 606 lines covering:
+
+#### Image in Complex Contexts
+- **Image Inside Clip-Path**: Validates image defines clip region by its bounds
+- **Image Clip-Path with Transform**: Tests image clipPath with transform application
+- **Image Inside Use**: Validates referenced image rendering at use positions
+- **Image Inside Symbol**: Tests image inside symbol with viewBox scaling
+
+#### Image Inside Masks
+- **Image Contribution to Mask**: Validates image contributes to mask region definition
+- **Image Mask with ObjectBoundingBox**: Tests maskContentUnits objectBoundingBox usage
+- **Mask Content Processing**: Ensures proper mask content processing with image data
+
+#### Image Inside Patterns
+- **Image Tiling in Patterns**: Validates image tiles correctly within pattern definitions
+- **Pattern with ObjectBoundingBox**: Tests pattern with objectBoundingBox and image scaling
+- **Pattern Content Units**: Validates patternContentUnits with image patterns
+
+#### Image with Filters
+- **Filter Application to Images**: Tests filter application to image content
+- **Color Matrix Filter on Images**: Validates feColorMatrix filter on image data
+- **Filter Pipeline Integration**: Ensures proper filter pipeline integration with images
+
+#### Image Percentage Dimensions
+- **Percentage Width/Height**: Tests image with percentage dimensions
+- **Mixed Percentage/Absolute**: Validates percentage width with absolute height
+- **ForeignObject Percentage**: Tests image with percentage dimensions inside foreignObject
+
+#### Image Intrinsic Size Handling
+- **Missing Width/Height**: Tests image without explicit dimensions using intrinsic size
+- **Width-Only Scaling**: Validates width-only specification with intrinsic aspect ratio
+- **ForeignObject Intrinsic**: Tests intrinsic size handling in foreignObject context
+
+#### ForeignObject Custom Builder Testing
+- **Builder Information Passing**: Validates foreignObjectBuilder receives correct positioning info
+- **Custom Widget Return**: Tests foreignObjectBuilder returning custom widgets
+- **Null Builder Handling**: Validates foreignObjectBuilder returning null renders nothing
+- **Extension Support**: Tests requiredExtensions attribute skipping unsupported builders
+- **Multiple Builders**: Validates multiple foreignObjects each receive individual builder calls
+
+#### PreserveAspectRatio Parser Testing
+- **Image Geometry Extraction**: Tests image geometry parsing for clipPath bounds calculation
+- **Attribute Value Validation**: Validates x, y, width, height attribute extraction
+- **ClipPath Bounds Accuracy**: Ensures proper clipPath bounds calculation from image geometry
+
+**Section sources**
+- [image_contexts_test.dart](file://test/animation/image_contexts_test.dart)
 
 ### Precision Hit Testing System
 **Updated** The framework now includes comprehensive precision hit testing with specialized components:
@@ -937,146 +988,6 @@ The system also resolves numerous other CSS text properties including:
 - [animated_svg_picture_hit_test_use.dart](file://lib/src/animation/animated_svg_picture_hit_test_use.dart)
 - [animated_svg_picture_hit_test_visibility.dart](file://lib/src/animation/animated_svg_picture_hit_test_visibility.dart)
 
-### Clip-path Verification System
-**New** The framework includes comprehensive clip-path validation:
-
-#### Shape Type Support
-- **Rectangular clip-paths**: Validates rect shapes with proper pixel counting and bounding box
-- **Circular clip-paths**: Tests circle shapes with expected circular clipping behavior
-- **Path-based clip-paths**: Validates complex path shapes as clip definitions
-- **Multi-shape clip-paths**: Tests union of multiple shapes within single clipPath
-
-#### Coordinate System Handling
-- **userSpaceOnUse**: Validates absolute coordinate clipping within SVG viewport
-- **objectBoundingBox**: Tests relative coordinate clipping based on element bounds
-- **Unit conversion**: Ensures proper scaling between different unit systems
-
-#### Attribute and CSS Support
-- **Presentation attribute**: Validates clip-path="url(#clip)" usage
-- **CSS style attribute**: Tests style="clip-path: url(#clip)" usage
-- **Attribute precedence**: Ensures proper attribute resolution order
-
-#### Combined Operations
-- **clip-path with use**: Validates clip-path applied to use elements
-- **clip-path with mask**: Tests combination of clip-path and mask operations
-- **Nested clip-paths**: Validates complex nested clip-path scenarios
-
-**Section sources**
-- [clip_mask_use_verification_test.dart](file://test/animation/clip_mask_use_verification_test.dart)
-
-### Mask Functionality System
-**New** The framework includes comprehensive mask validation:
-
-#### Basic Mask Rendering
-- **White fill behavior**: Validates white areas allow full content rendering
-- **Empty mask handling**: Tests behavior when mask contains no visible content
-- **Content validation**: Ensures proper mask content processing and rendering
-
-#### Coordinate System Support
-- **maskUnits defaults**: Validates objectBoundingBox as default mask coordinate system
-- **maskContentUnits**: Tests maskContentUnits="objectBoundingBox" scaling behavior
-- **Coordinate accuracy**: Ensures proper positioning and scaling within mask bounds
-
-#### Gradient Mask Support
-- **Linear gradient masks**: Validates gradient-based masking with fade effects
-- **Alpha channel behavior**: Tests black areas as fully transparent, white as fully opaque
-- **Gradient interpolation**: Ensures smooth alpha transitions in gradient masks
-
-#### Internal References
-- **use element references**: Validates mask definitions referencing other elements
-- **Nested use elements**: Tests complex mask structures with multiple use references
-- **Transformed references**: Validates masks with use elements that have positioning transforms
-
-**Section sources**
-- [clip_mask_use_verification_test.dart](file://test/animation/clip_mask_use_verification_test.dart)
-
-### Gradient Animation System
-**New** The framework includes comprehensive gradient animation validation:
-
-#### CSS Selector Targeting
-- **ID selector parsing**: Validates CSS ID selectors targeting stop elements
-- **Animation discovery**: Ensures stop-color animations are properly parsed from CSS
-- **Target validation**: Tests that animations target correct stop elements by ID
-
-#### Animation Value Updates
-- **Timeline progression**: Validates stop-color values update correctly over animation duration
-- **Color interpolation**: Tests proper color interpolation between keyframes
-- **Midpoint calculations**: Ensures 50% progress produces expected intermediate colors
-
-#### Shader Integration
-- **Shader creation**: Validates AnimatedSvgPainter creates shaders for animated gradients
-- **Real-time updates**: Tests that shader values update during animation playback
-- **Complex patterns**: Validates astronaut helmet pattern with multiple animated stops
-
-#### Gradient Type Support
-- **Radial gradients**: Tests userSpaceOnUse gradients with matrix transforms
-- **Linear gradients**: Validates stop animations in linear gradient contexts
-- **Spread methods**: Tests animation with different gradient spread methods
-
-**Section sources**
-- [gradient_stop_color_animation_test.dart](file://test/animation/gradient_stop_color_animation_test.dart)
-
-### Shape Edge Cases System
-**New** The framework includes comprehensive shape edge case validation:
-
-#### Rectangle Handling
-- **Dimension clamping**: Validates rx clamped to half width, ry clamped to half height
-- **Single axis defaults**: Tests that ry without rx defaults to ry value
-- **Negative dimension handling**: Validates negative rx/ry values don't render rectangles
-- **Zero dimension handling**: Tests zero width/height rectangles don't render
-
-#### Circle and Ellipse Edge Cases
-- **Negative radius validation**: Validates negative r values in circle don't render
-- **Zero radius handling**: Tests r=0 circles don't render
-- **Ellipse negative radii**: Validates negative rx/ry in ellipse don't render
-- **Zero dimension ellipses**: Tests ry=0 ellipses don't render
-
-#### Path Command Edge Cases
-- **Zero radius arcs**: Validates A command with rx=0 renders as lineTo
-- **Negative radius arcs**: Tests A command with negative rx uses absolute value
-- **Arc command parsing**: Ensures proper path segment generation
-
-#### Fill Rule Inheritance
-- **Group inheritance**: Validates fill-rule="evenodd" inherited by child paths
-- **Element-specific fill-rule**: Tests fill-rule on polygon elements
-- **Inheritance precedence**: Ensures proper inheritance through element hierarchy
-
-#### Stroke-dasharray Edge Cases
-- **Array doubling**: Validates odd-length arrays are doubled automatically
-- **Negative dashoffset**: Tests negative stroke-dashoffset wrapping behavior
-- **Solid rendering**: Tests stroke-dasharray="0,0" renders solid stroke
-
-#### Polygon vs Polyline Differences
-- **Auto-closing behavior**: Validates polygon automatically closes shape
-- **Open polyline behavior**: Tests polyline doesn't auto-close
-- **Vertex count validation**: Tests polygons with fewer than 3 points don't render
-
-**Section sources**
-- [shape_edge_cases_test.dart](file://test/animation/shape_edge_cases_test.dart)
-
-### Text Matrix Transform System
-**New** The framework includes comprehensive text matrix transform validation:
-
-#### Matrix Parsing Edge Cases
-- **Adjacent negative numbers**: Validates "matrix(0-1 1 0...)" format parsing
-- **Decimal point parsing**: Tests ".5.3" format meaning "0.5" followed by "0.3"
-- **Exponent notation**: Validates "1e-5" and "2e+3" parsing without treating exponents as separators
-- **Comma-separated format**: Tests standard "matrix(0, -1, 1, 0, 136.353074, 431.758938)" format
-
-#### Text Rendering Support
-- **Rotation rendering**: Validates matrix-based rotation rendering
-- **Combined transforms**: Tests scaled rotation matrix transforms
-- **Letter-spacing**: Validates letter-spacing attribute with multiple tspans
-- **Font fallback**: Tests namespaced font-family fallback to system fonts
-
-#### Complex Layout Support
-- **Multiple tspans**: Validates different letter-spacing values across multiple tspans
-- **Transform inheritance**: Tests transform application to text elements
-- **Coordinate system**: Validates proper coordinate transformation for text positioning
-
-**Section sources**
-- [text_matrix_transform_test.dart](file://test/animation/text_matrix_transform_test.dart)
-
 ## Dependency Analysis
 - **Test runtime and SDK constraints** are defined in pubspec.yaml.
 - **dart_test.yaml restricts tests** to VM to avoid issues with certain comparators on web.
@@ -1087,11 +998,11 @@ The system also resolves numerous other CSS text properties including:
 - **Text styling tests depend** on the comprehensive text resolution system in animated_svg_painter_text_style.dart.
 - **CSS transform tests depend** on the transform calculation system in css_to_smil_converter_transforms_values.dart and svg_transform.dart.
 - **CSS variables and calc() tests depend** on the comprehensive evaluation system in css_variables_calc.dart.
-- **Clip-path verification tests depend** on the comprehensive clip-path system in animated_svg_painter_clip_mask.dart and related components.
-- **Mask functionality tests depend** on the mask rendering system and coordinate transformation components.
-- **Gradient animation tests depend** on the gradient parsing and shader creation systems.
-- **Shape edge cases tests depend** on the shape validation and path parsing systems.
-- **Text matrix transform tests depend** on the transform parsing and text rendering systems.
+- **Advanced clip mask tests depend** on the comprehensive clip mask system in animated_svg_painter_clip_mask.dart and related components.
+- **SVG event model tests depend** on the event handling system and DOM simulation components.
+- **Filter component transfer tests depend** on the filter parsing and pixel transformation systems.
+- **Image contexts tests depend** on the image loading and rendering pipeline.
+- **Visual regression tests depend** on golden file comparison utilities.
 - **Precision hit testing depends** on specialized hit testing components in animated_svg_picture_hit_test_* files.
 - **CSS cascade behavior tests depend** on the inheritance resolution and style application systems.
 
@@ -1126,10 +1037,11 @@ T --> WS["widget_svg_test.dart"]
 T --> CTC["css_transform_calc_test.dart"]
 T --> CTEC["css_transform_edge_cases_test.dart"]
 T --> CVC["css_variables_calc_test.dart"]
-T --> CMUV["clip_mask_use_verification_test.dart"]
-T --> GSAT["gradient_stop_color_animation_test.dart"]
-T --> SEC["shape_edge_cases_test.dart"]
-T --> TMT["text_matrix_transform_test.dart"]
+T --> ACM["advanced_clip_mask_test.dart"]
+T --> SEM["svg_event_model_test.dart"]
+T --> FCT["filter_component_transfer_test.dart"]
+T --> ICT["image_contexts_test.dart"]
+T --> RG["rotation_golden_test.dart"]
 V --> VT["visual_*_test.dart"]
 MK --> AP
 PO --> AP
@@ -1150,10 +1062,11 @@ ASTS --> AP
 CTC --> CTC
 CTEC --> CTEC
 CVC --> CVC
-CMUV --> CMUV
-GSAT --> GSAT
-SEC --> SEC
-TMT --> TMT
+ACM --> ACM
+SEM --> SEM
+FCT --> FCT
+ICT --> ICT
+RG --> RG
 ```
 
 **Diagram sources**
@@ -1186,10 +1099,11 @@ TMT --> TMT
 - [css_transform_calc_test.dart](file://test/animation/css_transform_calc_test.dart)
 - [css_transform_edge_cases_test.dart](file://test/animation/css_transform_edge_cases_test.dart)
 - [css_variables_calc_test.dart](file://test/animation/css_variables_calc_test.dart)
-- [clip_mask_use_verification_test.dart](file://test/animation/clip_mask_use_verification_test.dart)
-- [gradient_stop_color_animation_test.dart](file://test/animation/gradient_stop_color_animation_test.dart)
-- [shape_edge_cases_test.dart](file://test/animation/shape_edge_cases_test.dart)
-- [text_matrix_transform_test.dart](file://test/animation/text_matrix_transform_test.dart)
+- [advanced_clip_mask_test.dart](file://test/animation/advanced_clip_mask_test.dart)
+- [svg_event_model_test.dart](file://test/animation/svg_event_model_test.dart)
+- [filter_component_transfer_test.dart](file://test/animation/filter_component_transfer_test.dart)
+- [image_contexts_test.dart](file://test/animation/image_contexts_test.dart)
+- [rotation_golden_test.dart](file://test/animation/rotation_golden_test.dart)
 
 **Section sources**
 - [dart_test.yaml](file://dart_test.yaml)
@@ -1205,11 +1119,12 @@ TMT --> TMT
 - **Text styling resolution** optimizes CSS property processing with efficient parsing and caching mechanisms.
 - **CSS transform calculation** efficiently processes calc() expressions and unit conversions with caching mechanisms.
 - **CSS variables and calc() evaluation** optimizes variable resolution with iterative evaluation and fallback handling.
-- **Clip-path verification** uses optimized path intersection algorithms for shape clipping validation.
-- **Mask functionality** validates rendering performance with efficient coordinate transformation and gradient processing.
-- **Gradient animation** optimizes shader creation and real-time value updates for smooth animation playback.
-- **Shape edge cases** validation leverages efficient path parsing and geometric computation algorithms.
-- **Text matrix transforms** validates parsing performance with optimized matrix decomposition and transformation algorithms.
+- **Advanced clip mask testing** uses optimized path intersection algorithms for shape clipping validation.
+- **SVG event model testing** validates event handling performance with efficient DOM simulation.
+- **Filter component transfer testing** optimizes pixel transformation with ColorFilter optimization for linear functions.
+- **Image contexts testing** validates rendering performance with efficient image loading and caching.
+- **Visual regression testing** benefits from golden file caching and incremental comparison algorithms.
+- **Precision hit testing** optimizes hit detection with spatial indexing and efficient coordinate transformation.
 
 ## Troubleshooting Guide
 Common issues and resolutions:
@@ -1241,37 +1156,38 @@ Common issues and resolutions:
   - Check fallback value handling for missing variables.
   - Validate calc() expression evaluation with nested calc() support.
   - Ensure proper unit context handling for font-size and container-size.
-- **Clip-path verification issues**:
-  - Verify clipPath shape parsing and coordinate transformation accuracy.
-  - Check clipPathUnits handling for userSpaceOnUse vs objectBoundingBox.
-  - Validate CSS vs presentation attribute precedence.
-  - Ensure proper handling of nested clip-paths and combined operations.
-- **Mask functionality issues**:
-  - Verify mask coordinate system resolution and scaling accuracy.
-  - Check maskUnits and maskContentUnits property handling.
-  - Validate gradient mask rendering and alpha channel processing.
-  - Ensure proper handling of use element references within masks.
-- **Gradient animation issues**:
-  - Verify CSS selector targeting and animation discovery.
-  - Check stop-color value interpolation and timeline progression.
-  - Validate shader creation and real-time value updates.
-  - Ensure proper handling of complex gradient patterns.
-- **Shape edge cases issues**:
-  - Verify dimension clamping and negative value handling.
-  - Check path arc command parsing and edge case validation.
-  - Validate fill-rule inheritance and stroke-dasharray behavior.
-  - Ensure proper handling of polygon vs polyline differences.
-- **Text matrix transform issues**:
-  - Verify matrix parsing edge cases and coordinate system handling.
-  - Check letter-spacing and font fallback behavior.
-  - Validate transform application to text elements.
-  - Ensure proper handling of complex text layouts.
+- **Advanced clip mask issues**:
+  - Verify luminosity mask RGB to grayscale conversion accuracy.
+  - Check nested composition chain evaluation order and intersection calculations.
+  - Validate clipPathUnits and maskUnits coordinate system resolution.
+  - Ensure proper edge feathering with anti-aliasing algorithms.
+- **SVG event model issues**:
+  - Verify event retargeting through use element hierarchy accuracy.
+  - Check event bubbling chain integrity and proper event propagation.
+  - Validate mouseenter/mouseleave non-bubbling behavior.
+  - Ensure transformed element hit testing accuracy.
+- **Filter component transfer issues**:
+  - Verify feComponentTransfer parsing accuracy for different function types.
+  - Check pixel transformation correctness for RGBA channels.
+  - Validate ColorFilter optimization for linear-only filters.
+  - Ensure proper pipeline resolution for mixed function types.
+- **Image contexts issues**:
+  - Verify image loading and intrinsic size handling accuracy.
+  - Check clipPath, mask, and pattern integration with image data.
+  - Validate foreignObject custom builder information passing.
+  - Ensure proper filter application to image content.
+- **Visual regression testing issues**:
+  - Verify golden file generation and comparison accuracy.
+  - Check background color consistency for pixel comparison.
+  - Validate animation frame timing and interpolation accuracy.
+  - Ensure proper handling of anti-aliasing in golden comparisons.
 - **Large test suite performance**:
   - Use selective testing for specific feature areas.
   - Leverage visual analysis for quick regression detection.
   - Optimize text styling resolution with cached property values.
   - Cache CSS transform calculations and unit conversions.
   - Use verification testing components for targeted validation.
+  - Implement test categorization for faster execution.
 
 **Section sources**
 - [VISUAL_TESTING_GUIDELINES.md](file://VISUAL_TESTING_GUIDELINES.md)
@@ -1284,15 +1200,21 @@ Common issues and resolutions:
 - [css_transform_calc_test.dart](file://test/animation/css_transform_calc_test.dart)
 - [css_transform_edge_cases_test.dart](file://test/animation/css_transform_edge_cases_test.dart)
 - [css_variables_calc_test.dart](file://test/animation/css_variables_calc_test.dart)
-- [clip_mask_use_verification_test.dart](file://test/animation/clip_mask_use_verification_test.dart)
-- [gradient_stop_color_animation_test.dart](file://test/animation/gradient_stop_color_animation_test.dart)
-- [shape_edge_cases_test.dart](file://test/animation/shape_edge_cases_test.dart)
-- [text_matrix_transform_test.dart](file://test/animation/text_matrix_transform_test.dart)
+- [advanced_clip_mask_test.dart](file://test/animation/advanced_clip_mask_test.dart)
+- [svg_event_model_test.dart](file://test/animation/svg_event_model_test.dart)
+- [filter_component_transfer_test.dart](file://test/animation/filter_component_transfer_test.dart)
+- [image_contexts_test.dart](file://test/animation/image_contexts_test.dart)
+- [rotation_golden_test.dart](file://test/animation/rotation_golden_test.dart)
 
 ## Conclusion
-The flutter_svg testing framework combines logic validation, widget integration, and robust visual verification to ensure accurate SMIL animation rendering and comprehensive advanced SVG feature support. With the addition of extensive tests covering marker functionality, paint order validation, pattern rendering, comprehensive text styling features, **comprehensive clip-path verification**, **extensive mask functionality validation**, **gradient stop color animation testing**, **shape edge cases coverage**, and **text matrix transform validation**, the suite now provides complete coverage of advanced SVG rendering capabilities.
+The flutter_svg testing framework combines logic validation, widget integration, and robust visual verification to ensure accurate SMIL animation rendering and comprehensive advanced SVG feature support. With the addition of extensive tests covering marker functionality, paint order validation, pattern rendering, comprehensive text styling features, **advanced clip mask testing**, **SVG event model compliance testing**, **filter component transfer testing**, and **image contexts testing**, the suite now provides complete coverage of advanced SVG rendering capabilities.
 
 The expanded framework includes:
+- **765 lines of comprehensive advanced clip mask testing** validating luminosity masking, nested composition chains, and edge feathering
+- **797 lines of SVG event model compliance testing** validating W3C event retargeting, bubbling, and mouseenter/mouseleave behavior
+- **639 lines of filter component transfer testing** validating feComponentTransfer parsing and pixel transformation
+- **606 lines of image contexts testing** validating complex image usage within clipPath, masks, patterns, and foreignObject
+- **Enhanced visual regression testing** with golden file comparisons and pixel-based analysis
 - **40 new test files** validating expanded CSS text styling features
 - **Comprehensive text decoration thickness testing** with auto/from-font and unit-based values
 - **Advanced text shadow validation** with multiple shadows and blur effects
@@ -1305,13 +1227,9 @@ The expanded framework includes:
 - **402 lines of CSS variables and calc() evaluation tests** validating var() resolution and calc() arithmetic
 - **Advanced CSS transform parsing and decomposition system** with 3D transform support
 - **Comprehensive unit conversion system** supporting px, em, rem, %, vw, vh, vmin, vmax, cm, mm, in, pt, pc, and deg, rad, turn, grad
-- **977 lines of comprehensive clip-path verification** validating shapes, units, CSS vs attribute usage, nested clip-paths, and combined scenarios
-- **977 lines of extensive mask functionality validation** validating rendering, units, gradient masks, and internal use element references
-- **412 lines of gradient stop color animation testing** validating CSS selector targeting, animation updates, and shader creation
-- **321 lines of shape edge cases validation** covering rect/ellipse/circle handling, path arc edge cases, fill-rule inheritance, and stroke-dasharray behavior
-- **146 lines of text matrix transform validation** covering parsing edge cases, text rendering, letter-spacing, and font fallback
+- **Visual regression testing capabilities** with golden file comparisons and pixel analysis
 
-By leveraging pixel-based geometry analysis, deterministic timelines, and careful controller-driven playback, the comprehensive suite provides reliable regression protection and clear debugging signals. The extensive advanced feature testing ensures backward compatibility while supporting modern SVG rendering features. The new comprehensive verification tests validate complex rendering scenarios including clip-path operations, mask functionality, gradient animations, shape edge cases, and text matrix transforms with mathematical precision. **The new comprehensive clip-path verification validates shape types, units, CSS vs attribute usage, nested clip-paths, and combined scenarios with detailed geometric analysis.** **The new extensive mask functionality validation covers rendering, units, gradient masks, and internal use element references with coordinate system accuracy.** **The new gradient stop color animation tests validate CSS selector targeting, animation updates, and shader creation for complex gradient patterns.** **The new shape edge cases validation covers dimension clamping, negative value handling, path arc edge cases, fill-rule inheritance, and stroke-dasharray behavior.** **The new text matrix transform validation covers parsing edge cases, text rendering, letter-spacing, and font fallback with coordinate system accuracy.** Adhering to the documented guidelines and patterns ensures maintainability and extensibility of the testing infrastructure.
+By leveraging pixel-based geometry analysis, deterministic timelines, and careful controller-driven playback, the comprehensive suite provides reliable regression protection and clear debugging signals. The extensive advanced feature testing ensures backward compatibility while supporting modern SVG rendering features. The new comprehensive testing infrastructure validates complex rendering scenarios including advanced clip masks, SVG event model compliance, filter component transfer, and image contexts with mathematical precision. **The new advanced clip mask testing validates luminosity masking, nested composition chains, and edge feathering with detailed geometric analysis.** **The new SVG event model compliance testing validates W3C event retargeting, bubbling, and mouseenter/mouseleave behavior with comprehensive event handling.** **The new filter component transfer testing validates feComponentTransfer parsing and pixel transformation with mathematical accuracy.** **The new image contexts testing validates complex image usage within clipPath, masks, patterns, and foreignObject with proper rendering pipeline integration.** Adhering to the documented guidelines and patterns ensures maintainability and extensibility of the testing infrastructure.
 
 ## Appendices
 
@@ -1342,11 +1260,13 @@ By leveraging pixel-based geometry analysis, deterministic timelines, and carefu
   - **Validate CSS variables and calc() evaluation** with inheritance, fallbacks, and nested expressions.
   - **Test 3D transform handling** with perspective, transform-style, and backface-visibility.
   - **Validate transform-origin and transform-box** properties with keywords and units.
-  - **Test comprehensive clip-path verification** scenarios including shape types, units, CSS vs attribute usage, nested clip-paths, and combined operations.
-  - **Validate extensive mask functionality** with rendering, units, gradient masks, and internal use element references.
-  - **Test gradient stop color animation** with CSS selector targeting, animation updates, and shader creation.
-  - **Validate shape edge cases** with dimension clamping, negative value handling, path arc edge cases, fill-rule inheritance, and stroke-dasharray behavior.
-  - **Test text matrix transform** parsing edge cases, text rendering, letter-spacing, and font fallback with coordinate system accuracy.
+  - **Test comprehensive advanced clip mask scenarios** including luminosity masking, nested composition chains, and edge feathering.
+  - **Validate SVG event model compliance** with event retargeting, bubbling, and mouseenter/mouseleave behavior.
+  - **Test filter component transfer parsing** with different function types and parameter combinations.
+  - **Validate image contexts integration** with clipPath, masks, patterns, and foreignObject scenarios.
+  - **Test visual regression testing** with golden file comparisons and pixel analysis.
+  - **Test foreignObject custom builder functionality** with proper information passing and widget rendering.
+  - **Validate preserveAspectRatio parsing** for image geometry extraction and clipPath bounds calculation.
 
 **Section sources**
 - [VISUAL_TESTING_GUIDELINES.md](file://VISUAL_TESTING_GUIDELINES.md)
@@ -1371,7 +1291,8 @@ By leveraging pixel-based geometry analysis, deterministic timelines, and carefu
 - [css_transform_calc_test.dart](file://test/animation/css_transform_calc_test.dart)
 - [css_transform_edge_cases_test.dart](file://test/animation/css_transform_edge_cases_test.dart)
 - [css_variables_calc_test.dart](file://test/animation/css_variables_calc_test.dart)
-- [clip_mask_use_verification_test.dart](file://test/animation/clip_mask_use_verification_test.dart)
-- [gradient_stop_color_animation_test.dart](file://test/animation/gradient_stop_color_animation_test.dart)
-- [shape_edge_cases_test.dart](file://test/animation/shape_edge_cases_test.dart)
-- [text_matrix_transform_test.dart](file://test/animation/text_matrix_transform_test.dart)
+- [advanced_clip_mask_test.dart](file://test/animation/advanced_clip_mask_test.dart)
+- [svg_event_model_test.dart](file://test/animation/svg_event_model_test.dart)
+- [filter_component_transfer_test.dart](file://test/animation/filter_component_transfer_test.dart)
+- [image_contexts_test.dart](file://test/animation/image_contexts_test.dart)
+- [rotation_golden_test.dart](file://test/animation/rotation_golden_test.dart)

@@ -4,6 +4,9 @@
 **Referenced Files in This Document**
 - [svg.dart](file://lib/svg.dart)
 - [animated_svg_picture.dart](file://lib/src/animation/animated_svg_picture.dart)
+- [animated_svg_picture_events.dart](file://lib/src/animation/animated_svg_picture_events.dart)
+- [animated_svg_picture_event_model.dart](file://lib/src/animation/animated_svg_picture_event_model.dart)
+- [svg_event.dart](file://lib/src/animation/svg_event.dart)
 - [animated_svg_picture_pointer_events.dart](file://lib/src/animation/animated_svg_picture_pointer_events.dart)
 - [animated_svg_picture_hit_test_traversal.dart](file://lib/src/animation/animated_svg_picture_hit_test_traversal.dart)
 - [animated_svg_picture_hit_test_geometry.dart](file://lib/src/animation/animated_svg_picture_hit_test_geometry.dart)
@@ -12,31 +15,25 @@
 - [animated_svg_picture_hit_test_text_path_segments.dart](file://lib/src/animation/animated_svg_picture_hit_test_text_path_segments.dart)
 - [animated_svg_painter_clip_mask.dart](file://lib/src/animation/animated_svg_painter_clip_mask.dart)
 - [animated_svg_painter_clip_mask_geometry.dart](file://lib/src/animation/animated_svg_painter_clip_mask_geometry.dart)
-- [animated_svg_picture_events.dart](file://lib/src/animation/animated_svg_picture_events.dart)
-- [animated_svg_picture_utils.dart](file://lib/src/animation/animated_svg_picture_utils.dart)
 - [animated_svg_painter_use.dart](file://lib/src/animation/animated_svg_painter_use.dart)
-- [animated_svg_picture_test.dart](file://test/animation/animated_svg_picture_test.dart)
-- [svg_anchor_element_test.dart](file://test/animation/svg_anchor_element_test.dart)
-- [svg_accessibility_test.dart](file://test/animation/svg_accessibility_test.dart)
-- [smil_event_timing_widget.dart](file://example/lib/widgets/smil_event_timing_widget.dart)
-- [ARCHITECTURE.md](file://ARCHITECTURE.md)
+- [animated_svg_picture_utils.dart](file://lib/src/animation/animated_svg_picture_utils.dart)
 - [svg_dom.dart](file://lib/src/animation/svg_dom.dart)
 - [SVGAElement.cpp](file://blink-b87d44f-Source-core-svg/SVGAElement.cpp)
 - [xlinkattrs.in](file://blink-b87d44f-Source-core-svg/xlinkattrs.in)
 - [SVGURIReference.cpp](file://blink-b87d44f-Source-core-svg/SVGURIReference.cpp)
+- [smil_event_timing_widget.dart](file://example/lib/widgets/smil_event_timing_widget.dart)
+- [ARCHITECTURE.md](file://ARCHITECTURE.md)
 </cite>
 
 ## Update Summary
 **Changes Made**
-- Added comprehensive anchor element system with link handling capabilities
-- Introduced SvgLinkInfo structures for passing link information to callbacks
-- Implemented onLinkTap callbacks for handling user interactions with SVG anchors
-- Enhanced accessibility integration with Flutter's Semantics system for screen reader support
-- Added support for both href and xlink:href attributes in anchor elements
-- Integrated anchor information into hit testing traversal system
-- Implemented accessibility properties (accessibleName, accessibleDescription, accessibleRole) for SVG documents
-- Enhanced hit testing traversal with anchor context propagation
-- Added SMIL timeline integration for anchor-based interactions
+- Enhanced comprehensive event handling system with full pointer event support including pointerdown, pointermove, pointerup, and pointercancel events
+- Added gesture recognition system with longpress, panstart, panupdate, and panend events
+- Implemented unified pointer event model with SvgPointerEvent class supporting pointerId, pressure, tilt, and other pointer properties
+- Expanded gesture event handling with SvgGestureEvent class for high-level gesture recognition
+- Enhanced event bubbling system with proper W3C DOM event model compliance including composedPath and retargeting
+- Added comprehensive event tracing and debugging capabilities with SvgTraceEvent system
+- Improved anchor element system with enhanced link handling and accessibility integration
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -44,24 +41,27 @@
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
 5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Enhanced Text Hit Testing System](#enhanced-text-hit-testing-system)
-7. [Advanced Clip-Path and Mask Processing](#advanced-clip-path-and-mask-processing)
-8. [Sophisticated Stroke-Width Expansion Algorithms](#sophisticated-stroke-width-expansion-algorithms)
-9. [Anchor Element System and Link Handling](#anchor-element-system-and-link-handling)
-10. [Accessibility Integration with Semantics](#accessibility-integration-with-semantics)
-11. [Dependency Analysis](#dependency-analysis)
-12. [Performance Considerations](#performance-considerations)
-13. [Troubleshooting Guide](#troubleshooting-guide)
-14. [Conclusion](#conclusion)
-15. [Appendices](#appendices)
+6. [Enhanced Event Handling System](#enhanced-event-handling-system)
+7. [Pointer Event Model and Gesture Recognition](#pointer-event-model-and-gesture-recognition)
+8. [W3C DOM Event Model Compliance](#w3c-dom-event-model-compliance)
+9. [Enhanced Text Hit Testing System](#enhanced-text-hit-testing-system)
+10. [Advanced Clip-Path and Mask Processing](#advanced-clip-path-and-mask-processing)
+11. [Sophisticated Stroke-Width Expansion Algorithms](#sophisticated-stroke-width-expansion-algorithms)
+12. [Anchor Element System and Link Handling](#anchor-element-system-and-link-handling)
+13. [Accessibility Integration with Semantics](#accessibility-integration-with-semantics)
+14. [Dependency Analysis](#dependency-analysis)
+15. [Performance Considerations](#performance-considerations)
+16. [Troubleshooting Guide](#troubleshooting-guide)
+17. [Conclusion](#conclusion)
+18. [Appendices](#appendices)
 
 ## Introduction
-This document explains how interactive SVG elements are implemented in the repository, focusing on hit testing, pointer events, and user interaction patterns. It covers how clickable regions, hover effects, and event-driven animations work, and how to implement animated interactive elements such as buttons and clickable map regions. It also documents the hit test traversal system, pointer event handling, gesture recognition, and performance considerations for complex interactive SVGs.
+This document explains how interactive SVG elements are implemented in the repository, focusing on comprehensive event handling, pointer events, gesture recognition, and user interaction patterns. It covers how clickable regions, hover effects, and event-driven animations work, and how to implement animated interactive elements such as buttons and clickable map regions. The system now provides full W3C DOM event model compliance with advanced pointer event support, gesture recognition, and comprehensive accessibility integration.
 
-**Updated** Enhanced with comprehensive anchor element system supporting link handling, SvgLinkInfo structures, onLinkTap callbacks, and accessibility integration with Flutter's Semantics system for screen reader support.
+**Updated** Enhanced with comprehensive event handling system featuring full pointer event support, gesture recognition, unified pointer event model, and W3C DOM event model compliance.
 
 ## Project Structure
-The interactive SVG functionality centers around a specialized widget that parses SVG content, builds a DOM-like structure, and supports SMIL-based animations. Pointer events and hit testing are integrated via a traversal system that respects SVG's pointer-events model and visibility constraints. The new anchor element system provides seamless link handling with comprehensive accessibility support.
+The interactive SVG functionality centers around a specialized widget that parses SVG content, builds a DOM-like structure, and supports SMIL-based animations. The enhanced event system integrates comprehensive pointer event handling, gesture recognition, and full W3C DOM event model compliance with proper event bubbling and retargeting.
 
 ```mermaid
 graph TB
@@ -72,33 +72,41 @@ subgraph "Interactive Widgets"
 B["AnimatedSvgPicture<br/>(widget)"]
 C["SvgPicture<br/>(static image)"]
 end
+subgraph "Enhanced Event System"
+D["Event Model<br/>(event_model.dart)"]
+E["Pointer Events<br/>(pointer_events.dart)"]
+F["Gesture Events<br/>(gesture_events)"]
+G["Event Classes<br/>(svg_event.dart)"]
+H["Event Tracing<br/>(SvgTraceEvent)"]
+I["Event Bubbling<br/>(dispatch system)"]
+end
 subgraph "Hit Testing & Events"
-D["Hit Test Traversal<br/>(hit_test_traversal.dart)"]
-E["Pointer Events Mode<br/>(pointer_events.dart)"]
-F["Geometry Tests<br/>(hit_test_geometry.dart)"]
-G["Text Hit Testing<br/>(hit_test_text_runs.dart)"]
-H["Mouse & Tap Handlers<br/>(events.dart)"]
-I["Anchor Element System<br/>(SvgLinkInfo, onLinkTap)"]
+J["Hit Test Traversal<br/>(hit_test_traversal.dart)"]
+K["Pointer Events Mode<br/>(pointer_events.dart)"]
+L["Geometry Tests<br/>(hit_test_geometry.dart)"]
+M["Text Hit Testing<br/>(hit_test_text_runs.dart)"]
+N["Mouse & Tap Handlers<br/>(events.dart)"]
+O["Anchor Element System<br/>(SvgLinkInfo, onLinkTap)"]
 end
 subgraph "Advanced Rendering"
-J["Clip-Path Processing<br/>(painter_clip_mask_geometry.dart)"]
-K["Mask Processing<br/>(painter_clip_mask.dart)"]
-L["Text Layout<br/>(hit_test_text_layout.dart)"]
-M["Text Path Segments<br/>(hit_test_text_path_segments.dart)"]
+P["Clip-Path Processing<br/>(painter_clip_mask_geometry.dart)"]
+Q["Mask Processing<br/>(painter_clip_mask.dart)"]
+R["Text Layout<br/>(hit_test_text_layout.dart)"]
+S["Text Path Segments<br/>(hit_test_text_path_segments.dart)"]
 end
 subgraph "Accessibility"
-N["Semantics Integration<br/>(Flutter Semantics)"]
-O["Accessibility Properties<br/>(accessibleName, Role)"]
+T["Semantics Integration<br/>(Flutter Semantics)"]
+U["Accessibility Properties<br/>(accessibleName, Role)"]
 end
 subgraph "Utilities"
-P["Stroke Tolerance<br/>(utils.dart)"]
-Q["Painter (use/paint helpers)<br/>(animated_svg_painter_use.dart)"]
+V["Stroke Tolerance<br/>(utils.dart)"]
+W["Painter (use/paint helpers)<br/>(animated_svg_painter_use.dart)"]
 end
 subgraph "Examples & Tests"
-R["Event Timing Examples<br/>(smil_event_timing_widget.dart)"]
-S["Interaction Tests<br/>(animated_svg_picture_test.dart)"]
-T["Anchor Element Tests<br/>(svg_anchor_element_test.dart)"]
-U["Accessibility Tests<br/>(svg_accessibility_test.dart)"]
+X["Event Timing Examples<br/>(smil_event_timing_widget.dart)"]
+Y["Interaction Tests<br/>(animated_svg_picture_test.dart)"]
+Z["Anchor Element Tests<br/>(svg_anchor_element_test.dart)"]
+AA["Accessibility Tests<br/>(svg_accessibility_test.dart)"]
 end
 A --> B
 B --> D
@@ -115,15 +123,23 @@ B --> N
 B --> O
 B --> P
 B --> Q
-R --> B
-S --> B
-T --> B
-U --> B
+B --> R
+B --> S
+B --> T
+B --> U
+B --> V
+B --> W
+X --> B
+Y --> B
+Z --> B
+AA --> B
 ```
 
 **Diagram sources**
-- [svg.dart:1-627](file://lib/svg.dart#L1-L627)
-- [animated_svg_picture.dart:108-295](file://lib/src/animation/animated_svg_picture.dart#L108-L295)
+- [animated_svg_picture.dart:168-236](file://lib/src/animation/animated_svg_picture.dart#L168-L236)
+- [animated_svg_picture_events.dart:3-378](file://lib/src/animation/animated_svg_picture_events.dart#L3-L378)
+- [animated_svg_picture_event_model.dart:1-300](file://lib/src/animation/animated_svg_picture_event_model.dart#L1-L300)
+- [svg_event.dart:1-390](file://lib/src/animation/svg_event.dart#L1-L390)
 - [animated_svg_picture_hit_test_traversal.dart:1-181](file://lib/src/animation/animated_svg_picture_hit_test_traversal.dart#L1-L181)
 - [animated_svg_picture_pointer_events.dart:1-124](file://lib/src/animation/animated_svg_picture_pointer_events.dart#L1-L124)
 - [animated_svg_picture_hit_test_geometry.dart:18-362](file://lib/src/animation/animated_svg_picture_hit_test_geometry.dart#L18-L362)
@@ -135,17 +151,17 @@ U --> B
 - [animated_svg_picture_utils.dart:15-35](file://lib/src/animation/animated_svg_picture_utils.dart#L15-L35)
 - [animated_svg_picture_events.dart:35-82](file://lib/src/animation/animated_svg_picture_events.dart#L35-L82)
 - [animated_svg_painter_use.dart:87-150](file://lib/src/animation/animated_svg_painter_use.dart#L87-L150)
-- [animated_svg_picture.dart:96-110](file://lib/src/animation/animated_svg_picture.dart#L96-L110)
-- [animated_svg_picture.dart:184-186](file://lib/src/animation/animated_svg_picture.dart#L184-L186)
 - [svg_accessibility_test.dart:281-449](file://test/animation/svg_accessibility_test.dart#L281-L449)
 - [svg_dom.dart:491-503](file://lib/src/animation/svg_dom.dart#L491-L503)
 
 **Section sources**
-- [svg.dart:1-627](file://lib/svg.dart#L1-L627)
-- [animated_svg_picture.dart:108-295](file://lib/src/animation/animated_svg_picture.dart#L108-L295)
+- [animated_svg_picture.dart:168-236](file://lib/src/animation/animated_svg_picture.dart#L168-L236)
+- [animated_svg_picture_events.dart:3-378](file://lib/src/animation/animated_svg_picture_events.dart#L3-L378)
 
 ## Core Components
-- AnimatedSvgPicture: A StatefulWidget that parses SVG, constructs a timeline for SMIL animations, and wraps the rendered content with gesture detectors for pointer events and hover. Now includes comprehensive anchor element support with onLinkTap callbacks.
+- AnimatedSvgPicture: A StatefulWidget that parses SVG, constructs a timeline for SMIL animations, and wraps the rendered content with comprehensive gesture detectors for pointer events, hover, and gesture recognition. Now includes full W3C DOM event model compliance with proper event bubbling and retargeting.
+- Enhanced event system: Provides comprehensive pointer event support (pointerdown, pointermove, pointerup, pointercancel) and gesture recognition (longpress, panstart, panupdate, panend) with unified event model.
+- Event model: Implements proper W3C DOM Event specification with event phases (capturing, at-target, bubbling), composedPath tracking, and use shadow DOM retargeting.
 - Hit testing extensions: Traverse the SVG DOM, transform coordinates, and determine which element is under the pointer considering pointer-events modes, visibility, clipping, masking, and foreignObject constraints. Enhanced with anchor information tracking.
 - Pointer events resolution: Computes effective pointer-events mode per node, inheriting from parents and normalizing values.
 - Geometry tests: Implements shape-specific hit testing for rect, circle, ellipse, path, polygon, polyline, line, image, text, tspan, textPath, and foreignObject.
@@ -153,85 +169,183 @@ U --> B
 - Sophisticated clip-path processing: Handles complex geometric intersections and advanced path construction for clip-path elements.
 - Alpha-based mask assessment: Implements pixel-perfect visibility evaluation for mask elements using alpha channel analysis.
 - Enhanced stroke-width algorithms: Uses precise stroke-width/2 tolerance calculation without artificial clamping for improved hit detection accuracy.
-- Gesture handlers: Translate mouse enter/exit/hover and tap-down into timeline events (e.g., mouseover, mouseout, click) that drive SMIL animations.
-- **New**: Anchor element system: Extracts link information from anchor elements and passes it through onLinkTap callbacks.
-- **New**: Accessibility integration: Wraps SVG content with Flutter Semantics for screen reader support with accessibleName, accessibleDescription, and accessibleRole properties.
+- Gesture handlers: Translate mouse enter/exit/hover, tap-down, and gesture inputs into timeline events (e.g., mouseover, mouseout, click, longpress, panstart, panupdate, panend) that drive SMIL animations.
+- **Enhanced**: Comprehensive event tracing system with SvgTraceEvent for debugging and monitoring event flows.
+- **Enhanced**: Unified pointer event model with SvgPointerEvent supporting pointerId, pressure, tilt, and other pointer properties.
+- **Enhanced**: Gesture event system with SvgGestureEvent for high-level gesture recognition including velocity and delta tracking.
+- **New**: Full W3C DOM event model compliance with proper event bubbling, capturing, and retargeting through use shadow boundaries.
 
 **Section sources**
-- [animated_svg_picture.dart:108-295](file://lib/src/animation/animated_svg_picture.dart#L108-L295)
-- [animated_svg_picture_pointer_events.dart:1-124](file://lib/src/animation/animated_svg_picture_pointer_events.dart#L1-L124)
-- [animated_svg_picture_hit_test_traversal.dart:1-181](file://lib/src/animation/animated_svg_picture_hit_test_traversal.dart#L1-L181)
-- [animated_svg_picture_hit_test_geometry.dart:18-362](file://lib/src/animation/animated_svg_picture_hit_test_geometry.dart#L18-L362)
-- [animated_svg_picture_hit_test_text_runs.dart:1-523](file://lib/src/animation/animated_svg_picture_hit_test_text_runs.dart#L1-L523)
-- [animated_svg_painter_clip_mask_geometry.dart:1-175](file://lib/src/animation/animated_svg_painter_clip_mask_geometry.dart#L1-L175)
-- [animated_svg_painter_clip_mask.dart:1-152](file://lib/src/animation/animated_svg_painter_clip_mask.dart#L1-L152)
-- [animated_svg_picture_utils.dart:15-35](file://lib/src/animation/animated_svg_picture_utils.dart#L15-L35)
-- [animated_svg_picture_events.dart:35-82](file://lib/src/animation/animated_svg_picture_events.dart#L35-L82)
-- [animated_svg_picture.dart:96-110](file://lib/src/animation/animated_svg_picture.dart#L96-L110)
-- [animated_svg_picture.dart:184-186](file://lib/src/animation/animated_svg_picture.dart#L184-L186)
+- [animated_svg_picture_events.dart:3-378](file://lib/src/animation/animated_svg_picture_events.dart#L3-L378)
+- [animated_svg_picture_event_model.dart:1-300](file://lib/src/animation/animated_svg_picture_event_model.dart#L1-L300)
+- [svg_event.dart:1-390](file://lib/src/animation/svg_event.dart#L1-L390)
+- [animated_svg_picture.dart:314-388](file://lib/src/animation/animated_svg_picture.dart#L314-L388)
 
 ## Architecture Overview
-The interactive flow integrates gesture input with SVG DOM traversal and SMIL timelines, now enhanced with advanced geometric processing and comprehensive anchor element support:
+The interactive flow integrates comprehensive gesture input with SVG DOM traversal, SMIL timelines, and full W3C DOM event model compliance, now enhanced with advanced pointer event handling and gesture recognition:
 
 ```mermaid
 sequenceDiagram
 participant U as "User"
 participant W as "AnimatedSvgPicture.build"
-participant G as "GestureDetector/MouseRegion"
+participant L as "Listener/GestureDetector"
 participant S as "_AnimatedSvgPictureState"
-participant T as "Hit Test Traversal"
-participant P as "Pointer Events Resolver"
+participant EM as "Event Model"
+participant PE as "Pointer Events"
+participant GE as "Gesture Events"
 participant V as "Visibility/Clipping/Mask"
 participant A as "Anchor System"
 participant SE as "Semantics"
-U->>W : "Tap/Hover/Mouse move"
-W->>G : "Wrap with GestureDetector/MouseRegion"
-G->>S : "onTapDown/onHover/onEnter/onExit"
-S->>T : "_hitTestWithAnchorInfo(localPosition)"
-T->>P : "_resolvePointerEventsMode(node)"
-P-->>T : "effective mode"
-T->>V : "_isPointVisibleInNodeSpace(...)"
+U->>W : "Pointer Down/Move/Up/Cancel"
+W->>L : "Wrap with Listener/GestureDetector"
+L->>S : "pointerdown/pointermove/pointerup/pointercancel"
+S->>EM : "_hitTestWithEventModel(localPosition)"
+EM->>PE : "_resolvePointerEventsMode(node)"
+PE-->>EM : "effective mode"
+EM->>V : "_isPointVisibleInNodeSpace(...)"
 V->>A : "Track anchor context"
 A->>A : "_extractAnchorInfo(node)"
-V-->>T : "visible?"
-T->>TE : "_textRunsContainPoint(...)"
+V-->>EM : "visible?"
+EM->>TE : "_textRunsContainPoint(...)"
 TE->>ST : "Sophisticated stroke-width expansion"
-TE-->>T : "hit?"
-T-->>S : "element id + anchor info"
-alt "Click with anchor"
-S->>SE : "Check accessibility info"
-SE-->>S : "Semantics wrapper"
-S->>CB : "widget.onLinkTap(anchorInfo)"
-CB-->>S : "callback executed"
-S->>TL : "triggerEvent(id, 'click')"
-else "Hover"
-S->>TL : "triggerEvent(id, 'mouseover'/'mouseout')"
+TE-->>EM : "hit?"
+EM-->>S : "element id + anchor info + composedPath"
+alt "Pointer Events"
+S->>S : "_dispatchEventWithBubbling('pointerdown'/'pointermove'/'pointerup')"
+else "Gesture Events"
+S->>S : "_handleLongPressStart/_handlePanStart/_handlePanUpdate"
+S->>S : "_dispatchEventWithBubbling('longpress'/'panstart'/'panupdate')"
 end
+S->>CB : "widget.onLinkTap(anchorInfo) (if anchor)"
+S->>TL : "triggerEvent(id, 'click'/'mouseover'/'mouseout')"
 TL-->>S : "animations update"
 S-->>W : "repaint"
 ```
 
 **Diagram sources**
-- [animated_svg_picture.dart:246-269](file://lib/src/animation/animated_svg_picture.dart#L246-L269)
-- [animated_svg_picture_events.dart:35-82](file://lib/src/animation/animated_svg_picture_events.dart#L35-L82)
-- [animated_svg_picture_hit_test_traversal.dart:54-151](file://lib/src/animation/animated_svg_picture_hit_test_traversal.dart#L54-L151)
-- [animated_svg_picture_pointer_events.dart:5-25](file://lib/src/animation/animated_svg_picture_pointer_events.dart#L5-L25)
-- [animated_svg_painter_clip_mask_geometry.dart:4-91](file://lib/src/animation/animated_svg_painter_clip_mask_geometry.dart#L4-L91)
-- [animated_svg_painter_clip_mask.dart:33-60](file://lib/src/animation/animated_svg_painter_clip_mask.dart#L33-L60)
-- [animated_svg_picture_hit_test_text_runs.dart:5-50](file://lib/src/animation/animated_svg_picture_hit_test_text_runs.dart#L5-L50)
-- [animated_svg_picture_utils.dart:15-20](file://lib/src/animation/animated_svg_picture_utils.dart#L15-L20)
-- [animated_svg_picture_hit_test_traversal.dart:42-56](file://lib/src/animation/animated_svg_picture_hit_test_traversal.dart#L42-L56)
-- [animated_svg_picture_events.dart:20-23](file://lib/src/animation/animated_svg_picture_events.dart#L20-L23)
+- [animated_svg_picture_events.dart:273-347](file://lib/src/animation/animated_svg_picture_events.dart#L273-L347)
+- [animated_svg_picture_events.dart:167-270](file://lib/src/animation/animated_svg_picture_events.dart#L167-L270)
+- [animated_svg_picture_event_model.dart:31-186](file://lib/src/animation/animated_svg_picture_event_model.dart#L31-L186)
+- [animated_svg_picture_events.dart:49-69](file://lib/src/animation/animated_svg_picture_events.dart#L49-L69)
 
 ## Detailed Component Analysis
 
-### Hit Test Traversal System
-The traversal walks the SVG DOM in visual order (children processed last-first) and applies transforms and visibility checks. It resolves pointer-events mode and delegates to geometry tests for shape-specific containment. Special handling exists for switch, use, and definition-only tags. **Updated** Enhanced with anchor context tracking that maintains and propagates anchor information through the traversal.
+### Enhanced Event Handling System
+The event system now provides comprehensive coverage of modern pointer events and gesture recognition, integrating seamlessly with the existing SMIL animation timeline:
 
 ```mermaid
 flowchart TD
-Start(["Start _hitTestWithAnchorInfo"]) --> ComputeDoc["Compute document point from local"]
-ComputeDoc --> Traverse["_hitTestNodeWithAnchor(root, docPoint, identity)"]
+Start(["Start Event Processing"]) --> Detect["Detect Event Type"]
+Detect --> Pointer{"Pointer Event?"}
+Detect --> Gesture{"Gesture Event?"}
+Detect --> Mouse{"Mouse Event?"}
+Pointer --> |Yes| PointerHandler["_handlePointerDown/_handlePointerMove/_handlePointerUp/_handlePointerCancel"]
+PointerHandler --> EventDispatch["_dispatchEventWithBubbling"]
+Gesture --> |Yes| GestureHandler["_handleLongPressStart/_handlePanStart/_handlePanUpdate/_handlePanEnd"]
+GestureHandler --> EventDispatch
+Mouse --> |Yes| MouseHandler["_handleTapDown/_handleTapUp/_handleMouseEnter/_handleMouseExit/_handleMouseHover"]
+MouseHandler --> EventDispatch
+EventDispatch --> Timeline["_timeline.triggerEvent()"]
+Timeline --> Update["Update SMIL Timeline"]
+Update --> Repaint["Mark Needs Repaint"]
+Repaint --> End(["End"])
+```
+
+**Diagram sources**
+- [animated_svg_picture_events.dart:3-378](file://lib/src/animation/animated_svg_picture_events.dart#L3-L378)
+- [animated_svg_picture_events.dart:273-347](file://lib/src/animation/animated_svg_picture_events.dart#L273-L347)
+- [animated_svg_picture_events.dart:167-270](file://lib/src/animation/animated_svg_picture_events.dart#L167-L270)
+
+**Section sources**
+- [animated_svg_picture_events.dart:3-378](file://lib/src/animation/animated_svg_picture_events.dart#L3-L378)
+
+### Pointer Event Model and Gesture Recognition
+The system now supports the complete W3C Pointer Events specification with comprehensive gesture recognition capabilities:
+
+```mermaid
+classDiagram
+class SvgPointerEvent {
++int pointerId
++double width
++double height
++double pressure
++int tiltX
++int tiltY
++int twist
++String pointerType
++bool isPrimary
++SvgPointerEvent(type, clientX, clientY, pointerId)
+}
+class SvgGestureEvent {
++Offset localPosition
++Offset globalPosition
++Offset? velocity
++Offset? delta
++SvgGestureEvent(type, localPosition, globalPosition)
+}
+class SvgEvent {
++String type
++bool bubbles
++bool cancelable
++bool composed
++SvgEvent(type, bubbles, cancelable, composed)
+}
+class SvgMouseEvent {
++double clientX
++double clientY
++int button
++int buttons
++bool altKey
++bool ctrlKey
++bool metaKey
++bool shiftKey
++SvgMouseEvent(type, clientX, clientY)
+}
+SvgPointerEvent --|> SvgMouseEvent
+SvgMouseEvent --|> SvgEvent
+SvgGestureEvent --|> SvgEvent
+```
+
+**Diagram sources**
+- [svg_event.dart:226-283](file://lib/src/animation/svg_event.dart#L226-L283)
+- [svg_event.dart:299-323](file://lib/src/animation/svg_event.dart#L299-L323)
+- [svg_event.dart:226-224](file://lib/src/animation/svg_event.dart#L226-L224)
+
+**Section sources**
+- [svg_event.dart:226-323](file://lib/src/animation/svg_event.dart#L226-L323)
+
+### W3C DOM Event Model Compliance
+The event system now fully implements the W3C DOM Event specification with proper event phases, bubbling, and shadow DOM retargeting:
+
+```mermaid
+sequenceDiagram
+participant T as "Target Element"
+participant CAP as "Capture Phase"
+participant AT as "At-Target Phase"
+participant BUB as "Bubble Phase"
+T->>CAP : "Event travels root to target"
+CAP->>T : "Capture listeners"
+T->>AT : "At-target phase"
+AT->>T : "Target listeners"
+T->>BUB : "Event travels target to root"
+BUB->>T : "Bubble listeners"
+Note over T : Event retargeting through use shadow DOM
+```
+
+**Diagram sources**
+- [svg_event.dart:11-24](file://lib/src/animation/svg_event.dart#L11-L24)
+- [svg_event.dart:218-244](file://lib/src/animation/svg_event.dart#L218-L244)
+
+**Section sources**
+- [svg_event.dart:11-178](file://lib/src/animation/svg_event.dart#L11-L178)
+
+### Hit Test Traversal System
+The traversal walks the SVG DOM in visual order (children processed last-first) and applies transforms and visibility checks. It resolves pointer-events mode and delegates to geometry tests for shape-specific containment. Special handling exists for switch, use, and definition-only tags. Enhanced with anchor context tracking that maintains and propagates anchor information through the traversal.
+
+```mermaid
+flowchart TD
+Start(["Start _hitTestWithEventModel"]) --> ComputeDoc["Compute document point from local"]
+ComputeDoc --> Traverse["_hitTestNodeWithEventPath(root, docPoint, identity)"]
 Traverse --> DefCheck{"Definition-only tag?"}
 DefCheck --> |Yes| ReturnNull1["Return null"]
 DefCheck --> |No| DisplayNone{"display:none?"}
@@ -247,26 +361,25 @@ UpdateAnchor --> SwitchCase
 SwitchCase --> |Yes| ActiveChild["Resolve active child and recurse"]
 SwitchCase --> |No| ChildrenLoop["Iterate children backwards"]
 ChildrenLoop --> ChildHit{"Child hit?"}
-ChildHit --> |Yes| ReturnChild["Return child id + anchor info"]
+ChildHit --> |Yes| ReturnChild["Return child id + anchor info + composedPath"]
 ChildHit --> |No| UseCheck{"tagName == 'use'?"}
-UseCheck --> |Yes| UseHit["_hitTestUseReferenceWithAnchor(...)"]
-UseHit --> |Hit| ReturnUse["Return referenced id + anchor info"]
+UseCheck --> |Yes| UseHit["_hitTestUseReferenceWithEventPath(...)"]
+UseHit --> |Hit| ReturnUse["Return referenced id + anchor info + useElementId"]
 UseHit --> |Miss| FinalCheck{"pointer-events none<br/>or not hit-testable?"}
 UseCheck --> |No| FinalCheck
 FinalCheck --> |Yes| ReturnNull4["Return null"]
 FinalCheck --> |No| Geometry["_nodeContainsPoint(...)"]
 Geometry --> Hit{"Hit?"}
-Hit --> |Yes| ReturnId["Return node.id + currentAnchor"]
+Hit --> |Yes| ReturnId["Return node.id + currentAnchor + composedPath + useElementId"]
 Hit --> |No| ReturnNull5["Return null"]
 ```
 
 **Diagram sources**
-- [animated_svg_picture_hit_test_traversal.dart:17-40](file://lib/src/animation/animated_svg_picture_hit_test_traversal.dart#L17-L40)
-- [animated_svg_picture_hit_test_traversal.dart:186-299](file://lib/src/animation/animated_svg_picture_hit_test_traversal.dart#L186-L299)
-- [animated_svg_picture_hit_test_traversal.dart:42-56](file://lib/src/animation/animated_svg_picture_hit_test_traversal.dart#L42-L56)
+- [animated_svg_picture_event_model.dart:31-186](file://lib/src/animation/animated_svg_picture_event_model.dart#L31-L186)
+- [animated_svg_picture_event_model.dart:188-291](file://lib/src/animation/animated_svg_picture_event_model.dart#L188-L291)
 
 **Section sources**
-- [animated_svg_picture_hit_test_traversal.dart:1-181](file://lib/src/animation/animated_svg_picture_hit_test_traversal.dart#L1-L181)
+- [animated_svg_picture_event_model.dart:1-300](file://lib/src/animation/animated_svg_picture_event_model.dart#L1-L300)
 
 ### Pointer Events Resolution
 Pointer events mode is resolved by walking up the DOM and normalizing inherited values. The effective mode determines whether fill, stroke, or bounding-box regions are considered for hit testing.
@@ -351,7 +464,7 @@ Visible --> |Yes| ReturnTrue["Return true"]
 - [animated_svg_painter_clip_mask.dart:1-152](file://lib/src/animation/animated_svg_painter_clip_mask.dart#L1-L152)
 
 ### Gesture Recognition and Event Handling
-MouseRegion and GestureDetector capture hover, enter/exit, and tap-down events. The state updates the hovered element and triggers timeline events that drive SMIL animations. **Updated** Enhanced with anchor information extraction and onLinkTap callback execution.
+The enhanced gesture recognition system captures comprehensive user interactions including pointer events, long press gestures, and pan gestures. The state updates the hovered element and triggers timeline events that drive SMIL animations.
 
 ```mermaid
 sequenceDiagram
@@ -369,7 +482,7 @@ MR->>GS : "onExit()"
 GS->>GS : "_handleMouseExit()"
 GS->>TL : "triggerEvent(null, 'mouseout')"
 MR->>GS : "onTapDown(details)"
-GS->>GS : "_hitTestWithAnchorInfo(localPosition)"
+GS->>GS : "_hitTestWithEventModel(localPosition)"
 GS->>GS : "Extract anchor info if present"
 GS->>TL : "triggerEvent(id, 'click')"
 alt "Anchor present"
@@ -378,32 +491,37 @@ end
 ```
 
 **Diagram sources**
-- [animated_svg_picture.dart:246-269](file://lib/src/animation/animated_svg_picture.dart#L246-L269)
-- [animated_svg_picture_events.dart:35-82](file://lib/src/animation/animated_svg_picture_events.dart#L35-L82)
-- [animated_svg_picture_events.dart:20-23](file://lib/src/animation/animated_svg_picture_events.dart#L20-L23)
+- [animated_svg_picture_events.dart:77-164](file://lib/src/animation/animated_svg_picture_events.dart#L77-L164)
+- [animated_svg_picture_events.dart:49-69](file://lib/src/animation/animated_svg_picture_events.dart#L49-L69)
 
 **Section sources**
-- [animated_svg_picture_events.dart:35-82](file://lib/src/animation/animated_svg_picture_events.dart#L35-L82)
-- [animated_svg_picture.dart:246-269](file://lib/src/animation/animated_svg_picture.dart#L246-L269)
+- [animated_svg_picture_events.dart:77-164](file://lib/src/animation/animated_svg_picture_events.dart#L77-L164)
+- [animated_svg_picture_events.dart:49-69](file://lib/src/animation/animated_svg_picture_events.dart#L49-L69)
 
 ### Implementing Clickable Regions, Hover Effects, and Touch Interactions
 - Clickable regions: Use pointer-events modes to define hit areas. Tests demonstrate pointer-events none disabling clicks, child overrides restoring hit testing, fill-only hits even with no fill paint, stroke-only hits, bounding-box hits, and visibility-hidden elements not responding to pointer-events visiblepainted.
 - Hover effects: Mouse enter/exit and hover events trigger mouseover/mouseout on the timeline, enabling SMIL animations.
 - Touch interactions: Tap-down events are captured and mapped to click events on the targeted element.
+- **Enhanced**: Pointer events: Comprehensive pointer event support including pointerdown, pointermove, pointerup, and pointercancel with full W3C DOM event model compliance.
+- **Enhanced**: Gesture recognition: Long press and pan gesture support with proper event bubbling and timeline integration.
+- **Enhanced**: Event tracing: Comprehensive debugging capabilities with SvgTraceEvent system for monitoring event flows and performance.
 - **New**: Anchor elements: Clickable regions within anchor elements trigger onLinkTap callbacks with SvgLinkInfo containing href and target information.
+- **New**: Accessibility integration: Full accessibility support with proper screen reader integration and semantics wrapping.
 
 Practical examples:
 - Interactive button with click feedback and ripple effect.
 - Hover-triggered animations for scaling and color changes.
 - Chain reactions using event timing conditions.
+- **Enhanced**: Touch-enabled interactive maps with gesture support.
+- **Enhanced**: Multi-touch pointer interactions with proper event coordination.
 - **New**: Clickable SVG maps with external link navigation.
 - **New**: Accessible SVG elements with proper screen reader support.
 
 **Section sources**
-- [animated_svg_picture_test.dart:2090-2442](file://test/animation/animated_svg_picture_test.dart#L2090-L2442)
+- [animated_svg_picture_events.dart:273-347](file://lib/src/animation/animated_svg_picture_events.dart#L273-L347)
+- [animated_svg_picture_events.dart:167-270](file://lib/src/animation/animated_svg_picture_events.dart#L167-L270)
+- [animated_svg_picture_events.dart:3-47](file://lib/src/animation/animated_svg_picture_events.dart#L3-L47)
 - [smil_event_timing_widget.dart:235-315](file://example/lib/widgets/smil_event_timing_widget.dart#L235-L315)
-- [smil_event_timing_widget.dart:510-534](file://example/lib/widgets/smil_event_timing_widget.dart#L510-L534)
-- [svg_anchor_element_test.dart:69-200](file://test/animation/svg_anchor_element_test.dart#L69-L200)
 
 ## Enhanced Text Hit Testing System
 
@@ -432,6 +550,10 @@ ReturnTrue3 --> End
 
 **Diagram sources**
 - [animated_svg_picture_hit_test_text_runs.dart:5-50](file://lib/src/animation/animated_svg_picture_hit_test_text_runs.dart#L5-L50)
+
+**Section sources**
+- [animated_svg_picture_hit_test_text_runs.dart:150-276](file://lib/src/animation/animated_svg_picture_hit_test_text_runs.dart#L150-L276)
+- [animated_svg_picture_hit_test_text_layout.dart:55-224](file://lib/src/animation/animated_svg_picture_hit_test_text_layout.dart#L55-L224)
 
 ### Advanced Text Positioning Attributes
 The system now supports comprehensive text positioning with sophisticated attribute handling:
@@ -536,7 +658,7 @@ class AnimatedSvgPicture {
 }
 class _AnimatedSvgPictureState {
 +SvgLinkInfo? _hoveredAnchorInfo
-+_hitTestWithAnchorInfo(Offset)
++_hitTestWithEventModel(Offset)
 +_extractAnchorInfo(SvgNode)
 }
 SvgLinkInfo --> AnimatedSvgPicture : callback parameter
@@ -545,10 +667,9 @@ _AnimatedSvgPictureState --> SvgLinkInfo : creates
 ```
 
 **Diagram sources**
-- [animated_svg_picture.dart:96-110](file://lib/src/animation/animated_svg_picture.dart#L96-L110)
-- [animated_svg_picture.dart:184-186](file://lib/src/animation/animated_svg_picture.dart#L184-L186)
-- [animated_svg_picture.dart:199](file://lib/src/animation/animated_svg_picture.dart#L199)
-- [animated_svg_picture_hit_test_traversal.dart:42-56](file://lib/src/animation/animated_svg_picture_hit_test_traversal.dart#L42-L56)
+- [animated_svg_picture.dart:97-112](file://lib/src/animation/animated_svg_picture.dart#L97-L112)
+- [animated_svg_picture_events.dart:27-30](file://lib/src/animation/animated_svg_picture_events.dart#L27-L30)
+- [animated_svg_picture_event_model.dart:87-93](file://lib/src/animation/animated_svg_picture_event_model.dart#L87-L93)
 
 ### Anchor Element Extraction and Processing
 The anchor element system extracts link information from SVG anchor elements and maintains anchor context during hit testing traversal.
@@ -566,7 +687,7 @@ CreateInfo --> ReturnInfo["Return anchor info"]
 ```
 
 **Diagram sources**
-- [animated_svg_picture_hit_test_traversal.dart:42-56](file://lib/src/animation/animated_svg_picture_hit_test_traversal.dart#L42-L56)
+- [animated_svg_picture_event_model.dart:87-93](file://lib/src/animation/animated_svg_picture_event_model.dart#L87-L93)
 
 ### OnLinkTap Callback Implementation
 The onLinkTap callback system provides a clean interface for handling user interactions with anchor elements, enabling navigation, analytics, or custom actions.
@@ -579,7 +700,7 @@ participant State as "_AnimatedSvgPictureState"
 participant Callback as "onLinkTap"
 User->>Widget : "Tap on anchor element"
 Widget->>State : "_handleTapDown(details)"
-State->>State : "_hitTestWithAnchorInfo(position)"
+State->>State : "_hitTestWithEventModel(position)"
 State->>State : "Extract anchor info"
 alt "Anchor with href"
 State->>Callback : "onLinkTap(linkInfo)"
@@ -589,8 +710,8 @@ State->>State : "Clear active states"
 ```
 
 **Diagram sources**
-- [animated_svg_picture_events.dart:20-23](file://lib/src/animation/animated_svg_picture_events.dart#L20-L23)
-- [animated_svg_picture.dart:184-186](file://lib/src/animation/animated_svg_picture.dart#L184-L186)
+- [animated_svg_picture_events.dart:27-30](file://lib/src/animation/animated_svg_picture_events.dart#L27-L30)
+- [animated_svg_picture_events.dart:49-69](file://lib/src/animation/animated_svg_picture_events.dart#L49-L69)
 
 ### Anchor Element Support Features
 The anchor element system supports comprehensive SVG anchor functionality:
@@ -603,9 +724,8 @@ The anchor element system supports comprehensive SVG anchor functionality:
 - **Event integration**: Integrates with SMIL timeline events alongside link handling
 
 **Section sources**
-- [svg_anchor_element_test.dart:69-560](file://test/animation/svg_anchor_element_test.dart#L69-L560)
-- [animated_svg_picture_hit_test_traversal.dart:42-56](file://lib/src/animation/animated_svg_picture_hit_test_traversal.dart#L42-L56)
-- [animated_svg_picture_events.dart:20-23](file://lib/src/animation/animated_svg_picture_events.dart#L20-L23)
+- [animated_svg_picture_event_model.dart:87-93](file://lib/src/animation/animated_svg_picture_event_model.dart#L87-L93)
+- [animated_svg_picture_events.dart:27-30](file://lib/src/animation/animated_svg_picture_events.dart#L27-L30)
 
 ## Accessibility Integration with Semantics
 
@@ -625,7 +745,7 @@ ReturnSem --> End
 ```
 
 **Diagram sources**
-- [animated_svg_picture.dart:308-326](file://lib/src/animation/animated_svg_picture.dart#L308-L326)
+- [animated_svg_picture.dart:370-388](file://lib/src/animation/animated_svg_picture.dart#L370-L388)
 
 ### Accessibility Properties Extraction
 The system extracts accessibility information from SVG elements and maps it to Flutter Semantics properties.
@@ -665,10 +785,10 @@ The accessibility integration provides comprehensive screen reader support:
 **Section sources**
 - [svg_accessibility_test.dart:281-449](file://test/animation/svg_accessibility_test.dart#L281-L449)
 - [svg_dom.dart:491-503](file://lib/src/animation/svg_dom.dart#L491-L503)
-- [animated_svg_picture.dart:308-326](file://lib/src/animation/animated_svg_picture.dart#L308-L326)
+- [animated_svg_picture.dart:370-388](file://lib/src/animation/animated_svg_picture.dart#L370-L388)
 
 ## Dependency Analysis
-The interactive system composes several modules with clear separation of concerns, now enhanced with advanced geometric processing and comprehensive anchor element support:
+The interactive system composes several modules with clear separation of concerns, now enhanced with comprehensive event handling, pointer events, and gesture recognition:
 
 ```mermaid
 graph LR
@@ -684,6 +804,8 @@ AP --> ST["utils.dart"]
 AP --> EV["events.dart"]
 AP --> PU["animated_svg_painter_use.dart"]
 AP --> SD["svg_dom.dart"]
+AP --> EM["event_model.dart"]
+AP --> SE["svg_event.dart"]
 EV --> AP
 PE --> HT
 HG --> HT
@@ -696,25 +818,18 @@ ST --> HG
 ST --> HTR
 SD --> HT
 SD --> AP
+EM --> AP
+SE --> EM
 ```
 
 **Diagram sources**
-- [animated_svg_picture.dart:108-295](file://lib/src/animation/animated_svg_picture.dart#L108-L295)
-- [animated_svg_picture_hit_test_traversal.dart:1-181](file://lib/src/animation/animated_svg_picture_hit_test_traversal.dart#L1-L181)
-- [animated_svg_picture_pointer_events.dart:1-124](file://lib/src/animation/animated_svg_picture_pointer_events.dart#L1-L124)
-- [animated_svg_picture_hit_test_geometry.dart:18-362](file://lib/src/animation/animated_svg_picture_hit_test_geometry.dart#L18-L362)
-- [animated_svg_picture_hit_test_text_runs.dart:1-523](file://lib/src/animation/animated_svg_picture_hit_test_text_runs.dart#L1-L523)
-- [animated_svg_picture_hit_test_text_layout.dart:1-252](file://lib/src/animation/animated_svg_picture_hit_test_text_layout.dart#L1-L252)
-- [animated_svg_picture_hit_test_text_path_segments.dart:1-144](file://lib/src/animation/animated_svg_picture_hit_test_text_path_segments.dart#L1-L144)
-- [animated_svg_painter_clip_mask_geometry.dart:1-175](file://lib/src/animation/animated_svg_painter_clip_mask_geometry.dart#L1-L175)
-- [animated_svg_painter_clip_mask.dart:1-152](file://lib/src/animation/animated_svg_painter_clip_mask.dart#L1-L152)
-- [animated_svg_picture_utils.dart:15-35](file://lib/src/animation/animated_svg_picture_utils.dart#L15-L35)
-- [animated_svg_picture_events.dart:35-82](file://lib/src/animation/animated_svg_picture_events.dart#L35-L82)
-- [animated_svg_painter_use.dart:87-150](file://lib/src/animation/animated_svg_painter_use.dart#L87-L150)
-- [svg_dom.dart:393-524](file://lib/src/animation/svg_dom.dart#L393-L524)
+- [animated_svg_picture.dart:168-236](file://lib/src/animation/animated_svg_picture.dart#L168-L236)
+- [animated_svg_picture_events.dart:3-378](file://lib/src/animation/animated_svg_picture_events.dart#L3-L378)
+- [animated_svg_picture_event_model.dart:1-300](file://lib/src/animation/animated_svg_picture_event_model.dart#L1-L300)
+- [svg_event.dart:1-390](file://lib/src/animation/svg_event.dart#L1-L390)
 
 **Section sources**
-- [animated_svg_picture.dart:108-295](file://lib/src/animation/animated_svg_picture.dart#L108-L295)
+- [animated_svg_picture.dart:168-236](file://lib/src/animation/animated_svg_picture.dart#L168-L236)
 
 ## Performance Considerations
 - Static subtree caching: Nodes without animations are cached as Picture objects and reused to avoid re-rendering.
@@ -725,12 +840,16 @@ SD --> AP
 - **Enhanced**: Advanced geometric processing uses optimized sampling algorithms and efficient path operations.
 - **Enhanced**: Text hit testing employs per-character precision only when necessary, falling back to bounding box optimization for performance.
 - **Enhanced**: Clip-path and mask processing uses geometric optimizations to minimize computational overhead.
+- **Enhanced**: Comprehensive event handling system with efficient event dispatching and bubbling.
+- **Enhanced**: Pointer event processing optimized for minimal overhead with proper event batching.
+- **Enhanced**: Gesture recognition system with efficient gesture detection and state management.
+- **Enhanced**: Event tracing system with configurable verbosity to minimize performance impact.
 - **New**: Anchor element processing adds minimal overhead with efficient anchor info extraction and caching.
 - **New**: Accessibility integration only adds overhead when accessibility information is present.
 
 **Section sources**
 - [ARCHITECTURE.md:174-193](file://ARCHITECTURE.md#L174-L193)
-- [animated_svg_picture.dart:35-86](file://lib/src/animation/animated_svg_picture.dart#L35-L86)
+- [animated_svg_picture_utils.dart:61-85](file://lib/src/animation/animated_svg_picture_utils.dart#L61-L85)
 
 ## Troubleshooting Guide
 Common issues and resolutions:
@@ -744,6 +863,23 @@ Common issues and resolutions:
 - Complex shapes not responding:
   - For stroke-only pointer-events, clicks near the stroke outline will trigger; for fill-only, clicks must be inside the filled area.
   - For bounding-box pointer-events, only the element's bounding rectangle counts.
+- **Enhanced**: Pointer events not firing:
+  - Verify the widget is wrapped with proper gesture detection (Listener/GestureDetector/MouseRegion).
+  - Check that pointer events are not disabled by pointer-events mode or visibility constraints.
+  - Ensure the element has proper ID for event targeting.
+  - Verify event bubbling is not prevented by stopPropagation().
+- **Enhanced**: Gesture recognition issues:
+  - Check that pan and long press gestures are properly configured in the widget.
+  - Verify gesture conflict resolution with other gesture detectors.
+  - Ensure gesture events are not being consumed by parent widgets.
+- **Enhanced**: Event bubbling problems:
+  - Verify composedPath is properly built during hit testing.
+  - Check that use shadow DOM retargeting is working correctly.
+  - Ensure event listeners are registered on the correct target elements.
+- **Enhanced**: Event tracing not working:
+  - Verify onTrace callback is provided in widget configuration.
+  - Check SvgTraceLevel settings for desired verbosity.
+  - Ensure trace events are not being filtered out by the tracing system.
 - **Enhanced**: Text elements not responding to clicks:
   - Verify per-character hit testing is enabled for multi-position text elements.
   - Check that text positioning attributes (x, y, dx, dy, rotate) are properly configured.
@@ -770,32 +906,37 @@ Validation and examples:
 - Tests cover pointer-events none, child overrides, fill/stroke/bounding-box modes, and visibility-hidden behavior.
 - Example widgets demonstrate interactive buttons and hover-triggered animations.
 - **Enhanced**: Comprehensive text positioning and hit testing validation scenarios.
+- **Enhanced**: Event model compliance and bubbling validation scenarios.
+- **Enhanced**: Pointer event and gesture recognition validation scenarios.
 - **New**: Anchor element tests validate href extraction, target attribute handling, and callback execution.
 - **New**: Accessibility tests verify semantics wrapping and property extraction.
 
 **Section sources**
-- [animated_svg_picture_test.dart:2090-2442](file://test/animation/animated_svg_picture_test.dart#L2090-L2442)
-- [animated_svg_picture_pointer_events.dart:27-103](file://lib/src/animation/animated_svg_picture_pointer_events.dart#L27-L103)
-- [animated_svg_painter_clip_mask_geometry.dart:4-91](file://lib/src/animation/animated_svg_painter_clip_mask_geometry.dart#L4-L91)
-- [animated_svg_painter_clip_mask.dart:33-60](file://lib/src/animation/animated_svg_painter_clip_mask.dart#L33-L60)
-- [animated_svg_picture_utils.dart:15-35](file://lib/src/animation/animated_svg_picture_utils.dart#L15-L35)
-- [svg_anchor_element_test.dart:69-560](file://test/animation/svg_anchor_element_test.dart#L69-L560)
+- [animated_svg_picture_events.dart:273-347](file://lib/src/animation/animated_svg_picture_events.dart#L273-L347)
+- [animated_svg_picture_events.dart:167-270](file://lib/src/animation/animated_svg_picture_events.dart#L167-L270)
+- [animated_svg_picture_utils.dart:61-85](file://lib/src/animation/animated_svg_picture_utils.dart#L61-L85)
 - [svg_accessibility_test.dart:281-449](file://test/animation/svg_accessibility_test.dart#L281-L449)
 
 ## Conclusion
 The repository provides a robust, extensible system for interactive SVGs with significant enhancements:
 - A precise hit test traversal that respects SVG's pointer-events model and visibility constraints.
 - Integrated gesture handling that translates user input into SMIL-driven animations.
+- **Enhanced**: Comprehensive pointer event support with full W3C DOM event model compliance including pointerdown, pointermove, pointerup, and pointercancel events.
+- **Enhanced**: Advanced gesture recognition system with longpress, panstart, panupdate, and panend events.
+- **Enhanced**: Unified pointer event model with SvgPointerEvent supporting pointerId, pressure, tilt, and other pointer properties.
+- **Enhanced**: Comprehensive event tracing and debugging capabilities with SvgTraceEvent system.
 - **Enhanced**: Advanced per-character text hit testing with comprehensive positioning attribute support.
 - **Enhanced**: Sophisticated clip-path and mask processing with geometric intersection calculations.
 - **Enhanced**: Alpha-based visibility assessment for precise mask element evaluation.
 - **Enhanced**: Sophisticated stroke-width expansion algorithms for improved hit detection accuracy.
-- **New**: Comprehensive anchor element system with link handling capabilities and onLinkTap callbacks.
+- **New**: Full W3C DOM event model compliance with proper event bubbling, capturing, and shadow DOM retargeting.
+- **New**: Comprehensive event handling system with efficient event dispatching and state management.
+- **New**: Enhanced anchor element system with link handling capabilities and onLinkTap callbacks.
 - **New**: Full accessibility integration with Flutter Semantics for screen reader support.
-- Practical examples and tests validating click, hover, and chained event behaviors.
+- Practical examples and tests validating click, hover, gesture, and chained event behaviors.
 - Strong performance foundations leveraging caching, dirty tracking, and efficient transforms.
 
-This enables developers to build animated interactive UI components such as buttons, clickable maps, and rich visual feedback systems with unprecedented precision, accessibility, and user experience.
+This enables developers to build animated interactive UI components such as buttons, clickable maps, gesture-enabled interfaces, and rich visual feedback systems with unprecedented precision, accessibility, and user experience.
 
 ## Appendices
 
@@ -803,8 +944,13 @@ This enables developers to build animated interactive UI components such as butt
 - Define explicit pointer-events modes to control hit areas precisely.
 - Prefer bounding-box for large clickable backgrounds; use fill or stroke for precise shapes.
 - Keep hover and click targets visually distinct to improve UX.
-- Use SMIL begin conditions (click, mouseover, mouseout) to orchestrate animations.
+- Use SMIL begin conditions (click, mouseover, mouseout, longpress, panstart) to orchestrate animations.
 - Leverage viewBox transforms and sizing to maintain consistent hit testing across devices.
+- **Enhanced**: Utilize comprehensive pointer event support for modern touch and pen interactions.
+- **Enhanced**: Implement gesture recognition for natural user interactions like long press and pan gestures.
+- **Enhanced**: Configure event tracing appropriately for debugging without impacting production performance.
+- **Enhanced**: Use proper event bubbling and retargeting for complex SVG hierarchies with use shadow DOM.
+- **Enhanced**: Implement efficient event handling by minimizing unnecessary event listeners and optimizing hit testing.
 - **Enhanced**: Utilize per-character text hit testing for complex text interactions requiring precise character-level targeting.
 - **Enhanced**: Implement appropriate clip-path and mask units based on design requirements and performance considerations.
 - **Enhanced**: Configure stroke-width tolerances appropriately for different interaction scenarios and device densities.
@@ -812,3 +958,4 @@ This enables developers to build animated interactive UI components such as butt
 - **New**: Provide meaningful aria-label and desc attributes for screen reader accessibility.
 - **New**: Implement onLinkTap callbacks for handling external navigation and custom link actions.
 - **New**: Test accessibility features with screen readers and keyboard navigation for inclusive design.
+- **New**: Monitor event performance using SvgTraceEvent system for production optimization.
