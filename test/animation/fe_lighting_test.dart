@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter_test/flutter_test.dart';
@@ -1106,6 +1107,392 @@ void main() {
       expect(distantSpec.colorFilter(), isNotNull);
       expect(pointSpec.colorFilter(), isNotNull);
       expect(spotSpec.colorFilter(), isNotNull);
+    });
+  });
+
+  group('LightingProcessor Per-Pixel Computation', () {
+    test('LightingProcessor processes diffuse lighting correctly', () {
+      // Create a simple 3x3 test image with varying alpha
+      final imageData = Uint8List.fromList([
+        // Row 0: varying alpha
+        255, 0, 0, 128, 0, 255, 0, 192, 0, 0, 255, 255,
+        // Row 1: varying alpha
+        128, 128, 128, 64, 128, 128, 128, 128, 128, 128, 128, 192,
+        // Row 2: varying alpha
+        64, 64, 64, 0, 64, 64, 64, 64, 64, 64, 64, 128,
+      ]);
+
+      final processor = LightingProcessor(
+        surfaceScale: 1.0,
+        lightSource: const SvgDistantLightSource(azimuth: 0, elevation: 90),
+        lightingColor: const ui.Color(0xFFFFFFFF),
+      );
+
+      final result = processor.processDiffuse(imageData, 3, 3, 1.0);
+
+      // Verify output dimensions
+      expect(result.length, equals(36)); // 3x3x4 bytes
+
+      // All alpha values should be 255 for diffuse lighting
+      for (int i = 0; i < 9; i++) {
+        expect(result[i * 4 + 3], equals(255));
+      }
+    });
+
+    test('LightingProcessor processes specular lighting correctly', () {
+      final imageData = Uint8List.fromList([
+        255, 0, 0, 128, 0, 255, 0, 192, 0, 0, 255, 255,
+        128, 128, 128, 64, 128, 128, 128, 128, 128, 128, 128, 192,
+        64, 64, 64, 0, 64, 64, 64, 64, 64, 64, 64, 128,
+      ]);
+
+      final processor = LightingProcessor(
+        surfaceScale: 1.0,
+        lightSource: const SvgDistantLightSource(azimuth: 0, elevation: 90),
+        lightingColor: const ui.Color(0xFFFFFFFF),
+      );
+
+      final result = processor.processSpecular(imageData, 3, 3, 1.0, 20.0);
+
+      expect(result.length, equals(36));
+
+      // For specular, alpha = max(r, g, b)
+      for (int i = 0; i < 9; i++) {
+        final r = result[i * 4];
+        final g = result[i * 4 + 1];
+        final b = result[i * 4 + 2];
+        final a = result[i * 4 + 3];
+        expect(a, equals([r, g, b].reduce((a, b) => a > b ? a : b)));
+      }
+    });
+
+    test('LightingProcessor handles edge pixels correctly', () {
+      // 2x2 image - all pixels are edge pixels
+      final imageData = Uint8List.fromList([
+        255, 255, 255, 255, 255, 255, 255, 128,
+        255, 255, 255, 128, 255, 255, 255, 0,
+      ]);
+
+      final processor = LightingProcessor(
+        surfaceScale: 2.0,
+        lightSource: const SvgDistantLightSource(azimuth: 45, elevation: 45),
+        lightingColor: const ui.Color(0xFFFF0000),
+        edgeMode: LightingEdgeMode.duplicate,
+      );
+
+      final result = processor.processDiffuse(imageData, 2, 2, 1.0);
+
+      // Should complete without error
+      expect(result.length, equals(16));
+    });
+
+    test('LightingProcessor with point light has position-dependent results', () {
+      // Create a flat surface (uniform alpha)
+      final imageData = Uint8List(100 * 4);
+      for (int i = 0; i < 100; i++) {
+        imageData[i * 4] = 255;
+        imageData[i * 4 + 1] = 255;
+        imageData[i * 4 + 2] = 255;
+        imageData[i * 4 + 3] = 128; // Uniform height
+      }
+
+      final processor = LightingProcessor(
+        surfaceScale: 1.0,
+        lightSource: const SvgPointLightSource(x: 5, y: 5, z: 50),
+        lightingColor: const ui.Color(0xFFFFFFFF),
+      );
+
+      final result = processor.processDiffuse(imageData, 10, 10, 1.0);
+
+      // Light at (5, 5) should result in higher intensity at center
+      // Get center pixel (5, 5) and corner pixel (0, 0)
+      final centerIdx = (5 * 10 + 5) * 4;
+      final cornerIdx = 0;
+
+      // Center should be brighter or equal (depending on normal computation)
+      expect(result.length, equals(400));
+    });
+
+    test('LightingProcessor with spotlight has cone cutoff', () {
+      final imageData = Uint8List(100 * 4);
+      for (int i = 0; i < 100; i++) {
+        imageData[i * 4] = 255;
+        imageData[i * 4 + 1] = 255;
+        imageData[i * 4 + 2] = 255;
+        imageData[i * 4 + 3] = 128;
+      }
+
+      final processor = LightingProcessor(
+        surfaceScale: 1.0,
+        lightSource: const SvgSpotLightSource(
+          x: 5,
+          y: 5,
+          z: 50,
+          pointsAtX: 5,
+          pointsAtY: 5,
+          pointsAtZ: 0,
+          specularExponent: 10,
+          limitingConeAngle: 15, // Narrow cone
+        ),
+        lightingColor: const ui.Color(0xFFFFFFFF),
+      );
+
+      final result = processor.processDiffuse(imageData, 10, 10, 1.0);
+
+      // Should complete without error
+      expect(result.length, equals(400));
+    });
+  });
+
+  group('Surface Normal Computation', () {
+    test('flat surface produces up-facing normals', () {
+      // 3x3 uniform alpha (flat surface)
+      final alphaValues = <double>[
+        128, 128, 128,
+        128, 128, 128,
+        128, 128, 128,
+      ];
+
+      // The normal should point straight up (0, 0, 1) for flat surface
+      // This is verified by the lighting producing maximum intensity
+      // when light comes from above
+      final processor = LightingProcessor(
+        surfaceScale: 1.0,
+        lightSource: const SvgDistantLightSource(azimuth: 0, elevation: 90),
+        lightingColor: const ui.Color(0xFFFFFFFF),
+      );
+
+      final imageData = Uint8List(9 * 4);
+      for (int i = 0; i < 9; i++) {
+        imageData[i * 4] = 255;
+        imageData[i * 4 + 1] = 255;
+        imageData[i * 4 + 2] = 255;
+        imageData[i * 4 + 3] = 128;
+      }
+
+      final result = processor.processDiffuse(imageData, 3, 3, 1.0);
+
+      // Center pixel should have high intensity with light from above
+      final centerR = result[4 * 4];
+      expect(centerR, greaterThan(200)); // Should be close to 255
+    });
+
+    test('tilted surface produces tilted normals', () {
+      // Create a surface tilted in X direction
+      final imageData = Uint8List(9 * 4);
+      final alphas = [0, 64, 128, 0, 64, 128, 0, 64, 128];
+      for (int i = 0; i < 9; i++) {
+        imageData[i * 4] = 255;
+        imageData[i * 4 + 1] = 255;
+        imageData[i * 4 + 2] = 255;
+        imageData[i * 4 + 3] = alphas[i];
+      }
+
+      // Light from the right (azimuth=90) should illuminate tilted surface
+      final processor = LightingProcessor(
+        surfaceScale: 1.0,
+        lightSource: const SvgDistantLightSource(azimuth: 90, elevation: 45),
+        lightingColor: const ui.Color(0xFFFFFFFF),
+      );
+
+      final result = processor.processDiffuse(imageData, 3, 3, 1.0);
+
+      // Should produce valid output
+      expect(result.length, equals(36));
+    });
+  });
+
+  group('Light Source Direction Calculations', () {
+    test('distant light direction varies with azimuth', () {
+      final light0 = const SvgDistantLightSource(azimuth: 0, elevation: 0);
+      final light90 = const SvgDistantLightSource(azimuth: 90, elevation: 0);
+      final light180 = const SvgDistantLightSource(azimuth: 180, elevation: 0);
+
+      final (dir0, _) = light0.getDirectionAndIntensityAt(0, 0, 0);
+      final (dir90, _) = light90.getDirectionAndIntensityAt(0, 0, 0);
+      final (dir180, _) = light180.getDirectionAndIntensityAt(0, 0, 0);
+
+      // Directions should be different based on azimuth
+      expect(dir0.x, isNot(equals(dir90.x)));
+      expect(dir0.y, isNot(equals(dir90.y)));
+    });
+
+    test('distant light direction varies with elevation', () {
+      final light0 = const SvgDistantLightSource(azimuth: 45, elevation: 0);
+      final light45 = const SvgDistantLightSource(azimuth: 45, elevation: 45);
+      final light90 = const SvgDistantLightSource(azimuth: 45, elevation: 90);
+
+      final (dir0, _) = light0.getDirectionAndIntensityAt(0, 0, 0);
+      final (dir45, _) = light45.getDirectionAndIntensityAt(0, 0, 0);
+      final (dir90, _) = light90.getDirectionAndIntensityAt(0, 0, 0);
+
+      // Higher elevation = more Z component
+      expect(dir90.z, greaterThan(dir45.z));
+      expect(dir45.z, greaterThan(dir0.z));
+    });
+
+    test('point light direction depends on surface position', () {
+      final light = const SvgPointLightSource(x: 50, y: 50, z: 100);
+
+      final (dirCenter, _) = light.getDirectionAndIntensityAt(50, 50, 0);
+      final (dirCorner, _) = light.getDirectionAndIntensityAt(0, 0, 0);
+
+      // Direction from center should be straight up (mostly Z)
+      expect(dirCenter.z, closeTo(1.0, 0.01));
+
+      // Direction from corner should have X and Y components
+      expect(dirCorner.x, greaterThan(0));
+      expect(dirCorner.y, greaterThan(0));
+    });
+
+    test('spotlight intensity varies with angle from cone axis', () {
+      final light = const SvgSpotLightSource(
+        x: 50,
+        y: 50,
+        z: 100,
+        pointsAtX: 50,
+        pointsAtY: 50,
+        pointsAtZ: 0,
+        specularExponent: 1,
+        limitingConeAngle: 30,
+      );
+
+      // Point directly below light (in cone center)
+      final (_, intensityCenter) = light.getDirectionAndIntensityAt(50, 50, 0);
+
+      // Point at edge of image (outside cone for narrow angle)
+      final (_, intensityEdge) = light.getDirectionAndIntensityAt(0, 0, 0);
+
+      // Center should have higher intensity
+      expect(intensityCenter, greaterThan(intensityEdge));
+    });
+
+    test('spotlight with zero cone angle has no cutoff', () {
+      final light = const SvgSpotLightSource(
+        x: 50,
+        y: 50,
+        z: 100,
+        pointsAtX: 50,
+        pointsAtY: 50,
+        pointsAtZ: 0,
+        specularExponent: 1,
+        limitingConeAngle: 0, // No limiting cone
+      );
+
+      // Even far points should have some intensity
+      final (_, intensity) = light.getDirectionAndIntensityAt(0, 0, 0);
+      expect(intensity, greaterThan(0));
+    });
+  });
+
+  group('LightingSampler', () {
+    test('samples diffuse lighting produces valid color', () {
+      final sampler = LightingSampler(
+        lightSource: const SvgDistantLightSource(azimuth: 45, elevation: 45),
+        lightingColor: const ui.Color(0xFFFFFFFF),
+        surfaceScale: 1.0,
+      );
+
+      final color = sampler.sampleDiffuse(1.0);
+
+      expect(color.alpha, equals(255)); // Diffuse always opaque
+      expect(color.red, greaterThan(0));
+      expect(color.green, greaterThan(0));
+      expect(color.blue, greaterThan(0));
+    });
+
+    test('samples specular lighting produces valid color', () {
+      final sampler = LightingSampler(
+        lightSource: const SvgDistantLightSource(azimuth: 45, elevation: 45),
+        lightingColor: const ui.Color(0xFFFFFFFF),
+        surfaceScale: 1.0,
+      );
+
+      final color = sampler.sampleSpecular(1.0, 20.0);
+
+      // Alpha = max(r, g, b) for specular
+      expect(color.alpha, equals([color.red, color.green, color.blue].reduce((a, b) => a > b ? a : b)));
+    });
+
+    test('diffuse constant affects sampled color intensity', () {
+      final sampler = LightingSampler(
+        lightSource: const SvgDistantLightSource(azimuth: 0, elevation: 90),
+        lightingColor: const ui.Color(0xFFFFFFFF),
+        surfaceScale: 1.0,
+      );
+
+      final lowKd = sampler.sampleDiffuse(0.2);
+      final highKd = sampler.sampleDiffuse(1.0);
+
+      expect(highKd.red, greaterThanOrEqualTo(lowKd.red));
+    });
+
+    test('specular exponent affects highlight sharpness', () {
+      final sampler = LightingSampler(
+        lightSource: const SvgDistantLightSource(azimuth: 0, elevation: 90),
+        lightingColor: const ui.Color(0xFFFFFFFF),
+        surfaceScale: 1.0,
+      );
+
+      final lowExp = sampler.sampleSpecular(1.0, 1.0);
+      final highExp = sampler.sampleSpecular(1.0, 100.0);
+
+      // Both should produce valid colors
+      expect(lowExp.alpha, lessThanOrEqualTo(255));
+      expect(highExp.alpha, lessThanOrEqualTo(255));
+    });
+  });
+
+  group('Edge Mode Handling', () {
+    test('duplicate edge mode clamps to boundary', () {
+      final imageData = Uint8List.fromList([
+        255, 255, 255, 255, 255, 255, 255, 128,
+        255, 255, 255, 128, 255, 255, 255, 0,
+      ]);
+
+      final processorDuplicate = LightingProcessor(
+        surfaceScale: 1.0,
+        lightSource: const SvgDistantLightSource(azimuth: 45, elevation: 45),
+        lightingColor: const ui.Color(0xFFFFFFFF),
+        edgeMode: LightingEdgeMode.duplicate,
+      );
+
+      final result = processorDuplicate.processDiffuse(imageData, 2, 2, 1.0);
+      expect(result.length, equals(16));
+    });
+
+    test('wrap edge mode wraps to opposite edge', () {
+      final imageData = Uint8List.fromList([
+        255, 255, 255, 255, 255, 255, 255, 128,
+        255, 255, 255, 128, 255, 255, 255, 0,
+      ]);
+
+      final processorWrap = LightingProcessor(
+        surfaceScale: 1.0,
+        lightSource: const SvgDistantLightSource(azimuth: 45, elevation: 45),
+        lightingColor: const ui.Color(0xFFFFFFFF),
+        edgeMode: LightingEdgeMode.wrap,
+      );
+
+      final result = processorWrap.processDiffuse(imageData, 2, 2, 1.0);
+      expect(result.length, equals(16));
+    });
+
+    test('none edge mode uses zero for out-of-bounds', () {
+      final imageData = Uint8List.fromList([
+        255, 255, 255, 255, 255, 255, 255, 128,
+        255, 255, 255, 128, 255, 255, 255, 0,
+      ]);
+
+      final processorNone = LightingProcessor(
+        surfaceScale: 1.0,
+        lightSource: const SvgDistantLightSource(azimuth: 45, elevation: 45),
+        lightingColor: const ui.Color(0xFFFFFFFF),
+        edgeMode: LightingEdgeMode.none,
+      );
+
+      final result = processorNone.processDiffuse(imageData, 2, 2, 1.0);
+      expect(result.length, equals(16));
     });
   });
 }

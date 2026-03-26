@@ -1,6 +1,25 @@
 part of 'animated_svg_painter.dart';
 
 extension AnimatedSvgPainterGradientValuesExtension on AnimatedSvgPainter {
+  /// Checks if a bounding box is degenerate (zero area, zero dimension, or sub-pixel).
+  /// Per SVG spec and Blink, objectBoundingBox gradients cannot be rendered
+  /// when the target element has a degenerate bounding box.
+  bool _isDegenerateBoundingBox(ui.Rect bounds) {
+    // Zero area check (including lines and points)
+    if (bounds.width <= 0 || bounds.height <= 0) {
+      return true;
+    }
+
+    // Sub-pixel threshold for very small dimensions
+    // These would result in numerical instability in gradient calculations
+    const subPixelThreshold = 1e-6;
+    if (bounds.width < subPixelThreshold || bounds.height < subPixelThreshold) {
+      return true;
+    }
+
+    return false;
+  }
+
   String? _extractPaintServerId(Object? value) {
     if (value == null) {
       return null;

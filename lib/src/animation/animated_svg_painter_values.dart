@@ -305,6 +305,19 @@ extension AnimatedSvgPainterValuesExtension on AnimatedSvgPainter {
   /// Used for vector-effect: non-scaling-stroke.
   /// Returns the geometric mean of sx and sy scale factors.
   double _computeAccumulatedScale(SvgNode node) {
+    final scales = _computeAccumulatedScaleXY(node);
+    // Return geometric mean of scales
+    final scale = math.sqrt(scales.dx * scales.dy);
+    return scale > 0 ? scale : 1.0;
+  }
+
+  /// Computes the accumulated non-uniform scale factors (sx, sy) from the transform chain.
+  ///
+  /// Returns an Offset where dx = scaleX and dy = scaleY.
+  /// This is useful for text rendering under non-uniform transforms where
+  /// text metrics and glyph positioning need to account for different
+  /// horizontal and vertical scaling.
+  ui.Offset _computeAccumulatedScaleXY(SvgNode node) {
     var accumulatedMatrix = Matrix4.identity();
 
     // Walk up from current node to root, collecting transforms
@@ -327,7 +340,6 @@ extension AnimatedSvgPainterValuesExtension on AnimatedSvgPainter {
     }
 
     // Extract scale from the accumulated matrix
-    // Use the geometric mean of x and y scales
     final sx = math.sqrt(
       accumulatedMatrix.entry(0, 0) * accumulatedMatrix.entry(0, 0) +
           accumulatedMatrix.entry(1, 0) * accumulatedMatrix.entry(1, 0),
@@ -337,9 +349,7 @@ extension AnimatedSvgPainterValuesExtension on AnimatedSvgPainter {
           accumulatedMatrix.entry(1, 1) * accumulatedMatrix.entry(1, 1),
     );
 
-    // Return geometric mean of scales
-    final scale = math.sqrt(sx * sy);
-    return scale > 0 ? scale : 1.0;
+    return ui.Offset(sx > 0 ? sx : 1.0, sy > 0 ? sy : 1.0);
   }
 
   /// Resolves stroke-linecap attribute to Flutter StrokeCap.

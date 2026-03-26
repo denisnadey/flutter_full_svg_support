@@ -187,7 +187,15 @@ extension _AnimatedSvgPictureStateHitTestGeometryExtension
 
         // Check distance to line segment
         final distance = _distanceToSegment(point, startPoint, endPoint);
-        return distance <= tolerance;
+        if (distance <= tolerance) {
+          return true;
+        }
+        
+        // Check markers on line
+        if (_markersContainPoint(node, documentPoint, transform)) {
+          return true;
+        }
+        return false;
       case 'image':
         final x = _getNumber(node, 'x') ?? 0.0;
         final y = _getNumber(node, 'y') ?? 0.0;
@@ -229,9 +237,17 @@ extension _AnimatedSvgPictureStateHitTestGeometryExtension
               node,
               pointerEvents,
               visibilityHidden: visibilityHidden,
-            ) &&
-            path.contains(point)) {
-          return true;
+            )) {
+          // Use advanced evenodd containment for paths with evenodd fill rule
+          // to handle degenerate cases better
+          final fillRule = _getInheritedString(node, 'fill-rule')?.toLowerCase();
+          if (fillRule == 'evenodd') {
+            if (_evenoddContainsPointAdvanced(path, point)) {
+              return true;
+            }
+          } else if (path.contains(point)) {
+            return true;
+          }
         }
 
         if (_pointerEventsAllowsStroke(
@@ -240,7 +256,14 @@ extension _AnimatedSvgPictureStateHitTestGeometryExtension
           visibilityHidden: visibilityHidden,
         )) {
           final tolerance = _strokeTolerance(node);
-          return _pathStrokeContains(path, point, tolerance);
+          if (_pathStrokeContains(path, point, tolerance)) {
+            return true;
+          }
+        }
+        
+        // Check markers on path
+        if (_markersContainPoint(node, documentPoint, transform)) {
+          return true;
         }
         return false;
       case 'polygon':
@@ -279,6 +302,11 @@ extension _AnimatedSvgPictureStateHitTestGeometryExtension
               return true;
             }
           }
+        }
+        
+        // Check markers on polygon
+        if (_markersContainPoint(node, documentPoint, transform)) {
+          return true;
         }
         return false;
       case 'polyline':
@@ -334,11 +362,28 @@ extension _AnimatedSvgPictureStateHitTestGeometryExtension
           for (int i = 1; i < polylinePoints.length; i++) {
             polylinePath.lineTo(polylinePoints[i].dx, polylinePoints[i].dy);
           }
-          return polylinePath.contains(point);
+          if (polylinePath.contains(point)) {
+            return true;
+          }
+        }
+        
+        // Check markers on polyline
+        if (_markersContainPoint(node, documentPoint, transform)) {
+          return true;
         }
         return false;
       case 'text':
       case 'tspan':
+        // Use glyph-precision hit-testing for better accuracy
+        if (_glyphPrecisionTextContainsPoint(
+          node,
+          point,
+          pointerEvents: pointerEvents,
+          visibilityHidden: visibilityHidden,
+        )) {
+          return true;
+        }
+        // Fall back to standard text hit-testing
         return _textNodeContainsPoint(
           node,
           point,

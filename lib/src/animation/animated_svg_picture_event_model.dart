@@ -7,6 +7,7 @@ class _EventHitTestResult {
     this.anchorInfo,
     this.useElementId,
     this.composedPath = const [],
+    this.shadowPath = const [],
   });
 
   /// The ID of the hit element (the actual inner element).
@@ -19,13 +20,32 @@ class _EventHitTestResult {
   final String? useElementId;
 
   /// The composed path including shadow tree elements.
+  /// This is the full path from root through use to the actual element.
   final List<String> composedPath;
+
+  /// The shadow path - elements inside the <use> shadow tree only.
+  /// Used for W3C composedPath() behavior.
+  final List<String> shadowPath;
 
   /// Whether the hit is inside a <use> shadow tree.
   bool get isInsideUseShadow => useElementId != null;
 
   /// Returns the retargeted element ID (use element if inside shadow).
+  /// Per W3C spec, events fired inside a shadow tree have their target
+  /// retargeted to the shadow host (the <use> element).
   String? get retargetedElementId => useElementId ?? elementId;
+
+  /// Returns the event path for non-composed events (retargeted).
+  /// Starts from the <use> element when inside a shadow tree.
+  List<String> get retargetedPath {
+    if (useElementId == null) return composedPath;
+    // Find the use element in the composed path and return from there
+    final useIndex = composedPath.indexOf(useElementId!);
+    if (useIndex >= 0) {
+      return composedPath.sublist(0, useIndex + 1);
+    }
+    return composedPath;
+  }
 }
 
 extension _AnimatedSvgPictureStateEventModelExtension
@@ -114,6 +134,10 @@ extension _AnimatedSvgPictureStateEventModelExtension
     // Add to path if has ID
     if (node.id != null) {
       pathBuilder.add(node.id!);
+      // Also add to shadow path if we're inside a use shadow
+      if (useContext != null) {
+        useContext.addToShadowPath(node.id!);
+      }
     }
 
     if (node.tagName == 'switch') {
@@ -149,7 +173,10 @@ extension _AnimatedSvgPictureStateEventModelExtension
         pathBuilder: List.of(pathBuilder),
         useContext: useContext,
       );
-      if (hitResult.elementId != null || hitResult.anchorInfo != null) {
+      // Return if we hit any element, an anchor, or are inside a use shadow
+      if (hitResult.elementId != null || 
+          hitResult.anchorInfo != null ||
+          hitResult.useElementId != null) {
         return hitResult;
       }
     }
@@ -163,23 +190,31 @@ extension _AnimatedSvgPictureStateEventModelExtension
         currentAnchor: activeAnchor,
         pathBuilder: List.of(pathBuilder),
       );
-      if (hitReferenced.elementId != null || hitReferenced.anchorInfo != null) {
+      // Return if we hit any element, an anchor, or are inside a use shadow
+      if (hitReferenced.elementId != null || 
+          hitReferenced.anchorInfo != null ||
+          hitReferenced.useElementId != null) {
         return hitReferenced;
       }
     }
 
-    if (pointerEventsNone ||
-        node.id == null ||
-        !_isHitTestableTag(node.tagName)) {
+    if (pointerEventsNone || !_isHitTestableTag(node.tagName)) {
       return const _EventHitTestResult();
     }
 
     if (_nodeContainsPoint(node, documentPoint, currentTransform)) {
+      // Even if the element has no ID, if we're inside a use shadow,
+      // we should still return a hit result with the use element ID.
+      // This allows event retargeting to work properly for elements without IDs.
+      if (node.id == null && useContext?.useElementId == null) {
+        return const _EventHitTestResult();
+      }
       return _EventHitTestResult(
         elementId: node.id,
         anchorInfo: activeAnchor,
         useElementId: useContext?.useElementId,
         composedPath: List.of(pathBuilder),
+        shadowPath: useContext?.shadowPathBuilder ?? const [],
       );
     }
     return const _EventHitTestResult();
@@ -214,7 +249,10 @@ extension _AnimatedSvgPictureStateEventModelExtension
     }
 
     // Create use context for event retargeting
-    final useContext = _UseEventContext(useElementId: useNode.id);
+    final useContext = _UseEventContext(
+      useElementId: useNode.id,
+      shadowPathBuilder: <String>[],
+    );
 
     final referenceTransform = Matrix4.copy(currentTransform)
       ..translateByDouble(
@@ -256,13 +294,21 @@ extension _AnimatedSvgPictureStateEventModelExtension
               pathBuilder: List.of(pathBuilder),
               useContext: useContext,
             );
-            if (hitResult.elementId != null || hitResult.anchorInfo != null) {
-              return hitResult;
+            if (hitResult.elementId != null || 
+                hitResult.anchorInfo != null ||
+                hitResult.useElementId != null) {
+              return _EventHitTestResult(
+                elementId: hitResult.elementId,
+                anchorInfo: hitResult.anchorInfo,
+                useElementId: useNode.id,
+                composedPath: hitResult.composedPath,
+                shadowPath: useContext.shadowPathBuilder,
+              );
             }
           }
           return const _EventHitTestResult();
         }
-        return _hitTestNodeWithEventPath(
+        final hitResult = _hitTestNodeWithEventPath(
           referenced,
           documentPoint,
           useReferenceTransform,
@@ -272,9 +318,21 @@ extension _AnimatedSvgPictureStateEventModelExtension
           pathBuilder: List.of(pathBuilder),
           useContext: useContext,
         );
+        if (hitResult.elementId != null || 
+            hitResult.anchorInfo != null ||
+            hitResult.useElementId != null) {
+          return _EventHitTestResult(
+            elementId: hitResult.elementId,
+            anchorInfo: hitResult.anchorInfo,
+            useElementId: useNode.id,
+            composedPath: hitResult.composedPath,
+            shadowPath: useContext.shadowPathBuilder,
+          );
+        }
+        return hitResult;
       }
 
-      return _hitTestNodeWithEventPath(
+      final hitResult = _hitTestNodeWithEventPath(
         referenced,
         documentPoint,
         referenceTransform,
@@ -284,6 +342,18 @@ extension _AnimatedSvgPictureStateEventModelExtension
         pathBuilder: List.of(pathBuilder),
         useContext: useContext,
       );
+      if (hitResult.elementId != null || 
+          hitResult.anchorInfo != null ||
+          hitResult.useElementId != null) {
+        return _EventHitTestResult(
+          elementId: hitResult.elementId,
+          anchorInfo: hitResult.anchorInfo,
+          useElementId: useNode.id,
+          composedPath: hitResult.composedPath,
+          shadowPath: useContext.shadowPathBuilder,
+        );
+      }
+      return hitResult;
     } finally {
       referenced.parent = previousParent;
     }
@@ -292,8 +362,17 @@ extension _AnimatedSvgPictureStateEventModelExtension
 
 /// Context for tracking use element during event hit testing.
 class _UseEventContext {
-  const _UseEventContext({this.useElementId});
+  _UseEventContext({this.useElementId, List<String>? shadowPathBuilder})
+      : shadowPathBuilder = shadowPathBuilder ?? [];
 
   /// The ID of the <use> element that is the shadow host.
   final String? useElementId;
+
+  /// Builder for tracking the shadow path (elements inside the use shadow).
+  final List<String> shadowPathBuilder;
+
+  /// Adds an element ID to the shadow path.
+  void addToShadowPath(String id) {
+    shadowPathBuilder.add(id);
+  }
 }

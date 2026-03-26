@@ -9,8 +9,13 @@ extension AnimatedSvgPainterClipMaskUnitsExtension on AnimatedSvgPainter {
         .trim()
         .toLowerCase();
     if (units == 'objectboundingbox') {
-      final targetBounds = _computeNodeLocalBounds(maskedNode);
+      final targetBounds = _computeNodeLocalBoundsWithStroke(maskedNode);
       if (targetBounds == null) {
+        return null;
+      }
+      // Edge case: zero width or height - nothing to mask
+      if (targetBounds.width.abs() < _kMinBoundingBoxDimension ||
+          targetBounds.height.abs() < _kMinBoundingBoxDimension) {
         return null;
       }
       final x = _parseObjectBoundingBoxValue(maskNode.getAttributeValue('x'));
@@ -28,11 +33,18 @@ extension AnimatedSvgPainterClipMaskUnitsExtension on AnimatedSvgPainter {
       if (resolvedWidth <= 0 || resolvedHeight <= 0) {
         return null;
       }
+      // Handle very small target bounds by using safe dimensions
+      final safeWidth = targetBounds.width.abs() < _kMinSafeScaleDimension
+          ? _kMinSafeScaleDimension
+          : targetBounds.width;
+      final safeHeight = targetBounds.height.abs() < _kMinSafeScaleDimension
+          ? _kMinSafeScaleDimension
+          : targetBounds.height;
       final rect = ui.Rect.fromLTWH(
-        targetBounds.left + resolvedX * targetBounds.width,
-        targetBounds.top + resolvedY * targetBounds.height,
-        targetBounds.width * resolvedWidth,
-        targetBounds.height * resolvedHeight,
+        targetBounds.left + resolvedX * safeWidth,
+        targetBounds.top + resolvedY * safeHeight,
+        safeWidth * resolvedWidth,
+        safeHeight * resolvedHeight,
       );
       return ui.Path()..addRect(rect);
     }

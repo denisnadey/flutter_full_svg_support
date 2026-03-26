@@ -250,17 +250,57 @@ extension AnimatedSvgPainterGeometryExtension on AnimatedSvgPainter {
           // If rx or ry is negative, use absolute value
           final rx = absoluteCommand.rx.abs();
           final ry = absoluteCommand.ry.abs();
+
+          // Edge case: Zero radii - treat as lineTo
           if (rx == 0 || ry == 0) {
             path.lineTo(absoluteCommand.x, absoluteCommand.y);
-          } else {
-            path.arcToPoint(
-              ui.Offset(absoluteCommand.x, absoluteCommand.y),
-              radius: ui.Radius.elliptical(rx, ry),
-              rotation: absoluteCommand.rotation,
-              largeArc: absoluteCommand.largeArc,
-              clockwise: absoluteCommand.sweep,
-            );
+            currentX = absoluteCommand.x;
+            currentY = absoluteCommand.y;
+            previousCommand = absoluteCommand;
+            break;
           }
+
+          // Edge case: Very small arc (endpoints very close)
+          // When endpoints are within a tiny epsilon, just lineTo to avoid
+          // numerical instability in arc computation
+          final dx = absoluteCommand.x - currentX;
+          final dy = absoluteCommand.y - currentY;
+          final endpointDistance = (dx * dx + dy * dy);
+          const epsilon = 1e-10;
+          if (endpointDistance < epsilon) {
+            // Endpoints are essentially the same - no arc needed
+            currentX = absoluteCommand.x;
+            currentY = absoluteCommand.y;
+            previousCommand = absoluteCommand;
+            break;
+          }
+
+          // Edge case: Arc radius too small to reach endpoint
+          // Per SVG spec, radii are scaled up uniformly to the minimum required
+          // to reach the endpoint. This is handled by Flutter's arcToPoint.
+
+          // Edge case: Very large radii relative to endpoint distance
+          // This can cause numerical issues - the arc degenerates into almost
+          // a straight line or full ellipse. Flutter handles this correctly
+          // but we add a check for extreme cases.
+          final halfChord = endpointDistance / 4;
+          final minRadius = rx < ry ? rx : ry;
+          if (minRadius * minRadius < halfChord * epsilon) {
+            // Radius is too small relative to distance - lineTo is safer
+            path.lineTo(absoluteCommand.x, absoluteCommand.y);
+            currentX = absoluteCommand.x;
+            currentY = absoluteCommand.y;
+            previousCommand = absoluteCommand;
+            break;
+          }
+
+          path.arcToPoint(
+            ui.Offset(absoluteCommand.x, absoluteCommand.y),
+            radius: ui.Radius.elliptical(rx, ry),
+            rotation: absoluteCommand.rotation,
+            largeArc: absoluteCommand.largeArc,
+            clockwise: absoluteCommand.sweep,
+          );
           currentX = absoluteCommand.x;
           currentY = absoluteCommand.y;
           previousCommand = absoluteCommand;

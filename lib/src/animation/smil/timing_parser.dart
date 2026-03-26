@@ -43,7 +43,8 @@ class TimingParser {
 
     // Check for syncbase (contains id.type pattern, not just a decimal point)
     // Syncbase has format: id.begin, id.end, id.repeat(N)
-    if (RegExp(r'[a-zA-Z][a-zA-Z0-9_-]*\.(begin|end|repeat)').hasMatch(value)) {
+    // Also support DOM event forms: id.beginEvent, id.endEvent, id.repeatEvent
+    if (RegExp(r'[a-zA-Z][a-zA-Z0-9_-]*\.(begin|end|repeat|beginEvent|endEvent|repeatEvent)').hasMatch(value)) {
       return _parseSyncbase(value);
     }
 
@@ -91,10 +92,12 @@ class TimingParser {
   }
 
   /// Parse syncbase condition: "id.begin", "id.end+2s", "id.repeat(2)"
+  /// Also supports DOM event forms: "id.beginEvent", "id.endEvent", "id.repeatEvent"
   static SyncbaseCondition? _parseSyncbase(String value) {
     // Pattern: id.type[+/-offset]
+    // Extended to support beginEvent, endEvent, repeatEvent
     final match = RegExp(
-      r'^([a-zA-Z0-9_-]+)\.(begin|end|repeat(?:\((\d+)\))?)([+-].+)?$',
+      r'^([a-zA-Z0-9_-]+)\.(begin(?:Event)?|end(?:Event)?|repeat(?:Event)?(?:\((\d+)\))?)([+-].+)?$',
     ).firstMatch(value);
 
     if (match == null) return null;
@@ -104,13 +107,13 @@ class TimingParser {
     final repeatIndexStr = match.group(3);
     final offsetStr = match.group(4);
 
-    // Parse type
+    // Parse type - normalize beginEvent/endEvent/repeatEvent to begin/end/repeat
     SyncbaseType type;
     int? repeatIndex;
 
-    if (typeStr == 'begin') {
+    if (typeStr == 'begin' || typeStr == 'beginEvent') {
       type = SyncbaseType.begin;
-    } else if (typeStr == 'end') {
+    } else if (typeStr == 'end' || typeStr == 'endEvent') {
       type = SyncbaseType.end;
     } else if (typeStr.startsWith('repeat')) {
       type = SyncbaseType.repeat;

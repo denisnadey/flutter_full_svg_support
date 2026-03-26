@@ -218,7 +218,15 @@ extension SmilAnimationValueComputationExtension on SmilAnimation {
   }
 
   /// Применить accumulate="sum" - добавить финальное значение * количество повторений
-  /// Реализация основана на Blink SVGAnimationElement::animateAdditiveNumber()
+  /// Per SMIL spec: accumulate="sum" means that each repeat cycle adds to the
+  /// result of the previous cycle. The accumulated value is:
+  /// accumulatedValue = animValue + (finalValue * completedRepeats)
+  ///
+  /// When combined with additive="sum", the total effect is:
+  /// result = baseValue + accumulatedValue
+  /// 
+  /// For nested additive animations, each animation's accumulation is independent,
+  /// and they stack according to document order per the sandwich model.
   @protected
   Object? _applyAccumulate(Object? animValue, int completedRepeats) {
     if (!accumulate || completedRepeats == 0 || animValue == null) {
@@ -232,8 +240,12 @@ extension SmilAnimationValueComputationExtension on SmilAnimation {
       return animValue;
     }
 
-    // Для accumulate="sum" добавляем финальное значение * количество завершённых повторений
-    // Как в Blink: number += toAtEndOfDurationNumber * repeatCount
+    // Per SMIL spec, accumulate="sum" adds the final value of the simple
+    // duration for each completed repeat cycle.
+    // Formula: animValue + (finalValue * completedRepeats)
+    //
+    // This is implemented by iteratively adding finalValue for efficiency
+    // and to support non-numeric types that implement addition
     Object accumulated = animValue;
     for (int i = 0; i < completedRepeats; i++) {
       final result = Interpolators.add(accumulated, finalValue, attributeType);
@@ -244,7 +256,9 @@ extension SmilAnimationValueComputationExtension on SmilAnimation {
     return accumulated;
   }
 
-  /// Вычислить финальное значение анимации (t=1.0)
+  /// Вычислить финальное значение анимации (t=1.0) для accumulate support
+  /// This returns the "to" value or last values entry - the final value
+  /// that gets accumulated on each repeat cycle.
   @protected
   Object? _computeFinalValue() {
     // Для values-based: последнее значение
@@ -256,7 +270,16 @@ extension SmilAnimationValueComputationExtension on SmilAnimation {
   }
 
   /// Применить additive="sum" - добавить к базовому значению элемента
-  /// Реализация основана на Blink SVGAnimationElement::animateAdditiveNumber()
+  /// Per SMIL spec: additive="sum" means the animation value is added to
+  /// the underlying value of the target attribute.
+  ///
+  /// When multiple additive animations target the same attribute:
+  /// - They stack in document order per the animation sandwich model
+  /// - Each animation adds its computed value (including accumulate) to the
+  ///   result of the previous animation in the sandwich
+  ///
+  /// For nested additive animations, the total effect is:
+  /// result = baseValue + anim1AccumulatedValue + anim2AccumulatedValue + ...
   @protected
   Object? _applyAdditive(Object? animValue) {
     if (animValue == null) return null;
@@ -281,6 +304,8 @@ extension SmilAnimationValueComputationExtension on SmilAnimation {
     }
 
     // Добавляем animValue к baseValue
+    // For nested additive animations, this will be called multiple times
+    // with the accumulated result being stored in the attribute
     return Interpolators.add(baseValue, animValueNonNull, attributeType);
   }
 

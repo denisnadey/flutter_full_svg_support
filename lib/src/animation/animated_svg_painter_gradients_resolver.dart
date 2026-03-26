@@ -25,7 +25,9 @@ extension AnimatedSvgPainterGradientResolverExtension on AnimatedSvgPainter {
       return null;
     }
 
-    if (node.tagName != 'linearGradient' && node.tagName != 'radialGradient') {
+    if (node.tagName != 'linearGradient' &&
+        node.tagName != 'radialGradient' &&
+        node.tagName != 'conicGradient') {
       if (visited == null) {
         _gradientCache[gradientId] = null;
       }

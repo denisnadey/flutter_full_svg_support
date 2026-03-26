@@ -282,4 +282,38 @@ extension SvgFiltersPipelinePrimitiveEffectsExtension on SvgFilters {
         )
         .toList(growable: false);
   }
+
+  /// Resolves feTurbulence output with fractal noise generation.
+  ///
+  /// feTurbulence generates procedural Perlin noise with the following properties:
+  /// - baseFrequency: Controls the scale of the noise pattern
+  /// - numOctaves: Number of noise layers summed together (fractal octaves)
+  /// - seed: Random seed for deterministic noise generation
+  /// - type: 'turbulence' (absolute value) or 'fractalNoise' (signed)
+  /// - stitchTiles: Whether to create seamless tiling patterns
+  ///
+  /// Blink's implementation uses classic Perlin noise with fBm (fractional
+  /// Brownian motion) for octave summation. Each octave adds finer detail
+  /// at half the amplitude and double the frequency.
+  List<SvgFilterPaintPass> _resolveTurbulenceOutput({
+    required SvgTurbulenceFilter turbulence,
+    required List<SvgFilterPaintPass> previous,
+    required Map<String, List<SvgFilterPaintPass>> namedResults,
+    required List<SvgFilterPaintPass> sourceGraphic,
+    required List<SvgFilterPaintPass> sourceAlpha,
+  }) {
+    // feTurbulence is a procedural generator - it doesn't use input.
+    // Per SVG spec, it ignores the 'in' attribute and always generates
+    // noise to fill the filter primitive subregion.
+    //
+    // Create a specialized paint pass that carries the turbulence parameters.
+    // The painter will use these to generate the noise texture.
+    return <SvgFilterPaintPass>[
+      SvgTurbulencePaintPass(
+        turbulenceFilter: turbulence,
+        paintFill: true,
+        paintStroke: true,
+      ),
+    ];
+  }
 }

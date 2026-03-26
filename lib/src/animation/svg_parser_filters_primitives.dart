@@ -6,11 +6,13 @@ SvgGaussianBlurFilter _parseGaussianBlur(XmlElement element, String filterId) {
   final stdDeviation = _parseNumberOptionalNumber(stdDeviationStr);
   final input = _normalizeFilterInput(element.getAttribute('in'));
   final resultName = _normalizeFilterResult(element.getAttribute('result'));
+  final edgeMode = _parseConvolveEdgeMode(element.getAttribute('edgeMode'));
 
   return SvgGaussianBlurFilter(
     id: filterId,
     stdDeviationX: stdDeviation.$1,
     stdDeviationY: stdDeviation.$2,
+    edgeMode: edgeMode,
     input: input,
     resultName: resultName,
   );
@@ -26,12 +28,14 @@ SvgMorphologyFilter _parseMorphology(XmlElement element, String filterId) {
   final radius = _parseNumberOptionalNumber(radiusRaw);
   final input = _normalizeFilterInput(element.getAttribute('in'));
   final resultName = _normalizeFilterResult(element.getAttribute('result'));
+  final edgeMode = _parseConvolveEdgeMode(element.getAttribute('edgeMode'));
 
   return SvgMorphologyFilter(
     id: filterId,
     operatorType: operatorType,
     radiusX: radius.$1,
     radiusY: radius.$2,
+    edgeMode: edgeMode,
     input: input,
     resultName: resultName,
   );

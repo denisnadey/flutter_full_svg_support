@@ -1,5 +1,13 @@
 part of 'animated_svg_painter.dart';
 
+/// Minimum threshold for valid bounding box dimensions.
+/// Values below this are considered degenerate/zero.
+const double _kMinBoundingBoxDimension = 1e-6;
+
+/// Minimum threshold for very small bounding box dimensions.
+/// Used for scaling safety to prevent excessive magnification.
+const double _kMinSafeScaleDimension = 1e-3;
+
 extension AnimatedSvgPainterClipMaskExtension on AnimatedSvgPainter {
   void _applyClipPath(
     ui.Canvas canvas,
@@ -72,15 +80,25 @@ extension AnimatedSvgPainterClipMaskExtension on AnimatedSvgPainter {
       'clipPathUnits',
     )?.trim().toLowerCase();
     if (clipUnits == 'objectboundingbox') {
-      final localBounds = _computeNodeLocalBounds(clippedNode);
-      if (localBounds == null ||
-          localBounds.width.abs() < 1e-6 ||
-          localBounds.height.abs() < 1e-6) {
+      final localBounds = _computeNodeLocalBoundsWithStroke(clippedNode);
+      if (localBounds == null) {
         return null;
       }
+      // Edge case: zero width or height - nothing to clip
+      if (localBounds.width.abs() < _kMinBoundingBoxDimension ||
+          localBounds.height.abs() < _kMinBoundingBoxDimension) {
+        return null;
+      }
+      // Edge case: very small dimensions - clamp scaling to prevent issues
+      final safeWidth = localBounds.width.abs() < _kMinSafeScaleDimension
+          ? _kMinSafeScaleDimension
+          : localBounds.width;
+      final safeHeight = localBounds.height.abs() < _kMinSafeScaleDimension
+          ? _kMinSafeScaleDimension
+          : localBounds.height;
       rootMatrix = Matrix4.identity()
-        ..setEntry(0, 0, localBounds.width)
-        ..setEntry(1, 1, localBounds.height)
+        ..setEntry(0, 0, safeWidth)
+        ..setEntry(1, 1, safeHeight)
         ..setEntry(0, 3, localBounds.left)
         ..setEntry(1, 3, localBounds.top);
     }
@@ -93,7 +111,8 @@ extension AnimatedSvgPainterClipMaskExtension on AnimatedSvgPainter {
     );
 
     final bounds = clipPath.getBounds();
-    if (bounds.width.abs() < 1e-6 || bounds.height.abs() < 1e-6) {
+    if (bounds.width.abs() < _kMinBoundingBoxDimension ||
+        bounds.height.abs() < _kMinBoundingBoxDimension) {
       return null;
     }
 
@@ -113,15 +132,25 @@ extension AnimatedSvgPainterClipMaskExtension on AnimatedSvgPainter {
             .trim()
             .toLowerCase();
     if (contentUnits == 'objectboundingbox') {
-      final localBounds = _computeNodeLocalBounds(maskedNode);
-      if (localBounds == null ||
-          localBounds.width.abs() < 1e-6 ||
-          localBounds.height.abs() < 1e-6) {
+      final localBounds = _computeNodeLocalBoundsWithStroke(maskedNode);
+      if (localBounds == null) {
         return null;
       }
+      // Edge case: zero width or height - nothing to mask
+      if (localBounds.width.abs() < _kMinBoundingBoxDimension ||
+          localBounds.height.abs() < _kMinBoundingBoxDimension) {
+        return null;
+      }
+      // Edge case: very small dimensions - clamp scaling to prevent issues
+      final safeWidth = localBounds.width.abs() < _kMinSafeScaleDimension
+          ? _kMinSafeScaleDimension
+          : localBounds.width;
+      final safeHeight = localBounds.height.abs() < _kMinSafeScaleDimension
+          ? _kMinSafeScaleDimension
+          : localBounds.height;
       rootMatrix = Matrix4.identity()
-        ..setEntry(0, 0, localBounds.width)
-        ..setEntry(1, 1, localBounds.height)
+        ..setEntry(0, 0, safeWidth)
+        ..setEntry(1, 1, safeHeight)
         ..setEntry(0, 3, localBounds.left)
         ..setEntry(1, 3, localBounds.top);
     }
@@ -142,10 +171,108 @@ extension AnimatedSvgPainterClipMaskExtension on AnimatedSvgPainter {
         : ui.Path.combine(ui.PathOperation.intersect, maskPath, maskRegionPath);
 
     final bounds = effectiveMaskPath.getBounds();
-    if (bounds.width.abs() < 1e-6 || bounds.height.abs() < 1e-6) {
+    if (bounds.width.abs() < _kMinBoundingBoxDimension ||
+        bounds.height.abs() < _kMinBoundingBoxDimension) {
       return null;
     }
 
     return effectiveMaskPath;
+  }
+
+  /// Computes local bounds for a node, including stroke width expansion.
+  /// This is used for objectBoundingBox calculations in clip-path and mask.
+  ui.Rect? _computeNodeLocalBoundsWithStroke(SvgNode node) {
+    // For text elements, use enhanced text bounds computation
+    if (node.tagName == 'text' || node.tagName == 'tspan') {
+      return _computeTextMaskBounds(node);
+    }
+
+    // For groups, compute union of all children's bounds
+    if (node.tagName == 'g' || node.tagName == 'svg' || node.tagName == 'a') {
+      return _computeGroupBoundsWithStroke(node);
+    }
+
+    final baseBounds = _computeNodeLocalBounds(node);
+    if (baseBounds == null) return null;
+
+    // Expand bounds by stroke width if stroke is applied
+    final strokeWidth = _getInheritedNumber(node, 'stroke-width') ?? 1.0;
+    final stroke = _getStyleOrAttributeValue(node, 'stroke');
+    if (stroke != null && stroke.toString().toLowerCase() != 'none') {
+      final halfStroke = strokeWidth / 2;
+      return baseBounds.inflate(halfStroke);
+    }
+
+    return baseBounds;
+  }
+
+  /// Computes bounds for a group element by unioning all children's bounds.
+  ui.Rect? _computeGroupBoundsWithStroke(SvgNode group) {
+    ui.Rect? combinedBounds;
+    for (final child in group.children) {
+      final childBounds = _computeNodeLocalBoundsWithStroke(child);
+      if (childBounds != null) {
+        if (combinedBounds == null) {
+          combinedBounds = childBounds;
+        } else {
+          combinedBounds = combinedBounds.expandToInclude(childBounds);
+        }
+      }
+    }
+    return combinedBounds;
+  }
+
+  /// Computes mask bounds for text elements including stroke, decorations,
+  /// and emphasis marks per SVG spec.
+  ui.Rect? _computeTextMaskBounds(SvgNode textNode) {
+    final baseBounds = _computeNodeLocalBounds(textNode);
+    if (baseBounds == null) return null;
+
+    // Start with base bounds
+    var expandedBounds = baseBounds;
+
+    // Expand by stroke width
+    final strokeWidth = _getInheritedNumber(textNode, 'stroke-width') ?? 1.0;
+    final stroke = _getStyleOrAttributeValue(textNode, 'stroke');
+    if (stroke != null && stroke.toString().toLowerCase() != 'none') {
+      expandedBounds = expandedBounds.inflate(strokeWidth / 2);
+    }
+
+    // Expand for text decoration (underline, overline, line-through)
+    final decoration =
+        _getInheritedString(textNode, 'text-decoration')?.toLowerCase();
+    if (decoration != null && decoration != 'none') {
+      final fontSize = _getInheritedNumber(textNode, 'font-size') ?? 16.0;
+      // Expand by ~10% of font size for decoration thickness
+      final decorationExpand = fontSize * 0.1;
+      if (decoration.contains('underline')) {
+        expandedBounds = ui.Rect.fromLTRB(
+          expandedBounds.left,
+          expandedBounds.top,
+          expandedBounds.right,
+          expandedBounds.bottom + decorationExpand,
+        );
+      }
+      if (decoration.contains('overline')) {
+        expandedBounds = ui.Rect.fromLTRB(
+          expandedBounds.left,
+          expandedBounds.top - decorationExpand,
+          expandedBounds.right,
+          expandedBounds.bottom,
+        );
+      }
+    }
+
+    // Expand for text-emphasis marks (dots, circles, etc.)
+    final emphasis =
+        _getInheritedString(textNode, 'text-emphasis')?.toLowerCase();
+    if (emphasis != null && emphasis != 'none') {
+      final fontSize = _getInheritedNumber(textNode, 'font-size') ?? 16.0;
+      // Emphasis marks are typically placed above/below text
+      final emphasisExpand = fontSize * 0.5;
+      expandedBounds = expandedBounds.inflate(emphasisExpand);
+    }
+
+    return expandedBounds;
   }
 }

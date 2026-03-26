@@ -182,6 +182,16 @@ class SvgTimeline {
     _triggerSyncbaseEventImpl(this, sourceAnim, eventType, time);
   }
 
+  /// Trigger a repeat event for syncbase timing
+  /// Per SMIL spec, repeat(n) fires when the nth repeat begins
+  void _triggerRepeatEvent(
+    SmilAnimation sourceAnim,
+    int repeatIndex,
+    Duration time,
+  ) {
+    _triggerRepeatEventImpl(this, sourceAnim, repeatIndex, time);
+  }
+
   void _buildDependencyGraph() {
     _buildDependencyGraphImpl(this);
   }

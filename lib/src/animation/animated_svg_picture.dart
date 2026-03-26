@@ -39,6 +39,7 @@ part 'animated_svg_picture_hit_test_text_layout.dart';
 part 'animated_svg_picture_paths.dart';
 part 'animated_svg_picture_path_parser.dart';
 part 'animated_svg_picture_event_model.dart';
+part 'animated_svg_picture_hit_test_advanced.dart';
 
 /// Severity level for runtime SVG trace events.
 enum SvgTraceLevel {

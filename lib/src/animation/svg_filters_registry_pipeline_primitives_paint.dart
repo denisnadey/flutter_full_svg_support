@@ -51,15 +51,21 @@ extension SvgFiltersPipelinePrimitivePaintExtension on SvgFilters {
     ];
   }
 
-  /// Resolves feDropShadow output for complex filter chains.
+  /// Resolves feDropShadow output using Blink's multi-pass composition.
   ///
   /// feDropShadow is a convenience primitive that expands to the following
-  /// filter primitive sub-graph per SVG Filter 1.1 spec:
-  /// 1. feGaussianBlur - blur the input with stdDeviation
-  /// 2. feOffset - offset by dx/dy
-  /// 3. feFlood - fill with shadow color (flood-color * flood-opacity)
-  /// 4. feComposite in="flood" in2="blur" operator="in" - cut flood to blur shape
-  /// 5. feMerge - combine shadow with original input (shadow behind, input on top)
+  /// filter primitive sub-graph per SVG Filter 1.1 spec and Blink's impl:
+  /// 1. Extract alpha from input (SourceAlpha equivalent)
+  /// 2. feGaussianBlur - blur the alpha with stdDeviation
+  /// 3. feOffset - offset by dx/dy
+  /// 4. feFlood - fill with shadow color (flood-color * flood-opacity)
+  /// 5. feComposite in="flood" in2="blurredAlpha" operator="in" - cut flood to blur shape
+  /// 6. feMerge - combine shadow with original input (shadow behind, input on top)
+  ///
+  /// Blink's multi-pass approach ensures:
+  /// - Shadow shape comes from blurred alpha, not RGB
+  /// - Flood color is multiplied by the blurred alpha mask
+  /// - Result is properly composited behind the source
   ///
   /// When used with non-source inputs (e.g., in="blurred") or as part of a
   /// larger filter chain (e.g., feDropShadow -> feComposite), the composition
@@ -99,24 +105,35 @@ extension SvgFiltersPipelinePrimitivePaintExtension on SvgFilters {
     }
 
     // Get the blur filter (stdDeviation-based gaussian blur).
-    final shadowFilter = shadow.apply();
+    final blurFilter = shadow.apply();
 
     // Check for zero blur (optimization: skip blur composition).
     // HARDENING: Check both X and Y independently for asymmetric blur cases.
     final hasBlur = shadow.stdDeviationX > 0 || shadow.stdDeviationY > 0;
 
-    // Create shadow passes from input, applying blur + offset + color.
-    // This implements the expanded sub-graph: blur -> offset -> flood/composite.
+    // Blink's multi-pass composition approach:
+    // Step 1: Extract alpha from input (implicit via srcIn blend)
+    // Step 2: Apply blur to the alpha mask
+    // Step 3: Apply offset
+    // Step 4: Flood color with srcIn to cut flood to blurred alpha shape
+    // Step 5: Merge shadow behind source
+
+    final shadowColor = shadow.effectiveShadowColor;
+
+    // Create shadow passes from input using Blink's multi-pass approach:
+    // 1. blur(alpha) -> 2. offset -> 3. flood*alpha via srcIn
     final shadowPasses = input
         .map(
-          (pass) => SvgFilterPaintPass(
+          (pass) => SvgDropShadowPaintPass(
             // Compose blur filter with any existing filter on the input pass.
+            // This blurs the alpha channel shape for the shadow.
             imageFilter: hasBlur
-                ? _composeImageFilter(shadowFilter, pass.imageFilter)
+                ? _composeImageFilter(blurFilter, pass.imageFilter)
                 : pass.imageFilter,
-            // Apply shadow color using srcIn to cut flood to input shape.
+            // Apply shadow color using srcIn to properly multiply flood color
+            // with the blurred alpha mask (Blink's feComposite in="flood" in2="blur" operator="in").
             colorFilter: ui.ColorFilter.mode(
-              shadow.effectiveShadowColor,
+              shadowColor,
               ui.BlendMode.srcIn,
             ),
             // Shadow renders with srcOver to blend behind the input.
@@ -126,6 +143,8 @@ extension SvgFiltersPipelinePrimitivePaintExtension on SvgFilters {
             // Preserve paint channel scope from input.
             paintFill: pass.paintFill,
             paintStroke: pass.paintStroke,
+            // Store shadow parameters for potential advanced rendering.
+            shadowFilter: shadow,
           ),
         )
         .toList(growable: false);

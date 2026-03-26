@@ -110,6 +110,19 @@ extension SvgFiltersInputResolverExtension on SvgFilters {
         _activeStrokePaint ?? _createStrokePaintInput(sourceGraphic);
 
     // Use effective background methods for nested filter context support.
+    // Per SVG Filter 1.1 spec:
+    // - BackgroundImage: provides access to the graphics that were present
+    //   prior to the filtered element. This includes all graphics in the
+    //   current background, transformed appropriately.
+    // - BackgroundAlpha: same as BackgroundImage but only the alpha channel,
+    //   which represents the accumulated opacity of the background.
+    //
+    // Blink semantics:
+    // - When filter is applied to an element inside a filtered group,
+    //   BackgroundImage should reference the intermediate result of the
+    //   outer filter, not the original document background.
+    // - Transform stacking is applied to properly map coordinates between
+    //   filter spaces when nested.
     final backgroundImage = effectiveBackgroundImage ?? sourceGraphic;
     final backgroundAlpha = effectiveBackgroundAlpha ?? sourceAlpha;
 

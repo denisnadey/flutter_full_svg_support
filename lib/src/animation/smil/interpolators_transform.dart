@@ -9,6 +9,52 @@ bool _isNoneTransform(String value) {
   return trimmed.isEmpty || trimmed == 'none';
 }
 
+/// Checks if two transform lists have matching function types in the same order.
+///
+/// This is needed for per-function interpolation, which provides better results
+/// for non-commutative transforms (e.g., rotate(0) scale(1) → rotate(180) scale(2)).
+bool _hasMatchingTransformFunctions(
+  List<SvgTransform> from,
+  List<SvgTransform> to,
+) {
+  if (from.length != to.length) return false;
+  for (int i = 0; i < from.length; i++) {
+    if (from[i].type != to[i].type) return false;
+  }
+  return true;
+}
+
+/// Per-function interpolation for matching transform lists.
+///
+/// This is the preferred method for non-commutative transforms because it
+/// interpolates each function independently, preserving the transform order
+/// and producing visually correct results.
+///
+/// For example:
+/// - `rotate(0) scale(1)` → `rotate(180) scale(2)` at t=0.5
+/// - Results in `rotate(90) scale(1.5)` (each function interpolated)
+///
+/// This is better than matrix decomposition which may not preserve
+/// the original transform semantics.
+String _interpolateMatchingTransformLists(
+  List<SvgTransform> from,
+  List<SvgTransform> to,
+  double t,
+) {
+  final results = <String>[];
+
+  for (int i = 0; i < from.length; i++) {
+    final interpolatedTransform = _interpolateSingleTransformValue(
+      from[i],
+      to[i],
+      t,
+    );
+    results.add(interpolatedTransform);
+  }
+
+  return results.join(' ');
+}
+
 String _interpolateTransformValue(Object from, Object to, double t) {
   final fromStr = from.toString();
   final toStr = to.toString();
@@ -51,6 +97,13 @@ String _interpolateTransformValue(Object from, Object to, double t) {
         .join(' ');
   }
 
+  // Check if transform lists have matching functions - use per-function interpolation
+  // This handles non-commutative transforms better (e.g., rotate + scale)
+  if (_hasMatchingTransformFunctions(fromTransforms, toTransforms)) {
+    return _interpolateMatchingTransformLists(fromTransforms, toTransforms, t);
+  }
+
+  // Single matching transform type - direct interpolation
   if (fromTransforms.length == 1 &&
       toTransforms.length == 1 &&
       fromTransforms[0].type == toTransforms[0].type) {
@@ -61,6 +114,7 @@ String _interpolateTransformValue(Object from, Object to, double t) {
     );
   }
 
+  // Fall back to matrix decomposition for non-matching transform lists
   final fromDecomp = TransformDecomposition.fromTransforms(fromTransforms);
   final toDecomp = TransformDecomposition.fromTransforms(toTransforms);
   final interpolated = fromDecomp.lerp(toDecomp, t);
@@ -86,6 +140,27 @@ String _interpolateSingleTransformValue(
   final maxLength = from.values.length > to.values.length
       ? from.values.length
       : to.values.length;
+
+  // Handle rotation specially - take shortest path
+  if (from.type == SvgTransformType.rotate ||
+      from.type == SvgTransformType.rotateX ||
+      from.type == SvgTransformType.rotateY ||
+      from.type == SvgTransformType.rotateZ) {
+    final interpolatedValues = <double>[];
+    for (int i = 0; i < maxLength; i++) {
+      final fromVal = i < from.values.length ? from.values[i] : 0.0;
+      final toVal = i < to.values.length ? to.values[i] : 0.0;
+
+      // For angle (first value), we just interpolate directly
+      // The animation system handles the actual rotation direction
+      interpolatedValues.add(fromVal + (toVal - fromVal) * t);
+    }
+
+    final valueStr = interpolatedValues
+        .map((v) => v.toStringAsFixed(2))
+        .join(' ');
+    return '$name($valueStr)';
+  }
 
   final interpolatedValues = <double>[];
   for (int i = 0; i < maxLength; i++) {

@@ -13,6 +13,7 @@ part of 'animated_svg_painter.dart';
 /// - Nested clip-paths: clip-path on element inside another clipped element
 /// - Nested masks: mask on element inside another masked element
 /// - Mixed nesting: clip → mask → clip chains
+/// - Mask inheritance through groups: masks on group elements affect all children
 extension AnimatedSvgPainterClipMaskCompositionExtension on AnimatedSvgPainter {
   /// Applies the full composition chain for an element.
   ///
@@ -28,6 +29,7 @@ extension AnimatedSvgPainterClipMaskCompositionExtension on AnimatedSvgPainter {
   }) {
     final hasClip = _hasClipPath(node);
     final hasMaskRef = _hasMask(node);
+    final hasMultipleMasks = _hasMultipleMasks(node);
 
     if (!hasClip && !hasMaskRef) {
       // No composition needed, just paint
@@ -43,24 +45,151 @@ extension AnimatedSvgPainterClipMaskCompositionExtension on AnimatedSvgPainter {
     }
 
     if (!hasClip && hasMaskRef) {
-      // Only mask - use advanced masking with proper compositing
+      // Only mask - check for multiple masks
+      if (hasMultipleMasks) {
+        _applyMultipleMasks(
+          canvas,
+          node,
+          useStack: useStack,
+          paintContent: paintContent,
+        );
+      } else {
+        _applyAdvancedMask(
+          canvas,
+          node,
+          useStack: useStack,
+          paintContent: paintContent,
+        );
+      }
+      return;
+    }
+
+    // Both clip-path and mask: apply clip first, then mask
+    _applyClipPath(canvas, node, useStack: useStack);
+    if (hasMultipleMasks) {
+      _applyMultipleMasks(
+        canvas,
+        node,
+        useStack: useStack,
+        paintContent: paintContent,
+      );
+    } else {
       _applyAdvancedMask(
         canvas,
         node,
         useStack: useStack,
         paintContent: paintContent,
       );
+    }
+  }
+
+  /// Applies composition chain for group elements with mask inheritance.
+  ///
+  /// When a group has a mask, the mask affects all children within the group.
+  /// Nested masks compose correctly - child mask within a masked group results
+  /// in the intersection of both masks' effects.
+  void _applyGroupCompositionChain(
+    ui.Canvas canvas,
+    SvgNode groupNode, {
+    required Set<String> useStack,
+    required void Function() paintChildren,
+  }) {
+    final hasClip = _hasClipPath(groupNode);
+    final hasMaskRef = _hasMask(groupNode);
+    final hasMultipleMasks = _hasMultipleMasks(groupNode);
+
+    if (!hasClip && !hasMaskRef) {
+      // No composition on this group, just paint children
+      paintChildren();
       return;
     }
 
-    // Both clip-path and mask: apply clip first, then mask
-    _applyClipPath(canvas, node, useStack: useStack);
-    _applyAdvancedMask(
-      canvas,
-      node,
-      useStack: useStack,
-      paintContent: paintContent,
+    if (hasClip && !hasMaskRef) {
+      // Only clip-path on group - clip affects all children
+      _applyClipPath(canvas, groupNode, useStack: useStack);
+      paintChildren();
+      return;
+    }
+
+    if (!hasClip && hasMaskRef) {
+      // Only mask on group - mask affects all children
+      if (hasMultipleMasks) {
+        _applyMultipleMasks(
+          canvas,
+          groupNode,
+          useStack: useStack,
+          paintContent: paintChildren,
+        );
+      } else {
+        _applyAdvancedMask(
+          canvas,
+          groupNode,
+          useStack: useStack,
+          paintContent: paintChildren,
+        );
+      }
+      return;
+    }
+
+    // Both clip-path and mask on group
+    _applyClipPath(canvas, groupNode, useStack: useStack);
+    if (hasMultipleMasks) {
+      _applyMultipleMasks(
+        canvas,
+        groupNode,
+        useStack: useStack,
+        paintContent: paintChildren,
+      );
+    } else {
+      _applyAdvancedMask(
+        canvas,
+        groupNode,
+        useStack: useStack,
+        paintContent: paintChildren,
+      );
+    }
+  }
+
+  /// Computes effective mask bounds for nested masked elements.
+  ///
+  /// When an element has a mask and is inside a masked group, the effective
+  /// mask bounds are the intersection of both mask regions.
+  ui.Rect? _computeNestedMaskBounds({
+    required SvgNode node,
+    required SvgNode? parentMaskNode,
+    required Set<String> useStack,
+  }) {
+    // Get this element's mask bounds
+    final maskId = _extractPaintServerId(
+      _getStyleOrAttributeValue(node, 'mask'),
     );
+
+    ui.Rect? nodeMaskBounds;
+    if (maskId != null && maskId.isNotEmpty) {
+      final maskNode = document.root.findById(maskId);
+      if (maskNode != null && maskNode.tagName == 'mask') {
+        nodeMaskBounds = _computeMaskBounds(
+          maskedNode: node,
+          maskNode: maskNode,
+        );
+      }
+    }
+
+    // Get parent mask bounds if provided
+    ui.Rect? parentBounds;
+    if (parentMaskNode != null) {
+      parentBounds = _computeMaskBounds(
+        maskedNode: node,
+        maskNode: parentMaskNode,
+      );
+    }
+
+    // Combine bounds
+    if (nodeMaskBounds == null) return parentBounds;
+    if (parentBounds == null) return nodeMaskBounds;
+
+    // Return intersection of both mask regions
+    return nodeMaskBounds.intersect(parentBounds);
   }
 
   /// Applies nested clip-path composition.
@@ -129,15 +258,24 @@ extension AnimatedSvgPainterClipMaskCompositionExtension on AnimatedSvgPainter {
     )?.trim().toLowerCase();
 
     if (clipUnits == 'objectboundingbox') {
-      final localBounds = _computeNodeLocalBounds(clippedNode);
-      if (localBounds == null ||
-          localBounds.width.abs() < 1e-6 ||
-          localBounds.height.abs() < 1e-6) {
+      final localBounds = _computeNodeLocalBoundsWithStroke(clippedNode);
+      if (localBounds == null) {
         return null;
       }
+      // Edge case: zero or very small dimensions
+      if (localBounds.width.abs() < _kMinBoundingBoxDimension ||
+          localBounds.height.abs() < _kMinBoundingBoxDimension) {
+        return null;
+      }
+      final safeWidth = localBounds.width.abs() < _kMinSafeScaleDimension
+          ? _kMinSafeScaleDimension
+          : localBounds.width;
+      final safeHeight = localBounds.height.abs() < _kMinSafeScaleDimension
+          ? _kMinSafeScaleDimension
+          : localBounds.height;
       rootMatrix = Matrix4.identity()
-        ..setEntry(0, 0, localBounds.width)
-        ..setEntry(1, 1, localBounds.height)
+        ..setEntry(0, 0, safeWidth)
+        ..setEntry(1, 1, safeHeight)
         ..setEntry(0, 3, localBounds.left)
         ..setEntry(1, 3, localBounds.top);
     }
@@ -150,7 +288,8 @@ extension AnimatedSvgPainterClipMaskCompositionExtension on AnimatedSvgPainter {
     );
 
     final bounds = clipPath.getBounds();
-    if (bounds.width.abs() < 1e-6 || bounds.height.abs() < 1e-6) {
+    if (bounds.width.abs() < _kMinBoundingBoxDimension ||
+        bounds.height.abs() < _kMinBoundingBoxDimension) {
       return null;
     }
 
@@ -242,7 +381,8 @@ extension AnimatedSvgPainterClipMaskCompositionExtension on AnimatedSvgPainter {
           }
         }
         final bounds = combinedPath.getBounds();
-        if (bounds.width.abs() < 1e-6 || bounds.height.abs() < 1e-6) {
+        if (bounds.width.abs() < _kMinBoundingBoxDimension ||
+            bounds.height.abs() < _kMinBoundingBoxDimension) {
           return null;
         }
         return combinedPath;
@@ -381,6 +521,50 @@ extension AnimatedSvgPainterClipMaskCompositionExtension on AnimatedSvgPainter {
       }
     }
 
+    return null;
+  }
+
+  /// Checks if an element should inherit mask from its parent group.
+  ///
+  /// In SVG, masks on group elements affect all children, creating an
+  /// inheritance chain. This method walks up the parent tree to find
+  /// any applicable masks.
+  SvgNode? _findInheritedMaskNode(SvgNode node) {
+    var current = node.parent;
+    while (current != null) {
+      if (_hasMask(current)) {
+        final maskId = _extractPaintServerId(
+          _getStyleOrAttributeValue(current, 'mask'),
+        );
+        if (maskId != null && maskId.isNotEmpty) {
+          final maskNode = document.root.findById(maskId);
+          if (maskNode != null && maskNode.tagName == 'mask') {
+            return maskNode;
+          }
+        }
+      }
+      current = current.parent;
+    }
+    return null;
+  }
+
+  /// Checks if an element should inherit clip-path from its parent group.
+  SvgNode? _findInheritedClipNode(SvgNode node) {
+    var current = node.parent;
+    while (current != null) {
+      if (_hasClipPath(current)) {
+        final clipId = _extractPaintServerId(
+          _getStyleOrAttributeValue(current, 'clip-path'),
+        );
+        if (clipId != null && clipId.isNotEmpty) {
+          final clipNode = document.root.findById(clipId);
+          if (clipNode != null && clipNode.tagName == 'clipPath') {
+            return clipNode;
+          }
+        }
+      }
+      current = current.parent;
+    }
     return null;
   }
 }

@@ -319,6 +319,29 @@ class MotionPath {
             angle = _getAngleFromAdjacentSegment(metrics, metricIndex);
           }
 
+          // Handle path discontinuity (moveTo) at start of segment
+          if (localDistance < 0.001 && metricIndex > 0) {
+            // Check if this is a discontinuity by comparing end of prev
+            // segment with start of current
+            final prevEnd = metrics[metricIndex - 1].getTangentForOffset(
+              metrics[metricIndex - 1].length,
+            );
+            final currStart = metric.getTangentForOffset(0);
+            if (prevEnd != null && currStart != null) {
+              final dist = (prevEnd.position - currStart.position).distance;
+              // If there's a gap, this is a moveTo - use current segment's angle
+              if (dist > 0.1) {
+                // Discontinuity detected - use angle from current segment only
+                final forwardTangent = metric.getTangentForOffset(
+                  math.min(0.1, metric.length),
+                );
+                if (forwardTangent != null) {
+                  angle = forwardTangent.angle;
+                }
+              }
+            }
+          }
+
           // Average tangents at segment boundaries
           if (useAverageTangent) {
             angle = _getAveragedAngle(

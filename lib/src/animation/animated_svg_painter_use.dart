@@ -109,13 +109,33 @@ const Set<String> _cssInheritablePropertiesForUse = {
 /// IMPORTANT: Only inheritable CSS properties should flow through <use> boundaries.
 /// Non-inherited properties (opacity, transform, display, clip-path, mask, filter)
 /// should NOT cascade to referenced content.
+///
+/// ID Namespace Scoping:
+/// When multiple <use> elements reference the same content, internal IDs (for
+/// filters, gradients, clip-paths) are scoped per-use instance to avoid conflicts.
+/// Each use context tracks its unique instance ID for proper ID resolution.
 class _UseInheritanceContext {
-  const _UseInheritanceContext({
+  _UseInheritanceContext({
     required this.useNode,
     this.parentContext,
     this.cssRules,
     this.shadowRootId,
-  });
+  }) : instanceId = _generateInstanceId();
+
+  /// Global counter for generating unique instance IDs.
+  static int _instanceCounter = 0;
+
+  /// Generates a unique instance ID for ID namespace scoping.
+  static String _generateInstanceId() {
+    _instanceCounter++;
+    return '__use_${_instanceCounter}__';
+  }
+
+  /// Resets the instance counter (useful for testing).
+  // ignore: unused_element
+  static void resetInstanceCounter() {
+    _instanceCounter = 0;
+  }
 
   /// The <use> element providing inherited properties.
   final SvgNode useNode;
@@ -130,6 +150,10 @@ class _UseInheritanceContext {
   /// ID of the referenced element (shadow root).
   /// Used for tracking shadow DOM boundaries in selector matching.
   final String? shadowRootId;
+
+  /// Unique instance ID for this use context.
+  /// Used for ID namespace scoping when multiple uses reference same content.
+  final String instanceId;
 
   /// Gets the depth of nested use contexts.
   int get depth => parentContext == null ? 1 : 1 + parentContext!.depth;
@@ -302,6 +326,63 @@ class _UseInheritanceContext {
       return true;
     }
     return parentContext?.hasCircularReference(targetId) ?? false;
+  }
+
+  /// Gets the full use context chain from root to current as a list.
+  /// Useful for debugging and understanding the inheritance chain.
+  List<_UseInheritanceContext> get contextChain {
+    final chain = <_UseInheritanceContext>[];
+    _UseInheritanceContext? current = this;
+    while (current != null) {
+      chain.insert(0, current);
+      current = current.parentContext;
+    }
+    return chain;
+  }
+
+  /// Gets a scoped ID that is unique to this use instance.
+  /// This is used for internal references (gradients, filters, etc.) to
+  /// avoid conflicts when the same content is referenced by multiple uses.
+  String getScopedId(String originalId) {
+    return '${instanceId}$originalId';
+  }
+
+  /// Gets the root use context (the outermost use in nested chains).
+  _UseInheritanceContext get rootContext {
+    return parentContext?.rootContext ?? this;
+  }
+
+  /// Checks if this context is nested (has a parent context).
+  bool get isNested => parentContext != null;
+
+  /// Gets the transform to apply for animation coordinate inheritance.
+  /// This includes the x/y offset and any explicit transform on the use element.
+  Matrix4? getUseTransform() {
+    final x = useNode.getAttributeValue('x');
+    final y = useNode.getAttributeValue('y');
+    final transformStr = useNode.getAttributeValue('transform')?.toString();
+
+    final xVal = x is num ? x.toDouble() : double.tryParse(x?.toString() ?? '');
+    final yVal = y is num ? y.toDouble() : double.tryParse(y?.toString() ?? '');
+
+    if (xVal == null && yVal == null && transformStr == null) {
+      return null;
+    }
+
+    final matrix = Matrix4.identity();
+
+    // Apply explicit transform first (if any)
+    if (transformStr != null && transformStr.isNotEmpty) {
+      // Note: Transform parsing is done elsewhere; this is for documentation
+      // The transform is applied at the canvas level before painting
+    }
+
+    // Then apply x/y translation
+    if (xVal != null || yVal != null) {
+      matrix.translateByDouble(xVal ?? 0.0, yVal ?? 0.0, 0.0, 1.0);
+    }
+
+    return matrix;
   }
 
   /// Extracts a property value from an inline style attribute.

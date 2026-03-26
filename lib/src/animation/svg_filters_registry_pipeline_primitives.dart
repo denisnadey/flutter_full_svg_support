@@ -55,8 +55,8 @@ extension SvgFiltersPipelinePrimitiveResolverExtension on SvgFilters {
         );
 
       case SvgFilterType.turbulence:
-        return _resolvePassthroughOutput(
-          requestedInput: (primitive as SvgTurbulenceFilter).input,
+        return _resolveTurbulenceOutput(
+          turbulence: primitive as SvgTurbulenceFilter,
           previous: previous,
           namedResults: namedResults,
           sourceGraphic: sourceGraphic,

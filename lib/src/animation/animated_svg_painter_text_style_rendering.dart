@@ -10,6 +10,9 @@ part of 'animated_svg_painter.dart';
 extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
   /// Builds a Flutter Paragraph with the resolved text style.
   ui.Paragraph _buildTextParagraph(String text, _ResolvedTextStyle style) {
+    // Apply text-transform before any other processing
+    var transformedText = _applyTextTransform(text, style.textTransform);
+
     // Apply font-size-adjust if specified
     // font-size-adjust preserves x-height when font-fallback occurs
     // adjusted-font-size = font-size * (font-size-adjust / actual-aspect-ratio)
@@ -33,7 +36,7 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
 
     // Apply unicode-bidi by wrapping text with Unicode directional control characters
     final processedText = _applyUnicodeBidi(
-      text,
+      transformedText,
       style.unicodeBidi,
       style.textDirection,
     );
@@ -66,6 +69,31 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
       ),
     );
     final decoration = _buildTextDecoration(style.decorations);
+
+    // Build comprehensive font features list from font-variant-* properties
+    final allFontFeatures = <ui.FontFeature>[
+      ...style.fontFeatures,
+    ];
+
+    // Add font-variant-caps features
+    _addFontVariantCapsFeatures(allFontFeatures, style.fontVariantCaps);
+
+    // Add font-variant-numeric features
+    _addFontVariantNumericFeatures(allFontFeatures, style.fontVariantNumeric);
+
+    // Add font-variant-ligatures features
+    _addFontVariantLigaturesFeatures(allFontFeatures, style.fontVariantLigatures);
+
+    // Add font-variant-position features
+    _addFontVariantPositionFeatures(allFontFeatures, style.fontVariantPosition);
+
+    // Add font-kerning feature
+    if (style.fontKerning == 'none') {
+      allFontFeatures.add(const ui.FontFeature.disable('kern'));
+    } else if (style.fontKerning == 'normal') {
+      allFontFeatures.add(const ui.FontFeature.enable('kern'));
+    }
+
     paragraphBuilder.pushStyle(
       ui.TextStyle(
         color: style.color,
@@ -77,7 +105,7 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
         wordSpacing: style.wordSpacing,
         decoration: decoration,
         decorationColor: style.decorationColor ?? style.color,
-        fontFeatures: style.fontFeatures.isNotEmpty ? style.fontFeatures : null,
+        fontFeatures: allFontFeatures.isNotEmpty ? allFontFeatures : null,
         fontVariations: fontVariations.isNotEmpty ? fontVariations : null,
       ),
     );
@@ -156,9 +184,15 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
     ui.ImageFilter? imageFilter,
     ui.ColorFilter? colorFilter,
     ui.BlendMode? blendMode,
+    _ResolvedTextStyle? style,
+    String? text,
   }) {
     if (imageFilter == null && colorFilter == null && blendMode == null) {
       canvas.drawParagraph(paragraph, ui.Offset(x, y));
+      // Draw text emphasis marks if configured
+      if (style != null && text != null && style.textEmphasisStyle != null) {
+        _drawTextEmphasisMarks(canvas, paragraph, x, y, text, style);
+      }
       return;
     }
 
@@ -180,7 +214,305 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
     ).inflate(1.0);
     canvas.saveLayer(bounds, layerPaint);
     canvas.drawParagraph(paragraph, ui.Offset(x, y));
+    // Draw text emphasis marks if configured
+    if (style != null && text != null && style.textEmphasisStyle != null) {
+      _drawTextEmphasisMarks(canvas, paragraph, x, y, text, style);
+    }
     canvas.restore();
+  }
+
+  /// Draws text emphasis marks above or below text.
+  /// Supports: dot, circle, double-circle, triangle, sesame, or custom string.
+  void _drawTextEmphasisMarks(
+    ui.Canvas canvas,
+    ui.Paragraph paragraph,
+    double x,
+    double y,
+    String text,
+    _ResolvedTextStyle style,
+  ) {
+    final emphasisStyle = style.textEmphasisStyle;
+    if (emphasisStyle == null) return;
+
+    // Parse emphasis style to get mark character and fill mode
+    final emphasisMark = _resolveEmphasisMarkCharacter(emphasisStyle);
+    if (emphasisMark == null) return;
+
+    // Parse position (default: over right)
+    final position = style.textEmphasisPosition;
+    final isAbove = !position.contains('under');
+
+    // Get emphasis color (default to text color)
+    final emphasisColor = style.textEmphasisColor != null
+        ? _resolveColorFromString(style.textEmphasisColor!)
+        : style.color;
+
+    // Calculate mark position
+    final markFontSize = style.fontSize * 0.5; // Emphasis marks are typically smaller
+    final markSpacing = style.fontSize * 0.2;
+
+    // Build emphasis mark paragraph
+    final emphasisParagraphStyle = ui.ParagraphStyle(
+      fontSize: markFontSize,
+      textAlign: ui.TextAlign.center,
+    );
+    final emphasisBuilder = ui.ParagraphBuilder(emphasisParagraphStyle);
+    emphasisBuilder.pushStyle(
+      ui.TextStyle(
+        color: emphasisColor,
+        fontSize: markFontSize,
+      ),
+    );
+    emphasisBuilder.addText(emphasisMark);
+    final emphasisParagraph = emphasisBuilder.build();
+    emphasisParagraph.layout(const ui.ParagraphConstraints(width: 100));
+
+    // Draw marks for each character
+    final glyphs = text.runes.map((r) => String.fromCharCode(r)).toList();
+    var charX = x;
+
+    for (var i = 0; i < glyphs.length; i++) {
+      final glyph = glyphs[i];
+      // Skip whitespace
+      if (glyph == ' ' || glyph == '\t' || glyph == '\n') {
+        final glyphParagraph = _buildTextParagraph(glyph, style);
+        charX += glyphParagraph.maxIntrinsicWidth + style.letterSpacing;
+        continue;
+      }
+
+      final glyphParagraph = _buildTextParagraph(glyph, style);
+      final glyphWidth = glyphParagraph.maxIntrinsicWidth;
+
+      // Position the emphasis mark
+      final markX = charX + (glyphWidth - emphasisParagraph.maxIntrinsicWidth) / 2;
+      final markY = isAbove
+          ? y - markSpacing - emphasisParagraph.height
+          : y + paragraph.height + markSpacing;
+
+      canvas.drawParagraph(emphasisParagraph, ui.Offset(markX, markY));
+
+      charX += glyphWidth + style.letterSpacing;
+    }
+  }
+
+  /// Resolves emphasis mark character from style value.
+  /// Returns the character to use as emphasis mark.
+  String? _resolveEmphasisMarkCharacter(String style) {
+    final normalized = style.toLowerCase();
+    final parts = normalized.split(RegExp(r'\s+'));
+
+    var isFilled = true;
+    String? markType;
+
+    for (final part in parts) {
+      switch (part) {
+        case 'filled':
+          isFilled = true;
+          break;
+        case 'open':
+          isFilled = false;
+          break;
+        case 'dot':
+        case 'circle':
+        case 'double-circle':
+        case 'triangle':
+        case 'sesame':
+          markType = part;
+          break;
+        default:
+          // Custom string - check if it's a quoted string
+          if (part.startsWith("'") || part.startsWith('"')) {
+            return part.substring(1, part.length - 1);
+          } else if (part.isNotEmpty && !['none', 'filled', 'open'].contains(part)) {
+            return part; // Custom character
+          }
+      }
+    }
+
+    // Return mark character based on type
+    switch (markType ?? 'dot') {
+      case 'dot':
+        return isFilled ? '\u2022' : '\u25E6'; // • or ◦
+      case 'circle':
+        return isFilled ? '\u25CF' : '\u25CB'; // ● or ○
+      case 'double-circle':
+        return '\u25CE'; // ◎
+      case 'triangle':
+        return isFilled ? '\u25B2' : '\u25B3'; // ▲ or △
+      case 'sesame':
+        return isFilled ? '\uFE45' : '\uFE46'; // ﹅ or ﹆
+      default:
+        return null;
+    }
+  }
+
+  /// Helper to resolve color from a string value.
+  ui.Color _resolveColorFromString(String colorStr) {
+    // Simple color resolution - handle common color names and hex values
+    final normalized = colorStr.toLowerCase().trim();
+
+    // Common color names
+    const colorMap = <String, int>{
+      'black': 0xFF000000,
+      'white': 0xFFFFFFFF,
+      'red': 0xFFFF0000,
+      'green': 0xFF008000,
+      'blue': 0xFF0000FF,
+      'yellow': 0xFFFFFF00,
+      'cyan': 0xFF00FFFF,
+      'magenta': 0xFFFF00FF,
+      'gray': 0xFF808080,
+      'grey': 0xFF808080,
+      'orange': 0xFFFFA500,
+      'purple': 0xFF800080,
+      'pink': 0xFFFFC0CB,
+      'brown': 0xFFA52A2A,
+    };
+
+    if (colorMap.containsKey(normalized)) {
+      return ui.Color(colorMap[normalized]!);
+    }
+
+    // Try to parse hex color
+    if (normalized.startsWith('#')) {
+      final hex = normalized.substring(1);
+      if (hex.length == 6) {
+        final value = int.tryParse('FF$hex', radix: 16);
+        if (value != null) return ui.Color(value);
+      } else if (hex.length == 3) {
+        final r = hex[0];
+        final g = hex[1];
+        final b = hex[2];
+        final value = int.tryParse('FF$r$r$g$g$b$b', radix: 16);
+        if (value != null) return ui.Color(value);
+      }
+    }
+
+    // Default to black
+    return const ui.Color(0xFF000000);
+  }
+
+  /// Adds font-variant-caps features to the list.
+  void _addFontVariantCapsFeatures(List<ui.FontFeature> features, String value) {
+    if (value == 'normal') return;
+
+    switch (value) {
+      case 'small-caps':
+        features.add(const ui.FontFeature.enable('smcp'));
+        break;
+      case 'all-small-caps':
+        features.add(const ui.FontFeature.enable('smcp'));
+        features.add(const ui.FontFeature.enable('c2sc'));
+        break;
+      case 'petite-caps':
+        features.add(const ui.FontFeature.enable('pcap'));
+        break;
+      case 'all-petite-caps':
+        features.add(const ui.FontFeature.enable('pcap'));
+        features.add(const ui.FontFeature.enable('c2pc'));
+        break;
+      case 'unicase':
+        features.add(const ui.FontFeature.enable('unic'));
+        break;
+      case 'titling-caps':
+        features.add(const ui.FontFeature.enable('titl'));
+        break;
+    }
+  }
+
+  /// Adds font-variant-numeric features to the list.
+  void _addFontVariantNumericFeatures(List<ui.FontFeature> features, String value) {
+    if (value == 'normal') return;
+
+    final parts = value.split(RegExp(r'\s+'));
+    for (final part in parts) {
+      switch (part) {
+        case 'lining-nums':
+          features.add(const ui.FontFeature.liningFigures());
+          break;
+        case 'oldstyle-nums':
+          features.add(const ui.FontFeature.oldstyleFigures());
+          break;
+        case 'proportional-nums':
+          features.add(const ui.FontFeature.proportionalFigures());
+          break;
+        case 'tabular-nums':
+          features.add(const ui.FontFeature.tabularFigures());
+          break;
+        case 'diagonal-fractions':
+          features.add(const ui.FontFeature.enable('frac'));
+          break;
+        case 'stacked-fractions':
+          features.add(const ui.FontFeature.enable('afrc'));
+          break;
+        case 'ordinal':
+          features.add(const ui.FontFeature.enable('ordn'));
+          break;
+        case 'slashed-zero':
+          features.add(const ui.FontFeature.slashedZero());
+          break;
+      }
+    }
+  }
+
+  /// Adds font-variant-ligatures features to the list.
+  void _addFontVariantLigaturesFeatures(List<ui.FontFeature> features, String value) {
+    if (value == 'normal') return;
+
+    if (value == 'none') {
+      features.add(const ui.FontFeature.disable('liga'));
+      features.add(const ui.FontFeature.disable('clig'));
+      features.add(const ui.FontFeature.disable('dlig'));
+      features.add(const ui.FontFeature.disable('hlig'));
+      features.add(const ui.FontFeature.disable('calt'));
+      return;
+    }
+
+    final parts = value.split(RegExp(r'\s+'));
+    for (final part in parts) {
+      switch (part) {
+        case 'common-ligatures':
+          features.add(const ui.FontFeature.enable('liga'));
+          features.add(const ui.FontFeature.enable('clig'));
+          break;
+        case 'no-common-ligatures':
+          features.add(const ui.FontFeature.disable('liga'));
+          features.add(const ui.FontFeature.disable('clig'));
+          break;
+        case 'discretionary-ligatures':
+          features.add(const ui.FontFeature.enable('dlig'));
+          break;
+        case 'no-discretionary-ligatures':
+          features.add(const ui.FontFeature.disable('dlig'));
+          break;
+        case 'historical-ligatures':
+          features.add(const ui.FontFeature.enable('hlig'));
+          break;
+        case 'no-historical-ligatures':
+          features.add(const ui.FontFeature.disable('hlig'));
+          break;
+        case 'contextual':
+          features.add(const ui.FontFeature.enable('calt'));
+          break;
+        case 'no-contextual':
+          features.add(const ui.FontFeature.disable('calt'));
+          break;
+      }
+    }
+  }
+
+  /// Adds font-variant-position features to the list.
+  void _addFontVariantPositionFeatures(List<ui.FontFeature> features, String value) {
+    if (value == 'normal') return;
+
+    switch (value) {
+      case 'sub':
+        features.add(const ui.FontFeature.enable('subs'));
+        break;
+      case 'super':
+        features.add(const ui.FontFeature.enable('sups'));
+        break;
+    }
   }
 
   /// Calculates spacing after a glyph for text path rendering.
@@ -541,5 +873,76 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
       return normalized;
     }
     return 'normal';
+  }
+
+  /// Applies text-transform CSS property to text.
+  /// - none: no transformation
+  /// - capitalize: first letter of each word uppercase
+  /// - uppercase: all letters uppercase
+  /// - lowercase: all letters lowercase
+  /// - full-width: converts to full-width form (CJK compatibility)
+  String _applyTextTransform(String text, String textTransform) {
+    if (textTransform == 'none' || text.isEmpty) {
+      return text;
+    }
+
+    switch (textTransform) {
+      case 'uppercase':
+        return text.toUpperCase();
+      case 'lowercase':
+        return text.toLowerCase();
+      case 'capitalize':
+        return _capitalizeWords(text);
+      case 'full-width':
+        return _toFullWidth(text);
+      default:
+        return text;
+    }
+  }
+
+  /// Capitalizes the first letter of each word in text.
+  String _capitalizeWords(String text) {
+    if (text.isEmpty) return text;
+
+    final buffer = StringBuffer();
+    var capitalizeNext = true;
+
+    for (var i = 0; i < text.length; i++) {
+      final char = text[i];
+      if (char == ' ' ||
+          char == '\t' ||
+          char == '\n' ||
+          char == '\r' ||
+          char == '-' ||
+          char == '_') {
+        buffer.write(char);
+        capitalizeNext = true;
+      } else if (capitalizeNext) {
+        buffer.write(char.toUpperCase());
+        capitalizeNext = false;
+      } else {
+        buffer.write(char);
+      }
+    }
+
+    return buffer.toString();
+  }
+
+  /// Converts ASCII characters to full-width equivalents.
+  /// Full-width characters are used in CJK typography for alignment.
+  String _toFullWidth(String text) {
+    final buffer = StringBuffer();
+    for (final rune in text.runes) {
+      // ASCII range 0x21-0x7E maps to full-width 0xFF01-0xFF5E
+      if (rune >= 0x21 && rune <= 0x7E) {
+        buffer.writeCharCode(rune + 0xFEE0);
+      } else if (rune == 0x20) {
+        // Space maps to ideographic space
+        buffer.writeCharCode(0x3000);
+      } else {
+        buffer.writeCharCode(rune);
+      }
+    }
+    return buffer.toString();
   }
 }

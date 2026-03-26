@@ -1134,7 +1134,10 @@ void main() {
       expect(passes.single.imageFilter, isNull);
     });
 
-    test('Resolve feTurbulence as pass-through of in input', () {
+    test('Resolve feTurbulence as procedural generator (ignores in input)', () {
+      // feTurbulence is a procedural noise generator per SVG spec - it ignores
+      // its 'in' attribute and generates noise from scratch. The input's offset
+      // is NOT passed through because feTurbulence generates its own output.
       final svgString = '''
 <svg viewBox="0 0 100 100">
   <defs>
@@ -1151,8 +1154,10 @@ void main() {
       final passes = document.filters!.resolvePaintPasses('noiseFx');
 
       expect(passes, hasLength(1));
-      expect(passes.single.offset, const ui.Offset(3, 0));
-      expect(passes.single.imageFilter, isNull);
+      // feTurbulence generates procedural noise, so offset is NOT inherited
+      expect(passes.single.offset, const ui.Offset(0, 0));
+      // The pass should be a turbulence paint pass (procedural generator)
+      expect(passes.single, isA<SvgTurbulencePaintPass>());
     });
 
     test('Resolve feComponentTransfer as pass-through of in input', () {

@@ -313,6 +313,9 @@ class _TextCursor {
 
   /// Character index within the current text chunk (for text-anchor calculation).
   int chunkCharIndex = 0;
+
+  /// Whether this is the first line of text (for text-indent).
+  bool isFirstLine = false;
 }
 
 enum _SvgTextAnchor { start, middle, end }

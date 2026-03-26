@@ -31,6 +31,124 @@ enum CssPseudoClass {
 
   /// :root - element is the root of the document
   root,
+
+  /// :first-of-type - element is first sibling of its type
+  firstOfType,
+
+  /// :last-of-type - element is last sibling of its type
+  lastOfType,
+
+  /// :only-of-type - element is only sibling of its type
+  onlyOfType,
+}
+
+/// Represents an :nth-child, :nth-last-child, :nth-of-type, or :nth-last-of-type
+/// pseudo-class with An+B formula.
+class CssNthPseudoClass {
+  const CssNthPseudoClass({
+    required this.type,
+    required this.a,
+    required this.b,
+  });
+
+  /// The type of nth pseudo-class
+  final CssNthType type;
+
+  /// The 'A' coefficient in the An+B formula
+  final int a;
+
+  /// The 'B' offset in the An+B formula
+  final int b;
+
+  /// Parse an An+B formula string.
+  /// Supports: "odd", "even", "2n", "3n+1", "-n+3", "5", etc.
+  static CssNthPseudoClass? parse(CssNthType type, String formula) {
+    final normalized = formula.trim().toLowerCase();
+
+    // Special keywords
+    if (normalized == 'odd') {
+      return CssNthPseudoClass(type: type, a: 2, b: 1);
+    }
+    if (normalized == 'even') {
+      return CssNthPseudoClass(type: type, a: 2, b: 0);
+    }
+
+    // Parse An+B formula
+    // Examples: "2n", "3n+1", "-n+3", "n", "5", "-2n-1"
+    final regex = RegExp(r'^(-?\d*)n([+-]\d+)?$|^([+-]?\d+)$');
+    final match = regex.firstMatch(normalized);
+
+    if (match == null) return null;
+
+    int a = 0;
+    int b = 0;
+
+    if (match.group(3) != null) {
+      // Just a number like "5"
+      b = int.tryParse(match.group(3)!) ?? 0;
+    } else {
+      // An+B pattern
+      final aStr = match.group(1) ?? '';
+      if (aStr.isEmpty || aStr == '-') {
+        a = aStr == '-' ? -1 : 1;
+      } else {
+        a = int.tryParse(aStr) ?? 1;
+      }
+
+      final bStr = match.group(2);
+      if (bStr != null) {
+        b = int.tryParse(bStr) ?? 0;
+      }
+    }
+
+    return CssNthPseudoClass(type: type, a: a, b: b);
+  }
+
+  /// Check if the given 1-based index matches this An+B formula.
+  bool matches(int index) {
+    if (a == 0) {
+      // Just check if index == b
+      return index == b;
+    }
+
+    // Solve An + B = index for n >= 0
+    // n = (index - b) / a
+    final diff = index - b;
+    if (a > 0) {
+      return diff >= 0 && diff % a == 0;
+    } else {
+      // Negative A means we count backwards
+      return diff <= 0 && (-diff) % (-a) == 0;
+    }
+  }
+
+  @override
+  String toString() {
+    final typeStr = switch (type) {
+      CssNthType.nthChild => 'nth-child',
+      CssNthType.nthLastChild => 'nth-last-child',
+      CssNthType.nthOfType => 'nth-of-type',
+      CssNthType.nthLastOfType => 'nth-last-of-type',
+    };
+    if (a == 0) return ':$typeStr($b)';
+    final bStr = b >= 0 ? '+$b' : '$b';
+    return ':$typeStr(${a}n$bStr)';
+  }
+}
+
+/// Types of nth-* pseudo-classes
+enum CssNthType {
+  /// :nth-child(An+B)
+  nthChild,
+
+  /// :nth-last-child(An+B)
+  nthLastChild,
+
+  /// :nth-of-type(An+B)
+  nthOfType,
+
+  /// :nth-last-of-type(An+B)
+  nthLastOfType,
 }
 
 /// Context for CSS selector matching that includes element state.
@@ -184,6 +302,7 @@ class CssSimpleSelector {
     this.classes = const [],
     this.attributes = const [],
     this.pseudoClasses = const [],
+    this.nthPseudoClasses = const [],
     this.notSelectors = const [],
   });
 
@@ -202,6 +321,9 @@ class CssSimpleSelector {
   /// Pseudo-classes (:hover, :active, :focus, etc.)
   final List<CssPseudoClass> pseudoClasses;
 
+  /// Nth-type pseudo-classes (:nth-child, :nth-of-type, etc.)
+  final List<CssNthPseudoClass> nthPseudoClasses;
+
   /// Selectors inside :not() - elements matching these are excluded
   final List<CssSimpleSelector> notSelectors;
 
@@ -213,11 +335,14 @@ class CssSimpleSelector {
           classes.isEmpty &&
           attributes.isEmpty &&
           pseudoClasses.isEmpty &&
+          nthPseudoClasses.isEmpty &&
           notSelectors.isEmpty);
 
   /// Whether this selector has any pseudo-class requirements
   bool get hasPseudoClasses =>
-      pseudoClasses.isNotEmpty || notSelectors.isNotEmpty;
+      pseudoClasses.isNotEmpty ||
+      nthPseudoClasses.isNotEmpty ||
+      notSelectors.isNotEmpty;
 
   @override
   String toString() {
@@ -232,6 +357,9 @@ class CssSimpleSelector {
     }
     for (final pc in pseudoClasses) {
       buf.write(':${_pseudoClassToString(pc)}');
+    }
+    for (final nthPc in nthPseudoClasses) {
+      buf.write(nthPc);
     }
     for (final notSel in notSelectors) {
       buf.write(':not($notSel)');
@@ -263,6 +391,12 @@ String _pseudoClassToString(CssPseudoClass pc) {
       return 'empty';
     case CssPseudoClass.root:
       return 'root';
+    case CssPseudoClass.firstOfType:
+      return 'first-of-type';
+    case CssPseudoClass.lastOfType:
+      return 'last-of-type';
+    case CssPseudoClass.onlyOfType:
+      return 'only-of-type';
   }
 }
 
@@ -382,6 +516,7 @@ int _skipWhitespace(String str, int pos) {
   final classes = <String>[];
   final attributes = <CssAttributeSelector>[];
   final pseudoClasses = <CssPseudoClass>[];
+  final nthPseudoClasses = <CssNthPseudoClass>[];
   final notSelectors = <CssSimpleSelector>[];
 
   // Parse tag name or universal selector
@@ -456,13 +591,24 @@ int _skipWhitespace(String str, int pos) {
             pos++;
           }
         } else if (pos < str.length && str[pos] == '(') {
-          // Other functional pseudo-classes like :nth-child(2n+1) - skip content
+          // Functional pseudo-classes like :nth-child(2n+1)
           var depth = 1;
           pos++;
+          final argStart = pos;
           while (pos < str.length && depth > 0) {
             if (str[pos] == '(') depth++;
             if (str[pos] == ')') depth--;
             pos++;
+          }
+          final argContent = str.substring(argStart, pos - 1).trim();
+
+          // Parse nth-* pseudo-classes
+          final nthType = _parseNthType(lowerPseudo);
+          if (nthType != null) {
+            final nthPseudo = CssNthPseudoClass.parse(nthType, argContent);
+            if (nthPseudo != null) {
+              nthPseudoClasses.add(nthPseudo);
+            }
           }
         } else {
           // Simple pseudo-classes
@@ -483,6 +629,7 @@ int _skipWhitespace(String str, int pos) {
       classes.isEmpty &&
       attributes.isEmpty &&
       pseudoClasses.isEmpty &&
+      nthPseudoClasses.isEmpty &&
       notSelectors.isEmpty) {
     return (null, startPos);
   }
@@ -494,10 +641,27 @@ int _skipWhitespace(String str, int pos) {
       classes: classes,
       attributes: attributes,
       pseudoClasses: pseudoClasses,
+      nthPseudoClasses: nthPseudoClasses,
       notSelectors: notSelectors,
     ),
     pos,
   );
+}
+
+/// Parse an nth-* pseudo-class type from name
+CssNthType? _parseNthType(String name) {
+  switch (name) {
+    case 'nth-child':
+      return CssNthType.nthChild;
+    case 'nth-last-child':
+      return CssNthType.nthLastChild;
+    case 'nth-of-type':
+      return CssNthType.nthOfType;
+    case 'nth-last-of-type':
+      return CssNthType.nthLastOfType;
+    default:
+      return null;
+  }
 }
 
 /// Parse a pseudo-class name into enum value
@@ -523,6 +687,12 @@ CssPseudoClass? _parsePseudoClass(String name) {
       return CssPseudoClass.empty;
     case 'root':
       return CssPseudoClass.root;
+    case 'first-of-type':
+      return CssPseudoClass.firstOfType;
+    case 'last-of-type':
+      return CssPseudoClass.lastOfType;
+    case 'only-of-type':
+      return CssPseudoClass.onlyOfType;
     default:
       return null;
   }

@@ -231,7 +231,17 @@ String? _resolveAnimateMotionPathData(SvgNode animNode, SvgDocument document) {
   }
 
   final referencedNode = document.getElementById(referencedId);
-  if (referencedNode == null || referencedNode.tagName != 'path') {
+  if (referencedNode == null) {
+    return null;
+  }
+
+  // Handle <switch> element - evaluate conditions and select correct child
+  if (referencedNode.tagName == 'switch') {
+    final selectedPath = _evaluateSwitchAndGetPath(referencedNode, document);
+    return selectedPath;
+  }
+
+  if (referencedNode.tagName != 'path') {
     return null;
   }
 
@@ -240,6 +250,141 @@ String? _resolveAnimateMotionPathData(SvgNode animNode, SvgDocument document) {
     return null;
   }
   return referencedPath.trim();
+}
+
+/// Evaluate a <switch> element and return the path data of the first matching child.
+/// Per SVG spec, the <switch> element evaluates requiredFeatures, requiredExtensions,
+/// and systemLanguage attributes on each child and renders the first child where
+/// all specified attributes evaluate to true.
+String? _evaluateSwitchAndGetPath(SvgNode switchNode, SvgDocument document) {
+  for (final child in switchNode.children) {
+    // Evaluate conditional processing attributes
+    if (_evaluateConditionalAttributes(child, document)) {
+      // This child passes the conditional test
+      if (child.tagName == 'path') {
+        final pathData = child.getAttributeValue('d')?.toString();
+        if (pathData != null && pathData.trim().isNotEmpty) {
+          return pathData.trim();
+        }
+      }
+      // If the matching child is a group or another element containing a path,
+      // recursively search for the first path
+      final nestedPath = _findFirstPathInSubtree(child);
+      if (nestedPath != null) {
+        return nestedPath;
+      }
+    }
+  }
+  return null;
+}
+
+/// Evaluate conditional processing attributes on a node.
+/// Returns true if the element should be processed, false if it should be skipped.
+bool _evaluateConditionalAttributes(SvgNode node, SvgDocument document) {
+  // Check requiredFeatures
+  final requiredFeatures =
+      node.getAttributeValue('requiredFeatures')?.toString();
+  if (requiredFeatures != null && requiredFeatures.isNotEmpty) {
+    if (!_evaluateRequiredFeatures(requiredFeatures)) {
+      return false;
+    }
+  }
+
+  // Check systemLanguage
+  final systemLanguage = node.getAttributeValue('systemLanguage')?.toString();
+  if (systemLanguage != null && systemLanguage.isNotEmpty) {
+    if (!_evaluateSystemLanguage(systemLanguage, document)) {
+      return false;
+    }
+  }
+
+  // Check requiredExtensions - we don't support any extensions
+  final requiredExtensions =
+      node.getAttributeValue('requiredExtensions')?.toString();
+  if (requiredExtensions != null && requiredExtensions.isNotEmpty) {
+    // We don't support any extensions, so if any are required, return false
+    return false;
+  }
+
+  return true;
+}
+
+/// Evaluate requiredFeatures attribute.
+/// Returns true if all specified features are supported.
+bool _evaluateRequiredFeatures(String features) {
+  // SVG 1.1 feature strings that we support
+  const supportedFeatures = <String>{
+    'http://www.w3.org/TR/SVG11/feature#BasicStructure',
+    'http://www.w3.org/TR/SVG11/feature#Shape',
+    'http://www.w3.org/TR/SVG11/feature#BasicText',
+    'http://www.w3.org/TR/SVG11/feature#BasicPaintAttribute',
+    'http://www.w3.org/TR/SVG11/feature#BasicGraphicsAttribute',
+    'http://www.w3.org/TR/SVG11/feature#Gradient',
+    'http://www.w3.org/TR/SVG11/feature#Pattern',
+    'http://www.w3.org/TR/SVG11/feature#Clip',
+    'http://www.w3.org/TR/SVG11/feature#Mask',
+    'http://www.w3.org/TR/SVG11/feature#Filter',
+    'http://www.w3.org/TR/SVG11/feature#Animation',
+    'http://www.w3.org/TR/SVG11/feature#AnimationEventsAttribute',
+  };
+
+  final featureList = features
+      .split(RegExp(r'\s+'))
+      .map((s) => s.trim())
+      .where((s) => s.isNotEmpty);
+
+  for (final feature in featureList) {
+    if (!supportedFeatures.contains(feature)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/// Evaluate systemLanguage attribute.
+/// Returns true if the user's language matches any of the specified languages.
+bool _evaluateSystemLanguage(String languages, SvgDocument document) {
+  // Get user's preferred language from document's xml:lang attribute or default to 'en'
+  // Per SVG spec, systemLanguage compares against the user agent's language preferences
+  String? docLang;
+  final xmlLang = document.root.getAttributeValue('xml:lang')?.toString();
+  final lang = document.root.getAttributeValue('lang')?.toString();
+  docLang = xmlLang ?? lang;
+  
+  final userLanguage = docLang ?? 'en';
+  final userLangPrefix = userLanguage.split('-').first.toLowerCase();
+
+  final languageList = languages
+      .split(',')
+      .map((s) => s.trim().toLowerCase())
+      .where((s) => s.isNotEmpty);
+
+  for (final lang in languageList) {
+    // Check for exact match or prefix match (e.g., 'en' matches 'en-US')
+    final langPrefix = lang.split('-').first;
+    if (lang == userLanguage.toLowerCase() || langPrefix == userLangPrefix) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/// Find the first path element in a subtree.
+String? _findFirstPathInSubtree(SvgNode node) {
+  if (node.tagName == 'path') {
+    final pathData = node.getAttributeValue('d')?.toString();
+    if (pathData != null && pathData.trim().isNotEmpty) {
+      return pathData.trim();
+    }
+  }
+
+  for (final child in node.children) {
+    final result = _findFirstPathInSubtree(child);
+    if (result != null) {
+      return result;
+    }
+  }
+  return null;
 }
 
 String? _extractHrefId(String? href) {

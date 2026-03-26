@@ -27,7 +27,7 @@ extension AnimatedSvgPainterCanvasTransformExtension on AnimatedSvgPainter {
     final origin = _parseTransformOrigin(node);
     final hasOrigin = origin != null && (origin.dx != 0.0 || origin.dy != 0.0);
 
-    // Check for perspective property
+    // Check for perspective property (on parent, applied to children)
     final perspectiveValue = _getPerspective(node);
     final hasPerspective = perspectiveValue != null && perspectiveValue > 0;
 
@@ -35,21 +35,35 @@ extension AnimatedSvgPainterCanvasTransformExtension on AnimatedSvgPainter {
     final hideBackface =
         _getBackfaceVisibility(node) == BackfaceVisibility.hidden;
 
-    // Apply origin offset before transform
-    if (hasOrigin) {
-      canvas.translate(origin.dx, origin.dy);
-    }
+    // Get transform-style for 3D context preservation
+    // Note: While Flutter doesn't support true 3D rendering contexts,
+    // we parse this property for API completeness and potential future use
+    _getTransformStyle(node); // Parsed for completeness
 
     // Check if we have any 3D transforms
     final has3DTransform = transforms.any((t) => _is3DTransform(t.type));
 
     if (has3DTransform || hasPerspective) {
+      // Get reference box for perspective-origin
+      final bounds = _getTransformReferenceBox(node);
+
       // Build a 4x4 matrix for 3D transforms
       var matrix = Matrix4x4.identity();
 
-      // Apply perspective first if present
+      // Apply perspective with its own origin (perspective-origin)
+      // Per CSS spec, perspective is applied BEFORE transform-origin
       if (hasPerspective) {
+        final perspectiveOrigin = _parsePerspectiveOrigin(node, bounds);
+
+        // Translate to perspective origin, apply perspective, translate back
+        matrix = matrix * Matrix4x4.translation(perspectiveOrigin.dx, perspectiveOrigin.dy, 0);
         matrix = matrix * Matrix4x4.perspective(perspectiveValue);
+        matrix = matrix * Matrix4x4.translation(-perspectiveOrigin.dx, -perspectiveOrigin.dy, 0);
+      }
+
+      // Now apply transform-origin for the actual transforms
+      if (hasOrigin) {
+        matrix = matrix * Matrix4x4.translation(origin.dx, origin.dy, 0);
       }
 
       // Apply each transform
@@ -57,18 +71,23 @@ extension AnimatedSvgPainterCanvasTransformExtension on AnimatedSvgPainter {
         matrix = matrix * _createMatrix4x4(transform);
       }
 
+      // Translate back from transform-origin
+      if (hasOrigin) {
+        matrix = matrix * Matrix4x4.translation(-origin.dx, -origin.dy, 0);
+      }
+
       // Check backface visibility
       if (hideBackface && matrix.isBackfacing()) {
         // Element is facing away, don't render
         // Set up a transform that puts everything at infinity (invisible)
         canvas.scale(0, 0);
-        if (hasOrigin) {
-          canvas.translate(-origin.dx, -origin.dy);
-        }
         return;
       }
 
       // Extract 2D matrix and apply
+      // Note: For preserve-3d, we would need to maintain the full 3D context
+      // for children, but Flutter's canvas doesn't support true 3D rendering
+      // For now, we flatten to 2D but mark the context for children
       final matrix2d = matrix.extract2DMatrix();
       final flutterMatrix = Matrix4.identity()
         ..setEntry(0, 0, matrix2d[0]) // a
@@ -79,15 +98,21 @@ extension AnimatedSvgPainterCanvasTransformExtension on AnimatedSvgPainter {
         ..setEntry(1, 3, matrix2d[5]); // f (ty)
       canvas.transform(flutterMatrix.storage);
     } else {
+      // Apply 2D transforms with transform-origin
+      // Apply origin offset before transform
+      if (hasOrigin) {
+        canvas.translate(origin.dx, origin.dy);
+      }
+
       // Apply 2D transforms directly (original behavior)
       for (final transform in transforms) {
         _apply2DTransform(canvas, transform);
       }
-    }
 
-    // Translate back after transform
-    if (hasOrigin) {
-      canvas.translate(-origin.dx, -origin.dy);
+      // Translate back after transform
+      if (hasOrigin) {
+        canvas.translate(-origin.dx, -origin.dy);
+      }
     }
   }
 
@@ -364,6 +389,106 @@ extension AnimatedSvgPainterCanvasTransformExtension on AnimatedSvgPainter {
     return str == 'hidden'
         ? BackfaceVisibility.hidden
         : BackfaceVisibility.visible;
+  }
+
+  /// Gets the transform-style property for 3D rendering context.
+  ///
+  /// - 'flat' (default): Each element's 3D transform is flattened to 2D
+  ///   before applying to children.
+  /// - 'preserve-3d': 3D transforms are preserved and accumulated for
+  ///   children. Children exist in the same 3D space as the parent.
+  Transform3DStyle _getTransformStyle(SvgNode node) {
+    final value = _getStyleOrAttributeValue(node, 'transform-style');
+    if (value == null) return Transform3DStyle.flat;
+    final str = value.toString().trim().toLowerCase();
+    return str == 'preserve-3d'
+        ? Transform3DStyle.preserve3d
+        : Transform3DStyle.flat;
+  }
+
+  /// Parses the perspective-origin CSS property.
+  ///
+  /// The perspective-origin property defines the vanishing point for the
+  /// 3D perspective effect. Default is '50% 50%' (center).
+  ///
+  /// Supports:
+  /// - Keywords: left, center, right, top, bottom
+  /// - Percentages: '25% 75%'
+  /// - Lengths: '100px 50px'
+  ui.Offset _parsePerspectiveOrigin(SvgNode node, ui.Rect bounds) {
+    final originObj = _getStyleOrAttributeValue(node, 'perspective-origin');
+    if (originObj == null) {
+      // Default is center (50% 50%)
+      return ui.Offset(
+        bounds.left + bounds.width / 2,
+        bounds.top + bounds.height / 2,
+      );
+    }
+
+    final originValue = originObj.toString().trim();
+    if (originValue.isEmpty) {
+      return ui.Offset(
+        bounds.left + bounds.width / 2,
+        bounds.top + bounds.height / 2,
+      );
+    }
+
+    final parts = originValue.trim().split(RegExp(r'\s+'));
+    if (parts.isEmpty) {
+      return ui.Offset(
+        bounds.left + bounds.width / 2,
+        bounds.top + bounds.height / 2,
+      );
+    }
+
+    double parseOriginValue(
+      String value,
+      double size,
+      double offset,
+      bool isHorizontal,
+    ) {
+      final lower = value.toLowerCase();
+      // Handle keywords
+      switch (lower) {
+        case 'left':
+          return offset;
+        case 'center':
+          return offset + size / 2;
+        case 'right':
+          return offset + size;
+        case 'top':
+          return offset;
+        case 'bottom':
+          return offset + size;
+      }
+      // Handle percentage
+      if (lower.endsWith('%')) {
+        final percent = double.tryParse(lower.substring(0, lower.length - 1));
+        if (percent != null) {
+          return offset + (percent / 100.0) * size;
+        }
+      }
+      // Handle various length units
+      return _parseLengthToPixels(lower, size, isHorizontal) + offset;
+    }
+
+    // Handle keyword swapping (e.g., "top left" vs "left top")
+    var xPart = parts[0];
+    var yPart = parts.length > 1 ? parts[1] : 'center';
+
+    // Check if first part is a vertical keyword and second is horizontal
+    if (_isVerticalKeyword(xPart) &&
+        parts.length > 1 &&
+        _isHorizontalKeyword(yPart)) {
+      final temp = xPart;
+      xPart = yPart;
+      yPart = temp;
+    }
+
+    final x = parseOriginValue(xPart, bounds.width, bounds.left, true);
+    final y = parseOriginValue(yPart, bounds.height, bounds.top, false);
+
+    return ui.Offset(x, y);
   }
 
   /// Parses the transform-origin CSS property.

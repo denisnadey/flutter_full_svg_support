@@ -53,6 +53,46 @@ class SvgDropShadowFilter extends SvgFilter {
   double get stdDeviation => (stdDeviationX + stdDeviationY) / 2.0;
 }
 
+/// Paint pass for feDropShadow with Blink multi-pass composition data.
+///
+/// This specialized pass carries the drop shadow configuration to support
+/// advanced rendering scenarios where the painter needs access to the
+/// original shadow parameters (e.g., for custom shadow rendering effects).
+class SvgDropShadowPaintPass extends SvgFilterPaintPass {
+  const SvgDropShadowPaintPass({
+    required this.shadowFilter,
+    super.imageFilter,
+    super.colorFilter,
+    super.blendMode,
+    super.offset,
+    super.paintFill,
+    super.paintStroke,
+  });
+
+  /// The drop shadow filter containing original parameters.
+  final SvgDropShadowFilter shadowFilter;
+
+  @override
+  SvgFilterPaintPass copyWith({
+    ui.ImageFilter? imageFilter,
+    ui.ColorFilter? colorFilter,
+    ui.BlendMode? blendMode,
+    ui.Offset? offset,
+    bool? paintFill,
+    bool? paintStroke,
+  }) {
+    return SvgDropShadowPaintPass(
+      shadowFilter: shadowFilter,
+      imageFilter: imageFilter ?? this.imageFilter,
+      colorFilter: colorFilter ?? this.colorFilter,
+      blendMode: blendMode ?? this.blendMode,
+      offset: offset ?? this.offset,
+      paintFill: paintFill ?? this.paintFill,
+      paintStroke: paintStroke ?? this.paintStroke,
+    );
+  }
+}
+
 /// Color Matrix фильтр
 ///
 /// Применяет цветовые трансформации

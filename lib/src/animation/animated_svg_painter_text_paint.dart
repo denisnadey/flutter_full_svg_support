@@ -12,6 +12,9 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
     final startY = _getNumber(node, 'y') ?? 0.0;
     final cursor = _TextCursor(x: startX, y: startY);
 
+    // Mark this as the start of a new text element (for text-indent)
+    cursor.isFirstLine = true;
+
     _paintTextNode(
       canvas,
       node,
@@ -417,6 +420,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
         x: cursor.x,
         baselineY: cursor.y,
         ignoreTextLength: hasExplicitPositions,
+        isFirstLine: cursor.isFirstLine,
         imageFilter: imageFilter,
         colorFilter: colorFilter,
         blendMode: blendMode,
@@ -464,6 +468,13 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
       }
     }
 
+    // Apply text-indent for first line in per-character positioning
+    double textIndentOffset = 0.0;
+    if (cursor.isFirstLine && style.textIndent != 0.0) {
+      textIndentOffset = style.textIndent;
+      cursor.isFirstLine = false; // Only apply to first line
+    }
+
     // For mixed font-size tspans, calculate baseline offset to align properly
     // When child tspan has different font-size than parent, align on alphabetic baseline
     double mixedBaselineOffset = 0.0;
@@ -502,8 +513,8 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
       final paragraph = _buildTextParagraph(glyph, style);
       final glyphWidth = paragraph.maxIntrinsicWidth;
 
-      // Apply anchor offset only to the first character
-      var drawX = cursor.x + (i == 0 ? anchorOffset : 0.0);
+      // Apply anchor offset only to the first character, plus text-indent
+      var drawX = cursor.x + (i == 0 ? anchorOffset + textIndentOffset : 0.0);
 
       final drawY = _resolveTextTopFromBaseline(
         paragraph: paragraph,
@@ -550,6 +561,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
     required double x,
     required double baselineY,
     bool ignoreTextLength = false,
+    bool isFirstLine = false,
     ui.ImageFilter? imageFilter,
     ui.ColorFilter? colorFilter,
     ui.BlendMode? blendMode,
@@ -568,6 +580,12 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
         colorFilter: colorFilter,
         blendMode: blendMode,
       );
+    }
+
+    // Apply text-indent for first line
+    var effectiveX = x;
+    if (isFirstLine && style.textIndent != 0.0) {
+      effectiveX += style.textIndent;
     }
 
     var effectiveStyle = style;
@@ -592,7 +610,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
       }
     }
 
-    var drawX = x;
+    var drawX = effectiveX;
     // Determine effective anchor based on direction
     // In RTL mode, start becomes end and vice versa
     var effectiveAnchor = effectiveStyle.textAnchor;

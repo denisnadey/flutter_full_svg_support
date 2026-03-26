@@ -41,18 +41,29 @@ extension AnimatedSvgPainterPatternsExtension on AnimatedSvgPainter {
 
     // Parse patternUnits (default: objectBoundingBox)
     final patternUnitsStr = _getString(node, 'patternUnits')?.toLowerCase();
-    final patternUnits = patternUnitsStr == 'userspaceonuse'
-        ? _SvgPatternUnits.userSpaceOnUse
-        : (inherited?.patternUnits ?? _SvgPatternUnits.objectBoundingBox);
+    _SvgPatternUnits patternUnits;
+    if (patternUnitsStr != null) {
+      patternUnits = patternUnitsStr == 'userspaceonuse'
+          ? _SvgPatternUnits.userSpaceOnUse
+          : _SvgPatternUnits.objectBoundingBox;
+    } else {
+      patternUnits = inherited?.patternUnits ?? _SvgPatternUnits.objectBoundingBox;
+    }
 
     // Parse patternContentUnits (default: userSpaceOnUse)
     final contentUnitsStr = _getString(
       node,
       'patternContentUnits',
     )?.toLowerCase();
-    final patternContentUnits = contentUnitsStr == 'objectboundingbox'
-        ? _SvgPatternUnits.objectBoundingBox
-        : (inherited?.patternContentUnits ?? _SvgPatternUnits.userSpaceOnUse);
+    _SvgPatternUnits patternContentUnits;
+    if (contentUnitsStr != null) {
+      patternContentUnits = contentUnitsStr == 'objectboundingbox'
+          ? _SvgPatternUnits.objectBoundingBox
+          : _SvgPatternUnits.userSpaceOnUse;
+    } else {
+      patternContentUnits =
+          inherited?.patternContentUnits ?? _SvgPatternUnits.userSpaceOnUse;
+    }
 
     // Parse viewBox if present
     final viewBoxStr = _getString(node, 'viewBox');
@@ -151,12 +162,8 @@ extension AnimatedSvgPainterPatternsExtension on AnimatedSvgPainter {
       final recorder = ui.PictureRecorder();
       final canvas = ui.Canvas(recorder);
 
-      // Apply content units transformation
-      if (pattern.patternContentUnits == _SvgPatternUnits.objectBoundingBox) {
-        canvas.scale(targetBounds.width, targetBounds.height);
-      }
-
-      // Apply viewBox transformation if present
+      // Apply viewBox transformation if present - takes precedence over patternContentUnits
+      // Per SVG spec, when viewBox is specified it establishes its own coordinate system
       if (pattern.viewBox != null) {
         final vb = pattern.viewBox!;
         if (vb.width > 0 && vb.height > 0) {
@@ -164,6 +171,11 @@ extension AnimatedSvgPainterPatternsExtension on AnimatedSvgPainter {
           final scaleY = tileHeight / vb.height;
           canvas.translate(-vb.left * scaleX, -vb.top * scaleY);
           canvas.scale(scaleX, scaleY);
+        }
+      } else {
+        // Only apply content units transformation when no viewBox is present
+        if (pattern.patternContentUnits == _SvgPatternUnits.objectBoundingBox) {
+          canvas.scale(targetBounds.width, targetBounds.height);
         }
       }
 

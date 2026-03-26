@@ -8,6 +8,7 @@
 library;
 
 import 'css_animations.dart';
+import 'css_variables_calc.dart';
 import 'svg_dom.dart';
 
 /// CSS Specificity value represented as (a, b, c, d) where:
@@ -655,6 +656,13 @@ class CssCascadeResolver {
       }
     }
 
+    // Check nth pseudo-classes
+    for (final nthPseudo in selector.nthPseudoClasses) {
+      if (!_matchNthPseudoClass(nthPseudo, node)) {
+        return false;
+      }
+    }
+
     // Check :not() selectors
     for (final notSelector in selector.notSelectors) {
       // If the not selector matches, the overall selector doesn't match
@@ -669,23 +677,56 @@ class CssCascadeResolver {
         selector.classes.isNotEmpty ||
         selector.attributes.isNotEmpty ||
         selector.pseudoClasses.isNotEmpty ||
+        selector.nthPseudoClasses.isNotEmpty ||
         selector.notSelectors.isNotEmpty;
+  }
+
+  /// Check if a nth pseudo-class matches an element.
+  bool _matchNthPseudoClass(CssNthPseudoClass nthPseudo, SvgNode node) {
+    final parent = node.parent;
+    if (parent == null) return false;
+
+    final siblings = parent.children;
+    final nodeIndex = siblings.indexOf(node);
+    if (nodeIndex == -1) return false;
+
+    switch (nthPseudo.type) {
+      case CssNthType.nthChild:
+        // 1-based index from start
+        return nthPseudo.matches(nodeIndex + 1);
+
+      case CssNthType.nthLastChild:
+        // 1-based index from end
+        return nthPseudo.matches(siblings.length - nodeIndex);
+
+      case CssNthType.nthOfType:
+        // Count only siblings of the same type, from start
+        final tagName = node.tagName.toLowerCase();
+        var typeIndex = 0;
+        for (var i = 0; i <= nodeIndex; i++) {
+          if (siblings[i].tagName.toLowerCase() == tagName) {
+            typeIndex++;
+          }
+        }
+        return nthPseudo.matches(typeIndex);
+
+      case CssNthType.nthLastOfType:
+        // Count only siblings of the same type, from end
+        final tagName2 = node.tagName.toLowerCase();
+        var typeIndexFromEnd = 0;
+        for (var i = siblings.length - 1; i >= nodeIndex; i--) {
+          if (siblings[i].tagName.toLowerCase() == tagName2) {
+            typeIndexFromEnd++;
+          }
+        }
+        return nthPseudo.matches(typeIndexFromEnd);
+    }
   }
 
   /// Check if a pseudo-class matches an element's current state.
   bool _matchPseudoClass(CssPseudoClass pseudo, SvgNode node, String? id) {
-    if (pseudoClassState == null || id == null) {
-      // No state tracking available - pseudo-classes don't match
-      return false;
-    }
-
+    // Structural pseudo-classes don't need ID or state tracking
     switch (pseudo) {
-      case CssPseudoClass.hover:
-        return pseudoClassState!.isHovered(id);
-      case CssPseudoClass.active:
-        return pseudoClassState!.isActive(id);
-      case CssPseudoClass.focus:
-        return pseudoClassState!.isFocused(id);
       case CssPseudoClass.root:
         return node.parent == null || node.parent?.tagName == 'svg';
       case CssPseudoClass.empty:
@@ -696,6 +737,21 @@ class CssCascadeResolver {
         return _isLastChild(node);
       case CssPseudoClass.onlyChild:
         return _isOnlyChild(node);
+      case CssPseudoClass.firstOfType:
+        return _isFirstOfType(node);
+      case CssPseudoClass.lastOfType:
+        return _isLastOfType(node);
+      case CssPseudoClass.onlyOfType:
+        return _isOnlyOfType(node);
+      case CssPseudoClass.hover:
+        if (pseudoClassState == null || id == null) return false;
+        return pseudoClassState!.isHovered(id);
+      case CssPseudoClass.active:
+        if (pseudoClassState == null || id == null) return false;
+        return pseudoClassState!.isActive(id);
+      case CssPseudoClass.focus:
+        if (pseudoClassState == null || id == null) return false;
+        return pseudoClassState!.isFocused(id);
       case CssPseudoClass.visited:
       case CssPseudoClass.link:
         // Not typically applicable to SVG elements
@@ -719,6 +775,45 @@ class CssCascadeResolver {
     final parent = node.parent;
     if (parent == null) return true;
     return parent.children.length == 1 && parent.children.first == node;
+  }
+
+  bool _isFirstOfType(SvgNode node) {
+    final parent = node.parent;
+    if (parent == null) return true;
+    final tagName = node.tagName.toLowerCase();
+    for (final sibling in parent.children) {
+      if (sibling.tagName.toLowerCase() == tagName) {
+        return sibling == node;
+      }
+    }
+    return true;
+  }
+
+  bool _isLastOfType(SvgNode node) {
+    final parent = node.parent;
+    if (parent == null) return true;
+    final tagName = node.tagName.toLowerCase();
+    for (var i = parent.children.length - 1; i >= 0; i--) {
+      final sibling = parent.children[i];
+      if (sibling.tagName.toLowerCase() == tagName) {
+        return sibling == node;
+      }
+    }
+    return true;
+  }
+
+  bool _isOnlyOfType(SvgNode node) {
+    final parent = node.parent;
+    if (parent == null) return true;
+    final tagName = node.tagName.toLowerCase();
+    var count = 0;
+    for (final sibling in parent.children) {
+      if (sibling.tagName.toLowerCase() == tagName) {
+        count++;
+        if (count > 1) return false;
+      }
+    }
+    return count == 1;
   }
 
   /// Checks if a selector matches a node.
@@ -802,4 +897,57 @@ class _MatchedRule {
   const _MatchedRule({required this.rule, required this.specificity});
   final CssSelectorRule rule;
   final CssSpecificity specificity;
+}
+
+/// Implementation of CssVariablesCascadeResolver that uses the CSS cascade
+/// to resolve custom properties defined in style blocks.
+class CssCascadeVariablesResolver extends CssVariablesCascadeResolver {
+  CssCascadeVariablesResolver(this.cascadeResolver);
+
+  /// The underlying cascade resolver with CSS rules.
+  final CssCascadeResolver cascadeResolver;
+
+  @override
+  String? resolveCustomProperty(String name, SvgNode node) {
+    // Use the cascade resolver to find custom property from matching rules
+    // Custom properties follow normal cascade rules for specificity
+    final matchingRules = cascadeResolver._getMatchingRules(node);
+
+    // Build list of candidate values with their specificity
+    CssResolvedValue? winner;
+    var order = 0;
+
+    for (final matched in matchingRules) {
+      // Check if this rule has the custom property we're looking for
+      final declaration = matched.rule.declarations[name];
+      if (declaration != null) {
+        final isImportant =
+            declaration.endsWith('!important') ||
+            declaration.contains('!important');
+        final cleanValue = _stripImportant(declaration);
+        if (cleanValue.isNotEmpty) {
+          final candidate = CssResolvedValue(
+            value: cleanValue,
+            specificity: matched.specificity,
+            order: order++,
+            isImportant: isImportant,
+          );
+          if (winner == null) {
+            winner = candidate;
+          } else {
+            winner = winner.winner(candidate);
+          }
+        }
+      }
+    }
+
+    return winner?.value;
+  }
+
+  /// Strips !important from a value.
+  String _stripImportant(String value) {
+    return value
+        .replaceFirst(RegExp(r'\s*!important\s*$', caseSensitive: false), '')
+        .trim();
+  }
 }

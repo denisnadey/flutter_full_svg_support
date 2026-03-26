@@ -44,6 +44,39 @@ void _triggerSyncbaseEventImpl(
   }
 }
 
+/// Trigger repeat event for syncbase timing
+/// Per SMIL spec, id.repeat(n) fires when animation enters the nth repeat cycle
+void _triggerRepeatEventImpl(
+  SvgTimeline timeline,
+  SmilAnimation sourceAnim,
+  int repeatIndex,
+  Duration time,
+) {
+  final dependents = timeline._dependents[sourceAnim];
+  if (dependents == null || dependents.isEmpty) {
+    return;
+  }
+
+  for (final dependent in dependents) {
+    for (final condition in dependent.beginConditions) {
+      if (condition is SyncbaseCondition &&
+          condition.animationId == sourceAnim.id &&
+          condition.type == SyncbaseType.repeat) {
+        // Check if this specific repeat index matches
+        // repeatIndex == null means trigger on all repeats
+        // repeatIndex == n means trigger only on nth repeat
+        if (condition.repeatIndex == null ||
+            condition.repeatIndex == repeatIndex) {
+          // Calculate resolved time: current time + offset
+          final resolvedTime = time + condition.offset;
+          dependent.setResolvedBeginTime(resolvedTime);
+          dependent.updateForTime(timeline._currentTime);
+        }
+      }
+    }
+  }
+}
+
 void _buildDependencyGraphImpl(SvgTimeline timeline) {
   // Создать карту ID -> анимация
   for (final anim in timeline.animations) {

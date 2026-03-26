@@ -18,15 +18,6 @@ final RegExp _customPropertyDeclarationRegex = RegExp(
   caseSensitive: false,
 );
 
-/// Regex to match var() function calls
-final RegExp _varFunctionRegex = RegExp(
-  r'var\(\s*(--[\w-]+)(?:\s*,\s*([^)]+))?\s*\)',
-  caseSensitive: false,
-);
-
-/// Regex to match calc() function calls (including nested)
-final RegExp _calcFunctionRegex = RegExp(r'calc\(', caseSensitive: false);
-
 /// Unit conversion factors to pixels (base unit)
 const Map<String, double> _unitToPixels = {
   'px': 1.0,
@@ -99,9 +90,14 @@ extension SvgNodeCssVariablesExtension on SvgNode {
 
 /// CSS variable resolver that walks up the element tree.
 class CssVariableResolver {
+  /// Optional CSS cascade resolver for rule-based variable lookup.
+  /// When set, variables defined in CSS rules will also be considered.
+  static CssVariablesCascadeResolver? cascadeResolver;
+
   /// Resolve a CSS value that may contain var() references.
   /// Walks up the node tree to find variable definitions.
   /// Supports var(--name) and var(--name, fallback).
+  /// Supports nested fallbacks: var(--x, var(--y, default)).
   static String resolveValue(String value, SvgNode node, {double? fontSize}) {
     if (!value.contains('var(')) {
       return value;
@@ -126,10 +122,8 @@ class CssVariableResolver {
     SvgNode node, {
     double? fontSize,
   }) {
-    return value.replaceAllMapped(_varFunctionRegex, (match) {
-      final varName = match.group(1)!.trim();
-      final fallback = match.group(2)?.trim();
-
+    // Use a more robust regex that handles nested var() in fallback
+    return _replaceVarCalls(value, (varName, fallback) {
       // Walk up the tree to find the variable
       final resolvedValue = _lookupVariable(varName, node);
 
@@ -138,6 +132,7 @@ class CssVariableResolver {
         return resolvedValue;
       } else if (fallback != null) {
         // Use fallback if variable not found
+        // The fallback may itself contain var() which will be resolved in next pass
         return fallback;
       } else {
         // Variable not found and no fallback - return empty
@@ -146,17 +141,88 @@ class CssVariableResolver {
     });
   }
 
-  /// Look up a custom property by walking up the element tree.
-  /// Also checks use inheritance context for properties defined on <use> elements.
-  static String? _lookupVariable(String name, SvgNode node) {
-    SvgNode? current = node;
+  /// Replace var() calls handling nested parentheses properly.
+  static String _replaceVarCalls(
+    String value,
+    String Function(String varName, String? fallback) replacer,
+  ) {
+    final result = StringBuffer();
+    var i = 0;
 
+    while (i < value.length) {
+      // Look for var(
+      final varStart = value.indexOf('var(', i);
+      if (varStart == -1) {
+        result.write(value.substring(i));
+        break;
+      }
+
+      // Add text before var(
+      result.write(value.substring(i, varStart));
+
+      // Find matching closing paren
+      var depth = 1;
+      var pos = varStart + 4;
+      var commaPos = -1;
+
+      while (pos < value.length && depth > 0) {
+        if (value[pos] == '(') {
+          depth++;
+        } else if (value[pos] == ')') {
+          depth--;
+        } else if (value[pos] == ',' && depth == 1 && commaPos == -1) {
+          commaPos = pos;
+        }
+        if (depth > 0) pos++;
+      }
+
+      if (depth == 0) {
+        // Parse var name and fallback
+        final content = value.substring(varStart + 4, pos);
+        String varName;
+        String? fallback;
+
+        if (commaPos != -1) {
+          varName = value.substring(varStart + 4, commaPos).trim();
+          fallback = value.substring(commaPos + 1, pos).trim();
+        } else {
+          varName = content.trim();
+        }
+
+        result.write(replacer(varName, fallback));
+        i = pos + 1;
+      } else {
+        // Malformed var() - just copy as-is
+        result.write(value.substring(varStart, varStart + 4));
+        i = varStart + 4;
+      }
+    }
+
+    return result.toString();
+  }
+
+  /// Look up a custom property by walking up the element tree.
+  /// Checks in order:
+  /// 1. Inline style custom properties on the element and ancestors
+  /// 2. CSS rules from style blocks (via cascade resolver)
+  /// 3. Use inheritance context for properties defined on <use> elements
+  static String? _lookupVariable(String name, SvgNode node) {
+    // Check inline custom properties first (highest specificity)
+    SvgNode? current = node;
     while (current != null) {
       final props = current.cssCustomProperties;
       if (props.has(name)) {
         return props.get(name);
       }
       current = current.parent;
+    }
+
+    // Check CSS cascade resolver for rule-based custom properties
+    if (cascadeResolver != null) {
+      final ruleValue = cascadeResolver!.resolveCustomProperty(name, node);
+      if (ruleValue != null) {
+        return ruleValue;
+      }
     }
 
     // Check use inheritance context for CSS custom properties.
@@ -172,6 +238,14 @@ class CssVariableResolver {
   }
 }
 
+/// Interface for CSS cascade-based custom property resolution.
+/// This allows integration with the CSS rule matching system.
+abstract class CssVariablesCascadeResolver {
+  /// Resolve a custom property value from CSS rules for the given node.
+  /// Returns null if not defined.
+  String? resolveCustomProperty(String name, SvgNode node);
+}
+
 /// calc() expression parser and evaluator.
 class CssCalcEvaluator {
   /// Evaluate a calc() expression to a numeric value.
@@ -180,20 +254,52 @@ class CssCalcEvaluator {
   /// [value] - The string potentially containing calc()
   /// [fontSize] - Current font size for em/rem units
   /// [containerSize] - Container size for percentage calculations (optional)
+  /// [parentFontSize] - Parent element's font size for em inheritance
   static double? evaluate(
     String value, {
     double fontSize = _defaultFontSize,
     double? containerSize,
+    double? parentFontSize,
   }) {
     final trimmed = value.trim();
+    final lower = trimmed.toLowerCase();
+
+    // Check for CSS math functions first
+    if (lower.startsWith('clamp(')) {
+      return _evaluateClamp(
+        trimmed,
+        fontSize: fontSize,
+        containerSize: containerSize,
+        parentFontSize: parentFontSize,
+      );
+    }
+
+    if (lower.startsWith('min(')) {
+      return _evaluateMin(
+        trimmed,
+        fontSize: fontSize,
+        containerSize: containerSize,
+        parentFontSize: parentFontSize,
+      );
+    }
+
+    if (lower.startsWith('max(')) {
+      return _evaluateMax(
+        trimmed,
+        fontSize: fontSize,
+        containerSize: containerSize,
+        parentFontSize: parentFontSize,
+      );
+    }
 
     // Check if it's a calc() expression
-    if (!trimmed.toLowerCase().startsWith('calc(')) {
+    if (!lower.startsWith('calc(')) {
       // Try to parse as a simple numeric value with units
       return _parseNumericValue(
         trimmed,
         fontSize: fontSize,
         containerSize: containerSize,
+        parentFontSize: parentFontSize,
       );
     }
 
@@ -208,7 +314,162 @@ class CssCalcEvaluator {
       content,
       fontSize: fontSize,
       containerSize: containerSize,
+      parentFontSize: parentFontSize,
     );
+  }
+
+  /// Evaluate a clamp(min, val, max) expression.
+  /// clamp(MIN, VAL, MAX) is equivalent to max(MIN, min(VAL, MAX))
+  static double? _evaluateClamp(
+    String expr, {
+    required double fontSize,
+    double? containerSize,
+    double? parentFontSize,
+  }) {
+    final content = _extractFunctionContent(expr, 'clamp');
+    if (content == null) return null;
+
+    final args = _splitFunctionArgs(content);
+    if (args.length != 3) return null;
+
+    final minVal = evaluate(
+      args[0],
+      fontSize: fontSize,
+      containerSize: containerSize,
+      parentFontSize: parentFontSize,
+    );
+    final val = evaluate(
+      args[1],
+      fontSize: fontSize,
+      containerSize: containerSize,
+      parentFontSize: parentFontSize,
+    );
+    final maxVal = evaluate(
+      args[2],
+      fontSize: fontSize,
+      containerSize: containerSize,
+      parentFontSize: parentFontSize,
+    );
+
+    if (minVal == null || val == null || maxVal == null) return null;
+
+    // clamp(min, val, max) = max(min, min(val, max))
+    return val.clamp(minVal, maxVal);
+  }
+
+  /// Evaluate a min(...) expression - returns the smallest value.
+  static double? _evaluateMin(
+    String expr, {
+    required double fontSize,
+    double? containerSize,
+    double? parentFontSize,
+  }) {
+    final content = _extractFunctionContent(expr, 'min');
+    if (content == null) return null;
+
+    final args = _splitFunctionArgs(content);
+    if (args.isEmpty) return null;
+
+    double? result;
+    for (final arg in args) {
+      final val = evaluate(
+        arg,
+        fontSize: fontSize,
+        containerSize: containerSize,
+        parentFontSize: parentFontSize,
+      );
+      if (val == null) return null;
+      if (result == null || val < result) {
+        result = val;
+      }
+    }
+
+    return result;
+  }
+
+  /// Evaluate a max(...) expression - returns the largest value.
+  static double? _evaluateMax(
+    String expr, {
+    required double fontSize,
+    double? containerSize,
+    double? parentFontSize,
+  }) {
+    final content = _extractFunctionContent(expr, 'max');
+    if (content == null) return null;
+
+    final args = _splitFunctionArgs(content);
+    if (args.isEmpty) return null;
+
+    double? result;
+    for (final arg in args) {
+      final val = evaluate(
+        arg,
+        fontSize: fontSize,
+        containerSize: containerSize,
+        parentFontSize: parentFontSize,
+      );
+      if (val == null) return null;
+      if (result == null || val > result) {
+        result = val;
+      }
+    }
+
+    return result;
+  }
+
+  /// Extract content from a function call like func(...).
+  static String? _extractFunctionContent(String expr, String funcName) {
+    final lower = expr.toLowerCase();
+    final prefix = '$funcName(';
+    if (!lower.startsWith(prefix)) {
+      return null;
+    }
+
+    // Find matching closing parenthesis
+    var depth = 0;
+    final start = funcName.length + 1;
+    for (var i = funcName.length; i < expr.length; i++) {
+      if (expr[i] == '(') {
+        depth++;
+      } else if (expr[i] == ')') {
+        depth--;
+        if (depth == 0) {
+          return expr.substring(start, i);
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /// Split function arguments by commas, respecting nested parentheses.
+  static List<String> _splitFunctionArgs(String content) {
+    final args = <String>[];
+    var depth = 0;
+    var current = StringBuffer();
+
+    for (var i = 0; i < content.length; i++) {
+      final char = content[i];
+      if (char == '(') {
+        depth++;
+        current.write(char);
+      } else if (char == ')') {
+        depth--;
+        current.write(char);
+      } else if (char == ',' && depth == 0) {
+        args.add(current.toString().trim());
+        current = StringBuffer();
+      } else {
+        current.write(char);
+      }
+    }
+
+    final lastArg = current.toString().trim();
+    if (lastArg.isNotEmpty) {
+      args.add(lastArg);
+    }
+
+    return args;
   }
 
   /// Extract content from calc(...).
@@ -240,12 +501,14 @@ class CssCalcEvaluator {
     String expr, {
     required double fontSize,
     double? containerSize,
+    double? parentFontSize,
   }) {
-    // First, handle nested calc() expressions
-    var resolved = _resolveNestedCalc(
+    // First, handle nested calc() expressions and math functions
+    var resolved = _resolveNestedFunctions(
       expr,
       fontSize: fontSize,
       containerSize: containerSize,
+      parentFontSize: parentFontSize,
     );
 
     if (resolved == null) {
@@ -257,23 +520,32 @@ class CssCalcEvaluator {
       resolved,
       fontSize: fontSize,
       containerSize: containerSize,
+      parentFontSize: parentFontSize,
     );
   }
 
-  /// Resolve nested calc() expressions recursively.
-  static String? _resolveNestedCalc(
+  /// Resolve nested calc(), min(), max(), clamp() expressions recursively.
+  static String? _resolveNestedFunctions(
     String expr, {
     required double fontSize,
     double? containerSize,
+    double? parentFontSize,
   }) {
     var result = expr;
     var iterations = 0;
     const maxIterations = 10;
 
-    while (_calcFunctionRegex.hasMatch(result) && iterations < maxIterations) {
-      final match = _calcFunctionRegex.firstMatch(result);
+    // Handle all CSS math functions: calc(), min(), max(), clamp()
+    final funcRegex = RegExp(
+      r'(calc|min|max|clamp)\(',
+      caseSensitive: false,
+    );
+
+    while (funcRegex.hasMatch(result) && iterations < maxIterations) {
+      final match = funcRegex.firstMatch(result);
       if (match == null) break;
 
+      final funcName = match.group(1)!.toLowerCase();
       final start = match.start;
       // Find the matching closing paren
       var depth = 1;
@@ -288,12 +560,26 @@ class CssCalcEvaluator {
         return null; // Unmatched parentheses
       }
 
-      final nestedExpr = result.substring(match.end, end - 1);
-      final nestedValue = _evaluateExpression(
-        nestedExpr,
-        fontSize: fontSize,
-        containerSize: containerSize,
-      );
+      final fullExpr = result.substring(start, end);
+      double? nestedValue;
+
+      if (funcName == 'calc') {
+        final nestedExpr = result.substring(match.end, end - 1);
+        nestedValue = _evaluateExpression(
+          nestedExpr,
+          fontSize: fontSize,
+          containerSize: containerSize,
+          parentFontSize: parentFontSize,
+        );
+      } else {
+        // min, max, clamp - use the full evaluation
+        nestedValue = evaluate(
+          fullExpr,
+          fontSize: fontSize,
+          containerSize: containerSize,
+          parentFontSize: parentFontSize,
+        );
+      }
 
       if (nestedValue == null) {
         return null;
@@ -312,6 +598,7 @@ class CssCalcEvaluator {
     String expr, {
     required double fontSize,
     double? containerSize,
+    double? parentFontSize,
   }) {
     // Tokenize the expression
     final tokens = _tokenize(expr);
@@ -339,6 +626,7 @@ class CssCalcEvaluator {
               '-${tokens[i + 1]}',
               fontSize: fontSize,
               containerSize: containerSize,
+              parentFontSize: parentFontSize,
             );
             if (nextValue == null) return null;
             values.add(nextValue);
@@ -352,6 +640,7 @@ class CssCalcEvaluator {
           token,
           fontSize: fontSize,
           containerSize: containerSize,
+          parentFontSize: parentFontSize,
         );
         if (value == null) {
           return null;
@@ -456,10 +745,14 @@ class CssCalcEvaluator {
   }
 
   /// Parse a numeric value with optional units.
+  /// 
+  /// [parentFontSize] is used for em units in the context where an element's
+  /// font-size is being computed (em is relative to parent, not current).
   static double? _parseNumericValue(
     String value, {
     required double fontSize,
     double? containerSize,
+    double? parentFontSize,
   }) {
     final trimmed = value.trim();
     if (trimmed.isEmpty) {
@@ -492,9 +785,14 @@ class CssCalcEvaluator {
       case 'px':
         return num;
       case 'em':
-        return num * fontSize;
+        // When computing font-size, em is relative to parent font-size.
+        // In other contexts, em is relative to current element's font-size.
+        return num * (parentFontSize ?? fontSize);
       case 'rem':
         return num * _defaultFontSize;
+      case 'ex':
+        // ex is approximately 0.5em (x-height of the font)
+        return num * (parentFontSize ?? fontSize) * 0.5;
       case '%':
         if (containerSize != null) {
           return num / 100.0 * containerSize;
@@ -518,6 +816,12 @@ class CssCalcEvaluator {
       case 'vmax':
         // Viewport units - return as-is since we don't have viewport info
         return num;
+      case 'ch':
+        // ch is the width of the '0' character, approximately 0.5em
+        return num * (parentFontSize ?? fontSize) * 0.5;
+      case 'lh':
+        // lh is the line-height of the element, approximate with 1.2em
+        return num * (parentFontSize ?? fontSize) * 1.2;
       default:
         // Unknown unit, try to return the number
         return num;
@@ -534,6 +838,7 @@ class CssValueResolver {
     SvgNode node, {
     double fontSize = _defaultFontSize,
     double? containerSize,
+    double? parentFontSize,
   }) {
     // First resolve any var() references
     var resolved = CssVariableResolver.resolveValue(
@@ -546,12 +851,16 @@ class CssValueResolver {
   }
 
   /// Resolve a CSS value to a numeric result.
-  /// Handles var(), calc(), and plain numeric values.
+  /// Handles var(), calc(), min(), max(), clamp() and plain numeric values.
+  ///
+  /// [parentFontSize] is used when computing font-size values where em
+  /// should be relative to the parent element's font-size.
   static double? resolveToNumber(
     String value,
     SvgNode node, {
     double fontSize = _defaultFontSize,
     double? containerSize,
+    double? parentFontSize,
   }) {
     // First resolve var() references
     final resolved = resolve(
@@ -559,6 +868,7 @@ class CssValueResolver {
       node,
       fontSize: fontSize,
       containerSize: containerSize,
+      parentFontSize: parentFontSize,
     );
 
     // Then evaluate calc() or parse as number
@@ -566,6 +876,7 @@ class CssValueResolver {
       resolved,
       fontSize: fontSize,
       containerSize: containerSize,
+      parentFontSize: parentFontSize,
     );
   }
 }
@@ -589,6 +900,15 @@ bool containsVarReference(String value) => value.contains('var(');
 /// Check if a string contains calc() expressions.
 bool containsCalcExpression(String value) =>
     value.toLowerCase().contains('calc(');
+
+/// Check if a string contains CSS math functions (calc, min, max, clamp).
+bool containsCssMathFunction(String value) {
+  final lower = value.toLowerCase();
+  return lower.contains('calc(') ||
+      lower.contains('min(') ||
+      lower.contains('max(') ||
+      lower.contains('clamp(');
+}
 
 /// Check if a property name is a custom property (starts with --).
 bool isCustomProperty(String name) => name.startsWith('--');

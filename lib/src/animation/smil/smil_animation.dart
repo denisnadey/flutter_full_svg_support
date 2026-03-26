@@ -112,6 +112,7 @@ class SmilAnimation {
     this.beginConditions = const [],
     this.endConditions = const [],
     this.isPaused = false,
+    this.documentOrder = 0,
   }) {
     // Валидация
     if (values != null) {
@@ -274,6 +275,10 @@ class SmilAnimation {
   /// Whether the animation is paused (CSS animation-play-state)
   final bool isPaused;
 
+  /// Document order index for animation sandwich model priority resolution
+  /// Per SVG SMIL spec, later animations (higher index) have higher priority
+  final int documentOrder;
+
   // === Runtime state ===
 
   /// Активна ли анимация в данный момент
@@ -309,6 +314,9 @@ class SmilAnimation {
   }
 
   /// Вычислить эффективное конечное время анимации
+  /// Per SVG/SMIL spec: when both repeatCount and repeatDur are specified,
+  /// the active duration is min(repeatCount * dur, repeatDur).
+  /// When one is indefinite, the other determines the duration.
   Duration getEffectiveEndTime() {
     final effectiveBegin = getEffectiveBeginTime();
 
@@ -316,15 +324,42 @@ class SmilAnimation {
       return end!;
     }
 
-    if (repeatDur != null) {
-      return effectiveBegin + repeatDur!;
+    // Calculate active duration per SMIL spec
+    final activeDuration = _computeActiveDuration();
+    return effectiveBegin + activeDuration;
+  }
+
+  /// Compute the active duration according to SMIL spec rules:
+  /// - If both repeatCount and repeatDur are specified: min(repeatCount * dur, repeatDur)
+  /// - If only repeatCount is indefinite: use repeatDur
+  /// - If only repeatDur is indefinite: use repeatCount * dur
+  /// - If both are indefinite: indefinite
+  Duration _computeActiveDuration() {
+    final repeatCountDuration = repeatCount.isInfinite
+        ? null
+        : dur * repeatCount;
+    
+    final repeatDurDuration = repeatDur;
+
+    // Both specified - take minimum
+    if (repeatCountDuration != null && repeatDurDuration != null) {
+      return repeatCountDuration < repeatDurDuration 
+          ? repeatCountDuration 
+          : repeatDurDuration;
     }
 
-    if (repeatCount.isInfinite) {
-      return const Duration(days: 365 * 100); // "бесконечность"
+    // Only repeatDur specified (repeatCount is indefinite)
+    if (repeatDurDuration != null) {
+      return repeatDurDuration;
     }
 
-    return effectiveBegin + dur * repeatCount;
+    // Only repeatCount specified (repeatDur is null)
+    if (repeatCountDuration != null) {
+      return repeatCountDuration;
+    }
+
+    // Both indefinite
+    return const Duration(days: 365 * 100); // "infinity"
   }
 
   /// Вычислить значение анимации в момент времени t ∈ [0, 1] внутри итерации

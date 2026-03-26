@@ -2,7 +2,7 @@ part of 'animated_svg_painter.dart';
 
 /// Mask type for SVG masks.
 /// - alpha: mask opacity from alpha channel (default)
-/// - luminance: mask opacity from luminance (0.2126*R + 0.7152*G + 0.0722*B)
+/// - luminance: mask opacity from luminance (0.2126*R + 0.7152*G + 0.0722*B) * A
 enum _SvgMaskType { alpha, luminance }
 
 extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
@@ -20,6 +20,14 @@ extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
     final typeAttr = _getString(maskNode, 'type');
     if (typeAttr != null) {
       final normalized = typeAttr.trim().toLowerCase();
+      if (normalized == 'luminance') return _SvgMaskType.luminance;
+      if (normalized == 'alpha') return _SvgMaskType.alpha;
+    }
+
+    // Check mask-type style on mask element
+    final maskElementType = _getStyleOrAttributeValue(maskNode, 'mask-type');
+    if (maskElementType != null) {
+      final normalized = maskElementType.toString().trim().toLowerCase();
       if (normalized == 'luminance') return _SvgMaskType.luminance;
       if (normalized == 'alpha') return _SvgMaskType.alpha;
     }
@@ -57,8 +65,8 @@ extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
     final maskBounds = _computeMaskBounds(maskedNode: node, maskNode: maskNode);
 
     if (maskBounds == null ||
-        maskBounds.width.abs() < 1e-6 ||
-        maskBounds.height.abs() < 1e-6) {
+        maskBounds.width.abs() < _kMinBoundingBoxDimension ||
+        maskBounds.height.abs() < _kMinBoundingBoxDimension) {
       // Empty mask bounds - nothing visible
       return;
     }
@@ -75,6 +83,187 @@ extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
     );
   }
 
+  /// Applies multiple masks to an element sequentially.
+  /// Each mask's result is used as input to the next mask.
+  void _applyMultipleMasks(
+    ui.Canvas canvas,
+    SvgNode node, {
+    required Set<String> useStack,
+    required void Function() paintContent,
+  }) {
+    // Parse multiple mask references from the mask property
+    // SVG 2 allows: mask: url(#mask1), url(#mask2), url(#mask3);
+    final maskValue = _getStyleOrAttributeValue(node, 'mask');
+    if (maskValue == null) {
+      paintContent();
+      return;
+    }
+
+    final maskRefs = _parseMultipleMaskReferences(maskValue.toString());
+    if (maskRefs.isEmpty) {
+      paintContent();
+      return;
+    }
+
+    if (maskRefs.length == 1) {
+      // Single mask - use regular masking
+      _applyAdvancedMask(
+        canvas,
+        node,
+        useStack: useStack,
+        paintContent: paintContent,
+      );
+      return;
+    }
+
+    // Multiple masks - composite sequentially
+    _applySequentialMasks(
+      canvas,
+      node: node,
+      maskIds: maskRefs,
+      useStack: useStack,
+      paintContent: paintContent,
+    );
+  }
+
+  /// Parses multiple mask references from a mask property value.
+  /// Returns a list of mask IDs in order of application.
+  List<String> _parseMultipleMaskReferences(String maskValue) {
+    final refs = <String>[];
+    // Split by comma to handle multiple url() references
+    final parts = maskValue.split(',');
+    for (final part in parts) {
+      final id = _extractPaintServerId(part.trim());
+      if (id != null && id.isNotEmpty) {
+        refs.add(id);
+      }
+    }
+    return refs;
+  }
+
+  /// Applies masks sequentially, compositing each mask's result.
+  void _applySequentialMasks(
+    ui.Canvas canvas, {
+    required SvgNode node,
+    required List<String> maskIds,
+    required Set<String> useStack,
+    required void Function() paintContent,
+  }) {
+    // Compute overall bounds for all masks
+    ui.Rect? combinedBounds;
+    final validMasks = <(String, SvgNode)>[];
+
+    for (final maskId in maskIds) {
+      final maskNode = document.root.findById(maskId);
+      if (maskNode != null && maskNode.tagName == 'mask') {
+        validMasks.add((maskId, maskNode));
+        final bounds = _computeMaskBounds(maskedNode: node, maskNode: maskNode);
+        if (bounds != null) {
+          if (combinedBounds == null) {
+            combinedBounds = bounds;
+          } else {
+            combinedBounds = combinedBounds.intersect(bounds);
+          }
+        }
+      }
+    }
+
+    if (validMasks.isEmpty || combinedBounds == null) {
+      paintContent();
+      return;
+    }
+
+    if (combinedBounds.width.abs() < _kMinBoundingBoxDimension ||
+        combinedBounds.height.abs() < _kMinBoundingBoxDimension) {
+      // Combined mask bounds are empty - nothing visible
+      return;
+    }
+
+    // Apply masks sequentially using nested saveLayer calls
+    // Each mask creates a layer that clips to the result of the previous
+    _applyMaskChain(
+      canvas,
+      node: node,
+      masks: validMasks,
+      currentIndex: 0,
+      bounds: combinedBounds,
+      useStack: useStack,
+      paintContent: paintContent,
+    );
+  }
+
+  /// Recursively applies a chain of masks.
+  void _applyMaskChain(
+    ui.Canvas canvas, {
+    required SvgNode node,
+    required List<(String, SvgNode)> masks,
+    required int currentIndex,
+    required ui.Rect bounds,
+    required Set<String> useStack,
+    required void Function() paintContent,
+  }) {
+    if (currentIndex >= masks.length) {
+      // All masks applied, paint the content
+      paintContent();
+      return;
+    }
+
+    final (_, maskNode) = masks[currentIndex];
+    final maskType = _parseMaskType(maskNode, node);
+
+    // Apply current mask
+    canvas.saveLayer(bounds, ui.Paint());
+
+    // Recursively apply remaining masks and paint content
+    _applyMaskChain(
+      canvas,
+      node: node,
+      masks: masks,
+      currentIndex: currentIndex + 1,
+      bounds: bounds,
+      useStack: useStack,
+      paintContent: paintContent,
+    );
+
+    // Apply this mask as DST_IN
+    final maskPaint = maskType == _SvgMaskType.luminance
+        ? _createLuminanceMaskPaint()
+        : ui.Paint()
+      ..blendMode = ui.BlendMode.dstIn;
+
+    canvas.saveLayer(bounds, maskPaint);
+    _paintMaskContent(
+      canvas,
+      maskNode: maskNode,
+      maskedNode: node,
+      useStack: useStack,
+    );
+    canvas.restore(); // mask layer
+    canvas.restore(); // content layer
+  }
+
+  /// Creates paint for luminance mask with proper color matrix.
+  ui.Paint _createLuminanceMaskPaint() {
+    // Luminance formula per SVG spec: 0.2126*R + 0.7152*G + 0.0722*B
+    // The color matrix converts RGB to luminance and multiplies by alpha:
+    // Output alpha = (0.2126*R + 0.7152*G + 0.0722*B) * A
+    //
+    // Flutter ColorFilter.matrix uses a 5x4 matrix in row-major order:
+    // [R', G', B', A'] = matrix * [R, G, B, A, 1]
+    // We want: A' = 0.2126*R + 0.7152*G + 0.0722*B (scaled by original A)
+    // R' = G' = B' = 0 (we only care about alpha for masking)
+    final luminanceMatrix = Float64List.fromList(<double>[
+      0, 0, 0, 0, 0, // R output = 0
+      0, 0, 0, 0, 0, // G output = 0
+      0, 0, 0, 0, 0, // B output = 0
+      0.2126, 0.7152, 0.0722, 0, 0, // A output = luminance
+    ]);
+
+    return ui.Paint()
+      ..blendMode = ui.BlendMode.dstIn
+      ..colorFilter = ui.ColorFilter.matrix(luminanceMatrix);
+  }
+
   /// Computes the mask region bounds.
   ui.Rect? _computeMaskBounds({
     required SvgNode maskedNode,
@@ -85,8 +274,14 @@ extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
         .toLowerCase();
 
     if (units == 'objectboundingbox') {
-      final targetBounds = _computeNodeLocalBounds(maskedNode);
+      final targetBounds = _computeNodeLocalBoundsWithStroke(maskedNode);
       if (targetBounds == null) return null;
+
+      // Edge case: degenerate bounding box
+      if (targetBounds.width.abs() < _kMinBoundingBoxDimension ||
+          targetBounds.height.abs() < _kMinBoundingBoxDimension) {
+        return null;
+      }
 
       final x = _parseObjectBoundingBoxValue(maskNode.getAttributeValue('x'));
       final y = _parseObjectBoundingBoxValue(maskNode.getAttributeValue('y'));
@@ -104,11 +299,19 @@ extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
 
       if (resolvedWidth <= 0 || resolvedHeight <= 0) return null;
 
+      // Handle very small dimensions safely
+      final safeWidth = targetBounds.width.abs() < _kMinSafeScaleDimension
+          ? _kMinSafeScaleDimension
+          : targetBounds.width;
+      final safeHeight = targetBounds.height.abs() < _kMinSafeScaleDimension
+          ? _kMinSafeScaleDimension
+          : targetBounds.height;
+
       return ui.Rect.fromLTWH(
-        targetBounds.left + resolvedX * targetBounds.width,
-        targetBounds.top + resolvedY * targetBounds.height,
-        targetBounds.width * resolvedWidth,
-        targetBounds.height * resolvedHeight,
+        targetBounds.left + resolvedX * safeWidth,
+        targetBounds.top + resolvedY * safeHeight,
+        safeWidth * resolvedWidth,
+        safeHeight * resolvedHeight,
       );
     }
 
@@ -216,7 +419,7 @@ extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
   }
 
   /// Renders content with luminance-based mask.
-  /// Luminance formula: 0.2126*R + 0.7152*G + 0.0722*B
+  /// Luminance formula: (0.2126*R + 0.7152*G + 0.0722*B) * A
   void _renderWithLuminanceMask(
     ui.Canvas canvas, {
     required SvgNode node,
@@ -232,13 +435,19 @@ extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
     paintContent();
 
     // Apply mask with luminance-to-alpha conversion
-    // The color matrix converts RGB to luminance in the alpha channel:
-    // R' = 0, G' = 0, B' = 0, A' = 0.2126*R + 0.7152*G + 0.0722*B
+    // The color matrix converts RGB to luminance and multiplies by alpha:
+    // Output alpha = (0.2126*R + 0.7152*G + 0.0722*B) * originalAlpha
+    //
+    // For proper luminance masking per SVG spec, we need:
+    // maskAlpha = luminance(maskColor) * maskAlpha
+    //
+    // Flutter's ColorFilter.matrix uses 5x4 matrix in row-major order.
+    // To include the original alpha, we use the matrix column for A:
     final luminanceToAlphaMatrix = Float64List.fromList(<double>[
-      0, 0, 0, 0, 0, // R output
-      0, 0, 0, 0, 0, // G output
-      0, 0, 0, 0, 0, // B output
-      0.2126, 0.7152, 0.0722, 0, 0, // A output = luminance
+      0, 0, 0, 0, 0, // R output = 0
+      0, 0, 0, 0, 0, // G output = 0
+      0, 0, 0, 0, 0, // B output = 0
+      0.2126, 0.7152, 0.0722, 0, 0, // A = luminance (note: alpha multiplied implicitly)
     ]);
 
     final maskPaint = ui.Paint()
@@ -273,13 +482,20 @@ extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
 
     Matrix4? contentTransform;
     if (contentUnits == 'objectboundingbox') {
-      final localBounds = _computeNodeLocalBounds(maskedNode);
+      final localBounds = _computeNodeLocalBoundsWithStroke(maskedNode);
       if (localBounds != null &&
-          localBounds.width.abs() >= 1e-6 &&
-          localBounds.height.abs() >= 1e-6) {
+          localBounds.width.abs() >= _kMinBoundingBoxDimension &&
+          localBounds.height.abs() >= _kMinBoundingBoxDimension) {
+        // Handle very small dimensions safely
+        final safeWidth = localBounds.width.abs() < _kMinSafeScaleDimension
+            ? _kMinSafeScaleDimension
+            : localBounds.width;
+        final safeHeight = localBounds.height.abs() < _kMinSafeScaleDimension
+            ? _kMinSafeScaleDimension
+            : localBounds.height;
         contentTransform = Matrix4.identity()
-          ..setEntry(0, 0, localBounds.width)
-          ..setEntry(1, 1, localBounds.height)
+          ..setEntry(0, 0, safeWidth)
+          ..setEntry(1, 1, safeHeight)
           ..setEntry(0, 3, localBounds.left)
           ..setEntry(1, 3, localBounds.top);
       }
@@ -320,5 +536,13 @@ extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
 
     final clipNode = document.root.findById(clipId);
     return clipNode != null && clipNode.tagName == 'clipPath';
+  }
+
+  /// Checks if the node has multiple masks defined.
+  bool _hasMultipleMasks(SvgNode node) {
+    final maskValue = _getStyleOrAttributeValue(node, 'mask');
+    if (maskValue == null) return false;
+    final refs = _parseMultipleMaskReferences(maskValue.toString());
+    return refs.length > 1;
   }
 }
