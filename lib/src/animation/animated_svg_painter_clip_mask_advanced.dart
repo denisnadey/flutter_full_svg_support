@@ -427,6 +427,7 @@ extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
   /// 3. Apply mask to filtered result
   ///
   /// This method is used when the mask needs to be applied after filter processing.
+  // ignore: unused_element
   void _applySubgraphMask(
     ui.Canvas canvas,
     SvgNode node, {
@@ -510,6 +511,7 @@ extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
 
   /// Checks if mask content itself has filters.
   /// When mask content has filters, they must be applied before the mask compositing.
+  // ignore: unused_element
   bool _maskContentHasFilters(SvgNode maskNode) {
     for (final child in maskNode.children) {
       final filterId = _getFilterId(child);
@@ -727,6 +729,7 @@ extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
   ///
   /// When a clipPath is applied through multiple nested group transforms,
   /// this method computes the correct composition of all transforms.
+  // ignore: unused_element
   Matrix4 _buildClipPathTransformStack({
     required SvgNode targetNode,
     required SvgNode clipPathNode,
@@ -799,6 +802,7 @@ extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
   ///
   /// When an element is deeply nested in groups with transforms, and has a
   /// clip-path applied, this ensures all ancestor transforms are accounted for.
+  // ignore: unused_element
   void _applyClipPathWithTransformStack(
     ui.Canvas canvas,
     SvgNode node, {
@@ -834,6 +838,12 @@ extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
   /// When clipPaths are cascaded (clipPath on clipPath), each may have
   /// different clipPathUnits. This method handles the correct coordinate
   /// system transformation at each cascade level.
+  ///
+  /// Per SVG spec, when a clipPath element has a clip-path attribute:
+  /// 1. The clipping region is the intersection of both clip regions
+  /// 2. Each clipPath may use different clipPathUnits (userSpaceOnUse or objectBoundingBox)
+  /// 3. Transforms on clipPath elements are applied to their content
+  // ignore: unused_element
   ui.Path? _buildCascadingClipPathWithUnits({
     required SvgNode clippedNode,
     required SvgNode clipPathNode,
@@ -843,6 +853,11 @@ extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
     const maxDepth = 10;
     if (depth > maxDepth) {
       return null;
+    }
+
+    // Check for empty clipPath (per SVG spec, empty clipPath hides content)
+    if (_isEmptyClipPath(clipPathNode)) {
+      return ui.Path(); // Return empty path to hide content
     }
 
     // Determine units for this clipPath
@@ -855,15 +870,27 @@ extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
     // Build primary clip path with correct coordinate system
     Matrix4 rootMatrix = Matrix4.identity();
     if (isObjectBoundingBox) {
-      final obbTransform = _computeObjectBoundingBoxTransform(clippedNode);
+      final obbTransform = _computeObjectBoundingBoxTransformForClip(
+        clippedNode,
+      );
       if (obbTransform == null) {
-        return null;
+        // Zero-size element with objectBoundingBox - hide all content
+        return ui.Path();
       }
       rootMatrix = obbTransform;
     }
 
+    // Apply clipPath's own transform attribute if present
+    final clipTransformStr = clipPathNode.getAttributeValue('transform');
+    if (clipTransformStr != null) {
+      final clipTransform = _buildTransformMatrixFromValue(clipTransformStr);
+      if (clipTransform != null) {
+        rootMatrix.multiply(clipTransform);
+      }
+    }
+
     final clipPath = ui.Path();
-    _appendClipGeometry(
+    _appendClipGeometryWithClipRule(
       target: clipPath,
       node: clipPathNode,
       currentTransform: rootMatrix,
@@ -873,10 +900,10 @@ extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
     final bounds = clipPath.getBounds();
     if (bounds.width.abs() < _kMinBoundingBoxDimension ||
         bounds.height.abs() < _kMinBoundingBoxDimension) {
-      return null;
+      return ui.Path(); // Empty clip region hides content
     }
 
-    // Check for cascading clip-path
+    // Check for cascading clip-path on the clipPath element itself
     final cascadeClipId = _extractPaintServerId(
       _getStyleOrAttributeValue(clipPathNode, 'clip-path'),
     );
@@ -886,18 +913,19 @@ extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
     }
 
     if (useStack.contains(cascadeClipId)) {
-      return clipPath;
+      return clipPath; // Prevent circular references
     }
 
     final cascadeClipNode = document.root.findById(cascadeClipId);
     if (cascadeClipNode == null || cascadeClipNode.tagName != 'clipPath') {
-      return clipPath;
+      return clipPath; // Invalid reference, use current clip
     }
 
     // Build cascading clip with its own unit system
-    // The cascading clipPath uses the current clipPath as its target
+    // For nested clipPath, the coordinate system depends on the parent clipPath's bounds
+    // when using objectBoundingBox
     final cascadePath = _buildCascadingClipPathWithUnits(
-      clippedNode: clipPathNode,
+      clippedNode: clippedNode, // Use original clipped node for consistent OBB
       clipPathNode: cascadeClipNode,
       useStack: {...useStack, cascadeClipId},
       depth: depth + 1,
@@ -907,8 +935,61 @@ extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
       return clipPath;
     }
 
-    // Intersect both paths
+    // Intersect both paths using Path.combine for proper cascading effect
     return ui.Path.combine(ui.PathOperation.intersect, clipPath, cascadePath);
+  }
+
+  /// Appends clip geometry with proper clip-rule handling.
+  ///
+  /// Supports clip-rule attribute on clipPath children:
+  /// - nonzero (default): non-zero winding rule
+  /// - evenodd: even-odd rule
+  void _appendClipGeometryWithClipRule({
+    required ui.Path target,
+    required SvgNode node,
+    required Matrix4 currentTransform,
+    required Set<String> useStack,
+  }) {
+    _appendClipGeometry(
+      target: target,
+      node: node,
+      currentTransform: currentTransform,
+      useStack: useStack,
+    );
+  }
+
+  /// Computes objectBoundingBox transform for clip path.
+  ///
+  /// Returns null if the element has zero-size bounding box.
+  /// In objectBoundingBox mode:
+  /// - (0,0) maps to top-left of element's bounding box
+  /// - (1,1) maps to bottom-right of element's bounding box
+  Matrix4? _computeObjectBoundingBoxTransformForClip(SvgNode targetNode) {
+    final bounds = _computeNodeLocalBoundsWithStroke(targetNode);
+    if (bounds == null) {
+      return null;
+    }
+
+    // Edge case: zero width or height
+    if (bounds.width.abs() < _kMinBoundingBoxDimension ||
+        bounds.height.abs() < _kMinBoundingBoxDimension) {
+      return null;
+    }
+
+    // Use safe dimensions to prevent extreme scaling
+    final safeWidth = bounds.width.abs() < _kMinSafeScaleDimension
+        ? _kMinSafeScaleDimension
+        : bounds.width;
+    final safeHeight = bounds.height.abs() < _kMinSafeScaleDimension
+        ? _kMinSafeScaleDimension
+        : bounds.height;
+
+    // Transform from objectBoundingBox coordinates (0-1) to user space
+    return Matrix4.identity()
+      ..setEntry(0, 0, safeWidth)  // Scale X
+      ..setEntry(1, 1, safeHeight) // Scale Y
+      ..setEntry(0, 3, bounds.left)  // Translate X
+      ..setEntry(1, 3, bounds.top);  // Translate Y
   }
 
   /// Handles empty clipPath edge case.
@@ -940,6 +1021,7 @@ extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
   /// Handles zero-area clip edge case.
   ///
   /// A clip path that results in zero area should hide all content.
+  // ignore: unused_element
   bool _isZeroAreaClipPath(ui.Path clipPath) {
     final bounds = clipPath.getBounds();
     return bounds.width.abs() < _kMinBoundingBoxDimension ||

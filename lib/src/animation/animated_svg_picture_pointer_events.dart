@@ -2,6 +2,8 @@ part of 'animated_svg_picture.dart';
 
 extension _AnimatedSvgPictureStatePointerEventsExtension
     on _AnimatedSvgPictureState {
+  /// Resolves the effective pointer-events mode for a node.
+  /// Handles inheritance and normalizes values.
   String _resolvePointerEventsMode(SvgNode node) {
     final raw = _resolveInheritedPointerEvents(node);
     if (raw == null || raw.isEmpty || raw == 'auto') {
@@ -21,6 +23,84 @@ extension _AnimatedSvgPictureStatePointerEventsExtension
         return raw;
       default:
         return 'visiblepainted';
+    }
+  }
+
+  /// Checks if pointer-events="none" blocks all events.
+  /// Returns true if events should be completely blocked.
+  bool _isPointerEventsBlocked(SvgNode node) {
+    final mode = _resolvePointerEventsMode(node);
+    return mode == 'none';
+  }
+
+  /// Checks if pointer-events="all" allows events on invisible elements.
+  /// Returns true if events fire even on invisible/unpainted areas.
+  bool _pointerEventsAllowsAll(SvgNode node) {
+    final mode = _resolvePointerEventsMode(node);
+    return mode == 'all';
+  }
+
+  /// Checks if the element should receive pointer events based on its mode
+  /// and visibility state.
+  bool _shouldReceivePointerEvents(
+    SvgNode node, {
+    required bool visibilityHidden,
+    required bool hitFill,
+    required bool hitStroke,
+  }) {
+    final mode = _resolvePointerEventsMode(node);
+
+    switch (mode) {
+      case 'none':
+        // Never receive events
+        return false;
+
+      case 'all':
+        // Always receive events, regardless of visibility or paint
+        return true;
+
+      case 'visible':
+        // Only visible elements receive events (any part)
+        return !visibilityHidden;
+
+      case 'visiblepainted':
+        // Default: visible AND (fill painted OR stroke painted)
+        if (visibilityHidden) return false;
+        return (hitFill && _isFillEnabled(node)) ||
+            (hitStroke && _hasStroke(node));
+
+      case 'visiblefill':
+        // Visible AND fill area
+        if (visibilityHidden) return false;
+        return hitFill;
+
+      case 'visiblestroke':
+        // Visible AND stroke area
+        if (visibilityHidden) return false;
+        return hitStroke;
+
+      case 'painted':
+        // Fill or stroke painted (ignores visibility)
+        return (hitFill && _isFillEnabled(node)) ||
+            (hitStroke && _hasStroke(node));
+
+      case 'fill':
+        // Fill area only (ignores visibility and paint)
+        return hitFill;
+
+      case 'stroke':
+        // Stroke area only (ignores visibility and paint)
+        return hitStroke;
+
+      case 'bounding-box':
+        // Entire bounding box receives events
+        return true;
+
+      default:
+        // Fallback to visiblePainted behavior
+        if (visibilityHidden) return false;
+        return (hitFill && _isFillEnabled(node)) ||
+            (hitStroke && _hasStroke(node));
     }
   }
 

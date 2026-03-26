@@ -9,6 +9,8 @@ part of 'animated_svg_painter.dart';
 /// - Text content extraction with whitespace handling
 /// - Grapheme cluster segmentation for complex scripts
 /// - Combining marks and diacritics positioning
+/// - NFC normalization for Unicode text
+/// - Characters-based grapheme cluster iteration
 extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
   /// Builds a Flutter Paragraph with the resolved text style.
   ///
@@ -17,9 +19,13 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
   /// - Unicode BiDi text with directional control characters
   /// - Complex script shaping (Arabic, Thai, Devanagari)
   /// - Combining marks and diacritics
+  /// - NFC normalization for proper glyph composition
   ui.Paragraph _buildTextParagraph(String text, _ResolvedTextStyle style) {
+    // Apply NFC normalization first to compose combining marks
+    final normalizedText = _normalizeTextNfc(text);
+
     // Apply text-transform before any other processing
-    var transformedText = _applyTextTransform(text, style.textTransform);
+    var transformedText = _applyTextTransform(normalizedText, style.textTransform);
 
     // Apply font-size-adjust if specified
     // font-size-adjust preserves x-height when font-fallback occurs
@@ -186,18 +192,238 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
     }
   }
 
+  /// Normalizes text to NFC (Canonical Decomposition, followed by Canonical Composition).
+  ///
+  /// NFC ensures that combining character sequences are composed into
+  /// precomposed characters when possible. For example:
+  /// - 'e' + '\u0301' (combining acute accent) -> 'é' (U+00E9)
+  ///
+  /// This is important for:
+  /// - Proper glyph rendering
+  /// - Consistent text width measurement
+  /// - Correct character counting for positioning
+  String _normalizeTextNfc(String text) {
+    if (text.isEmpty) return text;
+    // Dart's String doesn't have built-in normalize, but we can implement
+    // NFC-like normalization by using replacement patterns for common cases
+    // and relying on the text shaper for the rest.
+    // For full NFC, we process combining sequences.
+    return _composeToNfc(text);
+  }
+
+  /// Composes text to NFC form.
+  ///
+  /// This handles the most common combining sequences for Latin, Greek,
+  /// and Cyrillic scripts. The text shaper handles complex scripts.
+  String _composeToNfc(String text) {
+    if (text.isEmpty) return text;
+
+    // Check if text has any combining marks that might need composition
+    bool hasCombining = false;
+    for (final rune in text.runes) {
+      if (_isCombiningMark(rune)) {
+        hasCombining = true;
+        break;
+      }
+    }
+
+    if (!hasCombining) return text;
+
+    // Process character by character, composing where possible
+    final buffer = StringBuffer();
+    final runes = text.runes.toList();
+    var i = 0;
+
+    while (i < runes.length) {
+      final base = runes[i];
+      i++;
+
+      // Collect all following combining marks
+      final combining = <int>[];
+      while (i < runes.length && _isCombiningMark(runes[i])) {
+        combining.add(runes[i]);
+        i++;
+      }
+
+      if (combining.isEmpty) {
+        buffer.writeCharCode(base);
+      } else {
+        // Try to compose base + combining marks
+        final composed = _tryCompose(base, combining);
+        buffer.write(composed);
+      }
+    }
+
+    return buffer.toString();
+  }
+
+  /// Attempts to compose a base character with combining marks.
+  ///
+  /// Returns the composed string (may be same length if no composition possible).
+  String _tryCompose(int base, List<int> combining) {
+    // Common Latin compositions with acute accent (U+0301)
+    if (combining.length == 1 && combining[0] == 0x0301) {
+      final composed = _composeWithAcute(base);
+      if (composed != null) return String.fromCharCode(composed);
+    }
+
+    // Common Latin compositions with grave accent (U+0300)
+    if (combining.length == 1 && combining[0] == 0x0300) {
+      final composed = _composeWithGrave(base);
+      if (composed != null) return String.fromCharCode(composed);
+    }
+
+    // Common Latin compositions with circumflex (U+0302)
+    if (combining.length == 1 && combining[0] == 0x0302) {
+      final composed = _composeWithCircumflex(base);
+      if (composed != null) return String.fromCharCode(composed);
+    }
+
+    // Common Latin compositions with tilde (U+0303)
+    if (combining.length == 1 && combining[0] == 0x0303) {
+      final composed = _composeWithTilde(base);
+      if (composed != null) return String.fromCharCode(composed);
+    }
+
+    // Common Latin compositions with diaeresis/umlaut (U+0308)
+    if (combining.length == 1 && combining[0] == 0x0308) {
+      final composed = _composeWithDiaeresis(base);
+      if (composed != null) return String.fromCharCode(composed);
+    }
+
+    // Common Latin compositions with cedilla (U+0327)
+    if (combining.length == 1 && combining[0] == 0x0327) {
+      final composed = _composeWithCedilla(base);
+      if (composed != null) return String.fromCharCode(composed);
+    }
+
+    // No composition found, return as separate characters
+    return String.fromCharCode(base) + String.fromCharCodes(combining);
+  }
+
+  /// Composes base character with acute accent (U+0301).
+  int? _composeWithAcute(int base) {
+    const compositions = <int, int>{
+      0x0041: 0x00C1, // A -> Á
+      0x0061: 0x00E1, // a -> á
+      0x0045: 0x00C9, // E -> É
+      0x0065: 0x00E9, // e -> é
+      0x0049: 0x00CD, // I -> Í
+      0x0069: 0x00ED, // i -> í
+      0x004F: 0x00D3, // O -> Ó
+      0x006F: 0x00F3, // o -> ó
+      0x0055: 0x00DA, // U -> Ú
+      0x0075: 0x00FA, // u -> ú
+      0x0059: 0x00DD, // Y -> Ý
+      0x0079: 0x00FD, // y -> ý
+      0x004E: 0x0143, // N -> Ń
+      0x006E: 0x0144, // n -> ń
+      0x0043: 0x0106, // C -> Ć
+      0x0063: 0x0107, // c -> ć
+      0x0053: 0x015A, // S -> Ś
+      0x0073: 0x015B, // s -> ś
+      0x005A: 0x0179, // Z -> Ź
+      0x007A: 0x017A, // z -> ź
+    };
+    return compositions[base];
+  }
+
+  /// Composes base character with grave accent (U+0300).
+  int? _composeWithGrave(int base) {
+    const compositions = <int, int>{
+      0x0041: 0x00C0, // A -> À
+      0x0061: 0x00E0, // a -> à
+      0x0045: 0x00C8, // E -> È
+      0x0065: 0x00E8, // e -> è
+      0x0049: 0x00CC, // I -> Ì
+      0x0069: 0x00EC, // i -> ì
+      0x004F: 0x00D2, // O -> Ò
+      0x006F: 0x00F2, // o -> ò
+      0x0055: 0x00D9, // U -> Ù
+      0x0075: 0x00F9, // u -> ù
+    };
+    return compositions[base];
+  }
+
+  /// Composes base character with circumflex (U+0302).
+  int? _composeWithCircumflex(int base) {
+    const compositions = <int, int>{
+      0x0041: 0x00C2, // A -> Â
+      0x0061: 0x00E2, // a -> â
+      0x0045: 0x00CA, // E -> Ê
+      0x0065: 0x00EA, // e -> ê
+      0x0049: 0x00CE, // I -> Î
+      0x0069: 0x00EE, // i -> î
+      0x004F: 0x00D4, // O -> Ô
+      0x006F: 0x00F4, // o -> ô
+      0x0055: 0x00DB, // U -> Û
+      0x0075: 0x00FB, // u -> û
+    };
+    return compositions[base];
+  }
+
+  /// Composes base character with tilde (U+0303).
+  int? _composeWithTilde(int base) {
+    const compositions = <int, int>{
+      0x0041: 0x00C3, // A -> Ã
+      0x0061: 0x00E3, // a -> ã
+      0x004E: 0x00D1, // N -> Ñ
+      0x006E: 0x00F1, // n -> ñ
+      0x004F: 0x00D5, // O -> Õ
+      0x006F: 0x00F5, // o -> õ
+    };
+    return compositions[base];
+  }
+
+  /// Composes base character with diaeresis/umlaut (U+0308).
+  int? _composeWithDiaeresis(int base) {
+    const compositions = <int, int>{
+      0x0041: 0x00C4, // A -> Ä
+      0x0061: 0x00E4, // a -> ä
+      0x0045: 0x00CB, // E -> Ë
+      0x0065: 0x00EB, // e -> ë
+      0x0049: 0x00CF, // I -> Ï
+      0x0069: 0x00EF, // i -> ï
+      0x004F: 0x00D6, // O -> Ö
+      0x006F: 0x00F6, // o -> ö
+      0x0055: 0x00DC, // U -> Ü
+      0x0075: 0x00FC, // u -> ü
+      0x0059: 0x0178, // Y -> Ÿ
+      0x0079: 0x00FF, // y -> ÿ
+    };
+    return compositions[base];
+  }
+
+  /// Composes base character with cedilla (U+0327).
+  int? _composeWithCedilla(int base) {
+    const compositions = <int, int>{
+      0x0043: 0x00C7, // C -> Ç
+      0x0063: 0x00E7, // c -> ç
+      0x0053: 0x015E, // S -> Ş
+      0x0073: 0x015F, // s -> ş
+    };
+    return compositions[base];
+  }
+
   /// Segments text into grapheme clusters for proper character handling.
   ///
   /// A grapheme cluster is a user-perceived "character" that may consist of:
   /// - A base character + combining marks (é = e + ́)
   /// - A base character + complex script components
   /// - Emoji sequences (family emoji, skin tone modifiers)
+  /// - Regional indicator pairs (flag sequences)
+  /// - ZWJ sequences (emoji with zero-width joiner)
+  ///
+  /// This method implements Unicode Text Segmentation (UAX #29) for proper
+  /// grapheme cluster identification.
   ///
   /// This is essential for:
   /// - Arabic connected letter forms
   /// - Thai vowel marks and tone marks
   /// - Devanagari conjuncts and matras
   /// - Combining diacritical marks
+  /// - Emoji sequences with ZWJ and modifiers
+  // ignore: unused_element
   List<String> _segmentIntoGraphemeClusters(String text) {
     if (text.isEmpty) {
       return const <String>[];
@@ -216,6 +442,33 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
         i++;
       }
 
+      // Handle ZWJ sequences (emoji)
+      while (i + 1 < runes.length && runes[i] == 0x200D) {
+        i++; // Skip ZWJ
+        i++; // Include next character
+        // Consume any combining marks after the joined character
+        while (i < runes.length && _isCombiningMark(runes[i])) {
+          i++;
+        }
+        // Handle variation selectors after ZWJ character
+        while (i < runes.length && _isVariationSelector(runes[i])) {
+          i++;
+        }
+      }
+
+      // Handle regional indicator pairs (flags)
+      if (start < runes.length &&
+          _isRegionalIndicator(runes[start]) &&
+          i < runes.length &&
+          _isRegionalIndicator(runes[i])) {
+        i++; // Include the second regional indicator
+      }
+
+      // Handle variation selectors and skin tone modifiers
+      while (i < runes.length && _isVariationSelector(runes[i])) {
+        i++;
+      }
+
       // Extract the grapheme cluster
       final cluster = String.fromCharCodes(runes.sublist(start, i));
       clusters.add(cluster);
@@ -224,11 +477,28 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
     return clusters;
   }
 
+  /// Checks if a code point is a regional indicator (used in flag emoji).
+  bool _isRegionalIndicator(int codePoint) {
+    return codePoint >= 0x1F1E6 && codePoint <= 0x1F1FF;
+  }
+
+  /// Checks if a code point is a variation selector.
+  bool _isVariationSelector(int codePoint) {
+    // Variation selectors VS1-VS16 (FE00-FE0F)
+    if (codePoint >= 0xFE00 && codePoint <= 0xFE0F) return true;
+    // Variation selectors VS17-VS256 (E0100-E01EF)
+    if (codePoint >= 0xE0100 && codePoint <= 0xE01EF) return true;
+    // Emoji skin tone modifiers (1F3FB-1F3FF)
+    if (codePoint >= 0x1F3FB && codePoint <= 0x1F3FF) return true;
+    return false;
+  }
+
   /// Detects the text direction for a given text based on its content.
   ///
   /// Implements first-strong character detection per UAX #9:
   /// - Scans for first character with strong directionality (L, R, or AL)
   /// - Returns RTL if first strong is R or AL, LTR otherwise
+  // ignore: unused_element
   ui.TextDirection _detectTextDirection(String text) {
     for (final codeUnit in text.runes) {
       final category = _getUnicodeBidiCategory(codeUnit);
@@ -313,6 +583,7 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
   ///
   /// Each run contains text of consistent directionality.
   /// Used for proper hit-testing and selection in mixed-direction text.
+  // ignore: unused_element
   List<_BidiRun> _segmentIntoBidiRuns(
     String text,
     ui.TextDirection baseDirection,

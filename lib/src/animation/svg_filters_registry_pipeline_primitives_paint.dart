@@ -1,5 +1,91 @@
 part of 'svg_filters.dart';
 
+/// Specialized paint pass for FillPaint input source.
+///
+/// Per SVG Filter 1.1 spec, FillPaint generates an image filled with the
+/// element's current fill paint. This enables filter effects like:
+/// - Fill-aware color manipulation
+/// - Outline effects based on fill color
+/// - Paint server-aware filtering (gradients, patterns)
+///
+/// When the element has a solid fill, this creates a uniform color image.
+/// When the element has a gradient or pattern fill, the paint's rendered
+/// appearance is used.
+class SvgFillPaintSourcePass extends SvgFilterPaintPass {
+  const SvgFillPaintSourcePass({
+    super.imageFilter,
+    super.colorFilter,
+    super.blendMode,
+    super.offset,
+    this.fillColor,
+  }) : super(paintFill: true, paintStroke: false);
+
+  /// The solid fill color, if available.
+  /// Null when fill is a gradient or pattern.
+  final ui.Color? fillColor;
+
+  @override
+  SvgFilterPaintPass copyWith({
+    ui.ImageFilter? imageFilter,
+    ui.ColorFilter? colorFilter,
+    ui.BlendMode? blendMode,
+    ui.Offset? offset,
+    bool? paintFill,
+    bool? paintStroke,
+  }) {
+    return SvgFillPaintSourcePass(
+      imageFilter: imageFilter ?? this.imageFilter,
+      colorFilter: colorFilter ?? this.colorFilter,
+      blendMode: blendMode ?? this.blendMode,
+      offset: offset ?? this.offset,
+      fillColor: fillColor,
+    );
+  }
+}
+
+/// Specialized paint pass for StrokePaint input source.
+///
+/// Per SVG Filter 1.1 spec, StrokePaint generates an image filled with the
+/// element's current stroke paint. This enables filter effects like:
+/// - Stroke-aware color manipulation
+/// - Stroke-based glow or shadow effects
+/// - Paint server-aware stroke filtering
+///
+/// When the element has a solid stroke, this creates a uniform color image.
+/// When the element has a gradient or pattern stroke, the paint's rendered
+/// appearance is used.
+class SvgStrokePaintSourcePass extends SvgFilterPaintPass {
+  const SvgStrokePaintSourcePass({
+    super.imageFilter,
+    super.colorFilter,
+    super.blendMode,
+    super.offset,
+    this.strokeColor,
+  }) : super(paintFill: false, paintStroke: true);
+
+  /// The solid stroke color, if available.
+  /// Null when stroke is a gradient or pattern.
+  final ui.Color? strokeColor;
+
+  @override
+  SvgFilterPaintPass copyWith({
+    ui.ImageFilter? imageFilter,
+    ui.ColorFilter? colorFilter,
+    ui.BlendMode? blendMode,
+    ui.Offset? offset,
+    bool? paintFill,
+    bool? paintStroke,
+  }) {
+    return SvgStrokePaintSourcePass(
+      imageFilter: imageFilter ?? this.imageFilter,
+      colorFilter: colorFilter ?? this.colorFilter,
+      blendMode: blendMode ?? this.blendMode,
+      offset: offset ?? this.offset,
+      strokeColor: strokeColor,
+    );
+  }
+}
+
 extension SvgFiltersPipelinePrimitivePaintExtension on SvgFilters {
   List<SvgFilterPaintPass> _resolvePassthroughOutput({
     required String? requestedInput,
@@ -220,5 +306,63 @@ extension SvgFiltersPipelinePrimitivePaintExtension on SvgFilters {
       sourceGraphic: sourceGraphic,
       sourceAlpha: sourceAlpha,
     );
+  }
+
+  /// Creates FillPaint source passes for use as filter input.
+  ///
+  /// Per SVG Filter 1.1 spec, FillPaint uses the element's current fill paint
+  /// to create the input image. When fill is a solid color, this generates
+  /// an image filled with that color. For gradients/patterns, the paint's
+  /// rendered appearance is used.
+  ///
+  /// This method creates specialized SvgFillPaintSourcePass instances that:
+  /// - Carry the paintFill=true flag for proper rendering
+  /// - Include the fill color when available for optimization
+  /// - Support downstream filter processing (blur, offset, etc.)
+  static List<SvgFilterPaintPass> createFillPaintSourcePasses({
+    ui.Color? fillColor,
+  }) {
+    if (fillColor != null) {
+      // Solid fill: create a pass with the color filter to produce filled image.
+      return <SvgFilterPaintPass>[
+        SvgFillPaintSourcePass(
+          fillColor: fillColor,
+          colorFilter: ui.ColorFilter.mode(fillColor, ui.BlendMode.srcIn),
+        ),
+      ];
+    }
+    // No specific color: use identity pass with paintFill flag.
+    return const <SvgFilterPaintPass>[
+      SvgFillPaintSourcePass(),
+    ];
+  }
+
+  /// Creates StrokePaint source passes for use as filter input.
+  ///
+  /// Per SVG Filter 1.1 spec, StrokePaint uses the element's current stroke
+  /// paint to create the input image. When stroke is a solid color, this
+  /// generates an image filled with that color. For gradients/patterns, the
+  /// paint's rendered appearance is used.
+  ///
+  /// This method creates specialized SvgStrokePaintSourcePass instances that:
+  /// - Carry the paintStroke=true flag for proper rendering
+  /// - Include the stroke color when available for optimization
+  /// - Support downstream filter processing (blur, offset, etc.)
+  static List<SvgFilterPaintPass> createStrokePaintSourcePasses({
+    ui.Color? strokeColor,
+  }) {
+    if (strokeColor != null) {
+      // Solid stroke: create a pass with the color filter to produce filled image.
+      return <SvgFilterPaintPass>[
+        SvgStrokePaintSourcePass(
+          strokeColor: strokeColor,
+          colorFilter: ui.ColorFilter.mode(strokeColor, ui.BlendMode.srcIn),
+        ),
+      ];
+    }
+    // No specific color: use identity pass with paintStroke flag.
+    return const <SvgFilterPaintPass>[
+      SvgStrokePaintSourcePass(),
+    ];
   }
 }

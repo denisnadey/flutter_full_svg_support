@@ -106,14 +106,14 @@ const Set<String> cssInheritablePropertiesForForeignObject =
 /// captures those inherited values and makes them available during rendering
 /// of the referenced subtree.
 ///
-/// Specificity rules (per CSS cascade):
-/// 1. Inline style on referenced element (highest - specificity 1,0,0,0)
-/// 2. !important declarations
-/// 3. CSS rules from <style> (by specificity, then source order)
-/// 4. Presentation attributes on referenced element (specificity 0,0,0,0)
-/// 5. Use element's style attribute
-/// 6. Use element's presentation attributes
-/// 7. Inherited from use's ancestors
+/// Cascade priority (highest to lowest):
+/// 1. Inline style on referenced element (with !important taking absolute priority)
+/// 2. CSS rules from <style> blocks (by specificity, then source order)
+/// 3. Presentation attributes on referenced element
+/// 4. Inherited from <use> element's style attribute (for inheritable props only)
+/// 5. Inherited from <use> element's presentation attributes (for inheritable props)
+/// 6. Inherited from use's ancestors (DOM tree)
+/// 7. Inherited from parent use context (nested use chains)
 ///
 /// IMPORTANT: Only inheritable CSS properties should flow through <use> boundaries.
 /// Non-inherited properties (opacity, transform, display, clip-path, mask, filter)
@@ -325,26 +325,25 @@ class _UseInheritanceContext {
   /// This handles the special case where CSS rules from the original
   /// definition context still apply to the referenced element.
   ///
-  /// Per SVG 2 spec:
-  /// - Inline styles on referenced elements take highest precedence
-  /// - CSS rules from <style> apply normally (respecting shadow boundary for combinators)
-  /// - Presentation attributes on referenced elements override use-inherited values
-  /// - Use element's presentation attributes apply as inherited values
+  /// Per SVG 2 spec and CSS cascade:
+  /// 1. Inline styles on referenced elements (with !important taking absolute priority)
+  /// 2. CSS rules from <style> apply normally (respecting shadow boundary for combinators)
+  /// 3. Presentation attributes on referenced elements
+  /// 4. Use element's style attribute (for inheritable properties only)
+  /// 5. Use element's presentation attributes (for inheritable properties only)
+  /// 6. Inherited from use's ancestors
   String? resolvePropertyWithShadowCascade(SvgNode node, String property) {
     final normalizedProperty = property.trim().toLowerCase();
 
-    // 1. Check inline style on referenced element (highest)
+    // 1. Check inline style on referenced element (highest priority except !important)
     final inlineValue = _extractStyleValueFromNode(node, normalizedProperty);
     if (inlineValue != null) {
       final hasImportant = inlineValue.contains('!important');
       final cleanValue = inlineValue
           .replaceFirst(RegExp(r'\s*!important\s*$', caseSensitive: false), '')
           .trim();
-      if (cleanValue.isNotEmpty && hasImportant) {
-        return cleanValue;
-      }
-      // Non-important inline value
-      if (cleanValue.isNotEmpty) {
+      // !important wins everything
+      if (hasImportant && cleanValue.isNotEmpty) {
         return cleanValue;
       }
     }
@@ -353,10 +352,33 @@ class _UseInheritanceContext {
     String? cssRuleValue;
     if (cssRules != null && cssRules!.isNotEmpty) {
       final resolver = CssCascadeResolver(cssRules: cssRules!);
+      // Use resolveOwnProperty which handles specificity properly
       cssRuleValue = resolver.resolveOwnProperty(node, normalizedProperty);
     }
+
+    // CSS rule value exists - check if inline value exists
     if (cssRuleValue != null) {
+      // Non-important inline beats CSS rules (inline has higher specificity)
+      if (inlineValue != null) {
+        final cleanInlineValue = inlineValue
+            .replaceFirst(RegExp(r'\s*!important\s*$', caseSensitive: false), '')
+            .trim();
+        if (cleanInlineValue.isNotEmpty) {
+          return cleanInlineValue;
+        }
+      }
+      // CSS rule wins
       return cssRuleValue;
+    }
+
+    // Only inline value exists (no CSS rule)
+    if (inlineValue != null) {
+      final cleanInlineValue = inlineValue
+          .replaceFirst(RegExp(r'\s*!important\s*$', caseSensitive: false), '')
+          .trim();
+      if (cleanInlineValue.isNotEmpty) {
+        return cleanInlineValue;
+      }
     }
 
     // 3. Presentation attribute on referenced element
@@ -365,21 +387,22 @@ class _UseInheritanceContext {
       return attrValue;
     }
 
-    // 4. Use element's style attribute (for inheritable properties)
+    // 4 & 5. Use element's inherited values (for inheritable properties only)
+    // Presentation attrs on <use> override inherited values but NOT inline/CSS
     if (_cssInheritablePropertiesForUse.contains(normalizedProperty) ||
         normalizedProperty.startsWith('--')) {
+      // Check use element's style attribute first
       final useStyleValue = _extractStyleValueFromNode(
         useNode,
         normalizedProperty,
       );
       if (useStyleValue != null) {
-        return useStyleValue;
+        return useStyleValue
+            .replaceFirst(RegExp(r'\s*!important\s*$', caseSensitive: false), '')
+            .trim();
       }
-    }
 
-    // 5. Use element's presentation attributes (for inheritable properties)
-    if (_cssInheritablePropertiesForUse.contains(normalizedProperty) ||
-        normalizedProperty.startsWith('--')) {
+      // Check use element's presentation attributes
       final useAttrValue = useNode.getAttributeValue(normalizedProperty);
       if (useAttrValue != null) {
         return useAttrValue.toString();
@@ -735,26 +758,32 @@ extension AnimatedSvgPainterUseExtension on AnimatedSvgPainter {
   }) {
     final hrefId = _extractHrefId(node);
     if (hrefId == null || hrefId.isEmpty) {
+      // Empty use (href to non-existent ID) renders nothing
       return;
     }
 
     // Check for circular reference in use stack
     if (useStack.contains(hrefId)) {
+      // Circular reference detected - render nothing, no crash
       return;
     }
 
     // Check for circular reference through use context chain
     if (useContext != null && useContext.hasCircularReference(hrefId)) {
+      // Circular reference in context chain - render nothing, no crash
       return;
     }
 
     // Limit recursion depth for nested <use> elements (Blink limits to ~10).
+    // This prevents excessive resource usage from deeply nested use chains.
     if (useStack.length >= _kMaxUseRecursionDepth) {
+      // Depth limit exceeded - render nothing
       return;
     }
 
     final referenced = document.root.findById(hrefId);
     if (referenced == null || !_isUseReferenceAllowedTag(referenced.tagName)) {
+      // Referenced element not found or not allowed - render nothing
       return;
     }
 
@@ -762,6 +791,17 @@ extension AnimatedSvgPainterUseExtension on AnimatedSvgPainter {
     final y = _getNumber(node, 'y') ?? 0.0;
 
     canvas.save();
+
+    // Apply use element's transform first (if any)
+    final transformStr = node.getAttributeValue('transform')?.toString();
+    if (transformStr != null && transformStr.isNotEmpty) {
+      final transformMatrix = _buildTransformMatrixFromValue(transformStr);
+      if (transformMatrix != null) {
+        canvas.transform(transformMatrix.storage);
+      }
+    }
+
+    // Then apply x/y translation
     canvas.translate(x, y);
 
     // Create inheritance context for this use boundary.
@@ -774,6 +814,20 @@ extension AnimatedSvgPainterUseExtension on AnimatedSvgPainter {
       cssRules: _currentDocumentCssRules ?? useContext?.cssRules,
       shadowRootId: hrefId,
     );
+
+    // Apply opacity from use element to the shadow tree
+    // opacity on use element propagates to shadow tree via saveLayer
+    final opacityValue = node.getAttributeValue('opacity');
+    final opacity = opacityValue != null
+        ? (double.tryParse(opacityValue.toString()) ?? 1.0).clamp(0.0, 1.0)
+        : 1.0;
+
+    if (opacity < 1.0) {
+      // Use saveLayer for opacity compositing
+      final layerPaint = ui.Paint()
+        ..color = ui.Color.fromARGB((opacity * 255).round(), 255, 255, 255);
+      canvas.saveLayer(null, layerPaint);
+    }
 
     final previousParent = referenced.parent;
     referenced.parent = node;
@@ -805,6 +859,11 @@ extension AnimatedSvgPainterUseExtension on AnimatedSvgPainter {
       }
     } finally {
       referenced.parent = previousParent;
+    }
+
+    // Restore opacity layer if we applied one
+    if (opacity < 1.0) {
+      canvas.restore();
     }
 
     canvas.restore();

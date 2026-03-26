@@ -1,5 +1,137 @@
 part of 'svg_filters.dart';
 
+/// Compute distant light direction vector from azimuth and elevation angles.
+///
+/// Implements SVG feDistantLight light direction calculation:
+///   Lx = cos(azimuth) * cos(elevation)
+///   Ly = sin(azimuth) * cos(elevation)
+///   Lz = sin(elevation)
+///
+/// [azimuthDegrees] is the angle in the XY plane (degrees, default 0).
+/// [elevationDegrees] is the angle from the XY plane (degrees, default 0).
+///
+/// Returns a normalized (Lx, Ly, Lz) direction vector tuple.
+(double, double, double) computeDistantLightVector(
+  double azimuthDegrees,
+  double elevationDegrees,
+) {
+  final az = azimuthDegrees * math.pi / 180.0;
+  final el = elevationDegrees * math.pi / 180.0;
+
+  final cosEl = math.cos(el);
+  final lx = math.cos(az) * cosEl;
+  final ly = math.sin(az) * cosEl;
+  final lz = math.sin(el);
+
+  // Normalize the vector
+  final len = math.sqrt(lx * lx + ly * ly + lz * lz);
+  if (len < 0.000001) {
+    return (0.0, 0.0, 1.0);
+  }
+  return (lx / len, ly / len, lz / len);
+}
+
+/// Compute point light direction vector from light position to surface point.
+///
+/// Implements SVG fePointLight light direction calculation.
+/// The direction is from the surface point toward the light source.
+///
+/// [lightX], [lightY], [lightZ] are the light source coordinates.
+/// [surfaceX], [surfaceY], [surfaceZ] are the surface point coordinates.
+///
+/// Returns a normalized direction vector tuple from surface to light.
+(double, double, double) computePointLightVector(
+  double lightX,
+  double lightY,
+  double lightZ,
+  double surfaceX,
+  double surfaceY,
+  double surfaceZ,
+) {
+  final dx = lightX - surfaceX;
+  final dy = lightY - surfaceY;
+  final dz = lightZ - surfaceZ;
+
+  final len = math.sqrt(dx * dx + dy * dy + dz * dz);
+  if (len < 0.000001) {
+    return (0.0, 0.0, 1.0);
+  }
+  return (dx / len, dy / len, dz / len);
+}
+
+/// Compute spot light contribution with direction and cone attenuation.
+///
+/// Implements SVG feSpotLight light calculation with:
+/// - Direction from light position to surface point
+/// - Cone attenuation based on limitingConeAngle
+/// - Falloff based on specularExponent
+///
+/// [lightX], [lightY], [lightZ] are the light source coordinates.
+/// [pointsAtX], [pointsAtY], [pointsAtZ] define the spot direction target.
+/// [surfaceX], [surfaceY], [surfaceZ] are the surface point coordinates.
+/// [specularExponent] controls the spotlight falloff (default 1).
+/// [limitingConeAngleDegrees] defines the cone cutoff angle (0 = no cutoff).
+///
+/// Returns a tuple of (direction (Lx, Ly, Lz), intensity).
+/// Intensity is 0 if outside the cone, otherwise attenuated by specularExponent.
+((double, double, double), double) computeSpotLightVector(
+  double lightX,
+  double lightY,
+  double lightZ,
+  double pointsAtX,
+  double pointsAtY,
+  double pointsAtZ,
+  double surfaceX,
+  double surfaceY,
+  double surfaceZ, {
+  double specularExponent = 1.0,
+  double limitingConeAngleDegrees = 0.0,
+}) {
+  // Spot direction (from light toward pointsAt)
+  final spotDx = pointsAtX - lightX;
+  final spotDy = pointsAtY - lightY;
+  final spotDz = pointsAtZ - lightZ;
+  final spotLen = math.sqrt(spotDx * spotDx + spotDy * spotDy + spotDz * spotDz);
+  final spotDirX = spotLen > 0.000001 ? spotDx / spotLen : 0.0;
+  final spotDirY = spotLen > 0.000001 ? spotDy / spotLen : 0.0;
+  final spotDirZ = spotLen > 0.000001 ? spotDz / spotLen : 1.0;
+
+  // Direction from light to surface (for cone check)
+  final toSurfaceX = surfaceX - lightX;
+  final toSurfaceY = surfaceY - lightY;
+  final toSurfaceZ = surfaceZ - lightZ;
+  final toSurfaceLen = math.sqrt(
+    toSurfaceX * toSurfaceX + toSurfaceY * toSurfaceY + toSurfaceZ * toSurfaceZ,
+  );
+  final toSurfaceDirX = toSurfaceLen > 0.000001 ? toSurfaceX / toSurfaceLen : 0.0;
+  final toSurfaceDirY = toSurfaceLen > 0.000001 ? toSurfaceY / toSurfaceLen : 0.0;
+  final toSurfaceDirZ = toSurfaceLen > 0.000001 ? toSurfaceZ / toSurfaceLen : 1.0;
+
+  // Direction from surface to light (for lighting calculation)
+  final lightDirX = toSurfaceLen > 0.000001 ? -toSurfaceDirX : 0.0;
+  final lightDirY = toSurfaceLen > 0.000001 ? -toSurfaceDirY : 0.0;
+  final lightDirZ = toSurfaceLen > 0.000001 ? -toSurfaceDirZ : 1.0;
+
+  // Dot product: direction from light to surface · spot direction
+  final spotDot =
+      toSurfaceDirX * spotDirX + toSurfaceDirY * spotDirY + toSurfaceDirZ * spotDirZ;
+
+  // Cone cutoff check
+  double cosConeAngle = -1.0;
+  if (limitingConeAngleDegrees > 0) {
+    cosConeAngle = math.cos(limitingConeAngleDegrees * math.pi / 180.0);
+  }
+
+  // If outside the cone, intensity is 0
+  if (spotDot < cosConeAngle) {
+    return ((lightDirX, lightDirY, lightDirZ), 0.0);
+  }
+
+  // Compute attenuation: (spotDot)^specularExponent
+  final attenuation = math.pow(spotDot.clamp(0.0, 1.0), specularExponent).toDouble();
+  return ((lightDirX, lightDirY, lightDirZ), attenuation);
+}
+
 /// Edge mode for surface normal computation at image boundaries.
 enum LightingEdgeMode {
   /// Duplicate edge pixels (Blink default behavior).

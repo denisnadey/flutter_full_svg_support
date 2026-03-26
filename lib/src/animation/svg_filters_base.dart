@@ -193,10 +193,14 @@ class TileProcessor {
   /// [inputHeight] - Input image height in pixels.
   /// [outputWidth] - Output tile region width in pixels.
   /// [outputHeight] - Output tile region height in pixels.
-  /// [tileX] - X offset of the tile within the output.
-  /// [tileY] - Y offset of the tile within the output.
+  /// [tileX] - X offset of the tile origin within the output.
+  /// [tileY] - Y offset of the tile origin within the output.
   /// [tileWidth] - Width of the tile region (0 = use inputWidth).
   /// [tileHeight] - Height of the tile region (0 = use inputHeight).
+  ///
+  /// Per SVG spec, feTile tiles the input image to fill the filter primitive
+  /// subregion. The input's own subregion defines the tile size. Tile origin
+  /// aligns with the filter region origin.
   ///
   /// Returns new RGBA pixel data with tiling applied.
   static Uint8List applyTiling({
@@ -210,28 +214,39 @@ class TileProcessor {
     int tileWidth = 0,
     int tileHeight = 0,
   }) {
-    if (inputWidth <= 0 || inputHeight <= 0) {
-      return Uint8List(outputWidth * outputHeight * 4);
-    }
+    // Handle empty output case
     if (outputWidth <= 0 || outputHeight <= 0) {
-      return inputPixels;
+      return Uint8List(0);
+    }
+
+    final outputSize = outputWidth * outputHeight * 4;
+
+    // Handle empty input: produce transparent black output per SVG spec
+    if (inputWidth <= 0 ||
+        inputHeight <= 0 ||
+        inputPixels.isEmpty ||
+        inputPixels.length < inputWidth * inputHeight * 4) {
+      return Uint8List(outputSize);
     }
 
     // Use input dimensions if tile dimensions not specified
+    // The tile size is defined by the input's subregion
     final tw = tileWidth > 0 ? tileWidth : inputWidth;
     final th = tileHeight > 0 ? tileHeight : inputHeight;
 
-    final result = Uint8List(outputWidth * outputHeight * 4);
+    final result = Uint8List(outputSize);
 
     for (int y = 0; y < outputHeight; y++) {
       for (int x = 0; x < outputWidth; x++) {
         // Calculate source coordinates with tiling
+        // Tile origin aligns with filter region origin (offset by tileX/tileY)
         var srcX = ((x - tileX) % tw);
         var srcY = ((y - tileY) % th);
         if (srcX < 0) srcX += tw;
         if (srcY < 0) srcY += th;
 
-        // Clamp to input dimensions if tile is larger than input
+        // Handle non-unit tile regions where tile size differs from input size
+        // If tile region is larger than input, areas outside input are transparent
         if (srcX >= inputWidth || srcY >= inputHeight) {
           // Outside input image - use transparent black
           final dstIndex = (y * outputWidth + x) * 4;

@@ -7,6 +7,13 @@ const int _kMaxUseRecursionDepthHitTest = 10;
 /// Context for tracking pointer-events inheritance across <use> boundaries.
 /// Also handles event retargeting per SVG spec - events from shadow content
 /// should target the <use> element, not the referenced content.
+///
+/// Per SVG 2 specification:
+/// - Events on content inside a <use> shadow tree should bubble up to the
+///   <use> element itself
+/// - Hit-test results should report the <use> element's ID (not the referenced
+///   element's ID) when the SVG uses event retargeting
+/// - The outermost <use> element with an ID is the event target
 class _UseHitTestContext {
   const _UseHitTestContext({
     this.inheritedPointerEvents,
@@ -47,19 +54,14 @@ class _UseHitTestContext {
   /// Gets the event target ID per SVG retargeting spec.
   /// When inside a <use> shadow tree, events should target the outermost
   /// <use> element that has an ID, not the inner referenced content.
+  ///
+  /// This implements the SVG event retargeting behavior where events from
+  /// shadow content bubble up to and are retargeted to the <use> element.
   String? getRetargetedId(String? innerElementId) {
-    // If we have a use element ID, return it (event retargeting)
-    // This implements the SVG spec behavior where events from shadow
-    // content are retargeted to the <use> element.
-    if (useElementId != null && useElementId!.isNotEmpty) {
-      return useElementId;
-    }
-    // Check parent context for nested use chains
-    if (parentContext != null) {
-      final parentRetargeted = parentContext!.getRetargetedId(innerElementId);
-      if (parentRetargeted != null) {
-        return parentRetargeted;
-      }
+    // First, try to get the outermost use element ID (event bubbling)
+    final outermost = outermostUseElementId;
+    if (outermost != null && outermost.isNotEmpty) {
+      return outermost;
     }
     // If no use element has an ID, fall back to inner element
     return innerElementId;
@@ -68,6 +70,7 @@ class _UseHitTestContext {
   /// Gets the outermost use element ID in the chain.
   /// For event bubbling, we need to know the outermost use element.
   String? get outermostUseElementId {
+    // Walk up the parent chain to find the outermost use element with an ID
     if (parentContext != null) {
       final parentId = parentContext!.outermostUseElementId;
       if (parentId != null && parentId.isNotEmpty) {
@@ -78,6 +81,7 @@ class _UseHitTestContext {
   }
 
   /// Gets all use element IDs in the chain from outermost to current.
+  /// This is useful for understanding the full event bubbling path.
   List<String?> get useChainIds {
     final ids = <String?>[];
     if (parentContext != null) {
@@ -97,6 +101,33 @@ class _UseHitTestContext {
     }
     return d;
   }
+
+  /// Checks if this context or any parent context already references
+  /// the given ID, which would indicate a circular reference.
+  bool hasCircularReference(String targetId) {
+    // Check if we've already seen this target in the use chain
+    _UseHitTestContext? current = this;
+    while (current != null) {
+      // Get the href ID from the use node if available
+      final hrefId = current.useNode != null
+          ? _extractHrefIdFromNode(current.useNode!)
+          : null;
+      if (hrefId == targetId) {
+        return true;
+      }
+      current = current.parentContext;
+    }
+    return false;
+  }
+
+  /// Extracts href ID from a use node.
+  static String? _extractHrefIdFromNode(SvgNode node) {
+    var href = node.getAttributeValue('href')?.toString();
+    href ??= node.getAttributeValue('xlink:href')?.toString();
+    if (href == null || href.isEmpty) return null;
+    if (href.startsWith('#')) return href.substring(1);
+    return null;
+  }
 }
 
 extension _AnimatedSvgPictureStateHitTestUseExtension
@@ -109,17 +140,32 @@ extension _AnimatedSvgPictureStateHitTestUseExtension
     _UseHitTestContext? context,
   }) {
     final hrefId = _extractHrefId(useNode);
-    if (hrefId == null || hrefId.isEmpty || useStack.contains(hrefId)) {
+    if (hrefId == null || hrefId.isEmpty) {
+      // Empty use (href to non-existent ID) - no hit
+      return null;
+    }
+
+    // Check for circular reference in use stack
+    if (useStack.contains(hrefId)) {
+      // Circular reference detected - no hit, no crash
+      return null;
+    }
+
+    // Check for circular reference through use context chain
+    if (context != null && context.hasCircularReference(hrefId)) {
+      // Circular reference in context chain - no hit, no crash
       return null;
     }
 
     // Limit recursion depth for nested <use> elements (Blink limits to ~10).
     if (useStack.length >= _kMaxUseRecursionDepthHitTest) {
+      // Depth limit exceeded - no hit
       return null;
     }
 
     final referenced = _document.root.findById(hrefId);
     if (referenced == null || !_isUseReferenceAllowedTag(referenced.tagName)) {
+      // Referenced element not found or not allowed - no hit
       return null;
     }
 
@@ -132,6 +178,7 @@ extension _AnimatedSvgPictureStateHitTestUseExtension
 
     // Create context for pointer-events inheritance and event retargeting.
     // Pass the use element ID for event retargeting.
+    // Events on use shadow content should bubble up to the use element.
     final useContext =
         context?.copyWith(
           inheritedPointerEvents: usePointerEvents,
@@ -144,13 +191,20 @@ extension _AnimatedSvgPictureStateHitTestUseExtension
           useNode: useNode,
         );
 
-    final referenceTransform = Matrix4.copy(currentTransform)
-      ..translateByDouble(
-        _getNumber(useNode, 'x') ?? 0.0,
-        _getNumber(useNode, 'y') ?? 0.0,
-        0,
-        1,
-      );
+    // Build transform: first apply use's transform attribute (if any),
+    // then apply x/y translation for proper coordinate stacking
+    final referenceTransform = Matrix4.copy(currentTransform);
+
+    // Apply use element's transform attribute using the shared transform helper
+    _applyNodeTransform(referenceTransform, useNode);
+
+    // Apply x/y translation after any explicit transform
+    referenceTransform.translateByDouble(
+      _getNumber(useNode, 'x') ?? 0.0,
+      _getNumber(useNode, 'y') ?? 0.0,
+      0,
+      1,
+    );
 
     final previousParent = referenced.parent;
     referenced.parent = useNode;
@@ -183,6 +237,7 @@ extension _AnimatedSvgPictureStateHitTestUseExtension
             );
             if (hitChild != null) {
               // Apply event retargeting - return use element ID instead
+              // This implements event bubbling from use content
               return useContext.getRetargetedId(hitChild);
             }
           }
@@ -196,7 +251,7 @@ extension _AnimatedSvgPictureStateHitTestUseExtension
           foreignObjectParent: null,
           useContext: useContext,
         );
-        // Apply event retargeting
+        // Apply event retargeting - events bubble up to use element
         return hitResult != null ? useContext.getRetargetedId(hitResult) : null;
       }
 
@@ -208,7 +263,7 @@ extension _AnimatedSvgPictureStateHitTestUseExtension
         foreignObjectParent: null,
         useContext: useContext,
       );
-      // Apply event retargeting
+      // Apply event retargeting - events bubble up to use element
       return hitResult != null ? useContext.getRetargetedId(hitResult) : null;
     } finally {
       referenced.parent = previousParent;

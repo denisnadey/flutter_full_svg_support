@@ -1441,10 +1441,10 @@ void main() {
 
       final color = sampler.sampleDiffuse(1.0);
 
-      expect(color.alpha, equals(255)); // Diffuse always opaque
-      expect(color.red, greaterThan(0));
-      expect(color.green, greaterThan(0));
-      expect(color.blue, greaterThan(0));
+      expect((color.a * 255).round(), equals(255)); // Diffuse always opaque
+      expect((color.r * 255).round(), greaterThan(0));
+      expect((color.g * 255).round(), greaterThan(0));
+      expect((color.b * 255).round(), greaterThan(0));
     });
 
     test('samples specular lighting produces valid color', () {
@@ -1458,9 +1458,9 @@ void main() {
 
       // Alpha = max(r, g, b) for specular
       expect(
-        color.alpha,
+        (color.a * 255).round(),
         equals(
-          [color.red, color.green, color.blue].reduce((a, b) => a > b ? a : b),
+          [(color.r * 255).round(), (color.g * 255).round(), (color.b * 255).round()].reduce((a, b) => a > b ? a : b),
         ),
       );
     });
@@ -1475,7 +1475,7 @@ void main() {
       final lowKd = sampler.sampleDiffuse(0.2);
       final highKd = sampler.sampleDiffuse(1.0);
 
-      expect(highKd.red, greaterThanOrEqualTo(lowKd.red));
+      expect((highKd.r * 255).round(), greaterThanOrEqualTo((lowKd.r * 255).round()));
     });
 
     test('specular exponent affects highlight sharpness', () {
@@ -1489,8 +1489,8 @@ void main() {
       final highExp = sampler.sampleSpecular(1.0, 100.0);
 
       // Both should produce valid colors
-      expect(lowExp.alpha, lessThanOrEqualTo(255));
-      expect(highExp.alpha, lessThanOrEqualTo(255));
+      expect((lowExp.a * 255).round(), lessThanOrEqualTo(255));
+      expect((highExp.a * 255).round(), lessThanOrEqualTo(255));
     });
   });
 

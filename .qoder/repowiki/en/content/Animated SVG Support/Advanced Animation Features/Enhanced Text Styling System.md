@@ -12,12 +12,20 @@
 - [animated_svg_painter_text_paint.dart](file://lib/src/animation/animated_svg_painter_text_paint.dart)
 - [animated_svg_painter_clip_mask.dart](file://lib/src/animation/animated_svg_painter_clip_mask.dart)
 - [animated_svg_picture_hit_test_text_runs.dart](file://lib/src/animation/animated_svg_picture_hit_test_text_runs.dart)
+- [text_font_fallback_test.dart](file://test/animation/text_font_fallback_test.dart)
 - [text_typography_parity_test.dart](file://test/animation/text_typography_parity_test.dart)
 - [svg.dart](file://lib/svg.dart)
 </cite>
 
 ## Update Summary
 **Changes Made**
+- Enhanced font family resolution with complex fallback chains including platform-specific font stacks
+- Comprehensive generic family mapping (serif, sans-serif, monospace, cursive, fantasy, system-ui, ui-serif, ui-sans-serif, ui-monospace, ui-rounded)
+- Added emoji font support with Apple Color Emoji, Segoe UI Emoji, and Noto Color Emoji
+- Implemented math font support with Cambria Math, STIX Two Math, and Latin Modern Math
+- Enhanced metric-compatible font selection for consistent typography
+- Added FontFallbackResult class for structured font family handling
+- Expanded font variant support including modern CSS generic families
 - Enhanced text decoration system with comprehensive thickness control, underline positioning, and skip-ink features
 - Improved baseline alignment system with sophisticated baseline reference calculation
 - Enhanced text-indent handling with percentage and unit conversion support
@@ -50,7 +58,7 @@ The Enhanced Text Styling System represents a comprehensive implementation of SV
 
 The system extends beyond basic text rendering by implementing a complete cascade of CSS properties, supporting modern web standards while maintaining compatibility with Flutter's text rendering engine. It encompasses font handling, text decoration, layout management, positioning systems, and advanced typographic features including vertical writing modes, ruby annotations, emphasis marks, and modern CSS optimization features.
 
-**Updated** Enhanced with comprehensive emphasis marks system featuring character-by-character rendering, advanced text decoration controls with thickness and positioning, improved baseline alignment with sophisticated reference calculation, enhanced text-indent handling with unit conversion, and comprehensive cursor management for precise character positioning. The system now includes enhanced text geometry handling with stroke width and decoration expansion calculations, providing comprehensive typography parity testing and advanced text rendering features.
+**Updated** Enhanced with comprehensive emphasis marks system featuring character-by-character rendering, advanced text decoration controls with thickness and positioning, improved baseline alignment with sophisticated reference calculation, enhanced text-indent handling with unit conversion, and comprehensive cursor management for precise character positioning. The system now includes enhanced text geometry handling with stroke width and decoration expansion calculations, providing comprehensive typography parity testing and advanced text rendering features. The font family resolution system has been significantly enhanced with complex fallback chains, platform-specific font stacks, comprehensive generic family mapping, emoji font support, math font support, and metric-compatible font selection for consistent typography.
 
 ## System Architecture
 
@@ -288,7 +296,7 @@ TextDecorationResolver --> _SvgTextDecoration : "creates"
 
 ### Font System
 
-The font resolution system handles complex font family chains, generic family mappings, and advanced font feature applications:
+The font resolution system handles complex font family chains, generic family mappings, and advanced font feature applications with enhanced platform-specific support:
 
 ```mermaid
 flowchart TD
@@ -296,7 +304,7 @@ FontRequest[Font Family Request] --> ParseChain["Parse Family Chain"]
 ParseChain --> CheckQuoted["Check Quoted Names"]
 CheckQuoted --> ExtractNames["Extract Individual Names"]
 ExtractNames --> NormalizeGeneric["Normalize Generic Families"]
-NormalizeGeneric --> MapGeneric["Map to Flutter Families"]
+NormalizeGeneric --> MapGeneric["Map to Platform-Specific Stacks"]
 MapGeneric --> BuildChain["Build Flutter Family Chain"]
 BuildChain --> ApplyFeatures["Apply Font Features"]
 ApplyFeatures --> CheckStretch["Check Font Stretch"]
@@ -308,6 +316,19 @@ CheckVariation --> FinalFont[Final Font Configuration]
 
 **Diagram sources**
 - [animated_svg_painter_text_style_font.dart:24-115](file://lib/src/animation/animated_svg_painter_text_style_font.dart#L24-L115)
+
+**Enhanced Font Family Resolution** The font family resolution system has been significantly enhanced with comprehensive platform-specific font stacks and modern CSS generic family support. The system now includes:
+
+- **Platform-Aware Generic Families**: Sophisticated fallback chains for serif, sans-serif, monospace, ui-serif, ui-sans-serif, ui-monospace, and ui-rounded families
+- **Emoji Font Support**: Dedicated emoji font stacks with Apple Color Emoji, Segoe UI Emoji, and Noto Color Emoji
+- **Math Font Support**: Specialized math font families including Cambria Math, STIX Two Math, and Latin Modern Math
+- **Metric-Compatible Selection**: Fonts chosen for consistent x-height and visual metrics across platforms
+- **Modern CSS Generics**: Full support for ui-serif, ui-sans-serif, ui-monospace, ui-rounded, and system-ui families
+- **Structured Font Handling**: FontFallbackResult class for proper primary/fallback font separation
+
+**Section sources**
+- [animated_svg_painter_text_style_font.dart:171-206](file://lib/src/animation/animated_svg_painter_text_style_font.dart#L171-L206)
+- [animated_svg_painter_text_style_layout.dart:14-60](file://lib/src/animation/animated_svg_painter_text_style_layout.dart#L14-L60)
 
 ### Layout and Spacing Properties
 
@@ -539,6 +560,7 @@ Comprehensive font variant resolution supporting advanced OpenType features:
 - **Ligature Control**: Common-ligatures, discretionary-ligatures, historical-ligatures
 - **Position Variants**: Subscript, superscript glyphs
 - **East Asian Variants**: JIS forms, traditional/simplified variants
+- **Modern CSS Generics**: ui-serif, ui-sans-serif, ui-monospace, ui-rounded support
 
 ### Advanced Emphasis Marks
 
@@ -588,6 +610,14 @@ The text styling system works in conjunction with the broader animation framewor
 
 **Text Geometry Issues**: Ensure stroke-width and text-decoration properties are properly accounted for in hit testing and bounds calculations.
 
+**Font Family Resolution Issues**: Verify that generic families resolve to platform-appropriate fonts. Check that emoji and math fonts are properly configured for the target platform.
+
+**Enhanced Font Family Resolution Troubleshooting** For font family issues:
+- Verify platform-specific font availability (Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji)
+- Check that modern CSS generic families (ui-serif, ui-sans-serif, ui-monospace, ui-rounded) resolve correctly
+- Ensure metric-compatible font selection maintains consistent typography across platforms
+- Validate that fallback chains properly handle font availability and platform differences
+
 ### Debugging Tools
 
 The system provides comprehensive diagnostic information through the debugFillProperties method, exposing all relevant styling parameters and rendering state for troubleshooting.
@@ -601,4 +631,4 @@ The Enhanced Text Styling System represents a comprehensive solution for advance
 
 The system's extensible design allows for continued enhancement while maintaining backward compatibility, making it suitable for both simple text rendering needs and complex typographic requirements found in modern web applications.
 
-**Updated** The system now provides comprehensive support for modern CSS features including content-visibility optimization, advanced text decoration controls, enhanced font variant resolution, sophisticated emphasis mark positioning with character-by-character rendering, improved baseline alignment with reference calculation, enhanced text-indent handling with unit conversion, comprehensive cursor management for precise text positioning, enhanced text geometry handling with stroke width and decoration expansion, and comprehensive typography parity testing, making it a complete solution for contemporary web typography requirements.
+**Updated** The system now provides comprehensive support for modern CSS features including content-visibility optimization, advanced text decoration controls, enhanced font variant resolution, sophisticated emphasis mark positioning with character-by-character rendering, improved baseline alignment with reference calculation, enhanced text-indent handling with unit conversion, comprehensive cursor management for precise text positioning, enhanced text geometry handling with stroke width and decoration expansion, and comprehensive typography parity testing. The font family resolution system has been significantly enhanced with complex fallback chains, platform-specific font stacks, comprehensive generic family mapping, emoji font support, math font support, and metric-compatible font selection for consistent typography, making it a complete solution for contemporary web typography requirements.

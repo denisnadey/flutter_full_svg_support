@@ -1,15 +1,58 @@
 part of 'animated_svg_picture.dart';
 
 /// W3C event dispatch result including propagation flags.
-/// Currently returns constant values as SMIL timeline doesn't track propagation.
+/// Tracks real propagation state for proper event handling.
 class _W3CEventDispatchResult {
-  const _W3CEventDispatchResult();
+  _W3CEventDispatchResult({
+    this.defaultPrevented = false,
+    this.propagationStopped = false,
+    this.immediatePropagationStopped = false,
+  });
 
-  /// Whether preventDefault() was called (always false for SMIL events).
-  bool get defaultPrevented => false;
+  /// Whether preventDefault() was called.
+  final bool defaultPrevented;
 
-  /// Whether stopPropagation() was called (always false for SMIL events).
-  bool get propagationStopped => false;
+  /// Whether stopPropagation() was called.
+  final bool propagationStopped;
+
+  /// Whether stopImmediatePropagation() was called.
+  final bool immediatePropagationStopped;
+
+  /// Creates a result indicating no handler modifications.
+  const _W3CEventDispatchResult.none()
+      : defaultPrevented = false,
+        propagationStopped = false,
+        immediatePropagationStopped = false;
+}
+
+/// Mutable event context for tracking propagation state during dispatch.
+class _EventDispatchContext {
+  bool defaultPrevented = false;
+  bool propagationStopped = false;
+  bool immediatePropagationStopped = false;
+
+  /// Called when a handler requests stopPropagation.
+  void stopPropagation() {
+    propagationStopped = true;
+  }
+
+  /// Called when a handler requests stopImmediatePropagation.
+  void stopImmediatePropagation() {
+    propagationStopped = true;
+    immediatePropagationStopped = true;
+  }
+
+  /// Called when a handler requests preventDefault.
+  void preventDefault() {
+    defaultPrevented = true;
+  }
+
+  /// Converts to an immutable result.
+  _W3CEventDispatchResult toResult() => _W3CEventDispatchResult(
+        defaultPrevented: defaultPrevented,
+        propagationStopped: propagationStopped,
+        immediatePropagationStopped: immediatePropagationStopped,
+      );
 }
 
 extension _AnimatedSvgPictureStateEventsExtension on _AnimatedSvgPictureState {
@@ -63,44 +106,135 @@ extension _AnimatedSvgPictureStateEventsExtension on _AnimatedSvgPictureState {
   /// 2. Target phase: target
   /// 3. Bubble phase: target's parent -> root
   ///
-  /// Note: For SMIL animations, the timeline doesn't support stopPropagation.
-  /// This method maintains the proper event order for W3C compliance.
+  /// Supports stopPropagation() and preventDefault() behavior.
   _W3CEventDispatchResult _dispatchEventWithW3CFlow({
     required String eventType,
     required String? targetId,
     required List<String> composedPath,
     bool bubbles = true,
     bool cancelable = true,
+    _EventDispatchContext? context,
   }) {
+    final ctx = context ?? _EventDispatchContext();
+
     // The composed path is from root to target, so we iterate forward for capture
     // and backward for bubble
 
     // Phase 1: Capture phase (root to target's parent)
-    // For SMIL, we trigger capture events separately
     for (int i = 0; i < composedPath.length - 1; i++) {
+      if (ctx.propagationStopped) break;
       final elementId = composedPath[i];
-      _timeline?.triggerEvent(elementId, '${eventType}_capture');
+      _triggerEventWithContext(elementId, '${eventType}_capture', ctx);
     }
 
     // Phase 2: Target phase
-    if (targetId != null) {
-      _timeline?.triggerEvent(targetId, eventType);
+    if (!ctx.propagationStopped && targetId != null) {
+      _triggerEventWithContext(targetId, eventType, ctx);
     }
 
     // Phase 3: Bubble phase (target's parent to root)
-    if (bubbles) {
+    if (bubbles && !ctx.propagationStopped) {
       for (int i = composedPath.length - 2; i >= 0; i--) {
+        if (ctx.propagationStopped) break;
         final elementId = composedPath[i];
-        _timeline?.triggerEvent(elementId, eventType);
+        _triggerEventWithContext(elementId, eventType, ctx);
       }
     }
 
-    // Document-level event as final fallback
-    _timeline?.triggerEvent(null, eventType);
+    // Document-level event as final fallback (only if not stopped)
+    if (!ctx.propagationStopped) {
+      _timeline?.triggerEvent(null, eventType);
+    }
 
-    return const _W3CEventDispatchResult();
+    return ctx.toResult();
   }
 
+  /// Triggers an event with context tracking for propagation control.
+  void _triggerEventWithContext(
+    String elementId,
+    String eventType,
+    _EventDispatchContext ctx,
+  ) {
+    // Check if element has event handlers registered
+    final handlers = _SvgEventHandlerRegistry.instance.getHandlers(elementId);
+    if (handlers != null && handlers.containsKey(eventType)) {
+      final handlerList = handlers[eventType]!;
+      for (final handler in List.of(handlerList)) {
+        if (ctx.immediatePropagationStopped) break;
+        // Call handler, passing context for potential stopPropagation
+        handler(ctx);
+      }
+    }
+    // Always trigger SMIL timeline events
+    _timeline?.triggerEvent(elementId, eventType);
+  }
+
+  /// Register an event handler for an element.
+  void _addEventListener(
+    String elementId,
+    String eventType,
+    void Function(_EventDispatchContext) handler,
+  ) {
+    _SvgEventHandlerRegistry.instance.addHandler(elementId, eventType, handler);
+  }
+
+  /// Remove an event handler for an element.
+  void _removeEventListener(
+    String elementId,
+    String eventType,
+    void Function(_EventDispatchContext) handler,
+  ) {
+    _SvgEventHandlerRegistry.instance
+        .removeHandler(elementId, eventType, handler);
+  }
+}
+
+/// Global registry for SVG event handlers.
+/// Used to track registered handlers across extensions.
+class _SvgEventHandlerRegistry {
+  _SvgEventHandlerRegistry._();
+
+  static final instance = _SvgEventHandlerRegistry._();
+
+  final Map<String, Map<String, List<void Function(_EventDispatchContext)>>>
+      _handlers = {};
+
+  /// Gets handlers for an element.
+  Map<String, List<void Function(_EventDispatchContext)>>? getHandlers(
+    String elementId,
+  ) {
+    return _handlers[elementId];
+  }
+
+  /// Adds a handler for an element and event type.
+  void addHandler(
+    String elementId,
+    String eventType,
+    void Function(_EventDispatchContext) handler,
+  ) {
+    _handlers
+        .putIfAbsent(elementId, () => {})
+        .putIfAbsent(eventType, () => [])
+        .add(handler);
+  }
+
+  /// Removes a handler for an element and event type.
+  void removeHandler(
+    String elementId,
+    String eventType,
+    void Function(_EventDispatchContext) handler,
+  ) {
+    _handlers[elementId]?[eventType]?.remove(handler);
+  }
+
+  /// Clears all handlers.
+  void clear() {
+    _handlers.clear();
+  }
+}
+
+extension _AnimatedSvgPictureStateEventDispatchExtension
+    on _AnimatedSvgPictureState {
   /// Legacy bubble-only dispatch for backward compatibility.
   /// Events fire on target first, then bubble up to ancestors.
   void _dispatchEventWithBubbling({
@@ -429,10 +563,14 @@ extension _AnimatedSvgPictureStatePointerEventsHandlersExtension
   }
 }
 
-/// Extension for focus events (focusin, focusout).
+/// Extension for focus events (focusin, focusout, focus, blur).
+/// - focusin/focusout: Bubble up through the DOM tree
+/// - focus/blur: Do NOT bubble (only fire on target)
 extension _AnimatedSvgPictureStateFocusEventsExtension
     on _AnimatedSvgPictureState {
-  /// Triggers focusin event when an element gains focus.
+  /// Triggers focus events when an element gains focus.
+  /// - 'focus' event: does NOT bubble (target only)
+  /// - 'focusin' event: DOES bubble through ancestors
   void _triggerFocusIn(String elementId) {
     _trace(
       category: 'event',
@@ -440,12 +578,27 @@ extension _AnimatedSvgPictureStateFocusEventsExtension
       data: <String, Object?>{'targetId': elementId},
     );
 
-    _timeline?.triggerEvent(elementId, 'focusin');
+    // Build the event path for bubbling
+    final composedPath = _buildComposedPathForElement(elementId);
+
+    // Fire 'focus' event (non-bubbling) - target only
     _timeline?.triggerEvent(elementId, 'focus');
+
+    // Fire 'focusin' event with bubbling
+    _dispatchEventWithW3CFlow(
+      eventType: 'focusin',
+      targetId: elementId,
+      composedPath: composedPath,
+      bubbles: true,
+      cancelable: false,
+    );
+
     _markNeedsRepaint();
   }
 
-  /// Triggers focusout event when an element loses focus.
+  /// Triggers blur events when an element loses focus.
+  /// - 'blur' event: does NOT bubble (target only)
+  /// - 'focusout' event: DOES bubble through ancestors
   void _triggerFocusOut(String elementId) {
     _trace(
       category: 'event',
@@ -453,9 +606,145 @@ extension _AnimatedSvgPictureStateFocusEventsExtension
       data: <String, Object?>{'targetId': elementId},
     );
 
-    _timeline?.triggerEvent(elementId, 'focusout');
+    // Build the event path for bubbling
+    final composedPath = _buildComposedPathForElement(elementId);
+
+    // Fire 'blur' event (non-bubbling) - target only
     _timeline?.triggerEvent(elementId, 'blur');
+
+    // Fire 'focusout' event with bubbling
+    _dispatchEventWithW3CFlow(
+      eventType: 'focusout',
+      targetId: elementId,
+      composedPath: composedPath,
+      bubbles: true,
+      cancelable: false,
+    );
+
     _markNeedsRepaint();
+  }
+
+  /// Builds the composed path (ancestor chain) for an element by ID.
+  List<String> _buildComposedPathForElement(String elementId) {
+    final path = <String>[];
+    final node = _document.root.findById(elementId);
+    if (node == null) return [elementId];
+
+    // Walk up the tree collecting IDs
+    SvgNode? current = node;
+    while (current != null) {
+      if (current.id != null) {
+        path.add(current.id!);
+      }
+      current = current.parent;
+    }
+
+    // Path is target -> ... -> root, reverse for capture phase order
+    return path.reversed.toList();
+  }
+
+  /// Gets all focusable elements in tab order.
+  /// Returns elements sorted by tabindex:
+  /// - tabindex > 0: sorted numerically (lowest first)
+  /// - tabindex = 0: natural document order
+  /// - tabindex < 0: excluded from tab navigation
+  List<String> _getFocusableElementsInTabOrder() {
+    final focusables = <_FocusableElementInfo>[];
+    _collectFocusableElements(_document.root, focusables, 0);
+
+    // Sort: positive tabindex first (ascending), then tabindex=0 (doc order)
+    focusables.sort((a, b) {
+      if (a.tabindex > 0 && b.tabindex > 0) {
+        // Both positive: sort by tabindex, then by doc order
+        final tabCompare = a.tabindex.compareTo(b.tabindex);
+        if (tabCompare != 0) return tabCompare;
+        return a.documentOrder.compareTo(b.documentOrder);
+      }
+      if (a.tabindex > 0) return -1; // a comes first
+      if (b.tabindex > 0) return 1; // b comes first
+      // Both tabindex=0: sort by document order
+      return a.documentOrder.compareTo(b.documentOrder);
+    });
+
+    // Exclude negative tabindex from tab navigation
+    return focusables
+        .where((e) => e.tabindex >= 0)
+        .map((e) => e.elementId)
+        .toList();
+  }
+
+  /// Recursively collects focusable elements.
+  void _collectFocusableElements(
+    SvgNode node,
+    List<_FocusableElementInfo> result,
+    int documentOrder,
+  ) {
+    if (node.id != null && isFocusableElement(node)) {
+      final tabindex = _getTabindex(node);
+      result.add(_FocusableElementInfo(
+        elementId: node.id!,
+        tabindex: tabindex,
+        documentOrder: documentOrder,
+      ));
+    }
+
+    var order = documentOrder;
+    for (final child in node.children) {
+      _collectFocusableElements(child, result, ++order);
+    }
+  }
+
+  /// Gets the tabindex value for a node.
+  int _getTabindex(SvgNode node) {
+    final tabindexStr = node.getAttributeValue('tabindex');
+    if (tabindexStr == null) {
+      // Naturally focusable elements default to 0
+      if (focusableTags.contains(node.tagName)) return 0;
+      return -1;
+    }
+    return int.tryParse(tabindexStr.toString()) ?? 0;
+  }
+
+  /// Moves focus to the next element in tab order.
+  void _focusNextElement() {
+    final focusOrder = _getFocusableElementsInTabOrder();
+    if (focusOrder.isEmpty) return;
+
+    final currentFocusId = _document.pseudoClassState.focusedId;
+    if (currentFocusId == null) {
+      // Focus first element
+      _handleFocusChange(focusOrder.first);
+      return;
+    }
+
+    final currentIndex = focusOrder.indexOf(currentFocusId);
+    if (currentIndex == -1 || currentIndex >= focusOrder.length - 1) {
+      // Wrap to first element
+      _handleFocusChange(focusOrder.first);
+    } else {
+      _handleFocusChange(focusOrder[currentIndex + 1]);
+    }
+  }
+
+  /// Moves focus to the previous element in tab order.
+  void _focusPreviousElement() {
+    final focusOrder = _getFocusableElementsInTabOrder();
+    if (focusOrder.isEmpty) return;
+
+    final currentFocusId = _document.pseudoClassState.focusedId;
+    if (currentFocusId == null) {
+      // Focus last element
+      _handleFocusChange(focusOrder.last);
+      return;
+    }
+
+    final currentIndex = focusOrder.indexOf(currentFocusId);
+    if (currentIndex <= 0) {
+      // Wrap to last element
+      _handleFocusChange(focusOrder.last);
+    } else {
+      _handleFocusChange(focusOrder[currentIndex - 1]);
+    }
   }
 }
 
@@ -546,4 +835,17 @@ extension _AnimatedSvgPictureStateContextMenuExtension
     );
     _markNeedsRepaint();
   }
+}
+
+/// Helper class for tracking focusable elements and their tab order.
+class _FocusableElementInfo {
+  const _FocusableElementInfo({
+    required this.elementId,
+    required this.tabindex,
+    required this.documentOrder,
+  });
+
+  final String elementId;
+  final int tabindex;
+  final int documentOrder;
 }

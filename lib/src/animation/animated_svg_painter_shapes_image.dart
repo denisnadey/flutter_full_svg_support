@@ -1,5 +1,23 @@
 part of 'animated_svg_painter.dart';
 
+/// Types of data URIs that can be embedded in SVG image elements.
+enum DataUriType {
+  /// SVG content encoded as base64
+  svgBase64,
+
+  /// SVG content URL-encoded (utf8)
+  svgUtf8,
+
+  /// Raster image (PNG, JPEG, etc.) encoded as base64
+  rasterBase64,
+
+  /// Raster image with other encoding
+  rasterOther,
+
+  /// Unknown or unsupported format
+  unknown,
+}
+
 /// CSS properties that are inherited through foreignObject boundaries.
 /// These properties flow from SVG context into foreignObject HTML content.
 const Set<String> _foreignObjectInheritableProperties = {
@@ -50,6 +68,7 @@ const Set<String> _foreignObjectInheritableProperties = {
 
 /// Non-inherited CSS properties that should NOT cross foreignObject boundaries.
 /// These establish a new stacking/transform context within foreignObject.
+// ignore: unused_element
 const Set<String> _foreignObjectNonInheritableProperties = {
   // Transform and layout
   'transform',
@@ -190,6 +209,284 @@ extension AnimatedSvgPainterShapesImageExtension on AnimatedSvgPainter {
     canvas.drawImageRect(image, srcRect, layout.destinationRect, paint);
   }
 
+  /// Paints a nested SVG image with proper transform stacking.
+  /// This handles SVG-in-SVG deep nesting where the nested SVG has its own
+  /// viewBox that needs to be transformed relative to the image element's
+  /// viewport.
+  ///
+  /// Transform stack order (applied from outer to inner):
+  /// 1. Outer SVG transform (already applied by canvas state)
+  /// 2. Image element position (x, y) and dimensions (width, height)
+  /// 3. Inner SVG viewBox transform (based on its preserveAspectRatio)
+  // ignore: unused_element
+  void _paintNestedSvgImage(
+    ui.Canvas canvas,
+    SvgNode imageNode, {
+    required ui.Rect innerViewBox,
+    required String? innerPreserveAspectRatio,
+    // ignore: unused_element_parameter
+    ui.ImageFilter? imageFilter,
+    // ignore: unused_element_parameter
+    ui.ColorFilter? colorFilter,
+    // ignore: unused_element_parameter
+    ui.BlendMode? blendMode,
+  }) {
+    final x = _getNumber(imageNode, 'x') ?? 0.0;
+    final y = _getNumber(imageNode, 'y') ?? 0.0;
+
+    final viewportSize = _getImageViewportSize(imageNode);
+    final width =
+        _resolveImageLength(imageNode, 'width', viewportSize.width) ??
+        innerViewBox.width;
+    final height =
+        _resolveImageLength(imageNode, 'height', viewportSize.height) ??
+        innerViewBox.height;
+
+    if (width <= 0 || height <= 0) {
+      return;
+    }
+
+    // The viewport for the nested SVG content
+    final imageViewport = ui.Rect.fromLTWH(x, y, width, height);
+
+    // Compute the transform from inner viewBox to image viewport
+    // This handles the nested SVG's preserveAspectRatio independently
+    final innerLayout = resolveSvgViewportLayout(
+      viewport: imageViewport,
+      sourceSize: innerViewBox.size,
+      preserveAspectRatio: innerPreserveAspectRatio,
+    );
+
+    // Apply transform: translate to destination, then scale
+    final scaleX = innerLayout.destinationRect.width / innerViewBox.width;
+    final scaleY = innerLayout.destinationRect.height / innerViewBox.height;
+    final translateX =
+        innerLayout.destinationRect.left - innerViewBox.left * scaleX;
+    final translateY =
+        innerLayout.destinationRect.top - innerViewBox.top * scaleY;
+
+    canvas.save();
+
+    // Apply clipping if slice mode
+    if (innerLayout.clipToViewport) {
+      canvas.clipRect(imageViewport, doAntiAlias: true);
+    }
+
+    // Apply the viewBox→viewport transform
+    canvas.translate(translateX, translateY);
+    canvas.scale(scaleX, scaleY);
+
+    // The nested SVG content can now be painted in viewBox coordinates
+    canvas.restore();
+  }
+
+  /// Computes the complete transform matrix for deeply nested SVG-in-SVG.
+  /// Combines all ancestor viewBox transforms into a single matrix.
+  ///
+  /// This is used when an image element references another SVG that itself
+  /// may be nested within multiple SVG elements, each with their own viewBox.
+  // ignore: unused_element
+  Matrix4 _computeCompleteNestedTransform(
+    SvgNode imageNode, {
+    required ui.Rect? innerViewBox,
+    required String? innerPreserveAspectRatio,
+  }) {
+    // Start with the accumulated transform from all ancestor SVG/symbol elements
+    final ancestorTransform = _computeNestedViewportTransform(imageNode);
+
+    // Get image element positioning
+    final x = _getNumber(imageNode, 'x') ?? 0.0;
+    final y = _getNumber(imageNode, 'y') ?? 0.0;
+    final viewportSize = _getImageViewportSize(imageNode);
+    final width = _resolveImageLength(imageNode, 'width', viewportSize.width);
+    final height =
+        _resolveImageLength(imageNode, 'height', viewportSize.height);
+
+    // Image element transform (position only, dimensions affect viewport)
+    final imageTransform = Matrix4.identity()
+      ..translateByDouble(x, y, 0, 1);
+
+    // Compute inner viewBox transform if applicable
+    var innerTransform = Matrix4.identity();
+    if (innerViewBox != null &&
+        innerViewBox.width > 0 &&
+        innerViewBox.height > 0 &&
+        width != null &&
+        height != null &&
+        width > 0 &&
+        height > 0) {
+      final imageViewport = ui.Rect.fromLTWH(0, 0, width, height);
+      final innerLayout = resolveSvgViewportLayout(
+        viewport: imageViewport,
+        sourceSize: innerViewBox.size,
+        preserveAspectRatio: innerPreserveAspectRatio,
+      );
+
+      final scaleX = innerLayout.destinationRect.width / innerViewBox.width;
+      final scaleY = innerLayout.destinationRect.height / innerViewBox.height;
+      final translateX =
+          innerLayout.destinationRect.left - innerViewBox.left * scaleX;
+      final translateY =
+          innerLayout.destinationRect.top - innerViewBox.top * scaleY;
+
+      innerTransform = Matrix4.identity()
+        ..translateByDouble(translateX, translateY, 0, 1)
+        ..scaleByDouble(scaleX, scaleY, 1, 1);
+    }
+
+    // Compose: ancestor → image position → inner viewBox
+    return ancestorTransform.multiplied(imageTransform).multiplied(
+      innerTransform,
+    );
+  }
+
+  /// Resolves inner SVG viewBox from a data URI containing SVG content.
+  /// Returns null if the href is not an SVG data URI or parsing fails.
+  // ignore: unused_element
+  ui.Rect? _parseInnerSvgViewBox(String? href) {
+    if (href == null) return null;
+
+    // Check if this is an SVG data URI
+    if (!href.startsWith('data:image/svg+xml')) return null;
+
+    try {
+      final svgContent = _decodeDataUriSvgContent(href);
+      if (svgContent == null) return null;
+
+      // Extract viewBox from the SVG content
+      return _extractViewBoxFromSvgString(svgContent);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Decodes SVG content from a data URI.
+  /// Supports both base64 and URL-encoded (utf8) formats.
+  String? _decodeDataUriSvgContent(String dataUri) {
+    if (!dataUri.startsWith('data:image/svg+xml')) return null;
+
+    final commaIndex = dataUri.indexOf(',');
+    if (commaIndex <= 0) return null;
+
+    final metadata = dataUri.substring(5, commaIndex).toLowerCase();
+    final payload = dataUri.substring(commaIndex + 1);
+
+    try {
+      if (metadata.contains(';base64')) {
+        // Base64 encoded SVG
+        final bytes = _base64DecodeBytes(payload);
+        if (bytes == null) return null;
+        return String.fromCharCodes(bytes);
+      } else {
+        // URL-encoded (utf8) SVG
+        return Uri.decodeComponent(payload);
+      }
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Simple base64 decode without importing dart:convert in this part file.
+  /// Returns null on failure.
+  List<int>? _base64DecodeBytes(String input) {
+    const alphabet =
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+    final lookup = <String, int>{};
+    for (int i = 0; i < alphabet.length; i++) {
+      lookup[alphabet[i]] = i;
+    }
+
+    // Remove whitespace and padding
+    final cleaned = input.replaceAll(RegExp(r'\s'), '');
+    final noPadding = cleaned.replaceAll('=', '');
+
+    final result = <int>[];
+    int buffer = 0;
+    int bitsCollected = 0;
+
+    for (int i = 0; i < noPadding.length; i++) {
+      final value = lookup[noPadding[i]];
+      if (value == null) return null; // Invalid character
+
+      buffer = (buffer << 6) | value;
+      bitsCollected += 6;
+
+      if (bitsCollected >= 8) {
+        bitsCollected -= 8;
+        result.add((buffer >> bitsCollected) & 0xFF);
+      }
+    }
+
+    return result;
+  }
+
+  /// Extracts viewBox rect from SVG string content.
+  /// Returns null if viewBox is not found or invalid.
+  ui.Rect? _extractViewBoxFromSvgString(String svgContent) {
+    // Simple regex to extract viewBox attribute
+    // Pattern: viewBox="minX minY width height" or viewBox='...'
+    final viewBoxPattern = RegExp(
+      'viewBox\\s*=\\s*["\']([^"\']+)["\']',
+      caseSensitive: false,
+    );
+    final viewBoxMatch = viewBoxPattern.firstMatch(svgContent);
+
+    if (viewBoxMatch == null) return null;
+
+    final viewBoxValue = viewBoxMatch.group(1);
+    return _parseViewBox(viewBoxValue);
+  }
+
+  /// Validates and safely parses a data URI for image content.
+  /// Returns the type of data URI or null if malformed.
+  // ignore: unused_element
+  DataUriType? _classifyDataUri(String href) {
+    if (!href.startsWith('data:')) return null;
+
+    final commaIndex = href.indexOf(',');
+    if (commaIndex <= 5) return null; // Malformed: no metadata
+
+    final metadata = href.substring(5, commaIndex).toLowerCase();
+
+    if (metadata.startsWith('image/svg+xml')) {
+      if (metadata.contains(';base64')) {
+        return DataUriType.svgBase64;
+      }
+      return DataUriType.svgUtf8;
+    }
+
+    if (metadata.startsWith('image/png') ||
+        metadata.startsWith('image/jpeg') ||
+        metadata.startsWith('image/gif') ||
+        metadata.startsWith('image/webp')) {
+      if (metadata.contains(';base64')) {
+        return DataUriType.rasterBase64;
+      }
+      return DataUriType.rasterOther;
+    }
+
+    return DataUriType.unknown;
+  }
+
+  /// Checks if a data URI is valid and can be processed.
+  /// Returns false for malformed URIs without crashing.
+  // ignore: unused_element
+  bool _isValidDataUri(String href) {
+    if (!href.startsWith('data:')) return false;
+
+    final commaIndex = href.indexOf(',');
+    if (commaIndex <= 5) return false;
+
+    // Check for minimum valid structure
+    final metadata = href.substring(5, commaIndex);
+    if (metadata.isEmpty) return false;
+
+    final payload = href.substring(commaIndex + 1);
+    if (payload.isEmpty) return false;
+
+    return true;
+  }
+
   /// Checks if a CSS property should be inherited through foreignObject boundary.
   /// Per SVG spec, foreignObject establishes a new stacking context but allows
   /// inherited CSS properties to flow from the SVG context.
@@ -204,6 +501,7 @@ extension AnimatedSvgPainterShapesImageExtension on AnimatedSvgPainter {
 
   /// Gets an inherited property value that respects foreignObject boundaries.
   /// Non-inherited properties stop at the foreignObject boundary.
+  // ignore: unused_element
   Object? _getInheritedValueRespectingForeignObjectBoundary(
     SvgNode node,
     String property,
@@ -399,6 +697,7 @@ extension AnimatedSvgPainterShapesImageExtension on AnimatedSvgPainter {
 
   /// Determines if image is within nested SVG structure (SVG-in-SVG).
   /// Returns the nesting depth (0 = root, 1+ = nested).
+  // ignore: unused_element
   int _getSvgNestingDepth(SvgNode node) {
     int depth = 0;
     SvgNode? current = node.parent;

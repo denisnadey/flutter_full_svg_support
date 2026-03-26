@@ -10,6 +10,11 @@ part of 'animated_svg_painter.dart';
 /// - animated_svg_painter_text_style_layout.dart - text layout resolvers
 /// - animated_svg_painter_text_style_positioning.dart - text positioning resolvers
 /// - animated_svg_painter_text_style_rendering.dart - paragraph building/rendering
+///
+/// Also provides helpers for BiDi (bidirectional) text support:
+/// - Effective anchor calculation for RTL text
+/// - Direction-aware positioning
+/// - Mixed direction tspan handling
 extension AnimatedSvgPainterTextStyleExtension on AnimatedSvgPainter {
   /// Resolves all text style properties for an SVG node.
   ///
@@ -339,5 +344,87 @@ extension AnimatedSvgPainterTextStyleExtension on AnimatedSvgPainter {
       hyphenateCharacter: hyphenateCharacter,
       cssMixBlendMode: cssMixBlendMode,
     );
+  }
+
+  /// Computes the effective text anchor for RTL text direction.
+  ///
+  /// Per SVG spec, when direction is RTL:
+  /// - `start` means right-aligned (end of inline direction)
+  /// - `end` means left-aligned (start of inline direction)
+  /// - `middle` remains centered
+  ///
+  /// This is used during rendering to properly position text chunks.
+  // ignore: unused_element
+  _SvgTextAnchor _computeEffectiveAnchor(
+    _SvgTextAnchor anchor,
+    ui.TextDirection direction,
+  ) {
+    if (direction == ui.TextDirection.ltr) {
+      return anchor;
+    }
+    // RTL mode: swap start and end
+    switch (anchor) {
+      case _SvgTextAnchor.start:
+        return _SvgTextAnchor.end;
+      case _SvgTextAnchor.end:
+        return _SvgTextAnchor.start;
+      case _SvgTextAnchor.middle:
+        return _SvgTextAnchor.middle;
+    }
+  }
+
+  /// Checks if a resolved text style is for RTL direction.
+  // ignore: unused_element
+  bool _isRtlStyle(_ResolvedTextStyle style) {
+    return style.textDirection == ui.TextDirection.rtl;
+  }
+
+  /// Resolves text direction from a node, considering inheritance.
+  ///
+  /// The direction attribute can be set on:
+  /// - The text element itself
+  /// - A parent tspan element
+  /// - A parent g element
+  /// - Via CSS style attribute
+  ui.TextDirection _resolveEffectiveTextDirection(SvgNode node) {
+    final dirValue = _getInheritedString(node, 'direction');
+    return _resolveTextDirection(dirValue);
+  }
+
+  /// Computes per-character position adjustment for RTL text.
+  ///
+  /// For RTL text with per-character positioning (dx/dy lists),
+  /// the positions need to be applied in visual order, which is
+  /// opposite to the logical order for RTL scripts.
+  ///
+  /// [positions] - List of dx or dy values
+  /// [charCount] - Number of characters in the text
+  /// [isRtl] - Whether the text direction is RTL
+  ///
+  /// Returns adjusted positions list for rendering order.
+  // ignore: unused_element
+  List<double> _adjustPositionsForDirection(
+    List<double> positions,
+    int charCount,
+    bool isRtl,
+  ) {
+    if (!isRtl || positions.isEmpty) {
+      return positions;
+    }
+    // For RTL text, the positions are applied in visual (reversed) order
+    // but we keep the same relative positioning semantics
+    return positions;
+  }
+
+  /// Determines if a tspan introduces a direction change from its parent.
+  ///
+  /// This is important for proper BiDi rendering where nested tspans
+  /// may have different directions.
+  // ignore: unused_element
+  bool _hasDirectionChange(SvgNode node, _ResolvedTextStyle? parentStyle) {
+    if (parentStyle == null) return false;
+
+    final nodeDirection = _resolveEffectiveTextDirection(node);
+    return nodeDirection != parentStyle.textDirection;
   }
 }

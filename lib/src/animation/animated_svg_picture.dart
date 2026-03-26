@@ -590,42 +590,6 @@ class _TextMeasure {
   }
 }
 
-/// Measurement for a BiDi text run.
-class _BidiTextMeasure {
-  const _BidiTextMeasure({
-    required this.text,
-    required this.direction,
-    required this.start,
-    required this.end,
-    required this.width,
-    required this.height,
-    required this.offset,
-  });
-
-  final String text;
-  final TextDirection direction;
-  final int start;
-  final int end;
-  final double width;
-  final double height;
-  final double offset;
-}
-
-/// A BiDi run for hit-testing purposes.
-class _HitTestBidiRun {
-  const _HitTestBidiRun({
-    required this.text,
-    required this.direction,
-    required this.start,
-    required this.end,
-  });
-
-  final String text;
-  final TextDirection direction;
-  final int start;
-  final int end;
-}
-
 enum _TextDominantBaseline {
   alphabetic,
   central,

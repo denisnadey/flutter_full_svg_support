@@ -505,4 +505,249 @@ extension AnimatedSvgPainterClipMaskUnitsExtension on AnimatedSvgPainter {
     }
     return false;
   }
+
+  // ============================================================================
+  // Enhanced maskUnits Support
+  // ============================================================================
+
+  /// Gets the maskUnits value with proper default handling.
+  ///
+  /// Per SVG spec:
+  /// - `objectBoundingBox` (default): mask region is relative to element bbox
+  /// - `userSpaceOnUse`: mask region is in user coordinates
+  String _getMaskUnits(SvgNode maskNode) {
+    final units = _getString(maskNode, 'maskUnits');
+    if (units == null) return 'objectBoundingBox';
+    final normalized = units.trim().toLowerCase();
+    if (normalized == 'userspaceonuse') return 'userSpaceOnUse';
+    return 'objectBoundingBox';
+  }
+
+  /// Gets the maskContentUnits value with proper default handling.
+  ///
+  /// Per SVG spec:
+  /// - `userSpaceOnUse` (default): mask content uses user coordinates
+  /// - `objectBoundingBox`: mask content uses element bbox coordinates (0-1)
+  String _getMaskContentUnits(SvgNode maskNode) {
+    final units = _getString(maskNode, 'maskContentUnits');
+    if (units == null) return 'userSpaceOnUse';
+    final normalized = units.trim().toLowerCase();
+    if (normalized == 'objectboundingbox') return 'objectBoundingBox';
+    return 'userSpaceOnUse';
+  }
+
+  /// Computes default mask region bounds per SVG spec.
+  ///
+  /// Default mask region:
+  /// - x = -10% of element bbox width
+  /// - y = -10% of element bbox height
+  /// - width = 120% of element bbox width
+  /// - height = 120% of element bbox height
+  ui.Rect? _computeDefaultMaskRegion(SvgNode maskedNode) {
+    final bounds = _computeNodeLocalBoundsWithStroke(maskedNode);
+    if (bounds == null) return null;
+
+    if (bounds.width.abs() < _kMinBoundingBoxDimension ||
+        bounds.height.abs() < _kMinBoundingBoxDimension) {
+      return null;
+    }
+
+    // Default: -10% for x/y, 120% for width/height
+    return ui.Rect.fromLTWH(
+      bounds.left - bounds.width * 0.1,
+      bounds.top - bounds.height * 0.1,
+      bounds.width * 1.2,
+      bounds.height * 1.2,
+    );
+  }
+
+  /// Builds the complete mask region considering maskUnits.
+  ///
+  /// Handles both objectBoundingBox and userSpaceOnUse units.
+  ui.Rect? _buildMaskRegion({
+    required SvgNode maskedNode,
+    required SvgNode maskNode,
+  }) {
+    final units = _getMaskUnits(maskNode);
+
+    if (units == 'userSpaceOnUse') {
+      return _buildMaskRegionUserSpaceOnUse(maskNode: maskNode);
+    }
+
+    return _buildMaskRegionObjectBoundingBox(
+      maskedNode: maskedNode,
+      maskNode: maskNode,
+    );
+  }
+
+  /// Builds mask region for userSpaceOnUse units.
+  ui.Rect? _buildMaskRegionUserSpaceOnUse({required SvgNode maskNode}) {
+    final viewport = _resolveMaskUnitsViewportRect();
+    if (viewport == null) return null;
+
+    // Get explicit coordinates or use defaults
+    final xAttr = maskNode.getAttributeValue('x');
+    final yAttr = maskNode.getAttributeValue('y');
+    final widthAttr = maskNode.getAttributeValue('width');
+    final heightAttr = maskNode.getAttributeValue('height');
+
+    // Default: -10% to +110% of viewport
+    double x = viewport.left - viewport.width * 0.1;
+    double y = viewport.top - viewport.height * 0.1;
+    double width = viewport.width * 1.2;
+    double height = viewport.height * 1.2;
+
+    // Parse x
+    if (xAttr != null) {
+      final parsed = _parseLengthOrPercentage(
+        xAttr,
+        viewport.width,
+        viewport.left,
+      );
+      if (parsed != null) x = parsed;
+    }
+
+    // Parse y
+    if (yAttr != null) {
+      final parsed = _parseLengthOrPercentage(
+        yAttr,
+        viewport.height,
+        viewport.top,
+      );
+      if (parsed != null) y = parsed;
+    }
+
+    // Parse width
+    if (widthAttr != null) {
+      final parsed = _parseLengthOrPercentage(
+        widthAttr,
+        viewport.width,
+        0,
+        isSize: true,
+      );
+      if (parsed != null) width = parsed;
+    }
+
+    // Parse height
+    if (heightAttr != null) {
+      final parsed = _parseLengthOrPercentage(
+        heightAttr,
+        viewport.height,
+        0,
+        isSize: true,
+      );
+      if (parsed != null) height = parsed;
+    }
+
+    if (width <= 0 || height <= 0) return null;
+
+    return ui.Rect.fromLTWH(x, y, width, height);
+  }
+
+  /// Builds mask region for objectBoundingBox units.
+  ui.Rect? _buildMaskRegionObjectBoundingBox({
+    required SvgNode maskedNode,
+    required SvgNode maskNode,
+  }) {
+    final bounds = _computeNodeLocalBoundsWithStroke(maskedNode);
+    if (bounds == null) return null;
+
+    if (bounds.width.abs() < _kMinBoundingBoxDimension ||
+        bounds.height.abs() < _kMinBoundingBoxDimension) {
+      return null;
+    }
+
+    // Parse relative coordinates (fractions of bbox)
+    final x = _parseObjectBoundingBoxValue(maskNode.getAttributeValue('x'));
+    final y = _parseObjectBoundingBoxValue(maskNode.getAttributeValue('y'));
+    final width =
+        _parseObjectBoundingBoxValue(maskNode.getAttributeValue('width'));
+    final height =
+        _parseObjectBoundingBoxValue(maskNode.getAttributeValue('height'));
+
+    // Default: -10% for x/y, 120% for width/height
+    final resolvedX = x ?? -0.1;
+    final resolvedY = y ?? -0.1;
+    final resolvedWidth = width ?? 1.2;
+    final resolvedHeight = height ?? 1.2;
+
+    if (resolvedWidth <= 0 || resolvedHeight <= 0) return null;
+
+    return ui.Rect.fromLTWH(
+      bounds.left + resolvedX * bounds.width,
+      bounds.top + resolvedY * bounds.height,
+      bounds.width * resolvedWidth,
+      bounds.height * resolvedHeight,
+    );
+  }
+
+  /// Parses a length or percentage value.
+  double? _parseLengthOrPercentage(
+    Object? value,
+    double referenceDimension,
+    double referenceOrigin, {
+    bool isSize = false,
+  }) {
+    if (value == null) return null;
+
+    if (value is num) return value.toDouble();
+
+    final str = value.toString().trim();
+    if (str.isEmpty) return null;
+
+    // Handle percentage
+    if (str.endsWith('%')) {
+      final percent = double.tryParse(str.substring(0, str.length - 1));
+      if (percent == null) return null;
+      final result = referenceDimension * percent / 100.0;
+      return isSize ? result : referenceOrigin + result;
+    }
+
+    // Handle units (px, em, etc.) - strip unit suffix
+    final cleaned = str.replaceAll(RegExp(r'[a-zA-Z]+$'), '');
+    return double.tryParse(cleaned);
+  }
+
+  // ============================================================================
+  // Enhanced maskContentUnits Support
+  // ============================================================================
+
+  /// Computes the transform matrix for mask content based on maskContentUnits.
+  ///
+  /// For objectBoundingBox:
+  /// - Content coordinates (0,0) map to element bbox top-left
+  /// - Content coordinates (1,1) map to element bbox bottom-right
+  ///
+  /// For userSpaceOnUse:
+  /// - Content uses the current user coordinate system (no transform)
+  Matrix4? _computeMaskContentUnitsTransform({
+    required SvgNode maskedNode,
+    required SvgNode maskNode,
+  }) {
+    final units = _getMaskContentUnits(maskNode);
+
+    if (units == 'userSpaceOnUse') {
+      // No transform needed for userSpaceOnUse
+      return null;
+    }
+
+    // objectBoundingBox - scale content to element bounds
+    return _computeMaskContentTransform(maskedNode);
+  }
+
+  /// Applies the mask content transform to the canvas.
+  void _applyMaskContentUnitsTransform(
+    ui.Canvas canvas, {
+    required SvgNode maskedNode,
+    required SvgNode maskNode,
+  }) {
+    final transform = _computeMaskContentUnitsTransform(
+      maskedNode: maskedNode,
+      maskNode: maskNode,
+    );
+
+    if (transform != null) {
+      canvas.transform(transform.storage);
+    }
+  }
 }
