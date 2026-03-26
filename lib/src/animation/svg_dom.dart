@@ -309,6 +309,12 @@ class SvgPseudoClassState {
   /// The ID of the currently focused element.
   String? _focusedId;
 
+  /// The ID of the previously focused element (for blur events).
+  String? _previousFocusedId;
+
+  /// Callback for focus changes (oldId, newId).
+  void Function(String? oldId, String? newId)? onFocusChange;
+
   /// Get set of hovered element IDs.
   Set<String> get hoveredIds => Set.unmodifiable(_hoveredIds);
 
@@ -317,6 +323,9 @@ class SvgPseudoClassState {
 
   /// Get the focused element ID.
   String? get focusedId => _focusedId;
+
+  /// Get the previously focused element ID.
+  String? get previousFocusedId => _previousFocusedId;
 
   /// Set hover state for an element.
   void setHovered(String id, bool isHovered) {
@@ -337,8 +346,18 @@ class SvgPseudoClassState {
   }
 
   /// Set focus to an element (clears focus from any other).
-  void setFocus(String? id) {
+  /// Returns true if focus actually changed.
+  bool setFocus(String? id) {
+    if (_focusedId == id) return false;
+
+    _previousFocusedId = _focusedId;
+    final oldId = _focusedId;
     _focusedId = id;
+
+    // Notify about focus change
+    onFocusChange?.call(oldId, id);
+
+    return true;
   }
 
   /// Check if an element has hover state.
@@ -355,6 +374,7 @@ class SvgPseudoClassState {
     _hoveredIds.clear();
     _activeIds.clear();
     _focusedId = null;
+    _previousFocusedId = null;
   }
 
   /// Clear hover state from all elements.
@@ -366,6 +386,36 @@ class SvgPseudoClassState {
   void clearActive() {
     _activeIds.clear();
   }
+
+  /// Clear focus state.
+  void clearFocus() {
+    if (_focusedId != null) {
+      _previousFocusedId = _focusedId;
+      final oldId = _focusedId;
+      _focusedId = null;
+      onFocusChange?.call(oldId, null);
+    }
+  }
+}
+
+/// Tags that are naturally focusable.
+const Set<String> focusableTags = {'a', 'text', 'textPath', 'tspan'};
+
+/// Check if an SVG element is focusable.
+bool isFocusableElement(SvgNode node) {
+  // Check if element has tabindex attribute
+  final tabindex = node.getAttributeValue('tabindex');
+  if (tabindex != null) {
+    final parsed = int.tryParse(tabindex.toString());
+    // tabindex >= 0 makes element focusable
+    // tabindex = -1 makes element programmatically focusable but not via tab
+    if (parsed != null && parsed >= -1) return true;
+  }
+
+  // Check if it's a naturally focusable tag
+  if (focusableTags.contains(node.tagName)) return true;
+
+  return false;
 }
 
 /// Represents an SVG <view> element.

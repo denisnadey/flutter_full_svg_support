@@ -3,7 +3,7 @@ part of 'svg_filters.dart';
 /// Utility class for performing convolution on image data.
 ///
 /// Implements the SVG feConvolveMatrix algorithm for pixel-level kernel
-/// convolution with support for all edge modes and preserveAlpha.
+/// convolution with support for all edge modes, preserveAlpha, and kernelUnitLength.
 class ConvolveMatrixProcessor {
   const ConvolveMatrixProcessor._();
 
@@ -21,6 +21,8 @@ class ConvolveMatrixProcessor {
   /// [bias] - Value added after division.
   /// [edgeMode] - How to handle pixels outside image bounds.
   /// [preserveAlpha] - If true, alpha channel is not convolved.
+  /// [kernelUnitLengthX] - Optional X scale for kernel coordinates.
+  /// [kernelUnitLengthY] - Optional Y scale for kernel coordinates.
   ///
   /// Returns new RGBA pixel data with convolution applied.
   static Uint8List applyConvolution({
@@ -36,6 +38,8 @@ class ConvolveMatrixProcessor {
     required double bias,
     required SvgConvolveEdgeMode edgeMode,
     required bool preserveAlpha,
+    double? kernelUnitLengthX,
+    double? kernelUnitLengthY,
   }) {
     if (width <= 0 || height <= 0) {
       return pixels;
@@ -51,6 +55,16 @@ class ConvolveMatrixProcessor {
     final bias255 = (bias * 255.0).roundToDouble();
     final invDivisor = divisor != 0 ? 1.0 / divisor : 1.0;
 
+    // Calculate effective kernel step based on kernelUnitLength
+    // When kernelUnitLength is specified, the kernel samples are spread out
+    // by that factor in user space
+    final stepX = (kernelUnitLengthX != null && kernelUnitLengthX > 0)
+        ? kernelUnitLengthX
+        : 1.0;
+    final stepY = (kernelUnitLengthY != null && kernelUnitLengthY > 0)
+        ? kernelUnitLengthY
+        : 1.0;
+
     for (int y = 0; y < height; y++) {
       for (int x = 0; x < width; x++) {
         double sumR = 0.0;
@@ -58,13 +72,13 @@ class ConvolveMatrixProcessor {
         double sumB = 0.0;
         double sumA = 0.0;
 
-        // Apply kernel
+        // Apply kernel with kernelUnitLength scaling
         for (int ky = 0; ky < orderY; ky++) {
           for (int kx = 0; kx < orderX; kx++) {
-            // Calculate source pixel position
+            // Calculate source pixel position with kernelUnitLength scaling
             // Kernel is applied with targetX/targetY as the center
-            final srcX = x + kx - targetX;
-            final srcY = y + ky - targetY;
+            final srcX = (x + (kx - targetX) * stepX).round();
+            final srcY = (y + (ky - targetY) * stepY).round();
 
             // Get pixel based on edge mode
             final pixelValues = _getPixelWithEdgeMode(

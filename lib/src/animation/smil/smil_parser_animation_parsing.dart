@@ -465,6 +465,20 @@ const Set<String> _numberAttributes = {
   'surfaceScale',
   'diffuseConstant',
   'specularConstant',
+  // Component transfer function attributes (feFuncR/G/B/A)
+  'slope',
+  'intercept',
+  'amplitude',
+  'exponent',
+  // Note: 'offset' already included above
+  // feTurbulence attributes
+  'baseFrequency',
+  'numOctaves',
+  'seed',
+  // feDisplacementMap attributes
+  'scale',
+  // feMorphology attributes
+  'radius',
 };
 
 const Set<String> _colorAttributes = {
@@ -489,4 +503,15 @@ const Set<String> _discreteAttributes = {
   'text-anchor',
   'dominant-baseline',
   'alignment-baseline',
+  // feTurbulence type attribute (turbulence vs fractalNoise)
+  'type',
+  // feConvolveMatrix edgeMode attribute
+  'edgeMode',
+  // feTurbulence stitchTiles attribute
+  'stitchTiles',
+  // feMorphology operator attribute
+  'operator',
+  // feDisplacementMap channel selectors
+  'xChannelSelector',
+  'yChannelSelector',
 };

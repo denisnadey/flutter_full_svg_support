@@ -26,7 +26,8 @@ extension AnimatedSvgPainterClipMaskExtension on AnimatedSvgPainter {
       return;
     }
 
-    final clipPath = _buildClipPathForNode(
+    // Build clip path with cascading support (clipPath on clipPath)
+    final clipPath = _buildCascadingClipPath(
       clippedNode: node,
       clipPathNode: clipNode,
       useStack: useStack,
@@ -36,6 +37,68 @@ extension AnimatedSvgPainterClipMaskExtension on AnimatedSvgPainter {
     }
 
     canvas.clipPath(clipPath, doAntiAlias: true);
+  }
+
+  /// Builds a clip path with support for cascading clipPaths.
+  ///
+  /// When a clipPath element itself has a clip-path attribute, the result
+  /// is the intersection of both clip regions. This supports N-level cascading.
+  ui.Path? _buildCascadingClipPath({
+    required SvgNode clippedNode,
+    required SvgNode clipPathNode,
+    required Set<String> useStack,
+    int depth = 0,
+  }) {
+    // Prevent infinite recursion
+    const maxCascadeDepth = 10;
+    if (depth > maxCascadeDepth) {
+      return null;
+    }
+
+    // Build the primary clip path
+    final primaryPath = _buildClipPathForNode(
+      clippedNode: clippedNode,
+      clipPathNode: clipPathNode,
+      useStack: useStack,
+    );
+
+    if (primaryPath == null) {
+      return null;
+    }
+
+    // Check if the clipPath element itself has a clip-path (cascading)
+    final cascadeClipId = _extractPaintServerId(
+      _getStyleOrAttributeValue(clipPathNode, 'clip-path'),
+    );
+
+    if (cascadeClipId == null || cascadeClipId.isEmpty) {
+      return primaryPath;
+    }
+
+    // Prevent circular references
+    if (useStack.contains(cascadeClipId)) {
+      return primaryPath;
+    }
+
+    final cascadeClipNode = document.root.findById(cascadeClipId);
+    if (cascadeClipNode == null || cascadeClipNode.tagName != 'clipPath') {
+      return primaryPath;
+    }
+
+    // Recursively build the cascading clip path
+    final cascadePath = _buildCascadingClipPath(
+      clippedNode: clipPathNode,
+      clipPathNode: cascadeClipNode,
+      useStack: {...useStack, cascadeClipId},
+      depth: depth + 1,
+    );
+
+    if (cascadePath == null) {
+      return primaryPath;
+    }
+
+    // Intersect both clip paths for the cascading effect
+    return ui.Path.combine(ui.PathOperation.intersect, primaryPath, cascadePath);
   }
 
   void _applyMask(

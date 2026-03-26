@@ -101,6 +101,8 @@ extension SvgFiltersPipelineCompositingExtension on SvgFilters {
   /// - Named results from any previous primitive (non-adjacent allowed)
   /// - Built-in inputs (SourceGraphic, SourceAlpha, BackgroundImage, etc.)
   /// - Implicit previous output (when `in` is omitted)
+  /// - FillPaint/StrokePaint source keywords
+  /// - Other named merge results (for chained/recursive merges)
   ///
   /// Per SVG Filter 1.1 spec:
   /// - Layer ordering follows declaration: first feMergeNode is bottom layer,
@@ -111,11 +113,27 @@ extension SvgFiltersPipelineCompositingExtension on SvgFilters {
   /// - If all nodes resolve to empty, the result is identity (no filtering).
   /// - The same named result can be referenced by multiple feMergeNode children.
   ///
+  /// Advanced feMerge scenarios supported:
+  /// - Many-node merge: feMerge with 5+ feMergeNode children referencing
+  ///   different intermediate results from the filter chain
+  /// - Chained merge: One feMerge references the result of another feMerge
+  ///   (e.g., merge1 -> merge2 where merge2 uses in="merge1Result")
+  /// - Recursive merge patterns: Multiple merges that cross-reference each
+  ///   other's results (validated via circular reference detection in pipeline)
+  /// - Mixed sources: feMergeNode children that mix SourceGraphic, named
+  ///   results, BackgroundImage, and FillPaint/StrokePaint
+  ///
+  /// `in="none"` handling in feMergeNode:
+  /// - When a feMergeNode explicitly specifies in="none", it produces no layer
+  /// - This is useful for conditionally excluding layers in generated SVG
+  /// - Unlike implicit omission, in="none" NEVER falls back to previous output
+  ///
   /// Input validation:
   /// - Null/empty `in` attribute: falls back to previous primitive's result
   /// - Non-existent named reference: produces empty (transparent black)
   /// - Forward reference: produces empty (transparent black per spec)
   /// - `in="none"`: explicitly produces empty (no fallback)
+  /// - Circular reference: detected in pipeline, produces empty
   List<SvgFilterPaintPass> _resolveMergeOutput({
     required SvgMergeFilter merge,
     required List<SvgFilterPaintPass> previous,
@@ -137,6 +155,10 @@ extension SvgFiltersPipelineCompositingExtension on SvgFilters {
 
     // Process each feMergeNode in order (bottom to top layering).
     // Each node's resolved passes are appended to create the layer stack.
+    // This supports:
+    // - Simple cases: 2-3 nodes with basic references
+    // - Complex cases: Many nodes referencing different intermediate results
+    // - Chained merges: One merge referencing another merge's named result
     for (var nodeIndex = 0; nodeIndex < merge.nodeInputs.length; nodeIndex++) {
       final nodeInput = merge.nodeInputs[nodeIndex];
 
@@ -153,6 +175,16 @@ extension SvgFiltersPipelineCompositingExtension on SvgFilters {
           ? null
           : normalizedInput;
 
+      // Check for explicit in="none" before resolving.
+      // in="none" produces empty layer, NEVER falls back to previous.
+      // This is important for conditional layer exclusion.
+      final isExplicitNone =
+          effectiveInput != null && effectiveInput.toLowerCase() == 'none';
+      if (isExplicitNone) {
+        // Explicitly skip this node - contributes nothing to the merge.
+        continue;
+      }
+
       final nodePasses = _resolveInputPasses(
         requestedInput: effectiveInput,
         previous: previous,
@@ -165,12 +197,12 @@ extension SvgFiltersPipelineCompositingExtension on SvgFilters {
         hasContributions = true;
         merged.addAll(nodePasses);
       }
-      // Note: When nodePasses is empty (forward ref, invalid ref, or in="none"),
+      // Note: When nodePasses is empty (forward ref, invalid ref),
       // we intentionally skip adding anything - this is correct per SVG spec
       // where invalid/forward refs produce transparent black (empty layer).
     }
 
-    // If all nodes resolved to empty (e.g., all forward references),
+    // If all nodes resolved to empty (e.g., all forward references, all in="none"),
     // return identity to prevent black output per baseline behavior.
     if (!hasContributions) {
       return const <SvgFilterPaintPass>[SvgFilterPaintPass.identity];

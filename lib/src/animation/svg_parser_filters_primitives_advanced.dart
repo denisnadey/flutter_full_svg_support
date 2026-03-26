@@ -272,6 +272,10 @@ SvgMergeFilter _parseMerge(XmlElement element, String filterId) {
 SvgTileFilter _parseTile(XmlElement element, String filterId) {
   return SvgTileFilter(
     id: filterId,
+    x: _parseNumber(element.getAttribute('x') ?? '0'),
+    y: _parseNumber(element.getAttribute('y') ?? '0'),
+    width: _parseNumber(element.getAttribute('width') ?? '0'),
+    height: _parseNumber(element.getAttribute('height') ?? '0'),
     input: _normalizeFilterInput(element.getAttribute('in')),
     resultName: _normalizeFilterResult(element.getAttribute('result')),
   );

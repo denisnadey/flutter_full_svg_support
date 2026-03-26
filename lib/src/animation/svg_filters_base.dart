@@ -146,14 +146,153 @@ class SvgMergeFilter extends SvgFilter {
 
 /// feTile: baseline-pass-through примитив.
 ///
-/// В текущем пайплайне не выполняет растеризованное тайлинг-повторение, но
-/// сохраняет граф зависимостей `in/result` и передаёт вход дальше по цепочке.
+/// Tiles the input image to fill the filter primitive subregion.
+/// Supports subregion specification (x, y, width, height) and proper
+/// tile boundary wrapping per SVG spec.
 class SvgTileFilter extends SvgFilter {
-  SvgTileFilter({required super.id, super.input, super.resultName})
-    : super(type: SvgFilterType.tile);
+  /// Primitive subregion x coordinate.
+  final double x;
+
+  /// Primitive subregion y coordinate.
+  final double y;
+
+  /// Primitive subregion width.
+  final double width;
+
+  /// Primitive subregion height.
+  final double height;
+
+  SvgTileFilter({
+    required super.id,
+    this.x = 0.0,
+    this.y = 0.0,
+    this.width = 0.0,
+    this.height = 0.0,
+    super.input,
+    super.resultName,
+  }) : super(type: SvgFilterType.tile);
+
+  /// Whether this tile filter has a non-standard subregion specified.
+  bool get hasSubregion => width > 0 && height > 0;
 
   @override
   ui.ImageFilter? apply() => null;
+}
+
+/// Utility class for performing tile operations on image data.
+///
+/// Implements the SVG feTile algorithm for tiling input images
+/// to fill the filter primitive subregion.
+class TileProcessor {
+  const TileProcessor._();
+
+  /// Tiles the input pixel data to fill the specified output dimensions.
+  ///
+  /// [inputPixels] - Source RGBA pixel data (4 bytes per pixel).
+  /// [inputWidth] - Input image width in pixels.
+  /// [inputHeight] - Input image height in pixels.
+  /// [outputWidth] - Output tile region width in pixels.
+  /// [outputHeight] - Output tile region height in pixels.
+  /// [tileX] - X offset of the tile within the output.
+  /// [tileY] - Y offset of the tile within the output.
+  /// [tileWidth] - Width of the tile region (0 = use inputWidth).
+  /// [tileHeight] - Height of the tile region (0 = use inputHeight).
+  ///
+  /// Returns new RGBA pixel data with tiling applied.
+  static Uint8List applyTiling({
+    required Uint8List inputPixels,
+    required int inputWidth,
+    required int inputHeight,
+    required int outputWidth,
+    required int outputHeight,
+    int tileX = 0,
+    int tileY = 0,
+    int tileWidth = 0,
+    int tileHeight = 0,
+  }) {
+    if (inputWidth <= 0 || inputHeight <= 0) {
+      return Uint8List(outputWidth * outputHeight * 4);
+    }
+    if (outputWidth <= 0 || outputHeight <= 0) {
+      return inputPixels;
+    }
+
+    // Use input dimensions if tile dimensions not specified
+    final tw = tileWidth > 0 ? tileWidth : inputWidth;
+    final th = tileHeight > 0 ? tileHeight : inputHeight;
+
+    final result = Uint8List(outputWidth * outputHeight * 4);
+
+    for (int y = 0; y < outputHeight; y++) {
+      for (int x = 0; x < outputWidth; x++) {
+        // Calculate source coordinates with tiling
+        var srcX = ((x - tileX) % tw);
+        var srcY = ((y - tileY) % th);
+        if (srcX < 0) srcX += tw;
+        if (srcY < 0) srcY += th;
+
+        // Clamp to input dimensions if tile is larger than input
+        if (srcX >= inputWidth || srcY >= inputHeight) {
+          // Outside input image - use transparent black
+          final dstIndex = (y * outputWidth + x) * 4;
+          result[dstIndex] = 0;
+          result[dstIndex + 1] = 0;
+          result[dstIndex + 2] = 0;
+          result[dstIndex + 3] = 0;
+          continue;
+        }
+
+        // Copy pixel from input
+        final srcIndex = (srcY * inputWidth + srcX) * 4;
+        final dstIndex = (y * outputWidth + x) * 4;
+        result[dstIndex] = inputPixels[srcIndex];
+        result[dstIndex + 1] = inputPixels[srcIndex + 1];
+        result[dstIndex + 2] = inputPixels[srcIndex + 2];
+        result[dstIndex + 3] = inputPixels[srcIndex + 3];
+      }
+    }
+
+    return result;
+  }
+}
+
+/// Extended paint pass that includes tile parameters for subregion support.
+///
+/// When [tileFilter] specifies a subregion, the painter should apply
+/// tiling with proper boundary handling.
+class SvgTilePaintPass extends SvgFilterPaintPass {
+  const SvgTilePaintPass({
+    super.imageFilter,
+    super.colorFilter,
+    super.blendMode,
+    super.offset,
+    super.paintFill,
+    super.paintStroke,
+    required this.tileFilter,
+  });
+
+  /// The tile filter parameters to apply.
+  final SvgTileFilter tileFilter;
+
+  @override
+  SvgFilterPaintPass copyWith({
+    ui.ImageFilter? imageFilter,
+    ui.ColorFilter? colorFilter,
+    ui.BlendMode? blendMode,
+    ui.Offset? offset,
+    bool? paintFill,
+    bool? paintStroke,
+  }) {
+    return SvgTilePaintPass(
+      imageFilter: imageFilter ?? this.imageFilter,
+      colorFilter: colorFilter ?? this.colorFilter,
+      blendMode: blendMode ?? this.blendMode,
+      offset: offset ?? this.offset,
+      paintFill: paintFill ?? this.paintFill,
+      paintStroke: paintStroke ?? this.paintStroke,
+      tileFilter: tileFilter,
+    );
+  }
 }
 
 /// Парсит feBlend mode в Flutter BlendMode.

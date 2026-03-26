@@ -205,6 +205,7 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
     List<double> parentRotateList = const <double>[],
     bool isRootText = false,
     _WritingMode writingMode = _WritingMode.horizontalTb,
+    bool forceCharacterPrecise = false,
   }) {
     // Parse position lists from this node
     final nodeXList = _getNumberList(node, 'x');
@@ -243,11 +244,13 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
 
     final text = _extractTextContent(node);
     if (text != null && text.isNotEmpty) {
-      final glyphCount = text.runes.length;
+      // Segment text into grapheme clusters for proper character handling
+      final graphemeClusters = _segmentTextIntoGraphemeClusters(text);
+      final glyphCount = graphemeClusters.length;
 
       // Determine if we should use per-character hit-testing
-      // Use it when any position list has more values than the first character
-      final usePerCharHit = _shouldUsePerCharacterHitTesting(
+      // Now also check for forceCharacterPrecise flag for precise selection
+      final usePerCharHit = forceCharacterPrecise || _shouldUsePerCharacterHitTesting(
         glyphCount,
         xList: xList,
         yList: yList,
@@ -257,9 +260,9 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
       );
 
       if (usePerCharHit) {
-        _appendPerCharacterHitRuns(
+        _appendPerCharacterHitRunsWithGraphemes(
           node: node,
-          text: text,
+          graphemeClusters: graphemeClusters,
           cursor: cursor,
           runs: runs,
           xList: xList,
@@ -294,12 +297,212 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
           parentDyList: dyList,
           parentRotateList: rotateList,
           writingMode: writingMode,
+          forceCharacterPrecise: forceCharacterPrecise,
         );
       } else if (child.tagName == 'textPath') {
         final consumed = _appendTextPathHitRuns(child, runs);
         cursor.x += consumed;
       }
     }
+  }
+
+  /// Segments text into grapheme clusters for proper character handling.
+  /// A grapheme cluster is a user-perceived "character" that may consist of
+  /// a base character plus combining marks.
+  List<String> _segmentTextIntoGraphemeClusters(String text) {
+    if (text.isEmpty) {
+      return const <String>[];
+    }
+
+    final clusters = <String>[];
+    final runes = text.runes.toList();
+    var i = 0;
+
+    while (i < runes.length) {
+      final start = i;
+      i++; // Include base character
+
+      // Consume any following combining marks
+      while (i < runes.length && _isHitTestCombiningMark(runes[i])) {
+        i++;
+      }
+
+      // Extract the grapheme cluster
+      final cluster = String.fromCharCodes(runes.sublist(start, i));
+      clusters.add(cluster);
+    }
+
+    return clusters;
+  }
+
+  /// Checks if a code point is a combining mark for hit-testing purposes.
+  bool _isHitTestCombiningMark(int codePoint) {
+    // Combining Diacritical Marks (0300-036F)
+    if (codePoint >= 0x0300 && codePoint <= 0x036F) {
+      return true;
+    }
+    // Combining Diacritical Marks Extended (1AB0-1AFF)
+    if (codePoint >= 0x1AB0 && codePoint <= 0x1AFF) {
+      return true;
+    }
+    // Combining Diacritical Marks Supplement (1DC0-1DFF)
+    if (codePoint >= 0x1DC0 && codePoint <= 0x1DFF) {
+      return true;
+    }
+    // Combining Half Marks (FE20-FE2F)
+    if (codePoint >= 0xFE20 && codePoint <= 0xFE2F) {
+      return true;
+    }
+    // Thai combining marks
+    if (codePoint == 0x0E31 ||
+        (codePoint >= 0x0E34 && codePoint <= 0x0E3A) ||
+        (codePoint >= 0x0E47 && codePoint <= 0x0E4E)) {
+      return true;
+    }
+    // Devanagari combining marks
+    if (codePoint == 0x093C ||
+        (codePoint >= 0x0941 && codePoint <= 0x0948) ||
+        codePoint == 0x094D) {
+      return true;
+    }
+    return false;
+  }
+
+  /// Appends hit runs for each grapheme cluster in the text.
+  void _appendPerCharacterHitRunsWithGraphemes({
+    required SvgNode node,
+    required List<String> graphemeClusters,
+    required _HitTextCursor cursor,
+    required List<_TextHitRun> runs,
+    required List<double> xList,
+    required List<double> yList,
+    required List<double> dxList,
+    required List<double> dyList,
+    required List<double> rotateList,
+    _WritingMode writingMode = _WritingMode.horizontalTb,
+  }) {
+    final textAnchor = _resolveTextAnchor(node);
+    final letterSpacing = _getInheritedNumber(node, 'letter-spacing') ?? 0.0;
+    final wordSpacing = _getInheritedNumber(node, 'word-spacing') ?? 0.0;
+    final isVertical = writingMode != _WritingMode.horizontalTb;
+
+    // Pre-calculate total dimension for text-anchor middle/end
+    double totalDimension = 0.0;
+    if (textAnchor != _TextAnchor.start) {
+      for (int i = 0; i < graphemeClusters.length; i++) {
+        final cluster = graphemeClusters[i];
+        final charMetrics = _measureText(cluster, node);
+        totalDimension += isVertical ? charMetrics.height : charMetrics.width;
+        if (i < graphemeClusters.length - 1) {
+          totalDimension += _spacingAfterGlyphForHit(
+            glyph: cluster,
+            isLast: false,
+            letterSpacing: letterSpacing,
+            wordSpacing: wordSpacing,
+          );
+        }
+      }
+    }
+
+    // Calculate initial position offset based on text-anchor
+    double anchorOffset = 0.0;
+    switch (textAnchor) {
+      case _TextAnchor.middle:
+        anchorOffset = -totalDimension / 2;
+        break;
+      case _TextAnchor.end:
+        anchorOffset = -totalDimension;
+        break;
+      case _TextAnchor.start:
+        break;
+    }
+
+    double charX = isVertical ? cursor.x : cursor.x + anchorOffset;
+    double charY = isVertical ? cursor.y + anchorOffset : cursor.y;
+    int listIdx = cursor.charIndex;
+
+    for (int i = 0; i < graphemeClusters.length; i++) {
+      final cluster = graphemeClusters[i];
+
+      // Apply per-character positioning from lists
+      if (listIdx < xList.length) {
+        charX = isVertical ? xList[listIdx] : xList[listIdx] + anchorOffset;
+      }
+      if (listIdx < yList.length) {
+        charY = isVertical ? yList[listIdx] + anchorOffset : yList[listIdx];
+      }
+      if (listIdx < dxList.length) {
+        charX += dxList[listIdx];
+      }
+      if (listIdx < dyList.length) {
+        charY += dyList[listIdx];
+      }
+
+      // Get rotation for this character
+      double rotation = 0.0;
+      if (rotateList.isNotEmpty) {
+        rotation = listIdx < rotateList.length
+            ? rotateList[listIdx]
+            : rotateList.last;
+      }
+
+      final charMetrics = _measureText(cluster, node);
+      final top = _resolveTextTopFromBaseline(
+        node: node,
+        baselineY: charY,
+        metrics: charMetrics,
+      );
+
+      // For vertical text, rotate character 90 degrees and swap dimensions
+      Rect charBounds;
+      if (isVertical) {
+        charBounds = Rect.fromLTWH(
+          charX - charMetrics.height / 2,
+          charY,
+          charMetrics.height,
+          charMetrics.width,
+        );
+      } else {
+        charBounds = Rect.fromLTWH(
+          charX,
+          top,
+          charMetrics.width,
+          charMetrics.height,
+        );
+      }
+
+      runs.add(
+        _TextHitRun.bounds(
+          owner: node,
+          bounds: charBounds,
+          rotation: isVertical ? 90.0 + rotation : rotation,
+          rotationCenter: Offset(charX, charY),
+        ),
+      );
+
+      // Advance for next character
+      final charAdvance = isVertical ? charMetrics.height : charMetrics.width;
+      final spacingAdvance = _spacingAfterGlyphForHit(
+        glyph: cluster,
+        isLast: i == graphemeClusters.length - 1,
+        letterSpacing: letterSpacing,
+        wordSpacing: wordSpacing,
+      );
+
+      if (isVertical) {
+        charY += charAdvance + spacingAdvance;
+      } else {
+        charX += charAdvance + spacingAdvance;
+      }
+      listIdx++;
+    }
+
+    if (isVertical) {
+      cursor.y = charY - anchorOffset;
+    } else {
+      cursor.x = charX - anchorOffset;
+    }
+    cursor.charIndex += graphemeClusters.length;
   }
 
   /// Checks if per-character hit-testing should be used based on position lists.

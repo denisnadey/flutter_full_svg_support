@@ -11,6 +11,7 @@ extension SvgFiltersInputResolverExtension on SvgFilters {
   /// - Forward reference handling (produces transparent black per spec)
   /// - Multi-hop chain resolution (A→B→C references)
   /// - Nested filter context handling for BackgroundImage
+  /// - `in="none"` handling: produces transparent black (empty passes)
   ///
   /// Input resolution precedence (per SVG spec):
   /// 1. If `in` is null/empty: use previous primitive's result or SourceGraphic
@@ -20,12 +21,20 @@ extension SvgFiltersInputResolverExtension on SvgFilters {
   /// 5. If `in` matches a built-in name (case-insensitive): return that input
   /// 6. Otherwise: return empty (transparent black for forward/invalid refs)
   ///
+  /// FillPaint/StrokePaint semantics (per SVG Filter 1.1):
+  /// - FillPaint: Uses the element's current fill paint as the input image.
+  ///   For solid fills, creates an image filled with that color.
+  ///   For gradient/pattern fills, uses the paint's rendered appearance.
+  /// - StrokePaint: Uses the element's current stroke paint as the input image.
+  ///   Similar to FillPaint but uses stroke paint context.
+  ///
   /// Edge cases handled:
   /// - Forward references: produce empty (transparent black)
   /// - Invalid named references: produce empty (transparent black)
   /// - Empty string vs null: both treated as "use previous"
   /// - Case-insensitive built-in names: accepted for compatibility
   /// - Named result reuse: returns a copy to prevent mutation issues
+  /// - `in="none"`: explicit transparent black, never falls back
   List<SvgFilterPaintPass> _resolveInputPasses({
     required String? requestedInput,
     required List<SvgFilterPaintPass> previous,
@@ -45,10 +54,15 @@ extension SvgFiltersInputResolverExtension on SvgFilters {
           : previous;
     }
 
-    // `in="none"` explicitly requests transparent-black input.
-    // HARDENING: This should never fall back to previous output, including
+    // Check for explicit "none" input - produces transparent black.
+    // Per SVG Filter 1.1 spec, `in="none"` explicitly produces a transparent
+    // black image with no input contribution. This is used to:
+    // - Terminate filter chains
+    // - Create from-scratch outputs (e.g., feFlood, feTurbulence)
+    // - Explicitly ignore previous output in feMergeNode
+    // HARDENING: This should NEVER fall back to previous output, including
     // in merge-node flow where implicit fallback would otherwise occur.
-    if (normalized.toLowerCase() == 'none') {
+    if (_isExplicitNoneInput(normalized)) {
       return const <SvgFilterPaintPass>[];
     }
 
@@ -97,14 +111,32 @@ extension SvgFiltersInputResolverExtension on SvgFilters {
     return const <SvgFilterPaintPass>[];
   }
 
+  /// Check if the input explicitly requests "none" (transparent black).
+  ///
+  /// Per SVG Filter 1.1 spec, `in="none"` is a valid keyword that produces
+  /// a transparent black image as the input.
+  bool _isExplicitNoneInput(String normalizedInput) {
+    return normalizedInput.toLowerCase() == 'none';
+  }
+
   List<SvgFilterPaintPass>? _resolveBuiltInInputPasses(
     String normalizedInput, {
     required List<SvgFilterPaintPass> sourceGraphic,
     required List<SvgFilterPaintPass> sourceAlpha,
     bool isNormalizedLowerCase = false,
   }) {
-    // Use _createFillPaintInput and _createStrokePaintInput for proper handling
-    // of pattern fills, gradient fills with objectBoundingBox, and inherited paint.
+    // FillPaint/StrokePaint handling:
+    // Per SVG Filter 1.1 spec, these inputs use the element's current
+    // fill/stroke paint to create the input image. When a filter primitive
+    // references FillPaint, it uses the fill paint from the context in which
+    // the filter is applied. This enables effects like:
+    // - Outline text with stroke-based effects
+    // - Fill-aware color manipulation
+    // - Paint server-aware filtering (gradients, patterns)
+    //
+    // The _activeFillPaint/_activeStrokePaint are set from SvgFilterSourceContext
+    // when resolvePaintPasses() is called. If not provided, we create a
+    // synthetic paint pass that preserves paintFill/paintStroke flags.
     final fillPaint = _activeFillPaint ?? _createFillPaintInput(sourceGraphic);
     final strokePaint =
         _activeStrokePaint ?? _createStrokePaintInput(sourceGraphic);
@@ -136,8 +168,13 @@ extension SvgFiltersInputResolverExtension on SvgFilters {
       case 'BackgroundAlpha':
         return _resolveBackgroundAlphaInput(backgroundAlpha);
       case 'FillPaint':
+        // Return fill paint passes that represent the element's fill.
+        // Per SVG spec, this is the paint used to fill the element,
+        // which could be a solid color, gradient, or pattern.
         return <SvgFilterPaintPass>[...fillPaint];
       case 'StrokePaint':
+        // Return stroke paint passes that represent the element's stroke.
+        // Per SVG spec, this is the paint used to stroke the element.
         return <SvgFilterPaintPass>[...strokePaint];
     }
 

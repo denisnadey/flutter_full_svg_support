@@ -564,26 +564,66 @@ class _TextMeasure {
     required this.height,
     required this.alphabeticBaseline,
     required this.fontSize,
+    this.textDirection = TextDirection.ltr,
   });
 
   final double width;
   final double height;
   final double alphabeticBaseline;
   final double fontSize;
+  final TextDirection textDirection;
 
   _TextMeasure copyWith({
     double? width,
     double? height,
     double? alphabeticBaseline,
     double? fontSize,
+    TextDirection? textDirection,
   }) {
     return _TextMeasure(
       width: width ?? this.width,
       height: height ?? this.height,
       alphabeticBaseline: alphabeticBaseline ?? this.alphabeticBaseline,
       fontSize: fontSize ?? this.fontSize,
+      textDirection: textDirection ?? this.textDirection,
     );
   }
+}
+
+/// Measurement for a BiDi text run.
+class _BidiTextMeasure {
+  const _BidiTextMeasure({
+    required this.text,
+    required this.direction,
+    required this.start,
+    required this.end,
+    required this.width,
+    required this.height,
+    required this.offset,
+  });
+
+  final String text;
+  final TextDirection direction;
+  final int start;
+  final int end;
+  final double width;
+  final double height;
+  final double offset;
+}
+
+/// A BiDi run for hit-testing purposes.
+class _HitTestBidiRun {
+  const _HitTestBidiRun({
+    required this.text,
+    required this.direction,
+    required this.start,
+    required this.end,
+  });
+
+  final String text;
+  final TextDirection direction;
+  final int start;
+  final int end;
 }
 
 enum _TextDominantBaseline {

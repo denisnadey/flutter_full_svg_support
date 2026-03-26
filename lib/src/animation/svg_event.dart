@@ -322,6 +322,72 @@ class SvgGestureEvent extends SvgEvent {
   final Offset? delta;
 }
 
+/// Wheel event for scroll/wheel interactions.
+class SvgWheelEvent extends SvgMouseEvent {
+  SvgWheelEvent({
+    required super.clientX,
+    required super.clientY,
+    super.button = 0,
+    super.buttons = 0,
+    super.altKey = false,
+    super.ctrlKey = false,
+    super.metaKey = false,
+    super.shiftKey = false,
+    required this.deltaX,
+    required this.deltaY,
+    this.deltaZ = 0.0,
+    this.deltaMode = SvgWheelDeltaMode.pixel,
+  }) : super(
+          type: 'wheel',
+          bubbles: true,
+          cancelable: true,
+          composed: false,
+        );
+
+  /// Horizontal scroll amount.
+  final double deltaX;
+
+  /// Vertical scroll amount.
+  final double deltaY;
+
+  /// Scroll amount on Z axis (usually 0).
+  final double deltaZ;
+
+  /// Unit of delta values (pixel, line, or page).
+  final SvgWheelDeltaMode deltaMode;
+}
+
+/// Delta mode for wheel events.
+enum SvgWheelDeltaMode {
+  /// Delta values are specified in pixels.
+  pixel,
+
+  /// Delta values are specified in lines.
+  line,
+
+  /// Delta values are specified in pages.
+  page,
+}
+
+/// Context menu event for right-click / long-press handling.
+class SvgContextMenuEvent extends SvgMouseEvent {
+  SvgContextMenuEvent({
+    required super.clientX,
+    required super.clientY,
+    super.button = 2, // Right button
+    super.buttons = 2,
+    super.altKey = false,
+    super.ctrlKey = false,
+    super.metaKey = false,
+    super.shiftKey = false,
+  }) : super(
+          type: 'contextmenu',
+          bubbles: true,
+          cancelable: true,
+          composed: false,
+        );
+}
+
 /// Offset class for position information.
 @immutable
 class Offset {

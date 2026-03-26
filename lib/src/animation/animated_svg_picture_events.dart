@@ -1,5 +1,17 @@
 part of 'animated_svg_picture.dart';
 
+/// W3C event dispatch result including propagation flags.
+/// Currently returns constant values as SMIL timeline doesn't track propagation.
+class _W3CEventDispatchResult {
+  const _W3CEventDispatchResult();
+
+  /// Whether preventDefault() was called (always false for SMIL events).
+  bool get defaultPrevented => false;
+
+  /// Whether stopPropagation() was called (always false for SMIL events).
+  bool get propagationStopped => false;
+}
+
 extension _AnimatedSvgPictureStateEventsExtension on _AnimatedSvgPictureState {
   /// Handle tap with full W3C event model support.
   /// Events bubble through the DOM tree and get retargeted through <use> shadows.
@@ -33,11 +45,11 @@ extension _AnimatedSvgPictureStateEventsExtension on _AnimatedSvgPictureState {
     if (retargetedId != null) {
       _document.pseudoClassState.setActive(retargetedId, true);
       // Set :focus state on tap (triggers focusin event)
-      _document.pseudoClassState.setFocus(retargetedId);
+      _handleFocusChange(retargetedId);
     }
 
-    // Trigger click events with bubbling through ancestor chain
-    _dispatchEventWithBubbling(
+    // Trigger click events with full W3C event flow (capture -> target -> bubble)
+    _dispatchEventWithW3CFlow(
       eventType: 'click',
       targetId: retargetedId,
       composedPath: hitResult.composedPath,
@@ -46,7 +58,50 @@ extension _AnimatedSvgPictureStateEventsExtension on _AnimatedSvgPictureState {
     _markNeedsRepaint();
   }
 
-  /// Dispatch an event that bubbles through the DOM tree.
+  /// Dispatch an event following the full W3C DOM event flow.
+  /// 1. Capture phase: root -> target's parent
+  /// 2. Target phase: target
+  /// 3. Bubble phase: target's parent -> root
+  ///
+  /// Note: For SMIL animations, the timeline doesn't support stopPropagation.
+  /// This method maintains the proper event order for W3C compliance.
+  _W3CEventDispatchResult _dispatchEventWithW3CFlow({
+    required String eventType,
+    required String? targetId,
+    required List<String> composedPath,
+    bool bubbles = true,
+    bool cancelable = true,
+  }) {
+    // The composed path is from root to target, so we iterate forward for capture
+    // and backward for bubble
+
+    // Phase 1: Capture phase (root to target's parent)
+    // For SMIL, we trigger capture events separately
+    for (int i = 0; i < composedPath.length - 1; i++) {
+      final elementId = composedPath[i];
+      _timeline?.triggerEvent(elementId, '${eventType}_capture');
+    }
+
+    // Phase 2: Target phase
+    if (targetId != null) {
+      _timeline?.triggerEvent(targetId, eventType);
+    }
+
+    // Phase 3: Bubble phase (target's parent to root)
+    if (bubbles) {
+      for (int i = composedPath.length - 2; i >= 0; i--) {
+        final elementId = composedPath[i];
+        _timeline?.triggerEvent(elementId, eventType);
+      }
+    }
+
+    // Document-level event as final fallback
+    _timeline?.triggerEvent(null, eventType);
+
+    return const _W3CEventDispatchResult();
+  }
+
+  /// Legacy bubble-only dispatch for backward compatibility.
   /// Events fire on target first, then bubble up to ancestors.
   void _dispatchEventWithBubbling({
     required String eventType,
@@ -161,6 +216,34 @@ extension _AnimatedSvgPictureStateEventsExtension on _AnimatedSvgPictureState {
       },
     );
     _markNeedsRepaint();
+  }
+
+  /// Handle focus change with proper blur/focus event dispatch.
+  void _handleFocusChange(String? newFocusId) {
+    final oldFocusId = _document.pseudoClassState.focusedId;
+    if (oldFocusId == newFocusId) return;
+
+    // Check if new element is focusable
+    if (newFocusId != null) {
+      final node = _document.root.findById(newFocusId);
+      if (node == null || !isFocusableElement(node)) {
+        // Element is not focusable, don't change focus
+        return;
+      }
+    }
+
+    // Fire blur/focusout on old element
+    if (oldFocusId != null) {
+      _triggerFocusOut(oldFocusId);
+    }
+
+    // Update focus state (this will update pseudoClassState)
+    _document.pseudoClassState.setFocus(newFocusId);
+
+    // Fire focus/focusin on new element
+    if (newFocusId != null) {
+      _triggerFocusIn(newFocusId);
+    }
   }
 }
 
@@ -372,6 +455,95 @@ extension _AnimatedSvgPictureStateFocusEventsExtension
 
     _timeline?.triggerEvent(elementId, 'focusout');
     _timeline?.triggerEvent(elementId, 'blur');
+    _markNeedsRepaint();
+  }
+}
+
+/// Extension for wheel events (scroll/mousewheel).
+extension _AnimatedSvgPictureStateWheelEventsExtension
+    on _AnimatedSvgPictureState {
+  /// Handle wheel/scroll event via PointerScrollEvent.
+  /// Call this from a Listener widget's onPointerSignal callback.
+  void _handleWheelEvent(Offset localPosition, Offset scrollDelta) {
+    final hitResult = _hitTestWithEventModel(localPosition);
+    final retargetedId = hitResult.retargetedElementId;
+
+    _trace(
+      category: 'event',
+      message: 'Wheel event',
+      data: <String, Object?>{
+        'x': localPosition.dx,
+        'y': localPosition.dy,
+        'deltaX': scrollDelta.dx,
+        'deltaY': scrollDelta.dy,
+        'targetId': retargetedId,
+      },
+    );
+
+    // Dispatch wheel event with W3C flow
+    _dispatchEventWithW3CFlow(
+      eventType: 'wheel',
+      targetId: retargetedId,
+      composedPath: hitResult.composedPath,
+      bubbles: true,
+      cancelable: true,
+    );
+    _markNeedsRepaint();
+  }
+}
+
+/// Extension for context menu events (right-click/long-press).
+extension _AnimatedSvgPictureStateContextMenuExtension
+    on _AnimatedSvgPictureState {
+  /// Handle context menu event (secondary tap/long press).
+  void _handleSecondaryTapDown(TapDownDetails details) {
+    final hitResult = _hitTestWithEventModel(details.localPosition);
+    final retargetedId = hitResult.retargetedElementId;
+
+    _trace(
+      category: 'event',
+      message: 'Context menu (secondary tap)',
+      data: <String, Object?>{
+        'x': details.localPosition.dx,
+        'y': details.localPosition.dy,
+        'targetId': retargetedId,
+      },
+    );
+
+    // Dispatch context menu event with W3C flow
+    _dispatchEventWithW3CFlow(
+      eventType: 'contextmenu',
+      targetId: retargetedId,
+      composedPath: hitResult.composedPath,
+      bubbles: true,
+      cancelable: true,
+    );
+    _markNeedsRepaint();
+  }
+
+  /// Handle long press as context menu trigger on touch devices.
+  void _handleLongPressAsContextMenu(LongPressStartDetails details) {
+    final hitResult = _hitTestWithEventModel(details.localPosition);
+    final retargetedId = hitResult.retargetedElementId;
+
+    _trace(
+      category: 'event',
+      message: 'Context menu (long press)',
+      data: <String, Object?>{
+        'x': details.localPosition.dx,
+        'y': details.localPosition.dy,
+        'targetId': retargetedId,
+      },
+    );
+
+    // Dispatch context menu event with W3C flow
+    _dispatchEventWithW3CFlow(
+      eventType: 'contextmenu',
+      targetId: retargetedId,
+      composedPath: hitResult.composedPath,
+      bubbles: true,
+      cancelable: true,
+    );
     _markNeedsRepaint();
   }
 }

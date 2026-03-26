@@ -67,20 +67,32 @@ extension SvgFiltersPipelinePrimitivePaintExtension on SvgFilters {
   /// - Flood color is multiplied by the blurred alpha mask
   /// - Result is properly composited behind the source
   ///
-  /// When used with non-source inputs (e.g., in="blurred") or as part of a
-  /// larger filter chain (e.g., feDropShadow -> feComposite), the composition
-  /// must correctly preserve the input chain state.
+  /// Advanced input handling (per SVG spec):
+  /// - Custom `in` attribute: The input can be any valid input reference
+  ///   (SourceGraphic, SourceAlpha, named result, FillPaint, etc.)
+  /// - When `in` references a named result from a previous primitive, the
+  ///   shadow is applied to that result's content
+  /// - Multiple feDropShadow in sequence: Each feDropShadow processes the
+  ///   output of the previous (if `in` is omitted) or the specified input
+  /// - `in="none"`: produces empty output (no shadow, no source)
+  ///
+  /// Composition order with explicit input chains:
+  /// - Shadow passes come first (bottom layer)
+  /// - Original input passes come last (top layer)
+  /// - This ensures shadow renders behind the source content
   ///
   /// Chaining considerations:
   /// - If feDropShadow has a result name, downstream primitives can reference it
   /// - The result contains both shadow passes and source passes (merged)
   /// - When chained, subsequent primitives process all output passes
+  /// - Sequential feDropShadow filters accumulate shadow layers
   ///
   /// Input validation and edge cases:
   /// - Empty/unresolved input: returns empty passes (transparent black)
   /// - stdDeviation=0: skips blur filter but still applies offset/color
   /// - flood-opacity=0: produces fully transparent shadow (still layered)
   /// - Multiple downstream references: each gets a copy of all passes
+  /// - `in="none"`: produces empty output, no fallback to previous
   List<SvgFilterPaintPass> _resolveDropShadowOutput({
     required SvgDropShadowFilter shadow,
     required List<SvgFilterPaintPass> previous,
@@ -88,7 +100,15 @@ extension SvgFiltersPipelinePrimitivePaintExtension on SvgFilters {
     required List<SvgFilterPaintPass> sourceGraphic,
     required List<SvgFilterPaintPass> sourceAlpha,
   }) {
+    // Check for explicit in="none" - produces empty output.
+    final inputRef = shadow.input?.trim();
+    if (inputRef != null && inputRef.toLowerCase() == 'none') {
+      return const <SvgFilterPaintPass>[];
+    }
+
     // Resolve the input (can be SourceGraphic, named result, or previous output).
+    // Per SVG spec, feDropShadow can reference any valid input, not just
+    // SourceGraphic. This enables applying shadow to filtered results.
     final input = _resolvePrimitiveInput(
       requestedInput: shadow.input,
       previous: previous,
@@ -97,8 +117,8 @@ extension SvgFiltersPipelinePrimitivePaintExtension on SvgFilters {
       sourceAlpha: sourceAlpha,
     );
 
-    // HARDENING: If input is empty (e.g., unresolved reference), produce no
-    // shadow. This matches the SVG spec behavior where invalid/forward
+    // HARDENING: If input is empty (e.g., unresolved reference or in="none"),
+    // produce no shadow. This matches the SVG spec behavior where invalid/forward
     // references produce transparent black output.
     if (input.isEmpty) {
       return const <SvgFilterPaintPass>[];
@@ -122,6 +142,9 @@ extension SvgFiltersPipelinePrimitivePaintExtension on SvgFilters {
 
     // Create shadow passes from input using Blink's multi-pass approach:
     // 1. blur(alpha) -> 2. offset -> 3. flood*alpha via srcIn
+    //
+    // For sequential feDropShadow filters, each shadow pass is created from
+    // the input (which may already contain shadow+source from previous filter).
     final shadowPasses = input
         .map(
           (pass) => SvgDropShadowPaintPass(
@@ -149,6 +172,11 @@ extension SvgFiltersPipelinePrimitivePaintExtension on SvgFilters {
     // Merge shadow passes (first/bottom) with original input (last/top).
     // This matches the SVG spec behavior where the shadow appears behind.
     // The resulting list is: [shadow_pass_0, ..., shadow_pass_n, input_0, ..., input_n]
+    //
+    // For sequential feDropShadow:
+    // - First feDropShadow: [shadow1, source]
+    // - Second feDropShadow (implicit input from first): [shadow2_of_shadow1, shadow2_of_source, shadow1, source]
+    // This creates the correct layering for multiple shadows.
     //
     // HARDENING: Return a new list to prevent any mutation issues when this
     // result is cached and referenced by multiple downstream primitives.

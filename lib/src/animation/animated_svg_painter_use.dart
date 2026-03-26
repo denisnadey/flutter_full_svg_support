@@ -90,6 +90,15 @@ const Set<String> _cssInheritablePropertiesForUse = {
   'text-emphasis-style',
 };
 
+/// CSS properties that cross foreignObject boundaries.
+/// These are the same inheritable properties that CSS defines,
+/// which flow from SVG context into foreignObject HTML content.
+/// Note: foreignObject establishes a new stacking context, so
+/// non-inherited properties (transform, opacity, clip-path, etc.)
+/// do NOT cross the boundary.
+const Set<String> cssInheritablePropertiesForForeignObject =
+    _cssInheritablePropertiesForUse;
+
 /// Context for tracking inherited CSS properties across <use> element boundaries.
 ///
 /// Per SVG spec, presentation attributes and inherited CSS properties on a
@@ -114,6 +123,12 @@ const Set<String> _cssInheritablePropertiesForUse = {
 /// When multiple <use> elements reference the same content, internal IDs (for
 /// filters, gradients, clip-paths) are scoped per-use instance to avoid conflicts.
 /// Each use context tracks its unique instance ID for proper ID resolution.
+///
+/// Shadow Boundary Behavior:
+/// Per SVG 2 spec, <use> creates a shadow-like scope:
+/// - CSS selectors with combinators (>, ~, +, space) stop at shadow boundary
+/// - Inherited CSS properties flow through the boundary
+/// - Original definition context CSS rules still apply to referenced elements
 class _UseInheritanceContext {
   _UseInheritanceContext({
     required this.useNode,
@@ -157,6 +172,29 @@ class _UseInheritanceContext {
 
   /// Gets the depth of nested use contexts.
   int get depth => parentContext == null ? 1 : 1 + parentContext!.depth;
+
+  /// Accumulated x/y transform stack for nested uses.
+  /// Each level adds its own x/y offset.
+  Matrix4 get accumulatedTransform {
+    final matrix = Matrix4.identity();
+    
+    // Start with parent context transform if nested
+    if (parentContext != null) {
+      matrix.multiply(parentContext!.accumulatedTransform);
+    }
+    
+    // Add this use's x/y offset
+    final x = useNode.getAttributeValue('x');
+    final y = useNode.getAttributeValue('y');
+    final xVal = x is num ? x.toDouble() : double.tryParse(x?.toString() ?? '');
+    final yVal = y is num ? y.toDouble() : double.tryParse(y?.toString() ?? '');
+    
+    if (xVal != null || yVal != null) {
+      matrix.translateByDouble(xVal ?? 0.0, yVal ?? 0.0, 0.0, 1.0);
+    }
+    
+    return matrix;
+  }
 
   /// Gets the inherited value for a property, checking the use chain.
   /// Returns null if the property is not inheritable or not set on any
@@ -255,10 +293,11 @@ class _UseInheritanceContext {
       }
     }
 
-    // 2. Check CSS rules from <style>
+    // 2. Check CSS rules from <style> (respects shadow boundary)
     String? cssRuleValue;
     if (cssRules != null && cssRules!.isNotEmpty) {
       final resolver = CssCascadeResolver(cssRules: cssRules!);
+      // Pass shadow boundary info for proper combinator matching
       cssRuleValue = resolver.resolveOwnProperty(node, normalizedProperty);
     }
 
@@ -280,6 +319,99 @@ class _UseInheritanceContext {
     // 4. Check inherited from use context (for inheritable properties)
     final inheritedValue = getInheritedValue(normalizedProperty);
     return inheritedValue?.toString();
+  }
+
+  /// Resolves a CSS property for use shadow boundary with full cascade.
+  /// This handles the special case where CSS rules from the original
+  /// definition context still apply to the referenced element.
+  ///
+  /// Per SVG 2 spec:
+  /// - Inline styles on referenced elements take highest precedence
+  /// - CSS rules from <style> apply normally (respecting shadow boundary for combinators)
+  /// - Presentation attributes on referenced elements override use-inherited values
+  /// - Use element's presentation attributes apply as inherited values
+  String? resolvePropertyWithShadowCascade(SvgNode node, String property) {
+    final normalizedProperty = property.trim().toLowerCase();
+
+    // 1. Check inline style on referenced element (highest)
+    final inlineValue = _extractStyleValueFromNode(node, normalizedProperty);
+    if (inlineValue != null) {
+      final hasImportant = inlineValue.contains('!important');
+      final cleanValue = inlineValue
+          .replaceFirst(
+            RegExp(r'\s*!important\s*$', caseSensitive: false),
+            '',
+          )
+          .trim();
+      if (cleanValue.isNotEmpty && hasImportant) {
+        return cleanValue;
+      }
+      // Non-important inline value
+      if (cleanValue.isNotEmpty) {
+        return cleanValue;
+      }
+    }
+
+    // 2. CSS rules from original definition context
+    String? cssRuleValue;
+    if (cssRules != null && cssRules!.isNotEmpty) {
+      final resolver = CssCascadeResolver(cssRules: cssRules!);
+      cssRuleValue = resolver.resolveOwnProperty(node, normalizedProperty);
+    }
+    if (cssRuleValue != null) {
+      return cssRuleValue;
+    }
+
+    // 3. Presentation attribute on referenced element
+    final attrValue = node.getAttributeValue(normalizedProperty)?.toString();
+    if (attrValue != null && attrValue.trim().isNotEmpty) {
+      return attrValue;
+    }
+
+    // 4. Use element's style attribute (for inheritable properties)
+    if (_cssInheritablePropertiesForUse.contains(normalizedProperty) ||
+        normalizedProperty.startsWith('--')) {
+      final useStyleValue = _extractStyleValueFromNode(
+        useNode,
+        normalizedProperty,
+      );
+      if (useStyleValue != null) {
+        return useStyleValue;
+      }
+    }
+
+    // 5. Use element's presentation attributes (for inheritable properties)
+    if (_cssInheritablePropertiesForUse.contains(normalizedProperty) ||
+        normalizedProperty.startsWith('--')) {
+      final useAttrValue = useNode.getAttributeValue(normalizedProperty);
+      if (useAttrValue != null) {
+        return useAttrValue.toString();
+      }
+    }
+
+    // 6. Inherited from use's ancestors
+    final inheritedValue = getInheritedValue(normalizedProperty);
+    return inheritedValue?.toString();
+  }
+
+  /// Gets the outermost use node ID for event retargeting.
+  /// Per SVG spec, events from shadow content should target the <use> element.
+  String? get retargetedEventId {
+    // Return the outermost use element's ID
+    final root = rootContext;
+    return root.useNode.id;
+  }
+
+  /// Gets all use element IDs in the chain from outermost to current.
+  /// Useful for event bubbling through nested use elements.
+  List<String?> get useChainIds {
+    final ids = <String?>[];
+    _UseInheritanceContext? current = this;
+    while (current != null) {
+      ids.insert(0, current.useNode.id);
+      current = current.parentContext;
+    }
+    return ids;
   }
 
   /// Gets a CSS custom property value from the use chain.
@@ -354,6 +486,38 @@ class _UseInheritanceContext {
 
   /// Checks if this context is nested (has a parent context).
   bool get isNested => parentContext != null;
+
+  /// Gets the accumulated viewBox transforms for nested symbol references.
+  /// Each symbol in the chain may have its own viewBox transform.
+  Matrix4 get accumulatedViewBoxTransform {
+    final matrix = Matrix4.identity();
+    
+    // Start with parent context viewBox transform if nested
+    if (parentContext != null) {
+      matrix.multiply(parentContext!.accumulatedViewBoxTransform);
+    }
+    
+    return matrix;
+  }
+
+  /// Applies viewBox transform to accumulated transform for symbol references.
+  /// Returns combined matrix with viewBox scaling.
+  Matrix4 applyViewBoxTransform(Matrix4 viewBoxMatrix) {
+    final combined = Matrix4.copy(accumulatedTransform);
+    combined.multiply(viewBoxMatrix);
+    return combined;
+  }
+
+  /// Gets the total nesting level considering both use and symbol nesting.
+  int get totalNestingLevel {
+    int level = 1;
+    _UseInheritanceContext? current = parentContext;
+    while (current != null) {
+      level++;
+      current = current.parentContext;
+    }
+    return level;
+  }
 
   /// Gets the transform to apply for animation coordinate inheritance.
   /// This includes the x/y offset and any explicit transform on the use element.

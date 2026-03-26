@@ -125,9 +125,58 @@ extension AnimatedSvgPainterGeometryExtension on AnimatedSvgPainter {
         }
         return ui.Path()
           ..addRect(ui.Rect.fromLTWH(imgX, imgY, actualWidth, actualHeight));
+      case 'foreignObject':
+        // ForeignObject geometry is its viewport rectangle.
+        // Used for clip/mask region calculation.
+        final foX = _getNumber(node, 'x') ?? 0.0;
+        final foY = _getNumber(node, 'y') ?? 0.0;
+        final foWidth = _getNumber(node, 'width') ?? 0.0;
+        final foHeight = _getNumber(node, 'height') ?? 0.0;
+        if (foWidth <= 0 || foHeight <= 0) {
+          return null;
+        }
+        return ui.Path()
+          ..addRect(ui.Rect.fromLTWH(foX, foY, foWidth, foHeight));
       default:
         return null;
     }
+  }
+
+  /// Builds a path for a nested SVG element within foreignObject context.
+  /// The SVG establishes its own coordinate system which may differ from
+  /// the foreignObject's viewport.
+  ui.Path? _buildNestedSvgPath(SvgNode svgNode, SvgNode foreignObjectParent) {
+    // Get foreignObject dimensions
+    final foWidth = _getNumber(foreignObjectParent, 'width') ?? 0.0;
+    final foHeight = _getNumber(foreignObjectParent, 'height') ?? 0.0;
+    if (foWidth <= 0 || foHeight <= 0) {
+      return null;
+    }
+
+    // Get SVG element positioning
+    final svgX = _getNumber(svgNode, 'x') ?? 0.0;
+    final svgY = _getNumber(svgNode, 'y') ?? 0.0;
+    final svgWidth = _getNumber(svgNode, 'width') ?? foWidth;
+    final svgHeight = _getNumber(svgNode, 'height') ?? foHeight;
+
+    if (svgWidth <= 0 || svgHeight <= 0) {
+      return null;
+    }
+
+    // The geometry is the SVG element's bounds within the foreignObject
+    return ui.Path()
+      ..addRect(ui.Rect.fromLTWH(svgX, svgY, svgWidth, svgHeight));
+  }
+
+  /// Resolves the coordinate transform for content within a foreignObject.
+  /// ForeignObject establishes a new stacking context with transform reset.
+  Matrix4 _resolveForeignObjectContentTransform(SvgNode foreignObjectNode) {
+    final x = _getNumber(foreignObjectNode, 'x') ?? 0.0;
+    final y = _getNumber(foreignObjectNode, 'y') ?? 0.0;
+
+    // ForeignObject translates content to (x, y) position
+    // Transform is reset - foreignObject content starts fresh
+    return Matrix4.identity()..translateByDouble(x, y, 0, 1);
   }
 
   void _applyPathFillType(ui.Path path, SvgNode node) {

@@ -5,19 +5,97 @@ part of 'animated_svg_picture.dart';
 const int _kMaxUseRecursionDepthHitTest = 10;
 
 /// Context for tracking pointer-events inheritance across <use> boundaries.
+/// Also handles event retargeting per SVG spec - events from shadow content
+/// should target the <use> element, not the referenced content.
 class _UseHitTestContext {
-  const _UseHitTestContext({this.inheritedPointerEvents});
+  const _UseHitTestContext({
+    this.inheritedPointerEvents,
+    this.useElementId,
+    this.parentContext,
+    this.useNode,
+  });
 
   /// Pointer-events value inherited from <use> element.
   /// If null, use the referenced element's own pointer-events.
   final String? inheritedPointerEvents;
 
+  /// The ID of the <use> element for event retargeting.
+  /// Per SVG spec, events from shadow content should target the <use> element.
+  final String? useElementId;
+
+  /// The <use> element node for full context access.
+  final SvgNode? useNode;
+
+  /// Parent hit-test context for nested <use> chains.
+  final _UseHitTestContext? parentContext;
+
   /// Creates a new context inheriting from this one.
-  _UseHitTestContext copyWith({String? inheritedPointerEvents}) {
+  _UseHitTestContext copyWith({
+    String? inheritedPointerEvents,
+    String? useElementId,
+    SvgNode? useNode,
+  }) {
     return _UseHitTestContext(
       inheritedPointerEvents:
           inheritedPointerEvents ?? this.inheritedPointerEvents,
+      useElementId: useElementId ?? this.useElementId,
+      useNode: useNode ?? this.useNode,
+      parentContext: this,
     );
+  }
+
+  /// Gets the event target ID per SVG retargeting spec.
+  /// When inside a <use> shadow tree, events should target the outermost
+  /// <use> element that has an ID, not the inner referenced content.
+  String? getRetargetedId(String? innerElementId) {
+    // If we have a use element ID, return it (event retargeting)
+    // This implements the SVG spec behavior where events from shadow
+    // content are retargeted to the <use> element.
+    if (useElementId != null && useElementId!.isNotEmpty) {
+      return useElementId;
+    }
+    // Check parent context for nested use chains
+    if (parentContext != null) {
+      final parentRetargeted = parentContext!.getRetargetedId(innerElementId);
+      if (parentRetargeted != null) {
+        return parentRetargeted;
+      }
+    }
+    // If no use element has an ID, fall back to inner element
+    return innerElementId;
+  }
+
+  /// Gets the outermost use element ID in the chain.
+  /// For event bubbling, we need to know the outermost use element.
+  String? get outermostUseElementId {
+    if (parentContext != null) {
+      final parentId = parentContext!.outermostUseElementId;
+      if (parentId != null && parentId.isNotEmpty) {
+        return parentId;
+      }
+    }
+    return useElementId;
+  }
+
+  /// Gets all use element IDs in the chain from outermost to current.
+  List<String?> get useChainIds {
+    final ids = <String?>[];
+    if (parentContext != null) {
+      ids.addAll(parentContext!.useChainIds);
+    }
+    ids.add(useElementId);
+    return ids;
+  }
+
+  /// Gets the nesting depth of use contexts.
+  int get depth {
+    int d = 1;
+    _UseHitTestContext? current = parentContext;
+    while (current != null) {
+      d++;
+      current = current.parentContext;
+    }
+    return d;
   }
 }
 
@@ -52,10 +130,18 @@ extension _AnimatedSvgPictureStateHitTestUseExtension
       return null;
     }
 
-    // Create context for pointer-events inheritance
-    final useContext =
-        context?.copyWith(inheritedPointerEvents: usePointerEvents) ??
-        _UseHitTestContext(inheritedPointerEvents: usePointerEvents);
+    // Create context for pointer-events inheritance and event retargeting.
+    // Pass the use element ID for event retargeting.
+    final useContext = context?.copyWith(
+          inheritedPointerEvents: usePointerEvents,
+          useElementId: useNode.id,
+          useNode: useNode,
+        ) ??
+        _UseHitTestContext(
+          inheritedPointerEvents: usePointerEvents,
+          useElementId: useNode.id,
+          useNode: useNode,
+        );
 
     final referenceTransform = Matrix4.copy(currentTransform)
       ..translateByDouble(
@@ -95,12 +181,13 @@ extension _AnimatedSvgPictureStateHitTestUseExtension
               useContext: useContext,
             );
             if (hitChild != null) {
-              return hitChild;
+              // Apply event retargeting - return use element ID instead
+              return useContext.getRetargetedId(hitChild);
             }
           }
           return null;
         }
-        return _hitTestNodeWithUseContext(
+        final hitResult = _hitTestNodeWithUseContext(
           referenced,
           documentPoint,
           useReferenceTransform,
@@ -108,9 +195,13 @@ extension _AnimatedSvgPictureStateHitTestUseExtension
           foreignObjectParent: null,
           useContext: useContext,
         );
+        // Apply event retargeting
+        return hitResult != null
+            ? useContext.getRetargetedId(hitResult)
+            : null;
       }
 
-      return _hitTestNodeWithUseContext(
+      final hitResult = _hitTestNodeWithUseContext(
         referenced,
         documentPoint,
         referenceTransform,
@@ -118,6 +209,8 @@ extension _AnimatedSvgPictureStateHitTestUseExtension
         foreignObjectParent: null,
         useContext: useContext,
       );
+      // Apply event retargeting
+      return hitResult != null ? useContext.getRetargetedId(hitResult) : null;
     } finally {
       referenced.parent = previousParent;
     }

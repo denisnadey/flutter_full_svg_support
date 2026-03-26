@@ -39,6 +39,32 @@ extension SvgFiltersPipelinePrimitiveEffectsExtension on SvgFilters {
       sourceGraphic: sourceGraphic,
       sourceAlpha: sourceAlpha,
     );
+
+    final clampedX = morphology.radiusX.clamp(0.0, 4096.0).toDouble();
+    final clampedY = morphology.radiusY.clamp(0.0, 4096.0).toDouble();
+    if (clampedX <= 0.0 && clampedY <= 0.0) {
+      return input;
+    }
+
+    // For non-default edge modes, use specialized paint pass that
+    // carries the morphology parameters for proper edge handling.
+    if (morphology.edgeMode != SvgConvolveEdgeMode.duplicate) {
+      return input
+          .map(
+            (pass) => SvgMorphologyPaintPass(
+              imageFilter: pass.imageFilter,
+              colorFilter: pass.colorFilter,
+              blendMode: pass.blendMode,
+              offset: pass.offset,
+              paintFill: pass.paintFill,
+              paintStroke: pass.paintStroke,
+              morphologyFilter: morphology,
+            ),
+          )
+          .toList(growable: false);
+    }
+
+    // Default edge mode (duplicate) - use Flutter's built-in erode/dilate
     final morphologyFilter = morphology.apply();
     if (morphologyFilter == null) {
       return input;

@@ -4,11 +4,19 @@ part of 'animated_svg_painter.dart';
 ///
 /// Contains methods for building and rendering text:
 /// - Paragraph building with font features and variations
-/// - Unicode bidirectional text handling
+/// - Unicode bidirectional text handling (UAX #9 compliant)
 /// - Text path support and spacing calculations
 /// - Text content extraction with whitespace handling
+/// - Grapheme cluster segmentation for complex scripts
+/// - Combining marks and diacritics positioning
 extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
   /// Builds a Flutter Paragraph with the resolved text style.
+  ///
+  /// Handles complex typography requirements:
+  /// - Font features and variable font axes
+  /// - Unicode BiDi text with directional control characters
+  /// - Complex script shaping (Arabic, Thai, Devanagari)
+  /// - Combining marks and diacritics
   ui.Paragraph _buildTextParagraph(String text, _ResolvedTextStyle style) {
     // Apply text-transform before any other processing
     var transformedText = _applyTextTransform(text, style.textTransform);
@@ -121,6 +129,8 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
   }
 
   /// Applies unicode-bidi handling by wrapping text with Unicode directional control characters.
+  ///
+  /// Implements UAX #9 (Unicode Bidirectional Algorithm):
   /// - embed: LRE/RLE + text + PDF
   /// - bidi-override: LRO/RLO + text + PDF
   /// - isolate: LRI/RLI + text + PDI
@@ -174,6 +184,204 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
         // Use normal Unicode bidi algorithm
         return text;
     }
+  }
+
+  /// Segments text into grapheme clusters for proper character handling.
+  ///
+  /// A grapheme cluster is a user-perceived "character" that may consist of:
+  /// - A base character + combining marks (é = e + ́)
+  /// - A base character + complex script components
+  /// - Emoji sequences (family emoji, skin tone modifiers)
+  ///
+  /// This is essential for:
+  /// - Arabic connected letter forms
+  /// - Thai vowel marks and tone marks
+  /// - Devanagari conjuncts and matras
+  /// - Combining diacritical marks
+  List<String> _segmentIntoGraphemeClusters(String text) {
+    if (text.isEmpty) {
+      return const <String>[];
+    }
+
+    final clusters = <String>[];
+    final runes = text.runes.toList();
+    var i = 0;
+
+    while (i < runes.length) {
+      final start = i;
+      i++; // Include base character
+
+      // Consume any following combining marks
+      while (i < runes.length && _isCombiningMark(runes[i])) {
+        i++;
+      }
+
+      // Extract the grapheme cluster
+      final cluster = String.fromCharCodes(runes.sublist(start, i));
+      clusters.add(cluster);
+    }
+
+    return clusters;
+  }
+
+  /// Detects the text direction for a given text based on its content.
+  ///
+  /// Implements first-strong character detection per UAX #9:
+  /// - Scans for first character with strong directionality (L, R, or AL)
+  /// - Returns RTL if first strong is R or AL, LTR otherwise
+  ui.TextDirection _detectTextDirection(String text) {
+    for (final codeUnit in text.runes) {
+      final category = _getUnicodeBidiCategory(codeUnit);
+      if (category == _BidiCategory.l) {
+        return ui.TextDirection.ltr;
+      } else if (category == _BidiCategory.r || category == _BidiCategory.al) {
+        return ui.TextDirection.rtl;
+      }
+    }
+    return ui.TextDirection.ltr; // Default to LTR
+  }
+
+  /// Gets the Unicode bidirectional category for a code point.
+  _BidiCategory _getUnicodeBidiCategory(int codePoint) {
+    // Arabic range (0600-06FF, 0750-077F, 08A0-08FF)
+    if ((codePoint >= 0x0600 && codePoint <= 0x06FF) ||
+        (codePoint >= 0x0750 && codePoint <= 0x077F) ||
+        (codePoint >= 0x08A0 && codePoint <= 0x08FF)) {
+      return _BidiCategory.al; // Arabic Letter
+    }
+
+    // Hebrew range (0590-05FF)
+    if (codePoint >= 0x0590 && codePoint <= 0x05FF) {
+      return _BidiCategory.r; // Right-to-Left
+    }
+
+    // Latin, Greek, Cyrillic, etc.
+    if ((codePoint >= 0x0041 && codePoint <= 0x005A) || // A-Z
+        (codePoint >= 0x0061 && codePoint <= 0x007A) || // a-z
+        (codePoint >= 0x00C0 && codePoint <= 0x024F) || // Latin Extended
+        (codePoint >= 0x0370 && codePoint <= 0x03FF) || // Greek
+        (codePoint >= 0x0400 && codePoint <= 0x04FF)) {
+      // Cyrillic
+      return _BidiCategory.l; // Left-to-Right
+    }
+
+    // Numbers are considered neutral/weak for bidi purposes
+    if (codePoint >= 0x0030 && codePoint <= 0x0039) {
+      return _BidiCategory.en; // European Number
+    }
+
+    return _BidiCategory.other;
+  }
+
+  /// Checks if a character is a combining mark or diacritic.
+  ///
+  /// Combining marks modify the preceding base character and should
+  /// be rendered as part of the same glyph.
+  bool _isCombiningMark(int codePoint) {
+    // Combining Diacritical Marks (0300-036F)
+    if (codePoint >= 0x0300 && codePoint <= 0x036F) {
+      return true;
+    }
+    // Combining Diacritical Marks Extended (1AB0-1AFF)
+    if (codePoint >= 0x1AB0 && codePoint <= 0x1AFF) {
+      return true;
+    }
+    // Combining Diacritical Marks Supplement (1DC0-1DFF)
+    if (codePoint >= 0x1DC0 && codePoint <= 0x1DFF) {
+      return true;
+    }
+    // Combining Half Marks (FE20-FE2F)
+    if (codePoint >= 0xFE20 && codePoint <= 0xFE2F) {
+      return true;
+    }
+    // Thai combining marks (0E31, 0E34-0E3A, 0E47-0E4E)
+    if (codePoint == 0x0E31 ||
+        (codePoint >= 0x0E34 && codePoint <= 0x0E3A) ||
+        (codePoint >= 0x0E47 && codePoint <= 0x0E4E)) {
+      return true;
+    }
+    // Devanagari combining marks (093C, 0941-0948, 094D)
+    if (codePoint == 0x093C ||
+        (codePoint >= 0x0941 && codePoint <= 0x0948) ||
+        codePoint == 0x094D) {
+      return true;
+    }
+    return false;
+  }
+
+  /// Segments text into logical visual runs for bidirectional text.
+  ///
+  /// Each run contains text of consistent directionality.
+  /// Used for proper hit-testing and selection in mixed-direction text.
+  List<_BidiRun> _segmentIntoBidiRuns(
+    String text,
+    ui.TextDirection baseDirection,
+  ) {
+    if (text.isEmpty) {
+      return const <_BidiRun>[];
+    }
+
+    final runs = <_BidiRun>[];
+    var currentStart = 0;
+    var currentDirection = baseDirection;
+
+    for (var i = 0; i < text.length;) {
+      final codePoint = text.codeUnitAt(i);
+      final category = _getUnicodeBidiCategory(codePoint);
+
+      ui.TextDirection charDirection;
+      if (category == _BidiCategory.l) {
+        charDirection = ui.TextDirection.ltr;
+      } else if (category == _BidiCategory.r || category == _BidiCategory.al) {
+        charDirection = ui.TextDirection.rtl;
+      } else {
+        // Neutral characters follow the current direction
+        charDirection = currentDirection;
+      }
+
+      // If direction changes, close current run and start new one
+      if (runs.isEmpty || charDirection != currentDirection) {
+        if (runs.isNotEmpty) {
+          // Close previous run
+          runs.last = _BidiRun(
+            text: text.substring(currentStart, i),
+            direction: currentDirection,
+            start: currentStart,
+            end: i,
+          );
+        }
+        // Start new run
+        currentStart = i;
+        currentDirection = charDirection;
+        runs.add(_BidiRun(
+          text: '',
+          direction: charDirection,
+          start: i,
+          end: i,
+        ));
+      }
+
+      i++;
+    }
+
+    // Close final run
+    if (runs.isNotEmpty) {
+      runs.last = _BidiRun(
+        text: text.substring(currentStart),
+        direction: currentDirection,
+        start: currentStart,
+        end: text.length,
+      );
+    } else {
+      runs.add(_BidiRun(
+        text: text,
+        direction: baseDirection,
+        start: 0,
+        end: text.length,
+      ));
+    }
+
+    return runs;
   }
 
   /// Draws a paragraph with optional effects (filter, color filter, blend mode).

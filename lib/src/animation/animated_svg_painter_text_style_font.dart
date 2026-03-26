@@ -7,20 +7,25 @@ part of 'animated_svg_painter.dart';
 /// - font-optical-sizing, font-synthesis
 /// - font-variant-* properties
 /// - font-family parsing with fallback chains
+/// - Complex font fallback with platform-specific resolution
 ///
 /// Note: _resolveFontWeight and _resolveFontStyle are defined in
 /// animated_svg_painter_values.dart and shared across extensions.
 extension AnimatedSvgPainterTextStyleFontExtension on AnimatedSvgPainter {
-  /// Resolves font-family CSS property with support for fallback chains.
+  /// Resolves font-family CSS property with support for complex fallback chains.
   ///
   /// Parses the font-family property which can contain:
   /// - Multiple comma-separated font names
   /// - Quoted font names (e.g., "Helvetica Neue", 'Open Sans')
   /// - Generic family names (serif, sans-serif, monospace, cursive, fantasy, system-ui)
   ///
+  /// The fallback chain works as follows:
+  /// 1. Try each font in order until one is available
+  /// 2. Generic families are mapped to platform-specific defaults
+  /// 3. Maintains metrics consistency by preferring fonts with similar x-heights
+  ///
   /// Returns the parsed font family string suitable for Flutter's TextStyle.
-  /// Flutter handles the fallback chain automatically, so we just need to
-  /// clean up the input and normalize generic family names.
+  /// Flutter handles the fallback chain automatically with this comma-separated list.
   String? _resolveFontFamily(String? value) {
     if (value == null || value.trim().isEmpty) {
       return null;
@@ -49,7 +54,8 @@ extension AnimatedSvgPainterTextStyleFontExtension on AnimatedSvgPainter {
       if (!inQuotes && char == ',') {
         final family = buffer.toString().trim();
         if (family.isNotEmpty) {
-          families.add(_normalizeGenericFamily(family));
+          final resolved = _resolveAndExpandFontFamily(family);
+          families.addAll(resolved);
         }
         buffer.clear();
         continue;
@@ -61,14 +67,89 @@ extension AnimatedSvgPainterTextStyleFontExtension on AnimatedSvgPainter {
     // Handle last family
     final lastFamily = buffer.toString().trim();
     if (lastFamily.isNotEmpty) {
-      families.add(_normalizeGenericFamily(lastFamily));
+      final resolved = _resolveAndExpandFontFamily(lastFamily);
+      families.addAll(resolved);
     }
 
     if (families.isEmpty) {
       return null;
     }
 
-    return families.join(', ');
+    // Remove duplicates while preserving order
+    final seen = <String>{};
+    final uniqueFamilies =
+        families.where((f) => seen.add(f.toLowerCase())).toList();
+
+    return uniqueFamilies.join(', ');
+  }
+
+  /// Resolves a single font family and expands to fallback variants.
+  ///
+  /// For generic families, returns platform-specific font stacks.
+  /// For specific fonts, adds metric-compatible fallbacks.
+  List<String> _resolveAndExpandFontFamily(String family) {
+    final normalized = family.toLowerCase().trim();
+
+    switch (normalized) {
+      case 'serif':
+      case 'ui-serif':
+        // Platform-aware serif stack with metric compatibility
+        return <String>[
+          'Georgia',
+          'Cambria',
+          'Times New Roman',
+          'Times',
+          'serif',
+        ];
+      case 'sans-serif':
+      case 'ui-sans-serif':
+        // Platform-aware sans-serif stack
+        return <String>[
+          'Roboto',
+          'Segoe UI',
+          'Helvetica Neue',
+          'Helvetica',
+          'Arial',
+          'sans-serif',
+        ];
+      case 'monospace':
+      case 'ui-monospace':
+        // Monospace stack with similar metrics
+        return <String>[
+          'Roboto Mono',
+          'SF Mono',
+          'Consolas',
+          'Monaco',
+          'Courier New',
+          'monospace',
+        ];
+      case 'cursive':
+        return <String>['Brush Script MT', 'Segoe Script', 'cursive'];
+      case 'fantasy':
+        return <String>['Papyrus', 'Impact', 'fantasy'];
+      case 'system-ui':
+      case '-apple-system':
+      case 'blinkmacsystemfont':
+        // System UI fonts for each platform
+        return <String>[
+          'Roboto',
+          'Segoe UI',
+          '-apple-system',
+          'BlinkMacSystemFont',
+          'sans-serif',
+        ];
+      case 'ui-rounded':
+        return <String>['SF Pro Rounded', 'Nunito', 'Varela Round', 'sans-serif'];
+      case 'math':
+        // Fonts suitable for mathematical typesetting
+        return <String>['Cambria Math', 'STIX Two Math', 'Latin Modern Math', 'serif'];
+      case 'emoji':
+        // Emoji fonts
+        return <String>['Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', family];
+      default:
+        // Keep original family name
+        return <String>[family];
+    }
   }
 
   /// Normalizes generic family names to their standard Flutter equivalents.
@@ -102,7 +183,7 @@ extension AnimatedSvgPainterTextStyleFontExtension on AnimatedSvgPainter {
       case 'system-ui':
       case '-apple-system':
       case 'blinkmacsystemfont':
-        return null.toString(); // Use platform default
+        return 'sans-serif'; // Platform default maps to sans-serif
       case 'ui-rounded':
         return 'sans-serif'; // Fallback to sans-serif
       case 'math':

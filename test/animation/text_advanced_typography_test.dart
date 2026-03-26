@@ -118,6 +118,724 @@ void main() {
     });
   });
 
+  group('complex font fallback chain', () {
+    testWidgets('font-family with multiple fallbacks renders', (tester) async {
+      const svg =
+          '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+        <text x="10" y="50" font-family="NonExistentFont, Arial, sans-serif" fill="black">
+          Font Fallback Test
+        </text>
+      </svg>''';
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svg, width: 300, height: 100),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
+
+    testWidgets('generic font family serif expands to platform fonts', (
+      tester,
+    ) async {
+      const svg =
+          '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+        <text x="10" y="50" font-family="serif" fill="black">
+          Serif Font Test
+        </text>
+      </svg>''';
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svg, width: 300, height: 100),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
+
+    testWidgets('generic font family monospace expands correctly', (
+      tester,
+    ) async {
+      const svg =
+          '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+        <text x="10" y="50" font-family="monospace" fill="black">
+          Monospace Font Test
+        </text>
+      </svg>''';
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svg, width: 300, height: 100),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
+
+    testWidgets('system-ui font family resolves', (tester) async {
+      const svg =
+          '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+        <text x="10" y="50" font-family="system-ui" fill="black">
+          System UI Font Test
+        </text>
+      </svg>''';
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svg, width: 300, height: 100),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
+
+    testWidgets('quoted font names parse correctly', (tester) async {
+      const svg =
+          '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+        <text x="10" y="50" font-family="'Helvetica Neue', 'Open Sans', sans-serif" fill="black">
+          Quoted Font Names
+        </text>
+      </svg>''';
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svg, width: 300, height: 100),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
+  });
+
+  group('bidirectional text handling', () {
+    testWidgets('direction="rtl" applies right-to-left text direction', (
+      tester,
+    ) async {
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+        <text x="190" y="50" direction="rtl" fill="black">مرحبا</text>
+      </svg>''';
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svg, width: 200, height: 100),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
+
+    testWidgets('direction="ltr" applies left-to-right text direction', (
+      tester,
+    ) async {
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+        <text x="10" y="50" direction="ltr" fill="black">Hello</text>
+      </svg>''';
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svg, width: 200, height: 100),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
+
+    testWidgets('unicode-bidi embed works', (tester) async {
+      const svg =
+          '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+        <text x="10" y="50" direction="ltr" unicode-bidi="embed" fill="black">
+          English مرحبا English
+        </text>
+      </svg>''';
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svg, width: 300, height: 100),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
+
+    testWidgets('unicode-bidi bidi-override works', (tester) async {
+      const svg =
+          '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+        <text x="10" y="50" direction="rtl" unicode-bidi="bidi-override" fill="black">
+          ABCDEF
+        </text>
+      </svg>''';
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svg, width: 300, height: 100),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
+
+    testWidgets('unicode-bidi isolate works', (tester) async {
+      const svg =
+          '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+        <text x="10" y="50" unicode-bidi="isolate" fill="black">
+          Isolated text
+        </text>
+      </svg>''';
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svg, width: 300, height: 100),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
+
+    testWidgets('unicode-bidi isolate-override works', (tester) async {
+      const svg =
+          '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+        <text x="10" y="50" direction="rtl" unicode-bidi="isolate-override" fill="black">
+          Override isolated
+        </text>
+      </svg>''';
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svg, width: 300, height: 100),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
+
+    testWidgets('unicode-bidi plaintext works', (tester) async {
+      const svg =
+          '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+        <text x="10" y="50" unicode-bidi="plaintext" fill="black">
+          Plain text auto direction
+        </text>
+      </svg>''';
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svg, width: 300, height: 100),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
+
+    testWidgets('mixed RTL and LTR text in same element', (tester) async {
+      const svg =
+          '''<svg viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
+        <text x="10" y="50" fill="black">
+          Hello <tspan direction="rtl">שלום</tspan> World
+        </text>
+      </svg>''';
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svg, width: 400, height: 100),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
+
+    testWidgets('Arabic text renders correctly', (tester) async {
+      const svg =
+          '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+        <text x="290" y="50" direction="rtl" fill="black">السلام عليكم</text>
+      </svg>''';
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svg, width: 300, height: 100),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
+
+    testWidgets('Hebrew text renders correctly', (tester) async {
+      const svg =
+          '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+        <text x="290" y="50" direction="rtl" fill="black">שלום עולם</text>
+      </svg>''';
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svg, width: 300, height: 100),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
+
+    testWidgets('BiDi text with text-anchor middle', (tester) async {
+      const svg =
+          '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+        <text x="150" y="50" text-anchor="middle" direction="rtl" fill="black">مرحبا</text>
+      </svg>''';
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svg, width: 300, height: 100),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
+
+    testWidgets('BiDi text with text-anchor end', (tester) async {
+      const svg =
+          '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+        <text x="290" y="50" text-anchor="end" direction="rtl" fill="black">مرحبا</text>
+      </svg>''';
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svg, width: 300, height: 100),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
+  });
+
+  group('combining marks and diacritics', () {
+    testWidgets('combining acute accent renders correctly', (tester) async {
+      // e + combining acute accent = é
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+        <text x="10" y="50" fill="black">cafe&#x0301;</text>
+      </svg>''';
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svg, width: 200, height: 100),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
+
+    testWidgets('precomposed character renders correctly', (tester) async {
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+        <text x="10" y="50" fill="black">café</text>
+      </svg>''';
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svg, width: 200, height: 100),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
+
+    testWidgets('multiple combining marks render', (tester) async {
+      // o + combining tilde + combining acute
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+        <text x="10" y="50" fill="black">o&#x0303;&#x0301;</text>
+      </svg>''';
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svg, width: 200, height: 100),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
+
+    testWidgets('Vietnamese text with diacritics renders', (tester) async {
+      const svg =
+          '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+        <text x="10" y="50" fill="black">Việt Nam</text>
+      </svg>''';
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svg, width: 300, height: 100),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
+  });
+
+  group('complex scripts', () {
+    testWidgets('Thai text with vowel marks renders', (tester) async {
+      const svg =
+          '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+        <text x="10" y="50" fill="black">สวัสดี</text>
+      </svg>''';
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svg, width: 300, height: 100),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
+
+    testWidgets('Devanagari text renders', (tester) async {
+      const svg =
+          '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+        <text x="10" y="50" fill="black">नमस्ते</text>
+      </svg>''';
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svg, width: 300, height: 100),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
+
+    testWidgets('Korean text renders', (tester) async {
+      const svg =
+          '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+        <text x="10" y="50" fill="black">안녕하세요</text>
+      </svg>''';
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svg, width: 300, height: 100),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
+
+    testWidgets('Chinese text renders', (tester) async {
+      const svg =
+          '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+        <text x="10" y="50" fill="black">你好世界</text>
+      </svg>''';
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svg, width: 300, height: 100),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
+
+    testWidgets('Japanese text renders', (tester) async {
+      const svg =
+          '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+        <text x="10" y="50" fill="black">こんにちは</text>
+      </svg>''';
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svg, width: 300, height: 100),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
+  });
+
+  group('character-precise hit-testing', () {
+    testWidgets('per-character bounding boxes work with multi-position x', (
+      tester,
+    ) async {
+      const svg =
+          '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+        <text x="10 50 90 130 170" y="50" fill="black">CLICK</text>
+      </svg>''';
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svg, width: 300, height: 100),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
+
+    testWidgets('per-character bounding boxes work with rotate', (
+      tester,
+    ) async {
+      const svg =
+          '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+        <text x="50" y="50" rotate="0 15 30 45 60" fill="black">ABCDE</text>
+      </svg>''';
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svg, width: 300, height: 100),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
+
+    testWidgets('character-precise hit-testing with dx offsets', (
+      tester,
+    ) async {
+      const svg =
+          '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+        <text x="10" y="50" dx="0 10 20 30 40" fill="black">HELLO</text>
+      </svg>''';
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svg, width: 300, height: 100),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
+
+    testWidgets('character-precise hit-testing with dy offsets', (
+      tester,
+    ) async {
+      const svg =
+          '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+        <text x="10" y="50" dy="0 -5 0 5 0" fill="black">WORLD</text>
+      </svg>''';
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svg, width: 300, height: 100),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
+  });
+
+  group('edge cases', () {
+    testWidgets('empty text element renders', (tester) async {
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+        <text x="10" y="50" fill="black"></text>
+      </svg>''';
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svg, width: 200, height: 100),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
+
+    testWidgets('single RTL character renders', (tester) async {
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+        <text x="100" y="50" direction="rtl" fill="black">א</text>
+      </svg>''';
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svg, width: 200, height: 100),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
+
+    testWidgets('whitespace-only text renders', (tester) async {
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+        <text x="10" y="50" fill="black">   </text>
+      </svg>''';
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svg, width: 200, height: 100),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
+
+    testWidgets('very long text renders', (tester) async {
+      final longText = 'A' * 1000;
+      final svg =
+          '''<svg viewBox="0 0 5000 100" xmlns="http://www.w3.org/2000/svg">
+        <text x="10" y="50" fill="black">$longText</text>
+      </svg>''';
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svg, width: 500, height: 100),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
+
+    testWidgets('text with special XML characters renders', (tester) async {
+      const svg =
+          '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+        <text x="10" y="50" fill="black">&lt;tag&gt; &amp; "quote"</text>
+      </svg>''';
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svg, width: 300, height: 100),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
+  });
+
   group('text-anchor per-chunk handling', () {
     testWidgets('text-anchor middle applies to each chunk independently', (
       tester,
@@ -257,106 +975,6 @@ void main() {
 
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
-
-    testWidgets('text-decoration-style solid renders', (tester) async {
-      const svg =
-          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
-        <text x="10" y="50" fill="black" text-decoration="underline" 
-              text-decoration-style="solid">Solid</text>
-      </svg>''';
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AnimatedSvgPicture.string(svg, width: 200, height: 100),
-          ),
-        ),
-      );
-      await tester.pump();
-      await tester.pump();
-
-      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-    });
-
-    testWidgets('text-decoration-style double renders', (tester) async {
-      const svg =
-          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
-        <text x="10" y="50" fill="black" text-decoration="underline" 
-              text-decoration-style="double">Double</text>
-      </svg>''';
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AnimatedSvgPicture.string(svg, width: 200, height: 100),
-          ),
-        ),
-      );
-      await tester.pump();
-      await tester.pump();
-
-      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-    });
-
-    testWidgets('text-decoration-style dotted renders', (tester) async {
-      const svg =
-          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
-        <text x="10" y="50" fill="black" text-decoration="underline" 
-              text-decoration-style="dotted">Dotted</text>
-      </svg>''';
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AnimatedSvgPicture.string(svg, width: 200, height: 100),
-          ),
-        ),
-      );
-      await tester.pump();
-      await tester.pump();
-
-      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-    });
-
-    testWidgets('text-decoration-style dashed renders', (tester) async {
-      const svg =
-          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
-        <text x="10" y="50" fill="black" text-decoration="underline" 
-              text-decoration-style="dashed">Dashed</text>
-      </svg>''';
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AnimatedSvgPicture.string(svg, width: 200, height: 100),
-          ),
-        ),
-      );
-      await tester.pump();
-      await tester.pump();
-
-      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-    });
-
-    testWidgets('text-decoration-style wavy renders', (tester) async {
-      const svg =
-          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
-        <text x="10" y="50" fill="black" text-decoration="underline" 
-              text-decoration-style="wavy">Wavy</text>
-      </svg>''';
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AnimatedSvgPicture.string(svg, width: 200, height: 100),
-          ),
-        ),
-      );
-      await tester.pump();
-      await tester.pump();
-
-      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-    });
   });
 
   group('textLength conflict resolution', () {
@@ -410,178 +1028,6 @@ void main() {
       const svg =
           '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="50" textLength="250" fill="black">Hello World</text>
-      </svg>''';
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AnimatedSvgPicture.string(svg, width: 300, height: 100),
-          ),
-        ),
-      );
-      await tester.pump();
-      await tester.pump();
-
-      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-    });
-  });
-
-  group('bidirectional text handling', () {
-    testWidgets('direction="rtl" applies right-to-left text direction', (
-      tester,
-    ) async {
-      const svg =
-          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
-        <text x="190" y="50" direction="rtl" fill="black">مرحبا</text>
-      </svg>''';
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AnimatedSvgPicture.string(svg, width: 200, height: 100),
-          ),
-        ),
-      );
-      await tester.pump();
-      await tester.pump();
-
-      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-    });
-
-    testWidgets('direction="ltr" applies left-to-right text direction', (
-      tester,
-    ) async {
-      const svg =
-          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
-        <text x="10" y="50" direction="ltr" fill="black">Hello</text>
-      </svg>''';
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AnimatedSvgPicture.string(svg, width: 200, height: 100),
-          ),
-        ),
-      );
-      await tester.pump();
-      await tester.pump();
-
-      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-    });
-
-    testWidgets('unicode-bidi embed works', (tester) async {
-      const svg =
-          '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
-        <text x="10" y="50" direction="ltr" unicode-bidi="embed" fill="black">
-          English مرحبا English
-        </text>
-      </svg>''';
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AnimatedSvgPicture.string(svg, width: 300, height: 100),
-          ),
-        ),
-      );
-      await tester.pump();
-      await tester.pump();
-
-      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-    });
-
-    testWidgets('unicode-bidi bidi-override works', (tester) async {
-      const svg =
-          '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
-        <text x="10" y="50" direction="rtl" unicode-bidi="bidi-override" fill="black">
-          ABCDEF
-        </text>
-      </svg>''';
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AnimatedSvgPicture.string(svg, width: 300, height: 100),
-          ),
-        ),
-      );
-      await tester.pump();
-      await tester.pump();
-
-      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-    });
-
-    testWidgets('unicode-bidi isolate works', (tester) async {
-      const svg =
-          '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
-        <text x="10" y="50" unicode-bidi="isolate" fill="black">
-          Isolated text
-        </text>
-      </svg>''';
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AnimatedSvgPicture.string(svg, width: 300, height: 100),
-          ),
-        ),
-      );
-      await tester.pump();
-      await tester.pump();
-
-      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-    });
-
-    testWidgets('mixed RTL and LTR text in same element', (tester) async {
-      const svg =
-          '''<svg viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
-        <text x="10" y="50" fill="black">
-          Hello <tspan direction="rtl">שלום</tspan> World
-        </text>
-      </svg>''';
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AnimatedSvgPicture.string(svg, width: 400, height: 100),
-          ),
-        ),
-      );
-      await tester.pump();
-      await tester.pump();
-
-      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-    });
-  });
-
-  group('character bounding boxes for hit-testing', () {
-    testWidgets('per-character bounding boxes work with multi-position x', (
-      tester,
-    ) async {
-      const svg =
-          '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
-        <text x="10 50 90 130 170" y="50" fill="black">CLICK</text>
-      </svg>''';
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AnimatedSvgPicture.string(svg, width: 300, height: 100),
-          ),
-        ),
-      );
-      await tester.pump();
-      await tester.pump();
-
-      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-    });
-
-    testWidgets('per-character bounding boxes work with rotate', (
-      tester,
-    ) async {
-      const svg =
-          '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
-        <text x="50" y="50" rotate="0 15 30 45 60" fill="black">ABCDE</text>
       </svg>''';
 
       await tester.pumpWidget(

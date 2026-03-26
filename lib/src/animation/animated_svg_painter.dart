@@ -363,6 +363,24 @@ enum _SvgTextDecoration { underline, overline, lineThrough }
 /// SVG writing-mode attribute values.
 enum _SvgWritingMode { horizontalTb, verticalRl, verticalLr }
 
+/// Unicode bidirectional category for text direction detection.
+enum _BidiCategory { l, r, al, en, other }
+
+/// A run of text with consistent directionality.
+class _BidiRun {
+  const _BidiRun({
+    required this.text,
+    required this.direction,
+    required this.start,
+    required this.end,
+  });
+
+  final String text;
+  final ui.TextDirection direction;
+  final int start;
+  final int end;
+}
+
 /// SVG markerUnits attribute values.
 enum _SvgMarkerUnits { userSpaceOnUse, strokeWidth }
 

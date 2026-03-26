@@ -25,6 +25,12 @@ extension _AnimatedSvgPictureStateHitTestTextLayoutExtension
     final wordSpacing = (_getInheritedNumber(node, 'word-spacing') ?? 0.0)
         .clamp(-1024.0, 1024.0);
 
+    // Detect text direction from content or attribute
+    final directionAttr = _getInheritedString(node, 'direction');
+    final textDirection = directionAttr == 'rtl'
+        ? TextDirection.rtl
+        : _detectHitTestTextDirection(text);
+
     final painter = TextPainter(
       text: TextSpan(
         text: text,
@@ -37,7 +43,7 @@ extension _AnimatedSvgPictureStateHitTestTextLayoutExtension
           wordSpacing: wordSpacing,
         ),
       ),
-      textDirection: TextDirection.ltr,
+      textDirection: textDirection,
       maxLines: 1,
     )..layout();
 
@@ -49,7 +55,140 @@ extension _AnimatedSvgPictureStateHitTestTextLayoutExtension
       height: painter.height,
       alphabeticBaseline: baseline,
       fontSize: fontSize,
+      textDirection: textDirection,
     );
+  }
+
+  /// Detects text direction from content for hit-testing.
+  TextDirection _detectHitTestTextDirection(String text) {
+    for (final codeUnit in text.runes) {
+      // Arabic range (0600-06FF, 0750-077F, 08A0-08FF)
+      if ((codeUnit >= 0x0600 && codeUnit <= 0x06FF) ||
+          (codeUnit >= 0x0750 && codeUnit <= 0x077F) ||
+          (codeUnit >= 0x08A0 && codeUnit <= 0x08FF)) {
+        return TextDirection.rtl;
+      }
+      // Hebrew range (0590-05FF)
+      if (codeUnit >= 0x0590 && codeUnit <= 0x05FF) {
+        return TextDirection.rtl;
+      }
+      // Latin, Greek, Cyrillic - LTR
+      if ((codeUnit >= 0x0041 && codeUnit <= 0x005A) || // A-Z
+          (codeUnit >= 0x0061 && codeUnit <= 0x007A) || // a-z
+          (codeUnit >= 0x00C0 && codeUnit <= 0x024F) || // Latin Extended
+          (codeUnit >= 0x0370 && codeUnit <= 0x03FF) || // Greek
+          (codeUnit >= 0x0400 && codeUnit <= 0x04FF)) {
+        // Cyrillic
+        return TextDirection.ltr;
+      }
+    }
+    return TextDirection.ltr;
+  }
+
+  /// Measures text for BiDi-aware hit-testing.
+  /// Returns separate measurements for each BiDi run.
+  List<_BidiTextMeasure> _measureBidiText(String text, SvgNode node) {
+    if (text.isEmpty) {
+      return const <_BidiTextMeasure>[];
+    }
+
+    final measures = <_BidiTextMeasure>[];
+    final runs = _segmentTextIntoBidiRuns(text, node);
+
+    double offset = 0.0;
+    for (final run in runs) {
+      final measure = _measureText(run.text, node);
+      measures.add(_BidiTextMeasure(
+        text: run.text,
+        direction: run.direction,
+        start: run.start,
+        end: run.end,
+        width: measure.width,
+        height: measure.height,
+        offset: offset,
+      ));
+      offset += measure.width;
+    }
+
+    return measures;
+  }
+
+  /// Segments text into BiDi runs for hit-testing.
+  List<_HitTestBidiRun> _segmentTextIntoBidiRuns(String text, SvgNode node) {
+    if (text.isEmpty) {
+      return const <_HitTestBidiRun>[];
+    }
+
+    final directionAttr = _getInheritedString(node, 'direction');
+    final baseDirection =
+        directionAttr == 'rtl' ? TextDirection.rtl : TextDirection.ltr;
+
+    final runs = <_HitTestBidiRun>[];
+    var currentStart = 0;
+    var currentDirection = baseDirection;
+
+    for (var i = 0; i < text.length;) {
+      final codePoint = text.codeUnitAt(i);
+      TextDirection charDirection;
+
+      // Determine character direction
+      if ((codePoint >= 0x0600 && codePoint <= 0x06FF) ||
+          (codePoint >= 0x0750 && codePoint <= 0x077F) ||
+          (codePoint >= 0x08A0 && codePoint <= 0x08FF) ||
+          (codePoint >= 0x0590 && codePoint <= 0x05FF)) {
+        charDirection = TextDirection.rtl;
+      } else if ((codePoint >= 0x0041 && codePoint <= 0x005A) ||
+          (codePoint >= 0x0061 && codePoint <= 0x007A) ||
+          (codePoint >= 0x00C0 && codePoint <= 0x024F) ||
+          (codePoint >= 0x0370 && codePoint <= 0x03FF) ||
+          (codePoint >= 0x0400 && codePoint <= 0x04FF)) {
+        charDirection = TextDirection.ltr;
+      } else {
+        // Neutral characters follow current direction
+        charDirection = currentDirection;
+      }
+
+      // If direction changes, start new run
+      if (runs.isEmpty || charDirection != currentDirection) {
+        if (runs.isNotEmpty) {
+          runs.last = _HitTestBidiRun(
+            text: text.substring(currentStart, i),
+            direction: currentDirection,
+            start: currentStart,
+            end: i,
+          );
+        }
+        currentStart = i;
+        currentDirection = charDirection;
+        runs.add(_HitTestBidiRun(
+          text: '',
+          direction: charDirection,
+          start: i,
+          end: i,
+        ));
+      }
+
+      i++;
+    }
+
+    // Close final run
+    if (runs.isNotEmpty) {
+      runs.last = _HitTestBidiRun(
+        text: text.substring(currentStart),
+        direction: currentDirection,
+        start: currentStart,
+        end: text.length,
+      );
+    } else {
+      runs.add(_HitTestBidiRun(
+        text: text,
+        direction: baseDirection,
+        start: 0,
+        end: text.length,
+      ));
+    }
+
+    return runs;
   }
 
   double? _resolveTextLength(SvgNode node) {
