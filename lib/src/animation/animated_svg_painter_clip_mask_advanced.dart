@@ -226,10 +226,11 @@ extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
     );
 
     // Apply this mask as DST_IN
-    final maskPaint = maskType == _SvgMaskType.luminance
-        ? _createLuminanceMaskPaint()
-        : ui.Paint()
-      ..blendMode = ui.BlendMode.dstIn;
+    final maskPaint =
+        maskType == _SvgMaskType.luminance
+              ? _createLuminanceMaskPaint()
+              : ui.Paint()
+          ..blendMode = ui.BlendMode.dstIn;
 
     canvas.saveLayer(bounds, maskPaint);
     _paintMaskContent(
@@ -447,7 +448,11 @@ extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
       0, 0, 0, 0, 0, // R output = 0
       0, 0, 0, 0, 0, // G output = 0
       0, 0, 0, 0, 0, // B output = 0
-      0.2126, 0.7152, 0.0722, 0, 0, // A = luminance (note: alpha multiplied implicitly)
+      0.2126,
+      0.7152,
+      0.0722,
+      0,
+      0, // A = luminance (note: alpha multiplied implicitly)
     ]);
 
     final maskPaint = ui.Paint()

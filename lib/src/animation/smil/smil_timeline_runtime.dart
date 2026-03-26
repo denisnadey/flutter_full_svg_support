@@ -127,12 +127,11 @@ void _updateAnimationsImpl(SvgTimeline timeline, Duration time) {
 /// - The "last wins" rule applies for non-additive animations
 void _applyAnimationSandwichModel(SvgTimeline timeline) {
   // Group active animations by target element and attribute
-  final animationsByTarget =
-      <(SvgNode, String), List<SmilAnimation>>{};
+  final animationsByTarget = <(SvgNode, String), List<SmilAnimation>>{};
 
   for (final anim in timeline.animations) {
     if (!anim.isActive) continue;
-    
+
     final key = (anim.targetNode, anim.attributeName);
     animationsByTarget.putIfAbsent(key, () => []).add(anim);
   }
@@ -143,13 +142,16 @@ void _applyAnimationSandwichModel(SvgTimeline timeline) {
     if (animations.length <= 1) continue;
 
     // Sort by document order (index in the original list preserves document order)
-    animations.sort((a, b) => 
-        timeline.animations.indexOf(a).compareTo(timeline.animations.indexOf(b)));
+    animations.sort(
+      (a, b) => timeline.animations
+          .indexOf(a)
+          .compareTo(timeline.animations.indexOf(b)),
+    );
 
     // Process animations in order:
     // - Non-additive animations use "last wins"
     // - Additive animations stack in order
-    // 
+    //
     // The current implementation already handles this through the attribute's
     // setAnimatedValue method. Each animation calls _applyValue which sets
     // the animated value. Later animations naturally override earlier ones.
@@ -157,7 +159,7 @@ void _applyAnimationSandwichModel(SvgTimeline timeline) {
     // For proper sandwich model with additive stacking, the animations
     // are processed in document order, and _applyAdditive in the animation's
     // computeValue handles the additive="sum" case.
-    
+
     // Re-apply values in document order to ensure correct priority
     for (final anim in animations) {
       final value = anim.computeValue(

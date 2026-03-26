@@ -282,8 +282,9 @@ String? _evaluateSwitchAndGetPath(SvgNode switchNode, SvgDocument document) {
 /// Returns true if the element should be processed, false if it should be skipped.
 bool _evaluateConditionalAttributes(SvgNode node, SvgDocument document) {
   // Check requiredFeatures
-  final requiredFeatures =
-      node.getAttributeValue('requiredFeatures')?.toString();
+  final requiredFeatures = node
+      .getAttributeValue('requiredFeatures')
+      ?.toString();
   if (requiredFeatures != null && requiredFeatures.isNotEmpty) {
     if (!_evaluateRequiredFeatures(requiredFeatures)) {
       return false;
@@ -299,8 +300,9 @@ bool _evaluateConditionalAttributes(SvgNode node, SvgDocument document) {
   }
 
   // Check requiredExtensions - we don't support any extensions
-  final requiredExtensions =
-      node.getAttributeValue('requiredExtensions')?.toString();
+  final requiredExtensions = node
+      .getAttributeValue('requiredExtensions')
+      ?.toString();
   if (requiredExtensions != null && requiredExtensions.isNotEmpty) {
     // We don't support any extensions, so if any are required, return false
     return false;
@@ -350,7 +352,7 @@ bool _evaluateSystemLanguage(String languages, SvgDocument document) {
   final xmlLang = document.root.getAttributeValue('xml:lang')?.toString();
   final lang = document.root.getAttributeValue('lang')?.toString();
   docLang = xmlLang ?? lang;
-  
+
   final userLanguage = docLang ?? 'en';
   final userLangPrefix = userLanguage.split('-').first.toLowerCase();
 

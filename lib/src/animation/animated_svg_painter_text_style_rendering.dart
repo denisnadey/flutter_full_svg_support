@@ -71,9 +71,7 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
     final decoration = _buildTextDecoration(style.decorations);
 
     // Build comprehensive font features list from font-variant-* properties
-    final allFontFeatures = <ui.FontFeature>[
-      ...style.fontFeatures,
-    ];
+    final allFontFeatures = <ui.FontFeature>[...style.fontFeatures];
 
     // Add font-variant-caps features
     _addFontVariantCapsFeatures(allFontFeatures, style.fontVariantCaps);
@@ -82,7 +80,10 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
     _addFontVariantNumericFeatures(allFontFeatures, style.fontVariantNumeric);
 
     // Add font-variant-ligatures features
-    _addFontVariantLigaturesFeatures(allFontFeatures, style.fontVariantLigatures);
+    _addFontVariantLigaturesFeatures(
+      allFontFeatures,
+      style.fontVariantLigatures,
+    );
 
     // Add font-variant-position features
     _addFontVariantPositionFeatures(allFontFeatures, style.fontVariantPosition);
@@ -248,7 +249,8 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
         : style.color;
 
     // Calculate mark position
-    final markFontSize = style.fontSize * 0.5; // Emphasis marks are typically smaller
+    final markFontSize =
+        style.fontSize * 0.5; // Emphasis marks are typically smaller
     final markSpacing = style.fontSize * 0.2;
 
     // Build emphasis mark paragraph
@@ -258,10 +260,7 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
     );
     final emphasisBuilder = ui.ParagraphBuilder(emphasisParagraphStyle);
     emphasisBuilder.pushStyle(
-      ui.TextStyle(
-        color: emphasisColor,
-        fontSize: markFontSize,
-      ),
+      ui.TextStyle(color: emphasisColor, fontSize: markFontSize),
     );
     emphasisBuilder.addText(emphasisMark);
     final emphasisParagraph = emphasisBuilder.build();
@@ -284,7 +283,8 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
       final glyphWidth = glyphParagraph.maxIntrinsicWidth;
 
       // Position the emphasis mark
-      final markX = charX + (glyphWidth - emphasisParagraph.maxIntrinsicWidth) / 2;
+      final markX =
+          charX + (glyphWidth - emphasisParagraph.maxIntrinsicWidth) / 2;
       final markY = isAbove
           ? y - markSpacing - emphasisParagraph.height
           : y + paragraph.height + markSpacing;
@@ -323,7 +323,8 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
           // Custom string - check if it's a quoted string
           if (part.startsWith("'") || part.startsWith('"')) {
             return part.substring(1, part.length - 1);
-          } else if (part.isNotEmpty && !['none', 'filled', 'open'].contains(part)) {
+          } else if (part.isNotEmpty &&
+              !['none', 'filled', 'open'].contains(part)) {
             return part; // Custom character
           }
       }
@@ -393,7 +394,10 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
   }
 
   /// Adds font-variant-caps features to the list.
-  void _addFontVariantCapsFeatures(List<ui.FontFeature> features, String value) {
+  void _addFontVariantCapsFeatures(
+    List<ui.FontFeature> features,
+    String value,
+  ) {
     if (value == 'normal') return;
 
     switch (value) {
@@ -421,7 +425,10 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
   }
 
   /// Adds font-variant-numeric features to the list.
-  void _addFontVariantNumericFeatures(List<ui.FontFeature> features, String value) {
+  void _addFontVariantNumericFeatures(
+    List<ui.FontFeature> features,
+    String value,
+  ) {
     if (value == 'normal') return;
 
     final parts = value.split(RegExp(r'\s+'));
@@ -456,7 +463,10 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
   }
 
   /// Adds font-variant-ligatures features to the list.
-  void _addFontVariantLigaturesFeatures(List<ui.FontFeature> features, String value) {
+  void _addFontVariantLigaturesFeatures(
+    List<ui.FontFeature> features,
+    String value,
+  ) {
     if (value == 'normal') return;
 
     if (value == 'none') {
@@ -502,7 +512,10 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
   }
 
   /// Adds font-variant-position features to the list.
-  void _addFontVariantPositionFeatures(List<ui.FontFeature> features, String value) {
+  void _addFontVariantPositionFeatures(
+    List<ui.FontFeature> features,
+    String value,
+  ) {
     if (value == 'normal') return;
 
     switch (value) {

@@ -132,10 +132,7 @@ extension SvgFiltersPipelinePrimitivePaintExtension on SvgFilters {
                 : pass.imageFilter,
             // Apply shadow color using srcIn to properly multiply flood color
             // with the blurred alpha mask (Blink's feComposite in="flood" in2="blur" operator="in").
-            colorFilter: ui.ColorFilter.mode(
-              shadowColor,
-              ui.BlendMode.srcIn,
-            ),
+            colorFilter: ui.ColorFilter.mode(shadowColor, ui.BlendMode.srcIn),
             // Shadow renders with srcOver to blend behind the input.
             blendMode: ui.BlendMode.srcOver,
             // Apply the offset (dx/dy) to position the shadow.

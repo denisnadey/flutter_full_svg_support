@@ -131,10 +131,10 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets(
-      'perspective and transform-origin are applied independently',
-      (tester) async {
-        const svg = '''
+    testWidgets('perspective and transform-origin are applied independently', (
+      tester,
+    ) async {
+      const svg = '''
         <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
           <g style="perspective: 400px; perspective-origin: 0% 0%;">
             <rect x="50" y="50" width="100" height="100" fill="cyan"
@@ -143,14 +143,13 @@ void main() {
         </svg>
       ''';
 
-        await tester.pumpWidget(
-          AnimatedSvgPicture.string(svg, width: 200, height: 200),
-        );
-        await tester.pumpAndSettle();
+      await tester.pumpWidget(
+        AnimatedSvgPicture.string(svg, width: 200, height: 200),
+      );
+      await tester.pumpAndSettle();
 
-        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-      },
-    );
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
   });
 
   group('Non-commutative transform animation', () {

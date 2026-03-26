@@ -174,7 +174,7 @@ extension _AnimatedSvgPictureStateEventModelExtension
         useContext: useContext,
       );
       // Return if we hit any element, an anchor, or are inside a use shadow
-      if (hitResult.elementId != null || 
+      if (hitResult.elementId != null ||
           hitResult.anchorInfo != null ||
           hitResult.useElementId != null) {
         return hitResult;
@@ -191,7 +191,7 @@ extension _AnimatedSvgPictureStateEventModelExtension
         pathBuilder: List.of(pathBuilder),
       );
       // Return if we hit any element, an anchor, or are inside a use shadow
-      if (hitReferenced.elementId != null || 
+      if (hitReferenced.elementId != null ||
           hitReferenced.anchorInfo != null ||
           hitReferenced.useElementId != null) {
         return hitReferenced;
@@ -294,7 +294,7 @@ extension _AnimatedSvgPictureStateEventModelExtension
               pathBuilder: List.of(pathBuilder),
               useContext: useContext,
             );
-            if (hitResult.elementId != null || 
+            if (hitResult.elementId != null ||
                 hitResult.anchorInfo != null ||
                 hitResult.useElementId != null) {
               return _EventHitTestResult(
@@ -318,7 +318,7 @@ extension _AnimatedSvgPictureStateEventModelExtension
           pathBuilder: List.of(pathBuilder),
           useContext: useContext,
         );
-        if (hitResult.elementId != null || 
+        if (hitResult.elementId != null ||
             hitResult.anchorInfo != null ||
             hitResult.useElementId != null) {
           return _EventHitTestResult(
@@ -342,7 +342,7 @@ extension _AnimatedSvgPictureStateEventModelExtension
         pathBuilder: List.of(pathBuilder),
         useContext: useContext,
       );
-      if (hitResult.elementId != null || 
+      if (hitResult.elementId != null ||
           hitResult.anchorInfo != null ||
           hitResult.useElementId != null) {
         return _EventHitTestResult(
@@ -363,7 +363,7 @@ extension _AnimatedSvgPictureStateEventModelExtension
 /// Context for tracking use element during event hit testing.
 class _UseEventContext {
   _UseEventContext({this.useElementId, List<String>? shadowPathBuilder})
-      : shadowPathBuilder = shadowPathBuilder ?? [];
+    : shadowPathBuilder = shadowPathBuilder ?? [];
 
   /// The ID of the <use> element that is the shadow host.
   final String? useElementId;

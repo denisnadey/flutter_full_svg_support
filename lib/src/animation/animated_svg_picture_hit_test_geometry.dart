@@ -190,7 +190,7 @@ extension _AnimatedSvgPictureStateHitTestGeometryExtension
         if (distance <= tolerance) {
           return true;
         }
-        
+
         // Check markers on line
         if (_markersContainPoint(node, documentPoint, transform)) {
           return true;
@@ -234,13 +234,16 @@ extension _AnimatedSvgPictureStateHitTestGeometryExtension
         }
 
         if (_pointerEventsAllowsFill(
-              node,
-              pointerEvents,
-              visibilityHidden: visibilityHidden,
-            )) {
+          node,
+          pointerEvents,
+          visibilityHidden: visibilityHidden,
+        )) {
           // Use advanced evenodd containment for paths with evenodd fill rule
           // to handle degenerate cases better
-          final fillRule = _getInheritedString(node, 'fill-rule')?.toLowerCase();
+          final fillRule = _getInheritedString(
+            node,
+            'fill-rule',
+          )?.toLowerCase();
           if (fillRule == 'evenodd') {
             if (_evenoddContainsPointAdvanced(path, point)) {
               return true;
@@ -260,7 +263,7 @@ extension _AnimatedSvgPictureStateHitTestGeometryExtension
             return true;
           }
         }
-        
+
         // Check markers on path
         if (_markersContainPoint(node, documentPoint, transform)) {
           return true;
@@ -303,7 +306,7 @@ extension _AnimatedSvgPictureStateHitTestGeometryExtension
             }
           }
         }
-        
+
         // Check markers on polygon
         if (_markersContainPoint(node, documentPoint, transform)) {
           return true;
@@ -366,7 +369,7 @@ extension _AnimatedSvgPictureStateHitTestGeometryExtension
             return true;
           }
         }
-        
+
         // Check markers on polyline
         if (_markersContainPoint(node, documentPoint, transform)) {
           return true;

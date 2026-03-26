@@ -44,8 +44,13 @@ extension _AnimatedSvgPictureStateHitTestAdvancedExtension
           angle,
           true,
         );
-        if (_markerContainsPoint(marker, pos, effectiveAngle, strokeWidth,
-            localPoint)) {
+        if (_markerContainsPoint(
+          marker,
+          pos,
+          effectiveAngle,
+          strokeWidth,
+          localPoint,
+        )) {
           return true;
         }
       }
@@ -63,8 +68,13 @@ extension _AnimatedSvgPictureStateHitTestAdvancedExtension
             angle,
             false,
           );
-          if (_markerContainsPoint(marker, pos, effectiveAngle, strokeWidth,
-              localPoint)) {
+          if (_markerContainsPoint(
+            marker,
+            pos,
+            effectiveAngle,
+            strokeWidth,
+            localPoint,
+          )) {
             return true;
           }
         }
@@ -82,8 +92,13 @@ extension _AnimatedSvgPictureStateHitTestAdvancedExtension
           angle,
           false,
         );
-        if (_markerContainsPoint(marker, pos, effectiveAngle, strokeWidth,
-            localPoint)) {
+        if (_markerContainsPoint(
+          marker,
+          pos,
+          effectiveAngle,
+          strokeWidth,
+          localPoint,
+        )) {
           return true;
         }
       }
@@ -477,8 +492,9 @@ extension _AnimatedSvgPictureStateHitTestAdvancedExtension
     final effectiveYList = nodeYList.isNotEmpty ? nodeYList : yList;
     final effectiveDxList = nodeDxList.isNotEmpty ? nodeDxList : dxList;
     final effectiveDyList = nodeDyList.isNotEmpty ? nodeDyList : dyList;
-    final effectiveRotateList =
-        nodeRotateList.isNotEmpty ? nodeRotateList : rotateList;
+    final effectiveRotateList = nodeRotateList.isNotEmpty
+        ? nodeRotateList
+        : rotateList;
 
     // Reset position if has absolute positioning
     if (nodeXList.isNotEmpty) cursor.x = nodeXList[0];

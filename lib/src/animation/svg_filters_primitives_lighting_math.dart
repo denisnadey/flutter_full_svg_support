@@ -150,13 +150,7 @@ class _SurfaceNormalCalculator {
   }
 
   /// Get alpha value at coordinates with edge mode handling.
-  double _getAlphaAt(
-    Uint8List alphaData,
-    int x,
-    int y,
-    int width,
-    int height,
-  ) {
+  double _getAlphaAt(Uint8List alphaData, int x, int y, int width, int height) {
     if (x >= 0 && x < width && y >= 0 && y < height) {
       return alphaData[y * width + x].toDouble();
     }
@@ -679,26 +673,38 @@ class LightingProcessor {
         final idx = (y * width + x) * 4;
 
         // Compute surface normal
-        final normal = normalCalc.computeNormalAt(alphaData, x, y, width, height);
+        final normal = normalCalc.computeNormalAt(
+          alphaData,
+          x,
+          y,
+          width,
+          height,
+        );
 
         // Compute surface height
         final surfaceZ = alphaData[y * width + x] / 255.0 * surfaceScale;
 
         // Get light direction and intensity
-        final (lightDir, lightIntensity) = lightSource.getDirectionAndIntensityAt(
-          x.toDouble(),
-          y.toDouble(),
-          surfaceZ,
-        );
+        final (lightDir, lightIntensity) = lightSource
+            .getDirectionAndIntensityAt(x.toDouble(), y.toDouble(), surfaceZ);
 
         // Compute diffuse: kd * max(0, N·L) * lightIntensity
         final nDotL = normal.dot(lightDir).clamp(0.0, 1.0);
-        final factor = (diffuseConstant * nDotL * lightIntensity).clamp(0.0, 1.0);
+        final factor = (diffuseConstant * nDotL * lightIntensity).clamp(
+          0.0,
+          1.0,
+        );
 
         // Apply to lighting color
         output[idx] = (lightingColor.r * 255 * factor).round().clamp(0, 255);
-        output[idx + 1] = (lightingColor.g * 255 * factor).round().clamp(0, 255);
-        output[idx + 2] = (lightingColor.b * 255 * factor).round().clamp(0, 255);
+        output[idx + 1] = (lightingColor.g * 255 * factor).round().clamp(
+          0,
+          255,
+        );
+        output[idx + 2] = (lightingColor.b * 255 * factor).round().clamp(
+          0,
+          255,
+        );
         output[idx + 3] = 255; // Diffuse alpha is always 1.0
       }
     }
@@ -744,17 +750,20 @@ class LightingProcessor {
         final idx = (y * width + x) * 4;
 
         // Compute surface normal
-        final normal = normalCalc.computeNormalAt(alphaData, x, y, width, height);
+        final normal = normalCalc.computeNormalAt(
+          alphaData,
+          x,
+          y,
+          width,
+          height,
+        );
 
         // Compute surface height
         final surfaceZ = alphaData[y * width + x] / 255.0 * surfaceScale;
 
         // Get light direction and intensity
-        final (lightDir, lightIntensity) = lightSource.getDirectionAndIntensityAt(
-          x.toDouble(),
-          y.toDouble(),
-          surfaceZ,
-        );
+        final (lightDir, lightIntensity) = lightSource
+            .getDirectionAndIntensityAt(x.toDouble(), y.toDouble(), surfaceZ);
 
         // Compute half vector: H = normalize(L + Eye)
         final halfVector = (lightDir + eyeDir).normalize();
@@ -762,7 +771,10 @@ class LightingProcessor {
         // Compute specular: ks * (N·H)^exp * lightIntensity
         final nDotH = normal.dot(halfVector).clamp(0.0, 1.0);
         final specular = math.pow(nDotH, specularExponent).toDouble();
-        final factor = (specularConstant * specular * lightIntensity).clamp(0.0, 1.0);
+        final factor = (specularConstant * specular * lightIntensity).clamp(
+          0.0,
+          1.0,
+        );
 
         // Apply to lighting color
         final r = (lightingColor.r * 255 * factor).round().clamp(0, 255);
@@ -817,7 +829,11 @@ class LightingSampler {
         final y = j * 10.0;
         final z = surfaceScale * 0.5; // Mid-height assumption
 
-        final (lightDir, intensity) = lightSource.getDirectionAndIntensityAt(x, y, z);
+        final (lightDir, intensity) = lightSource.getDirectionAndIntensityAt(
+          x,
+          y,
+          z,
+        );
 
         // Assume flat normal (0, 0, 1) for sampling
         const normal = _LightingVector3(0, 0, 1);
@@ -857,14 +873,21 @@ class LightingSampler {
         final y = j * 10.0;
         final z = surfaceScale * 0.5;
 
-        final (lightDir, intensity) = lightSource.getDirectionAndIntensityAt(x, y, z);
+        final (lightDir, intensity) = lightSource.getDirectionAndIntensityAt(
+          x,
+          y,
+          z,
+        );
 
         // Assume flat normal for sampling
         const normal = _LightingVector3(0, 0, 1);
         final halfVector = (lightDir + eyeDir).normalize();
         final nDotH = normal.dot(halfVector).clamp(0.0, 1.0);
         final specular = math.pow(nDotH, specularExponent).toDouble();
-        final factor = (specularConstant * specular * intensity).clamp(0.0, 1.0);
+        final factor = (specularConstant * specular * intensity).clamp(
+          0.0,
+          1.0,
+        );
 
         totalR += lightingColor.r * factor;
         totalG += lightingColor.g * factor;

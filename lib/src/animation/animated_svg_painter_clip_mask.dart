@@ -239,8 +239,10 @@ extension AnimatedSvgPainterClipMaskExtension on AnimatedSvgPainter {
     }
 
     // Expand for text decoration (underline, overline, line-through)
-    final decoration =
-        _getInheritedString(textNode, 'text-decoration')?.toLowerCase();
+    final decoration = _getInheritedString(
+      textNode,
+      'text-decoration',
+    )?.toLowerCase();
     if (decoration != null && decoration != 'none') {
       final fontSize = _getInheritedNumber(textNode, 'font-size') ?? 16.0;
       // Expand by ~10% of font size for decoration thickness
@@ -264,8 +266,10 @@ extension AnimatedSvgPainterClipMaskExtension on AnimatedSvgPainter {
     }
 
     // Expand for text-emphasis marks (dots, circles, etc.)
-    final emphasis =
-        _getInheritedString(textNode, 'text-emphasis')?.toLowerCase();
+    final emphasis = _getInheritedString(
+      textNode,
+      'text-emphasis',
+    )?.toLowerCase();
     if (emphasis != null && emphasis != 'none') {
       final fontSize = _getInheritedNumber(textNode, 'font-size') ?? 16.0;
       // Emphasis marks are typically placed above/below text

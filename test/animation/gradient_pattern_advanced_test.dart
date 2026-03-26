@@ -88,12 +88,12 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('gradient with userSpaceOnUse still works on zero-width element', (
-      tester,
-    ) async {
-      // userSpaceOnUse doesn't depend on element bounds, so should work
-      const svg =
-          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+    testWidgets(
+      'gradient with userSpaceOnUse still works on zero-width element',
+      (tester) async {
+        // userSpaceOnUse doesn't depend on element bounds, so should work
+        const svg =
+            '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <linearGradient id="grad1" gradientUnits="userSpaceOnUse"
                           x1="0" y1="0" x2="200" y2="100">
@@ -104,18 +104,19 @@ void main() {
         <rect x="50" y="25" width="0" height="50" fill="url(#grad1)" stroke="black"/>
       </svg>''';
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AnimatedSvgPicture.string(svg, width: 200, height: 100),
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svg, width: 200, height: 100),
+            ),
           ),
-        ),
-      );
-      await tester.pump();
-      await tester.pump();
+        );
+        await tester.pump();
+        await tester.pump();
 
-      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-    });
+        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+      },
+    );
 
     testWidgets('radial gradient on sub-pixel element renders nothing', (
       tester,
@@ -335,11 +336,9 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets(
-      'patternContentUnits works when no viewBox',
-      (tester) async {
-        const svg =
-            '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+    testWidgets('patternContentUnits works when no viewBox', (tester) async {
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <pattern id="pat1" patternUnits="userSpaceOnUse"
                    patternContentUnits="objectBoundingBox"
@@ -350,19 +349,18 @@ void main() {
         <rect x="10" y="10" width="100" height="80" fill="url(#pat1)"/>
       </svg>''';
 
-        await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: AnimatedSvgPicture.string(svg, width: 200, height: 100),
-            ),
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svg, width: 200, height: 100),
           ),
-        );
-        await tester.pump();
-        await tester.pump();
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
 
-        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-      },
-    );
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
   });
 
   group('nested pattern references', () {

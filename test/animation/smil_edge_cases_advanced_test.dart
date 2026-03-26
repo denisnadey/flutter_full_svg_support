@@ -55,7 +55,7 @@ void main() {
       timeline.seek(const Duration(seconds: 2));
       expect(anim1.isActive, isTrue);
       expect(anim1.currentIteration, equals(2));
-      
+
       // At t=3s (3rd repeat starts), dependent should become active
       timeline.seek(const Duration(seconds: 3));
       expect(anim1.isActive, isTrue);
@@ -112,7 +112,8 @@ void main() {
       expect(
         resolvedBeginTime,
         equals(const Duration(milliseconds: 2500)),
-        reason: 'resolved begin time should be 2.5s (repeat at 2s + 500ms offset)',
+        reason:
+            'resolved begin time should be 2.5s (repeat at 2s + 500ms offset)',
       );
 
       final effectiveEndTime = anim2.getEffectiveEndTime();
@@ -121,7 +122,7 @@ void main() {
         equals(const Duration(milliseconds: 3500)),
         reason: 'effective end time should be 3.5s (begin 2.5s + dur 1s)',
       );
-      
+
       // Verify timeline is created correctly
       expect(timeline, isNotNull);
       expect(timeline.animations.length, equals(2));
@@ -141,17 +142,17 @@ void main() {
 
       final document = SvgParser.parse(svgString);
       final animations = SmilParser.parseAnimations(document);
-      
+
       expect(animations.length, equals(2));
-      
+
       // Both should have same target and attribute
       expect(animations[0].attributeName, equals('x'));
       expect(animations[1].attributeName, equals('x'));
-      
+
       // Later animation value should win
       final firstValue = animations[0].computeValue(1.0);
       final secondValue = animations[1].computeValue(1.0);
-      
+
       expect(firstValue, equals(50.0));
       expect(secondValue, equals(100.0));
     });
@@ -168,7 +169,7 @@ void main() {
 
       final document = SvgParser.parse(svgString);
       final animations = SmilParser.parseAnimations(document);
-      
+
       expect(animations.length, equals(2));
       expect(animations[0].additive, equals(SmilAdditiveMode.sum));
       expect(animations[1].additive, equals(SmilAdditiveMode.sum));
@@ -257,11 +258,11 @@ void main() {
     test('handles arc path segments correctly', () {
       final path = MotionPath('M0,50 A50,50 0 1,1 100,50');
       expect(path.totalLength, greaterThan(0));
-      
+
       final start = path.getPointAtTime(0.0);
       final mid = path.getPointAtTime(0.5);
       final end = path.getPointAtTime(1.0);
-      
+
       expect(start.position.dx, closeTo(0, 1));
       expect(end.position.dx, closeTo(100, 1));
       expect(mid.position, isNot(equals(start.position)));
@@ -271,12 +272,12 @@ void main() {
       // Path that goes forward, then backward
       final path = MotionPath('M0,0 L100,0 L0,0');
       expect(path.totalLength, closeTo(200, 1));
-      
+
       final start = path.getPointAtTime(0.0);
       final quarter = path.getPointAtTime(0.25);
       final mid = path.getPointAtTime(0.5);
       final threeQuarter = path.getPointAtTime(0.75);
-      
+
       expect(start.position.dx, closeTo(0, 1));
       expect(quarter.position.dx, closeTo(50, 1));
       expect(mid.position.dx, closeTo(100, 1));
@@ -287,7 +288,7 @@ void main() {
       // Path with extremely short segment
       final path = MotionPath('M0,0 L0.001,0 L100,0');
       expect(path.totalLength, greaterThan(0));
-      
+
       final point = path.getPointAtTime(0.5);
       expect(point.position, isNotNull);
     });
@@ -296,11 +297,11 @@ void main() {
       // Path with a jump (discontinuity)
       final path = MotionPath('M0,0 L50,0 M100,0 L150,0');
       expect(path.totalLength, greaterThan(0));
-      
+
       // Should still traverse the path
       final start = path.getPointAtTime(0.0);
       final end = path.getPointAtTime(1.0);
-      
+
       expect(start.position.dx, closeTo(0, 1));
       expect(end.position.dx, closeTo(150, 1));
     });
@@ -316,12 +317,12 @@ void main() {
 
       final document = SvgParser.parse(svgString);
       final animations = SmilParser.parseAnimations(document);
-      
+
       expect(animations.length, equals(1));
-      
+
       final valueStart = animations[0].computeValue(0.0) as String?;
       final valueEnd = animations[0].computeValue(1.0) as String?;
-      
+
       expect(valueStart, contains('rotate'));
       expect(valueEnd, contains('rotate'));
     });
@@ -347,7 +348,7 @@ void main() {
 
       final document = SvgParser.parse(svgString);
       final animations = SmilParser.parseAnimations(document);
-      
+
       expect(animations.length, equals(1));
       // Should select path1 since Shape feature is supported
       expect(animations[0].from, equals('M0,0 L100,0'));
@@ -372,7 +373,7 @@ void main() {
 
       final document = SvgParser.parse(svgString);
       final animations = SmilParser.parseAnimations(document);
-      
+
       expect(animations.length, equals(1));
       // Should skip path1 (unsupported extension) and use path2
       expect(animations[0].from, equals('M0,0 L50,50'));
@@ -398,7 +399,7 @@ void main() {
 
       final document = SvgParser.parse(svgString);
       final animations = SmilParser.parseAnimations(document);
-      
+
       expect(animations.length, equals(1));
       // Should select path2 (matches en language)
       expect(animations[0].from, equals('M0,0 L50,50'));

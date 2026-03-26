@@ -536,10 +536,7 @@ class CssCalcEvaluator {
     const maxIterations = 10;
 
     // Handle all CSS math functions: calc(), min(), max(), clamp()
-    final funcRegex = RegExp(
-      r'(calc|min|max|clamp)\(',
-      caseSensitive: false,
-    );
+    final funcRegex = RegExp(r'(calc|min|max|clamp)\(', caseSensitive: false);
 
     while (funcRegex.hasMatch(result) && iterations < maxIterations) {
       final match = funcRegex.firstMatch(result);
@@ -745,7 +742,7 @@ class CssCalcEvaluator {
   }
 
   /// Parse a numeric value with optional units.
-  /// 
+  ///
   /// [parentFontSize] is used for em units in the context where an element's
   /// font-size is being computed (em is relative to parent, not current).
   static double? _parseNumericValue(

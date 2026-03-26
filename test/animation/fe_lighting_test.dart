@@ -1141,9 +1141,42 @@ void main() {
 
     test('LightingProcessor processes specular lighting correctly', () {
       final imageData = Uint8List.fromList([
-        255, 0, 0, 128, 0, 255, 0, 192, 0, 0, 255, 255,
-        128, 128, 128, 64, 128, 128, 128, 128, 128, 128, 128, 192,
-        64, 64, 64, 0, 64, 64, 64, 64, 64, 64, 64, 128,
+        255,
+        0,
+        0,
+        128,
+        0,
+        255,
+        0,
+        192,
+        0,
+        0,
+        255,
+        255,
+        128,
+        128,
+        128,
+        64,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        192,
+        64,
+        64,
+        64,
+        0,
+        64,
+        64,
+        64,
+        64,
+        64,
+        64,
+        64,
+        128,
       ]);
 
       final processor = LightingProcessor(
@@ -1169,8 +1202,22 @@ void main() {
     test('LightingProcessor handles edge pixels correctly', () {
       // 2x2 image - all pixels are edge pixels
       final imageData = Uint8List.fromList([
-        255, 255, 255, 255, 255, 255, 255, 128,
-        255, 255, 255, 128, 255, 255, 255, 0,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        128,
+        255,
+        255,
+        255,
+        128,
+        255,
+        255,
+        255,
+        0,
       ]);
 
       final processor = LightingProcessor(
@@ -1186,32 +1233,35 @@ void main() {
       expect(result.length, equals(16));
     });
 
-    test('LightingProcessor with point light has position-dependent results', () {
-      // Create a flat surface (uniform alpha)
-      final imageData = Uint8List(100 * 4);
-      for (int i = 0; i < 100; i++) {
-        imageData[i * 4] = 255;
-        imageData[i * 4 + 1] = 255;
-        imageData[i * 4 + 2] = 255;
-        imageData[i * 4 + 3] = 128; // Uniform height
-      }
+    test(
+      'LightingProcessor with point light has position-dependent results',
+      () {
+        // Create a flat surface (uniform alpha)
+        final imageData = Uint8List(100 * 4);
+        for (int i = 0; i < 100; i++) {
+          imageData[i * 4] = 255;
+          imageData[i * 4 + 1] = 255;
+          imageData[i * 4 + 2] = 255;
+          imageData[i * 4 + 3] = 128; // Uniform height
+        }
 
-      final processor = LightingProcessor(
-        surfaceScale: 1.0,
-        lightSource: const SvgPointLightSource(x: 5, y: 5, z: 50),
-        lightingColor: const ui.Color(0xFFFFFFFF),
-      );
+        final processor = LightingProcessor(
+          surfaceScale: 1.0,
+          lightSource: const SvgPointLightSource(x: 5, y: 5, z: 50),
+          lightingColor: const ui.Color(0xFFFFFFFF),
+        );
 
-      final result = processor.processDiffuse(imageData, 10, 10, 1.0);
+        final result = processor.processDiffuse(imageData, 10, 10, 1.0);
 
-      // Light at (5, 5) should result in higher intensity at center
-      // Get center pixel (5, 5) and corner pixel (0, 0)
-      final centerIdx = (5 * 10 + 5) * 4;
-      final cornerIdx = 0;
+        // Light at (5, 5) should result in higher intensity at center
+        // Get center pixel (5, 5) and corner pixel (0, 0)
+        final centerIdx = (5 * 10 + 5) * 4;
+        final cornerIdx = 0;
 
-      // Center should be brighter or equal (depending on normal computation)
-      expect(result.length, equals(400));
-    });
+        // Center should be brighter or equal (depending on normal computation)
+        expect(result.length, equals(400));
+      },
+    );
 
     test('LightingProcessor with spotlight has cone cutoff', () {
       final imageData = Uint8List(100 * 4);
@@ -1247,11 +1297,7 @@ void main() {
   group('Surface Normal Computation', () {
     test('flat surface produces up-facing normals', () {
       // 3x3 uniform alpha (flat surface)
-      final alphaValues = <double>[
-        128, 128, 128,
-        128, 128, 128,
-        128, 128, 128,
-      ];
+      final alphaValues = <double>[128, 128, 128, 128, 128, 128, 128, 128, 128];
 
       // The normal should point straight up (0, 0, 1) for flat surface
       // This is verified by the lighting producing maximum intensity
@@ -1411,7 +1457,12 @@ void main() {
       final color = sampler.sampleSpecular(1.0, 20.0);
 
       // Alpha = max(r, g, b) for specular
-      expect(color.alpha, equals([color.red, color.green, color.blue].reduce((a, b) => a > b ? a : b)));
+      expect(
+        color.alpha,
+        equals(
+          [color.red, color.green, color.blue].reduce((a, b) => a > b ? a : b),
+        ),
+      );
     });
 
     test('diffuse constant affects sampled color intensity', () {
@@ -1446,8 +1497,22 @@ void main() {
   group('Edge Mode Handling', () {
     test('duplicate edge mode clamps to boundary', () {
       final imageData = Uint8List.fromList([
-        255, 255, 255, 255, 255, 255, 255, 128,
-        255, 255, 255, 128, 255, 255, 255, 0,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        128,
+        255,
+        255,
+        255,
+        128,
+        255,
+        255,
+        255,
+        0,
       ]);
 
       final processorDuplicate = LightingProcessor(
@@ -1463,8 +1528,22 @@ void main() {
 
     test('wrap edge mode wraps to opposite edge', () {
       final imageData = Uint8List.fromList([
-        255, 255, 255, 255, 255, 255, 255, 128,
-        255, 255, 255, 128, 255, 255, 255, 0,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        128,
+        255,
+        255,
+        255,
+        128,
+        255,
+        255,
+        255,
+        0,
       ]);
 
       final processorWrap = LightingProcessor(
@@ -1480,8 +1559,22 @@ void main() {
 
     test('none edge mode uses zero for out-of-bounds', () {
       final imageData = Uint8List.fromList([
-        255, 255, 255, 255, 255, 255, 255, 128,
-        255, 255, 255, 128, 255, 255, 255, 0,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        128,
+        255,
+        255,
+        255,
+        128,
+        255,
+        255,
+        255,
+        0,
       ]);
 
       final processorNone = LightingProcessor(

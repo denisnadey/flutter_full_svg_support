@@ -224,7 +224,7 @@ extension SmilAnimationValueComputationExtension on SmilAnimation {
   ///
   /// When combined with additive="sum", the total effect is:
   /// result = baseValue + accumulatedValue
-  /// 
+  ///
   /// For nested additive animations, each animation's accumulation is independent,
   /// and they stack according to document order per the sandwich model.
   @protected

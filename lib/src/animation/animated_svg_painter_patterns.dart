@@ -47,7 +47,8 @@ extension AnimatedSvgPainterPatternsExtension on AnimatedSvgPainter {
           ? _SvgPatternUnits.userSpaceOnUse
           : _SvgPatternUnits.objectBoundingBox;
     } else {
-      patternUnits = inherited?.patternUnits ?? _SvgPatternUnits.objectBoundingBox;
+      patternUnits =
+          inherited?.patternUnits ?? _SvgPatternUnits.objectBoundingBox;
     }
 
     // Parse patternContentUnits (default: userSpaceOnUse)

@@ -56,9 +56,21 @@ extension AnimatedSvgPainterCanvasTransformExtension on AnimatedSvgPainter {
         final perspectiveOrigin = _parsePerspectiveOrigin(node, bounds);
 
         // Translate to perspective origin, apply perspective, translate back
-        matrix = matrix * Matrix4x4.translation(perspectiveOrigin.dx, perspectiveOrigin.dy, 0);
+        matrix =
+            matrix *
+            Matrix4x4.translation(
+              perspectiveOrigin.dx,
+              perspectiveOrigin.dy,
+              0,
+            );
         matrix = matrix * Matrix4x4.perspective(perspectiveValue);
-        matrix = matrix * Matrix4x4.translation(-perspectiveOrigin.dx, -perspectiveOrigin.dy, 0);
+        matrix =
+            matrix *
+            Matrix4x4.translation(
+              -perspectiveOrigin.dx,
+              -perspectiveOrigin.dy,
+              0,
+            );
       }
 
       // Now apply transform-origin for the actual transforms

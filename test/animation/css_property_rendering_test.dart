@@ -381,10 +381,7 @@ void main() {
 // Helper to access private parsing function
 CssSelector? _parseCssSelector(String selector) {
   // Create a rule and extract the parsed selector
-  final rule = CssSelectorRule(
-    selector: selector,
-    declarations: {},
-  );
+  final rule = CssSelectorRule(selector: selector, declarations: {});
   return rule.parsedSelector;
 }
 

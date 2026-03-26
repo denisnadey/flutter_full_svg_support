@@ -44,7 +44,9 @@ class TimingParser {
     // Check for syncbase (contains id.type pattern, not just a decimal point)
     // Syncbase has format: id.begin, id.end, id.repeat(N)
     // Also support DOM event forms: id.beginEvent, id.endEvent, id.repeatEvent
-    if (RegExp(r'[a-zA-Z][a-zA-Z0-9_-]*\.(begin|end|repeat|beginEvent|endEvent|repeatEvent)').hasMatch(value)) {
+    if (RegExp(
+      r'[a-zA-Z][a-zA-Z0-9_-]*\.(begin|end|repeat|beginEvent|endEvent|repeatEvent)',
+    ).hasMatch(value)) {
       return _parseSyncbase(value);
     }
 

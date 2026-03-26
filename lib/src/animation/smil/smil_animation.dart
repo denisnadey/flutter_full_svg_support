@@ -338,13 +338,13 @@ class SmilAnimation {
     final repeatCountDuration = repeatCount.isInfinite
         ? null
         : dur * repeatCount;
-    
+
     final repeatDurDuration = repeatDur;
 
     // Both specified - take minimum
     if (repeatCountDuration != null && repeatDurDuration != null) {
-      return repeatCountDuration < repeatDurDuration 
-          ? repeatCountDuration 
+      return repeatCountDuration < repeatDurDuration
+          ? repeatCountDuration
           : repeatDurDuration;
     }
 

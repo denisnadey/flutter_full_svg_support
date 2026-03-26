@@ -8,11 +8,11 @@ import 'visual_test_utils.dart';
 void main() {
   group('Advanced Use/Symbol Inheritance Tests', () {
     group('Shadow DOM-like Inheritance', () {
-      testWidgets(
-        'referenced element inline style wins over use element style',
-        (WidgetTester tester) async {
-          // Per SVG spec: referenced element's inline styles have highest priority
-          const svgXml = '''
+      testWidgets('referenced element inline style wins over use element style', (
+        WidgetTester tester,
+      ) async {
+        // Per SVG spec: referenced element's inline styles have highest priority
+        const svgXml = '''
             <svg viewBox="0 0 100 100">
               <defs>
                 <rect id="myRect" x="10" y="10" width="80" height="80"
@@ -22,24 +22,22 @@ void main() {
             </svg>
           ''';
 
-          await tester.pumpWidget(
-            const MaterialApp(
-              home: Scaffold(
-                body:
-                    AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-              ),
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
             ),
-          );
+          ),
+        );
 
-          await tester.pump();
+        await tester.pump();
 
-          final pixels = await VisualTestUtils.captureWidgetPixels(tester);
-          final redAnalysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final redAnalysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
 
-          // Red should win because referenced element has inline style
-          expect(redAnalysis.pixelCount, greaterThan(1000));
-        },
-      );
+        // Red should win because referenced element has inline style
+        expect(redAnalysis.pixelCount, greaterThan(1000));
+      });
 
       testWidgets(
         'use element presentation attr applies when ref has no explicit value',
@@ -56,8 +54,11 @@ void main() {
           await tester.pumpWidget(
             const MaterialApp(
               home: Scaffold(
-                body:
-                    AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+                body: AnimatedSvgPicture.string(
+                  svgXml,
+                  width: 200,
+                  height: 200,
+                ),
               ),
             ),
           );
@@ -71,10 +72,10 @@ void main() {
         },
       );
 
-      testWidgets(
-        'referenced element pres attr overrides use pres attr',
-        (WidgetTester tester) async {
-          const svgXml = '''
+      testWidgets('referenced element pres attr overrides use pres attr', (
+        WidgetTester tester,
+      ) async {
+        const svgXml = '''
             <svg viewBox="0 0 100 100">
               <defs>
                 <rect id="myRect" x="10" y="10" width="80" height="80" fill="red"/>
@@ -83,29 +84,27 @@ void main() {
             </svg>
           ''';
 
-          await tester.pumpWidget(
-            const MaterialApp(
-              home: Scaffold(
-                body:
-                    AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-              ),
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
             ),
-          );
+          ),
+        );
 
-          await tester.pump();
+        await tester.pump();
 
-          final pixels = await VisualTestUtils.captureWidgetPixels(tester);
-          final redAnalysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final redAnalysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
 
-          // Red should win because referenced element has explicit fill
-          expect(redAnalysis.pixelCount, greaterThan(1000));
-        },
-      );
+        // Red should win because referenced element has explicit fill
+        expect(redAnalysis.pixelCount, greaterThan(1000));
+      });
 
-      testWidgets(
-        'inherited style from use parent cascades through boundary',
-        (WidgetTester tester) async {
-          const svgXml = '''
+      testWidgets('inherited style from use parent cascades through boundary', (
+        WidgetTester tester,
+      ) async {
+        const svgXml = '''
             <svg viewBox="0 0 100 100">
               <defs>
                 <rect id="myRect" x="10" y="10" width="80" height="80"/>
@@ -116,24 +115,22 @@ void main() {
             </svg>
           ''';
 
-          await tester.pumpWidget(
-            const MaterialApp(
-              home: Scaffold(
-                body:
-                    AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-              ),
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
             ),
-          );
+          ),
+        );
 
-          await tester.pump();
+        await tester.pump();
 
-          final pixels = await VisualTestUtils.captureWidgetPixels(tester);
-          final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
 
-          // fill should inherit from parent g through use boundary
-          expect(analysis.pixelCount, greaterThan(1000));
-        },
-      );
+        // fill should inherit from parent g through use boundary
+        expect(analysis.pixelCount, greaterThan(1000));
+      });
     });
 
     group('CSS Cascade Through Use References', () {
@@ -155,8 +152,11 @@ void main() {
           await tester.pumpWidget(
             const MaterialApp(
               home: Scaffold(
-                body:
-                    AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+                body: AnimatedSvgPicture.string(
+                  svgXml,
+                  width: 200,
+                  height: 200,
+                ),
               ),
             ),
           );
@@ -189,8 +189,11 @@ void main() {
           await tester.pumpWidget(
             const MaterialApp(
               home: Scaffold(
-                body:
-                    AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+                body: AnimatedSvgPicture.string(
+                  svgXml,
+                  width: 200,
+                  height: 200,
+                ),
               ),
             ),
           );
@@ -205,10 +208,10 @@ void main() {
         },
       );
 
-      testWidgets(
-        'CSS attribute selector matches in use-referenced content',
-        (WidgetTester tester) async {
-          const svgXml = '''
+      testWidgets('CSS attribute selector matches in use-referenced content', (
+        WidgetTester tester,
+      ) async {
+        const svgXml = '''
             <svg viewBox="0 0 100 100">
               <style>rect[data-type="primary"] { fill: red; }</style>
               <defs>
@@ -218,21 +221,19 @@ void main() {
             </svg>
           ''';
 
-          await tester.pumpWidget(
-            const MaterialApp(
-              home: Scaffold(
-                body:
-                    AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-              ),
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
             ),
-          );
+          ),
+        );
 
-          await tester.pump();
+        await tester.pump();
 
-          // Should render without error
-          expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-        },
-      );
+        // Should render without error
+        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+      });
 
       testWidgets(
         'CSS descendant selector works within use-referenced content',
@@ -254,8 +255,11 @@ void main() {
           await tester.pumpWidget(
             const MaterialApp(
               home: Scaffold(
-                body:
-                    AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+                body: AnimatedSvgPicture.string(
+                  svgXml,
+                  width: 200,
+                  height: 200,
+                ),
               ),
             ),
           );
@@ -292,8 +296,11 @@ void main() {
           await tester.pumpWidget(
             const MaterialApp(
               home: Scaffold(
-                body:
-                    AnimatedSvgPicture.string(svgXml, width: 400, height: 400),
+                body: AnimatedSvgPicture.string(
+                  svgXml,
+                  width: 400,
+                  height: 400,
+                ),
               ),
             ),
           );
@@ -329,8 +336,11 @@ void main() {
           await tester.pumpWidget(
             const MaterialApp(
               home: Scaffold(
-                body:
-                    AnimatedSvgPicture.string(svgXml, width: 600, height: 200),
+                body: AnimatedSvgPicture.string(
+                  svgXml,
+                  width: 600,
+                  height: 200,
+                ),
               ),
             ),
           );
@@ -347,10 +357,10 @@ void main() {
     });
 
     group('Nested Use Support', () {
-      testWidgets(
-        'double-nested use references resolve correctly',
-        (WidgetTester tester) async {
-          const svgXml = '''
+      testWidgets('double-nested use references resolve correctly', (
+        WidgetTester tester,
+      ) async {
+        const svgXml = '''
             <svg viewBox="0 0 100 100">
               <defs>
                 <rect id="baseRect" x="0" y="0" width="20" height="20" fill="red"/>
@@ -361,28 +371,26 @@ void main() {
             </svg>
           ''';
 
-          await tester.pumpWidget(
-            const MaterialApp(
-              home: Scaffold(
-                body:
-                    AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-              ),
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
             ),
-          );
+          ),
+        );
 
-          await tester.pump();
+        await tester.pump();
 
-          final pixels = await VisualTestUtils.captureWidgetPixels(tester);
-          final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
 
-          expect(analysis.pixelCount, greaterThan(50));
-        },
-      );
+        expect(analysis.pixelCount, greaterThan(50));
+      });
 
-      testWidgets(
-        'use referencing group containing use works correctly',
-        (WidgetTester tester) async {
-          const svgXml = '''
+      testWidgets('use referencing group containing use works correctly', (
+        WidgetTester tester,
+      ) async {
+        const svgXml = '''
             <svg viewBox="0 0 100 100">
               <defs>
                 <rect id="r" x="0" y="0" width="20" height="20" fill="red"/>
@@ -394,29 +402,27 @@ void main() {
             </svg>
           ''';
 
-          await tester.pumpWidget(
-            const MaterialApp(
-              home: Scaffold(
-                body:
-                    AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-              ),
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
             ),
-          );
+          ),
+        );
 
-          await tester.pump();
+        await tester.pump();
 
-          final pixels = await VisualTestUtils.captureWidgetPixels(tester);
-          final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
 
-          expect(analysis.pixelCount, greaterThan(50));
-        },
-      );
+        expect(analysis.pixelCount, greaterThan(50));
+      });
 
-      testWidgets(
-        'depth limit of 10 is enforced for nested use',
-        (WidgetTester tester) async {
-          // Create a chain of 12 nested use elements
-          const svgXml = '''
+      testWidgets('depth limit of 10 is enforced for nested use', (
+        WidgetTester tester,
+      ) async {
+        // Create a chain of 12 nested use elements
+        const svgXml = '''
             <svg viewBox="0 0 100 100">
               <defs>
                 <rect id="r0" x="0" y="0" width="20" height="20" fill="red"/>
@@ -437,26 +443,24 @@ void main() {
             </svg>
           ''';
 
-          await tester.pumpWidget(
-            const MaterialApp(
-              home: Scaffold(
-                body:
-                    AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-              ),
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
             ),
-          );
+          ),
+        );
 
-          // Should not crash or hang
-          await tester.pump();
-          expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-        },
-      );
+        // Should not crash or hang
+        await tester.pump();
+        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+      });
 
-      testWidgets(
-        'circular reference is detected and prevented',
-        (WidgetTester tester) async {
-          // Direct circular reference: a -> b -> a
-          const svgXml = '''
+      testWidgets('circular reference is detected and prevented', (
+        WidgetTester tester,
+      ) async {
+        // Direct circular reference: a -> b -> a
+        const svgXml = '''
             <svg viewBox="0 0 100 100">
               <defs>
                 <g id="a">
@@ -471,26 +475,24 @@ void main() {
             </svg>
           ''';
 
-          await tester.pumpWidget(
-            const MaterialApp(
-              home: Scaffold(
-                body:
-                    AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-              ),
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
             ),
-          );
+          ),
+        );
 
-          // Should not crash or hang
-          await tester.pump();
-          expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-        },
-      );
+        // Should not crash or hang
+        await tester.pump();
+        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+      });
 
-      testWidgets(
-        'indirect circular reference through chain is detected',
-        (WidgetTester tester) async {
-          // Indirect circular: a -> b -> c -> a
-          const svgXml = '''
+      testWidgets('indirect circular reference through chain is detected', (
+        WidgetTester tester,
+      ) async {
+        // Indirect circular: a -> b -> c -> a
+        const svgXml = '''
             <svg viewBox="0 0 100 100">
               <defs>
                 <g id="a">
@@ -508,20 +510,18 @@ void main() {
             </svg>
           ''';
 
-          await tester.pumpWidget(
-            const MaterialApp(
-              home: Scaffold(
-                body:
-                    AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-              ),
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
             ),
-          );
+          ),
+        );
 
-          // Should not crash or hang
-          await tester.pump();
-          expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-        },
-      );
+        // Should not crash or hang
+        await tester.pump();
+        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+      });
     });
 
     group('ID Namespace Collision Handling', () {
@@ -545,8 +545,11 @@ void main() {
           await tester.pumpWidget(
             const MaterialApp(
               home: Scaffold(
-                body:
-                    AnimatedSvgPicture.string(svgXml, width: 400, height: 200),
+                body: AnimatedSvgPicture.string(
+                  svgXml,
+                  width: 400,
+                  height: 200,
+                ),
               ),
             ),
           );
@@ -581,8 +584,11 @@ void main() {
           await tester.pumpWidget(
             const MaterialApp(
               home: Scaffold(
-                body:
-                    AnimatedSvgPicture.string(svgXml, width: 400, height: 200),
+                body: AnimatedSvgPicture.string(
+                  svgXml,
+                  width: 400,
+                  height: 200,
+                ),
               ),
             ),
           );
@@ -617,8 +623,11 @@ void main() {
           await tester.pumpWidget(
             const MaterialApp(
               home: Scaffold(
-                body:
-                    AnimatedSvgPicture.string(svgXml, width: 400, height: 200),
+                body: AnimatedSvgPicture.string(
+                  svgXml,
+                  width: 400,
+                  height: 200,
+                ),
               ),
             ),
           );
@@ -710,33 +719,31 @@ void main() {
     });
 
     group('Edge Cases', () {
-      testWidgets(
-        'use element without href is handled gracefully',
-        (WidgetTester tester) async {
-          const svgXml = '''
+      testWidgets('use element without href is handled gracefully', (
+        WidgetTester tester,
+      ) async {
+        const svgXml = '''
             <svg viewBox="0 0 100 100">
               <rect x="10" y="10" width="30" height="30" fill="red"/>
               <use x="50" y="50"/>
             </svg>
           ''';
 
-          await tester.pumpWidget(
-            const MaterialApp(
-              home: Scaffold(
-                body:
-                    AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-              ),
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
             ),
-          );
+          ),
+        );
 
-          await tester.pump();
+        await tester.pump();
 
-          // Should not crash, rect should still render
-          final pixels = await VisualTestUtils.captureWidgetPixels(tester);
-          final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
-          expect(analysis.pixelCount, greaterThan(100));
-        },
-      );
+        // Should not crash, rect should still render
+        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+        expect(analysis.pixelCount, greaterThan(100));
+      });
 
       testWidgets(
         'use element referencing non-existent ID is handled gracefully',
@@ -751,8 +758,11 @@ void main() {
           await tester.pumpWidget(
             const MaterialApp(
               home: Scaffold(
-                body:
-                    AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+                body: AnimatedSvgPicture.string(
+                  svgXml,
+                  width: 200,
+                  height: 200,
+                ),
               ),
             ),
           );
@@ -784,8 +794,11 @@ void main() {
           await tester.pumpWidget(
             const MaterialApp(
               home: Scaffold(
-                body:
-                    AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+                body: AnimatedSvgPicture.string(
+                  svgXml,
+                  width: 200,
+                  height: 200,
+                ),
               ),
             ),
           );
@@ -797,10 +810,10 @@ void main() {
         },
       );
 
-      testWidgets(
-        'symbol with zero width/height viewBox handles gracefully',
-        (WidgetTester tester) async {
-          const svgXml = '''
+      testWidgets('symbol with zero width/height viewBox handles gracefully', (
+        WidgetTester tester,
+      ) async {
+        const svgXml = '''
             <svg viewBox="0 0 100 100">
               <defs>
                 <symbol id="icon" viewBox="0 0 0 0">
@@ -811,26 +824,24 @@ void main() {
             </svg>
           ''';
 
-          await tester.pumpWidget(
-            const MaterialApp(
-              home: Scaffold(
-                body:
-                    AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-              ),
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
             ),
-          );
+          ),
+        );
 
-          await tester.pump();
+        await tester.pump();
 
-          // Should not crash
-          expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-        },
-      );
+        // Should not crash
+        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+      });
 
-      testWidgets(
-        'empty symbol handles gracefully',
-        (WidgetTester tester) async {
-          const svgXml = '''
+      testWidgets('empty symbol handles gracefully', (
+        WidgetTester tester,
+      ) async {
+        const svgXml = '''
             <svg viewBox="0 0 100 100">
               <defs>
                 <symbol id="emptyIcon" viewBox="0 0 24 24"/>
@@ -840,23 +851,21 @@ void main() {
             </svg>
           ''';
 
-          await tester.pumpWidget(
-            const MaterialApp(
-              home: Scaffold(
-                body:
-                    AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-              ),
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
             ),
-          );
+          ),
+        );
 
-          await tester.pump();
+        await tester.pump();
 
-          // Should not crash, rect should still render
-          final pixels = await VisualTestUtils.captureWidgetPixels(tester);
-          final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
-          expect(analysis.pixelCount, greaterThan(50));
-        },
-      );
+        // Should not crash, rect should still render
+        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+        expect(analysis.pixelCount, greaterThan(50));
+      });
     });
   });
 }

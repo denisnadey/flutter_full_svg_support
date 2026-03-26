@@ -68,7 +68,8 @@ void main() {
 ''';
 
       final document = SvgParser.parse(svgString);
-      final filter = document.filters!.getById('asymBlurFx') as SvgDropShadowFilter;
+      final filter =
+          document.filters!.getById('asymBlurFx') as SvgDropShadowFilter;
       expect(filter.stdDeviationX, 1.0);
       expect(filter.stdDeviationY, 4.0);
 
@@ -216,7 +217,10 @@ void main() {
       final passes = document.filters!.resolvePaintPasses('mergeImplicitFx');
 
       expect(passes, hasLength(2));
-      expect(passes[0].offset, const ui.Offset(3, 0)); // implicit previous (offset)
+      expect(
+        passes[0].offset,
+        const ui.Offset(3, 0),
+      ); // implicit previous (offset)
     });
 
     test('feMerge with forward reference produces empty layer', () {
@@ -336,7 +340,8 @@ void main() {
 ''';
 
       final document = SvgParser.parse(svgString);
-      final filter = document.filters!.getById('blurDupFx') as SvgGaussianBlurFilter;
+      final filter =
+          document.filters!.getById('blurDupFx') as SvgGaussianBlurFilter;
       expect(filter.edgeMode, SvgConvolveEdgeMode.duplicate);
     });
 
@@ -353,7 +358,8 @@ void main() {
 ''';
 
       final document = SvgParser.parse(svgString);
-      final filter = document.filters!.getById('blurWrapFx') as SvgGaussianBlurFilter;
+      final filter =
+          document.filters!.getById('blurWrapFx') as SvgGaussianBlurFilter;
       expect(filter.edgeMode, SvgConvolveEdgeMode.wrap);
     });
 
@@ -370,7 +376,8 @@ void main() {
 ''';
 
       final document = SvgParser.parse(svgString);
-      final filter = document.filters!.getById('blurNoneFx') as SvgGaussianBlurFilter;
+      final filter =
+          document.filters!.getById('blurNoneFx') as SvgGaussianBlurFilter;
       expect(filter.edgeMode, SvgConvolveEdgeMode.none);
     });
 
@@ -387,7 +394,8 @@ void main() {
 ''';
 
       final document = SvgParser.parse(svgString);
-      final filter = document.filters!.getById('morphEdgeFx') as SvgMorphologyFilter;
+      final filter =
+          document.filters!.getById('morphEdgeFx') as SvgMorphologyFilter;
       expect(filter.edgeMode, SvgConvolveEdgeMode.wrap);
     });
 
@@ -404,7 +412,8 @@ void main() {
 ''';
 
       final document = SvgParser.parse(svgString);
-      final filter = document.filters!.getById('blurDefaultFx') as SvgGaussianBlurFilter;
+      final filter =
+          document.filters!.getById('blurDefaultFx') as SvgGaussianBlurFilter;
       expect(filter.edgeMode, SvgConvolveEdgeMode.duplicate);
     });
   });
@@ -423,7 +432,8 @@ void main() {
 ''';
 
       final document = SvgParser.parse(svgString);
-      final filter = document.filters!.getById('convDupFx') as SvgConvolveMatrixFilter;
+      final filter =
+          document.filters!.getById('convDupFx') as SvgConvolveMatrixFilter;
       expect(filter.edgeMode, SvgConvolveEdgeMode.duplicate);
     });
 
@@ -440,7 +450,8 @@ void main() {
 ''';
 
       final document = SvgParser.parse(svgString);
-      final filter = document.filters!.getById('convWrapFx') as SvgConvolveMatrixFilter;
+      final filter =
+          document.filters!.getById('convWrapFx') as SvgConvolveMatrixFilter;
       expect(filter.edgeMode, SvgConvolveEdgeMode.wrap);
     });
 
@@ -457,7 +468,8 @@ void main() {
 ''';
 
       final document = SvgParser.parse(svgString);
-      final filter = document.filters!.getById('convNoneFx') as SvgConvolveMatrixFilter;
+      final filter =
+          document.filters!.getById('convNoneFx') as SvgConvolveMatrixFilter;
       expect(filter.edgeMode, SvgConvolveEdgeMode.none);
     });
   });
@@ -501,7 +513,10 @@ void main() {
       final turbPass = passes[0] as SvgTurbulencePaintPass;
       expect(turbPass.turbulenceFilter.numOctaves, 5);
       expect(turbPass.turbulenceFilter.seed, 42.0);
-      expect(turbPass.turbulenceFilter.noiseType, SvgTurbulenceType.fractalNoise);
+      expect(
+        turbPass.turbulenceFilter.noiseType,
+        SvgTurbulenceType.fractalNoise,
+      );
     });
 
     test('feTurbulence with asymmetric baseFrequency', () {
@@ -517,20 +532,24 @@ void main() {
 ''';
 
       final document = SvgParser.parse(svgString);
-      final filter = document.filters!.getById('turbAsymFx') as SvgTurbulenceFilter;
+      final filter =
+          document.filters!.getById('turbAsymFx') as SvgTurbulenceFilter;
       expect(filter.baseFrequencyX, 0.01);
       expect(filter.baseFrequencyY, 0.05);
     });
 
-    test('TurbulenceNoiseGenerator produces deterministic output with seed', () {
-      final gen1 = TurbulenceNoiseGenerator(42.0);
-      final gen2 = TurbulenceNoiseGenerator(42.0);
+    test(
+      'TurbulenceNoiseGenerator produces deterministic output with seed',
+      () {
+        final gen1 = TurbulenceNoiseGenerator(42.0);
+        final gen2 = TurbulenceNoiseGenerator(42.0);
 
-      final val1 = gen1.noise2D(1.5, 2.3);
-      final val2 = gen2.noise2D(1.5, 2.3);
+        final val1 = gen1.noise2D(1.5, 2.3);
+        final val2 = gen2.noise2D(1.5, 2.3);
 
-      expect(val1, closeTo(val2, 0.0001));
-    });
+        expect(val1, closeTo(val2, 0.0001));
+      },
+    );
 
     test('TurbulenceNoiseGenerator fractalNoise produces correct range', () {
       final gen = TurbulenceNoiseGenerator(123.0);
@@ -586,7 +605,9 @@ void main() {
 ''';
 
       final document = SvgParser.parse(svgString);
-      final filter = document.filters!.getById('ctIdentityFx') as SvgComponentTransferFilter;
+      final filter =
+          document.filters!.getById('ctIdentityFx')
+              as SvgComponentTransferFilter;
       expect(filter.isIdentity, isTrue);
     });
 
@@ -608,7 +629,8 @@ void main() {
 ''';
 
       final document = SvgParser.parse(svgString);
-      final filter = document.filters!.getById('ctLinearFx') as SvgComponentTransferFilter;
+      final filter =
+          document.filters!.getById('ctLinearFx') as SvgComponentTransferFilter;
       expect(filter.isIdentity, isFalse);
       expect(filter.effectiveFuncR.slope, 0.5);
       expect(filter.effectiveFuncR.intercept, 0.1);
@@ -630,7 +652,8 @@ void main() {
 ''';
 
       final document = SvgParser.parse(svgString);
-      final filter = document.filters!.getById('ctTableFx') as SvgComponentTransferFilter;
+      final filter =
+          document.filters!.getById('ctTableFx') as SvgComponentTransferFilter;
       expect(filter.effectiveFuncR.type, SvgComponentTransferType.table);
       expect(filter.effectiveFuncR.tableValues, [0.0, 0.5, 1.0]);
     });
@@ -650,7 +673,9 @@ void main() {
 ''';
 
       final document = SvgParser.parse(svgString);
-      final filter = document.filters!.getById('ctDiscreteFx') as SvgComponentTransferFilter;
+      final filter =
+          document.filters!.getById('ctDiscreteFx')
+              as SvgComponentTransferFilter;
       expect(filter.effectiveFuncG.type, SvgComponentTransferType.discrete);
     });
 
@@ -669,13 +694,16 @@ void main() {
 ''';
 
       final document = SvgParser.parse(svgString);
-      final filter = document.filters!.getById('ctGammaFx') as SvgComponentTransferFilter;
+      final filter =
+          document.filters!.getById('ctGammaFx') as SvgComponentTransferFilter;
       expect(filter.effectiveFuncB.type, SvgComponentTransferType.gamma);
       expect(filter.effectiveFuncB.exponent, 2.2);
     });
 
-    test('feComponentTransfer creates SvgComponentTransferPaintPass for non-linear', () {
-      final svgString = '''
+    test(
+      'feComponentTransfer creates SvgComponentTransferPaintPass for non-linear',
+      () {
+        final svgString = '''
 <svg viewBox="0 0 100 100">
   <defs>
     <filter id="ctTablePassFx">
@@ -688,11 +716,12 @@ void main() {
 </svg>
 ''';
 
-      final document = SvgParser.parse(svgString);
-      final passes = document.filters!.resolvePaintPasses('ctTablePassFx');
+        final document = SvgParser.parse(svgString);
+        final passes = document.filters!.resolvePaintPasses('ctTablePassFx');
 
-      expect(passes, hasLength(1));
-      expect(passes[0], isA<SvgComponentTransferPaintPass>());
-    });
+        expect(passes, hasLength(1));
+        expect(passes[0], isA<SvgComponentTransferPaintPass>());
+      },
+    );
   });
 }
