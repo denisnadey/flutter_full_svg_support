@@ -20,9 +20,7 @@ List<CssKeyframes> _parseStyleElements(XmlElement svgElement) {
 }
 
 /// Парсит CSS <style> элементы и извлекает правила для селекторов
-List<CssSelectorRule> _parseSelectorRulesElements(
-  XmlElement svgElement,
-) {
+List<CssSelectorRule> _parseSelectorRulesElements(XmlElement svgElement) {
   final rules = <CssSelectorRule>[];
 
   final styleElements = svgElement.findElements('style');

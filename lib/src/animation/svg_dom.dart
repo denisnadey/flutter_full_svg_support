@@ -580,7 +580,8 @@ class SvgDocument {
       _fontRegistry.isRegistered(fontFamily);
 
   /// Get the set of registered font family names.
-  Set<String> get registeredFontFamilies => _fontRegistry.registeredFontFamilies;
+  Set<String> get registeredFontFamilies =>
+      _fontRegistry.registeredFontFamilies;
 
   /// Registers all embedded @font-face fonts from the SVG document.
   ///

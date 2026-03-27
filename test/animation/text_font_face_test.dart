@@ -357,7 +357,10 @@ void main() {
 
       final document = SvgParser.parse(svgString);
       expect(document.cssFontFaceRules, isNotNull);
-      expect(document.cssFontFaceRules!.first.fontFamily, equals('MyCustomFont'));
+      expect(
+        document.cssFontFaceRules!.first.fontFamily,
+        equals('MyCustomFont'),
+      );
 
       // The font-family attribute value is decoded by the XML parser
       // HTML entities like &quot; become actual quote characters
@@ -479,7 +482,10 @@ void main() {
 
       await registry.registerFonts(rules);
       expect(registry.errors, isNotEmpty);
-      expect(registry.errors.first, contains('WOFF format not natively supported'));
+      expect(
+        registry.errors.first,
+        contains('WOFF format not natively supported'),
+      );
       expect(registry.isRegistered('WoffFont'), isFalse);
     });
 
