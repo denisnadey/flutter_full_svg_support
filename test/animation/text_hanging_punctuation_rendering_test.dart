@@ -864,7 +864,8 @@ void main() {
         expect(find.byType(AnimatedSvgPicture), findsOneWidget);
       });
 
-      testWidgets('hangs curly quotes ' '  " "', (tester) async {
+      testWidgets('hangs curly quotes '
+          '  " "', (tester) async {
         const svg = '''
           <svg viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg">
             <text x="50" y="30" font-size="16" style="hanging-punctuation: first last">'Hello'</text>

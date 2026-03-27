@@ -348,19 +348,29 @@ extension AnimatedSvgPainterTextStylePositioningExtension
         final fontSize =
             _getNodeOwnNumber(current, 'font-size') ??
             (ancestors.isEmpty ? 16.0 : null);
-        final dominantBaseline = _getNodeOwnString(current, 'dominant-baseline');
-        final alignmentBaseline =
-            _getNodeOwnString(current, 'alignment-baseline');
-        final baselineShift = _getNodeOwnAttributeValue(current, 'baseline-shift');
+        final dominantBaseline = _getNodeOwnString(
+          current,
+          'dominant-baseline',
+        );
+        final alignmentBaseline = _getNodeOwnString(
+          current,
+          'alignment-baseline',
+        );
+        final baselineShift = _getNodeOwnAttributeValue(
+          current,
+          'baseline-shift',
+        );
         final writingMode = _getNodeOwnString(current, 'writing-mode');
 
-        ancestors.add(_BaselineAncestorInfo(
-          fontSize: fontSize,
-          dominantBaseline: dominantBaseline,
-          alignmentBaseline: alignmentBaseline,
-          baselineShift: baselineShift,
-          writingMode: writingMode,
-        ));
+        ancestors.add(
+          _BaselineAncestorInfo(
+            fontSize: fontSize,
+            dominantBaseline: dominantBaseline,
+            alignmentBaseline: alignmentBaseline,
+            baselineShift: baselineShift,
+            writingMode: writingMode,
+          ),
+        );
 
         // Stop at root text element
         if (tagName == 'text') {
@@ -391,7 +401,9 @@ extension AnimatedSvgPainterTextStylePositioningExtension
     final value = node.getAttributeValue(name);
     if (value == null) return null;
     if (value is num) return value.toDouble();
-    return double.tryParse(value.toString().trim().replaceAll(RegExp(r'[a-zA-Z%]+$'), ''));
+    return double.tryParse(
+      value.toString().trim().replaceAll(RegExp(r'[a-zA-Z%]+$'), ''),
+    );
   }
 
   /// Calculates accumulated baseline offset through the ancestor chain.
@@ -421,7 +433,8 @@ extension AnimatedSvgPainterTextStylePositioningExtension
 
     // Track running values through the chain
     double runningFontSize = 16.0;
-    _SvgDominantBaseline runningDominantBaseline = _SvgDominantBaseline.alphabetic;
+    _SvgDominantBaseline runningDominantBaseline =
+        _SvgDominantBaseline.alphabetic;
     _SvgWritingMode runningWritingMode = _SvgWritingMode.horizontalTb;
 
     for (int i = 0; i < context.ancestors.length; i++) {
@@ -445,7 +458,9 @@ extension AnimatedSvgPainterTextStylePositioningExtension
       final hasWritingModeTransition = runningWritingMode != levelWritingMode;
 
       // Calculate font-size based baseline offset if font size changes
-      if (i > 0 && ancestor.fontSize != null && ancestor.fontSize != runningFontSize) {
+      if (i > 0 &&
+          ancestor.fontSize != null &&
+          ancestor.fontSize != runningFontSize) {
         final parentFontSize = runningFontSize;
         final childFontSize = levelFontSize;
 
@@ -491,7 +506,9 @@ extension AnimatedSvgPainterTextStylePositioningExtension
 
       // Handle alignment-baseline (how child aligns to parent's dominant-baseline)
       if (i > 0 && ancestor.alignmentBaseline != null) {
-        final alignmentBaseline = _resolveDominantBaseline(ancestor.alignmentBaseline);
+        final alignmentBaseline = _resolveDominantBaseline(
+          ancestor.alignmentBaseline,
+        );
         if (alignmentBaseline != runningDominantBaseline) {
           final offset = _calculateAlignmentBaselineOffset(
             parentDominantBaseline: runningDominantBaseline,
@@ -509,7 +526,10 @@ extension AnimatedSvgPainterTextStylePositioningExtension
 
       // Accumulate baseline-shift
       if (ancestor.baselineShift != null) {
-        final shift = _resolveBaselineShift(ancestor.baselineShift, levelFontSize);
+        final shift = _resolveBaselineShift(
+          ancestor.baselineShift,
+          levelFontSize,
+        );
 
         if (levelWritingMode == _SvgWritingMode.horizontalTb) {
           // In horizontal mode, positive shift moves up (negative Y)
@@ -587,7 +607,10 @@ extension AnimatedSvgPainterTextStylePositioningExtension
     // alignment-baseline specifies which baseline of the child should align
     // with the parent's dominant-baseline
     final parentPos = _getBaselinePosition(parentDominantBaseline, fontSize);
-    final childAlignPos = _getBaselinePosition(childAlignmentBaseline, fontSize);
+    final childAlignPos = _getBaselinePosition(
+      childAlignmentBaseline,
+      fontSize,
+    );
     return parentPos - childAlignPos;
   }
 

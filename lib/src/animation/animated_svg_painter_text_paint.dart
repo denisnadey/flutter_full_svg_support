@@ -481,7 +481,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
       text: text,
       style: style,
       isFirstLine: true, // Per-char positioning is first line context
-      isLastLine: true,  // And last line context  
+      isLastLine: true, // And last line context
     );
 
     // Apply start hanging offset for first character
@@ -534,7 +534,8 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
       final glyphWidth = paragraph.maxIntrinsicWidth;
 
       // Apply anchor offset only to the first character, plus text-indent and hanging offset
-      var drawX = cursor.x +
+      var drawX =
+          cursor.x +
           (i == 0 ? anchorOffset + textIndentOffset + startHangOffset : 0.0);
 
       final drawY = _resolveTextTopFromBaseline(

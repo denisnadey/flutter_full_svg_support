@@ -311,7 +311,7 @@ extension AnimatedSvgPainterTextStyleLayoutExtension on AnimatedSvgPainter {
     }
   }
 
- /// Resolves hanging-punctuation CSS property.
+  /// Resolves hanging-punctuation CSS property.
   /// Returns the hanging punctuation mode (none, first, last, force-end, allow-end).
   String _resolveHangingPunctuation(String? value) {
     if (value == null || value.trim().isEmpty) {

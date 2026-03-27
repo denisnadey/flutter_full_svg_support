@@ -99,15 +99,17 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
     // Generate cache key for text paragraph (include font features for proper
     // caching of paragraphs with different font-feature-settings)
     final fontFeaturesKey = _fontFeaturesHashKey(allFontFeatures);
-    final cacheKey = _RenderCache.textKey(
-      processedText,
-      effectiveFontSize,
-      style.fontFamily,
-      style.fontWeight.index,
-      style.fontStyle.index,
-      style.letterSpacing,
-      style.color.toARGB32(),
-    ) + '|$fontFeaturesKey';
+    final cacheKey =
+        _RenderCache.textKey(
+          processedText,
+          effectiveFontSize,
+          style.fontFamily,
+          style.fontWeight.index,
+          style.fontStyle.index,
+          style.letterSpacing,
+          style.color.toARGB32(),
+        ) +
+        '|$fontFeaturesKey';
 
     // Check cache first
     final cached = _renderCache.textParagraphs[cacheKey];
@@ -238,7 +240,8 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
     if (firstStyle.fontSizeAdjust != null && firstStyle.fontSizeAdjust! > 0) {
       const estimatedAspectRatio = 0.48;
       effectiveFontSize =
-          firstStyle.fontSize * (firstStyle.fontSizeAdjust! / estimatedAspectRatio);
+          firstStyle.fontSize *
+          (firstStyle.fontSizeAdjust! / estimatedAspectRatio);
     }
 
     // Split font-family into primary + fallback chain
@@ -292,7 +295,8 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
       );
 
       // Check ligature compatibility with previous run
-      final canShareLigatures = prevFeatures == null ||
+      final canShareLigatures =
+          prevFeatures == null ||
           _areLigatureFeaturesCompatible(prevFeatures, run.fontFeatures);
 
       // If features are incompatible, insert zero-width non-joiner to break ligature
@@ -410,8 +414,7 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
     if ((c == 's' && n == 't') || (c == 'c' && n == 't')) return true;
 
     // Some fonts have Th, Qu ligatures
-    if ((char == 'T' && nextChar == 'h') ||
-        (char == 'Q' && nextChar == 'u')) {
+    if ((char == 'T' && nextChar == 'h') || (char == 'Q' && nextChar == 'u')) {
       return true;
     }
 

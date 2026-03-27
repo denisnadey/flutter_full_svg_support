@@ -6,7 +6,8 @@ void main() {
   group('deep nesting baseline alignment', () {
     testWidgets('3-level font-size nesting renders correctly', (tester) async {
       // <text font-size="48"><tspan font-size="24"><tspan font-size="12">deep</tspan></tspan></text>
-      const svg = '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="50" font-size="48" fill="black">
           Root
           <tspan font-size="24" fill="blue">
@@ -34,7 +35,8 @@ void main() {
       tester,
     ) async {
       // 48 -> 24 -> 36 -> 18 (alternating larger/smaller)
-      const svg = '''<svg viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="60" font-size="48" fill="black">
           A
           <tspan font-size="24" fill="blue">
@@ -63,7 +65,8 @@ void main() {
     testWidgets(
       'mixed dominant-baseline at each level: alphabetic -> hanging -> mathematical',
       (tester) async {
-        const svg = '''<svg viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
+        const svg =
+            '''<svg viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="50" dominant-baseline="alphabetic" font-size="24" fill="black">
           Alpha
           <tspan dominant-baseline="hanging" fill="blue">
@@ -90,7 +93,8 @@ void main() {
     testWidgets(
       'baseline-shift: super at level 2, sub at level 3 - cumulative shift',
       (tester) async {
-        const svg = '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+        const svg =
+            '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="50" font-size="24" fill="black">
           Normal
           <tspan baseline-shift="super" fill="blue">
@@ -119,7 +123,8 @@ void main() {
     testWidgets(
       'vertical text inside horizontal text: writing-mode axis change',
       (tester) async {
-        const svg = '''<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+        const svg =
+            '''<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="30" writing-mode="horizontal-tb" font-size="20" fill="black">
           Horiz
           <tspan writing-mode="vertical-rl" fill="blue">縦書き</tspan>
@@ -140,32 +145,33 @@ void main() {
       },
     );
 
-    testWidgets(
-      'horizontal text inside vertical text (reverse transition)',
-      (tester) async {
-        const svg = '''<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+    testWidgets('horizontal text inside vertical text (reverse transition)', (
+      tester,
+    ) async {
+      const svg =
+          '''<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
         <text x="50" y="10" writing-mode="vertical-rl" font-size="20" fill="black">
           縦
           <tspan writing-mode="horizontal-tb" fill="blue">横書き</tspan>
         </text>
       </svg>''';
 
-        await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: AnimatedSvgPicture.string(svg, width: 200, height: 200),
-            ),
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svg, width: 200, height: 200),
           ),
-        );
-        await tester.pump();
-        await tester.pump();
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
 
-        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-      },
-    );
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
 
     testWidgets('vertical-lr mode nesting', (tester) async {
-      const svg = '''<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="10" writing-mode="vertical-lr" font-size="20" fill="black">
           ABC
           <tspan font-size="12" fill="blue">DEF</tspan>
@@ -187,10 +193,11 @@ void main() {
   });
 
   group('alignment-baseline multi-level', () {
-    testWidgets(
-      'alignment-baseline set differently at 3 nesting levels',
-      (tester) async {
-        const svg = '''<svg viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
+    testWidgets('alignment-baseline set differently at 3 nesting levels', (
+      tester,
+    ) async {
+      const svg =
+          '''<svg viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="50" dominant-baseline="alphabetic" font-size="24" fill="black">
           Root
           <tspan alignment-baseline="middle" fill="blue">
@@ -200,24 +207,24 @@ void main() {
         </text>
       </svg>''';
 
-        await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: AnimatedSvgPicture.string(svg, width: 400, height: 100),
-            ),
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svg, width: 400, height: 100),
           ),
-        );
-        await tester.pump();
-        await tester.pump();
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
 
-        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-      },
-    );
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
 
     testWidgets('alignment-baseline with central and ideographic', (
       tester,
     ) async {
-      const svg = '''<svg viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="50" dominant-baseline="central" font-size="24" fill="black">
           Center
           <tspan alignment-baseline="ideographic" fill="blue">
@@ -242,11 +249,12 @@ void main() {
   });
 
   group('complex mixed scenarios', () {
-    testWidgets(
-      'deeply nested with mixed font-size and baseline-shift',
-      (tester) async {
-        // Tests: font-size 48->24->12 with baseline-shift at level 2
-        const svg = '''<svg viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
+    testWidgets('deeply nested with mixed font-size and baseline-shift', (
+      tester,
+    ) async {
+      // Tests: font-size 48->24->12 with baseline-shift at level 2
+      const svg =
+          '''<svg viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="60" font-size="48" fill="black">
           Big
           <tspan font-size="24" baseline-shift="super" fill="blue">
@@ -256,24 +264,24 @@ void main() {
         </text>
       </svg>''';
 
-        await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: AnimatedSvgPicture.string(svg, width: 400, height: 100),
-            ),
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svg, width: 400, height: 100),
           ),
-        );
-        await tester.pump();
-        await tester.pump();
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
 
-        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-      },
-    );
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
 
     testWidgets(
       'all properties combined: font-size, baseline, shift, writing-mode',
       (tester) async {
-        const svg = '''<svg viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg">
+        const svg =
+            '''<svg viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="50" font-size="24" dominant-baseline="alphabetic" fill="black">
           Start
           <tspan font-size="18" baseline-shift="super" dominant-baseline="hanging" fill="blue">
@@ -298,7 +306,8 @@ void main() {
     );
 
     testWidgets('5-level deep nesting stress test', (tester) async {
-      const svg = '''<svg viewBox="0 0 500 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 500 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="60" font-size="40" fill="black">
           L1
           <tspan font-size="32" fill="#333">
@@ -330,7 +339,8 @@ void main() {
 
   group('regression tests (1-2 level nesting)', () {
     testWidgets('1-level nesting still works correctly', (tester) async {
-      const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="50" font-size="24" fill="black">
           Hello <tspan fill="red">World</tspan>
         </text>
@@ -350,7 +360,8 @@ void main() {
     });
 
     testWidgets('2-level font-size nesting still works', (tester) async {
-      const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="50" font-size="24" fill="black">
           Big
           <tspan font-size="12" fill="blue">Small</tspan>
@@ -371,7 +382,8 @@ void main() {
     });
 
     testWidgets('simple baseline-shift super still works', (tester) async {
-      const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="50" font-size="24" fill="black">
           E=mc<tspan baseline-shift="super" font-size="12">2</tspan>
         </text>
@@ -391,7 +403,8 @@ void main() {
     });
 
     testWidgets('simple baseline-shift sub still works', (tester) async {
-      const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="50" font-size="24" fill="black">
           H<tspan baseline-shift="sub" font-size="12">2</tspan>O
         </text>
@@ -413,7 +426,8 @@ void main() {
     testWidgets('single tspan with dominant-baseline still works', (
       tester,
     ) async {
-      const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="50" dominant-baseline="middle" font-size="24" fill="black">
           Middle <tspan fill="red">Text</tspan>
         </text>
@@ -433,7 +447,8 @@ void main() {
     });
 
     testWidgets('text-anchor with nested tspans still works', (tester) async {
-      const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
         <text x="100" y="50" text-anchor="middle" font-size="24" fill="black">
           Center<tspan fill="red">ed</tspan>
         </text>
@@ -455,7 +470,8 @@ void main() {
 
   group('edge cases', () {
     testWidgets('empty tspan at deep level', (tester) async {
-      const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="50" font-size="24" fill="black">
           Text
           <tspan font-size="18">
@@ -480,7 +496,8 @@ void main() {
     testWidgets('same font-size at all levels (no offset needed)', (
       tester,
     ) async {
-      const svg = '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="50" font-size="24" fill="black">
           A
           <tspan fill="blue">
@@ -503,10 +520,9 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('percentage baseline-shift at multiple levels', (
-      tester,
-    ) async {
-      const svg = '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+    testWidgets('percentage baseline-shift at multiple levels', (tester) async {
+      const svg =
+          '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="50" font-size="24" fill="black">
           Normal
           <tspan baseline-shift="50%" fill="blue">
@@ -530,7 +546,8 @@ void main() {
     });
 
     testWidgets('em unit baseline-shift at multiple levels', (tester) async {
-      const svg = '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+      const svg =
+          '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
         <text x="10" y="50" font-size="24" fill="black">
           Base
           <tspan baseline-shift="0.5em" font-size="18" fill="blue">
@@ -555,10 +572,9 @@ void main() {
   });
 
   group('textPath deep nesting', () {
-    testWidgets('textPath with nested tspan font-size changes', (
-      tester,
-    ) async {
-      const svg = '''<svg viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg">
+    testWidgets('textPath with nested tspan font-size changes', (tester) async {
+      const svg =
+          '''<svg viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <path id="curve" d="M10,100 Q200,10 390,100" fill="none"/>
         </defs>

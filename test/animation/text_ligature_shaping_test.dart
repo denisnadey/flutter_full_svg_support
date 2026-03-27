@@ -4,9 +4,10 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('Ligature preservation across tspan boundaries', () {
-    testWidgets('fi ligature preserved across tspan with same ligature features',
-        (tester) async {
-      const svg = '''
+    testWidgets(
+      'fi ligature preserved across tspan with same ligature features',
+      (tester) async {
+        const svg = '''
         <svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
           <text x="10" y="50" font-size="24" fill="black">
             <tspan fill="red">fi</tspan><tspan fill="blue">nd</tspan>
@@ -14,20 +15,23 @@ void main() {
         </svg>
       ''';
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AnimatedSvgPicture.string(svg, width: 300, height: 100),
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svg, width: 300, height: 100),
+            ),
           ),
-        ),
-      );
-      await tester.pump();
-      await tester.pump();
+        );
+        await tester.pump();
+        await tester.pump();
 
-      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-    });
+        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+      },
+    );
 
-    testWidgets('fl ligature preserved across tspan boundaries', (tester) async {
+    testWidgets('fl ligature preserved across tspan boundaries', (
+      tester,
+    ) async {
       const svg = '''
         <svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
           <text x="10" y="50" font-size="24" fill="black">
@@ -49,7 +53,9 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('ffi ligature preserved across multiple tspans', (tester) async {
+    testWidgets('ffi ligature preserved across multiple tspans', (
+      tester,
+    ) async {
       const svg = '''
         <svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
           <text x="10" y="50" font-size="24" fill="black">
@@ -312,8 +318,9 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('discretionary ligatures enabled for some spans',
-        (tester) async {
+    testWidgets('discretionary ligatures enabled for some spans', (
+      tester,
+    ) async {
       const svg = '''
         <svg viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
           <text x="10" y="50" font-size="20" fill="black">
@@ -443,9 +450,10 @@ void main() {
   });
 
   group('Cache key correctness', () {
-    testWidgets('same text with different features produces different rendering',
-        (tester) async {
-      const svg = '''
+    testWidgets(
+      'same text with different features produces different rendering',
+      (tester) async {
+        const svg = '''
         <svg viewBox="0 0 400 150" xmlns="http://www.w3.org/2000/svg">
           <text x="10" y="40" font-size="20" fill="black"
                 style="font-feature-settings:'liga' 1">
@@ -461,21 +469,23 @@ void main() {
         </svg>
       ''';
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AnimatedSvgPicture.string(svg, width: 400, height: 150),
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svg, width: 400, height: 150),
+            ),
           ),
-        ),
-      );
-      await tester.pump();
-      await tester.pump();
+        );
+        await tester.pump();
+        await tester.pump();
 
-      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-    });
+        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+      },
+    );
 
-    testWidgets('same text with same features uses cached paragraph',
-        (tester) async {
+    testWidgets('same text with same features uses cached paragraph', (
+      tester,
+    ) async {
       const svg = '''
         <svg viewBox="0 0 400 150" xmlns="http://www.w3.org/2000/svg">
           <text x="10" y="40" font-size="20" fill="black"
