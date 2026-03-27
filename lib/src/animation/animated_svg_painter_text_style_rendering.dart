@@ -58,7 +58,9 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
 
     // Apply font-variation-settings
     if (style.fontVariationSettings != null) {
-      fontVariations.addAll(_parseFontVariationSettings(style.fontVariationSettings!));
+      fontVariations.addAll(
+        _parseFontVariationSettings(style.fontVariationSettings!),
+      );
     }
 
     // Apply unicode-bidi by wrapping text with Unicode directional control characters
@@ -89,7 +91,11 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
     List<String>? fontFamilyFallback;
     String? primaryFontFamily = style.fontFamily;
     if (style.fontFamily != null && style.fontFamily!.contains(',')) {
-      final families = style.fontFamily!.split(',').map((f) => f.trim()).where((f) => f.isNotEmpty).toList();
+      final families = style.fontFamily!
+          .split(',')
+          .map((f) => f.trim())
+          .where((f) => f.isNotEmpty)
+          .toList();
       if (families.isNotEmpty) {
         primaryFontFamily = families.first;
         if (families.length > 1) {
@@ -106,7 +112,9 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
         fontWeight: style.fontWeight,
         fontStyle: style.fontStyle,
         textDirection: style.textDirection,
-        height: style.lineHeight != null ? style.lineHeight! / effectiveFontSize : null,
+        height: style.lineHeight != null
+            ? style.lineHeight! / effectiveFontSize
+            : null,
       ),
     );
     final decoration = _buildTextDecoration(style.decorations);
@@ -150,8 +158,12 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
         decorationColor: style.decorationColor ?? style.color,
         decorationStyle: _mapDecorationStyle(style.textDecorationStyle),
         decorationThickness: style.textDecorationThickness,
-        height: style.lineHeight != null ? style.lineHeight! / effectiveFontSize : null,
-        shadows: style.textShadow != null ? _parseTextShadows(style.textShadow!) : null,
+        height: style.lineHeight != null
+            ? style.lineHeight! / effectiveFontSize
+            : null,
+        shadows: style.textShadow != null
+            ? _parseTextShadows(style.textShadow!)
+            : null,
         fontFeatures: allFontFeatures.isNotEmpty ? allFontFeatures : null,
         fontVariations: fontVariations.isNotEmpty ? fontVariations : null,
       ),
@@ -184,18 +196,24 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
     final strokeColor = _resolveColorForNode(strokeValue, node);
     if (strokeColor == null) return null;
 
-    final strokeWidth =
-        (_getInheritedNumber(node, 'stroke-width') ?? 1.0).clamp(0.0, 100.0);
+    final strokeWidth = (_getInheritedNumber(node, 'stroke-width') ?? 1.0)
+        .clamp(0.0, 100.0);
     if (strokeWidth <= 0) return null;
 
-    final opacity = (_getInheritedNumber(node, 'opacity') ?? 1.0).clamp(0.0, 1.0);
-    final strokeOpacity =
-        (_getInheritedNumber(node, 'stroke-opacity') ?? 1.0).clamp(0.0, 1.0);
+    final opacity = (_getInheritedNumber(node, 'opacity') ?? 1.0).clamp(
+      0.0,
+      1.0,
+    );
+    final strokeOpacity = (_getInheritedNumber(node, 'stroke-opacity') ?? 1.0)
+        .clamp(0.0, 1.0);
     final effectiveColor = _applyOpacity(strokeColor, opacity * strokeOpacity);
 
     // Apply NFC normalization and text-transform (same as fill paragraph)
     final normalizedText = _normalizeTextNfc(text);
-    var transformedText = _applyTextTransform(normalizedText, style.textTransform);
+    var transformedText = _applyTextTransform(
+      normalizedText,
+      style.textTransform,
+    );
     final processedText = _applyUnicodeBidi(
       transformedText,
       style.unicodeBidi,
@@ -1598,12 +1616,17 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
   /// Maps CSS text-decoration-style to Flutter ui.TextDecorationStyle.
   ui.TextDecorationStyle _mapDecorationStyle(String? value) {
     switch (value) {
-      case 'double': return ui.TextDecorationStyle.double;
-      case 'dotted': return ui.TextDecorationStyle.dotted;
-      case 'dashed': return ui.TextDecorationStyle.dashed;
-      case 'wavy': return ui.TextDecorationStyle.wavy;
+      case 'double':
+        return ui.TextDecorationStyle.double;
+      case 'dotted':
+        return ui.TextDecorationStyle.dotted;
+      case 'dashed':
+        return ui.TextDecorationStyle.dashed;
+      case 'wavy':
+        return ui.TextDecorationStyle.wavy;
       case 'solid':
-      default: return ui.TextDecorationStyle.solid;
+      default:
+        return ui.TextDecorationStyle.solid;
     }
   }
 
@@ -1629,10 +1652,10 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
     // Color can be at start or end
     final tokens = value.split(RegExp(r'\s+'));
     if (tokens.length < 2) return null;
-    
+
     var color = const ui.Color(0xFF000000);
     final numericTokens = <double>[];
-    
+
     for (final token in tokens) {
       final numVal = double.tryParse(token.replaceAll(RegExp(r'px$'), ''));
       if (numVal != null) {
@@ -1645,9 +1668,9 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
         }
       }
     }
-    
+
     if (numericTokens.length < 2) return null;
-    
+
     return ui.Shadow(
       offset: ui.Offset(numericTokens[0], numericTokens[1]),
       blurRadius: numericTokens.length > 2 ? numericTokens[2] : 0.0,
@@ -1686,12 +1709,16 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
     }
     // rgb/rgba
     if (normalized.startsWith('rgb')) {
-      final match = RegExp(r'rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*([\d.]+))?\s*\)').firstMatch(normalized);
+      final match = RegExp(
+        r'rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*([\d.]+))?\s*\)',
+      ).firstMatch(normalized);
       if (match != null) {
         final r = int.tryParse(match.group(1)!) ?? 0;
         final g = int.tryParse(match.group(2)!) ?? 0;
         final b = int.tryParse(match.group(3)!) ?? 0;
-        final a = match.group(4) != null ? ((double.tryParse(match.group(4)!) ?? 1.0) * 255).round() : 255;
+        final a = match.group(4) != null
+            ? ((double.tryParse(match.group(4)!) ?? 1.0) * 255).round()
+            : 255;
         return ui.Color.fromARGB(a, r, g, b);
       }
     }
@@ -1707,7 +1734,9 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
       final trimmed = setting.trim();
       if (trimmed.isEmpty) continue;
       // Format: "'axis' value" or '"axis" value'
-      final match = RegExp(r"""['"]([a-zA-Z0-9]{4})['"](?:\s+([\d.+-]+))?""").firstMatch(trimmed);
+      final match = RegExp(
+        r"""['"]([a-zA-Z0-9]{4})['"](?:\s+([\d.+-]+))?""",
+      ).firstMatch(trimmed);
       if (match != null) {
         final axis = match.group(1)!;
         final val = double.tryParse(match.group(2) ?? '1') ?? 1.0;

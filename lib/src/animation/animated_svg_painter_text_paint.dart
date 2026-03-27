@@ -489,8 +489,8 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
 
     // Determine paint order (default: fill first, then stroke)
     final paintOrderParts = style.paintOrder.split(RegExp(r'\s+'));
-    final strokeFirst = paintOrderParts.isNotEmpty &&
-        paintOrderParts.first == 'stroke';
+    final strokeFirst =
+        paintOrderParts.isNotEmpty && paintOrderParts.first == 'stroke';
 
     for (int i = 0; i < glyphs.length; i++) {
       final charIdx = cursor.charIndex + i;
@@ -676,11 +676,16 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
     );
 
     // Build stroke paragraph if stroke is defined
-    final strokeParagraph = _buildStrokeTextParagraph(text, effectiveStyle, node);
+    final strokeParagraph = _buildStrokeTextParagraph(
+      text,
+      effectiveStyle,
+      node,
+    );
 
     // Determine paint order (default: fill first, then stroke)
     final paintOrderParts = effectiveStyle.paintOrder.split(RegExp(r'\s+'));
-    final strokeFirst = strokeParagraph != null &&
+    final strokeFirst =
+        strokeParagraph != null &&
         paintOrderParts.isNotEmpty &&
         paintOrderParts.first == 'stroke';
 
@@ -915,8 +920,8 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
 
     // Determine paint order (default: fill first, then stroke)
     final paintOrderParts = style.paintOrder.split(RegExp(r'\s+'));
-    final strokeFirst = paintOrderParts.isNotEmpty &&
-        paintOrderParts.first == 'stroke';
+    final strokeFirst =
+        paintOrderParts.isNotEmpty && paintOrderParts.first == 'stroke';
 
     var consumed = 0.0;
     var cursor = drawOffset;
