@@ -93,4 +93,12 @@ class CssParser {
   ) {
     return CssShorthandExpander.expandAll(properties);
   }
+
+  /// Parses @font-face rules from CSS text.
+  ///
+  /// Extracts all @font-face blocks and parses their properties into
+  /// [CssFontFaceRule] objects containing font-family, src, font-weight, etc.
+  static List<CssFontFaceRule> parseFontFaceRules(String cssText) {
+    return extractFontFaceRules(cssText);
+  }
 }

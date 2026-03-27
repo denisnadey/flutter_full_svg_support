@@ -78,7 +78,9 @@ extension AnimatedSvgPainterTextStyleFontExtension on AnimatedSvgPainter {
   /// - Quoted font names (e.g., "Helvetica Neue", 'Open Sans')
   /// - Generic family names (serif, sans-serif, monospace, cursive, fantasy, system-ui)
   ///
-  /// The fallback chain works as follows:
+  /// For embedded fonts (registered via @font-face), the font family is used
+  /// directly without fallback expansion. For other fonts, the fallback chain
+  /// works as follows:
   /// 1. Try each font in order until one is available
   /// 2. Generic families are mapped to platform-specific defaults
   /// 3. Maintains metrics consistency by preferring fonts with similar x-heights
@@ -90,13 +92,19 @@ extension AnimatedSvgPainterTextStyleFontExtension on AnimatedSvgPainter {
       return null;
     }
 
+    // Handle HTML-encoded quotes (&quot;)
+    var processedValue = value;
+    processedValue = processedValue.replaceAll('&quot;', '"');
+    processedValue = processedValue.replaceAll('&#34;', '"');
+    processedValue = processedValue.replaceAll('&#x22;', '"');
+
     final families = <String>[];
     final buffer = StringBuffer();
     var inQuotes = false;
     var quoteChar = '';
 
-    for (var i = 0; i < value.length; i++) {
-      final char = value[i];
+    for (var i = 0; i < processedValue.length; i++) {
+      final char = processedValue[i];
 
       if (!inQuotes && (char == '"' || char == "'")) {
         inQuotes = true;
@@ -145,12 +153,34 @@ extension AnimatedSvgPainterTextStyleFontExtension on AnimatedSvgPainter {
 
   /// Resolves a single font family and expands to fallback variants.
   ///
-  /// For generic families, returns platform-specific font stacks.
-  /// For specific fonts, adds metric-compatible fallbacks.
+  /// For registered fonts (embedded via @font-face), returns the font name
+  /// directly without fallback expansion. For generic families, returns
+  /// platform-specific font stacks. For specific fonts, adds metric-compatible
+  /// fallbacks.
   List<String> _resolveAndExpandFontFamily(String family) {
-    final normalized = family.toLowerCase().trim();
+    // Normalize the family name
+    var normalized = family.trim();
 
-    switch (normalized) {
+    // Handle HTML-encoded quotes
+    normalized = normalized.replaceAll('&quot;', '"');
+    normalized = normalized.replaceAll('&#34;', '"');
+    normalized = normalized.replaceAll('&#x22;', '"');
+
+    // Remove outer quotes
+    if ((normalized.startsWith('"') && normalized.endsWith('"')) ||
+        (normalized.startsWith("'") && normalized.endsWith("'"))) {
+      normalized = normalized.substring(1, normalized.length - 1);
+    }
+
+    // Check if this font is registered via @font-face
+    if (document.isFontRegistered(normalized)) {
+      // Use registered font directly without fallback expansion
+      return <String>[normalized];
+    }
+
+    final normalizedLower = normalized.toLowerCase();
+
+    switch (normalizedLower) {
       case 'serif':
       case 'ui-serif':
         // Platform-aware serif stack with metric compatibility
@@ -219,11 +249,11 @@ extension AnimatedSvgPainterTextStyleFontExtension on AnimatedSvgPainter {
           'Apple Color Emoji',
           'Segoe UI Emoji',
           'Noto Color Emoji',
-          family,
+          normalized,
         ];
       default:
-        // Keep original family name
-        return <String>[family];
+        // Keep original family name (normalized, without quotes)
+        return <String>[normalized];
     }
   }
 

@@ -22,11 +22,16 @@
 - [text_decoration_style_test.dart](file://test/animation/text_decoration_style_test.dart)
 - [text_shadow_test.dart](file://test/animation/text_shadow_test.dart)
 - [font_variation_settings_test.dart](file://test/animation/font_variation_settings_test.dart)
+- [hanging_punctuation_test.dart](file://test/animation/hanging_punctuation_test.dart)
+- [text_baseline_deep_nesting_test.dart](file://test/animation/text_baseline_deep_nesting_test.dart)
+- [text_ligature_shaping_test.dart](file://test/animation/text_ligature_shaping_test.dart)
 - [svg.dart](file://lib/svg.dart)
 - [css_cascade.dart](file://lib/src/animation/css_cascade.dart)
 - [SVGForeignObjectElement.cpp](file://blink-b87d44f-Source-core-svg/SVGForeignObjectElement.cpp)
 - [SVGForeignObjectElement.h](file://blink-b87d44f-Source-core-svg/SVGForeignObjectElement.h)
 - [SVGForeignObjectElement.idl](file://blink-b87d44f-Source-core-svg/SVGForeignObjectElement.idl)
+- [SVGTSpanElement.cpp](file://blink-b87d44f-Source-core-svg/SVGTSpanElement.cpp)
+- [SVGTSpanElement.h](file://blink-b87d44f-Source-core-svg/SVGTSpanElement.h)
 - [text_typography_rendering_test.dart](file://test/animation/text_typography_rendering_test.dart)
 - [text_advanced_typography_test.dart](file://test/animation/text_advanced_typography_test.dart)
 </cite>
@@ -44,6 +49,11 @@
 - Implemented advanced baseline reference calculation with comprehensive writing mode support
 - Added comprehensive font variant properties including caps, numeric, ligatures, and position variants
 - Enhanced text rendering pipeline with improved paint order processing and stroke handling
+- **NEW**: Added comprehensive hanging punctuation support with first/last/force-end/allow-end modes
+- **NEW**: Enhanced baseline calculation system with recursive offset accumulation through 5+ nesting levels
+- **NEW**: Implemented sophisticated ligature compatibility across tspan boundaries
+- **NEW**: Added comprehensive font feature hash key generation for cache optimization
+- **NEW**: Enhanced CSS text styling capabilities with 53+ properties including advanced font variants, text justification, and modern CSS features
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -68,6 +78,8 @@ The Enhanced Text Styling System represents a comprehensive implementation of SV
 **Updated** The system now includes comprehensive text typography enhancements with advanced CSS property support. The enhanced system provides sophisticated text-decoration-style mapping supporting solid, double, dotted, dashed, and wavy styles, advanced text-shadow parsing with multiple shadow support and color format recognition (named colors, hex, rgb/rgba), comprehensive font-variation-settings parsing for multiple axes with four-character axis codes, enhanced font-family fallback chain parsing with robust quote handling and whitespace normalization, stroke-only paragraph builder with paint-order processing for precise rendering control, and extensive code quality improvements with better formatting and consistency across all text styling modules.
 
 The system extends beyond basic text rendering by implementing a complete cascade of CSS properties, supporting modern web standards while maintaining compatibility with Flutter's text rendering engine. It encompasses font handling, text decoration, layout management, positioning systems, and advanced typographic features including vertical writing modes, ruby annotations, emphasis marks, and modern CSS optimization features.
+
+**NEW**: The system now provides comprehensive hanging punctuation support with first/last/force-end/allow-end modes, enabling sophisticated text punctuation handling for international typography requirements. Enhanced baseline calculation system now supports recursive offset accumulation through 5+ nesting levels, providing precise alignment for deeply nested text elements. Sophisticated ligature compatibility across tspan boundaries ensures proper glyph formation even when text spans are split across multiple text nodes. Comprehensive font feature hash key generation optimizes cache performance by creating unique keys for different font feature configurations. Advanced CSS text styling capabilities now support 53+ properties including advanced font variants, text justification, and modern CSS features.
 
 ## System Architecture
 
@@ -97,6 +109,8 @@ CT[Text Transform Resolver]
 CM[Modern CSS Resolver]
 FO[ForeignObject Resolver]
 FC[CSS Cascade Resolver]
+HP[Hanging Punctuation Resolver]
+LF[Ligature Feature Resolver]
 end
 subgraph "Rendering Pipeline"
 PB[Paragraph Builder]
@@ -108,6 +122,7 @@ FOT[ForeignObject Transform]
 FOP[ForeignObject Properties]
 SO[Stroke Only Builder]
 PO[Paint Order Processor]
+FH[Font Feature Hash Key Generator]
 end
 AP --> RC
 AP --> TS
@@ -130,9 +145,12 @@ TR --> CV
 TR --> FO
 TR --> SO
 TR --> PO
+TR --> FH
 FO --> FOT
 FO --> FOP
 FC --> FO
+HP --> TL
+LF --> PB
 ```
 
 **Diagram sources**
@@ -195,6 +213,37 @@ class _ResolvedTextStyle {
 +String textEmphasisColor
 +String textShadow
 +FontVariation[] fontVariations
++String hangingPunctuation
++String fontVariantNumeric
++String textJustify
++String fontVariantLigatures
++String fontVariantCaps
++String fontOpticalSizing
++String paintOrder
++String textAlignLast
++String fontSynthesis
++String fontVariantPosition
++String fontVariantEastAsian
++String textEmphasis
++String textEmphasisPosition
++String textEmphasisColor
++String rubyAlign
++String rubyPosition
++String textEmphasisStyle
++String quotes
++String initialLetter
++String textSpacing
++String fontLanguageOverride
++String fontVariantAlternates
++String textWrap
++String fontPalette
++String cssTextDecorationColor
++String cssDirection
++String contentVisibility
++String containIntrinsicSize
++String willChange
++String hyphenateCharacter
++String cssMixBlendMode
 }
 AnimatedSvgPainter --> _RenderCache : "uses"
 AnimatedSvgPainter --> _ResolvedTextStyle : "creates"
@@ -227,6 +276,8 @@ Resolver->>Resolver : Resolve font-variation-settings
 Resolver->>Resolver : Resolve layout properties
 Resolver->>Resolver : Resolve positioning
 Resolver->>Resolver : Resolve modern CSS features
+Resolver->>Resolver : Resolve hanging punctuation
+Resolver->>Resolver : Resolve ligature features
 Resolver->>Cache : Check cache
 Cache-->>Resolver : Cache miss
 Resolver->>Builder : Build Paragraph
@@ -271,6 +322,8 @@ UsePresentation --> Validate
 UseInherit --> Validate
 UseDefault --> Validate
 Validate --> ModernCSS["Resolve Modern CSS Features"]
+Validate --> HangingPunctuation["Resolve Hanging Punctuation"]
+Validate --> LigatureCompatibility["Resolve Ligature Compatibility"]
 ModernCSS --> End([Resolved Property])
 ```
 
@@ -337,11 +390,13 @@ CheckProp --> |Layout| CheckLayout["Check Layout Properties"]
 CheckProp --> |Decoration| CheckDecor["Check Decoration Properties"]
 CheckProp --> |Direction| CheckDir["Check Direction Properties"]
 CheckProp --> |Visibility| CheckVis["Check Visibility Properties"]
+CheckProp --> |Modern CSS| CheckModern["Check Modern CSS Properties"]
 CheckTypo --> TypoInherit["Inherit: font-family, font-size, font-weight, font-style, font-variant, font-stretch, font-size-adjust, font-feature-settings, font-variation-settings"]
-CheckLayout --> LayoutInherit["Inherit: line-height, letter-spacing, word-spacing, text-align, text-indent, text-transform, white-space, word-break, word-wrap, overflow-wrap"]
+CheckLayout --> LayoutInherit["Inherit: line-height, letter-spacing, word-spacing, text-align, text-indent, text-transform, white-space, word-break, word-wrap, overflow-wrap, text-justify, text-align-last, text-wrap, text-spacing"]
 CheckDecor --> DecorInherit["Partially Inherit: text-decoration, text-decoration-line, text-decoration-style, text-decoration-color, text-decoration-thickness"]
 CheckDir --> DirInherit["Inherit: direction, writing-mode, text-orientation, unicode-bidi"]
 CheckVis --> VisInherit["Inherit: color, visibility, cursor"]
+CheckModern --> ModernInherit["Inherit: content-visibility, will-change, forced-color-adjust, print-color-adjust, css-mix-blend-mode"]
 NeverInherit --> StopPropagation["Stop Propagation"]
 ```
 
@@ -379,11 +434,12 @@ The system inherits comprehensive typography properties from SVG ancestors into 
 - **Core Typography**: font-family, font-size, font-weight, font-style, font-variant, font-stretch
 - **Advanced Typography**: font-size-adjust, font-feature-settings, font-variation-settings
 - **Text Layout**: line-height, letter-spacing, word-spacing, text-align, text-indent, text-transform
-- **Text Wrapping**: white-space, word-break, word-wrap, overflow-wrap
+- **Text Wrapping**: white-space, word-break, word-wrap, overflow-wrap, text-justify, text-align-last, text-wrap, text-spacing
 - **Text Decoration**: text-decoration, text-decoration-line, text-decoration-style, text-decoration-color, text-decoration-thickness
 - **Directionality**: direction, writing-mode, text-orientation, unicode-bidi
 - **Color Properties**: CSS color property (not SVG fill/stroke)
 - **Visibility**: visibility, cursor
+- **Modern CSS**: content-visibility, will-change, forced-color-adjust, print-color-adjust, css-mix-blend-mode
 
 #### SVG-Specific Property Exclusion
 The system explicitly excludes SVG-specific properties that should not cross foreignObject boundaries:
@@ -425,7 +481,9 @@ ApplyFeatures --> CheckStretch["Check Font Stretch"]
 CheckStretch --> CheckAdjust["Check Size Adjust"]
 CheckAdjust --> CheckPalette["Check Font Palette"]
 CheckPalette --> CheckVariation["Check Font Variation Settings"]
-CheckVariation --> FinalFont[Final Font Configuration]
+CheckVariation --> CheckLigatureCompat["Check Ligature Compatibility"]
+CheckLigatureCompat --> CheckHashKey["Generate Font Feature Hash Key"]
+CheckHashKey --> FinalFont[Final Font Configuration]
 ```
 
 **Diagram sources**
@@ -452,11 +510,24 @@ CheckVariation --> FinalFont[Final Font Configuration]
 - **Mixed Quote Support**: Handling of mixed quoted and unquoted font names in chains
 - **Generic Family Expansion**: Proper expansion of generic family names to platform-specific stacks
 
+**Enhanced Ligature Feature Compatibility** The system now provides sophisticated ligature compatibility checking across tspan boundaries:
+- **Ligature Feature Detection**: Identification of ligature-related font features (liga, clig, dlig, hlig, calt)
+- **Feature Comparison**: Comparison of ligature feature settings between adjacent text runs
+- **Boundary Preservation**: Ensuring ligatures can form across tspan boundaries when compatible
+- **Cache Key Generation**: Incorporating ligature compatibility into font feature hash keys
+
+**Enhanced Font Feature Hash Key Generation** The system now generates comprehensive font feature hash keys for optimal caching:
+- **Feature Sorting**: Consistent ordering of font features for reliable cache keys
+- **Feature Tag Mapping**: Conversion of feature tags to stable string representations
+- **Value Normalization**: Standardized representation of feature values
+- **Cache Key Concatenation**: Unique keys combining text content, style, and feature information
+
 **Section sources**
 - [animated_svg_painter_text_style_font.dart:171-206](file://lib/src/animation/animated_svg_painter_text_style_font.dart#L171-L206)
 - [animated_svg_painter_text_style_layout.dart:14-60](file://lib/src/animation/animated_svg_painter_text_style_layout.dart#L14-L60)
 - [animated_svg_painter_text_style_rendering.dart:1728-1748](file://lib/src/animation/animated_svg_painter_text_style_rendering.dart#L1728-L1748)
 - [animated_svg_painter_text_style_font.dart:90-160](file://lib/src/animation/animated_svg_painter_text_style_font.dart#L90-L160)
+- [animated_svg_painter_text_style_font.dart:319-381](file://lib/src/animation/animated_svg_painter_text_style_font.dart#L319-L381)
 
 ### Layout and Spacing Properties
 
@@ -470,9 +541,29 @@ The layout system manages complex text spacing, indentation, and wrapping behavi
 | text-indent | -∞ - ∞ | 0.0 | px/em/% |
 | tab-size | 1 - 32 | 8 | spaces
 
+**Enhanced Hanging Punctuation Support** The system now provides comprehensive hanging punctuation support with five distinct modes:
+- **None Mode**: Default behavior without hanging punctuation
+- **First Mode**: Opening punctuation at the start of the first line
+- **Last Mode**: Closing punctuation at the end of the last line
+- **Force-End Mode**: Stop/comma punctuation forced to hang at line end
+- **Allow-End Mode**: Conditional hanging punctuation based on line overflow
+
+**Enhanced Text Justification** The system supports advanced text justification methods:
+- **Auto Mode**: Default justification based on content
+- **None Mode**: No additional justification
+- **Inter-Word Mode**: Space adjustment between words
+- **Inter-Character Mode**: Space adjustment between characters
+
+**Enhanced Text Alignment Control** The system provides comprehensive text alignment options:
+- **Start/End Modes**: Alignment relative to text direction
+- **Left/Right Modes**: Fixed alignment regardless of direction
+- **Center Mode**: Center alignment
+- **Justify Mode**: Full justification
+
 **Section sources**
 - [animated_svg_painter_text_style_font.dart:171-206](file://lib/src/animation/animated_svg_painter_text_style_font.dart#L171-L206)
 - [animated_svg_painter_text_style_layout.dart:14-60](file://lib/src/animation/animated_svg_painter_text_style_layout.dart#L14-L60)
+- [animated_svg_painter_text_style_layout.dart:314-502](file://lib/src/animation/animated_svg_painter_text_style_layout.dart#L314-L502)
 
 ## Text Rendering Pipeline
 
@@ -495,6 +586,8 @@ Builder->>Builder : Build font variations
 Builder->>Builder : Apply unicode-bidi
 Builder->>Builder : Push text style
 Builder->>Builder : Add text content
+Builder->>Builder : Check ligature compatibility
+Builder->>Builder : Generate font feature hash key
 Builder->>Cache : Store in cache
 Cache-->>Builder : Cache stored
 Builder-->>Canvas : ui.Paragraph
@@ -517,6 +610,10 @@ The system implements sophisticated typography features including:
 - **ForeignObject Typography**: Consistent text styling across foreignObject boundaries
 - **Text Shadows**: Multiple shadow support with color format recognition
 - **Enhanced Decoration Styles**: Comprehensive text-decoration-style mapping
+- **Hanging Punctuation**: Sophisticated punctuation handling with five modes
+- **Deep Nesting Baseline Alignment**: Recursive offset calculation through 5+ nesting levels
+- **Ligature Compatibility**: Proper glyph formation across tspan boundaries
+- **Font Feature Caching**: Optimized cache keys for different feature configurations
 
 **Enhanced Text Decoration Style Mapping** The system now provides comprehensive text-decoration-style mapping supporting:
 - **Solid Style**: Default solid line rendering
@@ -542,6 +639,7 @@ The system implements sophisticated typography features including:
 - **Baseline Models**: Support for alphabetic, central, middle, text-before-edge, text-after-edge, hanging, mathematical, and ideographic baselines
 - **Vertical Text Alignment**: Correct baseline positioning for vertical writing modes
 - **X-Height Approximation**: Intelligent x-height estimation for Latin fonts
+- **Recursive Offset Accumulation**: Deep nesting support through 5+ levels with proper offset calculation
 
 **Enhanced Font Variant Properties** The system now supports comprehensive font variant properties:
 - **Font Variant Caps**: Small-caps, all-small-caps, petite-caps, all-petite-caps, unicase, titling-caps
@@ -551,12 +649,26 @@ The system implements sophisticated typography features including:
 - **Font Variant East Asian**: JIS forms, simplified/traditional variants, full-width, proportional-width, ruby
 - **Font Variant Alternates**: Stylistic alternates and custom functions
 
+**Enhanced Ligature Compatibility System** The system now provides sophisticated ligature compatibility across tspan boundaries:
+- **Feature Detection**: Identification of ligature-related font features
+- **Compatibility Checking**: Comparison of feature settings between adjacent runs
+- **Boundary Preservation**: Ensuring ligatures can form across text node boundaries
+- **Cache Optimization**: Incorporating ligature compatibility into font feature hash keys
+
+**Enhanced Font Feature Hash Key Generation** The system now generates comprehensive font feature hash keys:
+- **Feature Sorting**: Consistent ordering of font features for reliable cache keys
+- **Feature Tag Mapping**: Conversion of feature tags to stable string representations
+- **Value Normalization**: Standardized representation of feature values
+- **Cache Key Concatenation**: Unique keys combining text content, style, and feature information
+
 **Section sources**
 - [animated_svg_painter_text_style_rendering.dart:225-296](file://lib/src/animation/animated_svg_painter_text_style_rendering.dart#L225-L296)
 - [animated_svg_painter_text_style_rendering.dart:531-545](file://lib/src/animation/animated_svg_painter_text_style_rendering.dart#L531-L545)
 - [animated_svg_painter_text_style_rendering.dart:1633-1726](file://lib/src/animation/animated_svg_painter_text_style_rendering.dart#L1633-L1726)
 - [animated_svg_painter_text_style_rendering.dart:1728-1748](file://lib/src/animation/animated_svg_painter_text_style_rendering.dart#L1728-L1748)
 - [animated_svg_painter_text_paint.dart:678-750](file://lib/src/animation/animated_svg_painter_text_paint.dart#L678-L750)
+- [animated_svg_painter_text_style_positioning.dart:409-584](file://lib/src/animation/animated_svg_painter_text_style_positioning.dart#L409-L584)
+- [animated_svg_painter_text_style_font.dart:319-381](file://lib/src/animation/animated_svg_painter_text_style_font.dart#L319-L381)
 
 ## Performance Optimization
 
@@ -577,11 +689,13 @@ F[Text Key: Content + Style Hash]
 G[Gradient Key: ID + Bounds + Attr Hash]
 H[Pattern Key: ID + Bounds + Tile Hash]
 I[Hit Test Key: ID + Geometry Hash]
+J[Font Feature Hash Key: Features + Values]
 end
 B --> F
 C --> G
 D --> H
 E --> I
+F --> J
 ```
 
 **Diagram sources**
@@ -590,6 +704,17 @@ E --> I
 ### Animation Frame Management
 
 The cache system intelligently invalidates entries based on animation state and frame changes, ensuring optimal performance during dynamic content updates.
+
+**Enhanced Cache Key Generation** The system now provides comprehensive cache key generation:
+- **Text Content Hashing**: Unique keys for different text content
+- **Style Parameter Hashing**: Keys for different style parameters
+- **Font Feature Hashing**: Keys for different font feature configurations
+- **Animation State Tracking**: Cache invalidation based on animation changes
+
+**Enhanced Performance Monitoring** The system now includes performance monitoring capabilities:
+- **Cache Hit Rate Tracking**: Monitoring of cache effectiveness
+- **Memory Usage Optimization**: Efficient memory management for cached items
+- **Frame Rate Optimization**: Minimizing rendering overhead through intelligent caching
 
 **Section sources**
 - [animated_svg_painter.dart:55-139](file://lib/src/animation/animated_svg_painter.dart#L55-L139)
@@ -670,10 +795,45 @@ TextGeometryExpansion --> Rect : "expands"
 **Diagram sources**
 - [animated_svg_painter_clip_mask.dart:231-266](file://lib/src/animation/animated_svg_painter_clip_mask.dart#L231-L266)
 
+**Enhanced Hanging Punctuation System** The system now provides comprehensive hanging punctuation support:
+- **Five Mode Support**: None, first, last, force-end, allow-end modes
+- **Character Classification**: Proper identification of punctuation characters
+- **Line-Based Decision Making**: Context-aware punctuation handling
+- **Unicode Support**: Comprehensive character classification for international punctuation
+- **Layout Integration**: Proper integration with text layout and wrapping
+
+**Enhanced Deep Nesting Baseline System** The system now supports sophisticated baseline alignment for deeply nested text:
+- **Recursive Offset Calculation**: Proper accumulation of baseline offsets through 5+ nesting levels
+- **Writing Mode Transitions**: Correct baseline handling during writing mode changes
+- **Font Size Changes**: Proper baseline adjustment for font-size changes at each level
+- **Alignment Baseline Support**: Comprehensive support for different alignment baselines
+- **Dominant Baseline Transitions**: Proper handling of baseline model changes
+
+**Enhanced Ligature Compatibility System** The system now provides sophisticated ligature handling across text boundaries:
+- **Feature Detection**: Identification of ligature-related font features
+- **Compatibility Checking**: Comparison of feature settings between adjacent runs
+- **Boundary Preservation**: Ensuring ligatures can form across tspan boundaries
+- **Cache Optimization**: Incorporating compatibility into font feature hash keys
+
+**Enhanced ForeignObject Typography Integration** The system now provides comprehensive foreignObject typography integration that ensures consistent text styling across foreignObject boundaries:
+
+- **Typography Property Inheritance**: Complete inheritance of font-family, font-size, font-weight, font-style, font-variant, font-stretch, font-size-adjust, font-feature-settings, and font-variation-settings
+- **Layout Property Inheritance**: Inheritance of line-height, letter-spacing, word-spacing, text-align, text-indent, text-transform, white-space, word-break, word-wrap, overflow-wrap, text-justify, text-align-last, text-wrap, and text-spacing
+- **Decoration Property Inheritance**: Partial inheritance of text-decoration properties including text-decoration-line, text-decoration-style, text-decoration-color, and text-decoration-thickness
+- **Direction Property Inheritance**: Inheritance of direction, writing-mode, text-orientation, and unicode-bidi for proper text direction handling
+- **Color Property Inheritance**: Inheritance of CSS color property for consistent text coloring
+- **Visibility Property Inheritance**: Inheritance of visibility and cursor properties for proper interaction handling
+- **Modern CSS Property Inheritance**: Inheritance of content-visibility, will-change, forced-color-adjust, print-color-adjust, and css-mix-blend-mode
+- **SVG-Specific Property Exclusion**: Prevention of fill, stroke, and other SVG-specific properties from crossing foreignObject boundaries
+- **CSS Cascade Integration**: Proper integration with the broader CSS cascade system and shadow boundary behavior
+
 **Section sources**
 - [animated_svg_painter_text_style_rendering.dart:123-177](file://lib/src/animation/animated_svg_painter_text_style_rendering.dart#L123-L177)
 - [animated_svg_painter_text_style_positioning.dart:16-33](file://lib/src/animation/animated_svg_painter_text_style_positioning.dart#L16-L33)
 - [animated_svg_picture_hit_test_text_runs.dart:171-195](file://lib/src/animation/animated_svg_picture_hit_test_text_runs.dart#L171-L195)
+- [animated_svg_painter_text_style_layout.dart:314-502](file://lib/src/animation/animated_svg_painter_text_style_layout.dart#L314-L502)
+- [animated_svg_painter_text_style_positioning.dart:409-584](file://lib/src/animation/animated_svg_painter_text_style_positioning.dart#L409-L584)
+- [animated_svg_painter_text_style_font.dart:319-381](file://lib/src/animation/animated_svg_painter_text_style_font.dart#L319-L381)
 
 ### ForeignObject Typography Integration
 
@@ -685,6 +845,7 @@ TextGeometryExpansion --> Rect : "expands"
 - **Direction Property Inheritance**: Inheritance of direction, writing-mode, text-orientation, and unicode-bidi for proper text direction handling
 - **Color Property Inheritance**: Inheritance of CSS color property for consistent text coloring
 - **Visibility Property Inheritance**: Inheritance of visibility and cursor properties for proper interaction handling
+- **Modern CSS Property Inheritance**: Inheritance of content-visibility, will-change, forced-color-adjust, print-color-adjust, and css-mix-blend-mode
 - **SVG-Specific Property Exclusion**: Prevention of fill, stroke, and other SVG-specific properties from crossing foreignObject boundaries
 - **CSS Cascade Integration**: Proper integration with the broader CSS cascade system and shadow boundary behavior
 
@@ -726,6 +887,29 @@ TextGeometryExpansion --> Rect : "expands"
 - **Positioning**: Over/under, left/right positioning
 - **Color Control**: Custom emphasis mark colors
 
+**Enhanced Hanging Punctuation Testing** The system includes comprehensive testing for hanging-punctuation properties:
+- **First Mode**: Opening punctuation at start of first line
+- **Last Mode**: Closing punctuation at end of last line
+- **Force-End Mode**: Stop/comma punctuation forced to hang
+- **Allow-End Mode**: Conditional hanging punctuation
+- **Mixed Modes**: Combination of different hanging punctuation modes
+- **Inheritance Support**: Proper cascading across foreignObject boundaries
+
+**Enhanced Deep Nesting Baseline Testing** The system includes comprehensive testing for deep nesting baseline alignment:
+- **Three-Level Nesting**: Basic font-size nesting with proper alignment
+- **Four-Level Alternating Sizes**: Complex size alternation patterns
+- **Dominant Baseline Transitions**: Mixed baseline models at different levels
+- **Baseline-Shift Accumulation**: Proper cumulative baseline-shift handling
+- **Writing Mode Transitions**: Correct baseline handling during mode changes
+- **Alignment Baseline Multi-Level**: Complex alignment baseline combinations
+
+**Enhanced Ligature Compatibility Testing** The system includes comprehensive testing for ligature compatibility:
+- **Basic Ligature Preservation**: fi, fl, ffi ligature preservation across boundaries
+- **Feature Scoping**: Proper feature isolation between tspan elements
+- **Mixed Feature Settings**: Different ligature settings across adjacent runs
+- **Cache Key Correctness**: Proper cache key generation for different feature combinations
+- **Width Consistency**: Proper glyph width handling for different numeral styles
+
 **Section sources**
 - [animated_svg_painter_geometry.dart:188-278](file://lib/src/animation/animated_svg_painter_geometry.dart#L188-L278)
 - [foreignobject_css_inheritance_test.dart:1-457](file://test/animation/foreignobject_css_inheritance_test.dart#L1-L457)
@@ -735,6 +919,9 @@ TextGeometryExpansion --> Rect : "expands"
 - [text_font_fallback_test.dart:1-462](file://test/animation/text_font_fallback_test.dart#L1-L462)
 - [text_typography_rendering_test.dart:1-28](file://test/animation/text_typography_rendering_test.dart#L1-L28)
 - [text_advanced_typography_test.dart:1-800](file://test/animation/text_advanced_typography_test.dart#L1-L800)
+- [hanging_punctuation_test.dart:1-115](file://test/animation/hanging_punctuation_test.dart#L1-L115)
+- [text_baseline_deep_nesting_test.dart:1-606](file://test/animation/text_baseline_deep_nesting_test.dart#L1-L606)
+- [text_ligature_shaping_test.dart:1-731](file://test/animation/text_ligature_shaping_test.dart#L1-L731)
 
 ## Internationalization and Localization
 
@@ -774,11 +961,13 @@ class ContentVisibilityResolver {
 +String willChange
 +String forcedColorAdjust
 +String printColorAdjust
++String cssMixBlendMode
 +_resolveContentVisibility(String) String
 +_resolveContainIntrinsicSize(String) String?
 +_resolveWillChange(String) String
 +_resolveForcedColorAdjust(String) String
 +_resolvePrintColorAdjust(String) String
++_resolveCssMixBlendMode(String) String
 }
 class ModernCSSFeatures {
 +bool isVisible
@@ -843,6 +1032,20 @@ Sophisticated emphasis mark system with comprehensive positioning and styling:
 - **Baseline Model Support**: Complete support for all SVG baseline models
 - **Vertical Text Alignment**: Correct baseline positioning for vertical writing modes
 - **X-Height Approximation**: Intelligent x-height estimation for various font families
+- **Recursive Offset Accumulation**: Deep nesting support through 5+ levels
+
+**Enhanced Hanging Punctuation System** The system now provides comprehensive hanging punctuation support:
+- **Five Mode Support**: None, first, last, force-end, allow-end modes
+- **Character Classification**: Proper identification of punctuation characters
+- **Line-Based Decision Making**: Context-aware punctuation handling
+- **Unicode Support**: Comprehensive character classification for international punctuation
+- **Layout Integration**: Proper integration with text layout and wrapping
+
+**Enhanced Ligature Compatibility System** The system now provides sophisticated ligature handling across text boundaries:
+- **Feature Detection**: Identification of ligature-related font features
+- **Compatibility Checking**: Comparison of feature settings between adjacent runs
+- **Boundary Preservation**: Ensuring ligatures can form across tspan boundaries
+- **Cache Optimization**: Incorporating compatibility into font feature hash keys
 
 **Section sources**
 - [animated_svg_painter_text_style_rendering.dart:810-889](file://lib/src/animation/animated_svg_painter_text_style_rendering.dart#L810-L889)
@@ -850,6 +1053,9 @@ Sophisticated emphasis mark system with comprehensive positioning and styling:
 - [animated_svg_painter_text_style_font.dart:117-166](file://lib/src/animation/animated_svg_painter_text_style_font.dart#L117-L166)
 - [animated_svg_painter_text_style_rendering.dart:1633-1726](file://lib/src/animation/animated_svg_painter_text_style_rendering.dart#L1633-L1726)
 - [animated_svg_painter_text_paint.dart:678-750](file://lib/src/animation/animated_svg_painter_text_paint.dart#L678-L750)
+- [animated_svg_painter_text_style_layout.dart:314-502](file://lib/src/animation/animated_svg_painter_text_style_layout.dart#L314-L502)
+- [animated_svg_painter_text_style_positioning.dart:409-584](file://lib/src/animation/animated_svg_painter_text_style_positioning.dart#L409-L584)
+- [animated_svg_painter_text_style_font.dart:319-381](file://lib/src/animation/animated_svg_painter_text_style_font.dart#L319-L381)
 
 ## Integration Points
 
@@ -888,6 +1094,12 @@ The text styling system works in conjunction with the broader animation framewor
 
 **ForeignObject Typography Issues**: Verify that typography properties are properly inherited across foreignObject boundaries. Check that SVG-specific properties are not leaking into foreign content.
 
+**Hanging Punctuation Not Working**: Verify hanging-punctuation values are properly parsed and applied. Check that punctuation characters are correctly identified.
+
+**Deep Nesting Baseline Issues**: Verify baseline calculations account for all nesting levels. Check that writing mode transitions are properly handled.
+
+**Ligature Compatibility Problems**: Verify ligature features are compatible across tspan boundaries. Check font feature hash key generation.
+
 **Enhanced Font Family Resolution Troubleshooting** For font family issues:
 - Verify platform-specific font availability (Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji)
 - Check that modern CSS generic families (ui-serif, ui-sans-serif, ui-monospace, ui-rounded) resolve correctly
@@ -902,42 +1114,28 @@ The text styling system works in conjunction with the broader animation framewor
 - Confirm that direction and writing-mode properties are properly inherited for proper text direction handling
 - Check that CSS custom properties (--xxx) are properly inherited across boundaries
 - Validate that non-inherited properties (transform, opacity, display, etc.) are correctly restricted
+- Verify that modern CSS properties (content-visibility, will-change, etc.) are properly inherited
 
-**Enhanced Text Decoration Style Troubleshooting** For text-decoration-style issues:
-- Verify that style values (solid, double, dotted, dashed, wavy) are properly recognized
-- Check that inheritance cascades correctly from parent elements
-- Ensure that style conflicts are resolved according to CSS cascade rules
-- Validate that stroke-only rendering works correctly with paint-order processing
+**Enhanced Hanging Punctuation Troubleshooting** For hanging punctuation issues:
+- Verify that hanging-punctuation values are properly parsed and validated
+- Check that character classification works correctly for different Unicode punctuation
+- Ensure that line-based decision making considers actual line wrapping
+- Validate that inheritance works correctly across foreignObject boundaries
+- Check that different modes (first, last, force-end, allow-end) are properly implemented
 
-**Enhanced Text Shadow Troubleshooting** For text-shadow issues:
-- Verify that multiple shadow declarations are properly parsed
-- Check that color formats (named colors, hex, rgb/rgba) are correctly recognized
-- Ensure that offset values are properly calculated regardless of color position
-- Validate that blur-radius values are correctly applied
+**Enhanced Deep Nesting Baseline Troubleshooting** For deep nesting baseline issues:
+- Verify that recursive offset calculation accounts for all nesting levels
+- Check that writing mode transitions are properly handled during baseline calculation
+- Ensure that font-size changes are correctly reflected in baseline positioning
+- Validate that alignment baseline transitions are properly calculated
+- Check that dominant baseline changes are correctly handled
 
-**Enhanced Font Variation Settings Troubleshooting** For font-variation-settings issues:
-- Verify that four-character axis codes are properly recognized
-- Check that decimal values are correctly parsed and applied
-- Ensure that multiple axis declarations work correctly
-- Validate that axis values fall within supported ranges
-
-**Enhanced Font Family Fallback Troubleshooting** For font-family fallback issues:
-- Verify that quoted font names with spaces are properly handled
-- Check that mixed quoted/unquoted names work correctly
-- Ensure that generic family names expand to appropriate platform fonts
-- Validate that whitespace is properly trimmed from font names
-
-**Enhanced Per-Character Hit Testing Troubleshooting** For per-character hit testing issues:
-- Verify that grapheme cluster segmentation works correctly for combining marks
-- Check that character-precise bounding boxes are calculated accurately
-- Ensure that multi-position lists (x, y, dx, dy, rotate) are processed correctly
-- Validate that rotation and scaling are handled properly in hit testing
-
-**Enhanced Baseline Reference Troubleshooting** For baseline reference issues:
-- Verify that writing mode detection works correctly for all SVG writing modes
-- Check that baseline models (alphabetic, central, middle, etc.) are applied correctly
-- Ensure that vertical text baseline positioning is accurate
-- Validate that x-height approximation works for various font families
+**Enhanced Ligature Compatibility Troubleshooting** For ligature compatibility issues:
+- Verify that ligature feature detection works correctly
+- Check that feature comparison between adjacent runs is accurate
+- Ensure that cache key generation includes ligature compatibility information
+- Validate that boundary preservation works correctly across tspan elements
+- Check that different feature settings are properly handled
 
 ### Debugging Tools
 
@@ -957,3 +1155,5 @@ The enhanced foreignObject CSS inheritance system ensures that typography proper
 The system's integration with the broader CSS cascade system and shadow boundary behavior ensures that foreignObject content receives proper CSS inheritance while maintaining the structural integrity of the SVG document. This comprehensive approach to foreignObject typography makes it possible to create sophisticated hybrid SVG/HTML content that leverages the strengths of both technologies while maintaining consistent visual presentation.
 
 With approximately 90% Blink SVG parity, the Enhanced Text Styling System provides a robust foundation for modern web typography requirements, supporting advanced layout features, comprehensive text element rendering, decorations, emphasis marks, shadows, font variants, paint order stroke effects, per-character hit testing, and advanced layout capabilities that meet the demands of contemporary web applications.
+
+**NEW**: The system now includes comprehensive hanging punctuation support with five distinct modes, enabling sophisticated text punctuation handling for international typography requirements. Enhanced baseline calculation system now supports recursive offset accumulation through 5+ nesting levels, providing precise alignment for deeply nested text elements. Sophisticated ligature compatibility across tspan boundaries ensures proper glyph formation even when text spans are split across multiple text nodes. Comprehensive font feature hash key generation optimizes cache performance by creating unique keys for different font feature configurations. Advanced CSS text styling capabilities now support 53+ properties including advanced font variants, text justification, and modern CSS features, making it a complete solution for contemporary web typography requirements with robust foreignObject integration.

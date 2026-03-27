@@ -450,8 +450,10 @@ class SvgDocument {
     this.filters,
     this.cssKeyframes,
     this.cssSelectorRules,
+    this.cssFontFaceRules,
   }) : _pseudoClassState = SvgPseudoClassState(),
-       _views = {};
+       _views = {},
+       _fontRegistry = SvgFontRegistry();
 
   /// Корневой <svg> узел
   final SvgNode root;
@@ -474,8 +476,14 @@ class SvgDocument {
   /// CSS selector rules (#id, .class)
   final List<CssSelectorRule>? cssSelectorRules;
 
+  /// CSS @font-face rules for embedded fonts.
+  final List<CssFontFaceRule>? cssFontFaceRules;
+
   /// Pseudo-class state manager for CSS :hover, :active, :focus
   final SvgPseudoClassState _pseudoClassState;
+
+  /// Font registry for managing embedded fonts.
+  final SvgFontRegistry _fontRegistry;
 
   /// Parsed <view> elements by ID
   final Map<String, SvgViewElement> _views;
@@ -561,6 +569,38 @@ class SvgDocument {
 
   /// Найти узлы по тегу
   List<SvgNode> getElementsByTag(String tagName) => root.findByTag(tagName);
+
+  // === Font Registration ===
+
+  /// Get the font registry for this document.
+  SvgFontRegistry get fontRegistry => _fontRegistry;
+
+  /// Check if a font family name is registered.
+  bool isFontRegistered(String fontFamily) =>
+      _fontRegistry.isRegistered(fontFamily);
+
+  /// Get the set of registered font family names.
+  Set<String> get registeredFontFamilies => _fontRegistry.registeredFontFamilies;
+
+  /// Registers all embedded @font-face fonts from the SVG document.
+  ///
+  /// This should be called once before rendering the SVG to ensure
+  /// embedded fonts are available. The method is async because font
+  /// loading with Flutter's FontLoader requires awaiting the load.
+  ///
+  /// Returns true if fonts were registered successfully (or no fonts
+  /// needed to be registered), false if there were errors.
+  Future<bool> registerEmbeddedFonts() async {
+    if (cssFontFaceRules == null || cssFontFaceRules!.isEmpty) {
+      return true;
+    }
+
+    await _fontRegistry.registerFonts(cssFontFaceRules!);
+    return _fontRegistry.errors.isEmpty;
+  }
+
+  /// Get any errors that occurred during font registration.
+  List<String> get fontRegistrationErrors => _fontRegistry.errors;
 
   /// Освободить ресурсы
   void dispose() {

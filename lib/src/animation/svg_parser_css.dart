@@ -37,3 +37,23 @@ List<CssSelectorRule> _parseSelectorRulesElements(
 
   return rules;
 }
+
+/// Parses CSS <style> elements and extracts @font-face rules.
+///
+/// Extracts all @font-face blocks from embedded CSS and returns a list
+/// of [CssFontFaceRule] objects containing font metadata and source.
+List<CssFontFaceRule> _parseFontFaceRulesElements(XmlElement svgElement) {
+  final rules = <CssFontFaceRule>[];
+
+  final styleElements = svgElement.findElements('style');
+
+  for (final styleElement in styleElements) {
+    final cssText = styleElement.innerText;
+    if (cssText.isEmpty) continue;
+
+    final parsedRules = CssParser.parseFontFaceRules(cssText);
+    rules.addAll(parsedRules);
+  }
+
+  return rules;
+}

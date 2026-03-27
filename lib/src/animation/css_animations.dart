@@ -1,5 +1,8 @@
 library;
 
+import 'svg_font_registry.dart';
+export 'svg_font_registry.dart';
+
 part 'css_animations_keyframes.dart';
 part 'css_animations_models.dart';
 part 'css_animations_parser.dart';

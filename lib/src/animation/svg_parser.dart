@@ -41,6 +41,9 @@ class SvgParser {
     // Парсим CSS правила для селекторов (id, class)
     final selectorRules = _parseSelectorRulesElements(svgElement);
 
+    // Parse @font-face rules for embedded fonts
+    final fontFaceRules = _parseFontFaceRulesElements(svgElement);
+
     // Парсим корневой <svg> элемент
     final rootNode = _parseElement(svgElement);
 
@@ -57,6 +60,7 @@ class SvgParser {
       filters: filters,
       cssKeyframes: keyframes,
       cssSelectorRules: selectorRules,
+      cssFontFaceRules: fontFaceRules.isEmpty ? null : fontFaceRules,
     );
 
     // Parse and register <view> elements
