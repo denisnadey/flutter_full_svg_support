@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+  <!-- Text with embedded font test: Using web-safe fallback fonts -->
+  <defs>
+    <!-- Note: For testing, we use generic fonts that should be available -->
+    <style type="text/css">
+      @font-face {
+        font-family: 'TestFont';
+        /* Fallback to generic fonts */
+      }
+      .custom-font {
+        font-family: 'TestFont', Georgia, serif;
+      }
+    </style>
+  </defs>
+  
+  <!-- Test font rendering with different declarations -->
+  <text x="50" y="80" class="custom-font" font-size="32" fill="#333333">Custom font class</text>
+  
+  <!-- Inline font-family with fallbacks -->
+  <text x="50" y="150" font-family="'Arial Black', Gadget, sans-serif" font-size="28" fill="#333333">Arial Black fallback</text>
+  
+  <text x="50" y="220" font-family="'Times New Roman', Times, serif" font-size="28" fill="#333333">Times New Roman</text>
+  
+  <text x="50" y="290" font-family="'Courier New', Courier, monospace" font-size="28" fill="#333333">Courier New</text>
+  
+  <!-- Different weights -->
+  <text x="50" y="360" font-family="Helvetica, Arial, sans-serif" font-size="24" font-weight="100" fill="#333333">Weight 100</text>
+  <text x="300" y="360" font-family="Helvetica, Arial, sans-serif" font-size="24" font-weight="400" fill="#333333">Weight 400</text>
+  <text x="550" y="360" font-family="Helvetica, Arial, sans-serif" font-size="24" font-weight="700" fill="#333333">Weight 700</text>
+  
+  <!-- Letter spacing -->
+  <text x="50" y="430" font-size="24" letter-spacing="2" fill="#333333">Letter spacing: 2</text>
+  <text x="50" y="480" font-size="24" letter-spacing="5" fill="#333333">Letter spacing: 5</text>
+  
+  <!-- Word spacing -->
+  <text x="50" y="530" font-size="24" word-spacing="10" fill="#333333">Word spacing test here</text>
+  
+  <!-- Text decoration -->
+  <text x="50" y="580" font-size="24" text-decoration="underline" fill="#333333">Underlined text</text>
+  <text x="350" y="580" font-size="24" text-decoration="line-through" fill="#333333">Line-through</text>
+</svg>

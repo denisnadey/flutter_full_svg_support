@@ -41,6 +41,7 @@ extension _AnimatedSvgPictureStateLifecycleExtension
       }
 
       _scheduleImagePreload();
+      _scheduleFontRegistration();
 
       if (_hasAnimations) {
         // Парсим анимации
@@ -319,5 +320,69 @@ extension _AnimatedSvgPictureStateLifecycleExtension
     _timeline = null;
     _hoveredElementId = null;
     _hoveredAnchorInfo = null;
+  }
+
+  /// Schedules font registration for embedded @font-face fonts.
+  ///
+  /// This mirrors the image preload pattern: async work with generation guards.
+  void _scheduleFontRegistration() {
+    final fontFaceRules = _document.cssFontFaceRules;
+    if (fontFaceRules == null || fontFaceRules.isEmpty) {
+      return;
+    }
+
+    final generation = _imageLoadGeneration;
+
+    _trace(
+      category: 'font',
+      message: 'Font registration scheduled',
+      data: <String, Object?>{'count': fontFaceRules.length},
+    );
+
+    unawaited(_registerFontsAndRepaint(generation));
+  }
+
+  /// Registers embedded fonts and triggers repaint on success.
+  Future<void> _registerFontsAndRepaint(int generation) async {
+    try {
+      final success = await _document.registerEmbeddedFonts();
+      if (!mounted || generation != _imageLoadGeneration) {
+        return;
+      }
+
+      if (success) {
+        _trace(
+          category: 'font',
+          message: 'Font registration completed',
+          data: <String, Object?>{
+            'registeredFamilies':
+                _document.registeredFontFamilies.toList(),
+          },
+        );
+        _markNeedsRepaint();
+      } else {
+        _trace(
+          category: 'font',
+          level: SvgTraceLevel.warning,
+          message: 'Font registration completed with errors',
+          data: <String, Object?>{
+            'errors': _document.fontRegistrationErrors,
+          },
+        );
+        // Still repaint — some fonts may have loaded successfully
+        _markNeedsRepaint();
+      }
+    } catch (e, stackTrace) {
+      // Graceful fallback — font registration failure should not crash rendering
+      if (mounted && generation == _imageLoadGeneration) {
+        _trace(
+          category: 'font',
+          level: SvgTraceLevel.error,
+          message: 'Font registration failed',
+          error: e,
+          stackTrace: stackTrace,
+        );
+      }
+    }
   }
 }

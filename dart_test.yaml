@@ -2,3 +2,14 @@
 # TODO(stuartmorgan): Restructure to allow other tests to run; see
 # https://github.com/flutter/flutter/issues/157741
 test_on: vm
+
+tags:
+  golden:
+    # Golden comparison tests - can be run separately
+    # Run with: flutter test --tags=golden
+  capture:
+    # Capture tests - generate Flutter golden images
+  compare:
+    # Compare tests - compare Flutter vs browser goldens
+  full:
+    # Full pipeline tests - capture and compare in one test

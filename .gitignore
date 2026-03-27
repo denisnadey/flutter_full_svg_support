@@ -1,9 +1,37 @@
+# === OS ===
+.DS_Store
+Thumbs.db
 
-# FVM Version Cache
-.fvm/
+# === IDE ===
+.idea/
+*.iml
+.vscode/
 
-# Generated tooling/build outputs
+# === Dart / Flutter ===
 .dart_tool/
 build/
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+pubspec.lock
+*.g.dart
+
+# === FVM ===
+.fvm/
+
+# === Example app ===
 example/.dart_tool/
 example/build/
+example/.flutter-plugins
+example/.flutter-plugins-dependencies
+
+# === Node.js (golden capture tooling) ===
+node_modules/
+tool/golden_capture/package-lock.json
+
+# === Golden test outputs (regenerated, not committed) ===
+test/goldens/flutter/
+test/goldens/diff/
+
+# === Misc ===
+.aider*

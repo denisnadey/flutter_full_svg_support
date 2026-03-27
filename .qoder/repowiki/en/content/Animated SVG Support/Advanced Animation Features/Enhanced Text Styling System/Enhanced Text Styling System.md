@@ -27,17 +27,28 @@
 - [text_ligature_shaping_test.dart](file://test/animation/text_ligature_shaping_test.dart)
 - [svg.dart](file://lib/svg.dart)
 - [css_cascade.dart](file://lib/src/animation/css_cascade.dart)
-- [SVGForeignObjectElement.cpp](file://blink-b87d44f-Source-core-svg/SVGForeignObjectElement.cpp)
-- [SVGForeignObjectElement.h](file://blink-b87d44f-Source-core-svg/SVGForeignObjectElement.h)
-- [SVGForeignObjectElement.idl](file://blink-b87d44f-Source-core-svg/SVGForeignObjectElement.idl)
+- [svg_font_registry.dart](file://lib/src/animation/svg_font_registry.dart)
+- [css_animations_parser.dart](file://lib/src/animation/css_animations_parser.dart)
+- [svg_dom.dart](file://lib/src/animation/svg_dom.dart)
+- [SVGFontFaceElement.cpp](file://blink-b87d44f-Source-core-svg/SVGFontFaceElement.cpp)
+- [SVGFontFaceElement.h](file://blink-b87d44f-Source-core-svg/SVGFontFaceElement.h)
+- [SVGFontFaceElement.idl](file://blink-b87d44f-Source-core-svg/SVGFontFaceElement.idl)
 - [SVGTSpanElement.cpp](file://blink-b87d44f-Source-core-svg/SVGTSpanElement.cpp)
 - [SVGTSpanElement.h](file://blink-b87d44f-Source-core-svg/SVGTSpanElement.h)
 - [text_typography_rendering_test.dart](file://test/animation/text_typography_rendering_test.dart)
 - [text_advanced_typography_test.dart](file://test/animation/text_advanced_typography_test.dart)
+- [text_font_face_test.dart](file://test/animation/text_font_face_test.dart)
+- [css_shorthand_expansion_font.dart](file://lib/src/animation/css_shorthand_expansion_font.dart)
+- [svg_parser.dart](file://lib/src/animation/svg_parser.dart)
+- [font_registration_lifecycle_test.dart](file://test/animation/font_registration_lifecycle_test.dart)
 </cite>
 
 ## Update Summary
 **Changes Made**
+- **NEW**: Added comprehensive SVG Font Registry System with @font-face support, embedded font parsing, and advanced CSS font-face rule extraction
+- **NEW**: Implemented SvgFontRegistry class with 401 lines of functionality for parsing @font-face CSS rules, decoding base64 font data, and registering fonts with Flutter
+- **NEW**: Enhanced text styling now supports embedded fonts with improved font-family resolution that detects registered fonts
+- **NEW**: Added comprehensive error handling for font formats and external URLs in the font registry system
 - Enhanced text-decoration-style mapping with comprehensive style support (solid, double, dotted, dashed, wavy)
 - Implemented advanced text-shadow parsing with multiple shadows and color format support (named colors, hex, rgb/rgba)
 - Added font-variation-settings parsing for multiple axes with four-character axis codes
@@ -60,16 +71,17 @@
 2. [System Architecture](#system-architecture)
 3. [Core Components](#core-components)
 4. [Text Styling Architecture](#text-styling-architecture)
-5. [ForeignObject CSS Inheritance System](#foreignobject-css-inheritance-system)
-6. [CSS Property Resolution](#css-property-resolution)
-7. [Text Rendering Pipeline](#text-rendering-pipeline)
-8. [Performance Optimization](#performance-optimization)
-9. [Advanced Features](#advanced-features)
-10. [Internationalization and Localization](#internationalization-and-localization)
-11. [Modern CSS Integration](#modern-css-integration)
-12. [Integration Points](#integration-points)
-13. [Troubleshooting Guide](#troubleshooting-guide)
-14. [Conclusion](#conclusion)
+5. [SVG Font Registry System](#svg-font-registry-system)
+6. [ForeignObject CSS Inheritance System](#foreignobject-css-inheritance-system)
+7. [CSS Property Resolution](#css-property-resolution)
+8. [Text Rendering Pipeline](#text-rendering-pipeline)
+9. [Performance Optimization](#performance-optimization)
+10. [Advanced Features](#advanced-features)
+11. [Internationalization and Localization](#internationalization-and-localization)
+12. [Modern CSS Integration](#modern-css-integration)
+13. [Integration Points](#integration-points)
+14. [Troubleshooting Guide](#troubleshooting-guide)
+15. [Conclusion](#conclusion)
 
 ## Introduction
 
@@ -79,7 +91,7 @@ The Enhanced Text Styling System represents a comprehensive implementation of SV
 
 The system extends beyond basic text rendering by implementing a complete cascade of CSS properties, supporting modern web standards while maintaining compatibility with Flutter's text rendering engine. It encompasses font handling, text decoration, layout management, positioning systems, and advanced typographic features including vertical writing modes, ruby annotations, emphasis marks, and modern CSS optimization features.
 
-**NEW**: The system now provides comprehensive hanging punctuation support with first/last/force-end/allow-end modes, enabling sophisticated text punctuation handling for international typography requirements. Enhanced baseline calculation system now supports recursive offset accumulation through 5+ nesting levels, providing precise alignment for deeply nested text elements. Sophisticated ligature compatibility across tspan boundaries ensures proper glyph formation even when text spans are split across multiple text nodes. Comprehensive font feature hash key generation optimizes cache performance by creating unique keys for different font feature configurations. Advanced CSS text styling capabilities now support 53+ properties including advanced font variants, text justification, and modern CSS features.
+**NEW**: The system now provides comprehensive SVG font registry system with @font-face support, enabling embedded font registration and advanced font-family resolution with registration detection. The font registry includes SvgFontRegistry class with 401 lines of functionality for parsing @font-face CSS rules, decoding base64 font data, and registering fonts with Flutter. Enhanced text styling now supports embedded fonts with improved font-family resolution that detects registered fonts and provides comprehensive error handling for font formats and external URLs. The system includes comprehensive hanging punctuation support with first/last/force-end/allow-end modes, enabling sophisticated text punctuation handling for international typography requirements. Enhanced baseline calculation system now supports recursive offset accumulation through 5+ nesting levels, providing precise alignment for deeply nested text elements. Sophisticated ligature compatibility across tspan boundaries ensures proper glyph formation even when text spans are split across multiple text nodes. Comprehensive font feature hash key generation optimizes cache performance by creating unique keys for different font feature configurations. Advanced CSS text styling capabilities now support 53+ properties including advanced font variants, text justification, and modern CSS features.
 
 ## System Architecture
 
@@ -111,6 +123,12 @@ FO[ForeignObject Resolver]
 FC[CSS Cascade Resolver]
 HP[Hanging Punctuation Resolver]
 LF[Ligature Feature Resolver]
+end
+subgraph "Font Management"
+FR[SvgFontRegistry]
+FFR[CssFontFaceRule]
+EF[Embedded Font Parser]
+DR[Data URL Decoder]
 end
 subgraph "Rendering Pipeline"
 PB[Paragraph Builder]
@@ -146,6 +164,9 @@ TR --> FO
 TR --> SO
 TR --> PO
 TR --> FH
+FR --> FFR
+FR --> EF
+FR --> DR
 FO --> FOT
 FO --> FOP
 FC --> FO
@@ -157,11 +178,13 @@ LF --> PB
 - [animated_svg_painter.dart:148-200](file://lib/src/animation/animated_svg_painter.dart#L148-L200)
 - [animated_svg_painter_text_style.dart:13-344](file://lib/src/animation/animated_svg_painter_text_style.dart#L13-L344)
 - [animated_svg_painter_geometry.dart:185-278](file://lib/src/animation/animated_svg_painter_geometry.dart#L185-L278)
+- [svg_font_registry.dart:81-251](file://lib/src/animation/svg_font_registry.dart#L81-L251)
 
 **Section sources**
 - [animated_svg_painter.dart:148-200](file://lib/src/animation/animated_svg_painter.dart#L148-L200)
 - [animated_svg_painter_text_style.dart:13-344](file://lib/src/animation/animated_svg_painter_text_style.dart#L13-L344)
 - [animated_svg_painter_geometry.dart:185-278](file://lib/src/animation/animated_svg_painter_geometry.dart#L185-L278)
+- [svg_font_registry.dart:81-251](file://lib/src/animation/svg_font_registry.dart#L81-L251)
 
 ## Core Components
 
@@ -374,6 +397,194 @@ TextDecorationResolver --> _SvgTextDecoration : "creates"
 - [animated_svg_painter_text_style_decoration.dart:10-200](file://lib/src/animation/animated_svg_painter_text_style_decoration.dart#L10-L200)
 - [animated_svg_painter_text_style_rendering.dart:34-50](file://lib/src/animation/animated_svg_painter_text_style_rendering.dart#L34-L50)
 
+## SVG Font Registry System
+
+**NEW**: The SVG Font Registry System provides comprehensive embedded font support through a sophisticated registry and parser system that enables advanced font management within SVG documents.
+
+### SvgFontRegistry Class
+
+The SvgFontRegistry class serves as the central font management system, handling @font-face rule parsing, embedded font registration, and comprehensive error handling.
+
+```mermaid
+classDiagram
+class SvgFontRegistry {
++Set~String~ _registeredFonts
++Map~String, List~ _fontFaceRules
++String[] _errors
++Set~String~ registeredFontFamilies
++String[] errors
++isRegistered(String) bool
++registerFonts(CssFontFaceRule[]) Future~void~
++isRegistered(String) bool
++clear() void
+}
+class CssFontFaceRule {
++String fontFamily
++String fontStyle
++String fontWeight
++String? src
++String? format
++isEmbeddedFont bool
++isSupportedFormat bool
++isWoffFormat bool
+}
+class EmbeddedFontParser {
++_decodeDataUrl(String) Uint8List?
++_normalizeFontFamily(String) String
+}
+class DataURLDecoder {
++_decodeDataUrl(String) Uint8List?
+}
+SvgFontRegistry --> CssFontFaceRule : "manages"
+SvgFontRegistry --> EmbeddedFontParser : "uses"
+EmbeddedFontParser --> DataURLDecoder : "uses"
+```
+
+**Diagram sources**
+- [svg_font_registry.dart:81-251](file://lib/src/animation/svg_font_registry.dart#L81-L251)
+- [svg_font_registry.dart:12-75](file://lib/src/animation/svg_font_registry.dart#L12-L75)
+
+### Font Family Resolution with Registration Detection
+
+The font resolution system has been enhanced to detect registered fonts and provide appropriate fallback behavior:
+
+```mermaid
+sequenceDiagram
+participant Style as Resolved Style
+participant FontResolver as Font Resolver
+participant Registry as SvgFontRegistry
+participant Flutter as Flutter Font Loader
+Style->>FontResolver : _resolveFontFamily(family)
+FontResolver->>Registry : isFontRegistered(family)
+Registry-->>FontResolver : Registration status
+FontResolver->>FontResolver : If registered -> direct use
+FontResolver->>FontResolver : If not registered -> platform fallback
+FontResolver->>Flutter : Register embedded fonts (async)
+Flutter-->>FontResolver : Font loaded
+FontResolver-->>Style : Final font family
+```
+
+**Diagram sources**
+- [animated_svg_painter_text_style_font.dart:175-179](file://lib/src/animation/animated_svg_painter_text_style_font.dart#L175-L179)
+- [svg_font_registry.dart:101-104](file://lib/src/animation/svg_font_registry.dart#L101-L104)
+
+### CSS Font-Face Rule Extraction
+
+The system includes comprehensive CSS font-face rule extraction with support for various formats and encoding schemes:
+
+```mermaid
+flowchart TD
+CSSInput[CSS Input] --> ExtractRules[extractFontFaceRules]
+ExtractRules --> ParseBody[_parseFontFaceBody]
+ParseBody --> ExtractFamily[_extractFontFamily]
+ParseBody --> ExtractSrc[_extractSrc]
+ParseBody --> ExtractFormat[_extractFormat]
+ExtractFamily --> NormalizeFamily[_normalizeFontFamily]
+ExtractSrc --> ParseSrc[Parse src property]
+ExtractFormat --> DetectFormat[Detect format from src]
+ParseSrc --> DecodeDataURL[_decodeDataUrl]
+DecodeDataURL --> ValidateFormat[Validate format support]
+ValidateFormat --> CreateRule[Create CssFontFaceRule]
+NormalizeFamily --> CreateRule
+DetectFormat --> CreateRule
+CreateRule --> Output[Return List<CssFontFaceRule>]
+```
+
+**Diagram sources**
+- [svg_font_registry.dart:256-325](file://lib/src/animation/svg_font_registry.dart#L256-L325)
+- [svg_font_registry.dart:347-376](file://lib/src/animation/svg_font_registry.dart#L347-L376)
+
+### Embedded Font Registration Process
+
+The embedded font registration process handles asynchronous font loading and comprehensive error reporting:
+
+```mermaid
+sequenceDiagram
+participant Document as SvgDocument
+participant Registry as SvgFontRegistry
+participant Flutter as Flutter FontLoader
+Document->>Registry : registerFonts(cssFontFaceRules)
+Registry->>Registry : Group rules by font family
+Registry->>Registry : Check if already registered
+Registry->>Flutter : Load font family
+Flutter->>Flutter : Decode base64 font data
+Flutter->>Flutter : Validate font format
+Flutter->>Flutter : Register with Flutter
+Registry->>Registry : Track registration status
+Registry->>Registry : Collect errors
+Registry-->>Document : Registration complete
+```
+
+**Diagram sources**
+- [svg_font_registry.dart:110-134](file://lib/src/animation/svg_font_registry.dart#L110-L134)
+- [svg_font_registry.dart:137-185](file://lib/src/animation/svg_font_registry.dart#L137-L185)
+
+### Font Registration Lifecycle Integration
+
+The font registry integrates seamlessly with the SVG document lifecycle and widget system:
+
+```mermaid
+sequenceDiagram
+participant Parser as SvgParser
+participant Document as SvgDocument
+participant Registry as SvgFontRegistry
+participant Widget as AnimatedSvgPicture
+Parser->>Document : Create SvgDocument with cssFontFaceRules
+Document->>Registry : Initialize SvgFontRegistry
+Widget->>Document : registerEmbeddedFonts()
+Document->>Registry : registerFonts(cssFontFaceRules)
+Registry->>Registry : Async font loading
+Registry-->>Document : Registration complete
+Document-->>Widget : Ready for rendering
+```
+
+**Diagram sources**
+- [svg_parser.dart:44-64](file://lib/src/animation/svg_parser.dart#L44-L64)
+- [svg_dom.dart:594-601](file://lib/src/animation/svg_dom.dart#L594-L601)
+
+**Enhanced Font Family Resolution** The font family resolution system has been significantly enhanced with comprehensive platform-specific font stacks and modern CSS generic family support. The system now includes:
+
+- **Platform-Aware Generic Families**: Sophisticated fallback chains for serif, sans-serif, monospace, ui-serif, ui-sans-serif, ui-monospace, ui-rounded, and system-ui families
+- **Emoji Font Support**: Dedicated emoji font stacks with Apple Color Emoji, Segoe UI Emoji, and Noto Color Emoji
+- **Math Font Support**: Specialized math font families including Cambria Math, STIX Two Math, and Latin Modern Math
+- **Metric-Compatible Selection**: Fonts chosen for consistent x-height and visual metrics across platforms
+- **Modern CSS Generics**: Full support for ui-serif, ui-sans-serif, ui-monospace, ui-rounded, and system-ui families
+- **Structured Font Handling**: FontFallbackResult class for proper primary/fallback font separation
+- **Registration Detection**: Enhanced font-family resolution that detects registered fonts and uses them directly without fallback expansion
+
+**Enhanced Font Variation Settings Parsing** The system now supports comprehensive font-variation-settings parsing with:
+- **Multiple Axis Support**: Parsing of multiple axes in a single declaration
+- **Four-Character Axis Codes**: Support for standardized four-character OpenType axis codes
+- **Decimal Value Precision**: Accurate parsing of decimal values for axis positions
+- **Quote Handling**: Proper handling of quoted axis names and values
+
+**Enhanced Font Family Fallback Chain Parsing** The font-family fallback chain parsing has been enhanced with:
+- **Robust Quote Handling**: Proper parsing of both single and double quotes around font names
+- **Whitespace Normalization**: Removal of extraneous whitespace around font names
+- **Mixed Quote Support**: Handling of mixed quoted and unquoted font names in chains
+- **Generic Family Expansion**: Proper expansion of generic family names to platform-specific stacks
+
+**Enhanced Ligature Feature Compatibility** The system now provides sophisticated ligature compatibility checking across tspan boundaries:
+- **Ligature Feature Detection**: Identification of ligature-related font features (liga, clig, dlig, hlig, calt)
+- **Feature Comparison**: Comparison of ligature feature settings between adjacent text runs
+- **Boundary Preservation**: Ensuring ligatures can form across tspan boundaries when compatible
+- **Cache Key Generation**: Incorporating ligature compatibility into font feature hash keys
+
+**Enhanced Font Feature Hash Key Generation** The system now generates comprehensive font feature hash keys for optimal caching:
+- **Feature Sorting**: Consistent ordering of font features for reliable cache keys
+- **Feature Tag Mapping**: Conversion of feature tags to stable string representations
+- **Value Normalization**: Standardized representation of feature values
+- **Cache Key Concatenation**: Unique keys combining text content, style, and feature information
+
+**Section sources**
+- [svg_font_registry.dart:81-251](file://lib/src/animation/svg_font_registry.dart#L81-L251)
+- [svg_font_registry.dart:256-401](file://lib/src/animation/svg_font_registry.dart#L256-L401)
+- [animated_svg_painter_text_style_font.dart:171-206](file://lib/src/animation/animated_svg_painter_text_style_font.dart#L171-L206)
+- [animated_svg_painter_text_style_font.dart:90-160](file://lib/src/animation/animated_svg_painter_text_style_font.dart#L90-L160)
+- [animated_svg_painter_text_style_font.dart:319-381](file://lib/src/animation/animated_svg_painter_text_style_font.dart#L319-L381)
+- [svg_dom.dart:575-601](file://lib/src/animation/svg_dom.dart#L575-L601)
+- [svg_parser.dart:44-64](file://lib/src/animation/svg_parser.dart#L44-L64)
+
 ## ForeignObject CSS Inheritance System
 
 ### Comprehensive CSS Property Filtering
@@ -483,7 +694,8 @@ CheckAdjust --> CheckPalette["Check Font Palette"]
 CheckPalette --> CheckVariation["Check Font Variation Settings"]
 CheckVariation --> CheckLigatureCompat["Check Ligature Compatibility"]
 CheckLigatureCompat --> CheckHashKey["Generate Font Feature Hash Key"]
-CheckHashKey --> FinalFont[Final Font Configuration]
+CheckHashKey --> CheckRegistration["Check Font Registration"]
+CheckRegistration --> FinalFont[Final Font Configuration]
 ```
 
 **Diagram sources**
@@ -497,6 +709,7 @@ CheckHashKey --> FinalFont[Final Font Configuration]
 - **Metric-Compatible Selection**: Fonts chosen for consistent x-height and visual metrics across platforms
 - **Modern CSS Generics**: Full support for ui-serif, ui-sans-serif, ui-monospace, ui-rounded, and system-ui families
 - **Structured Font Handling**: FontFallbackResult class for proper primary/fallback font separation
+- **Registration Detection**: Enhanced font-family resolution that detects registered fonts and uses them directly without fallback expansion
 
 **Enhanced Font Variation Settings Parsing** The system now supports comprehensive font-variation-settings parsing with:
 - **Multiple Axis Support**: Parsing of multiple axes in a single declaration
@@ -614,6 +827,7 @@ The system implements sophisticated typography features including:
 - **Deep Nesting Baseline Alignment**: Recursive offset calculation through 5+ nesting levels
 - **Ligature Compatibility**: Proper glyph formation across tspan boundaries
 - **Font Feature Caching**: Optimized cache keys for different feature configurations
+- **Embedded Font Support**: Comprehensive @font-face rule parsing and font registration
 
 **Enhanced Text Decoration Style Mapping** The system now provides comprehensive text-decoration-style mapping supporting:
 - **Solid Style**: Default solid line rendering
@@ -690,12 +904,14 @@ G[Gradient Key: ID + Bounds + Attr Hash]
 H[Pattern Key: ID + Bounds + Tile Hash]
 I[Hit Test Key: ID + Geometry Hash]
 J[Font Feature Hash Key: Features + Values]
+K[Font Registration Key: Font Family + Format]
 end
 B --> F
 C --> G
 D --> H
 E --> I
 F --> J
+J --> K
 ```
 
 **Diagram sources**
@@ -710,6 +926,7 @@ The cache system intelligently invalidates entries based on animation state and 
 - **Style Parameter Hashing**: Keys for different style parameters
 - **Font Feature Hashing**: Keys for different font feature configurations
 - **Animation State Tracking**: Cache invalidation based on animation changes
+- **Font Registration Tracking**: Cache invalidation when fonts are registered/unregistered
 
 **Enhanced Performance Monitoring** The system now includes performance monitoring capabilities:
 - **Cache Hit Rate Tracking**: Monitoring of cache effectiveness
@@ -910,6 +1127,14 @@ TextGeometryExpansion --> Rect : "expands"
 - **Cache Key Correctness**: Proper cache key generation for different feature combinations
 - **Width Consistency**: Proper glyph width handling for different numeral styles
 
+**Enhanced Font Registry Testing** The system includes comprehensive testing for the font registry functionality:
+- **@font-face Parsing**: Proper parsing of @font-face CSS rules
+- **Embedded Font Support**: Base64 font data decoding and registration
+- **External URL Handling**: Proper error reporting for external font URLs
+- **Format Validation**: Support for TTF and OTF formats, warnings for WOFF
+- **Registration Detection**: Proper font family registration and detection
+- **Error Collection**: Comprehensive error reporting for font loading issues
+
 **Section sources**
 - [animated_svg_painter_geometry.dart:188-278](file://lib/src/animation/animated_svg_painter_geometry.dart#L188-L278)
 - [foreignobject_css_inheritance_test.dart:1-457](file://test/animation/foreignobject_css_inheritance_test.dart#L1-L457)
@@ -922,6 +1147,8 @@ TextGeometryExpansion --> Rect : "expands"
 - [hanging_punctuation_test.dart:1-115](file://test/animation/hanging_punctuation_test.dart#L1-L115)
 - [text_baseline_deep_nesting_test.dart:1-606](file://test/animation/text_baseline_deep_nesting_test.dart#L1-L606)
 - [text_ligature_shaping_test.dart:1-731](file://test/animation/text_ligature_shaping_test.dart#L1-L731)
+- [text_font_face_test.dart:1-509](file://test/animation/text_font_face_test.dart#L1-L509)
+- [font_registration_lifecycle_test.dart:1-340](file://test/animation/font_registration_lifecycle_test.dart#L1-L340)
 
 ## Internationalization and Localization
 
@@ -1100,6 +1327,8 @@ The text styling system works in conjunction with the broader animation framewor
 
 **Ligature Compatibility Problems**: Verify ligature features are compatible across tspan boundaries. Check font feature hash key generation.
 
+**Font Registry Issues**: Verify @font-face rules are properly parsed and fonts are correctly registered. Check for proper base64 data decoding and format validation.
+
 **Enhanced Font Family Resolution Troubleshooting** For font family issues:
 - Verify platform-specific font availability (Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji)
 - Check that modern CSS generic families (ui-serif, ui-sans-serif, ui-monospace, ui-rounded) resolve correctly
@@ -1112,7 +1341,7 @@ The text styling system works in conjunction with the broader animation framewor
 - Ensure that decoration properties are partially inherited as expected
 - Verify that SVG-specific properties (fill, stroke) are not crossing foreignObject boundaries
 - Confirm that direction and writing-mode properties are properly inherited for proper text direction handling
-- Check that CSS custom properties (--xxx) are properly inherited across boundaries
+- Check that CSS custom properties (--xxx) are properly inherited
 - Validate that non-inherited properties (transform, opacity, display, etc.) are correctly restricted
 - Verify that modern CSS properties (content-visibility, will-change, etc.) are properly inherited
 
@@ -1137,6 +1366,14 @@ The text styling system works in conjunction with the broader animation framewor
 - Validate that boundary preservation works correctly across tspan elements
 - Check that different feature settings are properly handled
 
+**Enhanced Font Registry Troubleshooting** For font registry issues:
+- Verify that @font-face rules are properly extracted from CSS text
+- Check that base64 font data is correctly decoded and validated
+- Ensure that format detection works for TTF, OTF, and WOFF formats
+- Validate that external URLs produce appropriate error messages
+- Check that font registration process handles asynchronous loading correctly
+- Verify that font family normalization handles quotes and HTML entities properly
+
 ### Debugging Tools
 
 The system provides comprehensive diagnostic information through the debugFillProperties method, exposing all relevant styling parameters and rendering state for troubleshooting.
@@ -1156,4 +1393,4 @@ The system's integration with the broader CSS cascade system and shadow boundary
 
 With approximately 90% Blink SVG parity, the Enhanced Text Styling System provides a robust foundation for modern web typography requirements, supporting advanced layout features, comprehensive text element rendering, decorations, emphasis marks, shadows, font variants, paint order stroke effects, per-character hit testing, and advanced layout capabilities that meet the demands of contemporary web applications.
 
-**NEW**: The system now includes comprehensive hanging punctuation support with five distinct modes, enabling sophisticated text punctuation handling for international typography requirements. Enhanced baseline calculation system now supports recursive offset accumulation through 5+ nesting levels, providing precise alignment for deeply nested text elements. Sophisticated ligature compatibility across tspan boundaries ensures proper glyph formation even when text spans are split across multiple text nodes. Comprehensive font feature hash key generation optimizes cache performance by creating unique keys for different font feature configurations. Advanced CSS text styling capabilities now support 53+ properties including advanced font variants, text justification, and modern CSS features, making it a complete solution for contemporary web typography requirements with robust foreignObject integration.
+**NEW**: The system now includes comprehensive SVG font registry system with @font-face support, enabling embedded font registration and advanced font-family resolution with registration detection. The font registry includes SvgFontRegistry class with 401 lines of functionality for parsing @font-face CSS rules, decoding base64 font data, and registering fonts with Flutter. Enhanced text styling now supports embedded fonts with improved font-family resolution that detects registered fonts and provides comprehensive error handling for font formats and external URLs. The system includes comprehensive hanging punctuation support with five distinct modes, enabling sophisticated text punctuation handling for international typography requirements. Enhanced baseline calculation system now supports recursive offset accumulation through 5+ nesting levels, providing precise alignment for deeply nested text elements. Sophisticated ligature compatibility across tspan boundaries ensures proper glyph formation even when text spans are split across multiple text nodes. Comprehensive font feature hash key generation optimizes cache performance by creating unique keys for different font feature configurations. Advanced CSS text styling capabilities now support 53+ properties including advanced font variants, text justification, and modern CSS features, making it a complete solution for contemporary web typography requirements with robust foreignObject integration.

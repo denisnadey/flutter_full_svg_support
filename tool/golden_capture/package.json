@@ -1,0 +1,12 @@
+{
+  "name": "svg-golden-capture",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Capture SVG golden reference images from headless browser",
+  "scripts": {
+    "capture": "node capture.js"
+  },
+  "dependencies": {
+    "puppeteer": "^22.0.0"
+  }
+}
