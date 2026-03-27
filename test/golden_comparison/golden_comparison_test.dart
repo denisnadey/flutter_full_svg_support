@@ -52,7 +52,7 @@ final List<TestCase> testCases = [
   (
     'test/golden_comparison/svg_fixtures/text_embedded_font.svg',
     'text_embedded_font',
-    0.85
+    0.85,
   ),
   ('test/golden_comparison/svg_fixtures/gradients.svg', 'gradients', 0.95),
   ('test/golden_comparison/svg_fixtures/transforms.svg', 'transforms', 0.95),
@@ -60,13 +60,13 @@ final List<TestCase> testCases = [
   (
     'test/golden_comparison/svg_fixtures/filters_blur.svg',
     'filters_blur',
-    0.85
+    0.85,
   ),
   ('test/golden_comparison/svg_fixtures/text_tspan.svg', 'text_tspan', 0.90),
   (
     'test/golden_comparison/svg_fixtures/stroke_patterns.svg',
     'stroke_patterns',
-    0.95
+    0.95,
   ),
 
   // Complex example assets (may take longer to process)
@@ -138,13 +138,15 @@ void main() {
 
           // Capture Flutter render
           final flutterPng = await tester.runAsync<Uint8List?>(() async {
-            final boundary = repaintKey.currentContext?.findRenderObject()
-                as RenderRepaintBoundary?;
+            final boundary =
+                repaintKey.currentContext?.findRenderObject()
+                    as RenderRepaintBoundary?;
             if (boundary == null) return null;
 
             final image = await boundary.toImage(pixelRatio: 1.0);
-            final byteData =
-                await image.toByteData(format: ui.ImageByteFormat.png);
+            final byteData = await image.toByteData(
+              format: ui.ImageByteFormat.png,
+            );
             image.dispose();
             return byteData?.buffer.asUint8List();
           });
@@ -185,7 +187,8 @@ void main() {
           expect(
             result.similarity,
             greaterThanOrEqualTo(threshold),
-            reason: '$name: similarity $percentage% '
+            reason:
+                '$name: similarity $percentage% '
                 'is below threshold ${(threshold * 100).toStringAsFixed(0)}%',
           );
         } finally {
@@ -210,14 +213,12 @@ void main() {
     }
 
     final browserFiles = browserDir.listSync().whereType<File>().toList();
-    final flutterCount =
-        flutterDir.existsSync()
-            ? flutterDir.listSync().whereType<File>().length
-            : 0;
-    final diffCount =
-        diffDir.existsSync()
-            ? diffDir.listSync().whereType<File>().length
-            : 0;
+    final flutterCount = flutterDir.existsSync()
+        ? flutterDir.listSync().whereType<File>().length
+        : 0;
+    final diffCount = diffDir.existsSync()
+        ? diffDir.listSync().whereType<File>().length
+        : 0;
 
     // ignore: avoid_print
     print('\n=== Golden Comparison Summary ===');

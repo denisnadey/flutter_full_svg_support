@@ -355,8 +355,7 @@ extension _AnimatedSvgPictureStateLifecycleExtension
           category: 'font',
           message: 'Font registration completed',
           data: <String, Object?>{
-            'registeredFamilies':
-                _document.registeredFontFamilies.toList(),
+            'registeredFamilies': _document.registeredFontFamilies.toList(),
           },
         );
         _markNeedsRepaint();
@@ -365,9 +364,7 @@ extension _AnimatedSvgPictureStateLifecycleExtension
           category: 'font',
           level: SvgTraceLevel.warning,
           message: 'Font registration completed with errors',
-          data: <String, Object?>{
-            'errors': _document.fontRegistrationErrors,
-          },
+          data: <String, Object?>{'errors': _document.fontRegistrationErrors},
         );
         // Still repaint — some fonts may have loaded successfully
         _markNeedsRepaint();

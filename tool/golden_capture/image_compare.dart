@@ -29,16 +29,16 @@ class ImageCompareResult {
 
   /// Creates a failed result with an error message.
   const ImageCompareResult.failed(String errorMessage)
-      : similarity = 0.0,
-        totalPixels = 0,
-        differentPixels = 0,
-        matchingPixels = 0,
-        diffImage = null,
-        message = errorMessage,
-        imageAWidth = null,
-        imageAHeight = null,
-        imageBWidth = null,
-        imageBHeight = null;
+    : similarity = 0.0,
+      totalPixels = 0,
+      differentPixels = 0,
+      matchingPixels = 0,
+      diffImage = null,
+      message = errorMessage,
+      imageAWidth = null,
+      imageAHeight = null,
+      imageBWidth = null,
+      imageBHeight = null;
 
   /// Similarity ratio from 0.0 to 1.0 (1.0 = identical).
   final double similarity;
@@ -139,10 +139,12 @@ Future<ImageCompareResult> compareImages({
     }
 
     // Convert to raw RGBA bytes
-    final ByteData? bytesA =
-        await decodedA.toByteData(format: ui.ImageByteFormat.rawRgba);
-    final ByteData? bytesB =
-        await decodedB.toByteData(format: ui.ImageByteFormat.rawRgba);
+    final ByteData? bytesA = await decodedA.toByteData(
+      format: ui.ImageByteFormat.rawRgba,
+    );
+    final ByteData? bytesB = await decodedB.toByteData(
+      format: ui.ImageByteFormat.rawRgba,
+    );
 
     if (bytesA == null || bytesB == null) {
       return const ImageCompareResult.failed(
@@ -184,7 +186,8 @@ Future<ImageCompareResult> compareImages({
       final bDiff = (bA - bB).abs();
       final aDiff = (aA - aB).abs();
 
-      final isMatch = rDiff <= threshold &&
+      final isMatch =
+          rDiff <= threshold &&
           gDiff <= threshold &&
           bDiff <= threshold &&
           aDiff <= threshold;
@@ -211,8 +214,7 @@ Future<ImageCompareResult> compareImages({
     }
 
     // Calculate similarity
-    final similarity =
-        totalPixels > 0 ? matchingPixels / totalPixels : 0.0;
+    final similarity = totalPixels > 0 ? matchingPixels / totalPixels : 0.0;
 
     // Generate diff image PNG if requested
     Uint8List? diffImagePng;
@@ -372,7 +374,8 @@ ImageCompareResult compareRawPixels({
     final bDiff = (bA - bB).abs();
     final aDiff = (aA - aB).abs();
 
-    final isMatch = rDiff <= threshold &&
+    final isMatch =
+        rDiff <= threshold &&
         gDiff <= threshold &&
         bDiff <= threshold &&
         aDiff <= threshold;
@@ -385,8 +388,7 @@ ImageCompareResult compareRawPixels({
   }
 
   // Calculate similarity
-  final similarity =
-      totalPixels > 0 ? matchingPixels / totalPixels : 0.0;
+  final similarity = totalPixels > 0 ? matchingPixels / totalPixels : 0.0;
 
   return ImageCompareResult(
     similarity: similarity,

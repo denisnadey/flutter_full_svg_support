@@ -82,52 +82,39 @@ void main() {
   group('SVG Capture Tests', () {
     // Generate capture tests for each SVG file
     for (final svgName in _getAvailableSvgFiles()) {
-      testWidgets(
-        'Capture $svgName',
-        (WidgetTester tester) async {
-          await _captureSvg(tester, svgName);
-        },
-        tags: ['capture'],
-      );
+      testWidgets('Capture $svgName', (WidgetTester tester) async {
+        await _captureSvg(tester, svgName);
+      }, tags: ['capture']);
     }
   });
 
   group('SVG Comparison Tests', () {
     // Generate comparison tests for each SVG file
     for (final svgName in _getAvailableSvgFiles()) {
-      testWidgets(
-        'Compare $svgName: Flutter vs Browser',
-        (WidgetTester tester) async {
-          await _compareSvg(tester, svgName);
-        },
-        tags: ['compare'],
-      );
+      testWidgets('Compare $svgName: Flutter vs Browser', (
+        WidgetTester tester,
+      ) async {
+        await _compareSvg(tester, svgName);
+      }, tags: ['compare']);
     }
   });
 
   group('Full Pipeline Tests', () {
     // Capture and compare in one test
     for (final svgName in _getAvailableSvgFiles()) {
-      testWidgets(
-        'Full test $svgName',
-        (WidgetTester tester) async {
-          // First capture
-          await _captureSvg(tester, svgName);
+      testWidgets('Full test $svgName', (WidgetTester tester) async {
+        // First capture
+        await _captureSvg(tester, svgName);
 
-          // Then compare (if browser golden exists)
-          final browserGoldenFile =
-              File('$kBrowserGoldensDir/$svgName.png');
-          if (browserGoldenFile.existsSync()) {
-            await _compareSvg(tester, svgName);
-          } else {
-            // ignore: avoid_print
-            print(
-              '  ⚠️ Skipping comparison - no browser golden for $svgName',
-            );
-          }
-        },
-        tags: ['full'],
-      );
+        // Then compare (if browser golden exists)
+        final browserGoldenFile = File('$kBrowserGoldensDir/$svgName.png');
+        if (browserGoldenFile.existsSync()) {
+          await _compareSvg(tester, svgName);
+        } else {
+          // ignore: avoid_print
+          print('  ⚠️ Skipping comparison - no browser golden for $svgName');
+        }
+      }, tags: ['full']);
     }
   });
 }
@@ -208,8 +195,9 @@ Future<void> _captureSvg(WidgetTester tester, String svgName) async {
 
     // Capture to PNG
     final pngBytes = await tester.runAsync<Uint8List?>(() async {
-      final boundary = repaintKey.currentContext?.findRenderObject()
-          as RenderRepaintBoundary?;
+      final boundary =
+          repaintKey.currentContext?.findRenderObject()
+              as RenderRepaintBoundary?;
       if (boundary == null) {
         return null;
       }
@@ -296,7 +284,8 @@ Future<void> _compareSvg(WidgetTester tester, String svgName) async {
   expect(
     result.passed(kDefaultThreshold),
     isTrue,
-    reason: '$svgName: similarity ${result.similarity.toStringAsFixed(3)} '
+    reason:
+        '$svgName: similarity ${result.similarity.toStringAsFixed(3)} '
         'below threshold $kDefaultThreshold',
   );
 
@@ -350,8 +339,9 @@ Future<Uint8List?> captureSvgToPng(
     await tester.pump(const Duration(milliseconds: 100));
 
     return await tester.runAsync<Uint8List?>(() async {
-      final boundary = repaintKey.currentContext?.findRenderObject()
-          as RenderRepaintBoundary?;
+      final boundary =
+          repaintKey.currentContext?.findRenderObject()
+              as RenderRepaintBoundary?;
       if (boundary == null) return null;
 
       final image = await boundary.toImage(pixelRatio: 1.0);
@@ -380,8 +370,7 @@ class BatchComparisonResult {
   final List<String> failed;
   final List<String> skipped;
 
-  double get passRate =>
-      results.isEmpty ? 0.0 : passed.length / results.length;
+  double get passRate => results.isEmpty ? 0.0 : passed.length / results.length;
 
   void printSummary() {
     // ignore: avoid_print

@@ -1,84 +1,81 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
-  <!-- Text with tspan elements test -->
-  
-  <!-- Basic tspan with different colors -->
-  <text x="50" y="50" font-size="24" fill="#333333">
-    <tspan>Hello </tspan>
-    <tspan fill="#FF0000">Red </tspan>
-    <tspan fill="#00FF00">Green </tspan>
-    <tspan fill="#0000FF">Blue</tspan>
-  </text>
-  
-  <!-- tspan with different sizes -->
-  <text x="50" y="100" fill="#333333">
-    <tspan font-size="16">Small </tspan>
-    <tspan font-size="24">Medium </tspan>
-    <tspan font-size="32">Large </tspan>
-    <tspan font-size="20">Normal</tspan>
-  </text>
-  
-  <!-- tspan with different weights and styles -->
-  <text x="50" y="160" font-size="24" fill="#333333">
-    <tspan font-weight="normal">Normal </tspan>
-    <tspan font-weight="bold">Bold </tspan>
-    <tspan font-style="italic">Italic </tspan>
-    <tspan font-weight="bold" font-style="italic">BoldItalic</tspan>
-  </text>
-  
-  <!-- tspan with x positioning (absolute) -->
-  <text y="220" font-size="20" fill="#333333">
-    <tspan x="50">First</tspan>
-    <tspan x="200">Second</tspan>
-    <tspan x="350">Third</tspan>
-    <tspan x="500">Fourth</tspan>
-  </text>
-  
-  <!-- tspan with dx/dy relative positioning -->
-  <text x="50" y="280" font-size="20" fill="#333333">
-    <tspan>Base</tspan>
-    <tspan dx="10" dy="-10" fill="#FF0000">Up</tspan>
-    <tspan dx="10" dy="20" fill="#00FF00">Down</tspan>
-    <tspan dx="20" dy="-5" fill="#0000FF">Shifted</tspan>
-  </text>
-  
-  <!-- Multi-line text using tspan -->
-  <text x="50" y="350" font-size="20" fill="#333333">
-    <tspan x="50" dy="0">Line one of text</tspan>
-    <tspan x="50" dy="25">Line two of text</tspan>
-    <tspan x="50" dy="25">Line three of text</tspan>
-  </text>
-  
-  <!-- tspan with rotation (per-character) -->
-  <text x="50" y="480" font-size="28" fill="#333333">
-    <tspan>R</tspan>
-    <tspan rotate="10">O</tspan>
-    <tspan rotate="20">T</tspan>
-    <tspan rotate="30">A</tspan>
-    <tspan rotate="40">T</tspan>
-    <tspan rotate="50">E</tspan>
-    <tspan rotate="60">D</tspan>
-  </text>
-  
-  <!-- tspan with baseline-shift -->
-  <text x="350" y="480" font-size="24" fill="#333333">
-    <tspan>H</tspan>
-    <tspan baseline-shift="super" font-size="14">2</tspan>
-    <tspan>O and CO</tspan>
-    <tspan baseline-shift="sub" font-size="14">2</tspan>
-  </text>
-  
-  <!-- Nested tspan -->
-  <text x="50" y="550" font-size="20" fill="#333333">
-    <tspan>Outer
-      <tspan fill="#FF0000" font-weight="bold">Nested
-        <tspan fill="#0000FF" font-style="italic">Deep</tspan>
-      </tspan>
-      Back
-    </tspan>
-  </text>
-  
-  <!-- tspan with textLength -->
-  <text x="400" y="550" font-size="20" fill="#333333">
-    <tspan textLength="200" lengthAdjust="spacing">Stretched text</tspan>
-  </text>
+    <!-- Text with tspan elements test -->
+
+    <!-- Basic tspan with different colors -->
+    <text x="50" y="50" font-size="24" fill="#333333">
+        <tspan>Hello </tspan>
+        <tspan fill="#FF0000">Red </tspan>
+        <tspan fill="#00FF00">Green </tspan>
+        <tspan fill="#0000FF">Blue</tspan>
+    </text>
+
+    <!-- tspan with different sizes -->
+    <text x="50" y="100" fill="#333333">
+        <tspan font-size="16">Small </tspan>
+        <tspan font-size="24">Medium </tspan>
+        <tspan font-size="32">Large </tspan>
+        <tspan font-size="20">Normal</tspan>
+    </text>
+
+    <!-- tspan with different weights and styles -->
+    <text x="50" y="160" font-size="24" fill="#333333">
+        <tspan font-weight="normal">Normal </tspan>
+        <tspan font-weight="bold">Bold </tspan>
+        <tspan font-style="italic">Italic </tspan>
+        <tspan font-weight="bold" font-style="italic">BoldItalic</tspan>
+    </text>
+
+    <!-- tspan with x positioning (absolute) -->
+    <text y="220" font-size="20" fill="#333333">
+        <tspan x="50">First</tspan>
+        <tspan x="200">Second</tspan>
+        <tspan x="350">Third</tspan>
+        <tspan x="500">Fourth</tspan>
+    </text>
+
+    <!-- tspan with dx/dy relative positioning -->
+    <text x="50" y="280" font-size="20" fill="#333333">
+        <tspan>Base</tspan>
+        <tspan dx="10" dy="-10" fill="#FF0000">Up</tspan>
+        <tspan dx="10" dy="20" fill="#00FF00">Down</tspan>
+        <tspan dx="20" dy="-5" fill="#0000FF">Shifted</tspan>
+    </text>
+
+    <!-- Multi-line text using tspan -->
+    <text x="50" y="350" font-size="20" fill="#333333">
+        <tspan x="50" dy="0">Line one of text</tspan>
+        <tspan x="50" dy="25">Line two of text</tspan>
+        <tspan x="50" dy="25">Line three of text</tspan>
+    </text>
+
+    <!-- tspan with rotation (per-character) -->
+    <text x="50" y="480" font-size="28" fill="#333333">
+        <tspan>R</tspan>
+        <tspan rotate="10">O</tspan>
+        <tspan rotate="20">T</tspan>
+        <tspan rotate="30">A</tspan>
+        <tspan rotate="40">T</tspan>
+        <tspan rotate="50">E</tspan>
+        <tspan rotate="60">D</tspan>
+    </text>
+
+    <!-- tspan with baseline-shift -->
+    <text x="350" y="480" font-size="24" fill="#333333">
+        <tspan>H</tspan>
+        <tspan baseline-shift="super" font-size="14">2</tspan>
+        <tspan>O and CO</tspan>
+        <tspan baseline-shift="sub" font-size="14">2</tspan>
+    </text>
+
+    <!-- Nested tspan -->
+    <text x="50" y="550" font-size="20" fill="#333333">
+        <tspan>Outer <tspan fill="#FF0000" font-weight="bold">Nested <tspan fill="#0000FF"
+                    font-style="italic">Deep</tspan>
+            </tspan> Back </tspan>
+    </text>
+
+    <!-- tspan with textLength -->
+    <text x="400" y="550" font-size="20" fill="#333333">
+        <tspan textLength="200" lengthAdjust="spacing">Stretched text</tspan>
+    </text>
 </svg>

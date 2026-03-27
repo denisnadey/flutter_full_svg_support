@@ -6,8 +6,9 @@ import 'package:flutter_svg/src/animation/svg_parser.dart';
 
 void main() {
   group('Font Registration Lifecycle', () {
-    testWidgets('Widget with SVG containing @font-face auto-registers fonts',
-        (WidgetTester tester) async {
+    testWidgets('Widget with SVG containing @font-face auto-registers fonts', (
+      WidgetTester tester,
+    ) async {
       // SVG with embedded @font-face rule (minimal valid base64 data)
       const svgWithFont = '''
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
@@ -42,7 +43,8 @@ void main() {
 
       // Verify that font registration was scheduled
       final fontScheduledEvent = traceEvents.firstWhere(
-        (e) => e.category == 'font' && e.message == 'Font registration scheduled',
+        (e) =>
+            e.category == 'font' && e.message == 'Font registration scheduled',
         orElse: () => throw TestFailure('Font registration was not scheduled'),
       );
       expect(fontScheduledEvent.data['count'], equals(1));
@@ -62,8 +64,9 @@ void main() {
       );
     });
 
-    testWidgets('Widget with SVG without @font-face does not try to register',
-        (WidgetTester tester) async {
+    testWidgets('Widget with SVG without @font-face does not try to register', (
+      WidgetTester tester,
+    ) async {
       const svgWithoutFont = '''
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
   <rect x="10" y="10" width="80" height="80" fill="blue"/>
@@ -92,13 +95,13 @@ void main() {
       expect(
         fontEvents.isEmpty,
         isTrue,
-        reason:
-            'No font events should occur for SVG without @font-face',
+        reason: 'No font events should occur for SVG without @font-face',
       );
     });
 
-    testWidgets('SVG string change re-triggers font registration',
-        (WidgetTester tester) async {
+    testWidgets('SVG string change re-triggers font registration', (
+      WidgetTester tester,
+    ) async {
       const svgWithFont1 = '''
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
   <style>
@@ -235,7 +238,9 @@ void main() {
       expect(success, isA<bool>());
     });
 
-    testWidgets('Guard against unmounted callback', (WidgetTester tester) async {
+    testWidgets('Guard against unmounted callback', (
+      WidgetTester tester,
+    ) async {
       const svgWithFont = '''
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
   <style>
@@ -263,9 +268,7 @@ void main() {
       );
 
       // Immediately dispose widget before font registration completes
-      await tester.pumpWidget(
-        const MaterialApp(home: SizedBox.shrink()),
-      );
+      await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
 
       // Wait for any pending async operations
       await tester.pump(const Duration(milliseconds: 200));
@@ -293,8 +296,9 @@ void main() {
       );
     });
 
-    testWidgets('Multiple @font-face rules are all registered',
-        (WidgetTester tester) async {
+    testWidgets('Multiple @font-face rules are all registered', (
+      WidgetTester tester,
+    ) async {
       const svgWithMultipleFonts = '''
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
   <style>
@@ -330,7 +334,8 @@ void main() {
 
       // Verify that all font rules were counted
       final fontScheduledEvent = traceEvents.firstWhere(
-        (e) => e.category == 'font' && e.message == 'Font registration scheduled',
+        (e) =>
+            e.category == 'font' && e.message == 'Font registration scheduled',
         orElse: () => throw TestFailure('Font registration was not scheduled'),
       );
       expect(fontScheduledEvent.data['count'], equals(2));
