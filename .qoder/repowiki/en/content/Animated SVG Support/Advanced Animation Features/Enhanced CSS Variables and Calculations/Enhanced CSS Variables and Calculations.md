@@ -18,11 +18,14 @@
 - [svg_filters_registry_pipeline.dart](file://lib/src/animation/svg_filters_registry_pipeline.dart)
 - [svg_filters_registry_inputs.dart](file://lib/src/animation/svg_filters_registry_inputs.dart)
 - [SVGElement.cpp](file://blink-b87d44f-Source-core-svg/SVGElement.cpp)
+- [advanced_use_inheritance_test.dart](file://test/animation/advanced_use_inheritance_test.dart)
+- [use_css_cascade_test.dart](file://test/animation/use_css_cascade_test.dart)
+- [css_selectors_combinators_test.dart](file://test/animation/css_selectors_combinators_test.dart)
 </cite>
 
 ## Update Summary
 **Changes Made**
-- Enhanced CSS cascade processing with new CSS variables cascade resolver integration
+- Enhanced CSS cascade processing with improved selector specificity handling and shadow DOM boundary management
 - Added comprehensive support for structural pseudo-classes: nth-child, nth-last-child, nth-of-type, nth-last-of-type, first-of-type, last-of-type, only-of-type
 - Implemented advanced CSS selector parsing with enhanced structural pseudo-class matching algorithms
 - Expanded CSS calc() evaluator with improved CSS math function support and variable resolution
@@ -86,6 +89,9 @@ subgraph "Testing Framework"
 T1["css_variables_calc_test.dart"]
 T2["css_property_rendering_test.dart"]
 T3["css_cascade_specificity_test.dart"]
+T4["advanced_use_inheritance_test.dart"]
+T5["use_css_cascade_test.dart"]
+T6["css_selectors_combinators_test.dart"]
 end
 CV --> CC
 CC --> CS
@@ -100,6 +106,9 @@ SE --> SD
 T1 --> CV
 T2 --> CV
 T3 --> CC
+T4 --> CC
+T5 --> CC
+T6 --> CS
 ```
 
 **Diagram sources**
@@ -335,6 +344,8 @@ The system integrates with an improved CSS cascade mechanism featuring better sp
 **Section sources**
 - [css_cascade.dart](file://lib/src/animation/css_cascade.dart)
 - [css_cascade_specificity_test.dart](file://test/animation/css_cascade_specificity_test.dart)
+- [advanced_use_inheritance_test.dart](file://test/animation/advanced_use_inheritance_test.dart)
+- [use_css_cascade_test.dart](file://test/animation/use_css_cascade_test.dart)
 
 ### SVG DOM Integration
 The CSS system maintains deep integration with the SVG DOM structure and enhanced rendering pipeline:
@@ -677,6 +688,9 @@ P["css_variables_calc_test.dart"] --> B
 Q["css_property_rendering_test.dart"] --> B
 R["css_cascade_specificity_test.dart"] --> C
 S["css_property_rendering_test.dart"] --> F
+T["advanced_use_inheritance_test.dart"] --> C
+U["use_css_cascade_test.dart"] --> C
+V["css_selectors_combinators_test.dart"] --> F
 end
 ```
 
@@ -762,6 +776,9 @@ The comprehensive test suite covers edge cases, integration scenarios, structura
 - [css_variables_calc_test.dart](file://test/animation/css_variables_calc_test.dart)
 - [css_property_rendering_test.dart](file://test/animation/css_property_rendering_test.dart)
 - [css_cascade_specificity_test.dart](file://test/animation/css_cascade_specificity_test.dart)
+- [advanced_use_inheritance_test.dart](file://test/animation/advanced_use_inheritance_test.dart)
+- [use_css_cascade_test.dart](file://test/animation/use_css_cascade_test.dart)
+- [css_selectors_combinators_test.dart](file://test/animation/css_selectors_combinators_test.dart)
 
 ## Conclusion
 The Enhanced CSS Variables and Calculations system provides a robust, standards-compliant implementation that seamlessly integrates with Flutter's SVG rendering pipeline. The system successfully combines CSS custom properties, mathematical expressions, CSS math functions, structural pseudo-classes, and the cascade mechanism while maintaining excellent performance and memory efficiency. The comprehensive testing coverage, enhanced SMIL animation support, advanced filter primitive processing, improved use context inheritance, modern CSS unit support, and new CSS variables cascade resolver integration ensure reliability across diverse SVG use cases and complex styling scenarios. The system's architecture supports future enhancements while maintaining backward compatibility and optimal performance characteristics.

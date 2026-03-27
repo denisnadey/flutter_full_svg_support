@@ -12,19 +12,23 @@
 - [animated_svg_picture_hit_test_advanced.dart](file://lib/src/animation/animated_svg_picture_hit_test_advanced.dart)
 - [animated_svg_picture_hit_test_use.dart](file://lib/src/animation/animated_svg_picture_hit_test_use.dart)
 - [animated_svg_picture_hit_test_traversal.dart](file://lib/src/animation/animated_svg_picture_hit_test_traversal.dart)
+- [animated_svg_picture_hit_test_visibility.dart](file://lib/src/animation/animated_svg_picture_hit_test_visibility.dart)
+- [animated_svg_painter_clip_mask_advanced.dart](file://lib/src/animation/animated_svg_painter_clip_mask_advanced.dart)
+- [animated_svg_painter_clip_mask.dart](file://lib/src/animation/animated_svg_painter_clip_mask.dart)
 - [event_system_test.dart](file://test/animation/event_system_test.dart)
 - [hit_test_precision_test.dart](file://test/animation/hit_test_precision_test.dart)
+- [advanced_mask_semantics_test.dart](file://test/animation/advanced_mask_semantics_test.dart)
+- [clip_mask_advanced_composition_test.dart](file://test/animation/clip_mask_advanced_composition_test.dart)
 </cite>
 
 ## Update Summary
 **Changes Made**
-- Enhanced event handling with full W3C DOM event flow implementation including capture, target, and bubble phases
-- Implemented comprehensive shadow DOM integration with event retargeting for `<use>` elements
-- Added advanced precision hit testing capabilities for clipPath, mask, text, and marker elements
-- Integrated event delegation system with proper event bubbling and capturing support
-- Enhanced pointer events system with comprehensive pointer event mode resolution
-- Added event tracing and debugging capabilities for monitoring event flow
-- Implemented advanced gesture recognition with unified event handling
+- Enhanced hit testing capabilities with improved clipPath precision and mask hit testing with luminance alpha support
+- Added comprehensive mask-type support including alpha and luminance modes
+- Implemented advanced precision hit testing for clipPath, mask, text, and marker elements
+- Enhanced mask hit testing with proper luminance alpha channel computation
+- Improved clipPath precision with enhanced coordinate transformation handling
+- Added support for mask-type CSS properties and mask-mode specifications
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -34,20 +38,21 @@
 5. [Event Model Implementation](#event-model-implementation)
 6. [Enhanced Pointer Event Handling](#enhanced-pointer-event-handling)
 7. [Advanced Hit Testing System](#advanced-hit-testing-system)
-8. [Event Delegation and Flow Control](#event-delegation-and-flow-control)
-9. [Event Tracing and Debugging](#event-tracing-and-debugging)
-10. [Focus and State Management](#focus-and-state-management)
-11. [Event Timing and Animation Integration](#event-timing-and-animation-integration)
-12. [Testing and Validation](#testing-and-validation)
-13. [Performance Considerations](#performance-considerations)
-14. [Troubleshooting Guide](#troubleshooting-guide)
-15. [Conclusion](#conclusion)
+8. [Enhanced Mask Hit Testing with Luminance Alpha](#enhanced-mask-hit-testing-with-luminance-alpha)
+9. [Event Delegation and Flow Control](#event-delegation-and-flow-control)
+10. [Event Tracing and Debugging](#event-tracing-and-debugging)
+11. [Focus and State Management](#focus-and-state-management)
+12. [Event Timing and Animation Integration](#event-timing-and-animation-integration)
+13. [Testing and Validation](#testing-and-validation)
+14. [Performance Considerations](#performance-considerations)
+15. [Troubleshooting Guide](#troubleshooting-guide)
+16. [Conclusion](#conclusion)
 
 ## Introduction
 
 The Flutter SVG Event System represents a comprehensive implementation of the W3C DOM Event model specifically designed for SVG graphics. This system provides full event bubbling, capturing, and retargeting capabilities, enabling developers to create interactive SVG experiences with native-like event handling.
 
-**Updated** The system now features enhanced W3C DOM event model compliance with comprehensive pointer event support, advanced precision hit testing, gesture recognition capabilities, unified event classes, and a complete event tracing system for debugging and monitoring.
+**Updated** The system now features enhanced W3C DOM event model compliance with comprehensive pointer event support, advanced precision hit testing, gesture recognition capabilities, unified event classes, and a complete event tracing system for debugging and monitoring. Recent enhancements include improved clipPath precision and comprehensive mask hit testing with luminance alpha support.
 
 The system integrates seamlessly with Flutter's gesture detection while maintaining strict adherence to web standards for event propagation, timing, and behavior. It supports all major SVG event types including mouse events, pointer events, keyboard events, focus events, gesture events, and custom events with enhanced precision testing capabilities.
 
@@ -62,7 +67,7 @@ A[User Interaction]
 B[Flutter Gesture Detectors]
 C[W3C Pointer Events]
 D[High-Level Gestures]
-E[Advanced Hit Testing]
+E[Enhanced Hit Testing]
 end
 subgraph "Event Processing Layer"
 F[Enhanced Hit Testing Engine]
@@ -409,7 +414,7 @@ G --> H
 ```
 
 **Diagram sources**
-- [animated_svg_picture_hit_test_advanced.dart:1-800](file://lib/src/animation/animated_svg_picture_hit_test_advanced.dart#L1-L800)
+- [animated_svg_picture_hit_test_advanced.dart:1-816](file://lib/src/animation/animated_svg_picture_hit_test_advanced.dart#L1-L816)
 
 ### Advanced Precision Testing Features
 
@@ -437,8 +442,128 @@ The system includes sophisticated hit testing for complex SVG elements:
 - Collinear edge and zero-length segment handling
 
 **Section sources**
-- [animated_svg_picture_hit_test_advanced.dart:1-800](file://lib/src/animation/animated_svg_picture_hit_test_advanced.dart#L1-L800)
+- [animated_svg_picture_hit_test_advanced.dart:1-816](file://lib/src/animation/animated_svg_picture_hit_test_advanced.dart#L1-L816)
 - [hit_test_precision_test.dart:1-1006](file://test/animation/hit_test_precision_test.dart#L1-L1006)
+
+## Enhanced Mask Hit Testing with Luminance Alpha
+
+**Updated** The system now provides comprehensive mask hit testing with support for both alpha and luminance mask types, enabling precise control over mask opacity computation.
+
+### Mask Type Support
+
+The system supports two primary mask types with comprehensive CSS property parsing:
+
+```mermaid
+classDiagram
+class MaskTypeSupport {
++_SvgMaskType alpha
++alpha mask opacity from alpha channel
++css mask-type : alpha
++css mask-mode : alpha
++_SvgMaskType luminance
++luminance mask opacity from luminance
++css mask-type : luminance
++css mask-mode : luminance
++css mask-mode : match-source
++mask element type attribute
++mask element mask-type style
+}
+class LuminanceCalculation {
++double kLuminanceR = 0.2126
++double kLuminanceG = 0.7152
++double kLuminanceB = 0.0722
++ColorFilter.matrix for luminance conversion
++Output alpha = 0.2126*R + 0.7152*G + 0.0722*B
+}
+MaskTypeSupport --> LuminanceCalculation : uses
+```
+
+**Diagram sources**
+- [animated_svg_painter_clip_mask_advanced.dart:4-12](file://lib/src/animation/animated_svg_painter_clip_mask_advanced.dart#L4-L12)
+
+### Luminance Alpha Mask Processing
+
+The system implements precise luminance alpha computation following ITU-R BT.709 standards:
+
+```mermaid
+flowchart TD
+A[Mask Hit Test Request] --> B{Mask Type?}
+B --> |Alpha| C[Use Standard Alpha Channel]
+B --> |Luminance| D[Compute RGB to Luminance]
+C --> E[Apply Alpha Mask]
+D --> F[Apply Luminance Mask]
+F --> G[RGB to Luminance Conversion]
+G --> H[Output Alpha = 0.2126*R + 0.7152*G + 0.0722*B]
+H --> I[Combine with Original Alpha]
+E --> I
+I --> J[Return Precise Opacity]
+```
+
+**Diagram sources**
+- [animated_svg_painter_clip_mask_advanced.dart:68-88](file://lib/src/animation/animated_svg_painter_clip_mask_advanced.dart#L68-L88)
+
+### Mask Type Resolution Priority
+
+The system follows a comprehensive priority order for determining mask type:
+
+```mermaid
+flowchart TD
+A[Mask Type Resolution] --> B[Check CSS mask-mode Property]
+B --> C{Value = 'luminance'?}
+C --> |Yes| D[Luminance Mask]
+C --> |No| E{Value = 'alpha'?}
+E --> |Yes| F[Alpha Mask]
+E --> |No| G{Value = 'match-source'?}
+G --> |Yes| H[Use Mask Element Settings]
+G --> |No| I[Continue to Next Check]
+D --> J[Return Result]
+F --> J
+H --> J
+I --> K[Check CSS mask-type Property]
+K --> L{Value = 'luminance'?}
+L --> |Yes| D
+L --> |No| M{Value = 'alpha'?}
+M --> |Yes| F
+M --> |No| N[Check mask Element type Attribute]
+N --> O{Value = 'luminance'?}
+O --> |Yes| D
+O --> |No| P{Value = 'alpha'?}
+P --> |Yes| F
+P --> |No| Q[Check mask Element mask-type Style]
+Q --> R{Value = 'luminance'?}
+R --> |Yes| D
+R --> |No| S{Value = 'alpha'?}
+S --> |Yes| F
+S --> |No| T[Default to Alpha Mask]
+```
+
+**Diagram sources**
+- [animated_svg_painter_clip_mask_advanced.dart:26-66](file://lib/src/animation/animated_svg_painter_clip_mask_advanced.dart#L26-L66)
+
+### Enhanced Mask Hit Testing Implementation
+
+The system provides sophisticated mask hit testing with proper luminance alpha support:
+
+#### ClipPath Precision Enhancement
+- Improved clipPath precision with enhanced coordinate transformation handling
+- Support for nested clipPath references with proper recursion depth limiting
+- Accurate hit testing within clipPath boundaries using objectBoundingBox units
+
+#### Mask Hit Testing with Luminance Alpha
+- Precise luminance alpha computation using ITU-R BT.709 coefficients
+- Support for CSS mask-type and mask-mode properties
+- Proper handling of mask-content units and mask units
+- Enhanced mask composition with proper opacity blending
+
+#### Visibility Testing Integration
+- Seamless integration with visibility testing for clipPath and mask
+- Proper handling of foreignObject viewport restrictions
+- Enhanced precision testing for complex SVG compositions
+
+**Section sources**
+- [animated_svg_picture_hit_test_visibility.dart:1-606](file://lib/src/animation/animated_svg_picture_hit_test_visibility.dart#L1-L606)
+- [animated_svg_painter_clip_mask_advanced.dart:1-671](file://lib/src/animation/animated_svg_painter_clip_mask_advanced.dart#L1-L671)
+- [animated_svg_painter_clip_mask.dart:1-233](file://lib/src/animation/animated_svg_painter_clip_mask.dart#L1-L233)
 
 ## Event Delegation and Flow Control
 
@@ -676,10 +801,30 @@ The system includes extensive validation of enhanced event model compliance:
 | Event Tracing | All categories | Trace event emission and categorization |
 | Focus Management | :hover, :active, :focus | State verification through pseudo-class checks |
 | Precision Hit Testing | ClipPath, Mask, Text, Markers | Accuracy validation through visual testing |
+| **Enhanced** | **Mask Type Support** | **Luminance alpha computation validation** |
+| **Enhanced** | **ClipPath Precision** | **Coordinate transformation accuracy** |
+
+### Enhanced Mask Type Testing
+
+**Updated** The system includes comprehensive testing for mask type support:
+
+#### Luminance Mask Testing
+- Validation of RGB to luminance conversion using ITU-R BT.709 coefficients
+- Testing of mask-type CSS properties and mask-mode specifications
+- Verification of proper mask composition with alpha blending
+- Testing of mask inheritance through group elements
+
+#### ClipPath Precision Testing
+- Validation of objectBoundingBox units handling
+- Testing of nested clipPath references with recursion protection
+- Verification of coordinate transformation accuracy
+- Testing of clipPath-on-clipPath composition
 
 **Section sources**
 - [event_system_test.dart:1-732](file://test/animation/event_system_test.dart#L1-L732)
 - [hit_test_precision_test.dart:1-1006](file://test/animation/hit_test_precision_test.dart#L1-L1006)
+- [advanced_mask_semantics_test.dart:624-654](file://test/animation/advanced_mask_semantics_test.dart#L624-L654)
+- [clip_mask_advanced_composition_test.dart:166-255](file://test/animation/clip_mask_advanced_composition_test.dart#L166-L255)
 
 ## Performance Considerations
 
@@ -708,6 +853,13 @@ The gesture recognition system uses efficient algorithms for pointer tracking an
 ### Precision Testing Optimization
 
 The precision hit testing system uses optimized algorithms for complex geometries, with caching mechanisms for frequently accessed elements and paths.
+
+### **Enhanced** Mask Type Processing Optimization
+
+**Updated** The system optimizes mask type processing with efficient luminance computation and caching mechanisms for mask content.
+
+**Section sources**
+- [animated_svg_painter_clip_mask_advanced.dart:68-88](file://lib/src/animation/animated_svg_painter_clip_mask_advanced.dart#L68-L88)
 
 ## Troubleshooting Guide
 
@@ -755,6 +907,18 @@ The precision hit testing system uses optimized algorithms for complex geometrie
 - Ensure text elements have proper font and positioning
 - Validate marker definitions and orientations
 
+**Issue: Mask type not working correctly**
+- Verify mask-type CSS properties are properly formatted
+- Check mask-mode property compatibility with mask-type
+- Ensure mask element has proper type attribute
+- Validate luminance alpha computation accuracy
+
+**Issue: ClipPath precision issues**
+- Verify clipPathUnits attribute is properly set
+- Check nested clipPath references for recursion
+- Ensure coordinate transformations are accurate
+- Validate objectBoundingBox calculations
+
 **Section sources**
 - [svg_event_dispatcher.dart:334-375](file://lib/src/animation/svg_event_dispatcher.dart#L334-L375)
 - [animated_svg_picture_pointer_events.dart:1-208](file://lib/src/animation/animated_svg_picture_pointer_events.dart#L1-L208)
@@ -763,7 +927,7 @@ The precision hit testing system uses optimized algorithms for complex geometrie
 
 The Flutter SVG Event System provides a comprehensive, standards-compliant implementation of the W3C DOM Event model tailored specifically for SVG graphics. The system successfully bridges the gap between Flutter's gesture detection and web standards for event handling, enabling developers to create rich, interactive SVG experiences.
 
-**Updated** Key enhancements include comprehensive W3C DOM pointer event model compliance, advanced precision hit testing for complex SVG elements, gesture recognition system with unified event handling, enhanced event tracing capabilities, and full shadow DOM support with proper event retargeting.
+**Updated** Key enhancements include comprehensive W3C DOM pointer event model compliance, advanced precision hit testing for complex SVG elements, gesture recognition system with unified event handling, enhanced event tracing capabilities, full shadow DOM support with proper event retargeting, and most importantly, comprehensive mask hit testing with luminance alpha support and improved clipPath precision.
 
 The system's integration with the SMIL animation timeline enables sophisticated event-driven animation control, making it possible to create complex interactive SVG experiences that respond naturally to user input while maintaining predictable behavior and performance characteristics.
 
@@ -776,5 +940,7 @@ The system's integration with the SMIL animation timeline enables sophisticated 
 - **Performance Optimization**: Efficient event dispatch with caching and gesture optimization
 - **Robust Testing**: Extensive test suite validating all aspects of the enhanced implementation
 - **Event Delegation**: Comprehensive event delegation with proper flow control
+- ****Enhanced** Mask Type Support**: Comprehensive support for alpha and luminance mask types with precise opacity computation
+- ****Improved** ClipPath Precision**: Enhanced coordinate transformation handling and nested reference support
 
 The system continues to evolve with comprehensive support for modern web standards while maintaining backward compatibility and performance characteristics essential for production SVG applications.

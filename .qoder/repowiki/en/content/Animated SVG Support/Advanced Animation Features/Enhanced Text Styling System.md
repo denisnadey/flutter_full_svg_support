@@ -20,16 +20,21 @@
 - [text_font_fallback_test.dart](file://test/animation/text_font_fallback_test.dart)
 - [text_typography_parity_test.dart](file://test/animation/text_typography_parity_test.dart)
 - [svg.dart](file://lib/svg.dart)
+- [css_cascade.dart](file://lib/src/animation/css_cascade.dart)
+- [SVGForeignObjectElement.cpp](file://blink-b87d44f-Source-core-svg/SVGForeignObjectElement.cpp)
+- [SVGForeignObjectElement.h](file://blink-b87d44f-Source-core-svg/SVGForeignObjectElement.h)
+- [SVGForeignObjectElement.idl](file://blink-b87d44f-Source-core-svg/SVGForeignObjectElement.idl)
 </cite>
 
 ## Update Summary
 **Changes Made**
-- Enhanced foreignObject CSS inheritance system with comprehensive typography property propagation
+- Enhanced foreignObject CSS inheritance system with comprehensive typography property support
 - Added advanced font property management with consistent text styling across foreignObject boundaries
 - Implemented sophisticated CSS property filtering for foreignObject content boundaries
 - Enhanced text rendering pipeline with foreignObject-aware viewport management
 - Improved transform propagation and clipping for foreignObject content
 - Added comprehensive testing suite for foreignObject CSS inheritance scenarios
+- Integrated foreignObject CSS inheritance into the broader CSS cascade system
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -51,7 +56,7 @@
 
 The Enhanced Text Styling System represents a comprehensive implementation of SVG text rendering capabilities within the Flutter ecosystem. This system provides extensive support for CSS text properties, advanced typography features, and sophisticated layout algorithms that enable precise control over text appearance and positioning in SVG documents.
 
-**Updated** The system now includes enhanced foreignObject CSS inheritance capabilities that ensure consistent typography and text styling across foreignObject boundaries. The enhanced system provides comprehensive support for CSS properties including font-family, font-size, font-weight, font-style, font-variant, line-height, letter-spacing, word-spacing, text-decoration, direction, writing-mode, and color properties when content is embedded within foreignObject elements.
+**Updated** The system now includes an enhanced foreignObject CSS inheritance capability that ensures consistent typography and text styling across foreignObject boundaries. The enhanced system provides comprehensive support for CSS properties including font-family, font-size, font-weight, font-style, font-variant, font-stretch, font-size-adjust, font-feature-settings, font-variation-settings, line-height, letter-spacing, word-spacing, text-decoration, direction, writing-mode, text-orientation, unicode-bidi, color, visibility, and cursor properties when content is embedded within foreignObject elements.
 
 The system extends beyond basic text rendering by implementing a complete cascade of CSS properties, supporting modern web standards while maintaining compatibility with Flutter's text rendering engine. It encompasses font handling, text decoration, layout management, positioning systems, and advanced typographic features including vertical writing modes, ruby annotations, emphasis marks, and modern CSS optimization features.
 
@@ -82,6 +87,7 @@ CB[Baseline Resolver]
 CT[Text Transform Resolver]
 CM[Modern CSS Resolver]
 FO[ForeignObject Resolver]
+FC[CSS Cascade Resolver]
 end
 subgraph "Rendering Pipeline"
 PB[Paragraph Builder]
@@ -113,6 +119,7 @@ TR --> CV
 TR --> FO
 FO --> FOT
 FO --> FOP
+FC --> FO
 ```
 
 **Diagram sources**
@@ -346,10 +353,41 @@ Content->>Canvas : Return to Original Context
 - [animated_svg_painter_geometry.dart:449-627](file://lib/src/animation/animated_svg_painter_geometry.dart#L449-L627)
 - [animated_svg_painter_use.dart:670-731](file://lib/src/animation/animated_svg_painter_use.dart#L670-L731)
 
+### Enhanced ForeignObject CSS Inheritance Implementation
+
+**Updated** The system now provides comprehensive foreignObject CSS inheritance with the following enhanced capabilities:
+
+#### Typography Property Inheritance
+The system inherits comprehensive typography properties from SVG ancestors into foreignObject content:
+- **Core Typography**: font-family, font-size, font-weight, font-style, font-variant, font-stretch
+- **Advanced Typography**: font-size-adjust, font-feature-settings, font-variation-settings
+- **Text Layout**: line-height, letter-spacing, word-spacing, text-align, text-indent, text-transform
+- **Text Wrapping**: white-space, word-break, word-wrap, overflow-wrap
+- **Text Decoration**: text-decoration, text-decoration-line, text-decoration-style, text-decoration-color, text-decoration-thickness
+- **Directionality**: direction, writing-mode, text-orientation, unicode-bidi
+- **Color Properties**: CSS color property (not SVG fill/stroke)
+- **Visibility**: visibility, cursor
+
+#### SVG-Specific Property Exclusion
+The system explicitly excludes SVG-specific properties that should not cross foreignObject boundaries:
+- **Fill Properties**: fill, fill-opacity, fill-rule
+- **Stroke Properties**: stroke, stroke-opacity, stroke-width, stroke-linecap, stroke-linejoin, stroke-dasharray, stroke-dashoffset, stroke-miterlimit
+- **Marker Properties**: marker, marker-start, marker-mid, marker-end
+- **Paint Order**: paint-order, vector-effect
+- **Color Interpolation**: color-interpolation, color-interpolation-filters, color-rendering, shape-rendering, text-rendering, image-rendering
+
+#### CSS Cascade Integration
+The foreignObject inheritance system integrates with the broader CSS cascade system:
+- **CSS Custom Properties**: Always inheritable (--xxx properties)
+- **Inherited Properties**: Follow CSS specification for inheritable properties
+- **Non-Inherited Properties**: Respect foreignObject boundary restrictions
+- **Shadow Boundary Behavior**: Treat foreignObject as CSS shadow boundary
+
 **Section sources**
 - [animated_svg_painter_geometry.dart:188-278](file://lib/src/animation/animated_svg_painter_geometry.dart#L188-L278)
 - [animated_svg_painter_geometry.dart:449-627](file://lib/src/animation/animated_svg_painter_geometry.dart#L449-L627)
 - [animated_svg_painter_use.dart:670-731](file://lib/src/animation/animated_svg_painter_use.dart#L670-L731)
+- [css_cascade.dart:180-276](file://lib/src/animation/css_cascade.dart#L180-L276)
 
 ## CSS Property Resolution
 
@@ -378,7 +416,7 @@ CheckVariation --> FinalFont[Final Font Configuration]
 
 **Enhanced Font Family Resolution** The font family resolution system has been significantly enhanced with comprehensive platform-specific font stacks and modern CSS generic family support. The system now includes:
 
-- **Platform-Aware Generic Families**: Sophisticated fallback chains for serif, sans-serif, monospace, ui-serif, ui-sans-serif, ui-monospace, and ui-rounded families
+- **Platform-Aware Generic Families**: Sophisticated fallback chains for serif, sans-serif, monospace, ui-serif, ui-sans-serif, ui-monospace, ui-rounded, and system-ui families
 - **Emoji Font Support**: Dedicated emoji font stacks with Apple Color Emoji, Segoe UI Emoji, and Noto Color Emoji
 - **Math Font Support**: Specialized math font families including Cambria Math, STIX Two Math, and Latin Modern Math
 - **Metric-Compatible Selection**: Fonts chosen for consistent x-height and visual metrics across platforms
@@ -576,6 +614,8 @@ TextGeometryExpansion --> Rect : "expands"
 - **Direction Property Inheritance**: Inheritance of direction, writing-mode, text-orientation, and unicode-bidi for proper text direction handling
 - **Color Property Inheritance**: Inheritance of CSS color property for consistent text coloring
 - **Visibility Property Inheritance**: Inheritance of visibility and cursor properties for proper interaction handling
+- **SVG-Specific Property Exclusion**: Prevention of fill, stroke, and other SVG-specific properties from crossing foreignObject boundaries
+- **CSS Cascade Integration**: Proper integration with the broader CSS cascade system and shadow boundary behavior
 
 **Section sources**
 - [animated_svg_painter_geometry.dart:188-278](file://lib/src/animation/animated_svg_painter_geometry.dart#L188-L278)
@@ -725,6 +765,8 @@ The text styling system works in conjunction with the broader animation framewor
 - Ensure that decoration properties are partially inherited as expected
 - Verify that SVG-specific properties (fill, stroke) are not crossing foreignObject boundaries
 - Confirm that direction and writing-mode properties are properly inherited for proper text direction handling
+- Check that CSS custom properties (--xxx) are properly inherited across boundaries
+- Validate that non-inherited properties (transform, opacity, display, etc.) are correctly restricted
 
 ### Debugging Tools
 
@@ -740,3 +782,5 @@ The Enhanced Text Styling System represents a comprehensive solution for advance
 **Updated** The system now provides comprehensive support for modern CSS features including content-visibility optimization, advanced text decoration controls, enhanced font variant resolution, sophisticated emphasis mark positioning with character-by-character rendering, improved baseline alignment with reference calculation, enhanced text-indent handling with unit conversion, comprehensive cursor management for precise text positioning, enhanced text geometry handling with stroke width and decoration expansion, and most importantly, comprehensive foreignObject CSS inheritance that ensures consistent typography and text styling across foreignObject boundaries. The font family resolution system has been significantly enhanced with complex fallback chains, platform-specific font stacks, comprehensive generic family mapping, emoji font support, math font support, and metric-compatible font selection for consistent typography, making it a complete solution for contemporary web typography requirements with robust foreignObject integration.
 
 The enhanced foreignObject CSS inheritance system ensures that typography properties flow seamlessly from SVG ancestors into foreign content, while preventing SVG-specific properties from leaking into foreign contexts. This provides developers with the flexibility to embed HTML/CSS content within SVG while maintaining consistent visual styling and proper text rendering behavior across the entire document hierarchy.
+
+The system's integration with the broader CSS cascade system and shadow boundary behavior ensures that foreignObject content receives proper CSS inheritance while maintaining the structural integrity of the SVG document. This comprehensive approach to foreignObject typography makes it possible to create sophisticated hybrid SVG/HTML content that leverages the strengths of both technologies while maintaining consistent visual presentation.

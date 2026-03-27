@@ -51,6 +51,16 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
       fontVariations.add(ui.FontVariation('wdth', style.fontStretch));
     }
 
+    // Apply font-optical-sizing via 'opsz' variation axis
+    if (style.fontOpticalSizing == 'auto') {
+      fontVariations.add(ui.FontVariation('opsz', effectiveFontSize));
+    }
+
+    // Apply font-variation-settings
+    if (style.fontVariationSettings != null) {
+      fontVariations.addAll(_parseFontVariationSettings(style.fontVariationSettings!));
+    }
+
     // Apply unicode-bidi by wrapping text with Unicode directional control characters
     final processedText = _applyUnicodeBidi(
       transformedText,
@@ -75,14 +85,28 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
       return cached;
     }
 
+    // Split font-family into primary + fallback chain
+    List<String>? fontFamilyFallback;
+    String? primaryFontFamily = style.fontFamily;
+    if (style.fontFamily != null && style.fontFamily!.contains(',')) {
+      final families = style.fontFamily!.split(',').map((f) => f.trim()).where((f) => f.isNotEmpty).toList();
+      if (families.isNotEmpty) {
+        primaryFontFamily = families.first;
+        if (families.length > 1) {
+          fontFamilyFallback = families.sublist(1);
+        }
+      }
+    }
+
     // Build the paragraph
     final paragraphBuilder = ui.ParagraphBuilder(
       ui.ParagraphStyle(
         fontSize: effectiveFontSize,
-        fontFamily: style.fontFamily,
+        fontFamily: primaryFontFamily,
         fontWeight: style.fontWeight,
         fontStyle: style.fontStyle,
         textDirection: style.textDirection,
+        height: style.lineHeight != null ? style.lineHeight! / effectiveFontSize : null,
       ),
     );
     final decoration = _buildTextDecoration(style.decorations);
@@ -116,13 +140,18 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
       ui.TextStyle(
         color: style.color,
         fontSize: effectiveFontSize,
-        fontFamily: style.fontFamily,
+        fontFamily: primaryFontFamily,
+        fontFamilyFallback: fontFamilyFallback,
         fontWeight: style.fontWeight,
         fontStyle: style.fontStyle,
         letterSpacing: style.letterSpacing,
         wordSpacing: style.wordSpacing,
         decoration: decoration,
         decorationColor: style.decorationColor ?? style.color,
+        decorationStyle: _mapDecorationStyle(style.textDecorationStyle),
+        decorationThickness: style.textDecorationThickness,
+        height: style.lineHeight != null ? style.lineHeight! / effectiveFontSize : null,
+        shadows: style.textShadow != null ? _parseTextShadows(style.textShadow!) : null,
         fontFeatures: allFontFeatures.isNotEmpty ? allFontFeatures : null,
         fontVariations: fontVariations.isNotEmpty ? fontVariations : null,
       ),
@@ -133,6 +162,132 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
 
     // Cache the result
     _renderCache.textParagraphs[cacheKey] = paragraph;
+
+    return paragraph;
+  }
+
+  /// Builds a stroke-only paragraph for SVG text stroke rendering.
+  /// Returns null if no stroke is defined or stroke is 'none'.
+  ui.Paragraph? _buildStrokeTextParagraph(
+    String text,
+    _ResolvedTextStyle style,
+    SvgNode node,
+  ) {
+    // Check if stroke is defined
+    final strokeValue = _getInheritedAttributeValue(node, 'stroke');
+    if (strokeValue == null ||
+        strokeValue.toString().trim() == 'none' ||
+        strokeValue.toString().trim().isEmpty) {
+      return null;
+    }
+
+    final strokeColor = _resolveColorForNode(strokeValue, node);
+    if (strokeColor == null) return null;
+
+    final strokeWidth =
+        (_getInheritedNumber(node, 'stroke-width') ?? 1.0).clamp(0.0, 100.0);
+    if (strokeWidth <= 0) return null;
+
+    final opacity = (_getInheritedNumber(node, 'opacity') ?? 1.0).clamp(0.0, 1.0);
+    final strokeOpacity =
+        (_getInheritedNumber(node, 'stroke-opacity') ?? 1.0).clamp(0.0, 1.0);
+    final effectiveColor = _applyOpacity(strokeColor, opacity * strokeOpacity);
+
+    // Apply NFC normalization and text-transform (same as fill paragraph)
+    final normalizedText = _normalizeTextNfc(text);
+    var transformedText = _applyTextTransform(normalizedText, style.textTransform);
+    final processedText = _applyUnicodeBidi(
+      transformedText,
+      style.unicodeBidi,
+      style.textDirection,
+    );
+
+    // Apply font-size-adjust
+    var effectiveFontSize = style.fontSize;
+    if (style.fontSizeAdjust != null && style.fontSizeAdjust! > 0) {
+      const estimatedAspectRatio = 0.48;
+      effectiveFontSize =
+          style.fontSize * (style.fontSizeAdjust! / estimatedAspectRatio);
+    }
+
+    // Split font family
+    List<String>? fontFamilyFallback;
+    String? primaryFontFamily = style.fontFamily;
+    if (style.fontFamily != null && style.fontFamily!.contains(',')) {
+      final families = style.fontFamily!
+          .split(',')
+          .map((f) => f.trim())
+          .where((f) => f.isNotEmpty)
+          .toList();
+      if (families.isNotEmpty) {
+        primaryFontFamily = families.first;
+        if (families.length > 1) {
+          fontFamilyFallback = families.sublist(1);
+        }
+      }
+    }
+
+    // Build stroke paint
+    final strokePaint = ui.Paint()
+      ..style = ui.PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..color = effectiveColor;
+
+    // Handle stroke-linecap
+    final lineCap = _getInheritedString(node, 'stroke-linecap');
+    if (lineCap != null) {
+      switch (lineCap.toLowerCase()) {
+        case 'round':
+          strokePaint.strokeCap = ui.StrokeCap.round;
+          break;
+        case 'square':
+          strokePaint.strokeCap = ui.StrokeCap.square;
+          break;
+        default:
+          strokePaint.strokeCap = ui.StrokeCap.butt;
+      }
+    }
+
+    // Handle stroke-linejoin
+    final lineJoin = _getInheritedString(node, 'stroke-linejoin');
+    if (lineJoin != null) {
+      switch (lineJoin.toLowerCase()) {
+        case 'round':
+          strokePaint.strokeJoin = ui.StrokeJoin.round;
+          break;
+        case 'bevel':
+          strokePaint.strokeJoin = ui.StrokeJoin.bevel;
+          break;
+        default:
+          strokePaint.strokeJoin = ui.StrokeJoin.miter;
+      }
+    }
+
+    final paragraphBuilder = ui.ParagraphBuilder(
+      ui.ParagraphStyle(
+        fontSize: effectiveFontSize,
+        fontFamily: primaryFontFamily,
+        fontWeight: style.fontWeight,
+        fontStyle: style.fontStyle,
+        textDirection: style.textDirection,
+      ),
+    );
+
+    paragraphBuilder.pushStyle(
+      ui.TextStyle(
+        foreground: strokePaint,
+        fontSize: effectiveFontSize,
+        fontFamily: primaryFontFamily,
+        fontFamilyFallback: fontFamilyFallback,
+        fontWeight: style.fontWeight,
+        fontStyle: style.fontStyle,
+        letterSpacing: style.letterSpacing,
+        wordSpacing: style.wordSpacing,
+      ),
+    );
+    paragraphBuilder.addText(processedText);
+    final paragraph = paragraphBuilder.build();
+    paragraph.layout(const ui.ParagraphConstraints(width: 1000000));
 
     return paragraph;
   }
@@ -1438,5 +1593,127 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
       }
     }
     return buffer.toString();
+  }
+
+  /// Maps CSS text-decoration-style to Flutter ui.TextDecorationStyle.
+  ui.TextDecorationStyle _mapDecorationStyle(String? value) {
+    switch (value) {
+      case 'double': return ui.TextDecorationStyle.double;
+      case 'dotted': return ui.TextDecorationStyle.dotted;
+      case 'dashed': return ui.TextDecorationStyle.dashed;
+      case 'wavy': return ui.TextDecorationStyle.wavy;
+      case 'solid':
+      default: return ui.TextDecorationStyle.solid;
+    }
+  }
+
+  /// Parses CSS text-shadow value into Flutter Shadow list.
+  /// Format: offset-x offset-y [blur-radius] [color], comma-separated for multiple.
+  List<ui.Shadow> _parseTextShadows(String value) {
+    final shadows = <ui.Shadow>[];
+    // Split by commas for multiple shadows
+    final parts = value.split(',');
+    for (final part in parts) {
+      final shadow = _parseSingleTextShadow(part.trim());
+      if (shadow != null) {
+        shadows.add(shadow);
+      }
+    }
+    return shadows;
+  }
+
+  /// Parses a single CSS text-shadow value.
+  ui.Shadow? _parseSingleTextShadow(String value) {
+    if (value.isEmpty) return null;
+    // Parse: offset-x offset-y [blur-radius] [color]
+    // Color can be at start or end
+    final tokens = value.split(RegExp(r'\s+'));
+    if (tokens.length < 2) return null;
+    
+    var color = const ui.Color(0xFF000000);
+    final numericTokens = <double>[];
+    
+    for (final token in tokens) {
+      final numVal = double.tryParse(token.replaceAll(RegExp(r'px$'), ''));
+      if (numVal != null) {
+        numericTokens.add(numVal);
+      } else {
+        // Try to parse as color
+        final parsed = _tryParseColor(token);
+        if (parsed != null) {
+          color = parsed;
+        }
+      }
+    }
+    
+    if (numericTokens.length < 2) return null;
+    
+    return ui.Shadow(
+      offset: ui.Offset(numericTokens[0], numericTokens[1]),
+      blurRadius: numericTokens.length > 2 ? numericTokens[2] : 0.0,
+      color: color,
+    );
+  }
+
+  /// Tries to parse a color string for text-shadow.
+  ui.Color? _tryParseColor(String token) {
+    final normalized = token.toLowerCase().trim();
+    // Simple named colors
+    const colorMap = <String, int>{
+      'black': 0xFF000000,
+      'white': 0xFFFFFFFF,
+      'red': 0xFFFF0000,
+      'green': 0xFF008000,
+      'blue': 0xFF0000FF,
+      'gray': 0xFF808080,
+      'grey': 0xFF808080,
+      'transparent': 0x00000000,
+    };
+    if (colorMap.containsKey(normalized)) {
+      return ui.Color(colorMap[normalized]!);
+    }
+    // Hex color
+    if (normalized.startsWith('#')) {
+      final hex = normalized.substring(1);
+      if (hex.length == 6) {
+        final val = int.tryParse('FF$hex', radix: 16);
+        if (val != null) return ui.Color(val);
+      } else if (hex.length == 3) {
+        final r = hex[0], g = hex[1], b = hex[2];
+        final val = int.tryParse('FF$r$r$g$g$b$b', radix: 16);
+        if (val != null) return ui.Color(val);
+      }
+    }
+    // rgb/rgba
+    if (normalized.startsWith('rgb')) {
+      final match = RegExp(r'rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*([\d.]+))?\s*\)').firstMatch(normalized);
+      if (match != null) {
+        final r = int.tryParse(match.group(1)!) ?? 0;
+        final g = int.tryParse(match.group(2)!) ?? 0;
+        final b = int.tryParse(match.group(3)!) ?? 0;
+        final a = match.group(4) != null ? ((double.tryParse(match.group(4)!) ?? 1.0) * 255).round() : 255;
+        return ui.Color.fromARGB(a, r, g, b);
+      }
+    }
+    return null;
+  }
+
+  /// Parses CSS font-variation-settings value.
+  /// Format: "'axis' value" or '"axis" value', comma-separated.
+  List<ui.FontVariation> _parseFontVariationSettings(String value) {
+    final variations = <ui.FontVariation>[];
+    final settings = value.split(',');
+    for (final setting in settings) {
+      final trimmed = setting.trim();
+      if (trimmed.isEmpty) continue;
+      // Format: "'axis' value" or '"axis" value'
+      final match = RegExp(r"""['"]([a-zA-Z0-9]{4})['"](?:\s+([\d.+-]+))?""").firstMatch(trimmed);
+      if (match != null) {
+        final axis = match.group(1)!;
+        final val = double.tryParse(match.group(2) ?? '1') ?? 1.0;
+        variations.add(ui.FontVariation(axis, val));
+      }
+    }
+    return variations;
   }
 }

@@ -17,6 +17,7 @@
 - [smil_timeline_info.dart](file://lib/src/animation/smil/smil_timeline_info.dart)
 - [smil_animation.dart](file://lib/src/animation/smil/smil_animation.dart)
 - [smil_parser.dart](file://lib/src/animation/smil/smil_parser.dart)
+- [smil_parser_animation_parsing.dart](file://lib/src/animation/smil/smil_parser_animation_parsing.dart)
 - [css_to_smil_converter.dart](file://lib/src/animation/css_to_smil_converter.dart)
 - [css_to_smil_converter_core.dart](file://lib/src/animation/css_to_smil_converter_core.dart)
 - [css_to_smil_converter_transforms.dart](file://lib/src/animation/css_to_smil_converter_transforms.dart)
@@ -26,6 +27,7 @@
 - [timing_parser.dart](file://lib/src/animation/smil/timing_parser.dart)
 - [smil_timeline_syncbase.dart](file://lib/src/animation/smil/smil_timeline_syncbase.dart)
 - [smil_timeline_runtime.dart](file://lib/src/animation/smil/smil_timeline_runtime.dart)
+- [interpolators.dart](file://lib/src/animation/smil/interpolators.dart)
 - [controller_test.dart](file://test/animation/controller_test.dart)
 - [css_animations_test.dart](file://test/animation/css_animations_test.dart)
 - [event_timing_test.dart](file://test/animation/event_timing_test.dart)
@@ -38,21 +40,21 @@
 - [css_transform_calc_test.dart](file://test/animation/css_transform_calc_test.dart)
 - [css_variables_calc_test.dart](file://test/animation/css_variables_calc_test.dart)
 - [css_transform_decomposition_test.dart](file://test/animation/css_transform_decomposition_test.dart)
+- [smil_test.dart](file://test/animation/smil_test.dart)
+- [gradient_stop_color_animation_test.dart](file://test/animation/gradient_stop_color_animation_test.dart)
+- [examples_data.dart](file://example/lib/data/examples_data.dart)
 - [animation.dart](file://lib/src/animation.dart)
 </cite>
 
 ## Update Summary
 **Changes Made**
-- Enhanced SMIL parsing and CSS animation conversion with improved transform processing capabilities
-- Added comprehensive CSS transform parsing with support for compound transforms and calc() expressions
-- Implemented advanced transform normalization with full function decomposition and unit conversion
-- Enhanced CSS animation conversion with proper transform semantics and additive modes
-- Added support for CSS calc() expressions in transform values with proper evaluation
-- Improved transform type inference and animation generation for animateTransform elements
-- **NEW** Enhanced event-driven animation system with comprehensive DOM event integration and improved autoplay functionality
-- **NEW** Added hasEventBasedAnimations() method for automatic event-based animation detection
-- **NEW** Implemented target-specific event handling with element ID support
-- **NEW** Enhanced timing systems with offset support and event-based synchronization
+- Enhanced SMIL animation system with animateColor support for deprecated but still encountered color animations
+- Improved transform type handling with comprehensive animateTransform type attribute parsing and validation
+- Added animateColor animation type to SmilAnimationType enum with dedicated color interpolation support
+- Enhanced SmilParser to recognize and process animateColor elements with proper type attribute validation
+- Improved transform type inference and animation generation for animateTransform elements with robust type attribute handling
+- Updated interpolators to support animateColor animations with proper color value interpolation
+- Enhanced CSS animation conversion with improved transform semantics and additive modes for color animations
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -69,7 +71,7 @@
 ## Introduction
 This document describes the animation APIs for Flutter SVG, focusing on the AnimatedSvgController, timeline management, and animation control methods. It covers controller methods for play, pause, stop, seek, and loop control; timeline properties such as duration, position, status, and playback rate; animation state management and event callbacks; and integration with Flutter animation widgets. It also documents SMIL animation parsing, CSS animation conversion, and animation composition, with examples of programmatic control, synchronization, and custom behaviors. Finally, it addresses performance optimization, memory management, and debugging techniques.
 
-**Updated** Enhanced SMIL parsing and CSS animation conversion now feature improved transform processing capabilities with comprehensive support for compound transforms, calc() expressions, and advanced unit conversions. The system maintains better compatibility with CSS animation specifications while providing robust transform normalization and type inference. **NEW** The event-driven animation system now provides comprehensive DOM event integration with automatic detection through hasEventBasedAnimations() method, enabling intelligent controller initialization and seamless interactive SVG experiences.
+**Updated** Enhanced SMIL parsing and CSS animation conversion now feature comprehensive animateColor support for deprecated but still encountered color animations, alongside improved transform processing capabilities with enhanced animateTransform type attribute handling. The system maintains better compatibility with CSS animation specifications while providing robust transform normalization and type inference. **NEW** The event-driven animation system now provides comprehensive DOM event integration with automatic detection through hasEventBasedAnimations() method, enabling intelligent controller initialization and seamless interactive SVG experiences.
 
 ## Project Structure
 The animation system is organized around:
@@ -78,7 +80,7 @@ The animation system is organized around:
 - SvgTimeline: Central timeline orchestrating SMIL animations, timing, and event triggers.
 - SmilAnimation: Individual SMIL animation definitions and runtime evaluation.
 - SmilParser and CssToSmilConverter: Parsers that extract and normalize SMIL and CSS animations into a unified runtime model.
-- **Enhanced** Transform Processing System: Comprehensive CSS transform parsing with calc() expression support, compound transform handling, and advanced unit conversion.
+- **Enhanced** Transform Processing System: Comprehensive CSS transform parsing with support for compound transforms, calc() expressions, and advanced unit conversions.
 - **NEW** Event-Based Animation System: Comprehensive DOM event support with hasEventBasedAnimations() detection, automatic controller initialization, and target-specific event handling.
 - **Enhanced** AnimatedSvgPainterTextStyleExtension: Comprehensive CSS text styling resolution with 5 specialized modules supporting 53 properties and advanced unit conversions.
 - Tests and examples: Demonstrate controller usage, CSS-to-SMIL conversion, event-driven animations, transform processing, and synchronization.
@@ -107,6 +109,8 @@ TextStyleExt --> DecorationModule["Decoration Module"]
 TextStyleExt --> LayoutModule["Layout Module"]
 TextStyleExt --> PositioningModule["Positioning Module"]
 TextStyleExt --> RenderingModule["Rendering Module"]
+AnimColor["animateColor Support"] --> Anim
+AnimColor --> Interpolators["Color Interpolation"]
 ```
 
 **Diagram sources**
@@ -123,12 +127,14 @@ TextStyleExt --> RenderingModule["Rendering Module"]
 - [smil_timeline.dart:20-256](file://lib/src/animation/smil/smil_timeline.dart#L20-L256)
 - [smil_animation.dart:80-453](file://lib/src/animation/smil/smil_animation.dart#L80-L453)
 - [smil_parser.dart:13-39](file://lib/src/animation/smil/smil_parser.dart#L13-L39)
+- [smil_parser_animation_parsing.dart:187-202](file://lib/src/animation/smil/smil_parser_animation_parsing.dart#L187-L202)
 - [css_to_smil_converter.dart:15-68](file://lib/src/animation/css_to_smil_converter.dart#L15-L68)
 - [css_to_smil_converter_core.dart:184-200](file://lib/src/animation/css_to_smil_converter_core.dart#L184-L200)
 - [css_to_smil_converter_transforms_values.dart:64-168](file://lib/src/animation/css_to_smil_converter_transforms_values.dart#L64-L168)
 - [css_variables_calc.dart:200-327](file://lib/src/animation/css_variables_calc.dart#L200-L327)
 - [timing_condition.dart:126-161](file://lib/src/animation/smil/timing_condition.dart#L126-L161)
 - [timing_parser.dart:64-91](file://lib/src/animation/smil/timing_parser.dart#L64-L91)
+- [interpolators.dart:14-42](file://lib/src/animation/smil/interpolators.dart#L14-L42)
 
 **Section sources**
 - [animation.dart:1-31](file://lib/src/animation.dart#L1-L31)
@@ -148,6 +154,7 @@ TextStyleExt --> RenderingModule["Rendering Module"]
 - [smil_timeline.dart:20-256](file://lib/src/animation/smil/smil_timeline.dart#L20-L256)
 - [smil_animation.dart:80-453](file://lib/src/animation/smil/smil_animation.dart#L80-L453)
 - [smil_parser.dart:13-39](file://lib/src/animation/smil/smil_parser.dart#L13-L39)
+- [smil_parser_animation_parsing.dart:187-202](file://lib/src/animation/smil/smil_parser_animation_parsing.dart#L187-L202)
 - [css_to_smil_converter_transforms_values.dart:64-168](file://lib/src/animation/css_to_smil_converter_transforms_values.dart#L64-L168)
 - [css_variables_calc.dart:200-327](file://lib/src/animation/css_variables_calc.dart#L200-L327)
 - [timing_condition.dart:126-161](file://lib/src/animation/smil/timing_condition.dart#L126-L161)
@@ -169,6 +176,7 @@ participant EventSys as "Event-Based Timing System"
 participant DOM as "DOM Events"
 participant TransformParser as "Transform Parser"
 participant CalcEval as "CssCalcEvaluator"
+participant AnimColor as "animateColor Support"
 Client->>Controller : "seek()/setPlaybackRate()/reverse()/restart()"
 Controller-->>Picture : "notifyListeners()"
 Picture->>TL : "hasEventBasedAnimations()"
@@ -182,6 +190,8 @@ DOM-->>EventSys : "Event detected"
 EventSys->>TL : "Activate animations with offset support"
 TL->>TransformParser : "Parse CSS transform values"
 TransformParser->>CalcEval : "Evaluate calc() expressions"
+TL->>AnimColor : "Process animateColor animations"
+AnimColor->>Interpolators : "Interpolate color values"
 CalcEval-->>TransformParser : "Normalized transform values"
 TL-->>Picture : "active animations updated"
 Picture-->>Client : "repaint with new frame"
@@ -196,6 +206,7 @@ Picture-->>Client : "repaint with new frame"
 - [timing_condition.dart:126-161](file://lib/src/animation/smil/timing_condition.dart#L126-L161)
 - [css_to_smil_converter_transforms_values.dart:64-168](file://lib/src/animation/css_to_smil_converter_transforms_values.dart#L64-L168)
 - [css_variables_calc.dart:200-327](file://lib/src/animation/css_variables_calc.dart#L200-L327)
+- [interpolators.dart:55-86](file://lib/src/animation/smil/interpolators.dart#L55-L86)
 
 ## Detailed Component Analysis
 
@@ -265,10 +276,11 @@ Usage highlights:
   - Maintains proper additive modes for CSS compatibility.
 
 **Section sources**
+- [smil_parser_animation_parsing.dart:28-38](file://lib/src/animation/smil/smil_parser_animation_parsing.dart#L28-L38)
 - [css_to_smil_converter_transforms_values.dart:64-168](file://lib/src/animation/css_to_smil_converter_transforms_values.dart#L64-L168)
 - [css_to_smil_converter_core.dart:184-200](file://lib/src/animation/css_to_smil_converter_core.dart#L184-L200)
 - [css_variables_calc.dart:200-327](file://lib/src/animation/css_variables_calc.dart#L200-L327)
-- [smil_animation.dart:203-204](file://lib/src/animation/smil/smil_animation.dart#L203-L204)
+- [smil_animation.dart:204-205](file://lib/src/animation/smil/smil_animation.dart#L204-L205)
 
 ### Enhanced Event-Driven Animation System
 - Purpose: Automatic detection and management of event-based animations for interactive SVG experiences.
@@ -359,14 +371,24 @@ Usage highlights:
 - **Enhanced** Transform Type Support:
   - transformType field stores the specific transform function type (translate, rotate, scale, etc.).
   - Used for proper animateTransform interpolation and value computation.
+- **NEW** animateColor Support:
+  - animateColor type added to SmilAnimationType enum for deprecated but still encountered color animations.
+  - Proper color interpolation support through dedicated color interpolators.
+  - Maintains compatibility with existing color animation workflows.
 
 **Section sources**
+- [smil_animation.dart:14-29](file://lib/src/animation/smil/smil_animation.dart#L14-L29)
 - [smil_animation.dart:80-453](file://lib/src/animation/smil/smil_animation.dart#L80-L453)
 
-### SMIL Parsing and CSS Animation Conversion
+### Enhanced SMIL Parsing and CSS Animation Conversion
 - SmilParser:
   - Extracts native SMIL animations and CSS animations from inline styles and @keyframes.
   - Supports CSS selector targeting (#id, .class).
+  - **NEW** Enhanced animateColor parsing with proper type attribute validation.
+  - **Enhanced** Transform Processing: Decomposes compound transforms into separate SmilAnimation instances per transform function.
+  - **Enhanced** CSS Transform Handling: Uses REPLACE semantics for CSS transform animations to prevent double-application.
+  - Maps timing functions (cubic-bezier) to keySplines and normalizes values.
+  - **Enhanced** Transform Type Inference: Determines transform type from first function in compound transforms.
 - CssToSmilConverter:
   - Converts CSS keyframes to SMIL equivalents.
   - **Enhanced** Transform Processing: Decomposes compound transforms into separate SmilAnimation instances per transform function.
@@ -394,18 +416,23 @@ EventConditions --> Timeline
 TransformProcessing --> CalcEvaluation["Calc Expression Evaluation"]
 CalcEvaluation --> UnitConversion["Unit Conversion"]
 UnitConversion --> TransformNormalization["Transform Normalization"]
+BuildSMIL --> AnimateColor["animateColor Processing"]
+AnimateColor --> ColorInterpolation["Color Interpolation"]
 ```
 
 **Diagram sources**
 - [smil_parser.dart:16-37](file://lib/src/animation/smil/smil_parser.dart#L16-L37)
+- [smil_parser_animation_parsing.dart:187-202](file://lib/src/animation/smil/smil_parser_animation_parsing.dart#L187-L202)
 - [css_to_smil_converter.dart:15-68](file://lib/src/animation/css_to_smil_converter.dart#L15-L68)
 - [css_to_smil_converter_core.dart:184-200](file://lib/src/animation/css_to_smil_converter_core.dart#L184-L200)
 - [css_to_smil_converter_transforms_values.dart:64-168](file://lib/src/animation/css_to_smil_converter_transforms_values.dart#L64-L168)
 - [timing_parser.dart:17-62](file://lib/src/animation/smil/timing_parser.dart#L17-L62)
 - [timing_condition.dart:126-161](file://lib/src/animation/smil/timing_condition.dart#L126-L161)
+- [interpolators.dart:55-86](file://lib/src/animation/smil/interpolators.dart#L55-L86)
 
 **Section sources**
 - [smil_parser.dart:13-39](file://lib/src/animation/smil/smil_parser.dart#L13-L39)
+- [smil_parser_animation_parsing.dart:187-202](file://lib/src/animation/smil/smil_parser_animation_parsing.dart#L187-L202)
 - [css_to_smil_converter.dart:15-68](file://lib/src/animation/css_to_smil_converter.dart#L15-L68)
 - [css_to_smil_converter_core.dart:184-200](file://lib/src/animation/css_to_smil_converter_core.dart#L184-L200)
 - [css_to_smil_converter_transforms_values.dart:64-168](file://lib/src/animation/css_to_smil_converter_transforms_values.dart#L64-L168)
@@ -456,8 +483,8 @@ UnitConversion --> TransformNormalization["Transform Normalization"]
   - Tests demonstrate pause/resume, seek, rate changes, direction toggles, and restart.
 - Widget integration:
   - AnimatedSvgPicture subscribes to controller updates and starts/stops playback accordingly.
-  - On each tick, converts controller progress to elapsed time and seeks the timeline.
-  - **NEW** Intelligent controller initialization based on event-driven animation detection.
+- On each tick, converts controller progress to elapsed time and seeks the timeline.
+- **NEW** Intelligent controller initialization based on event-driven animation detection.
 
 **Section sources**
 - [controller_test.dart:26-140](file://test/animation/controller_test.dart#L26-L140)
@@ -477,12 +504,38 @@ UnitConversion --> TransformNormalization["Transform Normalization"]
 - **Enhanced** Transform Type Inference:
   - Transform type determined from first function in compound transforms.
   - animateTransform type specification preserved for SMIL compatibility.
+- **NEW** animateColor Animation Support:
+  - animateColor elements are parsed and processed with proper color interpolation.
+  - Maintains backward compatibility with deprecated SMIL color animation syntax.
 
 **Section sources**
+- [smil_parser_animation_parsing.dart:187-202](file://lib/src/animation/smil/smil_parser_animation_parsing.dart#L187-L202)
 - [css_to_smil_converter_core.dart:184-200](file://lib/src/animation/css_to_smil_converter_core.dart#L184-L200)
 - [css_to_smil_converter_transforms_values.dart:64-168](file://lib/src/animation/css_to_smil_converter_transforms_values.dart#L64-L168)
 - [css_animations_test.dart:312-339](file://test/animation/css_animations_test.dart#L312-L339)
 - [timing_parser.dart:70-91](file://lib/src/animation/smil/timing_parser.dart#L70-L91)
+
+### Enhanced Color Animation Support
+- Purpose: Comprehensive color animation processing with support for both modern and deprecated color animation syntax.
+- **NEW** animateColor Element Support:
+  - SmilParser recognizes and processes animateColor elements with proper type attribute validation.
+  - animateColor type added to SmilAnimationType enum for dedicated color animation handling.
+  - Validates type attribute presence for animateColor elements (required per SMIL specification).
+- **Enhanced** Color Interpolation:
+  - Interpolators support color value interpolation for both animate and animateColor animations.
+  - Handles hex colors, named colors, rgb() syntax, and extended CSS color names.
+  - Proper alpha channel interpolation for transparent color animations.
+- **Backward Compatibility**:
+  - animateColor maintains compatibility with deprecated SMIL color animation syntax.
+  - Seamless integration with existing color animation workflows and CSS color parsing.
+- **Validation and Error Handling**:
+  - animateColor elements without proper type attribute are ignored with graceful error handling.
+  - Color parsing errors are handled gracefully with fallback to default colors.
+
+**Section sources**
+- [smil_parser_animation_parsing.dart:187-202](file://lib/src/animation/smil/smil_parser_animation_parsing.dart#L187-L202)
+- [smil_animation.dart:27-28](file://lib/src/animation/smil/smil_animation.dart#L27-L28)
+- [interpolators.dart:55-86](file://lib/src/animation/smil/interpolators.dart#L55-L86)
 
 ## Dependency Analysis
 ```mermaid
@@ -564,6 +617,15 @@ class AnimatedSvgPainterTextStyleExtension {
 +Positioning Module methods
 +Rendering Module methods
 }
+class Interpolators {
++interpolate(from, to, t, type)
++interpolateColor(from, to, t)
++interpolateNumber(from, to, t)
++interpolateTransform(from, to, t)
++interpolatePath(from, to, t)
++interpolateList(from, to, t)
++add(base, delta, type)
+}
 class _ResolvedTextStyle {
 +color
 +fontSize
@@ -583,6 +645,7 @@ SvgTimeline --> EventCondition : "event-based timing"
 TimingParser --> EventCondition : "parses events"
 CssToSmilConverter --> TransformParser : "uses for transforms"
 TransformParser --> CssCalcEvaluator : "evaluates calc() expressions"
+Interpolators --> SmilAnimation : "color interpolation"
 ```
 
 **Diagram sources**
@@ -603,6 +666,7 @@ TransformParser --> CssCalcEvaluator : "evaluates calc() expressions"
 - [animated_svg_painter_text_style_positioning.dart:1-335](file://lib/src/animation/animated_svg_painter_text_style_positioning.dart#L1-L335)
 - [animated_svg_painter_text_style_rendering.dart:1-545](file://lib/src/animation/animated_svg_painter_text_style_rendering.dart#L1-L545)
 - [animated_svg_painter.dart:412-857](file://lib/src/animation/animated_svg_painter.dart#L412-L857)
+- [interpolators.dart:14-42](file://lib/src/animation/smil/interpolators.dart#L14-L42)
 
 **Section sources**
 - [animated_svg_controller.dart:25-131](file://lib/src/animation/animated_svg_controller.dart#L25-L131)
@@ -622,6 +686,7 @@ TransformParser --> CssCalcEvaluator : "evaluates calc() expressions"
 - [animated_svg_painter_text_style_positioning.dart:1-335](file://lib/src/animation/animated_svg_painter_text_style_positioning.dart#L1-L335)
 - [animated_svg_painter_text_style_rendering.dart:1-545](file://lib/src/animation/animated_svg_painter_text_style_rendering.dart#L1-L545)
 - [animated_svg_painter.dart:412-857](file://lib/src/animation/animated_svg_painter.dart#L412-L857)
+- [interpolators.dart:14-42](file://lib/src/animation/smil/interpolators.dart#L14-L42)
 
 ## Performance Considerations
 - Keep playbackRate positive and reasonable to avoid excessive recomputations.
@@ -638,6 +703,8 @@ TransformParser --> CssCalcEvaluator : "evaluates calc() expressions"
 - **NEW** Transform processing system uses optimized regex patterns and efficient argument parsing for CSS transform values.
 - **NEW** Calc() expression evaluation includes iterative limits to prevent infinite loops while maintaining performance.
 - **NEW** Transform normalization caches intermediate results and uses efficient string building for compound transform processing.
+- **NEW** animateColor animation processing includes optimized color interpolation algorithms for smooth color transitions.
+- **NEW** Color parsing and interpolation are cached to improve performance for repeated color animation evaluations.
 - **Updated** Modular architecture enables selective property resolution and improved memory management.
 
 ## Troubleshooting Guide
@@ -659,6 +726,11 @@ TransformParser --> CssCalcEvaluator : "evaluates calc() expressions"
   - Ensure compound transforms use spaces between functions (e.g., "translate(50px) rotate(45deg)").
   - Verify transform type inference works correctly for animateTransform elements.
   - Check transformType field is properly set for animateTransform animations.
+- **NEW** animateColor animation issues:
+  - Verify animateColor elements include proper type attribute (required per SMIL specification).
+  - Check color values are valid CSS color formats (hex, named colors, rgb(), etc.).
+  - Ensure color interpolation produces expected results for gradient color animations.
+  - Verify animateColor elements are properly parsed and included in animation timeline.
 - **NEW** Event-based animation issues:
   - Verify event condition parsing supports the specific event type (click, mouseover, etc.).
   - Check target-specific event syntax: "elementId.eventType+offset".
@@ -688,9 +760,11 @@ TransformParser --> CssCalcEvaluator : "evaluates calc() expressions"
 - [css_transform_decomposition_test.dart:62-75](file://test/animation/css_transform_decomposition_test.dart#L62-L75)
 - [animated_svg_painter_text_style.dart:3-342](file://lib/src/animation/animated_svg_painter_text_style.dart#L3-L342)
 - [event_timing_test.dart:104-134](file://test/animation/event_timing_test.dart#L104-L134)
+- [smil_test.dart:106-246](file://test/animation/smil_test.dart#L106-L246)
+- [gradient_stop_color_animation_test.dart:80-105](file://test/animation/gradient_stop_color_animation_test.dart#L80-L105)
 
 ## Conclusion
-The Flutter SVG animation system provides a robust, SMIL-compatible pipeline with a clear separation of concerns: AnimatedSvgController for programmatic control, AnimatedSvgPicture for widget lifecycle and rendering, and SvgTimeline for orchestration and timing. CSS animations are seamlessly converted to SMIL, enabling consistent behavior across animation types. The enhanced transform processing system now provides comprehensive CSS transform parsing with calc() expression support, compound transform handling, and advanced unit conversions, maintaining better compatibility with CSS animation specifications. **NEW** The enhanced event-driven animation system now provides automatic detection of event-based animations through the hasEventBasedAnimations() method, enabling intelligent controller initialization and seamless DOM event integration for interactive SVG experiences. The system supports comprehensive DOM event handling including click, mouseover, mouseout, focus, blur, and other common events with offset support and target-specific triggering. The enhanced text styling system now provides comprehensive CSS property resolution with advanced unit conversions, inheritance patterns, and fallback mechanisms distributed across 5 specialized modules supporting 53 text styling properties. This includes advanced typography features like font-variation-settings for variable fonts, comprehensive text decoration controls, internationalization support with ruby annotations and text emphasis, and accessibility features for forced color adjustments and content visibility optimization. The modular architecture improves maintainability, performance, and extensibility while maintaining strong performance and debuggability. With precise control over playback, direction, seeking, and event-driven triggers, developers can implement sophisticated synchronization and custom animation behaviors with seamless integration of interactive and automatic animation types.
+The Flutter SVG animation system provides a robust, SMIL-compatible pipeline with a clear separation of concerns: AnimatedSvgController for programmatic control, AnimatedSvgPicture for widget lifecycle and rendering, and SvgTimeline for orchestration and timing. CSS animations are seamlessly converted to SMIL, enabling consistent behavior across animation types. The enhanced transform processing system now provides comprehensive CSS transform parsing with calc() expression support, compound transform handling, and advanced unit conversions, maintaining better compatibility with CSS animation specifications. **NEW** The enhanced event-driven animation system now provides automatic detection of event-based animations through the hasEventBasedAnimations() method, enabling intelligent controller initialization and seamless DOM event integration for interactive SVG experiences. **NEW** The animateColor animation support provides comprehensive color animation processing with proper validation and interpolation, ensuring backward compatibility with deprecated SMIL color animation syntax while maintaining performance and reliability. The system supports comprehensive DOM event handling including click, mouseover, mouseout, focus, blur, and other common events with offset support and target-specific triggering. The enhanced text styling system now provides comprehensive CSS property resolution with advanced unit conversions, inheritance patterns, and fallback mechanisms distributed across 5 specialized modules supporting 53 text styling properties. This includes advanced typography features like font-variation-settings for variable fonts, comprehensive text decoration controls, internationalization support with ruby annotations and text emphasis, and accessibility features for forced color adjustments and content visibility optimization. The modular architecture improves maintainability, performance, and extensibility while maintaining strong performance and debuggability. With precise control over playback, direction, seeking, and event-driven triggers, developers can implement sophisticated synchronization and custom animation behaviors with seamless integration of interactive and automatic animation types.
 
 ## Appendices
 
@@ -719,6 +793,11 @@ The Flutter SVG animation system provides a robust, SMIL-compatible pipeline wit
   - Methods: parse(value), _parseEvent(value), _isEventName(value)
   - **NEW** Event parsing support: "click", "mouseover+1s", "button.click+250ms"
 
+- **Enhanced** SmilParser
+  - Methods: parseAnimations(document)
+  - **Enhanced** Animation type parsing: animate, animateTransform, animateMotion, set, animateColor
+  - **Enhanced** Transform type validation: requires type attribute for animateTransform elements
+
 - **Enhanced** CssToSmilConverter
   - Methods: convert(keyframes, animation, targetNode, document)
   - **Enhanced** Transform Processing: normalizeCssTransform(value), _extractFunctionArgs(input, start), _parseTransformArgs(argsString)
@@ -726,6 +805,10 @@ The Flutter SVG animation system provides a robust, SMIL-compatible pipeline wit
 - **Enhanced** CssCalcEvaluator
   - Methods: evaluate(calcExpr, {fontSize, containerSize})
   - **Enhanced** Expression Evaluation: _extractCalcContent(calc), _evaluateExpression(expr, fontSize, containerSize)
+
+- **Enhanced** Interpolators
+  - Methods: interpolate(from, to, t, type), interpolateColor(from, to, t), interpolateNumber(from, to, t), interpolateTransform(from, to, t), interpolatePath(from, to, t), interpolateList(from, to, t), add(base, delta, type)
+  - **NEW** animateColor support: proper color interpolation for animateColor animations
 
 - **Updated** AnimatedSvgPainterTextStyleExtension
   - Methods: `_resolveTextStyle`, delegates to 5 specialized modules
@@ -750,10 +833,12 @@ The Flutter SVG animation system provides a robust, SMIL-compatible pipeline wit
 - [animated_svg_picture.dart:272-294](file://lib/src/animation/animated_svg_picture.dart#L272-L294)
 - [timing_condition.dart:126-161](file://lib/src/animation/smil/timing_condition.dart#L126-L161)
 - [timing_parser.dart:144-171](file://lib/src/animation/smil/timing_parser.dart#L144-L171)
+- [smil_parser_animation_parsing.dart:187-202](file://lib/src/animation/smil/smil_parser_animation_parsing.dart#L187-L202)
 - [css_to_smil_converter.dart:15-68](file://lib/src/animation/css_to_smil_converter.dart#L15-L68)
 - [css_to_smil_converter_core.dart:184-200](file://lib/src/animation/css_to_smil_converter_core.dart#L184-L200)
 - [css_to_smil_converter_transforms_values.dart:64-168](file://lib/src/animation/css_to_smil_converter_transforms_values.dart#L64-L168)
 - [css_variables_calc.dart:200-327](file://lib/src/animation/css_variables_calc.dart#L200-L327)
+- [interpolators.dart:14-42](file://lib/src/animation/smil/interpolators.dart#L14-L42)
 - [animated_svg_painter_text_style.dart:3-342](file://lib/src/animation/animated_svg_painter_text_style.dart#L3-L342)
 - [animated_svg_painter_text_style_font.dart:1-362](file://lib/src/animation/animated_svg_painter_text_style_font.dart#L1-L362)
 - [animated_svg_painter_text_style_decoration.dart:1-32](file://lib/src/animation/animated_svg_painter_text_style_decoration.dart#L1-L32)

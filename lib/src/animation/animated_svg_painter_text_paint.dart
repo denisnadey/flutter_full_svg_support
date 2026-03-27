@@ -487,6 +487,11 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
       mixedBaselineOffset = parentBaseline - childBaseline;
     }
 
+    // Determine paint order (default: fill first, then stroke)
+    final paintOrderParts = style.paintOrder.split(RegExp(r'\s+'));
+    final strokeFirst = paintOrderParts.isNotEmpty &&
+        paintOrderParts.first == 'stroke';
+
     for (int i = 0; i < glyphs.length; i++) {
       final charIdx = cursor.charIndex + i;
 
@@ -522,6 +527,9 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
         baselineY: cursor.y + mixedBaselineOffset,
       );
 
+      // Build stroke paragraph for this glyph
+      final strokeParagraph = _buildStrokeTextParagraph(glyph, style, node);
+
       // Apply rotation around the character's baseline position
       if (rotation != 0.0) {
         canvas.save();
@@ -530,15 +538,38 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
         canvas.translate(-drawX, -cursor.y);
       }
 
-      _drawParagraphWithEffects(
-        canvas,
-        paragraph: paragraph,
-        x: drawX,
-        y: drawY,
-        imageFilter: imageFilter,
-        colorFilter: colorFilter,
-        blendMode: blendMode,
-      );
+      // Draw in paint-order
+      if (strokeFirst && strokeParagraph != null) {
+        // Stroke first
+        canvas.drawParagraph(strokeParagraph, ui.Offset(drawX, drawY));
+        _drawParagraphWithEffects(
+          canvas,
+          paragraph: paragraph,
+          x: drawX,
+          y: drawY,
+          imageFilter: imageFilter,
+          colorFilter: colorFilter,
+          blendMode: blendMode,
+          style: style,
+          text: glyph,
+        );
+      } else {
+        // Fill first (default)
+        _drawParagraphWithEffects(
+          canvas,
+          paragraph: paragraph,
+          x: drawX,
+          y: drawY,
+          imageFilter: imageFilter,
+          colorFilter: colorFilter,
+          blendMode: blendMode,
+          style: style,
+          text: glyph,
+        );
+        if (strokeParagraph != null) {
+          canvas.drawParagraph(strokeParagraph, ui.Offset(drawX, drawY));
+        }
+      }
 
       if (rotation != 0.0) {
         canvas.restore();
@@ -644,31 +675,71 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
       baselineY: baselineY,
     );
 
-    if ((scaleX - 1.0).abs() > 1e-6) {
-      canvas.save();
-      canvas.translate(drawX, 0.0);
-      canvas.scale(scaleX, 1.0);
-      _drawParagraphWithEffects(
-        canvas,
-        paragraph: paragraph,
-        x: 0.0,
-        y: drawY,
-        imageFilter: imageFilter,
-        colorFilter: colorFilter,
-        blendMode: blendMode,
-      );
-      canvas.restore();
-    } else {
-      _drawParagraphWithEffects(
-        canvas,
-        paragraph: paragraph,
-        x: drawX,
-        y: drawY,
-        imageFilter: imageFilter,
-        colorFilter: colorFilter,
-        blendMode: blendMode,
-      );
+    // Build stroke paragraph if stroke is defined
+    final strokeParagraph = _buildStrokeTextParagraph(text, effectiveStyle, node);
+
+    // Determine paint order (default: fill first, then stroke)
+    final paintOrderParts = effectiveStyle.paintOrder.split(RegExp(r'\s+'));
+    final strokeFirst = strokeParagraph != null &&
+        paintOrderParts.isNotEmpty &&
+        paintOrderParts.first == 'stroke';
+
+    // Helper to draw fill
+    void drawFill() {
+      if ((scaleX - 1.0).abs() > 1e-6) {
+        canvas.save();
+        canvas.translate(drawX, 0.0);
+        canvas.scale(scaleX, 1.0);
+        _drawParagraphWithEffects(
+          canvas,
+          paragraph: paragraph,
+          x: 0.0,
+          y: drawY,
+          imageFilter: imageFilter,
+          colorFilter: colorFilter,
+          blendMode: blendMode,
+          style: effectiveStyle,
+          text: text,
+        );
+        canvas.restore();
+      } else {
+        _drawParagraphWithEffects(
+          canvas,
+          paragraph: paragraph,
+          x: drawX,
+          y: drawY,
+          imageFilter: imageFilter,
+          colorFilter: colorFilter,
+          blendMode: blendMode,
+          style: effectiveStyle,
+          text: text,
+        );
+      }
     }
+
+    // Helper to draw stroke
+    void drawStroke() {
+      if (strokeParagraph == null) return;
+      if ((scaleX - 1.0).abs() > 1e-6) {
+        canvas.save();
+        canvas.translate(drawX, 0.0);
+        canvas.scale(scaleX, 1.0);
+        canvas.drawParagraph(strokeParagraph, ui.Offset(0.0, drawY));
+        canvas.restore();
+      } else {
+        canvas.drawParagraph(strokeParagraph, ui.Offset(drawX, drawY));
+      }
+    }
+
+    // Draw in paint-order
+    if (strokeFirst) {
+      drawStroke();
+      drawFill();
+    } else {
+      drawFill();
+      drawStroke();
+    }
+
     return width;
   }
 
@@ -715,6 +786,8 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
         imageFilter: imageFilter,
         colorFilter: colorFilter,
         blendMode: blendMode,
+        style: style,
+        text: glyph,
       );
       canvas.restore();
 
@@ -748,6 +821,10 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
 
     final paragraphs = glyphs
         .map((glyph) => _buildTextParagraph(glyph, style))
+        .toList(growable: false);
+    // Build stroke paragraphs for each glyph (null if no stroke)
+    final strokeParagraphs = glyphs
+        .map((glyph) => _buildStrokeTextParagraph(glyph, style, layoutNode))
         .toList(growable: false);
     final widths = paragraphs
         .map((paragraph) => paragraph.maxIntrinsicWidth)
@@ -836,6 +913,11 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
       canvas.saveLayer(pathBounds, layerPaint);
     }
 
+    // Determine paint order (default: fill first, then stroke)
+    final paintOrderParts = style.paintOrder.split(RegExp(r'\s+'));
+    final strokeFirst = paintOrderParts.isNotEmpty &&
+        paintOrderParts.first == 'stroke';
+
     var consumed = 0.0;
     var cursor = drawOffset;
     for (int i = 0; i < paragraphs.length; i++) {
@@ -873,16 +955,45 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
         paragraph: paragraph,
         dominantBaseline: style.dominantBaseline,
       );
+
+      final strokeParagraph = strokeParagraphs[i];
+      final drawX = -glyphWidth / 2;
+      final drawY = -baselineRef - style.baselineShift;
+
       canvas.save();
       canvas.translate(tangent.position.dx, tangent.position.dy);
       canvas.rotate(tangent.angle);
       if ((glyphScaleX - 1.0).abs() > 1e-6) {
         canvas.scale(glyphScaleX, 1.0);
       }
-      canvas.drawParagraph(
-        paragraph,
-        ui.Offset(-glyphWidth / 2, -baselineRef - style.baselineShift),
-      );
+
+      // Draw in paint-order
+      if (strokeFirst && strokeParagraph != null) {
+        // Stroke first
+        canvas.drawParagraph(strokeParagraph, ui.Offset(drawX, drawY));
+        _drawParagraphWithEffects(
+          canvas,
+          paragraph: paragraph,
+          x: drawX,
+          y: drawY,
+          style: style,
+          text: glyphs[i],
+        );
+      } else {
+        // Fill first (default)
+        _drawParagraphWithEffects(
+          canvas,
+          paragraph: paragraph,
+          x: drawX,
+          y: drawY,
+          style: style,
+          text: glyphs[i],
+        );
+        if (strokeParagraph != null) {
+          canvas.drawParagraph(strokeParagraph, ui.Offset(drawX, drawY));
+        }
+      }
+
       canvas.restore();
 
       cursor += glyphAdvance;

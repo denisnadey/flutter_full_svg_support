@@ -16,7 +16,7 @@
 
 ## Update Summary
 **Changes Made**
-- Enhanced CSS specificity calculation with complete 4-part tuple implementation
+- Enhanced CSS specificity calculation with complete 4-part tuple implementation (a, b, c, d)
 - Added comprehensive !important declaration support with proper precedence rules
 - Implemented advanced CSS variable resolution with cascade integration
 - Expanded selector parsing with shadow DOM boundary awareness
@@ -83,7 +83,7 @@ N --> I
 - [svg_dom.dart:124-297](file://lib/src/animation/svg_dom.dart#L124-L297)
 
 **Section sources**
-- [css_cascade.dart:1-1216](file://lib/src/animation/css_cascade.dart#L1-L1216)
+- [css_cascade.dart:1-1252](file://lib/src/animation/css_cascade.dart#L1-L1252)
 - [svg_dom.dart:1-574](file://lib/src/animation/svg_dom.dart#L1-L574)
 
 ## Core Components
@@ -333,6 +333,7 @@ The test suite validates critical cascade behaviors:
 - **Specificity Comparison**: Proper handling of equal specificity with source order
 - **Inheritance Logic**: Correct inheritance for inheritable properties
 - **Shadow DOM**: Proper boundary handling for `<use>` and `<symbol>` elements
+- **!Important Handling**: Correct precedence rules for !important declarations
 
 **Section sources**
 - [css_cascade_specificity_test.dart:1-583](file://test/animation/css_cascade_specificity_test.dart#L1-L583)

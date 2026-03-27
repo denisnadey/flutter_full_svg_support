@@ -839,6 +839,7 @@ class _ResolvedTextStyle {
     String? containIntrinsicSize,
     String? willChange,
     String? hyphenateCharacter,
+    String? cssMixBlendMode,
   }) {
     return _ResolvedTextStyle(
       color: color ?? this.color,
@@ -922,6 +923,7 @@ class _ResolvedTextStyle {
       containIntrinsicSize: containIntrinsicSize ?? this.containIntrinsicSize,
       willChange: willChange ?? this.willChange,
       hyphenateCharacter: hyphenateCharacter ?? this.hyphenateCharacter,
+      cssMixBlendMode: cssMixBlendMode ?? this.cssMixBlendMode,
     );
   }
 }

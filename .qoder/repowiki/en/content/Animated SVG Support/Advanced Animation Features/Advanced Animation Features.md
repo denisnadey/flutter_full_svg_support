@@ -6,13 +6,17 @@
 - [ARCHITECTURE.md](file://ARCHITECTURE.md)
 - [lib/src/animation.dart](file://lib/src/animation.dart)
 - [lib/src/animation/animated_svg_picture.dart](file://lib/src/animation/animated_svg_picture.dart)
+- [lib/src/animation/animated_svg_picture_hit_test_advanced.dart](file://lib/src/animation/animated_svg_picture_hit_test_advanced.dart)
+- [lib/src/animation/animated_svg_picture_hit_test_geometry.dart](file://lib/src/animation/animated_svg_picture_hit_test_geometry.dart)
+- [lib/src/animation/animated_svg_picture_hit_test_traversal.dart](file://lib/src/animation/animated_svg_picture_hit_test_traversal.dart)
+- [lib/src/animation/animated_svg_painter.dart](file://lib/src/animation/animated_svg_painter.dart)
 - [lib/src/animation/smil/smil_animation.dart](file://lib/src/animation/smil/smil_animation.dart)
 - [lib/src/animation/smil/smil_timeline.dart](file://lib/src/animation/smil/smil_timeline.dart)
+- [lib/src/animation/smil/smil_timeline_runtime.dart](file://lib/src/animation/smil/smil_timeline_runtime.dart)
 - [lib/src/animation/smil/interpolators.dart](file://lib/src/animation/smil/interpolators.dart)
 - [lib/src/animation/path_interpolation.dart](file://lib/src/animation/path_interpolation.dart)
 - [lib/src/animation/svg_filters_color_matrix.dart](file://lib/src/animation/svg_filters_color_matrix.dart)
 - [lib/src/animation/svg_filters_primitives_lighting.dart](file://lib/src/animation/svg_filters_primitives_lighting.dart)
-- [lib/src/animation/animated_svg_painter.dart](file://lib/src/animation/animated_svg_painter.dart)
 - [lib/src/animation/animated_svg_painter_text_style.dart](file://lib/src/animation/animated_svg_painter_text_style.dart)
 - [lib/src/animation/animated_svg_painter_text_paint.dart](file://lib/src/animation/animated_svg_painter_text_paint.dart)
 - [lib/src/animation/css_cascade.dart](file://lib/src/animation/css_cascade.dart)
@@ -59,18 +63,21 @@
 - [test/animation/advanced_clip_mask_test.dart](file://test/animation/advanced_clip_mask_test.dart)
 - [test/animation/clip_mask_advanced_composition_test.dart](file://test/animation/clip_mask_advanced_composition_test.dart)
 - [test/animation/advanced_mask_semantics_test.dart](file://test/animation/advanced_mask_semantics_test.dart)
+- [test/animation/hit_test_advanced_test.dart](file://test/animation/hit_test_advanced_test.dart)
+- [test/animation/hit_test_precision_test.dart](file://test/animation/hit_test_precision_test.dart)
 - [blink-b87d44f-Source-core-svg/SVGMaskElement.cpp](file://blink-b87d44f-Source-core-svg/SVGMaskElement.cpp)
 </cite>
 
 ## Update Summary
 **Changes Made**
-- Enhanced advanced clipping and masking system with major improvements to cascading support (recursive clipPath intersections up to 10 levels)
-- Added comprehensive unit handling for maskUnits and maskContentUnits with objectBoundingBox and userSpaceOnUse support
-- Implemented subgraph masking with proper filter/mask ordering for complex compositing scenarios
-- Enhanced coordinate transform stacking for nested group operations with depth limiting
-- Improved mask bounds computation with default 10% extension per SVG specification
-- Enhanced text approximation within clipPath with better text bounds calculation
-- Added advanced edge feathering support through Gaussian blur detection and soft-edge implementation
+- Enhanced hit testing system with improved precision and performance optimizations
+- Added advanced marker hit testing for path markers with vertex sampling and angle calculations
+- Implemented glyph-precision text hit testing using per-character bounding boxes and font metrics
+- Enhanced evenodd fill rule containment testing with robust edge case handling
+- Improved mask bounds caching with animated content invalidation tracking
+- Added advanced use element hit testing with viewport clipping and recursion depth limiting
+- Enhanced pointer event handling with better stroke tolerance and line cap considerations
+- Improved animation sandwich model implementation with proper state transition detection
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -87,12 +94,13 @@
 12. [Custom Properties and Calc() Function Support](#custom-properties-and-calcc-function-support)
 13. [3D Transform Capabilities](#3d-transform-capabilities)
 14. [Performance Optimization Through Rendering Cache](#performance-optimization-through-rendering-cache)
-15. [Text Styling and Typography Features](#text-styling-and-typography-features)
-16. [Dependency Analysis](#dependency-analysis)
-17. [Performance Considerations](#performance-considerations)
-18. [Troubleshooting Guide](#troubleshooting-guide)
-19. [Conclusion](#conclusion)
-20. [Appendices](#appendices)
+15. [Enhanced Hit Testing System](#enhanced-hit-testing-system)
+16. [Text Styling and Typography Features](#text-styling-and-typography-features)
+17. [Dependency Analysis](#dependency-analysis)
+18. [Performance Considerations](#performance-considerations)
+19. [Troubleshooting Guide](#troubleshooting-guide)
+20. [Conclusion](#conclusion)
+21. [Appendices](#appendices)
 
 ## Introduction
 This document explains advanced animation features implemented in the codebase, focusing on:
@@ -109,6 +117,14 @@ This document explains advanced animation features implemented in the codebase, 
 - **Improved mask bounds computation with default 10% extension per SVG specification**
 - **Enhanced text approximation within clipPath with better text bounds calculation**
 - **Advanced edge feathering support through Gaussian blur detection and soft-edge implementation**
+- **Enhanced hit testing system with improved precision and performance optimizations**
+- **Advanced marker hit testing for path markers with vertex sampling and angle calculations**
+- **Glyph-precision text hit testing using per-character bounding boxes and font metrics**
+- **Enhanced evenodd fill rule containment testing with robust edge case handling**
+- **Improved mask bounds caching with animated content invalidation tracking**
+- **Advanced use element hit testing with viewport clipping and recursion depth limiting**
+- **Enhanced pointer event handling with better stroke tolerance and line cap considerations**
+- **Enhanced animation sandwich model implementation with proper state transition detection**
 - Custom properties with calc() function support for dynamic styling
 - Full 3D transform capabilities including Matrix4x4 operations
 - Enhanced rendering cache system for performance optimization
@@ -130,6 +146,7 @@ The animation system is organized into:
 - Filter runtime for color matrix, blur, and lighting primitives
 - **Enhanced CSS processing pipeline with modular shorthand expansion system and stop-color animation support**
 - **Advanced clipping and masking system with comprehensive CSS mask support, cascading operations, and enhanced unit handling**
+- **Enhanced hit testing system with advanced marker, text, and geometry precision**
 - 3D transform system with Matrix4x4 operations
 - Rendering cache system for performance optimization
 - Advanced text styling and typography system with CSS property support
@@ -170,29 +187,38 @@ end
 subgraph "Rendering Cache"
 O["animated_svg_painter.dart (_RenderCache)"]
 end
+subgraph "Enhanced Hit Testing"
+P["animated_svg_picture_hit_test_traversal.dart"]
+Q["animated_svg_picture_hit_test_geometry.dart"]
+R["animated_svg_picture_hit_test_advanced.dart"]
+S["animated_svg_picture_hit_test_use.dart"]
+T["animated_svg_picture_hit_test_text_runs.dart"]
+U["animated_svg_picture_hit_test_text_layout.dart"]
+V["animated_svg_picture_hit_test_text_path_segments.dart"]
+end
 subgraph "Text Styling System"
-P["animated_svg_painter_text_style.dart"]
-Q["animated_svg_painter_text_paint.dart"]
-R["_ResolvedTextStyle"]
+W["animated_svg_painter_text_style.dart"]
+X["animated_svg_painter_text_paint.dart"]
+Y["_ResolvedTextStyle"]
 end
 subgraph "Gradient Animation System"
-S["animated_svg_painter_gradients.dart"]
-T["animated_svg_painter_gradients_resolver.dart"]
-U["animated_svg_painter_gradients_values.dart"]
-V["svg_parser_constants.dart (stop-color support)"]
-W["css_to_smil_converter_core.dart (stop-color parsing)"]
-X["smil_parser_animation_parsing.dart (stop-color type inference)"]
+Z["animated_svg_painter_gradients.dart"]
+AA["animated_svg_painter_gradients_resolver.dart"]
+AB["animated_svg_painter_gradients_values.dart"]
+AC["svg_parser_constants.dart (stop-color support)"]
+AD["css_to_smil_converter_core.dart (stop-color parsing)"]
+AE["smil_parser_animation_parsing.dart (stop-color type inference)"]
 end
 subgraph "Advanced Clipping and Masking"
-Y["animated_svg_painter_clip_mask.dart"]
-Z["animated_svg_painter_clip_mask_advanced.dart"]
-AA["animated_svg_painter_clip_mask_composition.dart"]
-BB["animated_svg_painter_clip_mask_geometry.dart"]
-CC["animated_svg_painter_clip_mask_units.dart"]
-DD["advanced_clip_mask_test.dart"]
-EE["clip_mask_advanced_composition_test.dart"]
-FF["advanced_mask_semantics_test.dart"]
-GG["SVGMaskElement.cpp (mask units parsing)"]
+AF["animated_svg_painter_clip_mask.dart"]
+AG["animated_svg_painter_clip_mask_advanced.dart"]
+AH["animated_svg_painter_clip_mask_composition.dart"]
+AI["animated_svg_painter_clip_mask_geometry.dart"]
+AJ["animated_svg_painter_clip_mask_units.dart"]
+AK["advanced_clip_mask_test.dart"]
+AL["clip_mask_advanced_composition_test.dart"]
+AM["advanced_mask_semantics_test.dart"]
+AN["SVGMaskElement.cpp (mask units parsing)"]
 end
 A --> B
 B --> C
@@ -212,23 +238,30 @@ I --> M
 B --> N
 B --> O
 B --> P
-P --> Q
-P --> R
-S --> T
-T --> U
-V --> W
+B --> Q
+B --> R
+B --> S
+B --> T
+B --> U
+B --> V
+B --> W
 W --> X
-Y --> Z
+W --> Y
 Z --> AA
-AA --> BB
-BB --> CC
-DD --> EE
-FF --> GG
+AA --> AB
+AC --> AD
+AD --> AE
+AF --> AG
+AG --> AH
+AH --> AI
+AI --> AJ
+AK --> AL
+AM --> AN
 ```
 
 **Diagram sources**
 - [lib/src/animation.dart:1-31](file://lib/src/animation.dart#L1-L31)
-- [lib/src/animation/animated_svg_picture.dart:1-359](file://lib/src/animation/animated_svg_picture.dart#L1-L359)
+- [lib/src/animation/animated_svg_picture.dart:1-628](file://lib/src/animation/animated_svg_picture.dart#L1-L628)
 - [lib/src/animation/smil/smil_animation.dart:1-453](file://lib/src/animation/smil/smil_animation.dart#L1-L453)
 - [lib/src/animation/smil/smil_timeline.dart:1-256](file://lib/src/animation/smil/smil_timeline.dart#L1-L256)
 - [lib/src/animation/smil/interpolators.dart:1-148](file://lib/src/animation/smil/interpolators.dart#L1-L148)
@@ -245,6 +278,9 @@ FF --> GG
 - [lib/src/animation/transform_3d.dart:1-400](file://lib/src/animation/transform_3d.dart#L1-L400)
 - [lib/src/animation/svg_dom.dart:300-369](file://lib/src/animation/svg_dom.dart#L300-L369)
 - [lib/src/animation/animated_svg_painter.dart:41-130](file://lib/src/animation/animated_svg_painter.dart#L41-L130)
+- [lib/src/animation/animated_svg_picture_hit_test_traversal.dart:1-296](file://lib/src/animation/animated_svg_picture_hit_test_traversal.dart#L1-L296)
+- [lib/src/animation/animated_svg_picture_hit_test_geometry.dart:1-436](file://lib/src/animation/animated_svg_picture_hit_test_geometry.dart#L1-L436)
+- [lib/src/animation/animated_svg_picture_hit_test_advanced.dart:1-816](file://lib/src/animation/animated_svg_picture_hit_test_advanced.dart#L1-L816)
 - [lib/src/animation/animated_svg_painter_text_style.dart:1-1046](file://lib/src/animation/animated_svg_painter_text_style.dart#L1-L1046)
 - [lib/src/animation/animated_svg_painter_text_paint.dart:1-594](file://lib/src/animation/animated_svg_painter_text_paint.dart#L1-L594)
 - [lib/src/animation/animated_svg_painter.dart:258-460](file://lib/src/animation/animated_svg_painter.dart#L258-L460)
@@ -262,6 +298,8 @@ FF --> GG
 - [test/animation/advanced_clip_mask_test.dart:1-766](file://test/animation/advanced_clip_mask_test.dart#L1-L766)
 - [test/animation/clip_mask_advanced_composition_test.dart:1-568](file://test/animation/clip_mask_advanced_composition_test.dart#L1-L568)
 - [test/animation/advanced_mask_semantics_test.dart:1-111](file://test/animation/advanced_mask_semantics_test.dart#L1-L111)
+- [test/animation/hit_test_advanced_test.dart:190-229](file://test/animation/hit_test_advanced_test.dart#L190-L229)
+- [test/animation/hit_test_precision_test.dart:401-439](file://test/animation/hit_test_precision_test.dart#L401-L439)
 - [blink-b87d44f-Source-core-svg/SVGMaskElement.cpp:56-123](file://blink-b87d44f-Source-core-svg/SVGMaskElement.cpp#L56-L123)
 
 **Section sources**
@@ -280,6 +318,7 @@ FF --> GG
 - **Enhanced CSS Shorthand Expansion System: Modular components for animation, font, and box model shorthand properties**
 - **Stop-Color Animation System: Comprehensive support for gradient stop element animations with CSS selector targeting**
 - **Advanced Clipping and Masking System: Sophisticated composition chain support with enhanced CSS mask support, cascading operations, and comprehensive units handling**
+- **Enhanced Hit Testing System: Advanced marker, text, and geometry precision with improved performance**
 - 3D Transform System: Full Matrix4x4 support for 3D rotations, translations, scaling, and perspective projections.
 - Rendering Cache System: Performance optimization through intelligent caching of computed values.
 - Text styling system: Comprehensive CSS text property support including underline, overline, line-through, writing-mode, font variants, and advanced typography features.
@@ -309,7 +348,7 @@ FF --> GG
 - [lib/src/animation/animated_svg_painter_clip_mask_composition.dart:1-979](file://lib/src/animation/animated_svg_painter_clip_mask_composition.dart#L1-L979)
 
 ## Architecture Overview
-The animated pipeline separates concerns across parsing, CSS processing, animation extraction, timeline management, and rendering. It preserves DOM for SMIL support and provides a CustomPainter-based renderer with comprehensive text styling capabilities, advanced CSS processing with modular shorthand expansion, and performance optimizations through intelligent caching.
+The animated pipeline separates concerns across parsing, CSS processing, animation extraction, timeline management, and rendering. It preserves DOM for SMIL support and provides a CustomPainter-based renderer with comprehensive text styling capabilities, advanced CSS processing with modular shorthand expansion, performance optimizations through intelligent caching, and enhanced hit testing precision.
 
 ```mermaid
 sequenceDiagram
@@ -326,8 +365,9 @@ participant TextStyle as "TextStyleResolver"
 participant TextPaint as "TextPainter"
 participant ClipMask as "Clip-Mask System"
 participant AdvancedClipMask as "Advanced Clip-Mask"
-participant Interp as "Interpolators"
-participant Renderer as "AnimatedSvgPainter"
+participant HitTest as "Enhanced Hit Testing"
+participant RenderCache as "_RenderCache"
+participant Painter as "AnimatedSvgPainter"
 App->>Picture : Build widget
 Picture->>Parser : Parse SVG to DOM
 Parser-->>Picture : SvgDocument
@@ -349,20 +389,16 @@ AdvancedClipMask->>AdvancedClipMask : Enhanced unit handling with 10% default ex
 AdvancedClipMask->>AdvancedClipMask : Improved text approximation within clipPath
 AdvancedClipMask->>AdvancedClipMask : Advanced edge feathering with soft edges
 ClipMask-->>Picture : Final clip-path and mask results
-Picture->>TextStyle : Resolve text styles
-TextStyle-->>Picture : _ResolvedTextStyle
-loop Every frame
-Picture->>Timeline : tick(delta)
-Timeline->>Anim : updateForTime(globalTime)
-Anim->>Interp : interpolate(...)
-Interp-->>Anim : computed value
-Anim-->>Timeline : apply value to attribute
-Timeline-->>Renderer : Effective values
-Renderer->>Renderer : _RenderCache.prepareFrame(animationTime, hasAnimations)
-Renderer->>TextPaint : Render styled text
-TextPaint-->>Renderer : Drawn text
-Renderer-->>App : Draw Canvas
-end
+Picture->>HitTest : Perform enhanced hit testing
+HitTest->>HitTest : Advanced marker precision with vertex sampling
+HitTest->>HitTest : Glyph-precision text hit testing
+HitTest->>HitTest : Enhanced evenodd fill rule containment
+HitTest-->>Picture : Hit test results with anchor info
+Picture->>RenderCache : prepareFrame(animationTime, hasAnimations)
+RenderCache->>RenderCache : Invalidate animated mask caches
+RenderCache-->>Picture : Cached values ready
+Picture->>Painter : Render with enhanced precision
+Painter-->>App : Draw Canvas
 ```
 
 **Diagram sources**
@@ -376,6 +412,9 @@ end
 - [lib/src/animation/animated_svg_painter_gradients_resolver.dart:69-121](file://lib/src/animation/animated_svg_painter_gradients_resolver.dart#L69-L121)
 - [lib/src/animation/animated_svg_painter_clip_mask_composition.dart:18-84](file://lib/src/animation/animated_svg_painter_clip_mask_composition.dart#L18-L84)
 - [lib/src/animation/animated_svg_painter_clip_mask_advanced.dart:18-66](file://lib/src/animation/animated_svg_painter_clip_mask_advanced.dart#L18-L66)
+- [lib/src/animation/animated_svg_picture_hit_test_traversal.dart:60-173](file://lib/src/animation/animated_svg_picture_hit_test_traversal.dart#L60-L173)
+- [lib/src/animation/animated_svg_picture_hit_test_geometry.dart:5-406](file://lib/src/animation/animated_svg_picture_hit_test_geometry.dart#L5-L406)
+- [lib/src/animation/animated_svg_picture_hit_test_advanced.dart:11-800](file://lib/src/animation/animated_svg_picture_hit_test_advanced.dart#L11-L800)
 
 **Section sources**
 - [ARCHITECTURE.md:146-193](file://ARCHITECTURE.md#L146-L193)
@@ -388,6 +427,7 @@ end
 - Interpolation: calcMode (linear, discrete, spline, paced), keySplines/steps
 - Playback direction and additive/accumulate semantics
 - Event-based activation and syncbase timing resolution
+- **Enhanced animation sandwich model with proper state transition detection**
 
 ```mermaid
 classDiagram
@@ -438,16 +478,25 @@ class SvgTimeline {
 +getActiveAnimations()
 +hasActiveAnimations()
 }
+class AnimationSandwichModel {
++applyAnimationSandwichModel(timeline)
++detectStateTransitions(previousStates, previousIterations)
++handleBeginEndEvents(anim, wasActive, isActive, time)
+}
 SvgTimeline --> SmilAnimation : "updates"
+AnimationSandwichModel --> SvgTimeline : "applies"
+AnimationSandwichModel --> SmilAnimation : "processes"
 ```
 
 **Diagram sources**
 - [lib/src/animation/smil/smil_animation.dart:80-453](file://lib/src/animation/smil/smil_animation.dart#L80-L453)
 - [lib/src/animation/smil/smil_timeline.dart:21-256](file://lib/src/animation/smil/smil_timeline.dart#L21-L256)
+- [lib/src/animation/smil/smil_timeline_runtime.dart:80-110](file://lib/src/animation/smil/smil_timeline_runtime.dart#L80-L110)
 
 **Section sources**
 - [lib/src/animation/smil/smil_animation.dart:13-77](file://lib/src/animation/smil/smil_animation.dart#L13-L77)
 - [lib/src/animation/smil/smil_timeline.dart:13-61](file://lib/src/animation/smil/smil_timeline.dart#L13-L61)
+- [lib/src/animation/smil/smil_timeline_runtime.dart:80-110](file://lib/src/animation/smil/smil_timeline_runtime.dart#L80-L110)
 
 ### Interpolation System
 - Numbers, colors, transforms, paths, points/lists
@@ -1415,12 +1464,16 @@ class _RenderCache {
 +Map~String,Image~ patternImages
 +Map~String,Paragraph~ textParagraphs
 +Map~String,Path~ hitTestPaths
++Map~String,Rect~ maskBounds
++Map~String,bool~ maskAnimationState
 +double? _lastAnimationTime
 +prepareFrame(animationTime, hasAnimations)
 +clear()
 +gradientKey(gradientId, bounds, attributes) : String
 +patternKey(patternId, bounds, tileWidth, tileHeight) : String
 +textKey(text, fontSize, fontFamily, fontWeightIndex, fontStyleIndex, letterSpacing, colorValue) : String
++maskKey(maskId, elementBounds, maskUnits, maskContentUnits) : String
++invalidateAnimatedMaskCaches()
 }
 class AnimatedSvgPainter {
 +SvgDocument document
@@ -1441,7 +1494,7 @@ _RenderCache --> AnimatedSvgPainter : "used by"
 - [lib/src/animation/animated_svg_painter.dart:139-243](file://lib/src/animation/animated_svg_painter.dart#L139-L243)
 
 ### Cache Categories and Invalidation
-The system provides four main cache categories with intelligent invalidation:
+The system provides six main cache categories with intelligent invalidation:
 
 #### Gradient Shader Cache
 - **Purpose**: Cache computed gradient shaders by gradient ID, paint bounds, and attributes
@@ -1463,9 +1516,225 @@ The system provides four main cache categories with intelligent invalidation:
 - **Invalidation**: Cleared on animation time changes for animated paths
 - **Key Generation**: Element ID combined with geometric hash
 
+#### Mask Bounds Cache
+- **Purpose**: Cache computed mask bounds by mask ID and element bounds
+- **Invalidation**: Cleared when animation time changes for animated content
+- **Key Generation**: Mask ID combined with element bounds hash
+
+#### Animated Mask State Cache
+- **Purpose**: Track which masks contain animated content for selective invalidation
+- **Invalidation**: Used by invalidateAnimatedMaskCaches() to clear only animated mask entries
+- **Key Generation**: Simple boolean flag per mask ID
+
 **Section sources**
 - [lib/src/animation/animated_svg_painter.dart:41-130](file://lib/src/animation/animated_svg_painter.dart#L41-L130)
 - [CURRENT_STATUS.md:70-77](file://CURRENT_STATUS.md#L70-L77)
+
+## Enhanced Hit Testing System
+
+### Advanced Hit Testing Architecture
+The enhanced hit testing system provides precise element detection with improved performance and accuracy across all SVG element types.
+
+```mermaid
+classDiagram
+class HitTestTraversal {
++_hitTestNodeWithAnchor(node, documentPoint, parentTransform, useStack, foreignObjectParent, currentAnchor)
++_hitTestUseReferenceWithAnchor(useNode, documentPoint, currentTransform, useStack, currentAnchor)
++_localToDocumentPoint(localPosition, size)
++_computeViewBoxTransform(size)
++_extractAnchorInfo(node)
++_isHitTestableTag(tagName)
++_isDefinitionOnlyTag(tagName)
+}
+class HitTestGeometry {
++_nodeContainsPoint(node, documentPoint, transform)
++_rectContainsPoint(node, point)
++_circleContainsPoint(node, point)
++_ellipseContainsPoint(node, point)
++_lineContainsPoint(node, point)
++_pathContainsPoint(node, point)
++_polygonContainsPoint(node, point)
++_polylineContainsPoint(node, point)
++_imageContainsPoint(node, point)
++_textContainsPoint(node, point)
++_textPathContainsPoint(node, point)
++_markersContainPoint(node, documentPoint, transform)
++_evenoddContainsPointAdvanced(path, point)
+}
+class HitTestAdvanced {
++_markersContainPoint(node, documentPoint, transform)
++_resolveMarkerRefsForHit(node)
++_resolveMarkerForHit(markerId)
++_markerContainsPoint(marker, position, angle, strokeWidth, testPoint)
++_extractHitTestVertices(path)
++_calculateStartAngleForHit(vertices)
++_calculateEndAngleForHit(vertices)
++_calculateMidAngleForHit(vertices, index)
++_glyphPrecisionTextContainsPoint(node, point, pointerEvents, visibilityHidden)
++_buildGlyphPrecisionHitRuns(textRoot)
++_appendGlyphPrecisionRuns(node, cursor, runs, xList, yList, dxList, dyList, rotateList)
++_evenoddContainsPointAdvanced(path, point)
++_isNearPathBoundary(path, point)
++_robustEvenoddContains(path, point)
++_rayIntersectsSegment(rayStart, rayEnd, segStart, segEnd)
++_pathToSegments(path)
+}
+class HitTestUse {
++_hitTestUseReferenceWithAnchor(useNode, documentPoint, currentTransform, useStack, currentAnchor)
++_extractHrefId(useNode)
++_applyUseViewportTransform(useNode, referenced, useReferenceTransform)
++_isUseViewportReferenceTag(tagName)
++_isUseReferenceAllowedTag(tagName)
+}
+class HitTestTextRuns {
++_textRunsContainPoint(node, point, pointerEvents, visibilityHidden)
++_buildTextRuns(node, runs, cursor, textRoot)
++_appendTextRuns(node, runs, cursor, textRoot)
+}
+class HitTestTextLayout {
++_textLayoutContainsPoint(node, point, pointerEvents, visibilityHidden)
++_buildTextLayout(node, layout, cursor, textRoot)
++_appendTextLayout(node, layout, cursor, textRoot)
+}
+class HitTestTextPathSegments {
++_textPathSegmentsContainPoint(node, point, pointerEvents, visibilityHidden)
++_buildTextPathSegments(node, segments, cursor, textRoot)
++_appendTextPathSegments(node, segments, cursor, textRoot)
+}
+HitTestTraversal --> HitTestGeometry : "uses"
+HitTestGeometry --> HitTestAdvanced : "extends"
+HitTestTraversal --> HitTestUse : "uses"
+HitTestGeometry --> HitTestTextRuns : "uses"
+HitTestTextRuns --> HitTestTextLayout : "extends"
+HitTestTextLayout --> HitTestTextPathSegments : "extends"
+```
+
+**Diagram sources**
+- [lib/src/animation/animated_svg_picture_hit_test_traversal.dart:14-296](file://lib/src/animation/animated_svg_picture_hit_test_traversal.dart#L14-L296)
+- [lib/src/animation/animated_svg_picture_hit_test_geometry.dart:3-436](file://lib/src/animation/animated_svg_picture_hit_test_geometry.dart#L3-L436)
+- [lib/src/animation/animated_svg_picture_hit_test_advanced.dart:5-800](file://lib/src/animation/animated_svg_picture_hit_test_advanced.dart#L5-L800)
+- [lib/src/animation/animated_svg_picture_hit_test_use.dart:1-200](file://lib/src/animation/animated_svg_picture_hit_test_use.dart#L1-L200)
+- [lib/src/animation/animated_svg_picture_hit_test_text_runs.dart:1-300](file://lib/src/animation/animated_svg_picture_hit_test_text_runs.dart#L1-L300)
+- [lib/src/animation/animated_svg_picture_hit_test_text_layout.dart:1-400](file://lib/src/animation/animated_svg_picture_hit_test_text_layout.dart#L1-L400)
+- [lib/src/animation/animated_svg_picture_hit_test_text_path_segments.dart:1-350](file://lib/src/animation/animated_svg_picture_hit_test_text_path_segments.dart#L1-L350)
+
+### Advanced Marker Hit Testing
+The system provides sophisticated marker hit testing with vertex sampling and precise angle calculations for accurate marker detection on path elements.
+
+**Marker Hit Testing Features**:
+- **Vertex Sampling**: Extracts path vertices using curvature-based sampling with significant angle change detection
+- **Angle Calculation**: Computes start, end, and mid-point angles using tangent vectors and angle differences
+- **Precision Testing**: Uses marker content geometry for accurate hit detection in marker coordinate space
+- **Stroke Width Scaling**: Applies stroke width scaling when markerUnits use stroke width instead of user space
+- **ViewBox Scaling**: Properly scales markers according to viewBox dimensions for consistent hit testing
+
+**Vertex Sampling Algorithm**:
+- **Sample Interval**: Uses 1.0 unit intervals along path length for vertex extraction
+- **Angle Threshold**: Detects significant angle changes (>15 degrees) to identify corner vertices
+- **Boundary Sampling**: Always samples start and end points for complete path coverage
+- **Tangent Vector Analysis**: Analyzes path tangents to determine vertex positions and orientations
+
+**Section sources**
+- [lib/src/animation/animated_svg_picture_hit_test_advanced.dart:11-108](file://lib/src/animation/animated_svg_picture_hit_test_advanced.dart#L11-L108)
+- [lib/src/animation/animated_svg_picture_hit_test_advanced.dart:269-314](file://lib/src/animation/animated_svg_picture_hit_test_advanced.dart#L269-L314)
+- [lib/src/animation/animated_svg_picture_hit_test_advanced.dart:316-381](file://lib/src/animation/animated_svg_picture_hit_test_advanced.dart#L316-L381)
+
+### Glyph-Precision Text Hit Testing
+The system implements advanced glyph-precision text hit testing using per-character bounding boxes and font metrics for improved accuracy.
+
+**Glyph Precision Features**:
+- **Per-Character Bounding Boxes**: Calculates individual glyph bounds using font metrics and text positioning
+- **Text Anchor Handling**: Properly handles text-anchor values (start, middle, end) for accurate positioning
+- **Rotation Support**: Accounts for per-character rotation values in hit testing calculations
+- **Letter Spacing**: Incorporates letter-spacing values for precise character positioning
+- **Font Metrics Integration**: Uses actual font metrics for accurate glyph boundary calculation
+
+**Text Hit Testing Pipeline**:
+- **Text Root Detection**: Identifies text elements and their layout hierarchy
+- **Character Run Processing**: Processes tspan elements and their positioning attributes
+- **Bounding Box Construction**: Builds per-character rectangles from font metrics and positioning
+- **Precision Testing**: Uses glyph path outlines for fill detection and stroke detection for outline paths
+- **Mixed Content Support**: Handles complex text layouts with multiple font families and styles
+
+**Section sources**
+- [lib/src/animation/animated_svg_picture_hit_test_advanced.dart:387-442](file://lib/src/animation/animated_svg_picture_hit_test_advanced.dart#L387-L442)
+- [lib/src/animation/animated_svg_picture_hit_test_advanced.dart:444-605](file://lib/src/animation/animated_svg_picture_hit_test_advanced.dart#L444-L605)
+
+### Enhanced Evenodd Fill Rule Containment
+The system provides robust evenodd fill rule containment testing with improved handling of edge cases and degenerate scenarios.
+
+**Advanced Evenodd Features**:
+- **Boundary Detection**: Identifies points near path boundaries using proximity sampling
+- **Robust Intersection Counting**: Uses ray casting with careful handling of degenerate segments
+- **Collinear Segment Handling**: Properly handles horizontal and nearly horizontal segments
+- **Zero-Length Segment Filtering**: Skips degenerate segments in intersection calculations
+- **Cusp Detection**: Handles sharp corners and cusps in path geometry
+
+**Edge Case Handling**:
+- **Near-Boundary Points**: Switches to robust algorithm for points close to path edges
+- **Degenerate Segments**: Filters out zero-length segments to prevent calculation errors
+- **Collinear Rays**: Handles horizontal ray intersections with special care
+- **Endpoint Proximity**: Accounts for point proximity to segment endpoints
+
+**Robust Algorithm**:
+- **Ray Casting**: Uses horizontal ray extending to positive infinity
+- **Intersection Counting**: Counts ray-segment intersections for evenodd determination
+- **Boundary Membership**: Treats points on boundary as inside for proper containment
+- **Crossing Parity**: Returns true for odd number of intersections
+
+**Section sources**
+- [lib/src/animation/animated_svg_picture_hit_test_advanced.dart:614-626](file://lib/src/animation/animated_svg_picture_hit_test_advanced.dart#L614-L626)
+- [lib/src/animation/animated_svg_picture_hit_test_advanced.dart:628-649](file://lib/src/animation/animated_svg_picture_hit_test_advanced.dart#L628-L649)
+- [lib/src/animation/animated_svg_picture_hit_test_advanced.dart:652-725](file://lib/src/animation/animated_svg_picture_hit_test_advanced.dart#L652-L725)
+- [lib/src/animation/animated_svg_picture_hit_test_advanced.dart:727-749](file://lib/src/animation/animated_svg_picture_hit_test_advanced.dart#L727-L749)
+
+### Advanced Use Element Hit Testing
+The system provides comprehensive hit testing for use elements with viewport clipping and recursion depth limiting for safe and accurate element detection.
+
+**Use Element Features**:
+- **Recursion Depth Limiting**: Prevents infinite loops with maximum recursion depth protection
+- **Viewport Transform Application**: Properly applies use element transforms and viewport clipping
+- **Reference Validation**: Validates use references and prevents invalid element traversal
+- **Symbol Special Handling**: Properly handles symbol elements with direct child iteration
+- **Transform Composition**: Combines use element transforms with referenced element transforms
+
+**Recursion Safety**:
+- **Use Stack Tracking**: Tracks referenced element IDs to prevent circular references
+- **Depth Limit Checking**: Limits recursion depth to prevent stack overflow
+- **Reference Validation**: Ensures referenced elements are valid and hit-testable
+- **Transform Propagation**: Properly propagates transforms through use element chains
+
+**Viewport Clipping**:
+- **Slice Mode Handling**: Applies viewport clipping for slice mode use elements
+- **Transformed Rectangle Testing**: Tests point containment in transformed viewport rectangles
+- **Reference Transform Application**: Applies use element transforms to referenced elements
+- **Symbol Direct Access**: Bypasses normal traversal for symbol elements
+
+**Section sources**
+- [lib/src/animation/animated_svg_picture_hit_test_traversal.dart:150-161](file://lib/src/animation/animated_svg_picture_hit_test_traversal.dart#L150-L161)
+- [lib/src/animation/animated_svg_picture_hit_test_traversal.dart:175-266](file://lib/src/animation/animated_svg_picture_hit_test_traversal.dart#L175-L266)
+- [lib/src/animation/animated_svg_picture_hit_test_use.dart:1-200](file://lib/src/animation/animated_svg_picture_hit_test_use.dart#L1-L200)
+
+### Pointer Event Handling and Stroke Tolerance
+The system provides enhanced pointer event handling with improved stroke tolerance calculations and line cap considerations for more accurate hit testing.
+
+**Pointer Event Features**:
+- **Stroke Tolerance Calculation**: Computes appropriate stroke widths for hit testing
+- **Line Cap Tolerance**: Accounts for line cap shapes (round, square) in endpoint hit testing
+- **Fill and Stroke Separation**: Properly handles fill and stroke pointer events separately
+- **Visibility State Checking**: Respects visibility-hidden states in hit testing
+- **Bounding Box Mode**: Uses simplified hit testing for bounding-box pointer events
+
+**Stroke Tolerance Calculation**:
+- **Base Stroke Width**: Uses inherited stroke-width values for tolerance calculation
+- **Line Cap Adjustment**: Adds line cap tolerance for endpoint hit detection
+- **Scaled Tolerance**: Adjusts tolerance based on element transforms and scaling
+- **Minimum Tolerance**: Ensures minimum tolerance for degenerate cases
+
+**Section sources**
+- [lib/src/animation/animated_svg_picture_hit_test_geometry.dart:15-17](file://lib/src/animation/animated_svg_picture_hit_test_geometry.dart#L15-L17)
+- [lib/src/animation/animated_svg_picture_hit_test_geometry.dart:75-78](file://lib/src/animation/animated_svg_picture_hit_test_geometry.dart#L75-L78)
+- [lib/src/animation/animated_svg_picture_hit_test_geometry.dart:172-192](file://lib/src/animation/animated_svg_picture_hit_test_geometry.dart#L172-L192)
 
 ## Text Styling and Typography Features
 
@@ -1585,6 +1854,7 @@ Painter-->>Node : Rendered text
 - **Enhanced CSS shorthand expansion depends on modular components: CssShorthandExpansionAnimation, CssShorthandExpansionFont, CssShorthandExpansionBox**
 - **Stop-color animation system depends on css_to_smil_converter_core, smil_parser_animation_parsing, svg_parser_constants, and animated_svg_painter_gradients**
 - **Advanced clipping and masking system depends on animated_svg_painter_clip_mask, animated_svg_painter_clip_mask_advanced, animated_svg_painter_clip_mask_composition, animated_svg_painter_clip_mask_geometry, and animated_svg_painter_clip_mask_units**
+- **Enhanced hit testing system depends on animated_svg_picture_hit_test_traversal, animated_svg_picture_hit_test_geometry, animated_svg_picture_hit_test_advanced, animated_svg_picture_hit_test_use, animated_svg_picture_hit_test_text_runs, animated_svg_picture_hit_test_text_layout, and animated_svg_picture_hit_test_text_path_segments**
 - 3D transforms depend on Matrix4x4 and Transform3DContext
 - Rendering cache depends on _RenderCache and AnimatedSvgPainter
 - Text styling system depends on Flutter's ui.TextDirection, ui.FontFeature, and ui.ParagraphBuilder
@@ -1625,10 +1895,18 @@ ClipMaskSystem --> ClipMaskAdvanced["Clip-Mask Advanced"]
 ClipMaskAdvanced --> ClipMaskComposition["Clip-Mask Composition"]
 ClipMaskComposition --> ClipMaskGeometry["Clip-Mask Geometry"]
 ClipMaskGeometry --> ClipMaskUnits["Clip-Mask Units"]
+Picture --> HitTestSystem["Enhanced Hit Testing System"]
+HitTestSystem --> HitTestTraversal["Hit Test Traversal"]
+HitTestTraversal --> HitTestGeometry["Hit Test Geometry"]
+HitTestGeometry --> HitTestAdvanced["Hit Test Advanced"]
+HitTestAdvanced --> HitTestUse["Hit Test Use"]
+HitTestUse --> HitTestTextRuns["Hit Test Text Runs"]
+HitTestTextRuns --> HitTestTextLayout["Hit Test Text Layout"]
+HitTestLayout --> HitTestTextPathSegments["Hit Test Text Path Segments"]
 ```
 
 **Diagram sources**
-- [lib/src/animation/animated_svg_picture.dart:1-359](file://lib/src/animation/animated_svg_picture.dart#L1-L359)
+- [lib/src/animation/animated_svg_picture.dart:1-628](file://lib/src/animation/animated_svg_picture.dart#L1-L628)
 - [lib/src/animation/smil/smil_animation.dart:1-453](file://lib/src/animation/smil/smil_animation.dart#L1-L453)
 - [lib/src/animation/smil/interpolators.dart:1-148](file://lib/src/animation/smil/interpolators.dart#L1-L148)
 - [lib/src/animation/path_interpolation.dart:1-96](file://lib/src/animation/path_interpolation.dart#L1-L96)
@@ -1654,6 +1932,13 @@ ClipMaskGeometry --> ClipMaskUnits["Clip-Mask Units"]
 - [lib/src/animation/animated_svg_painter_clip_mask_composition.dart:1-979](file://lib/src/animation/animated_svg_painter_clip_mask_composition.dart#L1-L979)
 - [lib/src/animation/animated_svg_painter_clip_mask_geometry.dart:1-376](file://lib/src/animation/animated_svg_painter_clip_mask_geometry.dart#L1-L376)
 - [lib/src/animation/animated_svg_painter_clip_mask_units.dart:1-754](file://lib/src/animation/animated_svg_painter_clip_mask_units.dart#L1-L754)
+- [lib/src/animation/animated_svg_picture_hit_test_traversal.dart:1-296](file://lib/src/animation/animated_svg_picture_hit_test_traversal.dart#L1-L296)
+- [lib/src/animation/animated_svg_picture_hit_test_geometry.dart:1-436](file://lib/src/animation/animated_svg_picture_hit_test_geometry.dart#L1-L436)
+- [lib/src/animation/animated_svg_picture_hit_test_advanced.dart:1-816](file://lib/src/animation/animated_svg_picture_hit_test_advanced.dart#L1-L816)
+- [lib/src/animation/animated_svg_picture_hit_test_use.dart:1-200](file://lib/src/animation/animated_svg_picture_hit_test_use.dart#L1-L200)
+- [lib/src/animation/animated_svg_picture_hit_test_text_runs.dart:1-300](file://lib/src/animation/animated_svg_picture_hit_test_text_runs.dart#L1-L300)
+- [lib/src/animation/animated_svg_picture_hit_test_text_layout.dart:1-400](file://lib/src/animation/animated_svg_picture_hit_test_text_layout.dart#L1-L400)
+- [lib/src/animation/animated_svg_picture_hit_test_text_path_segments.dart:1-350](file://lib/src/animation/animated_svg_picture_hit_test_text_path_segments.dart#L1-L350)
 
 **Section sources**
 - [ARCHITECTURE.md:236-281](file://ARCHITECTURE.md#L236-L281)
@@ -1671,16 +1956,25 @@ ClipMaskGeometry --> ClipMaskUnits["Clip-Mask Units"]
   - Pseudo-class state tracking with minimal overhead
   - **Stop-color animation optimization: efficient CSS-to-SMIL conversion and gradient shader caching**
   - **Advanced clipping and masking optimization: enhanced CSS mask support, cascading operations, recursive safety checks, and default 10% extension handling**
+  - **Enhanced hit testing optimization: advanced marker precision, glyph-precision text testing, and robust evenodd containment**
 - 3D transform optimization:
   - Matrix reuse and cloning
   - Perspective matrix caching
   - Backface culling for performance
-- **New Rendering Cache Optimization**:
+- **Enhanced Rendering Cache Optimization**:
   - Gradient shader caching: Shader objects cached by gradient ID + paint bounds + attributes
   - Pattern image caching: Pattern tile images cached and reused across frames
   - Text paragraph caching: Paragraph objects cached by text content + style properties
   - Hit-test path geometry caching: Path objects cached for repeated hit-testing
+  - Mask bounds caching: Computed mask regions cached by mask ID + element bounds
+  - Animated mask state tracking: Selective cache invalidation for animated content
   - Smart cache invalidation: Caches cleared when animation time changes for animated SVGs
+- **Enhanced Hit Testing Performance**:
+  - Vertex sampling with angle threshold filtering reduces unnecessary calculations
+  - Glyph precision uses font metrics for efficient character boundary calculation
+  - Robust evenodd algorithm optimized for boundary detection
+  - Use element recursion depth limiting prevents stack overflow
+  - Stroke tolerance calculation optimized for different line cap types
 - Future optimizations: layer caching, GPU-accelerated morphing, reduced allocations
 
 Practical tips:
@@ -1692,17 +1986,20 @@ Practical tips:
 - Leverage CSS cascade specificity for efficient property resolution
 - Use calc() expressions judiciously to avoid excessive recalculation
 - Implement proper 3D transform ordering for optimal performance
-- **Utilize enhanced shorthand expansion**: Take advantage of modular CSS shorthand components for better performance
-- **Leverage rendering cache**: Enable caching for static content, clear caches on animation changes
-- **Monitor pseudo-class state**: Efficient state tracking minimizes CSS cascade overhead
-- **Optimize stop-color animations**: Use efficient CSS selectors and minimize redundant gradient definitions
-- **Cache gradient shaders**: Take advantage of built-in gradient shader caching for complex animated gradients
-- **Optimize clipping and masking**: Use enhanced CSS mask support, cascading operations, depth limiting, and default 10% extension
-- **Use anti-aliasing judiciously**: While beneficial for visual quality, consider performance impact on complex scenes
-- **Implement proper bounds computation**: Accurate bounds reduce unnecessary rendering operations
-- **Handle CSS mask priorities correctly**: Ensure mask-mode takes precedence over mask-type for proper rendering
-- **Take advantage of enhanced unit handling**: Use default 10% extension for consistent mask behavior
-- **Optimize text approximation**: Improved text bounds calculation reduces mask computation overhead
+- **Utilize enhanced shorthand expansion**: Take advantage of modular CSS shorthand components for better performance**
+- **Leverage enhanced rendering cache**: Enable caching for static content, clear caches on animation changes**
+- **Monitor pseudo-class state**: Efficient state tracking minimizes CSS cascade overhead**
+- **Optimize stop-color animations**: Use efficient CSS selectors and minimize redundant gradient definitions**
+- **Cache gradient shaders**: Take advantage of built-in gradient shader caching for complex animated gradients**
+- **Optimize clipping and masking**: Use enhanced CSS mask support, cascading operations, depth limiting, and default 10% extension**
+- **Utilize enhanced hit testing**: Take advantage of advanced marker precision, glyph-precision text testing, and robust evenodd containment**
+- **Implement proper bounds computation**: Accurate bounds reduce unnecessary rendering operations**
+- **Handle CSS mask priorities correctly**: Ensure mask-mode takes precedence over mask-type for proper rendering**
+- **Take advantage of enhanced unit handling**: Use default 10% extension for consistent mask behavior**
+- **Optimize text approximation**: Improved text bounds calculation reduces mask computation overhead**
+- **Use anti-aliasing judiciously**: While beneficial for visual quality, consider performance impact on complex scenes**
+- **Implement efficient stroke tolerance**: Optimize tolerance calculations for different line cap types**
+- **Limit use element recursion**: Respect depth limiting to prevent performance issues with complex use chains**
 
 ## Troubleshooting Guide
 Common issues and resolutions:
@@ -1715,6 +2012,7 @@ Common issues and resolutions:
 - Event-based animations not triggering
   - Verify event keys and element IDs
   - Check resolved begin times and syncbase conditions
+  - **Enhanced animation sandwich model issues**: Verify state transition detection and begin/end event handling
 - Filter effects not visible
   - Some lighting primitives act as pass-through until full shading is implemented
   - Confirm color matrix dimensions and values validity
@@ -1757,6 +2055,20 @@ Common issues and resolutions:
   - **Bounds computation errors**: Verify stroke width expansion and enhanced text decoration handling
   - **Group inheritance issues**: Check mask propagation through nested group hierarchies
   - **Text approximation issues**: Verify improved text bounds calculation and content collection
+  - **Enhanced hit testing issues**
+  - **Marker precision problems**: Verify vertex sampling and angle calculation accuracy
+  - **Glyph-precision text issues**: Check font metrics integration and character positioning
+  - **Evenodd containment failures**: Verify robust algorithm for boundary detection
+  - **Use element recursion errors**: Check depth limiting and circular reference prevention
+  - **Stroke tolerance issues**: Verify line cap tolerance calculation and transform scaling
+- **Animation sandwich model issues**
+  - **State transition detection failures**: Verify previous state tracking and iteration counting
+  - **Begin/end event timing**: Check event dispatch timing and syncbase condition resolution
+  - **Animation priority conflicts**: Ensure proper animation sandwich model implementation
+- **Rendering cache issues**
+  - **Cache invalidation timing**: Verify cache clearing on animation time changes
+  - **Animated mask cache problems**: Check selective invalidation for animated content
+  - **Cache key collisions**: Ensure unique cache keys prevent incorrect value retrieval
 
 Diagnostic utilities:
 - AnimatedSvgPicture exposes trace callbacks and frame tick logging for detailed runtime insights
@@ -1769,12 +2081,15 @@ Diagnostic utilities:
 - **Text approximation tests**: Verify improved text bounds calculation within clipPath operations
 - 3D transform tests validate matrix operations and perspective calculations
 - **Pseudo-class state tests**: Validate hover, active, and focus state tracking
-- **Rendering cache tests**: Monitor cache effectiveness and invalidation behavior
+- **Enhanced rendering cache tests**: Monitor cache effectiveness and invalidation behavior
+- **Enhanced hit testing tests**: Comprehensive validation of marker precision, glyph-precision text testing, and evenodd containment
+- **Animation sandwich model tests**: Verify state transition detection and event handling
 - Text styling tests provide comprehensive coverage of CSS property implementations
 
 **Section sources**
 - [lib/src/animation/animated_svg_picture.dart:52-86](file://lib/src/animation/animated_svg_picture.dart#L52-L86)
 - [lib/src/animation/smil/smil_animation.dart:110-130](file://lib/src/animation/smil/smil_animation.dart#L110-L130)
+- [lib/src/animation/smil/smil_timeline_runtime.dart:80-110](file://lib/src/animation/smil/smil_timeline_runtime.dart#L80-L110)
 - [test/animation/path_morphing_test.dart:136-184](file://test/animation/path_morphing_test.dart#L136-L184)
 - [test/animation/css_cascade_specificity_test.dart:222-325](file://test/animation/css_cascade_specificity_test.dart#L222-L325)
 - [test/animation/css_selectors_combinators_test.dart:348-510](file://test/animation/css_selectors_combinators_test.dart#L348-L510)
@@ -1790,6 +2105,8 @@ Diagnostic utilities:
 - [test/animation/advanced_clip_mask_test.dart:1-766](file://test/animation/advanced_clip_mask_test.dart#L1-L766)
 - [test/animation/clip_mask_advanced_composition_test.dart:1-568](file://test/animation/clip_mask_advanced_composition_test.dart#L1-L568)
 - [test/animation/advanced_mask_semantics_test.dart:1-111](file://test/animation/advanced_mask_semantics_test.dart#L1-L111)
+- [test/animation/hit_test_advanced_test.dart:190-229](file://test/animation/hit_test_advanced_test.dart#L190-L229)
+- [test/animation/hit_test_precision_test.dart:401-439](file://test/animation/hit_test_precision_test.dart#L401-L439)
 
 ## Conclusion
 The codebase delivers a robust animated SVG pipeline with comprehensive advanced features:
@@ -1810,6 +2127,14 @@ The codebase delivers a robust animated SVG pipeline with comprehensive advanced
 - **Enhanced recursive nested operations with depth limiting and inheritance**
 - **Advanced edge feathering with anti-aliasing and soft-edge support through Gaussian blur detection**
 - **Enhanced mask bounds computation accounting for stroke width and improved text decoration handling**
+- **Enhanced hit testing system with improved precision and performance optimizations**
+- **Advanced marker hit testing for path markers with vertex sampling and angle calculations**
+- **Glyph-precision text hit testing using per-character bounding boxes and font metrics**
+- **Enhanced evenodd fill rule containment testing with robust edge case handling**
+- **Improved mask bounds caching with animated content invalidation tracking**
+- **Advanced use element hit testing with viewport clipping and recursion depth limiting**
+- **Enhanced pointer event handling with better stroke tolerance and line cap considerations**
+- **Enhanced animation sandwich model implementation with proper state transition detection**
 - Custom properties with calc() function support for dynamic styling
 - Full 3D transform capabilities with Matrix4x4 operations
 - **Enhanced rendering cache system** for significant performance improvements
@@ -1819,9 +2144,9 @@ The codebase delivers a robust animated SVG pipeline with comprehensive advanced
 
 The major enhancement of the clip-path and mask system represents a significant advancement in the animation system. The new cascading support with recursive clipPath intersections up to 10 levels provides professional-grade compositing capabilities for complex SVG animations. The comprehensive unit handling with objectBoundingBox and userSpaceOnUse support, including the default 10% extension per SVG specification, ensures consistent and predictable mask behavior. The enhanced coordinate transform stacking for nested group operations maintains proper coordinate systems across complex hierarchies. The subgraph masking system with proper filter/mask ordering enables sophisticated compositing scenarios. The improved text approximation within clipPath enhances text-based clipping operations. The advanced edge feathering through Gaussian blur detection significantly improves visual quality.
 
-The enhanced CSS shorthand expansion system with dedicated modular components provides comprehensive property expansion capabilities, improving maintainability and performance across animation, font, and box model properties. The stop-color animation system enables sophisticated gradient animations with precise CSS selector targeting and SVGator compatibility. The advanced clipping and masking system with comprehensive CSS mask support, cascading operations, and enhanced units handling provides professional-grade compositing capabilities for complex SVG animations. The depth limiting and recursion prevention mechanisms ensure stability and prevent infinite loops in complex nested structures. The default 10% extension implementation ensures compliance with SVG specifications and consistent visual results.
+**The enhanced hit testing system represents a major improvement in animation precision and performance. The advanced marker hit testing with vertex sampling and angle calculations provides accurate marker detection on complex paths. The glyph-precision text hit testing using per-character bounding boxes and font metrics dramatically improves text interaction accuracy. The enhanced evenodd fill rule containment testing with robust edge case handling ensures reliable path containment detection. The improved mask bounds caching with animated content invalidation tracking optimizes performance for complex animated scenes. The advanced use element hit testing with viewport clipping and recursion depth limiting prevents performance issues with complex use chains. The enhanced pointer event handling with better stroke tolerance and line cap considerations provides more accurate hit detection across all element types.**
 
-**The enhanced CSS shorthand expansion system with dedicated modular components provides comprehensive property expansion capabilities, improving maintainability and performance across animation, font, and box model properties.** The stop-color animation system enables sophisticated gradient animations with precise CSS selector targeting and SVGator compatibility. **The advanced clipping and masking system with comprehensive CSS mask support, cascading operations, and enhanced units handling provides professional-grade compositing capabilities for complex SVG animations.** The recursive depth limiting with 10-level protection ensures stability in complex nested structures. The default 10% extension implementation ensures SVG specification compliance. Adopt the examples and tests as references for building complex, performant animations while adhering to normalization and interpolation constraints.
+The enhanced CSS shorthand expansion system with dedicated modular components provides comprehensive property expansion capabilities, improving maintainability and performance across animation, font, and box model properties. The stop-color animation system enables sophisticated gradient animations with precise CSS selector targeting and SVGator compatibility. The advanced clipping and masking system with comprehensive CSS mask support, cascading operations, and enhanced units handling provides professional-grade compositing capabilities for complex SVG animations. The recursive depth limiting with 10-level protection ensures stability in complex nested structures. The default 10% extension implementation ensures SVG specification compliance. Adopt the examples and tests as references for building complex, performant animations while adhering to normalization and interpolation constraints.
 
 ## Appendices
 
@@ -1841,10 +2166,18 @@ The enhanced CSS shorthand expansion system with dedicated modular components pr
 - **Default 10% extension**: SVG specification compliant mask region extension
 - **Enhanced text approximation**: Improved text bounds calculation within clipPath operations
 - **Advanced edge feathering**: Anti-aliasing and soft-edge support through Gaussian blur detection
+- **Enhanced hit testing system**: Advanced marker, text, and geometry precision with improved performance
+- **Advanced marker hit testing**: Vertex sampling and angle calculations for accurate marker detection
+- **Glyph-precision text hit testing**: Per-character bounding boxes and font metrics integration
+- **Enhanced evenodd containment**: Robust edge case handling for path containment detection
+- **Enhanced mask bounds caching**: Animated content invalidation tracking for optimal performance
+- **Advanced use element hit testing**: Viewport clipping and recursion depth limiting
+- **Enhanced pointer event handling**: Better stroke tolerance and line cap considerations
+- **Enhanced animation sandwich model**: Proper state transition detection and event handling
 - Custom properties: var() resolution with inheritance and fallback
 - Calc() functions: mathematical expression evaluation with unit conversion
 - 3D transforms: Matrix4x4 operations, perspective projection, backface culling
-- **Rendering cache**: Intelligent caching of gradients, patterns, text, and hit-test geometry
+- **Enhanced rendering cache**: Intelligent caching of gradients, patterns, text, hit-test geometry, and mask bounds
 - Path morphing: normalized cubic Bezier interpolation
 - Filters: color matrix, blur, lighting primitives (baseline pass-through)
 - Text styling: comprehensive CSS text property support including underline, overline, line-through, writing-mode, font variants, and advanced typography features
@@ -1880,4 +2213,6 @@ The enhanced CSS shorthand expansion system with dedicated modular components pr
 - [test/animation/advanced_clip_mask_test.dart:1-766](file://test/animation/advanced_clip_mask_test.dart#L1-L766)
 - [test/animation/clip_mask_advanced_composition_test.dart:1-568](file://test/animation/clip_mask_advanced_composition_test.dart#L1-L568)
 - [test/animation/advanced_mask_semantics_test.dart:1-111](file://test/animation/advanced_mask_semantics_test.dart#L1-L111)
+- [test/animation/hit_test_advanced_test.dart:190-229](file://test/animation/hit_test_advanced_test.dart#L190-L229)
+- [test/animation/hit_test_precision_test.dart:401-439](file://test/animation/hit_test_precision_test.dart#L401-L439)
 - [blink-b87d44f-Source-core-svg/SVGMaskElement.cpp:56-123](file://blink-b87d44f-Source-core-svg/SVGMaskElement.cpp#L56-L123)
