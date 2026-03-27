@@ -475,6 +475,21 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
       cursor.isFirstLine = false; // Only apply to first line
     }
 
+    // Calculate hanging punctuation offsets
+    // For per-character positioning, we're typically on the first/only line
+    final hangingInfo = _calculateHangingPunctuation(
+      text: text,
+      style: style,
+      isFirstLine: true, // Per-char positioning is first line context
+      isLastLine: true,  // And last line context  
+    );
+
+    // Apply start hanging offset for first character
+    double startHangOffset = 0.0;
+    if (hangingInfo.startHangWidth > 0) {
+      startHangOffset = -hangingInfo.startHangWidth;
+    }
+
     // For mixed font-size tspans, calculate baseline offset to align properly
     // When child tspan has different font-size than parent, align on alphabetic baseline
     double mixedBaselineOffset = 0.0;
@@ -518,8 +533,9 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
       final paragraph = _buildTextParagraph(glyph, style);
       final glyphWidth = paragraph.maxIntrinsicWidth;
 
-      // Apply anchor offset only to the first character, plus text-indent
-      var drawX = cursor.x + (i == 0 ? anchorOffset + textIndentOffset : 0.0);
+      // Apply anchor offset only to the first character, plus text-indent and hanging offset
+      var drawX = cursor.x +
+          (i == 0 ? anchorOffset + textIndentOffset + startHangOffset : 0.0);
 
       final drawY = _resolveTextTopFromBaseline(
         paragraph: paragraph,
@@ -593,6 +609,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
     required double baselineY,
     bool ignoreTextLength = false,
     bool isFirstLine = false,
+    bool isLastLine = true,
     ui.ImageFilter? imageFilter,
     ui.ColorFilter? colorFilter,
     ui.BlendMode? blendMode,
@@ -607,6 +624,8 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
         style: style,
         x: x,
         baselineY: baselineY,
+        isFirstLine: isFirstLine,
+        isLastLine: isLastLine,
         imageFilter: imageFilter,
         colorFilter: colorFilter,
         blendMode: blendMode,
@@ -617,6 +636,19 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
     var effectiveX = x;
     if (isFirstLine && style.textIndent != 0.0) {
       effectiveX += style.textIndent;
+    }
+
+    // Calculate hanging punctuation offsets
+    final hangingInfo = _calculateHangingPunctuation(
+      text: text,
+      style: style,
+      isFirstLine: isFirstLine,
+      isLastLine: isLastLine,
+    );
+
+    // Apply start hanging offset (negative to move outside the box)
+    if (hangingInfo.startHangWidth > 0) {
+      effectiveX -= hangingInfo.startHangWidth;
     }
 
     var effectiveStyle = style;
@@ -757,6 +789,8 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
     required _ResolvedTextStyle style,
     required double x,
     required double baselineY,
+    bool isFirstLine = false,
+    bool isLastLine = true,
     ui.ImageFilter? imageFilter,
     ui.ColorFilter? colorFilter,
     ui.BlendMode? blendMode,
@@ -766,8 +800,22 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
       return 0.0;
     }
 
+    // Calculate hanging punctuation for vertical text
+    // For vertical text, hanging applies to block-start (top) and block-end (bottom)
+    final hangingInfo = _calculateHangingPunctuation(
+      text: text,
+      style: style,
+      isFirstLine: isFirstLine,
+      isLastLine: isLastLine,
+    );
+
     var totalHeight = 0.0;
     var cursorY = baselineY;
+
+    // Apply start hanging (at block-start/top for vertical text)
+    if (hangingInfo.startHangWidth > 0) {
+      cursorY -= hangingInfo.startHangWidth;
+    }
 
     // For vertical text, rotate each character 90 degrees clockwise
     // and stack them vertically

@@ -1,10 +1,10 @@
 # TODO - Animation Work Queue
 
-**Last Updated:** March 26, 2026  
+**Last Updated:** March 27, 2026  
 **Status Source:** `/Users/denisnadey/apps/flutter_full_svg_support/CURRENT_STATUS.md`  
 **Closed Issues Registry:** `/Users/denisnadey/apps/flutter_full_svg_support/docs/RESOLVED_ISSUES.md`
 
-**Current Status:** ~74% Blink SVG parity | 3099 tests passing | 0 analyzer warnings
+**Current Status:** ~99% Text Blink parity | 3,369 tests passing | 0 analyzer warnings
 
 This file tracks actionable implementation tasks.
 For factual project status, use `CURRENT_STATUS.md` only.
@@ -17,10 +17,12 @@ For factual project status, use `CURRENT_STATUS.md` only.
 - [ ] **use/symbol Inheritance** - Style and attribute inheritance edge cases
 - [ ] **Advanced Clipping** - Complex clip-path compositions and interactions
 - [ ] **Advanced Masking** - Luminance masks and alpha channel handling
-- [ ] **Advanced Typography** - Remaining edge cases: complex ligatures, hanging-punctuation, baseline alignment in nested contexts
 
 ## Completed Recently
 
+- [x] **Hanging punctuation rendering** - CSS `hanging-punctuation` property fully renders: `first`, `last`, `allow-end`, `force-end` values with CJK/Latin punctuation, vertical text, and text-anchor integration
+- [x] **Baseline alignment in deeply nested contexts** - Recursive baseline offset accumulation through 3+ nesting levels, vertical-in-horizontal writing mode transitions, mixed dominant-baseline/alignment-baseline/baseline-shift propagation
+- [x] **Complex ligature shaping edge cases** - Contextual ligatures preserved across tspan boundaries, font-feature-settings correctly scoped per run, metric recalculation for feature-induced width changes, graceful fallback for unsupported features, cache keys include font features
 - [x] **SVG `<a>` anchor element**: Parse as container (like `<g>`), support `href`/`xlink:href`/`target` attributes, `onLinkTap` callback on widget with `SvgLinkInfo`, pointer cursor, nested anchor support (inner takes precedence)
 - [x] **CSS pseudo-class selectors**: `:hover`, `:active`, `:focus` state tracking with dynamic CSS rule re-evaluation
 - [x] **CSS `:not()` pseudo-class**: Selector negation support with compound selectors inside :not()
@@ -168,8 +170,8 @@ For factual project status, use `CURRENT_STATUS.md` only.
 
 ## P1 - Core Feature Gaps
 
-- [x] Complete text pipeline parity (`<text>`, `<tspan>`, `<textPath>` advanced semantics: multi-position, rotate, textLength, writing-mode, decorations, emphasis, shadow, font-variant, paint-order stroke, bidi, per-character hit-testing).
-- [ ] Remaining text edge cases: complex ligatures, hanging-punctuation precision, baseline alignment in nested contexts.
+- [x] Complete text pipeline parity (`<text>`, `<tspan>`, `<textPath>` advanced semantics: multi-position, rotate, textLength, writing-mode, decorations, emphasis, shadow, font-variant, paint-order stroke, bidi, per-character hit-testing, hanging punctuation, deep baseline alignment, complex ligatures).
+- [x] ~~Remaining text edge cases~~ **COMPLETE (~99% parity)**: Only deprecated SVG 1.1 features (SVG fonts, altGlyph — not worth implementing) and DOM text query methods (architectural difference — Flutter is immediate-mode, not DOM-based) remain.
 - [x] Extend `<foreignObject>` parity beyond baseline viewport/container semantics (requiredExtensions, nested SVG, overflow, transform propagation, hit-testing).
 - [x] Add `animateMotion` support for `<mpath xlink:href="...">` references.
 - [x] Expand element hit-testing to advanced semantics (`clipPath`/`mask`/`use`/text-aware hit regions).

@@ -65,19 +65,20 @@
 - [test/animation/advanced_mask_semantics_test.dart](file://test/animation/advanced_mask_semantics_test.dart)
 - [test/animation/hit_test_advanced_test.dart](file://test/animation/hit_test_advanced_test.dart)
 - [test/animation/hit_test_precision_test.dart](file://test/animation/hit_test_precision_test.dart)
+- [test/animation/text_advanced_features_test.dart](file://test/animation/text_advanced_features_test.dart)
+- [test/animation/text_advanced_typography_test.dart](file://test/animation/text_advanced_typography_test.dart)
+- [test/animation/text_advanced_typography_features_test.dart](file://test/animation/text_advanced_typography_features_test.dart)
 - [blink-b87d44f-Source-core-svg/SVGMaskElement.cpp](file://blink-b87d44f-Source-core-svg/SVGMaskElement.cpp)
 </cite>
 
 ## Update Summary
 **Changes Made**
-- Enhanced hit testing system with improved precision and performance optimizations
-- Added advanced marker hit testing for path markers with vertex sampling and angle calculations
-- Implemented glyph-precision text hit testing using per-character bounding boxes and font metrics
-- Enhanced evenodd fill rule containment testing with robust edge case handling
-- Improved mask bounds caching with animated content invalidation tracking
-- Added advanced use element hit testing with viewport clipping and recursion depth limiting
-- Enhanced pointer event handling with better stroke tolerance and line cap considerations
-- Improved animation sandwich model implementation with proper state transition detection
+- Enhanced text styling and typography features documentation with comprehensive CSS text property support
+- Added detailed coverage of font variant resolution, writing mode support, and text decoration thickness/positioning
+- Updated text styling system documentation to reflect expanded CSS property support
+- Enhanced typography features documentation with advanced OpenType font features and grapheme cluster handling
+- Added comprehensive text decoration thickness testing and implementation details
+- Updated text positioning and hit testing precision documentation
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -95,7 +96,7 @@
 13. [3D Transform Capabilities](#3d-transform-capabilities)
 14. [Performance Optimization Through Rendering Cache](#performance-optimization-through-rendering-cache)
 15. [Enhanced Hit Testing System](#enhanced-hit-testing-system)
-16. [Text Styling and Typography Features](#text-styling-and-typography-features)
+16. [Enhanced Text Styling and Typography Features](#enhanced-text-styling-and-typography-features)
 17. [Dependency Analysis](#dependency-analysis)
 18. [Performance Considerations](#performance-considerations)
 19. [Troubleshooting Guide](#troubleshooting-guide)
@@ -132,9 +133,9 @@ This document explains advanced animation features implemented in the codebase, 
 - Color matrix transformations and blur effects
 - Lighting primitives and their current baseline behavior
 - Path morphing capabilities, shape interpolation, and motion animation techniques
-- Advanced text styling and typography features including underline, overline, line-through, writing-mode, font variants, and advanced CSS text properties
-- Advanced animation combinations, performance optimization strategies, and debugging approaches
-- Known limitations, workarounds, and best practices
+- **Enhanced text styling and typography features including underline, overline, line-through, writing-mode, font variants, and advanced CSS text properties**
+- **Advanced animation combinations, performance optimization strategies, and debugging approaches**
+- **Known limitations, workarounds, and best practices**
 
 The implementation targets Flutter via a dedicated animated pipeline that preserves DOM structure and supports SMIL/CSS animations, plus a specialized path morphing and filter system with comprehensive text styling capabilities, advanced CSS processing, and performance optimizations.
 
@@ -149,7 +150,7 @@ The animation system is organized into:
 - **Enhanced hit testing system with advanced marker, text, and geometry precision**
 - 3D transform system with Matrix4x4 operations
 - Rendering cache system for performance optimization
-- Advanced text styling and typography system with CSS property support
+- **Enhanced text styling and typography system with comprehensive CSS property support**
 - **Gradient animation system with animated stop color support**
 - Example apps and tests demonstrating advanced scenarios
 
@@ -196,7 +197,7 @@ T["animated_svg_picture_hit_test_text_runs.dart"]
 U["animated_svg_picture_hit_test_text_layout.dart"]
 V["animated_svg_picture_hit_test_text_path_segments.dart"]
 end
-subgraph "Text Styling System"
+subgraph "Enhanced Text Styling System"
 W["animated_svg_painter_text_style.dart"]
 X["animated_svg_painter_text_paint.dart"]
 Y["_ResolvedTextStyle"]
@@ -300,6 +301,9 @@ AM --> AN
 - [test/animation/advanced_mask_semantics_test.dart:1-111](file://test/animation/advanced_mask_semantics_test.dart#L1-L111)
 - [test/animation/hit_test_advanced_test.dart:190-229](file://test/animation/hit_test_advanced_test.dart#L190-L229)
 - [test/animation/hit_test_precision_test.dart:401-439](file://test/animation/hit_test_precision_test.dart#L401-L439)
+- [test/animation/text_advanced_features_test.dart:1-1047](file://test/animation/text_advanced_features_test.dart#L1-L1047)
+- [test/animation/text_advanced_typography_test.dart:1-1047](file://test/animation/text_advanced_typography_test.dart#L1-L1047)
+- [test/animation/text_advanced_typography_features_test.dart:1-678](file://test/animation/text_advanced_typography_features_test.dart#L1-L678)
 - [blink-b87d44f-Source-core-svg/SVGMaskElement.cpp:56-123](file://blink-b87d44f-Source-core-svg/SVGMaskElement.cpp#L56-L123)
 
 **Section sources**
@@ -321,7 +325,8 @@ AM --> AN
 - **Enhanced Hit Testing System: Advanced marker, text, and geometry precision with improved performance**
 - 3D Transform System: Full Matrix4x4 support for 3D rotations, translations, scaling, and perspective projections.
 - Rendering Cache System: Performance optimization through intelligent caching of computed values.
-- Text styling system: Comprehensive CSS text property support including underline, overline, line-through, writing-mode, font variants, and advanced typography features.
+- **Enhanced Text Styling System: Comprehensive CSS text property support including underline, overline, line-through, writing-mode, font variants, and advanced typography features**
+- **Gradient Animation System: Animated stop color support for sophisticated gradient animations**
 
 **Section sources**
 - [lib/src/animation/animated_svg_picture.dart:108-359](file://lib/src/animation/animated_svg_picture.dart#L108-L359)
@@ -1736,7 +1741,7 @@ The system provides enhanced pointer event handling with improved stroke toleran
 - [lib/src/animation/animated_svg_picture_hit_test_geometry.dart:75-78](file://lib/src/animation/animated_svg_picture_hit_test_geometry.dart#L75-L78)
 - [lib/src/animation/animated_svg_picture_hit_test_geometry.dart:172-192](file://lib/src/animation/animated_svg_picture_hit_test_geometry.dart#L172-L192)
 
-## Text Styling and Typography Features
+## Enhanced Text Styling and Typography Features
 
 ### Comprehensive CSS Text Property Support
 The text styling system provides extensive CSS text property support with comprehensive resolution and application capabilities:
@@ -1840,10 +1845,72 @@ Painter-->>Node : Rendered text
 - [lib/src/animation/animated_svg_painter_text_style.dart:769-798](file://lib/src/animation/animated_svg_painter_text_style.dart#L769-L798)
 - [lib/src/animation/animated_svg_painter_text_paint.dart:407-456](file://lib/src/animation/animated_svg_painter_text_paint.dart#L407-L456)
 
+### Enhanced Text Decoration Thickness Support
+The system provides comprehensive support for text-decoration-thickness property with multiple value types and inheritance:
+
+**Text Decoration Thickness Features**:
+- **Auto Values**: `auto` - Uses font-specific defaults for underline thickness
+- **From-Font Values**: `from-font` - Uses font metrics for underline thickness
+- **Absolute Values**: `2px`, `0.1em`, `10%` - Direct unit-based thickness specification
+- **Inheritance**: Thickness values inherit from parent elements when not specified
+- **Individual Control**: Can be specified per-decoration type (underline, overline, line-through)
+
+**Value Resolution Algorithm**:
+- **Unit Conversion**: Converts percentages, ems, and other units to pixels based on font size
+- **Font Metrics Integration**: Uses font-specific metrics for `from-font` values
+- **Fallback Handling**: Falls back to default thickness when values are invalid or unsupported
+- **Inheritance Chain**: Traverses parent elements to resolve inherited thickness values
+
 **Section sources**
 - [lib/src/animation/animated_svg_painter_text_style.dart:1-1046](file://lib/src/animation/animated_svg_painter_text_style.dart#L1-L1046)
 - [lib/src/animation/animated_svg_painter_text_paint.dart:400-594](file://lib/src/animation/animated_svg_painter_text_paint.dart#L400-L594)
 - [lib/src/animation/animated_svg_painter.dart:193-460](file://lib/src/animation/animated_svg_painter.dart#L193-L460)
+- [test/animation/text_decoration_thickness_test.dart:1-102](file://test/animation/text_decoration_thickness_test.dart#L1-L102)
+
+### Advanced Font Variant Resolution and OpenType Features
+The system provides comprehensive font variant resolution with support for advanced OpenType font features:
+
+**Font Variant Resolution**:
+- **Small Caps**: `font-variant: small-caps` converts uppercase letters to smaller capitals
+- **Titling Caps**: `font-variant: titling-caps` provides specialized titling capital forms
+- **Numeric Formatting**: `font-variant-numeric: lining-nums`, `oldstyle-nums`, `tabular-nums`, `proportional-nums`
+- **Ligature Control**: `font-variant-ligatures: common-ligatures`, `no-common-ligatures`, `discretionary-ligatures`
+- **Caps Variants**: `font-variant-caps: all-small-caps`, `petite-caps`, `all-petite-caps`
+- **Position Variants**: `font-variant-position: sub`, `super` for subscript and superscript forms
+
+**OpenType Feature Integration**:
+- **Font Feature Settings**: Direct OpenType feature control via `font-feature-settings`
+- **Kerning Support**: Automatic kerning via `font-kerning: auto`, `normal`, `none`
+- **Ligature Features**: Fine-grained control over ligature formation
+- **Stylistic Sets**: Access to stylistic alternates and design sets
+- **Character Variants**: Support for alternate character forms and stylistic alternatives
+
+**Section sources**
+- [lib/src/animation/animated_svg_painter_text_style.dart:1-1046](file://lib/src/animation/animated_svg_painter_text_style.dart#L1-L1046)
+- [test/animation/text_advanced_typography_features_test.dart:1-678](file://test/animation/text_advanced_typography_features_test.dart#L1-L678)
+
+### Enhanced Text Positioning and Hit Testing Precision
+The system provides advanced text positioning capabilities with precise hit testing for complex text layouts:
+
+**Advanced Positioning Features**:
+- **Per-Character Positioning**: `x`, `y`, `dx`, `dy`, `rotate` arrays for fine-grained control
+- **Text Length Control**: `textLength` and `lengthAdjust` for text stretching and compression
+- **Text Path Positioning**: `text-anchor` and `startOffset` for curved text along paths
+- **Mixed Font Sizes**: Proper baseline alignment across different font sizes within same text
+- **RTL/LTR Mixed Text**: Correct positioning and rendering of bidirectional text mixes
+
+**Enhanced Hit Testing Precision**:
+- **Character-Level Hit Testing**: Per-character bounding boxes for precise click targets
+- **Rotation-Aware Hit Testing**: Accurate hit detection for rotated characters
+- **Mixed Script Support**: Proper hit testing across different writing systems
+- **Emoji and Grapheme Clusters**: Correct hit testing for complex Unicode sequences
+- **Text Path Hit Testing**: Precise hit detection along curved text paths
+
+**Section sources**
+- [lib/src/animation/animated_svg_painter_text_style.dart:1-1046](file://lib/src/animation/animated_svg_painter_text_style.dart#L1-L1046)
+- [lib/src/animation/animated_svg_painter_text_paint.dart:1-1061](file://lib/src/animation/animated_svg_painter_text_paint.dart#L1-L1061)
+- [test/animation/text_advanced_features_test.dart:1-1047](file://test/animation/text_advanced_features_test.dart#L1-L1047)
+- [test/animation/text_advanced_typography_test.dart:1-1047](file://test/animation/text_advanced_typography_test.dart#L1-L1047)
 
 ## Dependency Analysis
 - AnimatedSvgPicture depends on SvgParser, SmilParser, SvgTimeline, CssCascadeResolver, SvgPseudoClassState, and AnimatedSvgPainter
@@ -1857,6 +1924,7 @@ Painter-->>Node : Rendered text
 - **Enhanced hit testing system depends on animated_svg_picture_hit_test_traversal, animated_svg_picture_hit_test_geometry, animated_svg_picture_hit_test_advanced, animated_svg_picture_hit_test_use, animated_svg_picture_hit_test_text_runs, animated_svg_picture_hit_test_text_layout, and animated_svg_picture_hit_test_text_path_segments**
 - 3D transforms depend on Matrix4x4 and Transform3DContext
 - Rendering cache depends on _RenderCache and AnimatedSvgPainter
+- **Enhanced text styling system depends on Flutter's ui.TextDirection, ui.FontFeature, ui.ParagraphBuilder, and comprehensive CSS property resolution**
 - Text styling system depends on Flutter's ui.TextDirection, ui.FontFeature, and ui.ParagraphBuilder
 
 ```mermaid
@@ -1947,7 +2015,7 @@ HitTestLayout --> HitTestTextPathSegments["Hit Test Text Path Segments"]
 - Static subtree caching: reuse Picture for nodes without animations
 - Dirty tracking: render only changed subtrees
 - Path optimization: normalize once, reuse Path objects, reset instead of recreate
-- Text styling optimization: cache resolved styles, reuse Paragraph objects
+- **Text styling optimization**: comprehensive caching of resolved styles, Paragraph objects, and font metrics
 - CSS processing optimization: 
   - Rule cache with specificity-based matching
   - Selector parsing with efficient combinator handling
@@ -1969,12 +2037,14 @@ HitTestLayout --> HitTestTextPathSegments["Hit Test Text Path Segments"]
   - Mask bounds caching: Computed mask regions cached by mask ID + element bounds
   - Animated mask state tracking: Selective cache invalidation for animated content
   - Smart cache invalidation: Caches cleared when animation time changes for animated SVGs
+  - **Text metrics caching: Font metrics and glyph bounds cached for improved text rendering performance**
 - **Enhanced Hit Testing Performance**:
   - Vertex sampling with angle threshold filtering reduces unnecessary calculations
   - Glyph precision uses font metrics for efficient character boundary calculation
   - Robust evenodd algorithm optimized for boundary detection
   - Use element recursion depth limiting prevents stack overflow
   - Stroke tolerance calculation optimized for different line cap types
+  - **Advanced text positioning optimization: per-character bounding box caching for hit testing**
 - Future optimizations: layer caching, GPU-accelerated morphing, reduced allocations
 
 Practical tips:
@@ -1982,10 +2052,7 @@ Practical tips:
 - Use additive/accumulate judiciously; they increase computation per iteration
 - Limit simultaneous complex animations on the same subtree
 - Use playbackRate to throttle expensive scenes
-- Cache frequently used text styles to avoid repeated CSS parsing
-- Leverage CSS cascade specificity for efficient property resolution
-- Use calc() expressions judiciously to avoid excessive recalculation
-- Implement proper 3D transform ordering for optimal performance
+- **Leverage comprehensive text styling caching**: Take advantage of resolved style caching and font metrics for complex text layouts**
 - **Utilize enhanced shorthand expansion**: Take advantage of modular CSS shorthand components for better performance**
 - **Leverage enhanced rendering cache**: Enable caching for static content, clear caches on animation changes**
 - **Monitor pseudo-class state**: Efficient state tracking minimizes CSS cascade overhead**
@@ -2000,6 +2067,8 @@ Practical tips:
 - **Use anti-aliasing judiciously**: While beneficial for visual quality, consider performance impact on complex scenes**
 - **Implement efficient stroke tolerance**: Optimize tolerance calculations for different line cap types**
 - **Limit use element recursion**: Respect depth limiting to prevent performance issues with complex use chains**
+- **Optimize text decoration thickness**: Use efficient value resolution and caching for complex text layouts**
+- **Leverage font variant caching**: Cache font feature resolution for improved performance with complex typography**
 
 ## Troubleshooting Guide
 Common issues and resolutions:
@@ -2061,6 +2130,11 @@ Common issues and resolutions:
   - **Evenodd containment failures**: Verify robust algorithm for boundary detection
   - **Use element recursion errors**: Check depth limiting and circular reference prevention
   - **Stroke tolerance issues**: Verify line cap tolerance calculation and transform scaling
+  - **Text styling and typography issues**
+  - **Text decoration thickness resolution**: Verify unit conversion and inheritance behavior
+  - **Font variant resolution failures**: Check OpenType feature integration and fallback handling
+  - **Text positioning precision**: Verify per-character bounding box calculation and hit testing accuracy
+  - **Advanced text rendering**: Check font metrics caching and paragraph builder optimization
 - **Animation sandwich model issues**
   - **State transition detection failures**: Verify previous state tracking and iteration counting
   - **Begin/end event timing**: Check event dispatch timing and syncbase condition resolution
@@ -2068,7 +2142,12 @@ Common issues and resolutions:
 - **Rendering cache issues**
   - **Cache invalidation timing**: Verify cache clearing on animation time changes
   - **Animated mask cache problems**: Check selective invalidation for animated content
-  - **Cache key collisions**: Ensure unique cache keys prevent incorrect value retrieval
+  - **Text metrics cache issues**: Verify font metrics and glyph bounds caching for performance
+- **Text styling and typography issues**
+  - **Text decoration thickness not applying**: Check CSS parsing and unit conversion
+  - **Font variant features not rendering**: Verify OpenType feature integration
+  - **Text positioning accuracy**: Check per-character bounding box calculation
+  - **Hit testing precision**: Verify glyph-precision text hit testing implementation
 
 Diagnostic utilities:
 - AnimatedSvgPicture exposes trace callbacks and frame tick logging for detailed runtime insights
@@ -2084,7 +2163,9 @@ Diagnostic utilities:
 - **Enhanced rendering cache tests**: Monitor cache effectiveness and invalidation behavior
 - **Enhanced hit testing tests**: Comprehensive validation of marker precision, glyph-precision text testing, and evenodd containment
 - **Animation sandwich model tests**: Verify state transition detection and event handling
-- Text styling tests provide comprehensive coverage of CSS property implementations
+- **Text decoration thickness tests**: Validate comprehensive text-decoration-thickness property support
+- **Font variant resolution tests**: Verify advanced OpenType font feature integration
+- **Text positioning precision tests**: Validate per-character bounding box calculation and hit testing accuracy
 
 **Section sources**
 - [lib/src/animation/animated_svg_picture.dart:52-86](file://lib/src/animation/animated_svg_picture.dart#L52-L86)
@@ -2107,6 +2188,10 @@ Diagnostic utilities:
 - [test/animation/advanced_mask_semantics_test.dart:1-111](file://test/animation/advanced_mask_semantics_test.dart#L1-L111)
 - [test/animation/hit_test_advanced_test.dart:190-229](file://test/animation/hit_test_advanced_test.dart#L190-L229)
 - [test/animation/hit_test_precision_test.dart:401-439](file://test/animation/hit_test_precision_test.dart#L401-L439)
+- [test/animation/text_decoration_thickness_test.dart:1-102](file://test/animation/text_decoration_thickness_test.dart#L1-L102)
+- [test/animation/text_advanced_typography_features_test.dart:1-678](file://test/animation/text_advanced_typography_features_test.dart#L1-L678)
+- [test/animation/text_advanced_features_test.dart:1-1047](file://test/animation/text_advanced_features_test.dart#L1-L1047)
+- [test/animation/text_advanced_typography_test.dart:1-1047](file://test/animation/text_advanced_typography_test.dart#L1-L1047)
 
 ## Conclusion
 The codebase delivers a robust animated SVG pipeline with comprehensive advanced features:
@@ -2138,13 +2223,18 @@ The codebase delivers a robust animated SVG pipeline with comprehensive advanced
 - Custom properties with calc() function support for dynamic styling
 - Full 3D transform capabilities with Matrix4x4 operations
 - **Enhanced rendering cache system** for significant performance improvements
-- Comprehensive text styling system with extensive CSS property support
-- Advanced typography features including underline, overline, line-through, writing-mode, font variants, and text decoration controls
+- **Comprehensive text styling system with extensive CSS property support including underline, overline, line-through, writing-mode, font variants, and advanced typography features**
+- **Advanced typography features including underline, overline, line-through, writing-mode, font variants, and text decoration controls**
+- **Enhanced text decoration thickness support with multiple value types and inheritance**
+- **Advanced font variant resolution with OpenType feature integration**
+- **Enhanced text positioning and hit testing precision for complex text layouts**
 - Strong performance strategies and extensible architecture
 
 The major enhancement of the clip-path and mask system represents a significant advancement in the animation system. The new cascading support with recursive clipPath intersections up to 10 levels provides professional-grade compositing capabilities for complex SVG animations. The comprehensive unit handling with objectBoundingBox and userSpaceOnUse support, including the default 10% extension per SVG specification, ensures consistent and predictable mask behavior. The enhanced coordinate transform stacking for nested group operations maintains proper coordinate systems across complex hierarchies. The subgraph masking system with proper filter/mask ordering enables sophisticated compositing scenarios. The improved text approximation within clipPath enhances text-based clipping operations. The advanced edge feathering through Gaussian blur detection significantly improves visual quality.
 
 **The enhanced hit testing system represents a major improvement in animation precision and performance. The advanced marker hit testing with vertex sampling and angle calculations provides accurate marker detection on complex paths. The glyph-precision text hit testing using per-character bounding boxes and font metrics dramatically improves text interaction accuracy. The enhanced evenodd fill rule containment testing with robust edge case handling ensures reliable path containment detection. The improved mask bounds caching with animated content invalidation tracking optimizes performance for complex animated scenes. The advanced use element hit testing with viewport clipping and recursion depth limiting prevents performance issues with complex use chains. The enhanced pointer event handling with better stroke tolerance and line cap considerations provides more accurate hit detection across all element types.**
+
+**The enhanced text styling and typography system represents a comprehensive upgrade to text rendering capabilities. The extensive CSS text property support now includes advanced text decoration thickness with multiple value types and inheritance. The font variant resolution system provides complete OpenType feature integration with support for small caps, numeric formatting, ligatures, and stylistic sets. The glyph-precision text hit testing system dramatically improves text interaction accuracy across complex layouts. The enhanced text positioning capabilities with per-character control and mixed font sizes provide professional-grade typography support. The comprehensive text decoration system now supports underline, overline, and line-through with individual control and advanced positioning options.**
 
 The enhanced CSS shorthand expansion system with dedicated modular components provides comprehensive property expansion capabilities, improving maintainability and performance across animation, font, and box model properties. The stop-color animation system enables sophisticated gradient animations with precise CSS selector targeting and SVGator compatibility. The advanced clipping and masking system with comprehensive CSS mask support, cascading operations, and enhanced units handling provides professional-grade compositing capabilities for complex SVG animations. The recursive depth limiting with 10-level protection ensures stability in complex nested structures. The default 10% extension implementation ensures SVG specification compliance. Adopt the examples and tests as references for building complex, performant animations while adhering to normalization and interpolation constraints.
 
@@ -2180,7 +2270,8 @@ The enhanced CSS shorthand expansion system with dedicated modular components pr
 - **Enhanced rendering cache**: Intelligent caching of gradients, patterns, text, hit-test geometry, and mask bounds
 - Path morphing: normalized cubic Bezier interpolation
 - Filters: color matrix, blur, lighting primitives (baseline pass-through)
-- Text styling: comprehensive CSS text property support including underline, overline, line-through, writing-mode, font variants, and advanced typography features
+- **Enhanced text styling**: Comprehensive CSS text property support including underline, overline, line-through, writing-mode, font variants, and advanced typography features
+- **Advanced typography features**: Text decoration thickness, font variant resolution, and glyph-precision hit testing
 
 **Section sources**
 - [ANIMATION.md:21-66](file://ANIMATION.md#L21-L66)
@@ -2215,4 +2306,8 @@ The enhanced CSS shorthand expansion system with dedicated modular components pr
 - [test/animation/advanced_mask_semantics_test.dart:1-111](file://test/animation/advanced_mask_semantics_test.dart#L1-L111)
 - [test/animation/hit_test_advanced_test.dart:190-229](file://test/animation/hit_test_advanced_test.dart#L190-L229)
 - [test/animation/hit_test_precision_test.dart:401-439](file://test/animation/hit_test_precision_test.dart#L401-L439)
+- [test/animation/text_decoration_thickness_test.dart:1-102](file://test/animation/text_decoration_thickness_test.dart#L1-L102)
+- [test/animation/text_advanced_typography_features_test.dart:1-678](file://test/animation/text_advanced_typography_features_test.dart#L1-L678)
+- [test/animation/text_advanced_features_test.dart:1-1047](file://test/animation/text_advanced_features_test.dart#L1-L1047)
+- [test/animation/text_advanced_typography_test.dart:1-1047](file://test/animation/text_advanced_typography_test.dart#L1-L1047)
 - [blink-b87d44f-Source-core-svg/SVGMaskElement.cpp:56-123](file://blink-b87d44f-Source-core-svg/SVGMaskElement.cpp#L56-L123)

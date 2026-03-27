@@ -235,6 +235,11 @@ extension AnimatedSvgPainterTextStyleFontExtension on AnimatedSvgPainter {
   /// - Feature values: 'kern' 1, 'liga' on/off, 'ss01' 2
   ///
   /// Example: 'kern' 1, 'liga' off, 'smcp' on
+  ///
+  /// Gracefully handles unsupported features - Flutter's text engine will
+  /// simply ignore features the font doesn't support, so we pass them through
+  /// without validation. This ensures correct width calculations match
+  /// actual rendered output.
   List<ui.FontFeature> _resolveFontFeatureSettings(String? value) {
     if (value == null ||
         value.trim().isEmpty ||
@@ -270,15 +275,124 @@ extension AnimatedSvgPainterTextStyleFontExtension on AnimatedSvgPainter {
           }
         }
 
-        if (featureValue > 0) {
-          features.add(ui.FontFeature(tag, featureValue));
-        } else {
-          features.add(ui.FontFeature(tag, 0));
-        }
+        // Add feature regardless of whether font supports it.
+        // Flutter's text engine gracefully ignores unsupported features,
+        // and by passing them through we ensure our metrics match actual
+        // rendered output (no crash, correct fallback behavior).
+        features.add(ui.FontFeature(tag, featureValue));
       }
     }
 
     return features;
+  }
+
+  /// Generates a hash string representing the font features list.
+  ///
+  /// This is used for cache key generation to ensure that paragraphs with
+  /// different font-feature-settings produce different cache entries.
+  /// Critical for proper rendering of tabular vs proportional numerals,
+  /// ligature variations, etc.
+  String _fontFeaturesHashKey(List<ui.FontFeature> features) {
+    if (features.isEmpty) return 'ff:none';
+    // Sort features by tag for consistent cache keys regardless of order
+    final sortedFeatures = List<ui.FontFeature>.from(features)
+      ..sort((a, b) => a.feature.compareTo(b.feature));
+    return 'ff:${sortedFeatures.map((f) => '${f.feature}=${f.value}').join('|')}';
+  }
+
+  /// Checks if two lists of font features are compatible for ligature shaping.
+  ///
+  /// When text spans across multiple tspans with different styles, ligatures
+  /// (like "fi", "fl", "ffi") can only form if the ligature-related features
+  /// are compatible between adjacent runs.
+  ///
+  /// Returns true if adjacent runs can share ligature shaping.
+  bool _areLigatureFeaturesCompatible(
+    List<ui.FontFeature> features1,
+    List<ui.FontFeature> features2,
+  ) {
+    // Ligature-related feature tags
+    const ligatureFeatures = <String>{
+      'liga', // Standard ligatures
+      'clig', // Contextual ligatures
+      'dlig', // Discretionary ligatures
+      'hlig', // Historical ligatures
+      'calt', // Contextual alternates
+    };
+
+    // Extract ligature features from each list
+    final ligatures1 = <String, int>{};
+    final ligatures2 = <String, int>{};
+
+    for (final f in features1) {
+      if (ligatureFeatures.contains(f.feature)) {
+        ligatures1[f.feature] = f.value;
+      }
+    }
+
+    for (final f in features2) {
+      if (ligatureFeatures.contains(f.feature)) {
+        ligatures2[f.feature] = f.value;
+      }
+    }
+
+    // For each ligature feature present in either list, check if values match
+    final allTags = <String>{...ligatures1.keys, ...ligatures2.keys};
+    for (final tag in allTags) {
+      // Default is enabled (1) if not explicitly set
+      final value1 = ligatures1[tag] ?? 1;
+      final value2 = ligatures2[tag] ?? 1;
+      if (value1 != value2) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  /// Checks if two font feature lists have the same numeric figure settings.
+  ///
+  /// This is important for cache key generation to ensure that text with
+  /// different numeral styles (tabular vs proportional, lining vs oldstyle)
+  /// produces correctly sized glyphs.
+  // ignore: unused_element
+  bool _areNumericFeaturesIdentical(
+    List<ui.FontFeature> features1,
+    List<ui.FontFeature> features2,
+  ) {
+    // Numeric-related feature tags that affect glyph width
+    const numericFeatures = <String>{
+      'tnum', // Tabular figures
+      'pnum', // Proportional figures
+      'lnum', // Lining figures
+      'onum', // Oldstyle figures
+      'zero', // Slashed zero
+      'ordn', // Ordinals
+      'frac', // Fractions
+      'afrc', // Alternative fractions
+    };
+
+    final numerics1 = <String, int>{};
+    final numerics2 = <String, int>{};
+
+    for (final f in features1) {
+      if (numericFeatures.contains(f.feature)) {
+        numerics1[f.feature] = f.value;
+      }
+    }
+
+    for (final f in features2) {
+      if (numericFeatures.contains(f.feature)) {
+        numerics2[f.feature] = f.value;
+      }
+    }
+
+    // Must have identical sets of numeric features with same values
+    if (numerics1.length != numerics2.length) return false;
+    for (final entry in numerics1.entries) {
+      if (numerics2[entry.key] != entry.value) return false;
+    }
+    return true;
   }
 
   /// Resolves font-variant CSS property to Flutter FontFeatures.

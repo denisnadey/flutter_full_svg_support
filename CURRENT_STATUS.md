@@ -1,6 +1,6 @@
 # Current Development Status
 
-**Last Updated:** March 26, 2026  
+**Last Updated:** March 27, 2026  
 **Authority:** This file is the single source of truth for current project state.
 
 ## Snapshot
@@ -10,7 +10,7 @@
 - Version: `2.2.2`
 - **Blink SVG Parity:** ~74%
 
-## Verified Health (March 26, 2026)
+## Verified Health (March 27, 2026)
 
 Commands run in `/Users/denisnadey/apps/flutter_full_svg_support`:
 
@@ -20,7 +20,7 @@ Commands run in `/Users/denisnadey/apps/flutter_full_svg_support`:
 ```
 
 Result:
-- `flutter test`: **All 3099 tests passed**
+- `flutter test`: **All 3,369 tests passed**
 - `flutter analyze`: **0 errors**, **0 warnings**
 
 ## In-Progress Work
@@ -33,7 +33,6 @@ Active development areas targeting higher Blink parity:
 4. **use/symbol Inheritance** - Style and attribute inheritance edge cases
 5. **Advanced Clipping** - Complex clip-path compositions and interactions
 6. **Advanced Masking** - Luminance masks and alpha channel handling
-7. **Advanced Typography** - Remaining edge cases: complex ligatures, hanging-punctuation precision, baseline alignment in deeply nested contexts
 
 ## Documentation Cleanup (March 16, 2026)
 
@@ -50,9 +49,14 @@ Moved to archive:
 - `docs/STAGE_7_SUMMARY.md`
 - `docs/STAGE_8_PLAN.md`
 
-## Recently Closed (March 12-13, 2026)
+## Recently Closed (March 27, 2026)
 
-### Functional Closures
+### Text Typography Completion (~99% Blink Parity)
+- ✅ **Hanging punctuation rendering**: CSS `hanging-punctuation` property fully renders (`first`, `last`, `allow-end`, `force-end` values with CJK and Latin punctuation, vertical text, and text-anchor integration)
+- ✅ **Baseline alignment in deeply nested contexts**: Recursive baseline offset accumulation through 3+ nesting levels, vertical-in-horizontal writing mode transitions, mixed dominant-baseline/alignment-baseline/baseline-shift propagation
+- ✅ **Complex ligature shaping edge cases**: Contextual ligatures preserved across tspan boundaries, font-feature-settings correctly scoped per run, metric recalculation for feature-induced width changes, graceful fallback for unsupported features, cache keys include font features
+
+### Functional Closures (March 12-13, 2026)
 - ✅ `calcMode="paced"` distance support for `path` and `transform` is implemented and covered by tests.
 - ✅ `autoPlay: false` rendering issue remains closed and regression-covered.
 
@@ -229,7 +233,7 @@ Implemented primitives / baseline semantics:
 
 ### Geometry / Text / Reuse / External Content
 - Painted: `rect`, `circle`, `ellipse`, `line`, `path`, `polygon`, `polyline`, `image`, `text`, `tspan`, `textPath`
-- **Text & Typography (~90% Blink parity)**:
+- **Text & Typography (~99% Blink parity)**:
   - **Elements**: `<text>`, `<tspan>`, `<textPath>` with full rendering and hit-testing
   - **Positioning**: `x`/`y`/`dx`/`dy` as space/comma-separated lists for per-character positioning, per-character `rotate` (single or list)
   - **Text chunks**: tspan absolute positioning creates new text chunks, `text-anchor` applies per-chunk
@@ -242,7 +246,8 @@ Implemented primitives / baseline semantics:
   - **Rendering**: `text-rendering`, text stroke with `paint-order` control, `mix-blend-mode`, NFC normalization, grapheme cluster segmentation, combining marks/diacritics
   - **Hit-testing**: Per-character hit regions, `pointer-events` text-aware modes, stroke-width expansion, multi-position awareness
   - **Caching**: Text paragraph caching by content + style with smart invalidation
-  - **Remaining gaps**: Complex ligature shaping, hanging-punctuation precision, baseline alignment edge cases in deeply nested contexts
+  - **Advanced typography**: Hanging punctuation rendering (first/last/allow-end/force-end), baseline alignment in deeply nested contexts (3+ levels), complex ligature shaping (tspan boundaries, font-feature-settings scoping)
+  - **Remaining gaps**: Only deprecated SVG 1.1 features (SVG fonts, altGlyph) and DOM text query methods (architectural difference — Flutter is immediate-mode, not DOM-based)
 - `<use href="#...">`, `<symbol>` via `<use>` (baseline)
 - `<defs>` as definitions-only
 - `<image>` with data URI + network/bundle best-effort loading (baseline)
@@ -264,7 +269,7 @@ Implemented primitives / baseline semantics:
 Detailed audit: `/Users/denisnadey/apps/flutter_full_svg_support/docs/BLINK_PARITY_AUDIT.md`
 
 High-impact gaps:
-1. Text typography is ~90% complete; remaining gaps are complex ligatures, hanging-punctuation, and baseline alignment edge cases in nested contexts.
+1. Text typography is ~99% complete; remaining gaps are only deprecated SVG 1.1 features (SVG fonts, altGlyph — not worth implementing) and DOM text query methods (architectural difference — Flutter is immediate-mode, not DOM-based).
 2. Filter parity is partial: baseline support exists for many primitives, but advanced non-source graph semantics remain limited.
 3. CSS animation conversion remains partial for advanced/edge CSS shorthand/transform semantics.
 4. `animateMotion` still lacks broader Blink-level semantics beyond current baseline support.

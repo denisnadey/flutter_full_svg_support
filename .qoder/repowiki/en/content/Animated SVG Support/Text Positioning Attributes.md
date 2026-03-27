@@ -46,12 +46,13 @@
 
 ## Update Summary
 **Changes Made**
-- Enhanced text-indent handling with comprehensive unit support (px, em, %) and inheritance patterns
-- Improved baseline alignment for mixed font-size scenarios with proper baseline offset calculations
-- Added comprehensive typography parity validation through enhanced test coverage
-- Strengthened per-character positioning with better text-indent integration
+- Enhanced text positioning attributes with comprehensive multi-position support for x, y, dx, dy, and rotate attributes
+- Added sophisticated textPath spacing control with exact/auto modes and startOffset positioning
+- Implemented full href/xlink:href attribute support for textPath and tref elements
+- Strengthened per-character positioning with intelligent textLength conflict resolution
 - Enhanced mixed font-size tspan alignment with alphabetic baseline preservation
 - Improved text rendering optimization with better baseline shift handling
+- Added comprehensive test coverage for new positioning features
 
 ## Table of Contents
 1. [Introduction](#introduction)

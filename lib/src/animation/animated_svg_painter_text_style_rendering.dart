@@ -70,7 +70,35 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
       style.textDirection,
     );
 
-    // Generate cache key for text paragraph (include new properties)
+    // Build comprehensive font features list from font-variant-* properties
+    // (built early to include in cache key for proper feature-based caching)
+    final allFontFeatures = <ui.FontFeature>[...style.fontFeatures];
+
+    // Add font-variant-caps features
+    _addFontVariantCapsFeatures(allFontFeatures, style.fontVariantCaps);
+
+    // Add font-variant-numeric features
+    _addFontVariantNumericFeatures(allFontFeatures, style.fontVariantNumeric);
+
+    // Add font-variant-ligatures features
+    _addFontVariantLigaturesFeatures(
+      allFontFeatures,
+      style.fontVariantLigatures,
+    );
+
+    // Add font-variant-position features
+    _addFontVariantPositionFeatures(allFontFeatures, style.fontVariantPosition);
+
+    // Add font-kerning feature
+    if (style.fontKerning == 'none') {
+      allFontFeatures.add(const ui.FontFeature.disable('kern'));
+    } else if (style.fontKerning == 'normal') {
+      allFontFeatures.add(const ui.FontFeature.enable('kern'));
+    }
+
+    // Generate cache key for text paragraph (include font features for proper
+    // caching of paragraphs with different font-feature-settings)
+    final fontFeaturesKey = _fontFeaturesHashKey(allFontFeatures);
     final cacheKey = _RenderCache.textKey(
       processedText,
       effectiveFontSize,
@@ -79,7 +107,7 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
       style.fontStyle.index,
       style.letterSpacing,
       style.color.toARGB32(),
-    );
+    ) + '|$fontFeaturesKey';
 
     // Check cache first
     final cached = _renderCache.textParagraphs[cacheKey];
@@ -119,31 +147,6 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
     );
     final decoration = _buildTextDecoration(style.decorations);
 
-    // Build comprehensive font features list from font-variant-* properties
-    final allFontFeatures = <ui.FontFeature>[...style.fontFeatures];
-
-    // Add font-variant-caps features
-    _addFontVariantCapsFeatures(allFontFeatures, style.fontVariantCaps);
-
-    // Add font-variant-numeric features
-    _addFontVariantNumericFeatures(allFontFeatures, style.fontVariantNumeric);
-
-    // Add font-variant-ligatures features
-    _addFontVariantLigaturesFeatures(
-      allFontFeatures,
-      style.fontVariantLigatures,
-    );
-
-    // Add font-variant-position features
-    _addFontVariantPositionFeatures(allFontFeatures, style.fontVariantPosition);
-
-    // Add font-kerning feature
-    if (style.fontKerning == 'none') {
-      allFontFeatures.add(const ui.FontFeature.disable('kern'));
-    } else if (style.fontKerning == 'normal') {
-      allFontFeatures.add(const ui.FontFeature.enable('kern'));
-    }
-
     paragraphBuilder.pushStyle(
       ui.TextStyle(
         color: style.color,
@@ -176,6 +179,243 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
     _renderCache.textParagraphs[cacheKey] = paragraph;
 
     return paragraph;
+  }
+
+  /// Builds a multi-run paragraph for text that spans across multiple tspans.
+  ///
+  /// This method handles the complex case where text like:
+  ///   `<tspan fill="red">fi</tspan><tspan fill="blue">nd</tspan>`
+  /// should render the "fi" ligature correctly even though it's in a different
+  /// tspan than "nd".
+  ///
+  /// The method:
+  /// 1. Checks if adjacent runs have compatible ligature features
+  /// 2. If compatible, builds a single paragraph with multiple styled runs
+  ///    so Flutter's text shaper can form ligatures across boundaries
+  /// 3. If incompatible (different ligature settings), inserts a proper
+  ///    shaping boundary by building separate paragraphs
+  ///
+  /// Parameters:
+  ///   [runs] - List of text runs, each with text, style, and font features
+  ///
+  /// Returns the built paragraph with proper ligature shaping.
+  // ignore: unused_element
+  ui.Paragraph _buildMultiRunParagraph(List<_MultiRunTextRun> runs) {
+    if (runs.isEmpty) {
+      // Return empty paragraph
+      final builder = ui.ParagraphBuilder(ui.ParagraphStyle());
+      final paragraph = builder.build();
+      paragraph.layout(const ui.ParagraphConstraints(width: 1000000));
+      return paragraph;
+    }
+
+    if (runs.length == 1) {
+      // Single run, use standard method
+      return _buildTextParagraph(runs.first.text, runs.first.style);
+    }
+
+    // Use first run's style for paragraph-level settings
+    final firstStyle = runs.first.style;
+
+    // Generate cache key that includes all runs' content and features
+    final cacheKeyBuffer = StringBuffer('mr:');
+    for (var i = 0; i < runs.length; i++) {
+      final run = runs[i];
+      final featuresKey = _fontFeaturesHashKey(run.fontFeatures);
+      cacheKeyBuffer.write('${run.text.hashCode}|$featuresKey');
+      if (i < runs.length - 1) cacheKeyBuffer.write(',');
+    }
+    final cacheKey = cacheKeyBuffer.toString();
+
+    // Check cache first
+    final cached = _renderCache.textParagraphs[cacheKey];
+    if (cached != null) {
+      return cached;
+    }
+
+    // Apply font-size-adjust if specified
+    var effectiveFontSize = firstStyle.fontSize;
+    if (firstStyle.fontSizeAdjust != null && firstStyle.fontSizeAdjust! > 0) {
+      const estimatedAspectRatio = 0.48;
+      effectiveFontSize =
+          firstStyle.fontSize * (firstStyle.fontSizeAdjust! / estimatedAspectRatio);
+    }
+
+    // Split font-family into primary + fallback chain
+    List<String>? fontFamilyFallback;
+    String? primaryFontFamily = firstStyle.fontFamily;
+    if (firstStyle.fontFamily != null && firstStyle.fontFamily!.contains(',')) {
+      final families = firstStyle.fontFamily!
+          .split(',')
+          .map((f) => f.trim())
+          .where((f) => f.isNotEmpty)
+          .toList();
+      if (families.isNotEmpty) {
+        primaryFontFamily = families.first;
+        if (families.length > 1) {
+          fontFamilyFallback = families.sublist(1);
+        }
+      }
+    }
+
+    // Build paragraph with multiple styled runs
+    final paragraphBuilder = ui.ParagraphBuilder(
+      ui.ParagraphStyle(
+        fontSize: effectiveFontSize,
+        fontFamily: primaryFontFamily,
+        fontWeight: firstStyle.fontWeight,
+        fontStyle: firstStyle.fontStyle,
+        textDirection: firstStyle.textDirection,
+        height: firstStyle.lineHeight != null
+            ? firstStyle.lineHeight! / effectiveFontSize
+            : null,
+      ),
+    );
+
+    // Track the previous run's features for ligature compatibility check
+    List<ui.FontFeature>? prevFeatures;
+
+    for (var i = 0; i < runs.length; i++) {
+      final run = runs[i];
+      final style = run.style;
+
+      // Apply NFC normalization and text-transform
+      final normalizedText = _normalizeTextNfc(run.text);
+      var transformedText = _applyTextTransform(
+        normalizedText,
+        style.textTransform,
+      );
+      final processedText = _applyUnicodeBidi(
+        transformedText,
+        style.unicodeBidi,
+        style.textDirection,
+      );
+
+      // Check ligature compatibility with previous run
+      final canShareLigatures = prevFeatures == null ||
+          _areLigatureFeaturesCompatible(prevFeatures, run.fontFeatures);
+
+      // If features are incompatible, insert zero-width non-joiner to break ligature
+      if (!canShareLigatures && i > 0) {
+        paragraphBuilder.addText('\u200C'); // ZWNJ breaks ligature formation
+      }
+
+      // Build font variations for this run
+      final fontVariations = <ui.FontVariation>[];
+      if ((style.fontStretch - 100.0).abs() > 0.1) {
+        fontVariations.add(ui.FontVariation('wdth', style.fontStretch));
+      }
+      if (style.fontOpticalSizing == 'auto') {
+        fontVariations.add(ui.FontVariation('opsz', style.fontSize));
+      }
+      if (style.fontVariationSettings != null) {
+        fontVariations.addAll(
+          _parseFontVariationSettings(style.fontVariationSettings!),
+        );
+      }
+
+      final decoration = _buildTextDecoration(style.decorations);
+
+      // Push this run's style
+      paragraphBuilder.pushStyle(
+        ui.TextStyle(
+          color: style.color,
+          fontSize: style.fontSize,
+          fontFamily: style.fontFamily?.split(',').first.trim(),
+          fontFamilyFallback: fontFamilyFallback,
+          fontWeight: style.fontWeight,
+          fontStyle: style.fontStyle,
+          letterSpacing: style.letterSpacing,
+          wordSpacing: style.wordSpacing,
+          decoration: decoration,
+          decorationColor: style.decorationColor ?? style.color,
+          decorationStyle: _mapDecorationStyle(style.textDecorationStyle),
+          decorationThickness: style.textDecorationThickness,
+          height: style.lineHeight != null
+              ? style.lineHeight! / style.fontSize
+              : null,
+          shadows: style.textShadow != null
+              ? _parseTextShadows(style.textShadow!)
+              : null,
+          fontFeatures: run.fontFeatures.isNotEmpty ? run.fontFeatures : null,
+          fontVariations: fontVariations.isNotEmpty ? fontVariations : null,
+        ),
+      );
+
+      paragraphBuilder.addText(processedText);
+      paragraphBuilder.pop();
+
+      prevFeatures = run.fontFeatures;
+    }
+
+    final paragraph = paragraphBuilder.build();
+    paragraph.layout(const ui.ParagraphConstraints(width: 1000000));
+
+    // Cache the result
+    _renderCache.textParagraphs[cacheKey] = paragraph;
+
+    return paragraph;
+  }
+
+  /// Builds font features list for a specific text run.
+  ///
+  /// This extracts and combines all font feature settings from a resolved
+  /// text style, producing a list suitable for use in multi-run paragraph
+  /// building.
+  // ignore: unused_element
+  List<ui.FontFeature> _buildFontFeaturesForRun(_ResolvedTextStyle style) {
+    final features = <ui.FontFeature>[...style.fontFeatures];
+
+    // Add font-variant-caps features
+    _addFontVariantCapsFeatures(features, style.fontVariantCaps);
+
+    // Add font-variant-numeric features
+    _addFontVariantNumericFeatures(features, style.fontVariantNumeric);
+
+    // Add font-variant-ligatures features
+    _addFontVariantLigaturesFeatures(features, style.fontVariantLigatures);
+
+    // Add font-variant-position features
+    _addFontVariantPositionFeatures(features, style.fontVariantPosition);
+
+    // Add font-kerning feature
+    if (style.fontKerning == 'none') {
+      features.add(const ui.FontFeature.disable('kern'));
+    } else if (style.fontKerning == 'normal') {
+      features.add(const ui.FontFeature.enable('kern'));
+    }
+
+    return features;
+  }
+
+  /// Checks if a character position could be part of a ligature.
+  ///
+  /// Common ligature-forming character sequences include:
+  /// - fi, fl, ff, ffi, ffl (f-ligatures)
+  /// - Th, Qu (capital ligatures in some fonts)
+  /// - st, ct (historical ligatures)
+  ///
+  /// Used to determine if shaping boundaries might affect ligature formation.
+  // ignore: unused_element
+  bool _isLigatureCandidate(String char, String? nextChar) {
+    if (nextChar == null) return false;
+
+    final c = char.toLowerCase();
+    final n = nextChar.toLowerCase();
+
+    // Common f-ligatures
+    if (c == 'f' && (n == 'i' || n == 'l' || n == 'f')) return true;
+
+    // Historical ligatures
+    if ((c == 's' && n == 't') || (c == 'c' && n == 't')) return true;
+
+    // Some fonts have Th, Qu ligatures
+    if ((char == 'T' && nextChar == 'h') ||
+        (char == 'Q' && nextChar == 'u')) {
+      return true;
+    }
+
+    return false;
   }
 
   /// Builds a stroke-only paragraph for SVG text stroke rendering.
@@ -1745,4 +1985,21 @@ extension AnimatedSvgPainterTextStyleRenderingExtension on AnimatedSvgPainter {
     }
     return variations;
   }
+}
+
+/// Represents a text run within a multi-run paragraph.
+///
+/// Each run has its own text content and style, but they're all composed
+/// into a single paragraph for proper shaping of ligatures that may span
+/// across run boundaries.
+class _MultiRunTextRun {
+  const _MultiRunTextRun({
+    required this.text,
+    required this.style,
+    required this.fontFeatures,
+  });
+
+  final String text;
+  final _ResolvedTextStyle style;
+  final List<ui.FontFeature> fontFeatures;
 }

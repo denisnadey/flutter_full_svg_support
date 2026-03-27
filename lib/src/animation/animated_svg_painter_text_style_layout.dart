@@ -311,7 +311,7 @@ extension AnimatedSvgPainterTextStyleLayoutExtension on AnimatedSvgPainter {
     }
   }
 
-  /// Resolves hanging-punctuation CSS property.
+ /// Resolves hanging-punctuation CSS property.
   /// Returns the hanging punctuation mode (none, first, last, force-end, allow-end).
   String _resolveHangingPunctuation(String? value) {
     if (value == null || value.trim().isEmpty) {
@@ -334,6 +334,177 @@ extension AnimatedSvgPainterTextStyleLayoutExtension on AnimatedSvgPainter {
       }
     }
     return validValues.isEmpty ? 'none' : validValues.join(' ');
+  }
+
+  /// Checks if a character is a start-edge hanging punctuation (opening brackets, quotes).
+  /// These hang at the start of the first line when 'first' is specified.
+  bool _isStartHangingPunctuation(String char) {
+    if (char.isEmpty) return false;
+    final codeUnit = char.codeUnitAt(0);
+
+    // Opening punctuation (Ps category) - ASCII and common
+    const openingPunctuation = <int>{
+      0x0028, // ( LEFT PARENTHESIS
+      0x005B, // [ LEFT SQUARE BRACKET
+      0x007B, // { LEFT CURLY BRACKET
+      0x2018, // ' LEFT SINGLE QUOTATION MARK
+      0x201C, // " LEFT DOUBLE QUOTATION MARK
+      0x00AB, // « LEFT-POINTING DOUBLE ANGLE QUOTATION MARK
+      0x2039, // ‹ SINGLE LEFT-POINTING ANGLE QUOTATION MARK
+    };
+
+    // CJK opening punctuation
+    const cjkOpeningPunctuation = <int>{
+      0x3008, // 〈 LEFT ANGLE BRACKET
+      0x300A, // 《 LEFT DOUBLE ANGLE BRACKET
+      0x300C, // 「 LEFT CORNER BRACKET
+      0x300E, // 『 LEFT WHITE CORNER BRACKET
+      0x3010, // 【 LEFT BLACK LENTICULAR BRACKET
+      0x3014, // 〔 LEFT TORTOISE SHELL BRACKET
+      0x3016, // 〖 LEFT WHITE LENTICULAR BRACKET
+      0x3018, // 〘 LEFT WHITE TORTOISE SHELL BRACKET
+      0x301A, // 〚 LEFT WHITE SQUARE BRACKET
+      0xFF08, // （ FULLWIDTH LEFT PARENTHESIS
+      0xFF3B, // ［ FULLWIDTH LEFT SQUARE BRACKET
+      0xFF5B, // ｛ FULLWIDTH LEFT CURLY BRACKET
+      0xFE59, // ﹙ SMALL LEFT PARENTHESIS
+      0xFE5B, // ﹛ SMALL LEFT CURLY BRACKET
+      0xFE5D, // ﹝ SMALL LEFT TORTOISE SHELL BRACKET
+    };
+
+    return openingPunctuation.contains(codeUnit) ||
+        cjkOpeningPunctuation.contains(codeUnit);
+  }
+
+  /// Checks if a character is an end-edge hanging punctuation (closing brackets, quotes).
+  /// These hang at the end of the last line when 'last' is specified.
+  bool _isEndHangingPunctuation(String char) {
+    if (char.isEmpty) return false;
+    final codeUnit = char.codeUnitAt(0);
+
+    // Closing punctuation (Pe category) - ASCII and common
+    const closingPunctuation = <int>{
+      0x0029, // ) RIGHT PARENTHESIS
+      0x005D, // ] RIGHT SQUARE BRACKET
+      0x007D, // } RIGHT CURLY BRACKET
+      0x2019, // ' RIGHT SINGLE QUOTATION MARK
+      0x201D, // " RIGHT DOUBLE QUOTATION MARK
+      0x00BB, // » RIGHT-POINTING DOUBLE ANGLE QUOTATION MARK
+      0x203A, // › SINGLE RIGHT-POINTING ANGLE QUOTATION MARK
+    };
+
+    // CJK closing punctuation
+    const cjkClosingPunctuation = <int>{
+      0x3009, // 〉 RIGHT ANGLE BRACKET
+      0x300B, // 》 RIGHT DOUBLE ANGLE BRACKET
+      0x300D, // 」 RIGHT CORNER BRACKET
+      0x300F, // 』 RIGHT WHITE CORNER BRACKET
+      0x3011, // 】 RIGHT BLACK LENTICULAR BRACKET
+      0x3015, // 〕 RIGHT TORTOISE SHELL BRACKET
+      0x3017, // 〗 RIGHT WHITE LENTICULAR BRACKET
+      0x3019, // 〙 RIGHT WHITE TORTOISE SHELL BRACKET
+      0x301B, // 〛 RIGHT WHITE SQUARE BRACKET
+      0xFF09, // ） FULLWIDTH RIGHT PARENTHESIS
+      0xFF3D, // ］ FULLWIDTH RIGHT SQUARE BRACKET
+      0xFF5D, // ｝ FULLWIDTH RIGHT CURLY BRACKET
+      0xFE5A, // ﹚ SMALL RIGHT PARENTHESIS
+      0xFE5C, // ﹜ SMALL RIGHT CURLY BRACKET
+      0xFE5E, // ﹞ SMALL RIGHT TORTOISE SHELL BRACKET
+    };
+
+    return closingPunctuation.contains(codeUnit) ||
+        cjkClosingPunctuation.contains(codeUnit);
+  }
+
+  /// Checks if a character is a stop/comma punctuation.
+  /// These hang at line ends when 'force-end' or 'allow-end' is specified.
+  bool _isStopCommaPunctuation(String char) {
+    if (char.isEmpty) return false;
+    final codeUnit = char.codeUnitAt(0);
+
+    // Stops and commas (Po subset)
+    const stopCommaPunctuation = <int>{
+      0x002C, // , COMMA
+      0x002E, // . FULL STOP
+      0x003A, // : COLON
+      0x003B, // ; SEMICOLON
+      0x3001, // 、 IDEOGRAPHIC COMMA
+      0x3002, // 。 IDEOGRAPHIC FULL STOP
+      0xFF0C, // ， FULLWIDTH COMMA
+      0xFF0E, // ． FULLWIDTH FULL STOP
+      0xFF1A, // ： FULLWIDTH COLON
+      0xFF1B, // ； FULLWIDTH SEMICOLON
+      0xFE50, // ﹐ SMALL COMMA
+      0xFE51, // ﹑ SMALL IDEOGRAPHIC COMMA
+      0xFE52, // ﹒ SMALL FULL STOP
+    };
+
+    return stopCommaPunctuation.contains(codeUnit);
+  }
+
+  /// Calculates hanging punctuation info for text rendering.
+  /// Returns a record with startHangWidth and endHangWidth.
+  /// - startHangWidth: width to hang at start (negative offset for first char)
+  /// - endHangWidth: width to hang at end (allow char to extend past edge)
+  ({double startHangWidth, double endHangWidth}) _calculateHangingPunctuation({
+    required String text,
+    required _ResolvedTextStyle style,
+    required bool isFirstLine,
+    required bool isLastLine,
+  }) {
+    if (text.isEmpty || style.hangingPunctuation == 'none') {
+      return (startHangWidth: 0.0, endHangWidth: 0.0);
+    }
+
+    final hangingModes = style.hangingPunctuation.split(' ').toSet();
+    double startHangWidth = 0.0;
+    double endHangWidth = 0.0;
+
+    // Handle 'first' - opening punctuation at start of first line
+    if (hangingModes.contains('first') && isFirstLine && text.isNotEmpty) {
+      final firstChar = String.fromCharCode(text.runes.first);
+      if (_isStartHangingPunctuation(firstChar)) {
+        // Measure the first character's width
+        startHangWidth = _measureCharWidth(firstChar, style);
+      }
+    }
+
+    // Handle 'last' - closing punctuation at end of last line
+    if (hangingModes.contains('last') && isLastLine && text.isNotEmpty) {
+      final lastChar = String.fromCharCode(text.runes.last);
+      if (_isEndHangingPunctuation(lastChar)) {
+        endHangWidth = _measureCharWidth(lastChar, style);
+      }
+    }
+
+    // Handle 'force-end' - stop/comma at end of any line forced to hang
+    if (hangingModes.contains('force-end') && text.isNotEmpty) {
+      final lastChar = String.fromCharCode(text.runes.last);
+      if (_isStopCommaPunctuation(lastChar)) {
+        endHangWidth = _measureCharWidth(lastChar, style);
+      }
+    }
+
+    // Handle 'allow-end' - stop/comma hangs only if line would overflow
+    // For now, treat similar to force-end as we don't have line box info here
+    // The actual allow-end logic would require knowing the line box width
+    if (hangingModes.contains('allow-end') &&
+        !hangingModes.contains('force-end') &&
+        text.isNotEmpty) {
+      final lastChar = String.fromCharCode(text.runes.last);
+      if (_isStopCommaPunctuation(lastChar)) {
+        // Mark it as potentially hanging; actual decision happens at layout
+        endHangWidth = _measureCharWidth(lastChar, style);
+      }
+    }
+
+    return (startHangWidth: startHangWidth, endHangWidth: endHangWidth);
+  }
+
+  /// Measures the advance width of a single character.
+  double _measureCharWidth(String char, _ResolvedTextStyle style) {
+    final paragraph = _buildTextParagraph(char, style);
+    return paragraph.maxIntrinsicWidth;
   }
 
   /// Resolves text-justify CSS property.
