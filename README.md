@@ -20,7 +20,7 @@ Two rendering pipelines: a fast **static pipeline** (`SvgPicture`) for productio
 | Interaction & Events | ~80% | Hit-testing (12 element types), pointer-events, `<a>`, `<view>` |
 | Accessibility | ~80% | title/desc, ARIA attributes, Flutter Semantics integration |
 | Structural Elements | ~80% | use/symbol/defs/view/a/switch/foreignObject |
-| Text & Typography | ~70% | Multi-position, textPath, writing-mode, decorations, bidi |
+| Text & Typography | ~90% | Full positioning (x/y/dx/dy/rotate), textPath, writing-mode, decorations, bidi, text-emphasis, text-shadow, font-variant, paint-order stroke, per-character hit-testing |
 | Clipping & Masking | ~70% | Baseline clip-path/mask with hit-testing gates |
 | Filter Effects | ~68% | 17/25 Blink FE primitives with actual math (lighting, convolution) |
 | External Content | ~60% | image (data/network/bundle), foreignObject viewport |
@@ -33,7 +33,7 @@ Two rendering pipelines: a fast **static pipeline** (`SvgPicture`) for productio
 - **17/25 Filter Primitives**: feGaussianBlur, feColorMatrix, feBlend (SVG2 modes), feComposite (arithmetic), feMorphology, feDisplacementMap, feDiffuseLighting (Lambertian), feSpecularLighting (Blinn-Phong), feConvolveMatrix (actual kernel), feTurbulence, feComponentTransfer, feOffset, feFlood, feMerge, feTile, feDropShadow, feImage
 - **All 8 Geometry Shapes**: rect, circle, ellipse, line, path, polygon, polyline, image
 - **Paint Servers**: Linear/radial gradients (`gradientUnits`, focal point, stop animation), patterns (`patternUnits`/`patternContentUnits`/`patternTransform`), markers (`orient`/`markerUnits`/`viewBox`)
-- **Advanced Text**: Multi-position `x`/`y`/`dx`/`dy` lists, per-character `rotate`, `textLength`/`lengthAdjust`, `writing-mode`, `text-decoration`, `textPath`, per-chunk `text-anchor`, `letter-spacing`/`word-spacing`/`baseline-shift`
+- **Advanced Text**: Multi-position `x`/`y`/`dx`/`dy` lists, per-character `rotate`, `textLength`/`lengthAdjust`, `writing-mode`, `text-decoration`/`text-emphasis`/`text-shadow`, `textPath` (href/startOffset/spacing), per-chunk `text-anchor`, `letter-spacing`/`word-spacing`/`baseline-shift`, `font-variant`/`font-feature-settings`/`font-variation-settings`, `text-transform`, `unicode-bidi`, `font-stretch`, `font-size-adjust`, `white-space`, text stroke with `paint-order`, NFC normalization, grapheme cluster segmentation
 - **Clipping & Masking**: `clip-path`, `mask` with geometric intersection, alpha-based visibility, hit-testing gates
 - **Interactive Hit-Testing**: `pointer-events` attribute (fill/stroke/painted/all/bounding-box/none), `<a>` anchor links with `onLinkTap`, `<view>` element with fragment identifiers, per-character text hit regions, stroke-width expansion
 - **Accessibility**: `<title>`/`<desc>` → Semantics label/hint, ARIA (`aria-label`, `aria-describedby`, `role`) → Flutter Semantics flags
@@ -45,7 +45,7 @@ Two rendering pipelines: a fast **static pipeline** (`SvgPicture`) for productio
 7 active P0 priorities to reach higher Blink parity:
 
 1. **Advanced Filter Graph** - Non-source/background input chain semantics, advanced feDropShadow/feMerge composition, 8 remaining FE primitives
-2. **Advanced Typography** - Glyph positioning edge cases, ligatures, OpenType features beyond baseline
+2. **Advanced Typography** - Remaining edge cases: complex ligatures, hanging-punctuation, baseline alignment precision in nested contexts
 3. **Advanced Clipping** - Complex clip-path compositions, nested clip-paths, clipPathUnits edge cases
 4. **Advanced Masking** - Luminance masks, alpha channel handling, maskUnits/maskContentUnits
 5. **use/symbol Inheritance** - Style and attribute inheritance edge cases in nested references

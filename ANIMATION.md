@@ -207,7 +207,8 @@ This package uses **two separate pipelines**:
 ## Known Limitations
 
 - Path morphing requires compatible path structures (normalized automatically)
-- Advanced Blink-level parity is still in progress for text/filter/hit-testing edge semantics
+- Text typography is ~90% Blink parity; remaining edge cases: complex ligatures, hanging-punctuation, baseline alignment in nested contexts
+- Advanced Blink-level parity is still in progress for filter/hit-testing edge semantics
 - CSS animation interoperability is implemented at baseline level; advanced shorthand edge cases are still pending
 
 > Note: `autoPlay: false` rendering issue is closed and covered by tests.

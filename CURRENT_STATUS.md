@@ -33,7 +33,7 @@ Active development areas targeting higher Blink parity:
 4. **use/symbol Inheritance** - Style and attribute inheritance edge cases
 5. **Advanced Clipping** - Complex clip-path compositions and interactions
 6. **Advanced Masking** - Luminance masks and alpha channel handling
-7. **Advanced Typography** - Remaining text layout edge cases for full Blink parity
+7. **Advanced Typography** - Remaining edge cases: complex ligatures, hanging-punctuation precision, baseline alignment in deeply nested contexts
 
 ## Documentation Cleanup (March 16, 2026)
 
@@ -228,10 +228,21 @@ Implemented primitives / baseline semantics:
 - `feColorMatrix`
 
 ### Geometry / Text / Reuse / External Content
-- Painted: `rect`, `circle`, `ellipse`, `line`, `path`, `polygon`, `polyline`, `image`, `text`, `tspan`, `textPath` (baseline)
-- Text multi-position attributes: `x`, `y`, `dx`, `dy` as space/comma-separated lists for per-character positioning
-- Text advanced typography: tspan absolute positioning creates new text chunks, text-anchor applies per-chunk
-- textLength conflict resolution: ignored when explicit per-character positions exist
+- Painted: `rect`, `circle`, `ellipse`, `line`, `path`, `polygon`, `polyline`, `image`, `text`, `tspan`, `textPath`
+- **Text & Typography (~90% Blink parity)**:
+  - **Elements**: `<text>`, `<tspan>`, `<textPath>` with full rendering and hit-testing
+  - **Positioning**: `x`/`y`/`dx`/`dy` as space/comma-separated lists for per-character positioning, per-character `rotate` (single or list)
+  - **Text chunks**: tspan absolute positioning creates new text chunks, `text-anchor` applies per-chunk
+  - **textLength**: `textLength` + `lengthAdjust` (`spacing`, `spacingAndGlyphs`), ignored when explicit per-character positions exist (per SVG spec)
+  - **textPath**: `href`/`xlink:href`, `startOffset`, `spacing` (`exact`/`auto`)
+  - **Font properties**: `font-family` (with fallback chain), `font-weight`, `font-style`, `font-size`, `font-stretch`, `font-variant` (OpenType features), `font-size-adjust`, `font-feature-settings`, `font-variation-settings`, `font-optical-sizing`
+  - **Decorations**: `text-decoration` (underline/overline/line-through), `text-decoration-color`/`-style`/`-thickness`/`-skip`/`-skip-ink`, `text-emphasis` (filled/open/dot/circle/double-circle), `text-emphasis-position`, `text-shadow`
+  - **Layout**: `text-anchor`, `dominant-baseline`/`alignment-baseline`, `baseline-shift`, `letter-spacing`, `word-spacing`, `line-height`, `white-space`, `text-indent`, `tab-size`, `text-transform`, `text-overflow`, `word-break`, `overflow-wrap`
+  - **Writing modes & BiDi**: `writing-mode` (horizontal-tb/vertical-rl/vertical-lr + legacy), `direction` (ltr/rtl), `unicode-bidi` (normal/embed/isolate/bidi-override), `text-orientation`, `glyph-orientation-vertical`
+  - **Rendering**: `text-rendering`, text stroke with `paint-order` control, `mix-blend-mode`, NFC normalization, grapheme cluster segmentation, combining marks/diacritics
+  - **Hit-testing**: Per-character hit regions, `pointer-events` text-aware modes, stroke-width expansion, multi-position awareness
+  - **Caching**: Text paragraph caching by content + style with smart invalidation
+  - **Remaining gaps**: Complex ligature shaping, hanging-punctuation precision, baseline alignment edge cases in deeply nested contexts
 - `<use href="#...">`, `<symbol>` via `<use>` (baseline)
 - `<defs>` as definitions-only
 - `<image>` with data URI + network/bundle best-effort loading (baseline)
@@ -253,7 +264,7 @@ Implemented primitives / baseline semantics:
 Detailed audit: `/Users/denisnadey/apps/flutter_full_svg_support/docs/BLINK_PARITY_AUDIT.md`
 
 High-impact gaps:
-1. No full animated-pipeline text parity (advanced typography semantics beyond baseline).
+1. Text typography is ~90% complete; remaining gaps are complex ligatures, hanging-punctuation, and baseline alignment edge cases in nested contexts.
 2. Filter parity is partial: baseline support exists for many primitives, but advanced non-source graph semantics remain limited.
 3. CSS animation conversion remains partial for advanced/edge CSS shorthand/transform semantics.
 4. `animateMotion` still lacks broader Blink-level semantics beyond current baseline support.

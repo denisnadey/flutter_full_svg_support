@@ -46,9 +46,20 @@
 * CSS attribute selectors: `[attr]`, `[attr=value]`, `[attr~=value]`, `[attr|=value]`, `[attr^=value]`, `[attr$=value]`, `[attr*=value]` with case-insensitive flag support.
 * Compound selectors with combinators: `g.container > rect[fill=red].item` and similar complex patterns.
 * Advanced hit-testing for complex geometry: clip-path geometric intersection, mask alpha-based visibility, stroke-width expansion with linecap/linejoin support, per-character text hit-testing.
-* Advanced text typography: tspan absolute positioning creates new text chunks with proper cursor reset.
-* Advanced text typography: text-anchor applies independently per text chunk.
-* textLength conflict resolution: ignored when explicit per-character positions exist (per SVG spec).
+* **Text & Typography (~90% Blink parity)**:
+  * Full `<text>`/`<tspan>`/`<textPath>` rendering and per-character hit-testing.
+  * Multi-position attributes: `x`/`y`/`dx`/`dy` as space/comma-separated lists for per-character positioning.
+  * Per-character `rotate` attribute (single value or list).
+  * `textLength` + `lengthAdjust` (`spacing`, `spacingAndGlyphs`), ignored when explicit per-character positions exist.
+  * `textPath`: `href`/`xlink:href`, `startOffset`, `spacing` (`exact`/`auto`).
+  * tspan absolute positioning creates new text chunks with proper cursor reset; `text-anchor` applies per-chunk.
+  * Font properties: `font-family` (fallback chain), `font-weight`, `font-style`, `font-size`, `font-stretch`, `font-variant` (OpenType), `font-size-adjust`, `font-feature-settings`, `font-variation-settings`, `font-optical-sizing`.
+  * Decorations: `text-decoration` (underline/overline/line-through), `text-decoration-color`/`-style`/`-thickness`/`-skip`/`-skip-ink`, `text-emphasis` (filled/open/dot/circle/double-circle), `text-emphasis-position`, `text-shadow`.
+  * Layout: `dominant-baseline`/`alignment-baseline`, `baseline-shift`, `letter-spacing`, `word-spacing`, `line-height`, `white-space`, `text-indent`, `tab-size`, `text-transform`, `text-overflow`, `word-break`, `overflow-wrap`.
+  * Writing modes: `writing-mode` (horizontal-tb/vertical-rl/vertical-lr + legacy), `direction` (ltr/rtl), `unicode-bidi`, `text-orientation`, `glyph-orientation-vertical`.
+  * Text stroke rendering with `paint-order` control.
+  * NFC normalization, grapheme cluster segmentation, combining marks/diacritics.
+  * Text paragraph caching by content + style with smart invalidation.
 * Advanced `<foreignObject>` semantics: requiredExtensions fallback for switch patterns, nested SVG context switching with viewBox/preserveAspectRatio, overflow handling, transform propagation, hit-testing through foreignObject children.
 * CSS cascade and specificity resolution: proper specificity calculation (inline > ID > class > element), cascade order (later wins), !important handling, and inheritable property support (fill, stroke, font-*, color, visibility, etc.).
 * CSS shorthand property expansion: font shorthand (font-style/variant/weight/size/line-height/family), animation shorthand with multiple comma-separated animations, transition shorthand, margin/padding shorthand (1-4 value expansion), marker shorthand (SVG-specific), border shorthand.

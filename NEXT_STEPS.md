@@ -21,12 +21,12 @@ Detailed Blink gap matrix:
 4. **use/symbol Inheritance** - Style and attribute inheritance edge cases in nested use/symbol references
 5. **Advanced Clipping** - Complex clip-path compositions, clipPathUnits, nested clip-paths
 6. **Advanced Masking** - Luminance masks, alpha channel handling, maskUnits/maskContentUnits
-7. **Advanced Typography** - Remaining text layout edge cases (baseline alignment, glyph positioning, bidirectional text)
+7. **Advanced Typography** - Remaining edge cases: complex ligatures, hanging-punctuation, baseline alignment in nested contexts (~90% complete)
 
 ## Immediate (Execution Order)
 
 1. Expand advanced filter graph semantics (`feDropShadow`, `feMerge`/`feMergeNode`, non-source/background input parity).
-2. Close advanced text parity gaps (`text`/`tspan`/`textPath` typography and positioning details).
+2. Close remaining text edge cases (complex ligatures, hanging-punctuation precision, baseline alignment in nested contexts).
 3. Expand advanced hit-testing semantics (`clipPath`/`mask`/`use` and text geometry edge cases).
 4. Improve advanced `<use>`/`<symbol>` inheritance semantics.
 5. Add targeted regression fixtures for CSS/SMIL edge cases (timing/transform shorthand corner cases).

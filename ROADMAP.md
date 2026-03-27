@@ -27,7 +27,7 @@ Authoritative references:
 7. All 8 geometry shapes with hit-testing.
 8. Gradient/pattern/marker paint servers.
 9. Clip-path and mask baseline support.
-10. Advanced text: multi-position, rotation, textLength, writing-mode.
+10. Advanced text: multi-position, rotation, textLength, writing-mode, decorations, emphasis, shadow, font-variant, paint-order stroke, bidi, per-character hit-testing (~90% parity).
 11. SVG `<a>` anchor element, `<view>` element.
 12. CSS pseudo-classes, combinators, attribute selectors.
 13. ARIA accessibility integration.
@@ -43,11 +43,11 @@ Authoritative references:
 4. **use/symbol Inheritance** - Style and attribute inheritance edge cases.
 5. **Advanced Clipping** - Complex clip-path compositions.
 6. **Advanced Masking** - Luminance masks and alpha channel handling.
-7. **Advanced Typography** - Remaining text layout edge cases.
+7. **Advanced Typography** - Remaining edge cases: complex ligatures, hanging-punctuation, baseline alignment in nested contexts.
 
 ### P1 - Core Feature Expansion
 
-1. ~~Advanced text typography/positioning parity.~~ (Baseline complete)
+1. ~~Advanced text typography/positioning parity.~~ (Complete - ~90% parity)
 2. ~~`foreignObject` and `image` semantics beyond baseline.~~ (Complete)
 3. ~~`animateMotion` parity beyond current baseline behavior.~~ (Complete)
 

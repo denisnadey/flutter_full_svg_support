@@ -15,7 +15,8 @@ gantt
 
     section Active Priorities
     Advanced filter graph semantics            :active, p1, 2026-03-14, 21d
-    Advanced text parity                       :p2, after p1, 21d
+    Advanced text parity (~90% done)             :done, p2, 2026-03-14, 14d
+    Text remaining edge cases                     :p2b, after p2, 7d
     Advanced hit-testing parity                :p3, after p2, 21d
     Advanced use/symbol inheritance parity     :p4, after p3, 14d
 

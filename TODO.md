@@ -17,7 +17,7 @@ For factual project status, use `CURRENT_STATUS.md` only.
 - [ ] **use/symbol Inheritance** - Style and attribute inheritance edge cases
 - [ ] **Advanced Clipping** - Complex clip-path compositions and interactions
 - [ ] **Advanced Masking** - Luminance masks and alpha channel handling
-- [ ] **Advanced Typography** - Remaining text layout edge cases for full Blink parity
+- [ ] **Advanced Typography** - Remaining edge cases: complex ligatures, hanging-punctuation, baseline alignment in nested contexts
 
 ## Completed Recently
 
@@ -168,7 +168,8 @@ For factual project status, use `CURRENT_STATUS.md` only.
 
 ## P1 - Core Feature Gaps
 
-- [ ] Complete text pipeline parity (`<text>`, `<tspan>`, `<textPath>` advanced semantics).
+- [x] Complete text pipeline parity (`<text>`, `<tspan>`, `<textPath>` advanced semantics: multi-position, rotate, textLength, writing-mode, decorations, emphasis, shadow, font-variant, paint-order stroke, bidi, per-character hit-testing).
+- [ ] Remaining text edge cases: complex ligatures, hanging-punctuation precision, baseline alignment in nested contexts.
 - [x] Extend `<foreignObject>` parity beyond baseline viewport/container semantics (requiredExtensions, nested SVG, overflow, transform propagation, hit-testing).
 - [x] Add `animateMotion` support for `<mpath xlink:href="...">` references.
 - [x] Expand element hit-testing to advanced semantics (`clipPath`/`mask`/`use`/text-aware hit regions).
