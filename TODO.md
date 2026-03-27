@@ -4,19 +4,19 @@
 **Status Source:** `/Users/denisnadey/apps/flutter_full_svg_support/CURRENT_STATUS.md`  
 **Closed Issues Registry:** `/Users/denisnadey/apps/flutter_full_svg_support/docs/RESOLVED_ISSUES.md`
 
-**Current Status:** ~99% Text Blink parity | 3,369 tests passing | 0 analyzer warnings
+**Current Status:** ~75% Blink parity | ~99% Text parity | 3,413+ tests passing | 0 analyzer warnings
 
 This file tracks actionable implementation tasks.
 For factual project status, use `CURRENT_STATUS.md` only.
 
 ## Current Sprint (P0 - Active)
 
-- [ ] **Light Sources** - Advanced feSpecularLighting/feDiffuseLighting light source positioning
-- [ ] **Component Transfer** - Extended feComponentTransfer channel functions
-- [ ] **Filter Input-Graph** - Advanced non-source/background input chain semantics
-- [ ] **use/symbol Inheritance** - Style and attribute inheritance edge cases
+- [ ] **Advanced Filter Graph** - Non-source/background input chain semantics, 8 remaining FE primitives
 - [ ] **Advanced Clipping** - Complex clip-path compositions and interactions
 - [ ] **Advanced Masking** - Luminance masks and alpha channel handling
+- [ ] **use/symbol Inheritance** - Style and attribute inheritance edge cases
+- [ ] **Light Sources** - Advanced feSpecularLighting/feDiffuseLighting light source positioning
+- [ ] **Component Transfer** - Extended feComponentTransfer channel functions
 
 ## Completed Recently
 

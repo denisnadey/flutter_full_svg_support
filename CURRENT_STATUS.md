@@ -6,33 +6,34 @@
 ## Snapshot
 
 - Branch: `main`
-- Flutter SDK: `3.32.0-1.0.pre` (via `.fvm/versions/3.32.0-1.0.pre/bin/flutter`)
+- Flutter SDK: `3.38.1` (via `.fvm/versions/3.38.1/bin/flutter`)
+- Dart SDK: `^3.8.0`
 - Version: `2.2.2`
-- **Blink SVG Parity:** ~74%
+- **Blink SVG Parity:** ~75%
 
 ## Verified Health (March 27, 2026)
 
 Commands run in `/Users/denisnadey/apps/flutter_full_svg_support`:
 
 ```bash
-.fvm/versions/3.32.0-1.0.pre/bin/dart analyze lib/ test/
-.fvm/versions/3.32.0-1.0.pre/bin/flutter test
+.fvm/versions/3.38.1/bin/dart analyze lib/ test/
+.fvm/versions/3.38.1/bin/flutter test
 ```
 
 Result:
-- `flutter test`: **All 3,369 tests passed**
-- `flutter analyze`: **0 errors**, **0 warnings**
+- `flutter test`: **3,413+ tests passed** (golden_comparison hangs on browser render - excluded)
+- `dart analyze`: **0 errors**, **0 warnings**, 1 info
 
 ## In-Progress Work
 
 Active development areas targeting higher Blink parity:
 
-1. **Light Sources** - Advanced feSpecularLighting/feDiffuseLighting light source positioning
-2. **Component Transfer** - Extended feComponentTransfer channel functions
-3. **Filter Input-Graph** - Advanced non-source/background input chain semantics
+1. **Advanced Filter Graph** - Non-source/background input chain semantics, 8 remaining FE primitives
+2. **Advanced Clipping** - Complex clip-path compositions and interactions
+3. **Advanced Masking** - Luminance masks and alpha channel handling
 4. **use/symbol Inheritance** - Style and attribute inheritance edge cases
-5. **Advanced Clipping** - Complex clip-path compositions and interactions
-6. **Advanced Masking** - Luminance masks and alpha channel handling
+5. **Light Sources** - Advanced feSpecularLighting/feDiffuseLighting light source positioning
+6. **Component Transfer** - Extended feComponentTransfer channel functions
 
 ## Documentation Cleanup (March 16, 2026)
 
@@ -284,7 +285,7 @@ To avoid drift:
 ## Next Execution Plan
 
 1. Expand advanced filter graph semantics (`feDropShadow`, `feMerge`, background input parity).
-2. Complete advanced text parity beyond current baseline.
+2. Expand advanced clipping/masking parity (complex compositions, luminance masks).
 3. Expand hit-testing parity for complex `clipPath`/`mask`/`use`/text regions.
 4. Improve advanced `<use>`/`symbol` inheritance semantics.
 5. Continue CSS/SMIL edge-case parity with regression fixtures.

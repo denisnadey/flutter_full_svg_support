@@ -1,6 +1,6 @@
 # SMIL Animation Support
 
-**Status**: Experimental - Full SMIL animation support for SVG files.
+**Status**: Full SMIL + CSS animation support for SVG files. Part of the animated pipeline (`AnimatedSvgPicture`).
 
 ## Quick Start
 
@@ -169,6 +169,23 @@ AnimatedSvgPicture.string(
 - `AnimatedSvgPicture.network()` - Load from URL
 - `AnimatedSvgPicture.memory()` - Load from bytes
 
+## Controller API
+
+```dart
+final controller = AnimatedSvgController();
+
+// Playback control
+controller.pause();
+controller.resume();
+controller.seek(Duration(seconds: 2));
+controller.restart();
+controller.reverse();
+controller.playbackRate = 2.0;
+
+// View switching
+controller.switchToView('myView');
+```
+
 ## Performance
 
 Latest baseline:
@@ -183,7 +200,7 @@ Run the example app to see all supported animations:
 
 ```bash
 cd example
-../.fvm/flutter_sdk/bin/flutter run
+../.fvm/versions/3.38.1/bin/flutter run
 ```
 
 Features:
@@ -207,9 +224,9 @@ This package uses **two separate pipelines**:
 ## Known Limitations
 
 - Path morphing requires compatible path structures (normalized automatically)
-- Text typography is ~90% Blink parity; remaining edge cases: complex ligatures, hanging-punctuation, baseline alignment in nested contexts
 - Advanced Blink-level parity is still in progress for filter/hit-testing edge semantics
 - CSS animation interoperability is implemented at baseline level; advanced shorthand edge cases are still pending
+- Text & Typography has reached ~99% Blink parity; only deprecated SVG 1.1 features (SVG fonts, altGlyph) and DOM text query methods remain
 
 > Note: `autoPlay: false` rendering issue is closed and covered by tests.
 

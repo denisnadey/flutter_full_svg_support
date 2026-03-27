@@ -50,9 +50,10 @@ Canvas rendering
 **Characteristics:**
 - ✅ Full DOM preservation
 - ✅ SMIL animation support
+- ✅ CSS animation interop
 - ✅ Runtime control (seek, playback rate)
+- ✅ Hit-testing, accessibility, filters
 - ⚠️ Slower than static pipeline
-- ⚠️ Experimental status
 
 **Use:** `AnimatedSvgPicture.string()`, `AnimatedSvgPicture.asset()`
 

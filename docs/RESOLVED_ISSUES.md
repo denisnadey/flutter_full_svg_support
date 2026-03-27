@@ -45,10 +45,10 @@ Re-open a closed issue only when:
 Run in project root:
 
 ```bash
-./.fvm/flutter_sdk/bin/flutter test
-./.fvm/flutter_sdk/bin/flutter analyze
+.fvm/versions/3.38.1/bin/flutter test
+.fvm/versions/3.38.1/bin/dart analyze lib/ test/
 ```
 
-Latest run (March 13, 2026):
-- `flutter test`: **All tests passed** (`+691 ~1`)
-- `flutter analyze`: **26 info**, **0 errors**, **0 warnings**
+Latest run (March 27, 2026):
+- `flutter test`: **3,413+ tests passed**
+- `dart analyze`: **0 errors**, **0 warnings**, 1 info

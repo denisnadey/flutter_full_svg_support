@@ -40,9 +40,9 @@ This is the central navigation page for project docs.
 ## Quick Commands
 
 ```bash
-./.fvm/flutter_sdk/bin/flutter test
-./.fvm/flutter_sdk/bin/flutter analyze
-cd example && ../.fvm/flutter_sdk/bin/flutter run
+.fvm/versions/3.38.1/bin/flutter test
+.fvm/versions/3.38.1/bin/dart analyze lib/ test/
+cd example && ../.fvm/versions/3.38.1/bin/flutter run
 ```
 
 ## Single Source Rules

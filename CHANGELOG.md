@@ -46,7 +46,7 @@
 * CSS attribute selectors: `[attr]`, `[attr=value]`, `[attr~=value]`, `[attr|=value]`, `[attr^=value]`, `[attr$=value]`, `[attr*=value]` with case-insensitive flag support.
 * Compound selectors with combinators: `g.container > rect[fill=red].item` and similar complex patterns.
 * Advanced hit-testing for complex geometry: clip-path geometric intersection, mask alpha-based visibility, stroke-width expansion with linecap/linejoin support, per-character text hit-testing.
-* **Text & Typography (~90% Blink parity)**:
+* **Text & Typography (~99% Blink parity)**:
   * Full `<text>`/`<tspan>`/`<textPath>` rendering and per-character hit-testing.
   * Multi-position attributes: `x`/`y`/`dx`/`dy` as space/comma-separated lists for per-character positioning.
   * Per-character `rotate` attribute (single value or list).

@@ -1,8 +1,8 @@
-# Flutter SVG Animation Roadmap (Living)
+# Flutter SVG Roadmap (Living)
 
-**Last Updated:** March 26, 2026
+**Last Updated:** March 27, 2026
 
-**Current Status:** ~74% Blink SVG parity | 3099 tests passing | 0 analyzer warnings
+**Current Status:** ~75% Blink SVG parity | 3,413+ tests passing | 0 analyzer warnings
 
 This roadmap reflects the current state. Legacy stage-by-stage plans are historical context only.
 
@@ -27,7 +27,7 @@ Authoritative references:
 7. All 8 geometry shapes with hit-testing.
 8. Gradient/pattern/marker paint servers.
 9. Clip-path and mask baseline support.
-10. Advanced text: multi-position, rotation, textLength, writing-mode, decorations, emphasis, shadow, font-variant, paint-order stroke, bidi, per-character hit-testing (~90% parity).
+10. **Text & Typography (~99% parity)**: multi-position, rotation, textLength, writing-mode, decorations, emphasis, shadow, font-variant, paint-order stroke, bidi, per-character hit-testing, hanging punctuation, deep baseline alignment, complex ligature shaping.
 11. SVG `<a>` anchor element, `<view>` element.
 12. CSS pseudo-classes, combinators, attribute selectors.
 13. ARIA accessibility integration.
@@ -37,17 +37,16 @@ Authoritative references:
 
 ### P0 - Parity Foundations (In Progress)
 
-1. **Light Sources** - Advanced feSpecularLighting/feDiffuseLighting positioning.
-2. **Component Transfer** - Extended feComponentTransfer channel functions.
-3. **Filter Input-Graph** - Advanced non-source/background input chain semantics.
+1. **Advanced Filter Graph** - Non-source/background input chain semantics, 8 remaining FE primitives.
+2. **Advanced Clipping** - Complex clip-path compositions, clipPathUnits, nested clip-paths.
+3. **Advanced Masking** - Luminance masks, alpha channel handling, maskUnits/maskContentUnits.
 4. **use/symbol Inheritance** - Style and attribute inheritance edge cases.
-5. **Advanced Clipping** - Complex clip-path compositions.
-6. **Advanced Masking** - Luminance masks and alpha channel handling.
-7. **Advanced Typography** - Remaining edge cases: complex ligatures, hanging-punctuation, baseline alignment in nested contexts.
+5. **Light Sources** - Advanced feSpecularLighting/feDiffuseLighting positioning.
+6. **Component Transfer** - Extended feComponentTransfer channel functions.
 
 ### P1 - Core Feature Expansion
 
-1. ~~Advanced text typography/positioning parity.~~ (Complete - ~90% parity)
+1. ~~Advanced text typography/positioning parity.~~ (Complete - ~99% parity)
 2. ~~`foreignObject` and `image` semantics beyond baseline.~~ (Complete)
 3. ~~`animateMotion` parity beyond current baseline behavior.~~ (Complete)
 
@@ -74,10 +73,10 @@ A roadmap item is complete only when:
 Validation commands:
 
 ```bash
-./.fvm/flutter_sdk/bin/flutter analyze
-./.fvm/flutter_sdk/bin/flutter test
+.fvm/versions/3.38.1/bin/flutter analyze
+.fvm/versions/3.38.1/bin/flutter test
 ```
 
 ## Latest Baseline
 
-- March 26, 2026: `flutter test` passed (+3099), `flutter analyze` returned 0 errors / 0 warnings.
+- March 27, 2026: `flutter test` passed (+3,413), `dart analyze` returned 0 errors / 0 warnings / 1 info.

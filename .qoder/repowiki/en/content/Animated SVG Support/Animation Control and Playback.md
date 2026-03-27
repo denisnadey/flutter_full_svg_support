@@ -8,6 +8,11 @@
 - [lib/src/animation/animated_svg_controller.dart](file://lib/src/animation/animated_svg_controller.dart)
 - [lib/src/animation/animated_svg_picture.dart](file://lib/src/animation/animated_svg_picture.dart)
 - [lib/src/animation/animated_svg_picture_lifecycle.dart](file://lib/src/animation/animated_svg_picture_lifecycle.dart)
+- [lib/src/animation/svg_font_registry.dart](file://lib/src/animation/svg_font_registry.dart)
+- [lib/src/animation/svg_dom.dart](file://lib/src/animation/svg_dom.dart)
+- [lib/src/animation/svg_parser.dart](file://lib/src/animation/svg_parser.dart)
+- [lib/src/animation/svg_parser_css.dart](file://lib/src/animation/svg_parser_css.dart)
+- [lib/src/animation/animated_svg_painter_text_style_font.dart](file://lib/src/animation/animated_svg_painter_text_style_font.dart)
 - [lib/src/animation/smil/smil_animation.dart](file://lib/src/animation/smil/smil_animation.dart)
 - [lib/src/animation/smil/smil_timeline.dart](file://lib/src/animation/smil/smil_timeline.dart)
 - [lib/src/animation/smil/smil_animation_runtime.dart](file://lib/src/animation/smil/smil_animation_runtime.dart)
@@ -23,10 +28,12 @@
 - [lib/src/animation/transform_3d.dart](file://lib/src/animation/transform_3d.dart)
 - [lib/src/animation/animated_svg_painter_matrix.dart](file://lib/src/animation/animated_svg_painter_matrix.dart)
 - [test/animation/controller_test.dart](file://test/animation/controller_test.dart)
+- [test/animation/font_registration_lifecycle_test.dart](file://test/animation/font_registration_lifecycle_test.dart)
 - [test/animation/css_animation_edge_cases_test.dart](file://test/animation/css_animation_edge_cases_test.dart)
 - [test/animation/css_3d_transforms_test.dart](file://test/animation/css_3d_transforms_test.dart)
 - [test/animation/stroke_dash_stop_color_test.dart](file://test/animation/stroke_dash_stop_color_test.dart)
 - [test/animation/css_transform_decomposition_test.dart](file://test/animation/css_transform_decomposition_test.dart)
+- [test/animation/text_font_face_test.dart](file://test/animation/text_font_face_test.dart)
 - [example/lib/pages/controller_demo_page.dart](file://example/lib/pages/controller_demo_page.dart)
 - [example/lib/pages/custom_svg_viewer_page.dart](file://example/lib/pages/custom_svg_viewer_page.dart)
 - [example/lib/widgets/smil_event_timing_widget.dart](file://example/lib/widgets/smil_event_timing_widget.dart)
@@ -34,11 +41,13 @@
 
 ## Update Summary
 **Changes Made**
-- Enhanced CSS to SMIL conversion with improved transform decomposition that maintains full transform string formats
-- Updated transform handling to use CSS REPLACE semantics instead of decomposition for compound transforms
-- Improved transform normalization with better support for complex transform strings
-- Enhanced 3D transform projection with automatic 2D extraction
-- Updated animation lifecycle to support compound transform animations with additive replace mode
+- Added comprehensive font registration lifecycle capabilities with async font loading
+- Implemented generation guards and graceful error handling mirroring image preload pattern
+- Integrated embedded @font-face font support with Flutter's FontLoader
+- Added font registry management with error tracking and state cleanup
+- Enhanced text rendering to resolve registered fonts without fallback expansion
+- Updated SVG parsing to extract @font-face rules from embedded CSS
+- Added lifecycle management for font registration with widget disposal safety
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -49,22 +58,23 @@
 6. [Enhanced CSS Animation System](#enhanced-css-animation-system)
 7. [3D Transform Support](#3d-transform-support)
 8. [Enhanced Controller Lifecycle](#enhanced-controller-lifecycle)
-9. [Dual-Mode Animation Control](#dual-mode-animation-control)
-10. [Event-Driven Animation Management](#event-driven-animation-management)
-11. [External Controller Integration](#external-controller-integration)
-12. [Dependency Analysis](#dependency-analysis)
-13. [Performance Considerations](#performance-considerations)
-14. [Troubleshooting Guide](#troubleshooting-guide)
-15. [Conclusion](#conclusion)
-16. [Appendices](#appendices)
+9. [Font Registration Lifecycle](#font-registration-lifecycle)
+10. [Dual-Mode Animation Control](#dual-mode-animation-control)
+11. [Event-Driven Animation Management](#event-driven-animation-management)
+12. [External Controller Integration](#external-controller-integration)
+13. [Dependency Analysis](#dependency-analysis)
+14. [Performance Considerations](#performance-considerations)
+15. [Troubleshooting Guide](#troubleshooting-guide)
+16. [Conclusion](#conclusion)
+17. [Appendices](#appendices)
 
 ## Introduction
 This document explains the animation control and playback mechanisms for animated SVGs in the project. It focuses on the AnimatedSvgController API, programmatic animation control, playback rate adjustment, and timeline manipulation. The system now includes enhanced CSS animation support with improved edge case handling, including multiple animations per element, animation-play-state control, negative animation delays, and comprehensive 3D transform support with automatic 2D/3D fallback. It also covers controller methods for play, pause, stop, reset, and seek operations, along with examples of manual animation control, animation synchronization, state management, lifecycle handling, and performance considerations. Guidance is provided for integrating animations with user interactions and application state.
 
-**Updated** Enhanced with improved controller lifecycle management, dual-mode animation control, and better event-driven animation detection and management. The CSS to SMIL conversion system now maintains full transform string formats through enhanced transform decomposition that preserves CSS semantics.
+**Updated** Enhanced with comprehensive font registration lifecycle capabilities that mirror the existing image preload pattern with async font loading, generation guards, and graceful error handling. The system now supports embedded @font-face fonts through Flutter's FontLoader with robust error handling and state management.
 
 ## Project Structure
-The animated SVG pipeline is implemented as a separate rendering path from the static SVG pipeline. The animated pipeline parses SVG into a DOM, extracts SMIL animations, manages time via a timeline, and renders via a CustomPainter. The enhanced system now includes comprehensive CSS animation parsing and conversion capabilities with improved event-driven animation detection and compound transform handling.
+The animated SVG pipeline is implemented as a separate rendering path from the static SVG pipeline. The animated pipeline parses SVG into a DOM, extracts SMIL animations, manages time via a timeline, and renders via a CustomPainter. The enhanced system now includes comprehensive CSS animation parsing and conversion capabilities with improved event-driven animation detection and compound transform handling. **Updated** The system now includes a complete font registration lifecycle that mirrors the image preload pattern with async font loading, generation guards, and graceful error handling.
 
 ```mermaid
 graph TB
@@ -88,6 +98,12 @@ M["Event Detection<br/>hasEventBasedAnimations()"]
 N["Repeat Mode Startup<br/>_controller!.repeat()"]
 O["Additive Replace Mode<br/>CSS Semantics"]
 end
+subgraph "Font Registration Lifecycle"
+P["SvgParser<br/>Extract @font-face"]
+Q["SvgFontRegistry<br/>Font Loader"]
+R["SvgDocument<br/>registerEmbeddedFonts()"]
+S["Async Generation Guards<br/>Graceful Error Handling"]
+end
 G --> C
 H --> C
 I --> C
@@ -97,6 +113,9 @@ L -.-> C
 L -.-> K
 M --> N
 O --> D
+P --> Q
+Q --> R
+R --> S
 ```
 
 **Diagram sources**
@@ -109,6 +128,9 @@ O --> D
 - [lib/src/animation/animated_svg_picture_lifecycle.dart:111-121](file://lib/src/animation/animated_svg_picture_lifecycle.dart#L111-L121)
 - [lib/src/animation/smil/smil_timeline.dart:211-215](file://lib/src/animation/smil/smil_timeline.dart#L211-L215)
 - [lib/src/animation/smil/smil_animation.dart:110](file://lib/src/animation/smil/smil_animation.dart#L110)
+- [lib/src/animation/svg_parser_css.dart:38-58](file://lib/src/animation/svg_parser_css.dart#L38-L58)
+- [lib/src/animation/svg_font_registry.dart:77-251](file://lib/src/animation/svg_font_registry.dart#L77-L251)
+- [lib/src/animation/svg_dom.dart:586-604](file://lib/src/animation/svg_dom.dart#L586-L604)
 
 **Section sources**
 - [ARCHITECTURE.md:6-58](file://ARCHITECTURE.md#L6-L58)
@@ -123,6 +145,9 @@ O --> D
 - CssParser: Enhanced CSS animation parser supporting multiple animations, play state control, and negative delays.
 - CssToSmilConverter: Converts CSS animations to SMIL format with comprehensive transform handling and compound transform preservation.
 - Transform3DContext: Manages 3D transform contexts with perspective, backface visibility, and transform-style support.
+- **Updated** SvgFontRegistry: Manages embedded @font-face fonts with Flutter's FontLoader, including parsing CSS font rules, decoding base64 font data, and error tracking.
+- **Updated** SvgDocument: Integrates font registry functionality with async font registration and error reporting capabilities.
+- **Updated** Font Registration Lifecycle: Implements async font loading with generation guards, graceful error handling, and widget disposal safety.
 
 Key capabilities:
 - Programmatic control via AnimatedSvgController
@@ -140,6 +165,10 @@ Key capabilities:
 - **Enhanced**: Better external controller integration with state synchronization
 - **Enhanced**: Compound transform handling with CSS REPLACE semantics
 - **Enhanced**: Full transform string format preservation in SMIL animations
+- **Enhanced**: Async font loading with generation guards and error handling
+- **Enhanced**: Embedded @font-face font support through Flutter FontLoader
+- **Enhanced**: Font registry management with state cleanup and error tracking
+- **Enhanced**: Text rendering integration with registered font resolution
 
 **Section sources**
 - [lib/src/animation/animated_svg_controller.dart:25-160](file://lib/src/animation/animated_svg_controller.dart#L25-L160)
@@ -149,9 +178,11 @@ Key capabilities:
 - [lib/src/animation/css_animations_parser.dart:28-43](file://lib/src/animation/css_animations_parser.dart#L28-L43)
 - [lib/src/animation/css_to_smil_converter_core.dart:27-147](file://lib/src/animation/css_to_smil_converter_core.dart#L27-L147)
 - [lib/src/animation/transform_3d.dart:333-373](file://lib/src/animation/transform_3d.dart#L333-L373)
+- [lib/src/animation/svg_font_registry.dart:77-251](file://lib/src/animation/svg_font_registry.dart#L77-L251)
+- [lib/src/animation/svg_dom.dart:586-604](file://lib/src/animation/svg_dom.dart#L586-L604)
 
 ## Architecture Overview
-The enhanced animated pipeline separates concerns across parsing, CSS-to-SMIL conversion, timeline management, and rendering with comprehensive 3D transform support and improved controller lifecycle management:
+The enhanced animated pipeline separates concerns across parsing, CSS-to-SMIL conversion, timeline management, and rendering with comprehensive 3D transform support and improved controller lifecycle management. **Updated** The system now includes a complete font registration lifecycle that mirrors the image preload pattern with async font loading, generation guards, and graceful error handling.
 
 ```mermaid
 sequenceDiagram
@@ -159,6 +190,8 @@ participant User as "User"
 participant Controller as "AnimatedSvgController"
 participant Picture as "AnimatedSvgPicture"
 participant Lifecycle as "Lifecycle Manager"
+participant Parser as "SvgParser"
+participant FontRegistry as "SvgFontRegistry"
 participant CssParser as "CssParser"
 participant Converter as "CssToSmilConverter"
 participant Timeline as "SvgTimeline"
@@ -169,6 +202,10 @@ Controller-->>Picture : "notifyListeners()"
 Picture->>Lifecycle : "_onControllerUpdate()"
 Lifecycle->>Timeline : "apply controller state (rate, direction)"
 Lifecycle->>Timeline : "tick(delta) or seek(time)"
+Lifecycle->>Parser : "_scheduleFontRegistration()"
+Parser->>FontRegistry : "registerFonts(cssFontFaceRules)"
+FontRegistry-->>Parser : "Future<bool> success/failure"
+Parser-->>Lifecycle : "async font registration result"
 CssParser->>Converter : "parseMultipleAnimations()"
 Converter->>Timeline : "create SMIL animations with REPLACE semantics"
 Timeline->>Animation : "updateForTime(time) with additive replace"
@@ -181,6 +218,8 @@ Painter-->>User : "rendered frame"
 - [lib/src/animation/animated_svg_controller.dart:25-160](file://lib/src/animation/animated_svg_controller.dart#L25-L160)
 - [lib/src/animation/animated_svg_picture_lifecycle.dart:226-309](file://lib/src/animation/animated_svg_picture_lifecycle.dart#L226-L309)
 - [lib/src/animation/animated_svg_picture.dart:166-220](file://lib/src/animation/animated_svg_picture.dart#L166-L220)
+- [lib/src/animation/svg_parser_css.dart:38-58](file://lib/src/animation/svg_parser_css.dart#L38-L58)
+- [lib/src/animation/svg_font_registry.dart:106-134](file://lib/src/animation/svg_font_registry.dart#L106-L134)
 - [lib/src/animation/css_animations_parser.dart:28-43](file://lib/src/animation/css_animations_parser.dart#L28-L43)
 - [lib/src/animation/css_to_smil_converter_core.dart:27-147](file://lib/src/animation/css_to_smil_converter_core.dart#L27-L147)
 - [lib/src/animation/smil/smil_timeline.dart:82-98](file://lib/src/animation/smil/smil_timeline.dart#L82-L98)
@@ -519,6 +558,131 @@ The controller lifecycle now provides better integration with external controlle
 **Section sources**
 - [lib/src/animation/animated_svg_picture_lifecycle.dart:226-309](file://lib/src/animation/animated_svg_picture_lifecycle.dart#L226-L309)
 
+## Font Registration Lifecycle
+
+### Embedded Font Support Architecture
+The system now provides comprehensive embedded font support through a complete lifecycle that mirrors the image preload pattern:
+
+- **Font extraction**: SVG parser extracts @font-face rules from embedded CSS during document parsing
+- **Font registry management**: SvgFontRegistry handles font parsing, decoding, and registration with Flutter's FontLoader
+- **Async registration**: Font registration occurs asynchronously to avoid blocking the UI thread
+- **Generation guards**: Async operations use generation counters to prevent race conditions during widget disposal
+- **Graceful error handling**: Font registration failures don't crash rendering; errors are tracked and reported
+
+Font processing flow:
+1. **Extraction**: `SvgParser` extracts @font-face rules from `<style>` elements
+2. **Parsing**: `CssParser.parseFontFaceRules()` parses CSS into structured `CssFontFaceRule` objects
+3. **Registration**: `SvgFontRegistry.registerFonts()` decodes base64 font data and loads with Flutter FontLoader
+4. **Integration**: `SvgDocument.registerEmbeddedFonts()` coordinates font loading with error tracking
+5. **Resolution**: Text rendering resolves registered fonts without fallback expansion
+
+**Section sources**
+- [lib/src/animation/svg_parser_css.dart:38-58](file://lib/src/animation/svg_parser_css.dart#L38-L58)
+- [lib/src/animation/svg_font_registry.dart:106-134](file://lib/src/animation/svg_font_registry.dart#L106-L134)
+- [lib/src/animation/svg_dom.dart:586-604](file://lib/src/animation/svg_dom.dart#L586-L604)
+- [lib/src/animation/animated_svg_picture_lifecycle.dart:325-343](file://lib/src/animation/animated_svg_picture_lifecycle.dart#L325-L343)
+
+### Async Font Loading with Generation Guards
+The font registration system implements robust async loading with generation guards to prevent race conditions:
+
+- **Generation counter**: Each font registration request increments a generation counter
+- **Mount safety**: Async callbacks check widget mount status before proceeding
+- **Generation validation**: Callbacks verify generation matches expected value before updating state
+- **Disposal safety**: Widget disposal cancels pending font registration operations
+
+Error handling mechanisms:
+- **Exception catching**: Font registration failures are caught and logged without crashing
+- **Partial success**: Fonts that load successfully still trigger repaint even if others fail
+- **Error tracking**: All font registration errors are collected and accessible via `fontRegistrationErrors`
+- **Warning level logging**: Non-fatal errors are logged as warnings rather than errors
+
+**Section sources**
+- [lib/src/animation/animated_svg_picture_lifecycle.dart:345-384](file://lib/src/animation/animated_svg_picture_lifecycle.dart#L345-L384)
+- [lib/src/animation/svg_font_registry.dart:136-185](file://lib/src/animation/svg_font_registry.dart#L136-L185)
+
+### Font Registry Management and State Tracking
+The SvgFontRegistry provides comprehensive font management capabilities:
+
+- **Font family grouping**: Font rules are grouped by normalized font family names for batch registration
+- **Format validation**: Only supported formats (TTF, OTF) are processed; WOFF/WOFF2 are rejected
+- **Base64 decoding**: Embedded font data is decoded from data URLs with proper MIME type checking
+- **Error collection**: All font processing errors are collected and made available for debugging
+- **State cleanup**: `clear()` method removes all registered fonts and resets internal state
+
+Font processing features:
+- **HTML entity decoding**: Font family names with HTML-encoded quotes are properly decoded
+- **Quote normalization**: Font family names with surrounding quotes are normalized
+- **Weight normalization**: CSS font-weight values are normalized to numeric strings
+- **Format detection**: Supported font formats are detected from CSS or data URL metadata
+
+**Section sources**
+- [lib/src/animation/svg_font_registry.dart:85-104](file://lib/src/animation/svg_font_registry.dart#L85-L104)
+- [lib/src/animation/svg_font_registry.dart:226-242](file://lib/src/animation/svg_font_registry.dart#L226-L242)
+- [lib/src/animation/svg_font_registry.dart:378-401](file://lib/src/animation/svg_font_registry.dart#L378-L401)
+
+### Text Rendering Integration with Registered Fonts
+The text rendering system integrates seamlessly with the font registration lifecycle:
+
+- **Font resolution**: Text rendering checks if a font is registered via @font-face before applying fallback expansion
+- **Direct font usage**: Registered fonts are used directly without additional fallback chains
+- **Platform fallbacks**: Generic font families (serif, sans-serif, monospace) use platform-appropriate fallback stacks
+- **Metric compatibility**: Fallback fonts are chosen for metric compatibility and visual consistency
+
+Font resolution process:
+1. **Normalization**: Font family names are normalized (quotes removed, HTML entities decoded)
+2. **Registration check**: `document.isFontRegistered()` checks if font is embedded via @font-face
+3. **Direct usage**: Registered fonts bypass fallback expansion for consistent rendering
+4. **Generic families**: Platform-specific fallback stacks are used for generic font families
+5. **Specific fonts**: Metric-compatible fallbacks are added for specific font names
+
+**Section sources**
+- [lib/src/animation/animated_svg_painter_text_style_font.dart:154-179](file://lib/src/animation/animated_svg_painter_text_style_font.dart#L154-L179)
+- [lib/src/animation/animated_svg_painter_text_style_font.dart:183-257](file://lib/src/animation/animated_svg_painter_text_style_font.dart#L183-L257)
+
+### SVG Parser Integration for Font Extraction
+The SVG parser provides comprehensive @font-face rule extraction from embedded CSS:
+
+- **Style element parsing**: All `<style>` elements are scanned for @font-face rules
+- **CSS rule extraction**: `CssParser.parseFontFaceRules()` extracts font metadata and source URLs
+- **Rule validation**: Font rules are validated for required properties and supported formats
+- **Empty rule handling**: Documents without @font-face rules return null or empty collections
+
+Extraction process:
+- **CSS text collection**: All `<style>` element innerText is collected for parsing
+- **Rule matching**: Regular expressions identify @font-face CSS blocks
+- **Property extraction**: Individual properties (font-family, font-style, font-weight, src, format) are parsed
+- **URL normalization**: Data URLs are normalized and validated for base64 encoding
+- **Format detection**: Font formats are detected from CSS or data URL metadata
+
+**Section sources**
+- [lib/src/animation/svg_parser_css.dart:39-57](file://lib/src/animation/svg_parser_css.dart#L39-L57)
+- [lib/src/animation/svg_parser.dart:43-64](file://lib/src/animation/svg_parser.dart#L43-L64)
+
+### Font Registration Lifecycle Testing and Verification
+The system includes comprehensive testing for font registration lifecycle:
+
+- **Auto-registration**: SVGs with @font-face rules automatically trigger font registration
+- **Multiple font support**: Multiple @font-face rules are all processed and registered
+- **SVG change handling**: Changing SVG content re-triggers font registration appropriately
+- **Error handling verification**: Font registration failures don't crash widget rendering
+- **Generation guard testing**: Widget disposal during font registration is safely handled
+
+Test coverage includes:
+- **Basic registration**: Single @font-face rule registration verification
+- **No font scenario**: SVGs without @font-face don't attempt registration
+- **Multiple fonts**: Multiple @font-face rules are all registered
+- **SVG switching**: Changing SVG content triggers re-registration
+- **Error scenarios**: Font registration failures are handled gracefully
+- **Mount safety**: Widget disposal during registration is prevented
+
+**Section sources**
+- [test/animation/font_registration_lifecycle_test.dart:8-65](file://test/animation/font_registration_lifecycle_test.dart#L8-L65)
+- [test/animation/font_registration_lifecycle_test.dart:67-100](file://test/animation/font_registration_lifecycle_test.dart#L67-L100)
+- [test/animation/font_registration_lifecycle_test.dart:102-192](file://test/animation/font_registration_lifecycle_test.dart#L102-L192)
+- [test/animation/font_registration_lifecycle_test.dart:194-239](file://test/animation/font_registration_lifecycle_test.dart#L194-L239)
+- [test/animation/font_registration_lifecycle_test.dart:241-279](file://test/animation/font_registration_lifecycle_test.dart#L241-L279)
+- [test/animation/font_registration_lifecycle_test.dart:281-342](file://test/animation/font_registration_lifecycle_test.dart#L281-L342)
+
 ## Dual-Mode Animation Control
 
 ### AutoPlay vs Event-Driven Control
@@ -607,7 +771,7 @@ The system provides enhanced integration with external controllers for event-dri
 - [example/lib/pages/custom_svg_viewer_page.dart:278-285](file://example/lib/pages/custom_svg_viewer_page.dart#L278-L285)
 
 ## Dependency Analysis
-High-level dependencies among core components with enhanced CSS animation support and improved controller lifecycle:
+High-level dependencies among core components with enhanced CSS animation support, improved controller lifecycle, and comprehensive font registration capabilities:
 
 ```mermaid
 classDiagram
@@ -653,27 +817,48 @@ class CssParser {
 +parseMultipleAnimations()
 +parseAnimationFromStyle()
 +parseMultipleAnimationsFromStyle()
++parseFontFaceRules()
 }
 class CssToSmilConverter {
 +convert(keyframes, animation, node)
 +transform normalization
 +compound transform handling
 }
+class SvgFontRegistry {
++Set~String~ registeredFontFamilies
++String[] errors
++isRegistered(fontFamily)
++registerFonts(rules)
++clear()
+}
+class SvgDocument {
++SvgFontRegistry fontRegistry
++Set~String~ registeredFontFamilies
++Future~bool~ registerEmbeddedFonts()
++String[] fontRegistrationErrors
++isFontRegistered(fontFamily)
+}
 class LifecycleManager {
 +_onControllerUpdate()
 +_startPlayback()
 +_controller!.repeat()
 +hasEventBasedAnimations()
++_scheduleFontRegistration()
++_registerFontsAndRepaint(generation)
 }
 AnimatedSvgPicture --> AnimatedSvgController : "subscribes to"
 AnimatedSvgPicture --> SvgTimeline : "drives"
 SvgTimeline --> SmilAnimation : "updates"
 AnimatedSvgPicture --> CssParser : "parses CSS"
 CssParser --> CssToSmilConverter : "converts to SMIL"
+CssParser --> SvgFontRegistry : "parses @font-face"
 CssToSmilConverter --> SvgTimeline : "creates animations"
+SvgDocument --> SvgFontRegistry : "coordinates"
+SvgFontRegistry --> SvgDocument : "registers fonts"
 AnimatedSvgController --> SvgTimeline : "controls rate/direction"
 LifecycleManager --> AnimatedSvgController : "manages state"
 LifecycleManager --> SvgTimeline : "controls startup"
+LifecycleManager --> SvgDocument : "manages font registration"
 ```
 
 **Diagram sources**
@@ -683,6 +868,8 @@ LifecycleManager --> SvgTimeline : "controls startup"
 - [lib/src/animation/smil/smil_animation.dart:80-453](file://lib/src/animation/smil/smil_animation.dart#L80-L453)
 - [lib/src/animation/css_animations_parser.dart:28-43](file://lib/src/animation/css_animations_parser.dart#L28-L43)
 - [lib/src/animation/css_to_smil_converter_core.dart:27-147](file://lib/src/animation/css_to_smil_converter_core.dart#L27-L147)
+- [lib/src/animation/svg_font_registry.dart:77-251](file://lib/src/animation/svg_font_registry.dart#L77-L251)
+- [lib/src/animation/svg_dom.dart:443-614](file://lib/src/animation/svg_dom.dart#L443-L614)
 - [lib/src/animation/animated_svg_picture_lifecycle.dart:111-152](file://lib/src/animation/animated_svg_picture_lifecycle.dart#L111-L152)
 
 **Section sources**
@@ -705,6 +892,10 @@ LifecycleManager --> SvgTimeline : "controls startup"
 - **Enhanced**: Conditional startup logic reduces unnecessary AnimationController initialization.
 - **Enhanced**: Compound transform preservation reduces animation count and improves performance.
 - **Enhanced**: CSS REPLACE semantics eliminate double-application issues in transform animations.
+- **Enhanced**: Async font loading prevents UI blocking during font registration.
+- **Enhanced**: Generation guards prevent race conditions and memory leaks during widget disposal.
+- **Enhanced**: Graceful error handling ensures font registration failures don't impact rendering performance.
+- **Enhanced**: Font registry caching avoids redundant font loading for the same font families.
 
 ## Troubleshooting Guide
 Common issues and remedies:
@@ -722,12 +913,18 @@ Common issues and remedies:
 - **Enhanced**: Dual-mode control: Verify that the system is correctly detecting whether to use autoPlay or event-driven mode.
 - **Enhanced**: Compound transform issues: Verify that transform animations use additive replace mode and maintain full string formats.
 - **Enhanced**: Transform normalization problems: Check that CSS transform functions are properly parsed and normalized.
+- **Enhanced**: Font registration failures: Check `fontRegistrationErrors` for specific error messages; verify font format support (TTF/OTF only).
+- **Enhanced**: Async font loading issues: Verify that font registration is completing successfully; check generation counter for race conditions.
+- **Enhanced**: Widget disposal during font registration: Ensure proper mount checking in async callbacks; verify generation validation.
+- **Enhanced**: Text rendering with custom fonts: Verify that registered fonts are being resolved correctly without unexpected fallback expansion.
 
 **Section sources**
 - [lib/src/animation/animated_svg_controller.dart:83-91](file://lib/src/animation/animated_svg_controller.dart#L83-L91)
 - [lib/src/animation/animated_svg_picture.dart:287-295](file://lib/src/animation/animated_svg_picture.dart#L287-L295)
 - [lib/src/animation/smil/smil_timeline.dart:128-158](file://lib/src/animation/smil/smil_timeline.dart#L128-L158)
 - [lib/src/animation/animated_svg_picture_lifecycle.dart:111-127](file://lib/src/animation/animated_svg_picture_lifecycle.dart#L111-L127)
+- [lib/src/animation/svg_font_registry.dart:92-99](file://lib/src/animation/svg_font_registry.dart#L92-L99)
+- [lib/src/animation/svg_dom.dart:603-604](file://lib/src/animation/svg_dom.dart#L603-L604)
 - [test/animation/css_animation_edge_cases_test.dart:459-499](file://test/animation/css_animation_edge_cases_test.dart#L459-L499)
 
 ## Conclusion
@@ -735,9 +932,11 @@ The enhanced animated SVG system provides robust programmatic control via Animat
 
 **Updated** The system now includes enhanced controller lifecycle management with improved event-driven animation detection and management, dual-mode animation control (autoplay vs event-driven), repeat mode startup mechanism for event-driven animations, and better external controller integration. Most significantly, the CSS to SMIL conversion system has been enhanced with improved transform decomposition that maintains full transform string formats, ensuring better compatibility with modern SVG workflows and providing more accurate visual results for complex transform animations.
 
+**Updated** The system now includes comprehensive font registration lifecycle capabilities that mirror the existing image preload pattern with async font loading, generation guards, and graceful error handling. The embedded @font-face font support provides seamless integration with Flutter's FontLoader, allowing SVG documents to embed custom fonts directly within the SVG content. The font registry manages font parsing, decoding, and registration with robust error tracking and state management.
+
 The compound transform handling now preserves CSS semantics through additive replace mode, eliminating double-application issues and providing more predictable animation behavior. The enhanced transform normalization system properly handles complex transform strings with nested functions, calc() expressions, and various CSS units.
 
-Developers can integrate animations with user interactions, manage playback rates and directions, synchronize animations using event and syncbase mechanisms, and leverage the enhanced CSS parsing capabilities for complex animation scenarios. The architecture cleanly separates parsing, CSS-to-SMIL conversion, timing, and rendering, enabling maintainability, extensibility, and optimal performance across diverse animation requirements.
+Developers can integrate animations with user interactions, manage playback rates and directions, synchronize animations using event and syncbase mechanisms, leverage the enhanced CSS parsing capabilities for complex animation scenarios, and utilize the comprehensive font registration system for custom typography. The architecture cleanly separates parsing, CSS-to-SMIL conversion, timing, rendering, and font management, enabling maintainability, extensibility, and optimal performance across diverse animation and typography requirements.
 
 ## Appendices
 
@@ -764,10 +963,18 @@ Developers can integrate animations with user interactions, manage playback rate
   - Multiple animations: parseMultipleAnimations(), parseMultipleAnimationsFromStyle()
   - Play state: parseAnimationFromStyle() with animation-play-state support
   - Transitions: parseTransitionsFromStyle(), parseTransition()
+  - Fonts: parseFontFaceRules() for @font-face extraction
 - **Enhanced** CssToSmilConverter
   - Convert: convert(CssKeyframes, CssAnimation, SvgNode)
   - Transform handling: _decomposeCompoundTransform(), _normalizeCssTransform()
   - Compound preservation: maintains full transform string formats
+- **Enhanced** SvgFontRegistry
+  - Registration: registerFonts(List<CssFontFaceRule>)
+  - State: isRegistered(), registeredFontFamilies, errors
+  - Management: clear(), normalize font family names
+- **Enhanced** SvgDocument
+  - Font integration: registerEmbeddedFonts(), isFontRegistered()
+  - State: registeredFontFamilies, fontRegistrationErrors
 - **Enhanced** Transform3DContext
   - 3D support: perspective, transformStyle, backfaceVisibility
   - Matrix operations: createPerspectiveMatrix(), isBackfacing()
@@ -775,6 +982,7 @@ Developers can integrate animations with user interactions, manage playback rate
   - Event detection: hasEventBasedAnimations()
   - Startup control: _startPlayback(), _controller!.repeat()
   - State synchronization: _onControllerUpdate()
+  - Font management: _scheduleFontRegistration(), _registerFontsAndRepaint()
 
 **Section sources**
 - [lib/src/animation/animated_svg_controller.dart:25-160](file://lib/src/animation/animated_svg_controller.dart#L25-L160)
@@ -783,5 +991,7 @@ Developers can integrate animations with user interactions, manage playback rate
 - [lib/src/animation/smil/smil_animation.dart:80-453](file://lib/src/animation/smil/smil_animation.dart#L80-L453)
 - [lib/src/animation/css_animations_parser.dart:28-43](file://lib/src/animation/css_animations_parser.dart#L28-L43)
 - [lib/src/animation/css_to_smil_converter_core.dart:27-147](file://lib/src/animation/css_to_smil_converter_core.dart#L27-L147)
+- [lib/src/animation/svg_font_registry.dart:77-251](file://lib/src/animation/svg_font_registry.dart#L77-L251)
+- [lib/src/animation/svg_dom.dart:443-614](file://lib/src/animation/svg_dom.dart#L443-L614)
 - [lib/src/animation/transform_3d.dart:333-373](file://lib/src/animation/transform_3d.dart#L333-L373)
 - [lib/src/animation/animated_svg_picture_lifecycle.dart:111-152](file://lib/src/animation/animated_svg_picture_lifecycle.dart#L111-L152)
