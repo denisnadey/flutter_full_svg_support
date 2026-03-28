@@ -1,5 +1,21 @@
 part of 'animated_svg_picture.dart';
 
+/// Information about an SVG anchor (link) element.
+@immutable
+class SvgLinkInfo {
+  /// Creates link info.
+  const SvgLinkInfo({required this.href, this.target});
+
+  /// The link URL (from href or xlink:href attribute).
+  final String href;
+
+  /// The link target (e.g., '_blank', '_self'). May be null.
+  final String? target;
+}
+
+/// Callback used for handling link taps in SVG anchor elements.
+typedef SvgLinkTapCallback = void Function(SvgLinkInfo linkInfo);
+
 /// W3C event dispatch result including propagation flags.
 /// Tracks real propagation state for proper event handling.
 class _W3CEventDispatchResult {

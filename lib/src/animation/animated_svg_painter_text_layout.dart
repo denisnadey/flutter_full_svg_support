@@ -7,6 +7,9 @@ part of 'animated_svg_painter.dart';
 /// - Text path support and spacing calculations
 /// - Text content extraction with whitespace handling
 /// - Layout computations and text flow
+/// - Deeply nested tspan transform composition
+/// - Per-character positioning in correct coordinate space
+/// - textLength distribution across nested tspan children
 extension AnimatedSvgPainterTextLayoutExtension on AnimatedSvgPainter {
   /// Builds a Flutter Paragraph with the resolved text style.
   ui.Paragraph _buildTextParagraph(String text, _ResolvedTextStyle style) {
@@ -770,6 +773,133 @@ extension AnimatedSvgPainterTextLayoutExtension on AnimatedSvgPainter {
     }
     return variations;
   }
+
+  /// Computes the accumulated transform matrix for deeply nested tspan elements.
+  ///
+  /// Walks up from the current tspan to the root text element, composing all
+  /// transform attributes. This ensures that per-character positions are
+  /// resolved in the correct coordinate space when transforms are applied
+  /// at multiple nesting levels.
+  Matrix4 _computeTextElementAccumulatedTransform(SvgNode node) {
+    final transformStack = <Matrix4>[];
+    SvgNode? current = node;
+
+    // Walk up to root text element, collecting transforms
+    while (current != null) {
+      final tagName = current.tagName;
+      final transformStr = current.getAttributeValue('transform');
+      if (transformStr != null) {
+        final matrix = _buildTransformMatrixFromValue(transformStr);
+        if (matrix != null) {
+          transformStack.add(matrix);
+        }
+      }
+
+      // Stop at root text element
+      if (tagName == 'text') {
+        break;
+      }
+      current = current.parent;
+    }
+
+    // Compose transforms in reverse order (root to leaf)
+    var result = Matrix4.identity();
+    for (int i = transformStack.length - 1; i >= 0; i--) {
+      result = result.multiplied(transformStack[i]);
+    }
+    return result;
+  }
+
+  /// Transforms a point using the accumulated transform matrix.
+  ui.Offset _transformPointForText(
+    ui.Offset point,
+    Matrix4 transform,
+  ) {
+    if (transform.isIdentity()) {
+      return point;
+    }
+    // Use manual matrix multiplication for the transform
+    final x = point.dx;
+    final y = point.dy;
+    final storage = transform.storage;
+    final tx = storage[0] * x + storage[4] * y + storage[12];
+    final ty = storage[1] * x + storage[5] * y + storage[13];
+    return ui.Offset(tx, ty);
+  }
+
+  /// Computes the total text width for all tspan children of a text element.
+  double _computeNestedTspanTotalWidth(
+    SvgNode textNode,
+    _ResolvedTextStyle parentStyle,
+  ) {
+    double totalWidth = 0.0;
+
+    final directText = _extractTextContentWithWhitespaceNormalization(
+      textNode,
+      null,
+    );
+    if (directText != null && directText.isNotEmpty) {
+      final paragraph = _buildTextParagraph(directText, parentStyle);
+      totalWidth += paragraph.maxIntrinsicWidth;
+    }
+
+    for (final child in textNode.children) {
+      if (child.tagName == 'tspan') {
+        final childStyle = _resolveTextStyle(child);
+        totalWidth += _computeNestedTspanTotalWidth(child, childStyle);
+      }
+    }
+
+    return totalWidth;
+  }
+
+  /// Computes proportional textLength distribution for nested tspan elements.
+  _TextLengthDistribution _computeTextLengthDistribution(
+    SvgNode textNode,
+    _ResolvedTextStyle style,
+  ) {
+    final targetLength = _resolveTextLength(textNode);
+    if (targetLength == null || targetLength <= 0) {
+      return const _TextLengthDistribution.none();
+    }
+
+    final naturalWidth = _computeNestedTspanTotalWidth(textNode, style);
+    if (naturalWidth <= 0) {
+      return const _TextLengthDistribution.none();
+    }
+
+    final lengthAdjust = _resolveLengthAdjust(textNode);
+
+    if (lengthAdjust == _SvgTextLengthAdjust.spacing) {
+      final totalChars = _countNestedCharacters(textNode);
+      if (totalChars <= 1) {
+        return const _TextLengthDistribution.none();
+      }
+      final extraSpacing = (targetLength - naturalWidth) / (totalChars - 1);
+      return _TextLengthDistribution.spacing(extraSpacing);
+    } else {
+      final scaleFactor = targetLength / naturalWidth;
+      return _TextLengthDistribution.scale(scaleFactor);
+    }
+  }
+
+  /// Counts total grapheme clusters in text node and all nested tspan children.
+  int _countNestedCharacters(SvgNode node) {
+    int count = 0;
+
+    final text = _extractTextContentWithWhitespaceNormalization(node, null);
+    if (text != null && text.isNotEmpty) {
+      count += text.runes.length;
+    }
+
+    for (final child in node.children) {
+      if (child.tagName == 'tspan') {
+        count += _countNestedCharacters(child);
+      }
+    }
+
+    return count;
+  }
 }
 
 /// Represents a text run within a multi-run paragraph.
@@ -782,4 +912,35 @@ class _MultiRunTextRun {
   final String text;
   final _ResolvedTextStyle style;
   final List<ui.FontFeature> fontFeatures;
+}
+
+/// Distribution mode for textLength across nested tspan elements.
+class _TextLengthDistribution {
+  const _TextLengthDistribution.none()
+      : mode = _TextLengthDistributionMode.none,
+        value = 0.0;
+
+  const _TextLengthDistribution.spacing(double extraSpacing)
+      : mode = _TextLengthDistributionMode.spacing,
+        value = extraSpacing;
+
+  const _TextLengthDistribution.scale(double scaleFactor)
+      : mode = _TextLengthDistributionMode.scale,
+        value = scaleFactor;
+
+  final _TextLengthDistributionMode mode;
+  final double value;
+
+  bool get isNone => mode == _TextLengthDistributionMode.none;
+  bool get isSpacing => mode == _TextLengthDistributionMode.spacing;
+  bool get isScale => mode == _TextLengthDistributionMode.scale;
+
+  double get extraSpacing => isSpacing ? value : 0.0;
+  double get scaleFactor => isScale ? value : 1.0;
+}
+
+enum _TextLengthDistributionMode {
+  none,
+  spacing,
+  scale,
 }

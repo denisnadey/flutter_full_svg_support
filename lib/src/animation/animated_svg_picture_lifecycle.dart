@@ -2,6 +2,40 @@ part of 'animated_svg_picture.dart';
 
 extension _AnimatedSvgPictureStateLifecycleExtension
     on _AnimatedSvgPictureState {
+  /// Handles widget updates when configuration changes.
+  void _handleWidgetUpdate(AnimatedSvgPicture oldWidget) {
+    // Обновляем подписку на контроллер
+    if (widget.controller != oldWidget.controller) {
+      oldWidget.controller?.removeListener(_onControllerUpdate);
+      widget.controller?.addListener(_onControllerUpdate);
+    }
+
+    if (widget._svgString != oldWidget._svgString) {
+      // SVG изменился - полная переинициализация
+      _dispose();
+      _initialize();
+    } else if (widget.playbackRate != oldWidget.playbackRate &&
+        _timeline != null) {
+      // Только скорость изменилась
+      _timeline!.playbackRate = widget.playbackRate;
+    } else if (widget.autoPlay != oldWidget.autoPlay) {
+      // AutoPlay изменился
+      if (widget.autoPlay && _controller == null && _timeline != null) {
+        // Нужно создать контроллер
+        final duration = _timeline!.totalDuration;
+        _controller = AnimationController(vsync: this, duration: duration);
+        _controller!.addListener(_onAnimationTick);
+        _isReversed = widget.controller?.isReversed ?? _isReversed;
+        _startPlayback();
+      } else if (!widget.autoPlay && _controller != null) {
+        // Нужно удалить контроллер
+        _controller?.removeListener(_onAnimationTick);
+        _controller?.dispose();
+        _controller = null;
+      }
+    }
+  }
+
   void _initialize() {
     _trace(
       category: 'init',
@@ -381,5 +415,106 @@ extension _AnimatedSvgPictureStateLifecycleExtension
         );
       }
     }
+  }
+
+  /// Builds the widget tree for the animated SVG.
+  Widget _buildWidget(BuildContext context) {
+    Widget svgWidget = CustomPaint(
+      painter: AnimatedSvgPainter(
+        document: _document,
+        backgroundColor: widget.backgroundColor,
+        imagesByHref: _imagesByHref,
+      ),
+      size: Size.infinite,
+    );
+
+    // Wrap with gesture detection for event-based animations or link handling
+    final needsGestureDetection =
+        (_hasAnimations && _timeline != null) || widget.onLinkTap != null;
+    if (needsGestureDetection) {
+      svgWidget = Listener(
+        onPointerDown: _handlePointerDown,
+        onPointerMove: _handlePointerMove,
+        onPointerUp: _handlePointerUp,
+        onPointerCancel: _handlePointerCancel,
+        child: GestureDetector(
+          onTapDown: (details) => _handleTapDown(details),
+          onTapUp: (_) => _handleTapUp(),
+          onTapCancel: () => _handleTapUp(),
+          onLongPressStart: _handleLongPressStart,
+          onLongPressEnd: _handleLongPressEnd,
+          onPanStart: _handlePanStart,
+          onPanUpdate: _handlePanUpdate,
+          onPanEnd: _handlePanEnd,
+          child: MouseRegion(
+            cursor: _hoveredAnchorInfo != null
+                ? SystemMouseCursors.click
+                : MouseCursor.defer,
+            onEnter: (event) => _handleMouseEnter(event.localPosition),
+            onExit: (_) => _handleMouseExit(),
+            onHover: (event) => _handleMouseHover(event.localPosition),
+            child: svgWidget,
+          ),
+        ),
+      );
+    }
+
+    // Add foreignObject overlay widgets if builder is provided
+    if (widget.foreignObjectBuilder != null) {
+      svgWidget = _buildWithForeignObjectOverlay(context, svgWidget);
+    }
+
+    // Оборачиваем в SizedBox если указаны размеры
+    if (widget.width != null || widget.height != null) {
+      svgWidget = SizedBox(
+        width: widget.width,
+        height: widget.height,
+        child: svgWidget,
+      );
+    }
+
+    // Wrap with Semantics for accessibility
+    final accessibleName = _document.accessibleName;
+    final accessibleDescription = _document.accessibleDescription;
+    final accessibleRole = _document.accessibleRole;
+
+    if (accessibleName != null || accessibleDescription != null) {
+      svgWidget = Semantics(
+        label: accessibleName,
+        hint: accessibleDescription,
+        image: accessibleRole == 'img',
+        button: accessibleRole == 'button',
+        link: accessibleRole == 'link',
+        excludeSemantics: false,
+        child: svgWidget,
+      );
+    }
+
+    return svgWidget;
+  }
+
+  /// Запустить анимацию
+  void _play() {
+    _controller?.forward();
+  }
+
+  /// Остановить анимацию
+  void _pause() {
+    _controller?.stop();
+  }
+
+  /// Перейти к началу
+  void _reset() {
+    _controller?.reset();
+    _timeline?.reset();
+  }
+
+  /// Перейти к конкретному времени
+  void _seekTo(Duration time) {
+    if (_controller == null || _timeline == null) return;
+
+    final progress =
+        time.inMicroseconds / _timeline!.totalDuration.inMicroseconds;
+    _controller!.value = progress.clamp(0.0, 1.0);
   }
 }

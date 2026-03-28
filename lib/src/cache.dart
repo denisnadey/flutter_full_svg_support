@@ -1,10 +1,92 @@
 import 'package:flutter/foundation.dart';
 import 'package:vector_graphics_compiler/vector_graphics_compiler.dart';
 
+/// Statistics for cache profiling and diagnostics.
+class CacheStats {
+  CacheStats();
+
+  int _hits = 0;
+  int _misses = 0;
+  int _evictions = 0;
+  int _pendingHits = 0;
+  int _peakSize = 0;
+
+  /// Total cache hits (found in completed cache).
+  int get hits => _hits;
+
+  /// Total cache misses (not found, had to load).
+  int get misses => _misses;
+
+  /// Total evictions from cache.
+  int get evictions => _evictions;
+
+  /// Hits on pending (in-flight) entries.
+  int get pendingHits => _pendingHits;
+
+  /// Peak cache size observed.
+  int get peakSize => _peakSize;
+
+  /// Total access count (hits + misses).
+  int get totalAccesses => _hits + _misses;
+
+  /// Hit rate as a percentage (0.0 to 1.0).
+  double get hitRate => totalAccesses > 0 ? _hits / totalAccesses : 0.0;
+
+  /// Hit rate including pending hits.
+  double get effectiveHitRate => 
+      totalAccesses > 0 ? (_hits + _pendingHits) / totalAccesses : 0.0;
+
+  /// Records a cache hit.
+  void recordHit() => _hits++;
+
+  /// Records a cache miss.
+  void recordMiss() => _misses++;
+
+  /// Records an eviction.
+  void recordEviction() => _evictions++;
+
+  /// Records a pending hit.
+  void recordPendingHit() => _pendingHits++;
+
+  /// Updates peak size if current size is larger.
+  void updatePeakSize(int currentSize) {
+    if (currentSize > _peakSize) {
+      _peakSize = currentSize;
+    }
+  }
+
+  /// Resets all statistics.
+  void reset() {
+    _hits = 0;
+    _misses = 0;
+    _evictions = 0;
+    _pendingHits = 0;
+    _peakSize = 0;
+  }
+
+  /// Returns a diagnostic summary of cache statistics.
+  String dump() {
+    return 'CacheStats{'
+        'hits: $_hits, '
+        'misses: $_misses, '
+        'pendingHits: $_pendingHits, '
+        'evictions: $_evictions, '
+        'hitRate: ${(hitRate * 100).toStringAsFixed(1)}%, '
+        'effectiveHitRate: ${(effectiveHitRate * 100).toStringAsFixed(1)}%, '
+        'peakSize: $_peakSize}';
+  }
+
+  @override
+  String toString() => dump();
+}
+
 /// The cache for decoded SVGs.
 class Cache {
   final Map<Object, Future<ByteData>> _pending = <Object, Future<ByteData>>{};
   final Map<Object, ByteData> _cache = <Object, ByteData>{};
+
+  /// Statistics for cache profiling.
+  final CacheStats stats = CacheStats();
 
   /// Maximum number of entries to store in the cache.
   ///
@@ -31,6 +113,7 @@ class Cache {
     } else {
       while (_cache.length > maximumSize) {
         _cache.remove(_cache.keys.first);
+        stats.recordEviction();
       }
     }
   }
@@ -40,12 +123,20 @@ class Cache {
   /// This is useful if, for instance, the root asset bundle has been updated
   /// and therefore new images must be obtained.
   void clear() {
+    final count = _cache.length;
     _cache.clear();
+    for (var i = 0; i < count; i++) {
+      stats.recordEviction();
+    }
   }
 
   /// Evicts a single entry from the cache, returning true if successful.
   bool evict(Object key) {
-    return _cache.remove(key) != null;
+    final removed = _cache.remove(key) != null;
+    if (removed) {
+      stats.recordEviction();
+    }
+    return removed;
   }
 
   /// Evicts a single entry from the cache if the `oldData` and `newData` are
@@ -67,15 +158,18 @@ class Cache {
     assert(loader != null); // ignore: unnecessary_null_comparison
     Future<ByteData>? pendingResult = _pending[key];
     if (pendingResult != null) {
+      stats.recordPendingHit();
       return pendingResult;
     }
 
     ByteData? result = _cache[key];
     if (result != null) {
+      stats.recordHit();
       // Remove the provider from the list so that we can put it back in below
       // and thus move it to the end of the list.
       _cache.remove(key);
     } else {
+      stats.recordMiss();
       pendingResult = loader();
       _pending[key] = pendingResult;
       pendingResult.then((ByteData data) {
@@ -84,6 +178,7 @@ class Cache {
         result = data; // in case it was a synchronous future.
       });
     }
+    stats.updatePeakSize(_cache.length);
     if (result != null) {
       _add(key, result!);
       return SynchronousFuture<ByteData>(result!);
@@ -98,6 +193,7 @@ class Cache {
         _cache.remove(key); // update LRU.
       } else if (_cache.length == maximumSize && maximumSize > 0) {
         _cache.remove(_cache.keys.first);
+        stats.recordEviction();
       }
       assert(_cache.length < maximumSize);
       _cache[key] = result;
@@ -107,4 +203,10 @@ class Cache {
 
   /// The number of entries in the cache.
   int get count => _cache.length;
+
+  /// Dumps cache statistics for diagnostic purposes.
+  String dumpStats() => stats.dump();
+
+  /// Resets cache statistics without clearing the cache.
+  void resetStats() => stats.reset();
 }

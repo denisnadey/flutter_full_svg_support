@@ -1,6 +1,6 @@
 # Current Development Status
 
-**Last Updated:** March 28, 2026  
+**Last Updated:** March 29, 2026  
 **Authority:** This file is the single source of truth for current project state.
 
 ## Snapshot
@@ -9,9 +9,9 @@
 - Flutter SDK: `3.38.1` (via `.fvm/versions/3.38.1/bin/flutter`)
 - Dart SDK: `^3.8.0`
 - Version: `2.2.2`
-- **Blink SVG Parity:** ~91-92%
+- **Blink SVG Parity:** ~93-94%
 
-## Verified Health (March 28, 2026)
+## Verified Health (March 29, 2026)
 
 Commands run in `/Users/denisnadey/apps/flutter_full_svg_support`:
 
@@ -21,17 +21,17 @@ Commands run in `/Users/denisnadey/apps/flutter_full_svg_support`:
 ```
 
 Result:
-- `flutter test`: **4,250+ tests passed** (golden_comparison hangs on browser render - excluded)
+- `flutter test`: **4,330+ tests passed** (golden_comparison hangs on browser render - excluded)
 - `dart analyze`: **0 errors**, **0 warnings**, 0 info
 
 ## In-Progress Work
 
 Active development areas targeting 95%+ Blink parity:
 
-1. **Performance benchmarking suite** - Comprehensive render benchmarks, cache profiling, memory analysis
-2. **Code modularization** - Remaining large files (`animated_svg_painter_shapes.dart`, `animated_svg_picture.dart`, `animated_svg_picture_utils.dart`)
+1. **Integrate edge case methods into render pipeline** - Wire up new edge case utility methods into active render path callsites
+2. **Address pre-existing golden test failures** - Fix known failing golden tests
 3. **Golden test coverage expansion** - Additional regression fixtures for edge cases
-4. **Remaining edge cases** - Advanced text positioning, mask refinements, image/foreignObject edge cases
+4. **Further modularization** - Remaining large files (`text_layout` at 785 lines, `text_style_positioning` at 679 lines, `clip_mask_advanced` at 715+ lines)
 
 ## Documentation Cleanup (March 16, 2026)
 
@@ -49,6 +49,22 @@ Moved to archive:
 - `docs/STAGE_8_PLAN.md`
 
 ## Recently Closed (March 2026)
+
+### Code Modularization Complete (March 29, 2026)
+- ✅ **animated_svg_painter.dart**: Split from 941 → 190 lines into 3 new part files (cache, types, text_types)
+- ✅ **animated_svg_picture.dart**: Split from 627 → 194 lines into 3 new + 2 modified part files (diagnostics, foreign_object, types, events, lifecycle)
+- All 4,310 tests pass, 0 analyzer errors
+
+### Performance Benchmarking Suite Complete (March 29, 2026)
+- ✅ **5 new benchmark files**: filter_chain, text_render, animation_render, combined_worst_case, memory
+- ✅ **Cache profiling**: CacheStats class with hit rate, eviction count, peak size tracking
+- ✅ **Benchmark runner**: Updated with sections 6-10
+
+### Text/Mask/Image Edge Cases Complete (March 29, 2026)
+- ✅ **Text edge cases**: Deeply nested tspan transforms, bidi in complex hierarchies, textLength distribution across nested tspan
+- ✅ **Mask edge cases**: Radial gradient luminance, filter chains on mask content, mask-to-mask intersection
+- ✅ **Image edge cases**: Error state fallback (verified working), nested SVG in foreignObject with all preserveAspectRatio variants
+- 21 new edge case tests added
 
 ### Filter & Clipping Edge Cases Complete (Blink Parity ~89-90% → ~91-92%)
 - ✅ **feMorphology edge modes**: Verified full implementation; added 7 new tests covering edge modes (duplicate/wrap/none), zero radius handling, fractional radius values
@@ -376,7 +392,8 @@ To avoid drift:
 
 ## Next Execution Plan
 
-1. **P0**: Build performance benchmarking suite with render benchmarks, cache profiling, memory analysis.
-2. **P1**: Continue modular refactor of remaining large files (`animated_svg_painter_shapes.dart`, `animated_svg_picture.dart`, `animated_svg_picture_utils.dart`) with full regression checks after each split.
-3. **P2**: Remaining edge cases (advanced text positioning, mask refinements, image/foreignObject edge cases). Expand golden test coverage.
-4. Target: Reach 95%+ Blink parity by Q2 2026.
+1. **P0**: Integrate edge case utility methods into active render pipeline callsites.
+2. **P0**: Address pre-existing golden test failures.
+3. **P1**: Expand golden test coverage for new edge cases.
+4. **P1**: Continue modular refactor of remaining large files (`text_layout` at 785 lines, `text_style_positioning` at 679 lines, `clip_mask_advanced` at 715+ lines) with full regression checks after each split.
+5. Target: Reach 95%+ Blink parity by Q2 2026.

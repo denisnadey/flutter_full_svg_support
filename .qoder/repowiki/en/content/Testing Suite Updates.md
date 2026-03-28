@@ -37,16 +37,19 @@
 - [font_synthesis_test.dart](file://test/animation/font_synthesis_test.dart)
 - [font_variant_test.dart](file://test/animation/font_variant_test.dart)
 - [visual_test_utils.dart](file://test/animation/visual_test_utils.dart)
+- [advanced_clip_composition_test.dart](file://test/animation/advanced_clip_composition_test.dart)
+- [filter_advanced_input_graph_test.dart](file://test/animation/filter_advanced_input_graph_test.dart)
+- [use_symbol_advanced_edge_cases_test.dart](file://test/animation/use_symbol_advanced_edge_cases_test.dart)
 </cite>
 
 ## Update Summary
 **Changes Made**
-- Added comprehensive CSS nth selectors test suite with 1000+ test cases covering all structural pseudo-classes
-- Enhanced SMIL animation runtime testing with precision validation for long-running animations
-- Expanded CSS selector parsing and matching capabilities for structural pseudo-classes
-- Improved SMIL animation runtime with enhanced precision handling and boundary value corrections
-- Added comprehensive test coverage for :nth-child, :nth-last-child, :nth-of-type, and :nth-last-of-type pseudo-classes
-- Enhanced SMIL timeline runtime with improved event handling and animation sandwich model implementation
+- Added comprehensive test coverage for advanced clip composition with 775 lines of tests covering deeply nested clipPaths, mixed units, transform compositions, text clipping, and polygon/polyline shapes
+- Added extensive filter advanced input graph testing with 707 lines of tests covering FillPaint/StrokePaint source distinction, recursive filter composition, advanced feDropShadow scenarios, and feMerge edge cases
+- Added detailed use symbol advanced edge cases testing with 644 lines of tests covering CSS cascade through nested use boundaries, visibility/display cascade, use within clipPath/mask regions, pointer events, transform composition, opacity compositing, and symbol viewBox handling
+- Enhanced visual regression testing with comprehensive edge case coverage for complex rendering scenarios
+- Expanded filter semantics testing with advanced input-graph resolution and circular reference detection
+- Improved use/symbol inheritance testing with comprehensive cascade behavior validation
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -54,29 +57,35 @@
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
 5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [CSS Nth Selectors Test Suite](#css-nth-selectors-test-suite)
-7. [Enhanced SMIL Animation Runtime Testing](#enhanced-smil-animation-runtime-testing)
-8. [CSS Calc Edge Cases Testing](#css-calc-edge-cases-testing)
-9. [ForeignObject Nesting and Coordinate Systems](#foreignobject-nesting-and-coordinate-systems)
-10. [Deep Hit Testing and Event System](#deep-hit-testing-and-event-system)
-11. [Image Transform Edge Cases](#image-transform-edge-cases)
-12. [SMIL Timing Precision Testing](#smil-timing-precision-testing)
-13. [CSS Variables and Calc Integration](#css-variables-and-calc-integration)
-14. [Enhanced Visual Regression Testing](#enhanced-visual-regression-testing)
-15. [Font Registration Lifecycle Testing](#font-registration-lifecycle-testing)
-16. [Embedded Font Scenarios](#embedded-font-scenarios)
-17. [Dependency Analysis](#dependency-analysis)
-18. [Performance Considerations](#performance-considerations)
-19. [Troubleshooting Guide](#troubleshooting-guide)
-20. [Conclusion](#conclusion)
+6. [Advanced Clip Composition Testing](#advanced-clip-composition-testing)
+7. [Filter Advanced Input Graph Testing](#filter-advanced-input-graph-testing)
+8. [Use Symbol Advanced Edge Cases Testing](#use-symbol-advanced-edge-cases-testing)
+9. [CSS Nth Selectors Test Suite](#css-nth-selectors-test-suite)
+10. [Enhanced SMIL Animation Runtime Testing](#enhanced-smil-animation-runtime-testing)
+11. [CSS Calc Edge Cases Testing](#css-calc-edge-cases-testing)
+12. [ForeignObject Nesting and Coordinate Systems](#foreignobject-nesting-and-coordinate-systems)
+13. [Deep Hit Testing and Event System](#deep-hit-testing-and-event-system)
+14. [Image Transform Edge Cases](#image-transform-edge-cases)
+15. [SMIL Timing Precision Testing](#smil-timing-precision-testing)
+16. [CSS Variables and Calc Integration](#css-variables-and-calc-integration)
+17. [Enhanced Visual Regression Testing](#enhanced-visual-regression-testing)
+18. [Font Registration Lifecycle Testing](#font-registration-lifecycle-testing)
+19. [Embedded Font Scenarios](#embedded-font-scenarios)
+20. [Dependency Analysis](#dependency-analysis)
+21. [Performance Considerations](#performance-considerations)
+22. [Troubleshooting Guide](#troubleshooting-guide)
+23. [Conclusion](#conclusion)
 
 ## Introduction
-This document provides a comprehensive overview of the expanded testing suite for the Flutter SVG project, reflecting the recent addition of a comprehensive CSS nth selectors test suite with over 1000 test cases and enhanced SMIL animation runtime testing. The testing suite now includes extensive coverage for CSS structural pseudo-classes, animation precision validation, and comprehensive edge case testing across multiple domains. These additions significantly enhance the reliability and robustness of SVG rendering, CSS selector parsing, and animation timing across various edge cases and complex scenarios.
+This document provides a comprehensive overview of the expanded testing suite for the Flutter SVG project, reflecting the recent addition of three major comprehensive test files that significantly enhance the reliability and robustness of SVG rendering. The testing suite now includes extensive coverage for advanced clip composition (775 lines), filter advanced input graph semantics (707 lines), and use symbol advanced edge cases (644 lines). These additions provide comprehensive validation for complex SVG features including deeply nested clipPaths, advanced filter composition, CSS cascade behavior through use/symbol boundaries, and sophisticated rendering scenarios.
 
 ## Project Structure
-The testing suite has been expanded with focused groups covering the newly added test categories:
+The testing suite has been expanded with three major comprehensive test categories:
 - Core widget and rendering tests
 - Animation and visual transformation tests
+- Advanced clip composition testing with deeply nested clipPaths and complex geometries
+- Filter advanced input graph testing with sophisticated filter semantics
+- Use symbol advanced edge cases testing with comprehensive cascade behavior
 - CSS nth selectors test suite with comprehensive structural pseudo-class coverage
 - Enhanced SMIL animation runtime precision testing
 - CSS calc edge cases and mathematical function testing
@@ -102,6 +111,15 @@ VS["visual_scale_test.dart"]
 VT["visual_translation_test.dart"]
 VM["visual_morph_test.dart"]
 VU["visual_test_utils.dart"]
+end
+subgraph "Advanced Clip Composition Tests"
+ACC["advanced_clip_composition_test.dart"]
+end
+subgraph "Filter Advanced Input Graph Tests"
+FAG["filter_advanced_input_graph_test.dart"]
+end
+subgraph "Use Symbol Advanced Edge Cases Tests"
+USE["use_symbol_advanced_edge_cases_test.dart"]
 end
 subgraph "CSS Nth Selectors Tests"
 CNST["css_nth_selectors_test.dart"]
@@ -147,6 +165,9 @@ VR --> VU
 VS --> VU
 VT --> VU
 VM --> VU
+ACC --> VU
+FAG --> VU
+USE --> VU
 CNST --> VU
 SART --> VU
 FRL --> TF
@@ -164,6 +185,9 @@ LT --> CT
 **Diagram sources**
 - [widget_svg_test.dart:1-1157](file://test/widget_svg_test.dart#L1-L1157)
 - [visual_test_utils.dart:1-231](file://test/animation/visual_test_utils.dart#L1-L231)
+- [advanced_clip_composition_test.dart:1-776](file://test/animation/advanced_clip_composition_test.dart#L1-L776)
+- [filter_advanced_input_graph_test.dart:1-708](file://test/animation/filter_advanced_input_graph_test.dart#L1-L708)
+- [use_symbol_advanced_edge_cases_test.dart:1-645](file://test/animation/use_symbol_advanced_edge_cases_test.dart#L1-L645)
 - [css_nth_selectors_test.dart:1-1001](file://test/animation/css_nth_selectors_test.dart#L1-L1001)
 - [css_calc_edge_cases_test.dart:1-658](file://test/animation/css_calc_edge_cases_test.dart#L1-L658)
 - [foreign_object_nesting_test.dart:1-869](file://test/animation/foreign_object_nesting_test.dart#L1-L869)
@@ -180,6 +204,9 @@ LT --> CT
 **Section sources**
 - [widget_svg_test.dart:1-1157](file://test/widget_svg_test.dart#L1-L1157)
 - [visual_test_utils.dart:1-231](file://test/animation/visual_test_utils.dart#L1-L231)
+- [advanced_clip_composition_test.dart:1-776](file://test/animation/advanced_clip_composition_test.dart#L1-L776)
+- [filter_advanced_input_graph_test.dart:1-708](file://test/animation/filter_advanced_input_graph_test.dart#L1-L708)
+- [use_symbol_advanced_edge_cases_test.dart:1-645](file://test/animation/use_symbol_advanced_edge_cases_test.dart#L1-L645)
 - [css_nth_selectors_test.dart:1-1001](file://test/animation/css_nth_selectors_test.dart#L1-L1001)
 - [css_calc_edge_cases_test.dart:1-658](file://test/animation/css_calc_edge_cases_test.dart#L1-L658)
 - [foreign_object_nesting_test.dart:1-869](file://test/animation/foreign_object_nesting_test.dart#L1-L869)
@@ -197,6 +224,9 @@ LT --> CT
 The testing suite now encompasses comprehensive coverage across multiple domains:
 - Visual test utilities: Enhanced pixel capture, analysis, hashing, and difference computation for visual regression testing
 - Widget rendering tests: Validate SvgPicture across string, memory, asset, and network sources, including strategies and color mapping
+- Advanced clip composition testing: Comprehensive deeply nested clipPath validation with 775 lines covering intersection operations, mixed units, transform compositions, text clipping, polygon/polyline shapes, and use element integration
+- Filter advanced input graph testing: Sophisticated filter semantics validation with 707 lines covering FillPaint/StrokePaint source distinction, recursive filter composition, advanced feDropShadow scenarios, feMerge edge cases, and circular reference detection
+- Use symbol advanced edge cases testing: Detailed cascade behavior validation with 644 lines covering CSS cascade through nested use boundaries, visibility/display cascade, use within clipPath/mask regions, pointer events, transform composition, opacity compositing, and symbol viewBox handling
 - CSS nth selectors test suite: Comprehensive structural pseudo-class testing with 1000+ test cases covering :nth-child, :nth-last-child, :nth-of-type, and :nth-last-of-type
 - Enhanced SMIL animation runtime testing: Precision validation for long-running animations, boundary value corrections, and floating-point drift prevention
 - CSS calc edge cases testing: Comprehensive mathematical function evaluation including nested expressions, min/max/clamp functions, and unit conversions
@@ -214,6 +244,9 @@ The testing suite now encompasses comprehensive coverage across multiple domains
 **Section sources**
 - [visual_test_utils.dart:1-231](file://test/animation/visual_test_utils.dart#L1-L231)
 - [widget_svg_test.dart:1-1157](file://test/widget_svg_test.dart#L1-L1157)
+- [advanced_clip_composition_test.dart:1-776](file://test/animation/advanced_clip_composition_test.dart#L1-L776)
+- [filter_advanced_input_graph_test.dart:1-708](file://test/animation/filter_advanced_input_graph_test.dart#L1-L708)
+- [use_symbol_advanced_edge_cases_test.dart:1-645](file://test/animation/use_symbol_advanced_edge_cases_test.dart#L1-L645)
 - [css_nth_selectors_test.dart:1-1001](file://test/animation/css_nth_selectors_test.dart#L1-L1001)
 - [css_calc_edge_cases_test.dart:1-658](file://test/animation/css_calc_edge_cases_test.dart#L1-L658)
 - [foreign_object_nesting_test.dart:1-869](file://test/animation/foreign_object_nesting_test.dart#L1-L869)
@@ -243,11 +276,17 @@ The expanded testing suite leverages Flutter's widget testing framework with spe
 - CSS variables and calc() integration testing
 - Structural pseudo-class selector matching validation
 - Enhanced SMIL animation runtime precision testing
+- Advanced clip composition validation with deeply nested geometries
+- Filter semantics testing with sophisticated input-graph resolution
+- Use/symbol cascade behavior validation
 
 ```mermaid
 sequenceDiagram
 participant T as "WidgetTester"
 participant U as "VisualTestUtils"
+participant ACC as "AdvancedClipComposition"
+participant FAG as "FilterAdvancedGraph"
+participant USE as "UseSymbolEdgeCases"
 participant CNST as "CssNthSelectors"
 participant SART as "SmilRuntime"
 participant CE as "CssCalcEvaluator"
@@ -255,6 +294,12 @@ participant FO as "ForeignObjectRenderer"
 participant HT as "HitTester"
 participant IT as "ImageTransformer"
 participant ST as "SmilTimeline"
+T->>ACC : "testDeeplyNestedClipPaths()"
+ACC-->>T : "intersection validation"
+T->>FAG : "testAdvancedFilterSemantics()"
+FAG-->>T : "input-graph resolution"
+T->>USE : "testUseSymbolCascade()"
+USE-->>T : "cascade behavior validation"
 T->>CNST : "testNthSelectors()"
 CNST-->>T : "structural pseudo-class validation"
 T->>SART : "testAnimationPrecision()"
@@ -275,6 +320,9 @@ U-->>T : "pixel analysis"
 
 **Diagram sources**
 - [visual_test_utils.dart:11-37](file://test/animation/visual_test_utils.dart#L11-L37)
+- [advanced_clip_composition_test.dart:11-85](file://test/animation/advanced_clip_composition_test.dart#L11-L85)
+- [filter_advanced_input_graph_test.dart:18-144](file://test/animation/filter_advanced_input_graph_test.dart#L18-L144)
+- [use_symbol_advanced_edge_cases_test.dart:8-644](file://test/animation/use_symbol_advanced_edge_cases_test.dart#L8-L644)
 - [css_nth_selectors_test.dart:8-416](file://test/animation/css_nth_selectors_test.dart#L8-L416)
 - [smil_animation_runtime.dart:27-122](file://lib/src/animation/smil/smil_animation_runtime.dart#L27-L122)
 - [css_calc_edge_cases_test.dart:8-47](file://test/animation/css_calc_edge_cases_test.dart#L8-L47)
@@ -285,6 +333,9 @@ U-->>T : "pixel analysis"
 
 **Section sources**
 - [visual_test_utils.dart:1-231](file://test/animation/visual_test_utils.dart#L1-L231)
+- [advanced_clip_composition_test.dart:1-776](file://test/animation/advanced_clip_composition_test.dart#L1-L776)
+- [filter_advanced_input_graph_test.dart:1-708](file://test/animation/filter_advanced_input_graph_test.dart#L1-L708)
+- [use_symbol_advanced_edge_cases_test.dart:1-645](file://test/animation/use_symbol_advanced_edge_cases_test.dart#L1-L645)
 - [css_nth_selectors_test.dart:1-1001](file://test/animation/css_nth_selectors_test.dart#L1-L1001)
 - [smil_animation_runtime.dart:1-132](file://lib/src/animation/smil/smil_animation_runtime.dart#L1-L132)
 - [css_calc_edge_cases_test.dart:1-658](file://test/animation/css_calc_edge_cases_test.dart#L1-L658)
@@ -493,6 +544,297 @@ Typography tests validate CSS font properties and their rendering with comprehen
 - [font_kerning_test.dart:1-53](file://test/animation/font_kerning_test.dart#L1-L53)
 - [font_synthesis_test.dart:1-53](file://test/animation/font_synthesis_test.dart#L1-L53)
 - [font_variant_test.dart:1-196](file://test/animation/font_variant_test.dart#L1-L196)
+
+## Advanced Clip Composition Testing
+
+### Comprehensive Deeply Nested ClipPath Validation
+The advanced clip composition testing provides extensive coverage for complex clipPath scenarios with 775 lines of comprehensive validation:
+
+#### Deeply Nested ClipPath Cascading
+- **4-level nested intersections**: Validates four levels of cascading clipPaths producing intersection of all levels
+- **5-level deep recursion**: Tests maximum recursion depth protection with 5-level clipPath chains
+- **Maximum depth protection**: Validates depth limit prevents infinite recursion with chains exceeding 10 levels
+- **Intersection geometry validation**: Ensures innermost clipPath produces expected rectangular intersection
+
+#### Mixed clipPathUnits at Each Level
+- **userSpaceOnUse then objectBoundingBox**: Validates alternating clipPathUnits produce expected intersections
+- **objectBoundingBox then userSpaceOnUse**: Tests coordinate system conversion between different units
+- **3-level alternating cascade**: Validates complex unit alternation patterns (user → obb → user)
+- **Coordinate system composition**: Ensures proper transformation between different coordinate spaces
+
+#### Enhanced Text Clipping
+- **Multi-character text clipping**: Validates text elements with multiple characters serve as clip geometry
+- **text-anchor middle handling**: Tests center-aligned text clipping with proper anchor point calculation
+- **text-anchor end handling**: Validates right-aligned text clipping with end anchor positioning
+- **Character-level precision**: Ensures individual characters contribute to clipping geometry
+
+#### Transform Composition in clipPath
+- **clipPath with rotate transform**: Validates rotated clip geometry produces diamond-shaped clipping regions
+- **clipPath with scale transform**: Tests scaling operations within clipPath coordinate systems
+- **Nested transforms in clipPath children**: Validates complex transform hierarchies within clipPath definitions
+- **objectBoundingBox with element transform**: Tests interaction between clipPath units and element transforms
+
+#### Polygon and Polyline in clipPath
+- **Triangle polygon clipping**: Validates basic polygon geometry serves as clipPath definition
+- **Star polygon clipping**: Tests complex polygon shapes with multiple vertices for clipping
+- **Multiple polygon unions**: Validates union operations with multiple polygon clipPath definitions
+- **Geometric precision**: Ensures polygon clipping produces accurate geometric intersections
+
+#### Group Clipping Inheritance
+- **Clip on group affects all children**: Validates group-level clipPath applies to all child elements
+- **Nested groups with clips**: Tests complex inheritance patterns with multiple nested clipPath definitions
+- **Clip inheritance validation**: Ensures proper inheritance through complex group hierarchies
+
+#### Use Element in clipPath
+- **use referencing rect in clipPath**: Validates use elements properly resolve and contribute geometry
+- **use referencing symbol with viewBox in clipPath**: Tests symbol resolution within clipPath contexts
+- **use with transform in clipPath**: Validates transform application within clipPath use elements
+- **Use element integration**: Ensures use elements behave consistently within clipPath definitions
+
+#### Edge Cases and Robustness
+- **clipPath with display:none use element**: Validates graceful handling of hidden use elements in clipPath
+- **clipPath with very small objectBoundingBox element**: Tests edge cases with extremely small clipPath geometry
+- **Maximum recursion depth protection**: Validates depth limits prevent stack overflow in extreme cases
+- **Robust error handling**: Ensures comprehensive error handling for malformed clipPath definitions
+
+```mermaid
+flowchart TD
+AdvancedClip["Advanced Clip Composition Tests"] --> DeepNesting["Deeply Nested Cascading"]
+AdvancedClip --> MixedUnits["Mixed clipPathUnits"]
+AdvancedClip --> TextClipping["Enhanced Text Clipping"]
+AdvancedClip --> TransformComposition["Transform Composition"]
+AdvancedClip --> PolygonGeometry["Polygon/Polyline Geometry"]
+AdvancedClip --> GroupInheritance["Group Clipping Inheritance"]
+AdvancedClip --> UseElements["Use Elements in clipPath"]
+AdvancedClip --> EdgeCases["Edge Cases & Robustness"]
+DeepNesting --> FourLevel["4-Level Intersections"]
+DeepNesting --> FiveLevel["5-Level Recursion"]
+DeepNesting --> DepthProtection["Depth Protection"]
+FourLevel --> Intersection["Intersection Validation"]
+FiveLevel --> MaximumDepth["Maximum Depth Testing"]
+MixedUnits --> UserSpace["userSpaceOnUse → obb"]
+MixedUnits --> ObjectBoundingBox["obb → userSpaceOnUse"]
+MixedUnits --> Alternating["Alternating Units"]
+TextClipping --> MultiChar["Multi-Character Text"]
+TextClipping --> AnchorMiddle["text-anchor middle"]
+TextClipping --> AnchorEnd["text-anchor end"]
+TransformComposition --> Rotate["Rotate Transform"]
+TransformComposition --> Scale["Scale Transform"]
+TransformComposition --> Nested["Nested Transforms"]
+PolygonGeometry --> Triangle["Triangle Geometry"]
+PolygonGeometry --> Star["Star Polygon"]
+PolygonGeometry --> Union["Multiple Polygon Union"]
+GroupInheritance --> GroupChildren["Group → Children"]
+GroupInheritance --> NestedGroups["Nested Groups"]
+UseElements --> RectUse["use rect in clipPath"]
+UseElements --> SymbolUse["use symbol in clipPath"]
+UseElements --> TransformUse["use with transform"]
+EdgeCases --> HiddenUse["display:none use"]
+EdgeCases --> SmallElements["Very Small Elements"]
+EdgeCases --> DepthLimits["Depth Limits"]
+```
+
+**Diagram sources**
+- [advanced_clip_composition_test.dart:11-85](file://test/animation/advanced_clip_composition_test.dart#L11-L85)
+- [advanced_clip_composition_test.dart:87-198](file://test/animation/advanced_clip_composition_test.dart#L87-L198)
+- [advanced_clip_composition_test.dart:200-283](file://test/animation/advanced_clip_composition_test.dart#L200-L283)
+- [advanced_clip_composition_test.dart:285-412](file://test/animation/advanced_clip_composition_test.dart#L285-L412)
+- [advanced_clip_composition_test.dart:414-504](file://test/animation/advanced_clip_composition_test.dart#L414-L504)
+- [advanced_clip_composition_test.dart:506-574](file://test/animation/advanced_clip_composition_test.dart#L506-L574)
+- [advanced_clip_composition_test.dart:576-675](file://test/animation/advanced_clip_composition_test.dart#L576-L675)
+- [advanced_clip_composition_test.dart:677-774](file://test/animation/advanced_clip_composition_test.dart#L677-L774)
+
+**Section sources**
+- [advanced_clip_composition_test.dart:1-776](file://test/animation/advanced_clip_composition_test.dart#L1-L776)
+
+### Advanced Filter Input Graph Testing
+
+#### Comprehensive FillPaint/StrokePaint Source Distinction
+The filter advanced input graph testing provides sophisticated validation for paint source semantics with 707 lines of comprehensive testing:
+
+##### FillPaint Source Resolution
+- **Gradient fill with FillPaint**: Validates gradient fills resolve correctly in FillPaint context
+- **Pattern fill with FillPaint**: Tests pattern fills through FillPaint source resolution
+- **Nested filter context**: Validates FillPaint resolution within complex filter chains
+- **Combined paint sources**: Tests scenarios with both FillPaint and StrokePaint present
+- **Case-insensitive resolution**: Validates FillPaint source resolution regardless of case
+
+##### StrokePaint Source Resolution
+- **Pattern stroke with StrokePaint**: Validates pattern strokes resolve correctly
+- **Nested stroke context**: Tests StrokePaint resolution within nested filter contexts
+- **Stroke-only scenarios**: Validates proper handling of elements with strokes but no fills
+
+##### Paint Source Properties
+- **paintFill property validation**: Ensures FillPaint elements set paintFill=true and paintStroke=false
+- **paintStroke property validation**: Ensures StrokePaint elements set paintStroke=true and paintFill=false
+- **Offset application**: Validates proper offset application for paint sources
+- **Image filter integration**: Tests image filter application within paint source contexts
+
+#### Recursive Filter Composition Edge Cases
+- **Deep chain A→B→C→D with 4 primitives**: Validates complex filter chains produce expected cumulative effects
+- **Deep chain with branch and rejoin**: Tests complex branching scenarios with proper rejoining
+- **Maximum depth chain (60 primitives)**: Validates depth limits prevent stack overflow
+- **Missing named result fallback**: Tests graceful handling of missing result references
+- **Forward reference handling**: Validates transparent black production for forward references
+- **Same named result multiple references**: Tests shared result references produce consistent effects
+
+#### Advanced feDropShadow Scenarios
+- **feDropShadow with named result input**: Validates drop shadow effects with custom input sources
+- **feDropShadow with SourceAlpha input**: Tests alpha channel integration for shadows
+- **feDropShadow with FillPaint input**: Validates paint source context preservation
+- **Triple feDropShadow chain**: Tests exponential effect growth (1→2→4→8 passes)
+- **feDropShadow with in="none"**: Validates identity behavior for none inputs
+- **feDropShadow after feColorMatrix**: Tests effect chaining with color transformations
+
+#### Advanced feMerge Edge Cases
+- **feMerge with unresolvable in**: Validates transparent black production for invalid references
+- **Empty feMerge handling**: Tests graceful handling of empty merge nodes
+- **feMerge with all in="none"**: Validates identity behavior for none inputs
+- **Mixed valid/invalid inputs**: Tests combination of valid and invalid merge inputs
+- **6+ feMergeNode children**: Validates scalability with multiple merge nodes
+- **Chained feMerge references**: Tests merge result references within complex chains
+
+#### Circular Reference Detection
+- **No circular reference in linear chain**: Validates proper linear chain resolution
+- **Resolution depth limit**: Tests depth limits preventing stack overflow in extreme cases
+- **Graceful error handling**: Ensures circular references don't cause crashes
+
+#### Whitespace and Edge Case Handling
+- **Leading/trailing whitespace trimming**: Validates proper whitespace handling in input references
+- **Empty whitespace fallback**: Tests fallback behavior for whitespace-only inputs
+- **Robust parsing**: Ensures comprehensive error handling for malformed inputs
+
+```mermaid
+flowchart TD
+FilterGraph["Filter Advanced Input Graph Tests"] --> FillStroke["FillPaint/StrokePaint Resolution"]
+FilterGraph --> RecursiveChains["Recursive Filter Chains"]
+FilterGraph --> DropShadow["Advanced feDropShadow"]
+FilterGraph --> MergeEdges["Advanced feMerge"]
+FilterGraph --> CircularRefs["Circular Reference Detection"]
+FilterGraph --> WhitespaceHandling["Whitespace Handling"]
+FillStroke --> GradientFill["Gradient Fill Resolution"]
+FillStroke --> PatternFill["Pattern Fill Resolution"]
+FillStroke --> StrokePaint["StrokePaint Resolution"]
+FillStroke --> PaintProperties["Paint Source Properties"]
+RecursiveChains --> DeepChains["Deep Chain A→B→C→D"]
+RecursiveChains --> BranchRejoin["Branch & Rejoin"]
+RecursiveChains --> DepthLimits["Depth Limits"]
+RecursiveChains --> ForwardRefs["Forward References"]
+DropShadow --> NamedInputs["Named Result Inputs"]
+DropShadow --> AlphaInputs["SourceAlpha Inputs"]
+DropShadow --> PaintInputs["FillPaint Inputs"]
+DropShadow --> ChainEffects["Chain Effects (1→2→4→8)"]
+DropShadow --> NoneInputs["in='none' Inputs"]
+DropShadow --> ColorMatrix["After ColorMatrix"]
+MergeEdges --> Unresolvable["Unresolvable References"]
+MergeEdges --> EmptyMerge["Empty Merge Nodes"]
+MergeEdges --> AllNone["All in='none'"]
+MergeEdges --> MixedInputs["Mixed Valid/Invalid"]
+MergeEdges --> MultipleNodes["6+ Merge Nodes"]
+MergeEdges --> ChainedReferences["Chained References"]
+CircularRefs --> LinearChains["Linear Chain Validation"]
+CircularRefs --> DepthLimit["Depth Limit Testing"]
+WhitespaceHandling --> TrimWhitespace["Trim Whitespace"]
+WhitespaceHandling --> EmptyFallback["Empty Whitespace Fallback"]
+```
+
+**Diagram sources**
+- [filter_advanced_input_graph_test.dart:18-144](file://test/animation/filter_advanced_input_graph_test.dart#L18-L144)
+- [filter_advanced_input_graph_test.dart:146-307](file://test/animation/filter_advanced_input_graph_test.dart#L146-L307)
+- [filter_advanced_input_graph_test.dart:309-440](file://test/animation/filter_advanced_input_graph_test.dart#L309-L440)
+- [filter_advanced_input_graph_test.dart:442-608](file://test/animation/filter_advanced_input_graph_test.dart#L442-L608)
+- [filter_advanced_input_graph_test.dart:610-663](file://test/animation/filter_advanced_input_graph_test.dart#L610-L663)
+- [filter_advanced_input_graph_test.dart:665-706](file://test/animation/filter_advanced_input_graph_test.dart#L665-L706)
+
+**Section sources**
+- [filter_advanced_input_graph_test.dart:1-708](file://test/animation/filter_advanced_input_graph_test.dart#L1-L708)
+
+### Use Symbol Advanced Edge Cases Testing
+
+#### CSS Cascade Through Nested Use Boundaries
+The use symbol advanced edge cases testing provides comprehensive validation for CSS cascade behavior through complex use/symbol hierarchies with 644 lines of detailed testing:
+
+##### Style Cascade Through Complex Hierarchies
+- **Nested use → symbol → use chain**: Validates CSS properties cascade through complex nested structures
+- **Outer use fill overrides inner symbol default**: Tests presentation attribute precedence over inherited styles
+- **Inline style override behavior**: Validates inline styles on referenced elements override inherited use styles
+- **Style inheritance validation**: Ensures proper CSS cascade through shadow boundaries
+
+##### Visibility and Display Cascade
+- **visibility:hidden on use hides referenced content**: Validates proper hiding behavior through use boundaries
+- **visibility:visible on ref can override hidden on use**: Tests child visibility override behavior
+- **display:none on use hides all referenced content**: Validates comprehensive hiding through use elements
+- **Nested use visibility cascade**: Tests visibility behavior through complex nested structures
+
+##### Use Within ClipPath and Mask Regions
+- **use element contributes geometry to clipPath**: Validates use elements properly contribute to clipping regions
+- **use with transform in clipPath**: Tests transform application within clipPath contexts
+- **nested use references in clipPath**: Validates complex use hierarchies within clipPath definitions
+- **display:none use in clipPath**: Tests hidden use elements within clipPath contexts
+
+##### Use Within Mask Regions
+- **use element contributes to mask**: Validates use elements properly contribute to masking regions
+- **Mask geometry validation**: Ensures use elements produce expected mask shapes
+
+##### Pointer Events Through Use Boundaries
+- **pointer-events:none on use prevents hit testing**: Validates event handling through use boundaries
+- **Nested use pointer-events cascade**: Tests pointer events behavior through complex hierarchies
+
+##### Event Retargeting in Nested Use
+- **Nested use elements compose event path**: Validates proper event path composition through use hierarchies
+
+##### Transform Composition (Non-Inheritance)
+- **Transforms compose rather than inherit**: Validates proper transform multiplication rather than inheritance
+- **Nested transforms compose through use chain**: Tests complex transform composition through use hierarchies
+
+##### Opacity Compositing Through Use
+- **Opacity on use applies to entire referenced content**: Validates proper opacity application through use boundaries
+
+##### Symbol ViewBox Handling Through Use
+- **Symbol viewBox transforms content correctly**: Validates proper scaling through symbol viewBox definitions
+
+```mermaid
+flowchart TD
+UseSymbol["Use Symbol Advanced Edge Cases"] --> StyleCascade["CSS Cascade Through Use"]
+UseSymbol --> VisibilityDisplay["Visibility/Display Cascade"]
+UseSymbol --> ClipPathMask["Use in ClipPath/Mask"]
+UseSymbol --> PointerEvents["Pointer Events Through Use"]
+UseSymbol --> EventRetargeting["Event Retargeting"]
+UseSymbol --> TransformComposition["Transform Composition"]
+UseSymbol --> OpacityCompositing["Opacity Compositing"]
+UseSymbol --> SymbolViewBox["Symbol ViewBox Handling"]
+StyleCascade --> NestedChain["Nested use → symbol → use"]
+StyleCascade --> OverrideBehavior["Override Behavior"]
+StyleCascade --> InlineStyles["Inline Styles Override"]
+VisibilityDisplay --> HideContent["visibility:hidden"]
+VisibilityDisplay --> VisibleOverride["visibility:visible override"]
+VisibilityDisplay --> DisplayNone["display:none"]
+VisibilityDisplay --> NestedVisibility["Nested Visibility"]
+ClipPathMask --> GeometryContribution["Geometry Contribution"]
+ClipPathMask --> TransformInClip["Transform in ClipPath"]
+ClipPathMask --> NestedClip["Nested ClipPath"]
+ClipPathMask --> HiddenClip["Hidden ClipPath"]
+PointerEvents --> EventPrevention["pointer-events:none"]
+PointerEvents --> NestedEvents["Nested Events"]
+EventRetargeting --> EventPath["Event Path Composition"]
+TransformComposition --> TransformCompose["Transforms Compose"]
+TransformComposition --> NestedTransforms["Nested Transform Compose"]
+OpacityCompositing --> OpacityApply["Opacity Application"]
+SymbolViewBox --> ViewBoxScale["ViewBox Scaling"]
+```
+
+**Diagram sources**
+- [use_symbol_advanced_edge_cases_test.dart:9-46](file://test/animation/use_symbol_advanced_edge_cases_test.dart#L9-L46)
+- [use_symbol_advanced_edge_cases_test.dart:115-181](file://test/animation/use_symbol_advanced_edge_cases_test.dart#L115-L181)
+- [use_symbol_advanced_edge_cases_test.dart:245-383](file://test/animation/use_symbol_advanced_edge_cases_test.dart#L245-L383)
+- [use_symbol_advanced_edge_cases_test.dart:420-480](file://test/animation/use_symbol_advanced_edge_cases_test.dart#L420-L480)
+- [use_symbol_advanced_edge_cases_test.dart:482-517](file://test/animation/use_symbol_advanced_edge_cases_test.dart#L482-L517)
+- [use_symbol_advanced_edge_cases_test.dart:519-581](file://test/animation/use_symbol_advanced_edge_cases_test.dart#L519-L581)
+- [use_symbol_advanced_edge_cases_test.dart:583-609](file://test/animation/use_symbol_advanced_edge_cases_test.dart#L583-L609)
+- [use_symbol_advanced_edge_cases_test.dart:611-642](file://test/animation/use_symbol_advanced_edge_cases_test.dart#L611-L642)
+
+**Section sources**
+- [use_symbol_advanced_edge_cases_test.dart:1-645](file://test/animation/use_symbol_advanced_edge_cases_test.dart#L1-L645)
 
 ## CSS Nth Selectors Test Suite
 
@@ -1067,6 +1409,9 @@ Comprehensive error handling testing ensures robust font processing:
 ## Dependency Analysis
 The expanded testing suite exhibits clear separation of concerns with comprehensive coverage across multiple domains:
 - Animation tests depend on visual utilities for pixel-level validation
+- Advanced clip composition tests depend on visual utilities and complex rendering scenarios
+- Filter advanced input graph tests depend on SVG parser and filter semantics
+- Use symbol advanced edge cases tests depend on visual utilities and complex cascade behavior
 - CSS nth selectors tests depend on CSS selector parsing and matching implementations
 - SMIL animation runtime tests depend on enhanced precision handling and boundary value corrections
 - CSS calc tests depend on mathematical evaluation utilities and edge case handling
@@ -1087,6 +1432,9 @@ VU["visual_test_utils.dart"] --> VR["visual_rotation_test.dart"]
 VU --> VS["visual_scale_test.dart"]
 VU --> VT["visual_translation_test.dart"]
 VU --> VM["visual_morph_test.dart"]
+VU --> ACC["advanced_clip_composition_test.dart"]
+VU --> FAG["filter_advanced_input_graph_test.dart"]
+VU --> USE["use_symbol_advanced_edge_cases_test.dart"]
 VU --> CNST["css_nth_selectors_test.dart"]
 VU --> SART["smil_animation_runtime.dart"]
 VU --> CCE["css_calc_edge_cases_test.dart"]
@@ -1113,10 +1461,16 @@ CNST --> CSSSEL["css_selectors.dart"]
 CNST --> CSSMATCH["css_cascade_selector_matching.dart"]
 SART --> SMILRUNTIME["smil_animation_runtime.dart"]
 SART --> SMILTIMELINE["smil_timeline_runtime.dart"]
+ACC --> VU
+FAG --> FR
+USE --> VU
 ```
 
 **Diagram sources**
 - [visual_test_utils.dart:1-231](file://test/animation/visual_test_utils.dart#L1-L231)
+- [advanced_clip_composition_test.dart:1-776](file://test/animation/advanced_clip_composition_test.dart#L1-L776)
+- [filter_advanced_input_graph_test.dart:1-708](file://test/animation/filter_advanced_input_graph_test.dart#L1-L708)
+- [use_symbol_advanced_edge_cases_test.dart:1-645](file://test/animation/use_symbol_advanced_edge_cases_test.dart#L1-L645)
 - [css_nth_selectors_test.dart:1-1001](file://test/animation/css_nth_selectors_test.dart#L1-L1001)
 - [css_calc_edge_cases_test.dart:1-658](file://test/animation/css_calc_edge_cases_test.dart#L1-L658)
 - [foreign_object_nesting_test.dart:1-869](file://test/animation/foreign_object_nesting_test.dart#L1-L869)
@@ -1135,6 +1489,9 @@ SART --> SMILTIMELINE["smil_timeline_runtime.dart"]
 
 **Section sources**
 - [visual_test_utils.dart:1-231](file://test/animation/visual_test_utils.dart#L1-L231)
+- [advanced_clip_composition_test.dart:1-776](file://test/animation/advanced_clip_composition_test.dart#L1-L776)
+- [filter_advanced_input_graph_test.dart:1-708](file://test/animation/filter_advanced_input_graph_test.dart#L1-L708)
+- [use_symbol_advanced_edge_cases_test.dart:1-645](file://test/animation/use_symbol_advanced_edge_cases_test.dart#L1-L645)
 - [css_nth_selectors_test.dart:1-1001](file://test/animation/css_nth_selectors_test.dart#L1-L1001)
 - [css_calc_edge_cases_test.dart:1-658](file://test/animation/css_calc_edge_cases_test.dart#L1-L658)
 - [foreign_object_nesting_test.dart:1-869](file://test/animation/foreign_object_nesting_test.dart#L1-L869)
@@ -1167,6 +1524,9 @@ SART --> SMILTIMELINE["smil_timeline_runtime.dart"]
 - CSS variables resolution includes iteration limits to prevent circular dependencies
 - CSS nth selectors parsing uses efficient regex patterns and mathematical formula evaluation
 - SMIL animation runtime includes epsilon corrections and boundary value handling for precision
+- Advanced clip composition tests optimize pixel analysis for complex geometries
+- Filter advanced input graph tests validate performance with deep filter chains
+- Use symbol advanced edge cases tests minimize redundant rendering operations
 
 ## Troubleshooting Guide
 Common issues and resolutions across the expanded test suite:
@@ -1186,11 +1546,17 @@ Common issues and resolutions across the expanded test suite:
 - CSS variables resolution failures: Verify variable existence and fallback handling
 - CSS nth selectors parsing failures: Check for proper An+B formula syntax and keyword handling
 - SMIL animation precision issues: Verify epsilon corrections and boundary value handling
+- Advanced clip composition failures: Check for proper clipPath unit handling and transform composition
+- Filter advanced input graph resolution errors: Validate filter chain depth limits and circular reference detection
+- Use symbol advanced edge cases failures: Verify CSS cascade behavior and transform composition
 - Visual test debugging: Use detailed pixel analysis and geometric validation reports
 
 **Section sources**
 - [widget_svg_test.dart:12-36](file://test/widget_svg_test.dart#L12-L36)
 - [visual_test_utils.dart:11-37](file://test/animation/visual_test_utils.dart#L11-L37)
+- [advanced_clip_composition_test.dart:677-774](file://test/animation/advanced_clip_composition_test.dart#L677-L774)
+- [filter_advanced_input_graph_test.dart:610-663](file://test/animation/filter_advanced_input_graph_test.dart#L610-L663)
+- [use_symbol_advanced_edge_cases_test.dart:420-480](file://test/animation/use_symbol_advanced_edge_cases_test.dart#L420-L480)
 - [css_nth_selectors_test.dart:271-324](file://test/animation/css_nth_selectors_test.dart#L271-L324)
 - [css_calc_edge_cases_test.dart:271-324](file://test/animation/css_calc_edge_cases_test.dart#L271-L324)
 - [foreign_object_nesting_test.dart:366-477](file://test/animation/foreign_object_nesting_test.dart#L366-L477)
@@ -1202,4 +1568,10 @@ Common issues and resolutions across the expanded test suite:
 - [text_font_face_test.dart:457-507](file://test/animation/text_font_face_test.dart#L457-L507)
 
 ## Conclusion
-The testing suite demonstrates a comprehensive approach to validating SVG rendering across multiple sources, themes, animations, font scenarios, mathematical functions, coordinate systems, hit testing, image transformations, CSS structural pseudo-classes, and animation timing. The expansion with the comprehensive CSS nth selectors test suite (1000+ test cases) and enhanced SMIL animation runtime testing significantly improves the reliability and robustness of the Flutter SVG project. The new CSS nth selectors testing provides extensive coverage for structural pseudo-classes including :nth-child, :nth-last-child, :nth-of-type, and :nth-last-of-type with comprehensive parsing, matching, and integration validation. The enhanced SMIL animation runtime testing validates precision handling for long-running animations, boundary value corrections, and floating-point drift prevention. The integration of CSS nth selectors with CSS parser and selector matching ensures proper handling of complex CSS selector scenarios. The expanded visual regression testing capabilities with comprehensive edge case coverage ensure reliable rendering validation. Typography feature testing validates CSS font property compliance across various scenarios. The integration of all test components with the existing testing infrastructure ensures comprehensive quality assurance for the Flutter SVG project, providing confidence in handling complex real-world SVG rendering scenarios with enhanced precision and reliability.
+The testing suite demonstrates a comprehensive approach to validating SVG rendering across multiple sources, themes, animations, font scenarios, mathematical functions, coordinate systems, hit testing, image transformations, CSS structural pseudo-classes, animation timing, and advanced rendering features. The expansion with three major comprehensive test files significantly enhances the reliability and robustness of the Flutter SVG project:
+
+- **Advanced Clip Composition Testing (775 lines)**: Provides extensive validation for deeply nested clipPaths, mixed units, transform compositions, text clipping, polygon/polyline shapes, and use element integration
+- **Filter Advanced Input Graph Testing (707 lines)**: Offers sophisticated filter semantics validation covering FillPaint/StrokePaint source distinction, recursive filter composition, advanced feDropShadow scenarios, and feMerge edge cases
+- **Use Symbol Advanced Edge Cases Testing (644 lines)**: Delivers comprehensive cascade behavior validation for CSS cascade through nested use boundaries, visibility/display cascade, use within clipPath/mask regions, pointer events, transform composition, opacity compositing, and symbol viewBox handling
+
+These additions provide comprehensive coverage for complex SVG features including deeply nested clipPaths, advanced filter composition, CSS cascade behavior through use/symbol hierarchies, and sophisticated rendering scenarios. The expanded visual regression testing capabilities with comprehensive edge case coverage ensure reliable rendering validation. Typography feature testing validates CSS font property compliance across various scenarios. The integration of all test components with the existing testing infrastructure ensures comprehensive quality assurance for the Flutter SVG project, providing confidence in handling complex real-world SVG rendering scenarios with enhanced precision and reliability.

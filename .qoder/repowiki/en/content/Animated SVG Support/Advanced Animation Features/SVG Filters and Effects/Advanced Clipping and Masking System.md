@@ -6,10 +6,9 @@
 - [animated_svg_painter_clip_mask_advanced.dart](file://lib/src/animation/animated_svg_painter_clip_mask_advanced.dart)
 - [animated_svg_painter_clip_mask_geometry.dart](file://lib/src/animation/animated_svg_painter_clip_mask_geometry.dart)
 - [animated_svg_painter_clip_mask_units.dart](file://lib/src/animation/animated_svg_painter_clip_mask_units.dart)
-- [animated_svg_painter_tree.dart](file://lib/src/animation/animated_svg_painter_tree.dart)
 - [animated_svg_painter.dart](file://lib/src/animation/animated_svg_painter.dart)
-- [advanced_mask_hit_test.dart](file://test/animation/advanced_mask_hit_test.dart)
-- [advanced_mask_test.dart](file://test/animation/advanced_mask_test.dart)
+- [advanced_clip_composition_test.dart](file://test/animation/advanced_clip_composition_test.dart)
+- [advanced_clip_mask_test.dart](file://test/animation/advanced_clip_mask_test.dart)
 - [clip_mask_advanced_composition_test.dart](file://test/animation/clip_mask_advanced_composition_test.dart)
 - [clip_mask_use_verification_test.dart](file://test/animation/clip_mask_use_verification_test.dart)
 - [animated_svg_picture_hit_test_visibility.dart](file://lib/src/animation/animated_svg_picture_hit_test_visibility.dart)
@@ -19,14 +18,14 @@
 
 ## Update Summary
 **Changes Made**
-- Enhanced layer-based masking system with circular reference protection to prevent infinite loops
-- Added _applyAdvancedMaskWrapper method for improved mask composition workflow
-- Enhanced mask geometry processing with improved text clipping using glyph-approximate paths
-- Improved luminance-based hit testing with proper RGB-to-luminance conversion using ITU-R BT.709 coefficients
-- Added advanced mask composition support for complex nested scenarios
+- Enhanced SVG clipping capabilities with advanced cascading clipPath composition supporting mixed coordinate systems
+- Improved text clipping precision using character-level approximate paths with enhanced glyph approximation algorithms
+- Added comprehensive support for mixed clipPathUnits at each cascade level (userSpaceOnUse and objectBoundingBox combinations)
+- Implemented robust circular reference protection with graceful fallback mechanisms for complex nested scenarios
+- Enhanced mask composition workflow with improved layer-based masking using Canvas.saveLayer
+- Added advanced text clipping with character-level paths for better precision in glyph approximation
+- Improved edge feathering detection and bounds expansion for blur filters in mask content
 - Enhanced performance optimizations with better cache invalidation and animation awareness
-- Implemented comprehensive text clipping with glyph-approximate path generation
-- Added robust circular reference protection with graceful fallback mechanisms
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -34,15 +33,17 @@
 3. [Core Components](#core-components)
 4. [Layer-Based Masking Implementation](#layer-based-masking-implementation)
 5. [Advanced Masking Features](#advanced-masking-features)
-6. [Circular Reference Protection](#circular-reference-protection)
-7. [Enhanced Text Clipping with Glyph-Approximate Paths](#enhanced-text-clipping-with-glyph-approximate-paths)
-8. [Improved Luminance-Based Hit Testing](#improved-luminance-based-hit-testing)
-9. [Edge Feathering and Soft Edges](#edge-feathering-and-soft-edges)
-10. [Composition and Nesting Support](#composition-and-nesting-support)
-11. [Performance Optimizations](#performance-optimizations)
-12. [Testing Framework](#testing-framework)
-13. [Troubleshooting Guide](#troubleshooting-guide)
-14. [Conclusion](#conclusion)
+6. [Enhanced Cascading ClipPath Composition](#enhanced-cascading-clippath-composition)
+7. [Mixed Coordinate System Support](#mixed-coordinate-system-support)
+8. [Enhanced Text Clipping with Character-Level Precision](#enhanced-text-clipping-with-character-level-precision)
+9. [Circular Reference Protection](#circular-reference-protection)
+10. [Improved Luminance-Based Hit Testing](#improved-luminance-based-hit-testing)
+11. [Edge Feathering and Soft Edges](#edge-feathering-and-soft-edges)
+12. [Composition and Nesting Support](#composition-and-nesting-support)
+13. [Performance Optimizations](#performance-optimizations)
+14. [Testing Framework](#testing-framework)
+15. [Troubleshooting Guide](#troubleshooting-guide)
+16. [Conclusion](#conclusion)
 
 ## Introduction
 
@@ -50,7 +51,7 @@ The Advanced Clipping and Masking System represents a complete architectural ove
 
 The new implementation provides comprehensive support for SVG 2.0 specification compliance while delivering superior performance and visual fidelity. The system now utilizes Flutter's Canvas.saveLayer mechanism for proper compositing, enabling advanced features like luminance-based masking, alpha masking, edge feathering, and complex nested composition scenarios.
 
-**Updated** The system now implements a layer-based approach using Canvas.saveLayer for proper compositing instead of simple path clipping, providing better performance and more accurate rendering of complex masking scenarios. Enhanced with circular reference protection, improved text clipping with glyph-approximate paths, and advanced luminance-based hit testing using ITU-R BT.709 coefficients.
+**Updated** The system now implements a layer-based approach using Canvas.saveLayer for proper compositing instead of simple path clipping, providing better performance and more accurate rendering of complex masking scenarios. Enhanced with circular reference protection, improved text clipping with character-level paths, and advanced luminance-based hit testing using ITU-R BT.709 coefficients.
 
 ## System Architecture
 
@@ -70,6 +71,11 @@ subgraph "Advanced Masking"
 AM[AdvancedMaskExtension]
 MT[MaskTypeResolution]
 MB[MaskBounds]
+end
+subgraph "Enhanced ClipPath System"
+CCP[CascadingClipPath]
+MCS[MixedCoordinateSupport]
+TCP[TextClippingPrecision]
 end
 subgraph "Protection & Optimization"
 CR[CircularReferenceProtection]
@@ -92,6 +98,8 @@ LM --> LC
 LM --> LF
 AM --> MT
 AM --> MB
+CCP --> MCS
+CCP --> TCP
 LC --> CR
 LF --> GAP
 CR --> LHT
@@ -103,17 +111,18 @@ HT --> AP
 ```
 
 **Diagram sources**
-- [animated_svg_painter_tree.dart:480-521](file://lib/src/animation/animated_svg_painter_tree.dart#L480-L521)
 - [animated_svg_painter_clip_mask_composition.dart:28-113](file://lib/src/animation/animated_svg_painter_clip_mask_composition.dart#L28-L113)
 - [animated_svg_painter_clip_mask_advanced.dart:19-69](file://lib/src/animation/animated_svg_painter_clip_mask_advanced.dart#L19-L69)
+- [animated_svg_painter_clip_mask_geometry.dart:1-123](file://lib/src/animation/animated_svg_painter_clip_mask_geometry.dart#L1-L123)
 
 The architecture centers around three core extensions that work together to provide comprehensive masking capabilities:
 
 - **_applyAdvancedMaskWrapper**: New wrapper function that manages mask application workflow and circular reference protection
 - **LayerMaskExtension**: Implements the new layer-based masking system using Canvas.saveLayer
 - **AdvancedMaskExtension**: Handles mask type resolution and bounds computation
+- **CascadingClipPathExtension**: Manages advanced clipPath composition with mixed coordinate systems
 - **CircularReferenceProtection**: Prevents infinite loops in nested mask references
-- **GeometryApproximation**: Provides glyph-approximate paths for text clipping
+- **EnhancedTextClipping**: Provides character-level precision for text clipping using glyph approximation
 - **LuminanceHitTesting**: Implements proper RGB-to-luminance conversion for hit testing
 
 ## Core Components
@@ -157,7 +166,6 @@ TA --> |Absent| DEFAULT[Default: Alpha Mode]
 - [animated_svg_painter_clip_mask_advanced.dart:28-69](file://lib/src/animation/animated_svg_painter_clip_mask_advanced.dart#L28-L69)
 
 **Section sources**
-- [animated_svg_painter_tree.dart:480-521](file://lib/src/animation/animated_svg_painter_tree.dart#L480-L521)
 - [animated_svg_painter_clip_mask_composition.dart:42-113](file://lib/src/animation/animated_svg_painter_clip_mask_composition.dart#L42-L113)
 - [animated_svg_painter_clip_mask_advanced.dart:19-69](file://lib/src/animation/animated_svg_painter_clip_mask_advanced.dart#L19-L69)
 
@@ -185,7 +193,6 @@ MaskLayer->>Canvas : Restore Layers
 ```
 
 **Diagram sources**
-- [animated_svg_painter_tree.dart:487-521](file://lib/src/animation/animated_svg_painter_tree.dart#L487-L521)
 - [animated_svg_painter_clip_mask_composition.dart:91-161](file://lib/src/animation/animated_svg_painter_clip_mask_composition.dart#L91-L161)
 
 ### Layer Composition Process
@@ -251,6 +258,141 @@ The system provides flexible bounds computation supporting both unit types:
 - [animated_svg_painter_clip_mask_advanced.dart:93-244](file://lib/src/animation/animated_svg_painter_clip_mask_advanced.dart#L93-L244)
 - [animated_svg_painter_clip_mask_composition.dart:143-179](file://lib/src/animation/animated_svg_painter_clip_mask_composition.dart#L143-L179)
 
+## Enhanced Cascading ClipPath Composition
+
+**Updated** The system now provides comprehensive support for advanced cascading clipPath composition with mixed coordinate system support:
+
+### Cascading ClipPath Architecture
+
+The system handles complex nested clipPath scenarios with proper coordinate system management:
+
+```mermaid
+flowchart TD
+CCP[Cascading ClipPath] --> UCU[UserSpaceOnUse Cascade]
+OBCU[ObjectBoundingBox Cascade]
+MCS[Mixed Coordinate Systems]
+CCP --> UCU
+CCP --> OBCU
+CCP --> MCS
+UCU --> UCUR[UserSpaceOnUse Recursive]
+OBCU --> OBCUR[ObjectBoundingBox Recursive]
+MCS --> MIX[Coordinate System Mixing]
+MIX --> UBOB[User -> Object]
+UBOB --> OBU[Object -> User]
+UCUR --> UCURF[Final Coordinate Space]
+OBCUR --> OBCURF[Final Coordinate Space]
+```
+
+**Diagram sources**
+- [animated_svg_painter_clip_mask_advanced.dart:509-622](file://lib/src/animation/animated_svg_painter_clip_mask_advanced.dart#L509-L622)
+
+### Mixed Coordinate System Handling
+
+The system supports complex combinations of clipPathUnits across cascade levels:
+
+**Supported Combinations:**
+- `userSpaceOnUse` → `objectBoundingBox` cascade
+- `objectBoundingBox` → `userSpaceOnUse` cascade  
+- Alternating patterns: `user` → `obb` → `user` → `obb`
+- Deep nesting with up to 10 levels of recursion
+
+**Coordinate System Transformation:**
+- Each cascade level maintains its own coordinate system
+- Final intersection computed in the original clipped element's coordinate space
+- Proper transform stacking for nested elements with transforms
+
+**Section sources**
+- [animated_svg_painter_clip_mask_advanced.dart:526-622](file://lib/src/animation/animated_svg_painter_clip_mask_advanced.dart#L526-L622)
+
+## Mixed Coordinate System Support
+
+**Updated** The system now provides robust support for mixed coordinate systems in clipPath composition:
+
+### Coordinate System Resolution
+
+The system intelligently handles coordinate system transformations at each cascade level:
+
+```mermaid
+flowchart TD
+MCS[Mixed Coordinate Systems] --> OBB[ObjectBoundingBox]
+USU[UserSpaceOnUse]
+MCS --> OBB
+MCS --> USU
+OBB --> OBBT[Transform Matrix]
+USU --> USUT[Direct Coordinates]
+OBBT --> OBBTF[Final Intersection]
+USUT --> USUTF[Final Intersection]
+OBBF --> COORD[Consistent Coordinate Space]
+USUTF --> COORD
+```
+
+**Diagram sources**
+- [animated_svg_painter_clip_mask_advanced.dart:624-660](file://lib/src/animation/animated_svg_painter_clip_mask_advanced.dart#L624-L660)
+
+### Implementation Details
+
+**Coordinate System Mapping:**
+- `objectBoundingBox`: Coordinates relative to clipped element's bounding box (0.0-1.0)
+- `userSpaceOnUse`: Direct coordinates in current user space
+- Mixed systems: Each level maintains its own coordinate system until final intersection
+
+**Transform Handling:**
+- Proper transform stacking for nested elements
+- Safe dimension handling for very small or zero-sized elements
+- Graceful fallback for degenerate cases
+
+**Section sources**
+- [animated_svg_painter_clip_mask_advanced.dart:624-660](file://lib/src/animation/animated_svg_painter_clip_mask_advanced.dart#L624-L660)
+
+## Enhanced Text Clipping with Character-Level Precision
+
+**Updated** The system now provides significantly improved text clipping capabilities using advanced character-level approximate paths:
+
+### Character-Level Text Clipping Strategy
+
+The text clipping system has been enhanced with sophisticated character-level approximation:
+
+```mermaid
+flowchart TD
+TCP[Text Clipping Precision] --> CLP[Character-Level Paths]
+GPC[Glyph Path Collection]
+TP[Text Positioning]
+TCP --> CLP
+TCP --> GPC
+TCP --> TP
+CLP --> CCP[Character-by-Character Precision]
+GPC --> GPE[Glyph Estimation Engine]
+TP --> TPA[Text Alignment Handling]
+CCP --> CCPD[Detailed Character Dimensions]
+GPE --> GPED[Glyph Metric Approximation]
+TPA --> TAA[Text Anchor Alignment]
+```
+
+**Diagram sources**
+- [animated_svg_painter_clip_mask_geometry.dart:291-352](file://lib/src/animation/animated_svg_painter_clip_mask_geometry.dart#L291-L352)
+
+### Enhanced Text Geometry Approximation
+
+**Improved Character-Level Path Generation:**
+- **Individual Character Paths**: Each character generates its own rounded rectangle path
+- **Font Size Scaling**: Proportional to inherited font-size values with better accuracy
+- **Text Anchor Alignment**: Enhanced handling for start, middle, and end alignments
+- **Character Count Estimation**: More accurate width calculation using character metrics
+
+**Advanced Text Metrics:**
+- **Character Width Estimation**: Uses font-size × 0.55 for average character width
+- **Character Height Estimation**: Uses font-size × 0.85 for ascent measurement
+- **Descender Handling**: Accounts for descender depth (font-size × 0.15)
+- **Rounded Corners**: Adds visual appeal with character-corner radius (font-size × 0.1)
+
+**Enhanced Text Content Collection:**
+- **Recursive Text Collection**: Properly collects text from nested tspan elements
+- **Whitespace Handling**: Skips whitespace characters in clipping calculations
+- **Multi-line Support**: Handles complex text layouts with proper positioning
+
+**Section sources**
+- [animated_svg_painter_clip_mask_geometry.dart:274-352](file://lib/src/animation/animated_svg_painter_clip_mask_geometry.dart#L274-L352)
+
 ## Circular Reference Protection
 
 **Updated** The system now includes comprehensive circular reference protection to prevent infinite loops in nested mask scenarios:
@@ -285,47 +427,6 @@ HR --> PC[Paint Content Without Mask]
 **Section sources**
 - [animated_svg_painter_clip_mask_composition.dart:3-10](file://lib/src/animation/animated_svg_painter_clip_mask_composition.dart#L3-L10)
 - [animated_svg_painter_clip_mask_composition.dart:60-110](file://lib/src/animation/animated_svg_painter_clip_mask_composition.dart#L60-L110)
-
-## Enhanced Text Clipping with Glyph-Approximate Paths
-
-**Updated** The system now provides improved text clipping capabilities using glyph-approximate paths:
-
-### Glyph Approximation Strategy
-
-The text clipping system converts text elements to approximate glyph paths for accurate clipping:
-
-```mermaid
-flowchart TD
-TC[Text Clipping] --> GT[Get Text Content]
-GT --> GA[Get Glyph Metrics]
-GA --> GP[Generate Glyph Paths]
-GP --> CT[Apply Clip Rule]
-CT --> AC[Add to Clip Path]
-AC --> EP[Empty Path Check]
-EP --> |Valid| CP[Clip Path Ready]
-EP --> |Empty| NP[No Clip Effect]
-```
-
-**Diagram sources**
-- [animated_svg_painter_clip_mask_geometry.dart:247-298](file://lib/src/animation/animated_svg_painter_clip_mask_geometry.dart#L247-L298)
-
-### Implementation Details
-
-**Text Elements Support:**
-- **Direct Text**: `<text>` elements with glyph outlines
-- **Text Spans**: `<tspan>` elements with relative positioning
-- **Mixed Content**: Complex text layouts with multiple spans
-- **Font Metrics**: Approximate glyph dimensions using font size
-
-**Approximation Methods:**
-- **Bounding Rectangle**: Uses character bounding boxes for clipping
-- **Font Size Scaling**: Proportional to inherited font-size values
-- **Text Anchor Alignment**: Handles start, middle, and end alignments
-- **Character Count Estimation**: Width based on character count and average glyph width
-
-**Section sources**
-- [animated_svg_painter_clip_mask_geometry.dart:82-121](file://lib/src/animation/animated_svg_painter_clip_mask_geometry.dart#L82-L121)
-- [animated_svg_painter_clip_mask_geometry.dart:247-298](file://lib/src/animation/animated_svg_painter_clip_mask_geometry.dart#L247-L298)
 
 ## Improved Luminance-Based Hit Testing
 
@@ -506,7 +607,8 @@ The testing framework has been enhanced to validate the new layer-based masking 
 - **Nested Composition**: Complex masking scenario testing
 - **Performance Optimization**: Cache effectiveness and invalidation
 - **Circular References**: Infinite loop prevention testing
-- **Text Clipping**: Glyph-approximate path accuracy
+- **Enhanced Text Clipping**: Character-level precision validation
+- **Cascading ClipPath**: Mixed coordinate system testing
 - **Hit Testing**: Luminance-based point testing with proper threshold handling
 
 ### Advanced Visual Testing
@@ -516,7 +618,7 @@ The testing framework has been enhanced to validate the new layer-based masking 
 - **Color Space Validation**: Luminance calculation verification using standard coefficients
 - **Bounds Expansion Testing**: Blur effect capture validation
 - **Animation Performance**: Cache invalidation timing analysis
-- **Text Geometry Testing**: Glyph approximation accuracy
+- **Text Geometry Testing**: Character-level clipping precision
 
 ### Test Scenarios
 
@@ -527,12 +629,13 @@ The testing framework has been enhanced to validate the new layer-based masking 
 - **Performance Testing**: Cache utilization and memory optimization
 - **Edge Case Testing**: Circular references, text content, deep nesting
 - **Hit Testing Validation**: Proper luminance-based hit detection with threshold filtering
+- **Cascading ClipPath Testing**: Mixed coordinate systems and deep nesting scenarios
 
 **Section sources**
-- [advanced_mask_hit_test.dart:1-744](file://test/animation/advanced_mask_hit_test.dart#L1-L744)
-- [advanced_mask_test.dart:1-200](file://test/animation/advanced_mask_test.dart#L1-L200)
-- [clip_mask_advanced_composition_test.dart](file://test/animation/clip_mask_advanced_composition_test.dart)
-- [clip_mask_use_verification_test.dart](file://test/animation/clip_mask_use_verification_test.dart)
+- [advanced_clip_composition_test.dart:1-776](file://test/animation/advanced_clip_composition_test.dart#L1-L776)
+- [advanced_clip_mask_test.dart:1-766](file://test/animation/advanced_clip_mask_test.dart#L1-L766)
+- [clip_mask_advanced_composition_test.dart:1-568](file://test/animation/clip_mask_advanced_composition_test.dart#L1-L568)
+- [clip_mask_use_verification_test.dart:1-800](file://test/animation/clip_mask_use_verification_test.dart#L1-L800)
 
 ## Troubleshooting Guide
 
@@ -558,9 +661,13 @@ The testing framework has been enhanced to validate the new layer-based masking 
 - **Cause**: Nested masks referencing each other
 - **Solution**: System automatically handles circular references with graceful fallback
 
-**Issue**: Text clipping not working properly
-- **Cause**: Glyph approximation not matching expected results
+**Issue**: Text clipping not working properly with enhanced precision
+- **Cause**: Character-level approximation not matching expected results
 - **Solution**: Check font metrics and text anchor alignment settings
+
+**Issue**: Cascading clipPath with mixed coordinate systems failing
+- **Cause**: Improper coordinate system transformation
+- **Solution**: Verify clipPathUnits values and coordinate system consistency
 
 ### Debugging Techniques
 
@@ -570,6 +677,7 @@ The testing framework has been enhanced to validate the new layer-based masking 
 - **Performance Profiling**: Timing analysis of mask rendering operations
 - **Animation Tracking**: Monitoring of animated mask content changes
 - **Circular Reference Monitoring**: Tracking of mask recursion depth
+- **Text Clipping Precision Analysis**: Character-level path validation
 
 **Section sources**
 - [animated_svg_painter_clip_mask_composition.dart:374-445](file://lib/src/animation/animated_svg_painter_clip_mask_composition.dart#L374-L445)
@@ -582,13 +690,14 @@ The Advanced Clipping and Masking System represents a revolutionary advancement 
 **Key Achievements:**
 - **Layer-Based Architecture**: Utilizes Canvas.saveLayer for proper compositing and superior performance
 - **Advanced Masking Support**: Comprehensive luminance and alpha masking with intelligent type resolution
+- **Enhanced Cascading ClipPath**: Supports mixed coordinate systems with up to 10 levels of recursion
+- **Improved Text Clipping**: Character-level precision using advanced glyph approximation algorithms
 - **Edge Feathering**: Sophisticated blur filter detection and bounds expansion for soft edges
 - **Circular Reference Protection**: Robust prevention of infinite loops in nested mask scenarios
-- **Enhanced Text Clipping**: Improved glyph-approximate path generation for accurate text masking
 - **Luminance-Based Hit Testing**: Proper RGB-to-luminance conversion using ITU-R BT.709 coefficients for accurate point testing
 - **Performance Optimization**: Advanced caching system with animation-aware invalidation
 - **Complex Composition**: Full support for nested masking scenarios and mixed composition chains
 
 The system's robust handling of complex masking scenarios, from simple alpha masking to sophisticated luminance masking with edge feathering, demonstrates its maturity and suitability for production applications requiring advanced SVG rendering capabilities.
 
-Future enhancements could include additional SVG filter integration, improved text mask geometry handling, and expanded support for CSS masking specifications, building upon this solid foundation.
+Future enhancements could include additional SVG filter integration, expanded support for CSS masking specifications, and further optimization of text clipping precision, building upon this solid foundation.

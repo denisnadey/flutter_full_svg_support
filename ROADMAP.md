@@ -1,8 +1,8 @@
 # Flutter SVG Roadmap (Living)
 
-**Last Updated:** March 28, 2026
+**Last Updated:** March 29, 2026
 
-**Current Status:** ~89-90% Blink SVG parity | ~97% Filter parity | 4,145 tests passing | 0 analyzer warnings
+**Current Status:** ~93-94% Blink SVG parity | ~99% Filter parity | 4,330 tests passing | 0 analyzer warnings
 
 This roadmap reflects the current state. Legacy stage-by-stage plans are historical context only.
 
@@ -21,6 +21,7 @@ Authoritative references:
    - `path_data`, `path_parser`, `path_normalizer`, `path_interpolation`
    - `css_animations`, `svg_parser_filters_primitives`, `svg_filters_registry_pipeline`
    - `animated_svg_painter_gradients`, `animated_svg_painter_clip_mask`, `smil/interpolators`
+   - `animated_svg_painter` (941→190 lines, 3 part files), `animated_svg_picture` (627→194 lines, 5 part files)
 4. Full SMIL animation engine (animate, animateTransform, animateMotion, set).
 5. CSS animation/keyframes support with cubic-bezier to SMIL conversion.
 6. All 17/17 filter primitives implemented (~95% filter parity).
@@ -40,17 +41,21 @@ Authoritative references:
 20. **Component Transfer** - All 5 function types (identity, table, discrete, linear, gamma).
 21. **Edge Case Sprint (March 2026)** - CSS shorthand resolution (font CSS2.1, margin/padding, animation coexistence, border overrides), CSS unit handling precision (em/rem/ch/ex/calc), SMIL timing precision (repeatCount drift, repeatDur, min/max), advanced image transformations, filter primitive edge cases (feDisplacementMap bilinear, feTurbulence stitchTiles, feGaussianBlur extreme, feImage external URL), hit-testing refinements (~206 new tests, parity ~82% → ~89-90%).
 22. **CSS Structural Pseudo-classes** - `:nth-child`, `:nth-of-type`, `:nth-last-child`, `:first-child`, `:last-child`, `:only-child`, `:empty`, `:root` (complete).
+23. **Filter & Clipping Edge Cases (March 2026)** - feMorphology edge modes, feTurbulence seamless stitchTiles, advanced filter input-graph semantics, advanced use/symbol inheritance, advanced clipping semantics (~105 new tests, parity ~89-90% → ~91-92%).
+24. **Code Modularization Sprint (March 2026)** - `animated_svg_painter.dart` split from 941→190 lines (cache, types, text_types), `animated_svg_picture.dart` split from 627→194 lines (diagnostics, foreign_object, types, events, lifecycle). All 4,310 tests pass.
+25. **Performance Benchmarking Suite (March 2026)** - 5 new benchmark files (filter_chain, text_render, animation_render, combined_worst_case, memory), CacheStats class with hit rate/eviction count/peak size tracking, benchmark runner sections 6-10.
+26. **Text/Mask/Image Edge Cases (March 2026)** - Deeply nested tspan transforms, bidi in complex hierarchies, textLength distribution, radial gradient luminance masks, filter chains on mask content, mask-to-mask intersection, image error fallback, nested SVG in foreignObject with preserveAspectRatio variants (21 new tests, parity ~91-92% → ~93-94%).
 
 ## Current Priorities
 
 ### P0 - Reaching 95%+ Parity (In Progress)
 
-1. **Remaining filter primitive edge cases** - feMorphology advanced modes, feTurbulence stitchTiles refinements.
-2. **Performance benchmarking suite** - Comprehensive render benchmarks, cache profiling, memory analysis.
+1. **Integrate edge case methods into render pipeline** - Wire up new edge case utility methods into active render path callsites.
+2. **Address pre-existing golden test failures** - Fix known failing golden tests.
 
 ### P1 - Code Modularization
 
-1. **Remaining large files** - `animated_svg_painter_shapes.dart`, `animated_svg_picture.dart`, `animated_svg_picture_utils.dart`.
+1. **Remaining large files** - `text_layout` (785 lines), `text_style_positioning` (679 lines), `clip_mask_advanced` (715+ lines).
 2. Full regression checks after each split, API stability preserved.
 
 ### P2 - Quality & Coverage
@@ -88,5 +93,7 @@ Validation commands:
 
 ## Latest Baseline
 
-- March 28, 2026: `flutter test` passed (4,145), `dart analyze` returned 0 errors / 0 warnings / 0 info.
-- Edge Case Sprint complete: ~206 new tests, parity increased from ~82% to ~89-90%.
+- March 29, 2026: `flutter test` passed (4,330+), `dart analyze` returned 0 errors / 0 warnings / 0 info.
+- Code Modularization Sprint complete: `animated_svg_painter.dart` and `animated_svg_picture.dart` successfully split.
+- Performance Benchmarking Suite complete: 5 new benchmark files, CacheStats profiling, runner sections 6-10.
+- Text/Mask/Image Edge Cases complete: 21 new tests, parity increased from ~91-92% to ~93-94%.

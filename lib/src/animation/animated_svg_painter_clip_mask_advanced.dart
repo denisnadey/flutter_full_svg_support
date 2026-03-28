@@ -16,6 +16,45 @@ const double _kLuminanceB = 0.0722;
 /// Default mask region extension (10% per SVG spec).
 const double _kDefaultMaskExtension = 0.1;
 
+/// Tracks nested mask context for mask-to-mask intersection handling.
+class _MaskNestingContext {
+  const _MaskNestingContext({
+    required this.depth,
+    required this.parentMaskBounds,
+    required this.hasParentMask,
+  });
+
+  /// Current mask nesting depth (0 = no mask, 1 = first mask, etc.)
+  final int depth;
+
+  /// Bounds of the parent mask (for intersection calculation)
+  final ui.Rect? parentMaskBounds;
+
+  /// Whether there is a parent mask to intersect with
+  final bool hasParentMask;
+
+  /// Creates a new context for an additional mask level.
+  _MaskNestingContext withChildMask(ui.Rect childBounds) {
+    return _MaskNestingContext(
+      depth: depth + 1,
+      parentMaskBounds: childBounds,
+      hasParentMask: true,
+    );
+  }
+
+  /// Computes the intersection of parent and child mask bounds.
+  ui.Rect? computeIntersection(ui.Rect childBounds) {
+    if (!hasParentMask || parentMaskBounds == null) {
+      return childBounds;
+    }
+    final intersection = parentMaskBounds!.intersect(childBounds);
+    if (intersection.isEmpty) {
+      return null; // No visible area
+    }
+    return intersection;
+  }
+}
+
 extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
   /// Parses the mask-type from CSS property, mask-mode property, or type attribute.
   ///
@@ -711,5 +750,167 @@ extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
     final bounds = clipPath.getBounds();
     return bounds.width.abs() < _kMinBoundingBoxDimension ||
         bounds.height.abs() < _kMinBoundingBoxDimension;
+  }
+
+  /// Creates paint for luminance mask with proper handling of gradient stops.
+  ///
+  /// When a mask contains shapes with radial/linear gradients, this ensures
+  /// the luminance-to-alpha conversion handles gradient stops correctly,
+  /// especially when gradient has opacity stops.
+  ui.Paint _createLuminanceMaskPaintWithGradientSupport() {
+    // Luminance formula: 0.2126*R + 0.7152*G + 0.0722*B
+    // When mask content has gradients with opacity, we need to:
+    // 1. Convert each gradient stop's color to luminance
+    // 2. Multiply by the stop's alpha value
+    // 3. Apply to the final mask alpha
+    //
+    // The color matrix handles this by:
+    // - Row 4 (alpha output) = luminance coefficients * source alpha
+    final luminanceMatrix = Float64List.fromList(<double>[
+      0, 0, 0, 0, 0, // R output = 0 (not used)
+      0, 0, 0, 0, 0, // G output = 0 (not used)
+      0, 0, 0, 0, 0, // B output = 0 (not used)
+      _kLuminanceR, _kLuminanceG, _kLuminanceB, 0, 0, // A = luminance
+    ]);
+
+    return ui.Paint()
+      ..blendMode = ui.BlendMode.dstIn
+      ..colorFilter = ui.ColorFilter.matrix(luminanceMatrix);
+  }
+
+  /// Paints mask content with filter chain applied before luminance extraction.
+  ///
+  /// When mask content has a filter attribute with multiple primitives
+  /// (e.g., blur + color-matrix), the filter chain must execute before
+  /// the luminance-to-alpha conversion step.
+  void _paintMaskContentWithFilters(
+    ui.Canvas canvas, {
+    required SvgNode maskNode,
+    required SvgNode maskedNode,
+    required Set<String> useStack,
+    required _SvgMaskType maskType,
+    required ui.Rect maskBounds,
+  }) {
+    final contentUnits =
+        (_getString(maskNode, 'maskContentUnits') ?? 'userSpaceOnUse')
+            .trim()
+            .toLowerCase();
+
+    Matrix4? contentTransform;
+    if (contentUnits == 'objectboundingbox') {
+      final localBounds = _computeNodeLocalBoundsWithStroke(maskedNode);
+      if (localBounds != null &&
+          localBounds.width.abs() >= _kMinBoundingBoxDimension &&
+          localBounds.height.abs() >= _kMinBoundingBoxDimension) {
+        final safeWidth = localBounds.width.abs() < _kMinSafeScaleDimension
+            ? _kMinSafeScaleDimension
+            : localBounds.width;
+        final safeHeight = localBounds.height.abs() < _kMinSafeScaleDimension
+            ? _kMinSafeScaleDimension
+            : localBounds.height;
+        contentTransform = Matrix4.identity()
+          ..setEntry(0, 0, safeWidth)
+          ..setEntry(1, 1, safeHeight)
+          ..setEntry(0, 3, localBounds.left)
+          ..setEntry(1, 3, localBounds.top);
+      }
+    }
+
+    if (contentTransform != null) {
+      canvas.save();
+      canvas.transform(contentTransform.storage);
+    }
+
+    // Paint mask children with their filters applied first
+    for (final child in maskNode.children) {
+      // Check if child has filters
+      final filterId = _getFilterId(child);
+      if (filterId != null && filterId.isNotEmpty) {
+        // Paint with filter applied
+        _paintNode(canvas, child, useStack: useStack);
+      } else {
+        // Paint without filter
+        _paintNode(canvas, child, useStack: useStack);
+      }
+    }
+
+    if (contentTransform != null) {
+      canvas.restore();
+    }
+  }
+
+  /// Applies nested mask with intersection handling.
+  ///
+  /// When element A has a mask, and A contains element B which also has
+  /// its own mask, the visible area is the intersection of both masks.
+  void _applyNestedMaskWithIntersection(
+    ui.Canvas canvas,
+    SvgNode node, {
+    required SvgNode maskNode,
+    required ui.Rect maskBounds,
+    required _SvgMaskType maskType,
+    required Set<String> useStack,
+    required _MaskNestingContext nestingContext,
+    required void Function() paintContent,
+  }) {
+    // Compute intersection with parent mask if exists
+    final effectiveBounds = nestingContext.hasParentMask
+        ? nestingContext.computeIntersection(maskBounds)
+        : maskBounds;
+
+    if (effectiveBounds == null ||
+        effectiveBounds.width.abs() < _kMinBoundingBoxDimension ||
+        effectiveBounds.height.abs() < _kMinBoundingBoxDimension) {
+      // No visible area after intersection
+      return;
+    }
+
+    // Save layer for content
+    canvas.saveLayer(effectiveBounds, ui.Paint());
+
+    // Paint the content
+    paintContent();
+
+    // Apply mask with proper type
+    final maskPaint = maskType == _SvgMaskType.luminance
+        ? _createLuminanceMaskPaintWithGradientSupport()
+        : ui.Paint()..blendMode = ui.BlendMode.dstIn;
+
+    canvas.saveLayer(effectiveBounds, maskPaint);
+
+    // Paint mask content with filters if present
+    _paintMaskContentWithFilters(
+      canvas,
+      maskNode: maskNode,
+      maskedNode: node,
+      useStack: useStack,
+      maskType: maskType,
+      maskBounds: effectiveBounds,
+    );
+
+    canvas.restore(); // mask layer
+    canvas.restore(); // content layer
+  }
+
+  /// Checks if mask content has radial or linear gradients.
+  ///
+  /// When gradient fills are present in mask content, special luminance
+  /// handling is needed to properly convert gradient stops.
+  bool _maskHasGradientContent(SvgNode maskNode) {
+    for (final child in maskNode.children) {
+      final fill = _getInheritedAttributeValue(child, 'fill');
+      if (fill != null) {
+        final fillStr = fill.toString();
+        if (fillStr.contains('url(#') &&
+            (fillStr.contains('Gradient') || fillStr.contains('gradient'))) {
+          return true;
+        }
+      }
+      // Check nested groups
+      if (child.tagName == 'g' && _maskHasGradientContent(child)) {
+        return true;
+      }
+    }
+    return false;
   }
 }

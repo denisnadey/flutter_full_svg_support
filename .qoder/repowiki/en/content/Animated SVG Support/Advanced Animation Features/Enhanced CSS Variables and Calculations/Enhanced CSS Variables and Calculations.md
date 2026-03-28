@@ -23,26 +23,27 @@
 - [smil_parser_motion.dart](file://lib/src/animation/smil/smil_parser_motion.dart)
 - [smil_timeline_syncbase.dart](file://lib/src/animation/smil/smil_timeline_syncbase.dart)
 - [smil_timeline_runtime.dart](file://lib/src/animation/smil/smil_timeline_runtime.dart)
-- [svg_filters_registry_pipeline_primitives.dart](file://lib/src/animation/svg_filters_registry_pipeline_primitives.dart)
+- [svg_filters_registry_pipeline_primitives_paint.dart](file://lib/src/animation/svg_filters_registry_pipeline_primitives_paint.dart)
+- [svg_filters_registry_pipeline_compositing.dart](file://lib/src/animation/svg_filters_registry_pipeline_compositing.dart)
 - [svg_filters_registry_pipeline.dart](file://lib/src/animation/svg_filters_registry_pipeline.dart)
 - [svg_filters_registry_inputs.dart](file://lib/src/animation/svg_filters_registry_inputs.dart)
+- [svg_filters_types.dart](file://lib/src/animation/svg_filters_types.dart)
 - [SVGElement.cpp](file://blink-b87d44f-Source-core-svg/SVGElement.cpp)
 - [advanced_use_inheritance_test.dart](file://test/animation/advanced_use_inheritance_test.dart)
 - [use_css_cascade_test.dart](file://test/animation/use_css_cascade_test.dart)
 - [css_selectors_combinators_test.dart](file://test/animation/css_selectors_combinators_test.dart)
+- [filter_advanced_input_graph_test.dart](file://test/animation/filter_advanced_input_graph_test.dart)
+- [filter_input_graph_hardening_test.dart](file://test/animation/filter_input_graph_hardening_test.dart)
 </cite>
 
 ## Update Summary
 **Changes Made**
-- Enhanced CSS calculation system with comprehensive recursion safety (20-level maximum nesting depth)
-- Implemented advanced CSS math function evaluation with support for min(), max(), and clamp() functions
-- Added robust depth tracking and safety mechanisms to prevent infinite recursion
-- Enhanced CSS variables cascade resolver integration for rule-based variable lookup
-- Improved structural pseudo-class support with comprehensive nth-child, nth-last-child, nth-of-type, and nth-last-of-type matching
-- Enhanced error handling for malformed expressions and unmatched parentheses
-- Added modern CSS unit support including ex, ch, and lh units with precise conversion algorithms
-- Integrated comprehensive SMIL animation enhancements with improved motion path parsing and timeline synchronization
-- Enhanced filter primitive pipeline with circular reference detection and result caching
+- Enhanced filter system with advanced paint source distinction (FillPaint vs StrokePaint)
+- Implemented comprehensive filter pipeline compositing support with recursive composition handling
+- Added specialized paint pass classes for paint source optimization
+- Enhanced input graph semantics with improved paint context propagation
+- Expanded filter primitive pipeline with circular reference detection and result caching
+- Added comprehensive test coverage for advanced filter edge cases
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -55,7 +56,7 @@
 8. [Structural Pseudo-Classes and Matching Algorithms](#structural-pseudo-classes-and-matching-algorithms)
 9. [Modern CSS Unit Support](#modern-css-unit-support)
 10. [SMIL Animation Enhancements](#smil-animation-enhancements)
-11. [Filter Primitive Pipeline Improvements](#filter-primitive-pipeline-improvements)
+11. [Advanced Filter System Optimizations](#advanced-filter-system-optimizations)
 12. [Enhanced Recursion Safety and Error Handling](#enhanced-recursion-safety-and-error-handling)
 13. [Dependency Analysis](#dependency-analysis)
 14. [Performance Considerations](#performance-considerations)
@@ -88,10 +89,12 @@ SPM["smil_parser_motion.dart"]
 STS["smil_timeline_syncbase.dart"]
 STR["smil_timeline_runtime.dart"]
 end
-subgraph "Filter Pipeline"
-FRP["svg_filters_registry_pipeline_primitives.dart"]
-FR["svg_filters_registry_pipeline.dart"]
+subgraph "Advanced Filter Pipeline"
+FP["svg_filters_registry_pipeline_primitives_paint.dart"]
+FC["svg_filters_registry_pipeline_compositing.dart"]
+FPI["svg_filters_registry_pipeline.dart"]
 FRI["svg_filters_registry_inputs.dart"]
+FT["svg_filters_types.dart"]
 end
 subgraph "Core SVG Engine"
 SE["SVGElement.cpp"]
@@ -103,8 +106,8 @@ T3["css_cascade_specificity_test.dart"]
 T4["advanced_use_inheritance_test.dart"]
 T5["use_css_cascade_test.dart"]
 T6["css_selectors_combinators_test.dart"]
-T7["css_calc_edge_cases_test.dart"]
-T8["css_nth_selectors_test.dart"]
+T7["filter_advanced_input_graph_test.dart"]
+T8["filter_input_graph_hardening_test.dart"]
 end
 CV --> CC
 CC --> CS
@@ -113,8 +116,10 @@ AP --> AT
 SD --> AE
 SPM --> STS
 STS --> STR
-FRP --> FR
-FR --> FRI
+FP --> FC
+FC --> FPI
+FPI --> FRI
+FT --> FP
 SE --> SD
 T1 --> CV
 T2 --> CV
@@ -122,8 +127,8 @@ T3 --> CC
 T4 --> CC
 T5 --> CC
 T6 --> CS
-T7 --> CV
-T8 --> CS
+T7 --> FP
+T8 --> FPI
 ```
 
 **Diagram sources**
@@ -136,9 +141,11 @@ T8 --> CS
 - [smil_parser_motion.dart](file://lib/src/animation/smil/smil_parser_motion.dart)
 - [smil_timeline_syncbase.dart](file://lib/src/animation/smil/smil_timeline_syncbase.dart)
 - [smil_timeline_runtime.dart](file://lib/src/animation/smil/smil_timeline_runtime.dart)
-- [svg_filters_registry_pipeline_primitives.dart](file://lib/src/animation/svg_filters_registry_pipeline_primitives.dart)
+- [svg_filters_registry_pipeline_primitives_paint.dart](file://lib/src/animation/svg_filters_registry_pipeline_primitives_paint.dart)
+- [svg_filters_registry_pipeline_compositing.dart](file://lib/src/animation/svg_filters_registry_pipeline_compositing.dart)
 - [svg_filters_registry_pipeline.dart](file://lib/src/animation/svg_filters_registry_pipeline.dart)
 - [svg_filters_registry_inputs.dart](file://lib/src/animation/svg_filters_registry_inputs.dart)
+- [svg_filters_types.dart](file://lib/src/animation/svg_filters_types.dart)
 - [SVGElement.cpp](file://blink-b87d44f-Source-core-svg/SVGElement.cpp)
 
 **Section sources**
@@ -646,46 +653,128 @@ The timeline system now provides comprehensive syncbase timing support:
 - [smil_timeline_syncbase.dart](file://lib/src/animation/smil/smil_timeline_syncbase.dart)
 - [smil_timeline_runtime.dart](file://lib/src/animation/smil/smil_timeline_runtime.dart)
 
-## Filter Primitive Pipeline Improvements
-The filter primitive system has been enhanced with comprehensive pipeline processing and circular reference detection:
+## Advanced Filter System Optimizations
 
-### Advanced Filter Pipeline Processing
-The filter registry now provides sophisticated pipeline optimization:
+### Enhanced Paint Source Distinction
+The filter system now provides sophisticated paint source handling with FillPaint and StrokePaint differentiation:
 
-#### Enhanced Primitive Resolution
-- **Circular Reference Detection**: Prevention of infinite filter chain loops
-- **Named Result Caching**: Efficient reuse of intermediate filter results
-- **Multi-Hop Chain Support**: Complex filter chains with multiple intermediate steps
-- **Input Graph Hardening**: Robust input resolution with fallback mechanisms
+#### Specialized Paint Pass Classes
+The system introduces specialized paint pass classes for optimized paint source handling:
 
-#### Advanced Filter Primitive Support
-- **Gaussian Blur**: Enhanced blur radius calculation with multi-pass optimization
-- **Morphology Operations**: Advanced erosion and dilation with kernel customization
-- **Displacement Mapping**: Sophisticated texture displacement with wrap modes
-- **Lighting Effects**: Comprehensive lighting model with multiple light sources
+```mermaid
+classDiagram
+class SvgFilterPaintPass {
++imageFilter ImageFilter?
++colorFilter ColorFilter?
++blendMode BlendMode?
++offset Offset
++paintFill bool
++paintStroke bool
++copyWith() SvgFilterPaintPass
+}
+class SvgFillPaintSourcePass {
++fillColor Color?
++copyWith() SvgFillPaintSourcePass
+}
+class SvgStrokePaintSourcePass {
++strokeColor Color?
++copyWith() SvgStrokePaintSourcePass
+}
+class SvgDropShadowPaintPass {
++shadowFilter DropShadowFilter
++copyWith() SvgDropShadowPaintPass
+}
+SvgFillPaintSourcePass --|> SvgFilterPaintPass
+SvgStrokePaintSourcePass --|> SvgFilterPaintPass
+SvgDropShadowPaintPass --|> SvgFilterPaintPass
+```
+
+**Diagram sources**
+- [svg_filters_registry_pipeline_primitives_paint.dart](file://lib/src/animation/svg_filters_registry_pipeline_primitives_paint.dart)
+- [svg_filters_types.dart](file://lib/src/animation/svg_filters_types.dart)
+
+#### Paint Source Optimization
+- **FillPaint**: Dedicated pass for element fill paint with paintFill=true, paintStroke=false
+- **StrokePaint**: Dedicated pass for element stroke paint with paintFill=false, paintStroke=true
+- **Solid Color Optimization**: When paint is solid, optimized color filters are applied
+- **Pattern/Gradient Support**: Paint servers are properly rendered through paint passes
+
+#### Advanced Paint Context Propagation
+- **Nested Filter Context**: Paint context properly propagated in nested filter scenarios
+- **Background Paint Integration**: BackgroundImage/BackgroundAlpha with proper transform handling
+- **Paint Channel Scope**: Maintains proper paintFill/paintStroke flags through filter chains
 
 **Section sources**
-- [svg_filters_registry_pipeline_primitives.dart](file://lib/src/animation/svg_filters_registry_pipeline_primitives.dart)
+- [svg_filters_registry_pipeline_primitives_paint.dart](file://lib/src/animation/svg_filters_registry_pipeline_primitives_paint.dart)
+- [svg_filters_types.dart](file://lib/src/animation/svg_filters_types.dart)
+
+### Comprehensive Filter Pipeline Compositing
+The filter system now provides advanced compositing support with recursive composition handling:
+
+#### Advanced Compositing Operations
+The compositing system handles complex filter combinations:
+
+```mermaid
+flowchart TD
+Start(["Filter Chain"]) --> ResolveInput["Resolve Input Passes"]
+ResolveInput --> CheckBuiltIn{"Built-in Input?"}
+CheckBuiltIn --> |FillPaint/StrokePaint| PaintPass["Create Paint Pass"]
+CheckBuiltIn --> |SourceGraphic/Alpha| BuiltInPass["Built-in Pass"]
+CheckBuiltIn --> |Named Result| CachedPass["Cached Pass"]
+CheckBuiltIn --> |None| EmptyPass["Empty Pass"]
+PaintPass --> Compose["Compose Passes"]
+BuiltInPass --> Compose
+CachedPass --> Compose
+EmptyPass --> Compose
+Compose --> CheckOp{"Operation Type?"}
+CheckOp --> |Blend| BlendOp["Blend Operation"]
+CheckOp --> |Composite| CompositeOp["Composite Operation"]
+CheckOp --> |Merge| MergeOp["Merge Operation"]
+BlendOp --> Output["Final Output"]
+CompositeOp --> Output
+MergeOp --> Output
+```
+
+**Diagram sources**
+- [svg_filters_registry_pipeline_compositing.dart](file://lib/src/animation/svg_filters_registry_pipeline_compositing.dart)
+
+#### Recursive Filter Composition
+- **Deep Chain Support**: Up to 64-level maximum depth with circular reference detection
+- **Named Result Caching**: Efficient reuse of intermediate filter results
+- **Multi-Hop Resolution**: Complex chains like A→B→C→D with proper result caching
+- **Circular Reference Prevention**: Detection and handling of recursive filter compositions
+
+#### Advanced Compositing Features
+- **feBlend**: Advanced blend mode support with proper input handling
+- **feComposite**: Comprehensive operator support including arithmetic with k-coefficients
+- **feMerge**: Complex merge operations with multiple feMergeNode children
+- **feDropShadow**: Multi-pass shadow composition with proper layering
+
+**Section sources**
+- [svg_filters_registry_pipeline_compositing.dart](file://lib/src/animation/svg_filters_registry_pipeline_compositing.dart)
 - [svg_filters_registry_pipeline.dart](file://lib/src/animation/svg_filters_registry_pipeline.dart)
-- [svg_filters_registry_inputs.dart](file://lib/src/animation/svg_filters_registry_inputs.dart)
 
-### Enhanced Input Resolution
-The input system now provides comprehensive filter input handling:
+### Enhanced Input Graph Semantics
+The input system now provides comprehensive filter input handling with advanced edge case management:
 
-#### Advanced Input Processing
-- **Built-in Input Support**: sourceGraphic, sourceAlpha, background, backgroundAlpha
-- **Named Result Resolution**: Multi-hop input chain resolution with caching
-- **None Input Handling**: Explicit transparent-black input processing
-- **Result Reuse Optimization**: Efficient sharing of intermediate filter results
+#### Advanced Input Resolution
+The input resolver handles complex scenarios:
+
+- **FillPaint/StrokePaint Semantics**: Proper paint source distinction and context propagation
+- **Case-Insensitive Built-ins**: Baseline compatibility with case-insensitive input names
+- **Forward Reference Handling**: Transparent black output for unresolved forward references
+- **Named Result Reuse**: Efficient caching and copying of intermediate results
+- **in="none" Handling**: Explicit transparent black production with no fallback
 
 #### Input Graph Hardening
-- **Circular Reference Prevention**: Detection and handling of filter chain loops
-- **Result Caching Strategy**: Prevent accidental mutation of cached filter results
+- **Circular Reference Detection**: Prevention of infinite recursion in filter chains
+- **Resolution Depth Tracking**: Maximum 64-level depth with safety thresholds
+- **Result Caching Strategy**: Prevents accidental mutation of cached filter results
 - **Multi-Primitive Sharing**: Support for multiple downstream primitives using same input
-- **Fallback Mechanisms**: Graceful degradation when filter inputs are unavailable
 
 **Section sources**
 - [svg_filters_registry_inputs.dart](file://lib/src/animation/svg_filters_registry_inputs.dart)
+- [filter_advanced_input_graph_test.dart](file://test/animation/filter_advanced_input_graph_test.dart)
 
 ## Enhanced Recursion Safety and Error Handling
 The enhanced CSS calculation system now includes comprehensive recursion safety measures and improved error handling:
@@ -776,19 +865,21 @@ H["animated_svg_painter_use.dart"] --> B
 I["animated_svg_painter_tree.dart"] --> H
 J["smil_parser_motion.dart"] --> K["smil_timeline_syncbase.dart"]
 K --> L["smil_timeline_runtime.dart"]
-M["svg_filters_registry_pipeline_primitives.dart"] --> N["svg_filters_registry_pipeline.dart"]
-N --> O["svg_filters_registry_inputs.dart"]
+M["svg_filters_registry_pipeline_primitives_paint.dart"] --> N["svg_filters_registry_pipeline_compositing.dart"]
+N --> O["svg_filters_registry_pipeline.dart"]
+O --> P["svg_filters_registry_inputs.dart"]
+Q["svg_filters_types.dart"] --> M
 end
 subgraph "Testing Layer"
-P["css_variables_calc_test.dart"] --> B
-Q["css_property_rendering_test.dart"] --> B
-R["css_cascade_specificity_test.dart"] --> C
-S["css_property_rendering_test.dart"] --> F
-T["advanced_use_inheritance_test.dart"] --> C
-U["use_css_cascade_test.dart"] --> C
-V["css_selectors_combinators_test.dart"] --> F
-W["css_calc_edge_cases_test.dart"] --> B
-X["css_nth_selectors_test.dart"] --> F
+R["css_variables_calc_test.dart"] --> B
+S["css_property_rendering_test.dart"] --> B
+T["css_cascade_specificity_test.dart"] --> C
+U["css_property_rendering_test.dart"] --> F
+V["advanced_use_inheritance_test.dart"] --> C
+W["use_css_cascade_test.dart"] --> C
+X["css_selectors_combinators_test.dart"] --> F
+Y["filter_advanced_input_graph_test.dart"] --> M
+Z["filter_input_graph_hardening_test.dart"] --> O
 end
 ```
 
@@ -802,9 +893,11 @@ end
 - [smil_parser_motion.dart](file://lib/src/animation/smil/smil_parser_motion.dart)
 - [smil_timeline_syncbase.dart](file://lib/src/animation/smil/smil_timeline_syncbase.dart)
 - [smil_timeline_runtime.dart](file://lib/src/animation/smil/smil_timeline_runtime.dart)
-- [svg_filters_registry_pipeline_primitives.dart](file://lib/src/animation/svg_filters_registry_pipeline_primitives.dart)
+- [svg_filters_registry_pipeline_primitives_paint.dart](file://lib/src/animation/svg_filters_registry_pipeline_primitives_paint.dart)
+- [svg_filters_registry_pipeline_compositing.dart](file://lib/src/animation/svg_filters_registry_pipeline_compositing.dart)
 - [svg_filters_registry_pipeline.dart](file://lib/src/animation/svg_filters_registry_pipeline.dart)
 - [svg_filters_registry_inputs.dart](file://lib/src/animation/svg_filters_registry_inputs.dart)
+- [svg_filters_types.dart](file://lib/src/animation/svg_filters_types.dart)
 
 The enhanced dependency graph shows improved separation of concerns with better modularization, enhanced SMIL and filter system integration, CSS variables cascade resolver integration, comprehensive recursion safety measures, and minimal circular dependencies for optimal maintainability and testability.
 
@@ -836,6 +929,7 @@ The enhanced implementation includes several advanced performance optimizations:
 - **SMIL Timeline Optimization**: Efficient dependency graph building and event propagation
 - **Structural Pseudo-Class Caching**: Matching results cached based on element position and type
 - **Expression Validation Caching**: Validation results cached to avoid repeated checks
+- **Paint Pass Optimization**: Specialized paint passes reduce unnecessary filter operations
 
 ## Troubleshooting Guide
 
@@ -873,6 +967,10 @@ The enhanced implementation includes several advanced performance optimizations:
 - **Issue**: Motion animations not synchronizing with timeline events
 - **Solution**: Verify syncbase conditions are properly configured, check event listener registration, and ensure circular dependency detection is not preventing animation activation
 
+#### Advanced Filter System Issues
+- **Issue**: FillPaint/StrokePaint not distinguishing properly
+- **Solution**: Verify paint context is properly established, check paintFill/paintStroke flags are correctly set, ensure paint source passes are created with proper color filters
+
 #### Filter Pipeline Performance Degradation
 - **Issue**: Slow rendering with complex filter chains
 - **Solution**: Simplify filter primitive combinations, reduce named result reuse complexity, and optimize filter input graph structure
@@ -889,6 +987,8 @@ The comprehensive test suite covers edge cases, integration scenarios, structura
 - [css_selectors_combinators_test.dart](file://test/animation/css_selectors_combinators_test.dart)
 - [css_calc_edge_cases_test.dart](file://test/animation/css_calc_edge_cases_test.dart)
 - [css_nth_selectors_test.dart](file://test/animation/css_nth_selectors_test.dart)
+- [filter_advanced_input_graph_test.dart](file://test/animation/filter_advanced_input_graph_test.dart)
+- [filter_input_graph_hardening_test.dart](file://test/animation/filter_input_graph_hardening_test.dart)
 
 ## Conclusion
 The Enhanced CSS Variables and Calculations system provides a robust, standards-compliant implementation that seamlessly integrates with Flutter's SVG rendering pipeline. The system successfully combines CSS custom properties, mathematical expressions, CSS math functions, structural pseudo-classes, and the cascade mechanism while maintaining excellent performance and memory efficiency. The comprehensive testing coverage, enhanced SMIL animation support, advanced filter primitive processing, improved use context inheritance, modern CSS unit support, new CSS variables cascade resolver integration, comprehensive recursion safety with 20-level maximum nesting depth, and enhanced error handling for malformed expressions and unmatched parentheses ensure reliability across diverse SVG use cases and complex styling scenarios. The system's architecture supports future enhancements while maintaining backward compatibility and optimal performance characteristics with robust safety measures built into the core calculation engine.

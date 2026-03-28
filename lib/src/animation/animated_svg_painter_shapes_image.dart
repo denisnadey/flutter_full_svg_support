@@ -754,4 +754,123 @@ extension AnimatedSvgPainterShapesImageExtension on AnimatedSvgPainter {
     }
     return depth;
   }
+
+  /// Computes transform for nested SVG within foreignObject.
+  ///
+  /// When a foreignObject contains an <svg> child with its own viewBox
+  /// and preserveAspectRatio, the coordinate system composition must
+  /// handle all preserveAspectRatio values correctly.
+  Matrix4? _computeForeignObjectNestedSvgTransform(
+    SvgNode foreignObjectNode,
+    SvgNode nestedSvgNode,
+  ) {
+    // Get foreignObject dimensions
+    final foWidth = _getNumber(foreignObjectNode, 'width');
+    final foHeight = _getNumber(foreignObjectNode, 'height');
+    if (foWidth == null || foHeight == null || foWidth <= 0 || foHeight <= 0) {
+      return null;
+    }
+
+    // Get nested SVG viewBox
+    final viewBoxStr = _getString(nestedSvgNode, 'viewBox');
+    final viewBox = _parseViewBox(viewBoxStr);
+    if (viewBox == null || viewBox.width <= 0 || viewBox.height <= 0) {
+      return null;
+    }
+
+    // Get nested SVG preserveAspectRatio
+    final preserveAspectRatio = _getString(
+      nestedSvgNode,
+      'preserveAspectRatio',
+    );
+
+    // Compute the viewport for the nested SVG within foreignObject
+    final nestedX = _getNumber(nestedSvgNode, 'x') ?? 0.0;
+    final nestedY = _getNumber(nestedSvgNode, 'y') ?? 0.0;
+    final nestedWidth = _getNumber(nestedSvgNode, 'width') ?? foWidth;
+    final nestedHeight = _getNumber(nestedSvgNode, 'height') ?? foHeight;
+
+    final viewport = ui.Rect.fromLTWH(
+      nestedX,
+      nestedY,
+      nestedWidth,
+      nestedHeight,
+    );
+
+    // Resolve the layout using preserveAspectRatio
+    final layout = resolveSvgViewportLayout(
+      viewport: viewport,
+      sourceSize: ui.Size(viewBox.width, viewBox.height),
+      preserveAspectRatio: preserveAspectRatio,
+    );
+
+    // Compute transform from viewBox to viewport
+    final scaleX = layout.destinationRect.width / viewBox.width;
+    final scaleY = layout.destinationRect.height / viewBox.height;
+    final translateX = layout.destinationRect.left - viewBox.left * scaleX;
+    final translateY = layout.destinationRect.top - viewBox.top * scaleY;
+
+    return Matrix4.identity()
+      ..translateByDouble(translateX, translateY, 0, 1)
+      ..scaleByDouble(scaleX, scaleY, 1, 1);
+  }
+
+  /// Handles all preserveAspectRatio values for nested SVG.
+  ///
+  /// Supports all 9 alignment values:
+  /// - xMinYMin, xMidYMin, xMaxYMin
+  /// - xMinYMid, xMidYMid, xMaxYMid
+  /// - xMinYMax, xMidYMax, xMaxYMax
+  ///
+  /// And modifiers:
+  /// - meet: scale uniformly to fit, preserving aspect ratio
+  /// - slice: scale uniformly to fill, clipping overflow
+  /// - none: stretch to fill, ignoring aspect ratio
+  _PreserveAspectRatioResult _parsePreserveAspectRatioForNested(
+    String? preserveAspectRatio,
+  ) {
+    if (preserveAspectRatio == null || preserveAspectRatio.trim().isEmpty) {
+      return const _PreserveAspectRatioResult(
+        align: 'xMidYMid',
+        meetOrSlice: 'meet',
+      );
+    }
+
+    final parts = preserveAspectRatio.trim().split(RegExp(r'\s+'));
+    if (parts.isEmpty) {
+      return const _PreserveAspectRatioResult(
+        align: 'xMidYMid',
+        meetOrSlice: 'meet',
+      );
+    }
+
+    final align = parts[0].toLowerCase();
+    if (align == 'none') {
+      return const _PreserveAspectRatioResult(
+        align: 'none',
+        meetOrSlice: 'none',
+      );
+    }
+
+    final meetOrSlice = parts.length > 1 ? parts[1].toLowerCase() : 'meet';
+    return _PreserveAspectRatioResult(
+      align: parts[0], // Keep original case for alignment
+      meetOrSlice: meetOrSlice == 'slice' ? 'slice' : 'meet',
+    );
+  }
+}
+
+/// Result of parsing preserveAspectRatio attribute.
+class _PreserveAspectRatioResult {
+  const _PreserveAspectRatioResult({
+    required this.align,
+    required this.meetOrSlice,
+  });
+
+  final String align;
+  final String meetOrSlice;
+
+  bool get isNone => align == 'none';
+  bool get isMeet => meetOrSlice == 'meet';
+  bool get isSlice => meetOrSlice == 'slice';
 }

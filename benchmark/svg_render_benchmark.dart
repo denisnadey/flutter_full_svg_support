@@ -12,14 +12,17 @@
 /// For JSON output:
 /// flutter test benchmark/svg_render_benchmark.dart --dart-define=JSON_OUTPUT=true
 
-import 'package:flutter_test/flutter_test.dart';
-
 import 'benchmark_config.dart';
 import 'benchmarks/parse_benchmark.dart';
 import 'benchmarks/filter_benchmark.dart';
 import 'benchmarks/animation_benchmark.dart';
 import 'benchmarks/text_benchmark.dart';
 import 'benchmarks/dash_pattern_benchmark.dart';
+import 'benchmarks/filter_chain_benchmark.dart';
+import 'benchmarks/text_render_benchmark.dart';
+import 'benchmarks/animation_render_benchmark.dart';
+import 'benchmarks/combined_worst_case_benchmark.dart';
+import 'benchmarks/memory_benchmark.dart';
 
 /// Benchmark result container.
 class BenchmarkResult {
@@ -171,6 +174,36 @@ void main() {
   print('5. Dash Pattern Benchmarks');
   print('───────────────────────────────────────────────────────────────────');
   results.addAll(runDashPatternBenchmarks());
+  print('');
+
+  print('───────────────────────────────────────────────────────────────────');
+  print('6. Filter Chain Benchmarks');
+  print('───────────────────────────────────────────────────────────────────');
+  results.addAll(runFilterChainBenchmarks());
+  print('');
+
+  print('───────────────────────────────────────────────────────────────────');
+  print('7. Text Render Benchmarks');
+  print('───────────────────────────────────────────────────────────────────');
+  results.addAll(runTextRenderBenchmarks());
+  print('');
+
+  print('───────────────────────────────────────────────────────────────────');
+  print('8. Animation Render Benchmarks');
+  print('───────────────────────────────────────────────────────────────────');
+  results.addAll(runAnimationRenderBenchmarks());
+  print('');
+
+  print('───────────────────────────────────────────────────────────────────');
+  print('9. Combined Worst-Case Benchmarks');
+  print('───────────────────────────────────────────────────────────────────');
+  results.addAll(runCombinedWorstCaseBenchmarks());
+  print('');
+
+  print('───────────────────────────────────────────────────────────────────');
+  print('10. Memory Benchmarks');
+  print('───────────────────────────────────────────────────────────────────');
+  results.addAll(runMemoryBenchmarks());
   print('');
 
   // Summary

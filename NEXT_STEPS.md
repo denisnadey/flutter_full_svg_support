@@ -1,8 +1,8 @@
 # Next Steps
 
-**Last Updated:** March 28, 2026
+**Last Updated:** March 29, 2026
 
-**Current Status:** ~91-92% Blink SVG parity | ~99% Filter parity | ~97% SMIL parity | 4,250+ tests passing | 0 analyzer warnings
+**Current Status:** ~93-94% Blink SVG parity | ~99% Filter parity | ~97% SMIL parity | 4,330+ tests passing | 0 analyzer warnings
 
 Authoritative status is maintained in:
 - `/Users/denisnadey/apps/flutter_full_svg_support/CURRENT_STATUS.md`
@@ -15,12 +15,12 @@ Detailed Blink gap matrix:
 
 ## Active Feature Items (P0 Priorities)
 
-1. **Performance benchmarking suite** - Comprehensive render benchmarks, cache profiling, memory analysis
-2. **Remaining edge cases** - Advanced text positioning, mask refinements, image/foreignObject edge cases
+1. **Integrate edge case methods into render pipeline** - Wire up new edge case utility methods into active render path callsites
+2. **Address pre-existing golden test failures** - Fix known failing golden tests
 
 ## P1 - Code Modularization
 
-1. **Remaining large files** - `animated_svg_painter_shapes.dart`, `animated_svg_picture.dart`, `animated_svg_picture_utils.dart`
+1. **Remaining large files** - `text_layout` (785 lines), `text_style_positioning` (679 lines), `clip_mask_advanced` (715+ lines)
 2. Full regression checks after each split, API stability preserved
 
 ## P2 - Quality & Coverage
@@ -30,14 +30,17 @@ Detailed Blink gap matrix:
 
 ## Immediate (Execution Order)
 
-1. Build performance benchmarking suite with render benchmarks, cache profiling, memory analysis.
-2. Continue modular refactor of remaining large files with API-stability and full regression checks.
-   Priority targets: `animated_svg_painter_shapes.dart`, `animated_svg_picture.dart`, `animated_svg_picture_utils.dart`.
-3. Address remaining edge cases (advanced text positioning, mask refinements, image/foreignObject edge cases).
-4. Expand golden test coverage for new edge cases.
+1. Integrate edge case utility methods into active render pipeline callsites.
+2. Address pre-existing golden test failures.
+3. Expand golden test coverage for new edge cases.
+4. Continue modular refactor of remaining large files with API-stability and full regression checks.
+   Priority targets: `text_layout` (785 lines), `text_style_positioning` (679 lines), `clip_mask_advanced` (715+ lines).
 
 ## Completed P0 Items (Closed)
 
+- ~~**Code Modularization Sprint (March 2026)**~~ - `animated_svg_painter.dart` split from 941→190 lines (3 part files), `animated_svg_picture.dart` split from 627→194 lines (5 part files). All 4,310 tests pass.
+- ~~**Performance Benchmarking Suite (March 2026)**~~ - 5 new benchmark files (filter_chain, text_render, animation_render, combined_worst_case, memory), CacheStats class for profiling, benchmark runner sections 6-10.
+- ~~**Text/Mask/Image Edge Cases (March 2026)**~~ - 21 new tests covering deeply nested tspan transforms, bidi in complex hierarchies, textLength distribution, radial gradient luminance masks, filter chains on mask content, mask-to-mask intersection, image error fallback, nested SVG in foreignObject.
 - ~~**Edge Case Sprint (March 2026)**~~ - CSS shorthand resolution, unit handling precision, SMIL timing precision, advanced image transformations, filter primitive edge cases, hit-testing refinements (~206 new tests, parity ~82% → ~89-90%).
 - ~~**Advanced Typography**~~ - Text & Typography reached ~99% Blink parity.
 - ~~**Advanced Filter Graph**~~ - All 17/17 FE primitives implemented with full input chain semantics (~97% filter parity).

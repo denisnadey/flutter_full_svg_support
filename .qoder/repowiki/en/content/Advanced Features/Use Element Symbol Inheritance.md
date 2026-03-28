@@ -5,6 +5,8 @@
 - [use_symbol_inheritance_test.dart](file://test/animation/use_symbol_inheritance_test.dart)
 - [symbol_animation_test.dart](file://test/animation/symbol_animation_test.dart)
 - [use_symbol_advanced_test.dart](file://test/animation/use_symbol_advanced_test.dart)
+- [foreignobject_css_inheritance_test.dart](file://test/animation/foreignobject_css_inheritance_test.dart)
+- [foreign_object_advanced_test.dart](file://test/animation/foreign_object_advanced_test.dart)
 - [css_cascade.dart](file://lib/src/animation/css_cascade.dart)
 - [css_variables_calc.dart](file://lib/src/animation/css_variables_calc.dart)
 - [animated_svg_painter_use.dart](file://lib/src/animation/animated_svg_painter_use.dart)
@@ -18,6 +20,7 @@
 - [animated_svg_painter_use_constants.dart](file://lib/src/animation/animated_svg_painter_use_constants.dart)
 - [animated_svg_painter_use_context.dart](file://lib/src/animation/animated_svg_painter_use_context.dart)
 - [animated_svg_painter_use_foreign_object.dart](file://lib/src/animation/animated_svg_painter_use_foreign_object.dart)
+- [animated_svg_painter_geometry_foreign_object.dart](file://lib/src/animation/animated_svg_painter_geometry_foreign_object.dart)
 - [css_cascade_specificity.dart](file://lib/src/animation/css_cascade_specificity.dart)
 - [css_cascade_selector_matching.dart](file://lib/src/animation/css_cascade_selector_matching.dart)
 - [css_cascade_resolution.dart](file://lib/src/animation/css_cascade_resolution.dart)
@@ -25,11 +28,12 @@
 
 ## Update Summary
 **Changes Made**
-- Enhanced use element system with new specialized modules for constants, context management, and foreign object handling
-- Improved CSS cascade resolution with better !important declaration handling in use contexts
-- Enhanced selector matching with comprehensive shadow DOM boundary awareness
-- Expanded CSS variable resolution system with proper inheritance tracking through use boundaries
-- Added comprehensive foreign object viewport handling within use contexts
+- Enhanced use element system with new comprehensive CSS inheritance boundary enforcement for ForeignObject elements
+- Introduced sophisticated _UseInheritanceContext class providing advanced property categorization and shadow boundary handling
+- Added comprehensive foreign object viewport handling with clipping and overflow management
+- Implemented advanced inheritance resolution algorithms with proper CSS cascade behavior
+- Enhanced CSS variable resolution system with boundary-aware property inheritance
+- Added specialized foreign object geometry handling with transform propagation and coordinate system management
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -42,24 +46,26 @@
 8. [Comprehensive Symbol Animation Support](#comprehensive-symbol-animation-support)
 9. [CSS Custom Properties Through Use Boundaries](#css-custom-properties-through-use-boundaries)
 10. [Advanced Symbol Resolution](#advanced-symbol-resolution)
-11. [Specialized Module Enhancements](#specialized-module-enhancements)
-12. [Dependency Analysis](#dependency-analysis)
-13. [Performance Considerations](#performance-considerations)
-14. [Troubleshooting Guide](#troubleshooting-guide)
-15. [Conclusion](#conclusion)
+11. [ForeignObject Boundary Enforcement](#foreignobject-boundary-enforcement)
+12. [Specialized Module Enhancements](#specialized-module-enhancements)
+13. [Dependency Analysis](#dependency-analysis)
+14. [Performance Considerations](#performance-considerations)
+15. [Troubleshooting Guide](#troubleshooting-guide)
+16. [Conclusion](#conclusion)
 
 ## Introduction
-This document explains how the Flutter SVG library implements enhanced element symbol inheritance through the `<use>` element and `<symbol>` references with comprehensive animation support. The system now provides advanced symbol resolution, improved inheritance chain handling, and comprehensive symbol animation support that flows through use boundaries. It covers the parsing pipeline, rendering behavior, attribute propagation rules, CSS property inheritance, viewport transformations, recursion limits, animation coordinate inheritance, and hit-testing mechanics with enhanced CSS cascade behavior including class rules, ID rules, element type rules, specificity calculations, and inheritance patterns.
+This document explains how the Flutter SVG library implements enhanced element symbol inheritance through the `<use>` element and `<symbol>` references with comprehensive animation support and advanced CSS inheritance boundary enforcement for ForeignObject elements. The system now provides sophisticated property categorization, shadow boundary handling, and advanced inheritance resolution algorithms that ensure proper CSS cascade behavior across use boundaries while maintaining strict boundary enforcement for ForeignObject elements. It covers the parsing pipeline, rendering behavior, attribute propagation rules, CSS property inheritance, viewport transformations, recursion limits, animation coordinate inheritance, hit-testing mechanics, and comprehensive foreign object support with boundary-aware CSS inheritance.
 
 ## Project Structure
-The relevant implementation spans the animation pipeline, CSS cascade system, SMIL animation support, and extensive testing:
-- Tests validate attribute propagation, symbol scaling, nested use recursion, CSS cascade behavior, hit testing, and comprehensive animation scenarios.
-- The painter handles rendering of `<use>` and `<symbol>` references, applying transforms and clipping with animation coordinate inheritance.
+The relevant implementation spans the animation pipeline, CSS cascade system, SMIL animation support, foreign object handling, and extensive testing:
+- Tests validate attribute propagation, symbol scaling, nested use recursion, CSS cascade behavior, hit testing, foreign object inheritance, and comprehensive animation scenarios.
+- The painter handles rendering of `<use>`, `<symbol>`, and `<foreignObject>` elements with advanced boundary enforcement and inheritance context.
 - The DOM model stores parsed attributes and enables traversal and lookup with enhanced symbol resolution.
 - The parser converts XML into a typed DOM with animatable attributes and SMIL animation support.
-- The CSS cascade system provides comprehensive specificity calculations, inheritance resolution, and shadow DOM boundary respect.
-- Custom properties support enables variables to flow through use boundaries with proper inheritance.
-- SMIL animation parser provides comprehensive animation support including coordinate inheritance for animated elements within symbols.
+- The CSS cascade system provides comprehensive specificity calculations, inheritance resolution, shadow DOM boundary respect, and boundary-aware property inheritance.
+- Custom properties support enables variables to flow through use boundaries with proper inheritance and boundary enforcement.
+- SMIL animation parser provides comprehensive animation support including coordinate inheritance for animated elements within symbols and foreign objects.
+- Foreign object handling provides sophisticated viewport management, clipping, and boundary enforcement for mixed content scenarios.
 
 ```mermaid
 graph TB
@@ -67,6 +73,8 @@ subgraph "Tests"
 T1["use_symbol_inheritance_test.dart"]
 T2["symbol_animation_test.dart"]
 T3["use_symbol_advanced_test.dart"]
+T4["foreignobject_css_inheritance_test.dart"]
+T5["foreign_object_advanced_test.dart"]
 end
 subgraph "CSS System"
 C1["css_cascade.dart"]
@@ -82,6 +90,7 @@ A3["animated_svg_painter_tree.dart"]
 A4["animated_svg_painter_use_constants.dart"]
 A5["animated_svg_painter_use_context.dart"]
 A6["animated_svg_painter_use_foreign_object.dart"]
+A7["animated_svg_painter_geometry_foreign_object.dart"]
 end
 subgraph "Parser"
 P1["svg_parser.dart"]
@@ -95,6 +104,8 @@ end
 T1 --> C1
 T2 --> A1
 T3 --> C1
+T4 --> A7
+T5 --> A7
 C1 --> R1
 C2 --> R1
 A1 --> R1
@@ -103,6 +114,7 @@ A3 --> R1
 A4 --> R1
 A5 --> R1
 A6 --> R1
+A7 --> R1
 P1 --> D1
 P2 --> D1
 D1 --> R1
@@ -113,18 +125,21 @@ R1 --> H1
 - [use_symbol_inheritance_test.dart:1-1202](file://test/animation/use_symbol_inheritance_test.dart#L1-L1202)
 - [symbol_animation_test.dart:1-74](file://test/animation/symbol_animation_test.dart#L1-L74)
 - [use_symbol_advanced_test.dart:1-872](file://test/animation/use_symbol_advanced_test.dart#L1-L872)
+- [foreignobject_css_inheritance_test.dart:1-457](file://test/animation/foreignobject_css_inheritance_test.dart#L1-L457)
+- [foreign_object_advanced_test.dart:1-634](file://test/animation/foreign_object_advanced_test.dart#L1-L634)
 - [css_cascade.dart:1-267](file://lib/src/animation/css_cascade.dart#L1-L267)
 - [css_variables_calc.dart:1-1080](file://lib/src/animation/css_variables_calc.dart#L1-L1080)
 - [smil_parser.dart:1-43](file://lib/src/animation/smil/smil_parser.dart#L1-L43)
-- [animated_svg_painter_use.dart:1-809](file://lib/src/animation/animated_svg_painter_use.dart#L1-L809)
+- [animated_svg_painter_use.dart:1-261](file://lib/src/animation/animated_svg_painter_use.dart#L1-L261)
 - [svg_parser.dart:27-65](file://lib/src/animation/svg_parser.dart#L27-L65)
 - [svg_parser_elements.dart:3-138](file://lib/src/animation/svg_parser_elements.dart#L3-L138)
 - [svg_dom.dart:123-332](file://lib/src/animation/svg_dom.dart#L123-L332)
 - [animated_svg_painter.dart:48-136](file://lib/src/animation/animated_svg_painter.dart#L48-L136)
 - [animated_svg_picture_hit_test_use.dart:1-339](file://lib/src/animation/animated_svg_picture_hit_test_use.dart#L1-L339)
 - [animated_svg_painter_use_constants.dart:1-101](file://lib/src/animation/animated_svg_painter_use_constants.dart#L1-L101)
-- [animated_svg_painter_use_context.dart:1-415](file://lib/src/animation/animated_svg_painter_use_context.dart#L1-L415)
+- [animated_svg_painter_use_context.dart:1-533](file://lib/src/animation/animated_svg_painter_use_context.dart#L1-L533)
 - [animated_svg_painter_use_foreign_object.dart:1-127](file://lib/src/animation/animated_svg_painter_use_foreign_object.dart#L1-L127)
+- [animated_svg_painter_geometry_foreign_object.dart:1-510](file://lib/src/animation/animated_svg_painter_geometry_foreign_object.dart#L1-L510)
 - [css_cascade_specificity.dart:1-74](file://lib/src/animation/css_cascade_specificity.dart#L1-L74)
 - [css_cascade_selector_matching.dart:1-487](file://lib/src/animation/css_cascade_selector_matching.dart#L1-L487)
 - [css_cascade_resolution.dart:1-140](file://lib/src/animation/css_cascade_resolution.dart#L1-L140)
@@ -133,20 +148,22 @@ R1 --> H1
 - [use_symbol_inheritance_test.dart:1-1202](file://test/animation/use_symbol_inheritance_test.dart#L1-L1202)
 - [symbol_animation_test.dart:1-74](file://test/animation/symbol_animation_test.dart#L1-L74)
 - [use_symbol_advanced_test.dart:1-872](file://test/animation/use_symbol_advanced_test.dart#L1-L872)
+- [foreignobject_css_inheritance_test.dart:1-457](file://test/animation/foreignobject_css_inheritance_test.dart#L1-L457)
+- [foreign_object_advanced_test.dart:1-634](file://test/animation/foreign_object_advanced_test.dart#L1-L634)
 - [css_cascade.dart:1-267](file://lib/src/animation/css_cascade.dart#L1-L267)
 - [css_variables_calc.dart:1-1080](file://lib/src/animation/css_variables_calc.dart#L1-L1080)
-- [animated_svg_painter_use.dart:1-809](file://lib/src/animation/animated_svg_painter_use.dart#L1-L809)
+- [animated_svg_painter_use.dart:1-261](file://lib/src/animation/animated_svg_painter_use.dart#L1-L261)
 - [smil_parser.dart:1-43](file://lib/src/animation/smil/smil_parser.dart#L1-L43)
 
 ## Core Components
 - DOM Model: Stores parsed attributes, supports lookup by ID/class, and tracks animation presence with enhanced symbol resolution capabilities.
 - Parser: Converts XML to DOM nodes, infers attribute types, preserves raw values for CSS matching, and extracts SMIL animations.
-- CSS Cascade System: Implements comprehensive specificity calculations, inheritance resolution, shadow DOM boundary respect, and property precedence.
-- SMIL Animation Parser: Extracts and processes SMIL animations including coordinate inheritance for elements within symbols.
-- Painter: Renders the document, applies viewBox transforms, handles `<use>` and `<symbol>` references with inheritance context and animation coordinate inheritance.
+- CSS Cascade System: Implements comprehensive specificity calculations, inheritance resolution, shadow DOM boundary respect, and boundary-aware property inheritance with ForeignObject enforcement.
+- SMIL Animation Parser: Extracts and processes SMIL animations including coordinate inheritance for elements within symbols and foreign objects.
+- Painter: Renders the document, applies viewBox transforms, handles `<use>`, `<symbol>`, and `<foreignObject>` references with inheritance context and animation coordinate inheritance.
 - Hit Test: Performs pointer hit detection across `<use>` chains with recursion limits, pointer-events inheritance, and animation coordinate handling.
-- CSS Variables: Supports custom properties flowing through use boundaries with proper inheritance and variable resolution.
-- Tests: Validate attribute propagation, symbol scaling, nested references, CSS cascade behavior, circular reference protection, animation inheritance, and comprehensive symbol scenarios.
+- CSS Variables: Supports custom properties flowing through use boundaries with proper inheritance and boundary enforcement.
+- Tests: Validate attribute propagation, symbol scaling, nested references, CSS cascade behavior, circular reference protection, animation inheritance, foreign object inheritance, and comprehensive symbol scenarios.
 
 **Section sources**
 - [svg_dom.dart:123-332](file://lib/src/animation/svg_dom.dart#L123-L332)
@@ -156,9 +173,10 @@ R1 --> H1
 - [animated_svg_picture_hit_test_use.dart:8-22](file://lib/src/animation/animated_svg_picture_hit_test_use.dart#L8-L22)
 - [use_symbol_inheritance_test.dart:1-1202](file://test/animation/use_symbol_inheritance_test.dart#L1-L1202)
 - [symbol_animation_test.dart:1-74](file://test/animation/symbol_animation_test.dart#L1-L74)
+- [foreignobject_css_inheritance_test.dart:1-457](file://test/animation/foreignobject_css_inheritance_test.dart#L1-L457)
 
 ## Architecture Overview
-The system parses SVG XML into a typed DOM with SMIL animation support, then renders it using a custom painter with enhanced CSS cascade support. The `<use>` element references another element by ID and inherits CSS properties from the referencing element with comprehensive animation coordinate inheritance. The CSS cascade system provides comprehensive specificity calculations, inheritance resolution, shadow DOM boundary respect, and animation support that flows through use boundaries.
+The system parses SVG XML into a typed DOM with SMIL animation support, then renders it using a custom painter with enhanced CSS cascade support and comprehensive ForeignObject boundary enforcement. The `<use>` element references another element by ID and inherits CSS properties from the referencing element with comprehensive animation coordinate inheritance. The CSS cascade system provides comprehensive specificity calculations, inheritance resolution, shadow DOM boundary respect, animation support that flows through use boundaries, and strict boundary enforcement for ForeignObject elements. The system now includes sophisticated _UseInheritanceContext class that manages property categorization, shadow boundary handling, and advanced inheritance resolution algorithms.
 
 ```mermaid
 sequenceDiagram
@@ -170,6 +188,7 @@ participant CSS as "CssCascadeResolver"
 participant SMILAnim as "SmilAnimation"
 participant Painter as "AnimatedSvgPainter"
 participant UseExt as "_paintUse/_paintSymbolReference"
+participant FOExt as "ForeignObject Extensions"
 Test->>Parser : parse(svgXml)
 Parser->>DOM : create nodes and attributes
 Test->>SMIL : parseAnimations(document)
@@ -177,11 +196,14 @@ SMIL->>SMILAnim : extract SMIL animations
 Test->>CSS : resolveProperty(node, property)
 CSS->>DOM : resolve specificity and inheritance with shadow boundaries
 Test->>Painter : paint(document)
-Painter->>UseExt : traverse use/symbol references with animation context
+Painter->>UseExt : traverse use/symbol references with _UseInheritanceContext
+Painter->>FOExt : handle foreignObject boundary enforcement
 UseExt->>DOM : resolve hrefId and apply transforms
 UseExt->>CSS : resolve inherited properties with cascade
 UseExt->>SMILAnim : apply animation coordinate inheritance
 UseExt-->>Painter : render referenced subtree with animation
+FOExt->>CSS : enforce boundary constraints for foreignObject
+FOExt->>Painter : apply viewport clipping and transforms
 ```
 
 **Diagram sources**
@@ -189,6 +211,7 @@ UseExt-->>Painter : render referenced subtree with animation
 - [smil_parser.dart:21-41](file://lib/src/animation/smil/smil_parser.dart#L21-L41)
 - [css_cascade.dart:295-396](file://lib/src/animation/css_cascade.dart#L295-L396)
 - [animated_svg_painter_use.dart:159-233](file://lib/src/animation/animated_svg_painter_use.dart#L159-L233)
+- [animated_svg_painter_geometry_foreign_object.dart:151-174](file://lib/src/animation/animated_svg_painter_geometry_foreign_object.dart#L151-L174)
 
 ## Detailed Component Analysis
 
@@ -501,7 +524,7 @@ The system resolves CSS rules for referenced elements with comprehensive animati
 - Parent element inherited values for non-inherited properties with animation context
 
 **Section sources**
-- [animated_svg_painter_use_context.dart:33-415](file://lib/src/animation/animated_svg_painter_use_context.dart#L33-L415)
+- [animated_svg_painter_use_context.dart:33-533](file://lib/src/animation/animated_svg_painter_use_context.dart#L33-L533)
 - [animated_svg_painter_tree.dart:27-226](file://lib/src/animation/animated_svg_painter_tree.dart#L27-L226)
 
 ## Comprehensive Symbol Animation Support
@@ -588,6 +611,49 @@ The system prevents ID namespace collisions in symbol references:
 - [animated_svg_painter_use_context.dart:331-335](file://lib/src/animation/animated_svg_painter_use_context.dart#L331-L335)
 - [use_symbol_advanced_test.dart:527-644](file://test/animation/use_symbol_advanced_test.dart#L527-L644)
 
+## ForeignObject Boundary Enforcement
+
+### Comprehensive CSS Inheritance Boundary Enforcement
+The system now provides sophisticated CSS inheritance boundary enforcement specifically designed for ForeignObject elements:
+- Strict separation between SVG and HTML content within ForeignObject boundaries
+- Comprehensive property categorization system distinguishing inheritable vs non-inheritable properties
+- Advanced boundary enforcement algorithms that respect SVG specification requirements
+- Sophisticated transform propagation and coordinate system management
+
+### ForeignObject Property Categorization
+The system implements sophisticated property categorization for ForeignObject boundary enforcement:
+- Typography properties (font-family, font-size, font-weight, line-height, letter-spacing) that inherit into foreign content
+- Text layout properties (text-align, white-space, word-spacing, text-transform) that inherit into foreign content
+- Text decoration properties (text-decoration, text-decoration-line, text-decoration-color) that inherit into foreign content
+- Directionality properties (direction, writing-mode, unicode-bidi) that inherit into foreign content
+- Color properties (CSS color) that inherit into foreign content
+- Visibility and interaction properties (visibility, cursor) that inherit into foreign content
+- SVG-specific properties (fill, stroke, paint-order, vector-effect) that do NOT inherit into foreign content
+- Layout and positioning properties (width, height, margin, padding, border) that do NOT inherit into foreign content
+- Transform properties (transform, transform-origin) that do NOT inherit into foreign content
+- Opacity and compositing properties (opacity, mix-blend-mode, isolation) that do NOT inherit into foreign content
+
+### ForeignObject Viewport Management
+The system provides comprehensive ForeignObject viewport management with boundary enforcement:
+- ForeignObject establishes a new stacking context with transform reset
+- Viewport clipping controlled by overflow property (hidden, visible, scroll treated as hidden)
+- Proper coordinate system management for mixed content scenarios
+- Transform propagation from ancestor elements through ForeignObject boundaries
+- Nested SVG viewport handling within ForeignObject content
+
+### Boundary Enforcement Algorithms
+The system implements advanced boundary enforcement algorithms:
+- Property inheritance validation that checks boundary compliance before inheritance
+- Transform composition that respects ForeignObject coordinate system boundaries
+- CSS rule resolution that enforces boundary constraints for ForeignObject content
+- Animation coordinate inheritance that maintains proper boundary context
+- Hit-testing that respects ForeignObject viewport clipping and boundary constraints
+
+**Section sources**
+- [animated_svg_painter_geometry_foreign_object.dart:49-174](file://lib/src/animation/animated_svg_painter_geometry_foreign_object.dart#L49-L174)
+- [animated_svg_painter_use_foreign_object.dart:1-127](file://lib/src/animation/animated_svg_painter_use_foreign_object.dart#L1-L127)
+- [foreignobject_css_inheritance_test.dart:1-457](file://test/animation/foreignobject_css_inheritance_test.dart#L1-L457)
+
 ## Specialized Module Enhancements
 
 ### Use Constants Module
@@ -604,6 +670,7 @@ The `animated_svg_painter_use_context.dart` module provides enhanced context man
 - Transform composition for nested use elements
 - Scoped ID generation for symbol instance isolation
 - Animation coordinate inheritance support
+- Advanced boundary enforcement integration
 
 ### Foreign Object Handling Module
 The `animated_svg_painter_use_foreign_object.dart` module extends foreign object support:
@@ -611,22 +678,33 @@ The `animated_svg_painter_use_foreign_object.dart` module extends foreign object
 - Nested SVG viewport transforms within foreign objects
 - Foreign object required extensions validation
 - Proper coordinate system management for mixed content
+- Boundary enforcement integration with inheritance context
+
+### Geometry Foreign Object Extension
+The `animated_svg_painter_geometry_foreign_object.dart` module provides sophisticated geometry handling:
+- Comprehensive CSS property categorization for boundary enforcement
+- Advanced transform propagation algorithms
+- ForeignObject viewport clipping and overflow management
+- Coordinate system transformation for mixed content scenarios
+- Boundary-aware property inheritance resolution
 
 **Section sources**
 - [animated_svg_painter_use_constants.dart:1-101](file://lib/src/animation/animated_svg_painter_use_constants.dart#L1-L101)
-- [animated_svg_painter_use_context.dart:1-415](file://lib/src/animation/animated_svg_painter_use_context.dart#L1-L415)
+- [animated_svg_painter_use_context.dart:1-533](file://lib/src/animation/animated_svg_painter_use_context.dart#L1-L533)
 - [animated_svg_painter_use_foreign_object.dart:1-127](file://lib/src/animation/animated_svg_painter_use_foreign_object.dart#L1-L127)
+- [animated_svg_painter_geometry_foreign_object.dart:1-510](file://lib/src/animation/animated_svg_painter_geometry_foreign_object.dart#L1-L510)
 
 ## Dependency Analysis
-- Tests depend on the parser, CSS cascade system, SMIL animation parser, and animation pipeline to validate rendering behavior and comprehensive animation scenarios.
-- The painter depends on the DOM model, CSS cascade resolver, SMIL animation system, and use extension for reference resolution with animation context.
+- Tests depend on the parser, CSS cascade system, SMIL animation parser, animation pipeline, and foreign object handling to validate rendering behavior and comprehensive animation scenarios.
+- The painter depends on the DOM model, CSS cascade resolver, SMIL animation system, use extension, foreign object extension, and use context for reference resolution with animation context.
 - The hit-test extension mirrors the painter's logic for pointer events with use context inheritance and animation coordinate handling.
-- CSS cascade system provides specificity calculations, inheritance resolution, shadow DOM boundary respect, and animation support for all rendering operations.
+- CSS cascade system provides specificity calculations, inheritance resolution, shadow DOM boundary respect, animation support, and boundary enforcement for all rendering operations.
 - SMIL animation parser provides comprehensive animation extraction and processing with coordinate inheritance support.
+- Foreign object system provides boundary enforcement, viewport management, and coordinate transformation for mixed content scenarios.
 
 ```mermaid
 graph LR
-Tests["use_symbol_inheritance_test.dart<br/>symbol_animation_test.dart<br/>use_symbol_advanced_test.dart"] --> Parser["svg_parser.dart"]
+Tests["use_symbol_inheritance_test.dart<br/>symbol_animation_test.dart<br/>use_symbol_advanced_test.dart<br/>foreignobject_css_inheritance_test.dart<br/>foreign_object_advanced_test.dart"] --> Parser["svg_parser.dart"]
 Tests --> SMIL["smil_parser.dart"]
 Tests --> CSS["css_cascade.dart"]
 Tests --> DOM["svg_dom.dart"]
@@ -640,32 +718,38 @@ Painter --> HitExt["animated_svg_picture_hit_test_use.dart"]
 Painter --> UseConst["animated_svg_painter_use_constants.dart"]
 Painter --> UseCtx["animated_svg_painter_use_context.dart"]
 Painter --> FOExt["animated_svg_painter_use_foreign_object.dart"]
+Painter --> GeoFO["animated_svg_painter_geometry_foreign_object.dart"]
 ```
 
 **Diagram sources**
 - [use_symbol_inheritance_test.dart:1-1202](file://test/animation/use_symbol_inheritance_test.dart#L1-L1202)
 - [symbol_animation_test.dart:1-74](file://test/animation/symbol_animation_test.dart#L1-L74)
 - [use_symbol_advanced_test.dart:1-872](file://test/animation/use_symbol_advanced_test.dart#L1-L872)
+- [foreignobject_css_inheritance_test.dart:1-457](file://test/animation/foreignobject_css_inheritance_test.dart#L1-L457)
+- [foreign_object_advanced_test.dart:1-634](file://test/animation/foreign_object_advanced_test.dart#L1-L634)
 - [css_cascade.dart:1-267](file://lib/src/animation/css_cascade.dart#L1-L267)
 - [css_variables_calc.dart:1-1080](file://lib/src/animation/css_variables_calc.dart#L1-L1080)
 - [smil_parser.dart:1-43](file://lib/src/animation/smil/smil_parser.dart#L1-L43)
 - [svg_parser.dart:27-65](file://lib/src/animation/svg_parser.dart#L27-L65)
 - [svg_dom.dart:123-332](file://lib/src/animation/svg_dom.dart#L123-L332)
 - [animated_svg_painter.dart:48-136](file://lib/src/animation/animated_svg_painter.dart#L48-L136)
-- [animated_svg_painter_use.dart:1-809](file://lib/src/animation/animated_svg_painter_use.dart#L1-L809)
-- [animated_svg_painter_tree.dart:1-457](file://lib/src/animation/animated_svg_painter_tree.dart#L1-L457)
+- [animated_svg_painter_use.dart:1-261](file://lib/src/animation/animated_svg_painter_use.dart#L1-L261)
+- [animated_svg_painter_tree.dart:1-739](file://lib/src/animation/animated_svg_painter_tree.dart#L1-L739)
 - [animated_svg_picture_hit_test_use.dart:1-339](file://lib/src/animation/animated_svg_picture_hit_test_use.dart#L1-L339)
 - [animated_svg_painter_use_constants.dart:1-101](file://lib/src/animation/animated_svg_painter_use_constants.dart#L1-L101)
-- [animated_svg_painter_use_context.dart:1-415](file://lib/src/animation/animated_svg_painter_use_context.dart#L1-L415)
+- [animated_svg_painter_use_context.dart:1-533](file://lib/src/animation/animated_svg_painter_use_context.dart#L1-L533)
 - [animated_svg_painter_use_foreign_object.dart:1-127](file://lib/src/animation/animated_svg_painter_use_foreign_object.dart#L1-L127)
+- [animated_svg_painter_geometry_foreign_object.dart:1-510](file://lib/src/animation/animated_svg_painter_geometry_foreign_object.dart#L1-L510)
 
 **Section sources**
 - [use_symbol_inheritance_test.dart:1-1202](file://test/animation/use_symbol_inheritance_test.dart#L1-L1202)
 - [symbol_animation_test.dart:1-74](file://test/animation/symbol_animation_test.dart#L1-L74)
 - [use_symbol_advanced_test.dart:1-872](file://test/animation/use_symbol_advanced_test.dart#L1-L872)
+- [foreignobject_css_inheritance_test.dart:1-457](file://test/animation/foreignobject_css_inheritance_test.dart#L1-L457)
+- [foreign_object_advanced_test.dart:1-634](file://test/animation/foreign_object_advanced_test.dart#L1-L634)
 - [css_cascade.dart:1-267](file://lib/src/animation/css_cascade.dart#L1-L267)
 - [css_variables_calc.dart:1-1080](file://lib/src/animation/css_variables_calc.dart#L1-L1080)
-- [animated_svg_painter_use.dart:1-809](file://lib/src/animation/animated_svg_painter_use.dart#L1-L809)
+- [animated_svg_painter_use.dart:1-261](file://lib/src/animation/animated_svg_painter_use.dart#L1-L261)
 - [animated_svg_picture_hit_test_use.dart:1-339](file://lib/src/animation/animated_svg_picture_hit_test_use.dart#L1-L339)
 - [smil_parser.dart:1-43](file://lib/src/animation/smil/smil_parser.dart#L1-L43)
 
@@ -677,6 +761,7 @@ Painter --> FOExt["animated_svg_painter_use_foreign_object.dart"]
 - Custom property resolution includes iteration limits to prevent infinite recursion with animation coordinate handling.
 - Use inheritance context is managed efficiently to minimize memory overhead with comprehensive animation support.
 - SMIL animation system provides optimized animation processing with coordinate inheritance and transform composition.
+- Foreign object boundary enforcement adds minimal overhead through property categorization and boundary validation algorithms.
 
 ## Troubleshooting Guide
 - If a `<use>` does not render, verify the `href` attribute references an allowed tag and exists in the document with proper symbol resolution.
@@ -688,12 +773,16 @@ Painter --> FOExt["animated_svg_painter_use_foreign_object.dart"]
 - Pointer-events inheritance: ensure use element pointer-events are properly inherited by referenced content with animation context.
 - Animation inheritance issues: verify that animation coordinates are properly inherited through use boundaries with transform composition.
 - SMIL animation problems: check that animation targets are properly resolved within symbol scopes with coordinate context.
+- ForeignObject boundary issues: verify that CSS properties are properly categorized as inheritable vs non-inheritable across ForeignObject boundaries.
+- ForeignObject viewport clipping: ensure overflow property is set correctly (hidden, visible, scroll treated as hidden) for proper clipping behavior.
+- ForeignObject transform propagation: verify that transforms are properly applied to ForeignObject content and nested SVG elements.
 
 **Section sources**
 - [animated_svg_painter_use.dart:159-172](file://lib/src/animation/animated_svg_painter_use.dart#L159-L172)
 - [animated_svg_picture_hit_test_use.dart:9-23](file://lib/src/animation/animated_svg_picture_hit_test_use.dart#L9-L23)
 - [use_symbol_inheritance_test.dart:126-159](file://test/animation/use_symbol_inheritance_test.dart#L126-L159)
 - [symbol_animation_test.dart:7-41](file://test/animation/symbol_animation_test.dart#L7-L41)
+- [foreignobject_css_inheritance_test.dart:1-457](file://test/animation/foreignobject_css_inheritance_test.dart#L1-L457)
 
 ## Conclusion
-The Flutter SVG library implements robust and comprehensive element symbol inheritance by resolving `<use>` references, applying symbol-specific viewport transforms, enforcing strict recursion limits, and providing advanced animation support. The enhanced CSS cascade system provides comprehensive specificity calculations, inheritance resolution, shadow DOM boundary respect, and custom property support that flows through use boundaries with animation context. The system now supports comprehensive symbol animation with coordinate inheritance, transform composition, and proper animation state management. Attribute propagation follows predictable precedence rules with animation support, and both rendering and hit testing mirror these behaviors with proper use context inheritance and animation coordinate handling. The extensive test suite validates correctness across common scenarios, nested references, CSS cascade behavior, edge cases like circular dependencies, custom property resolution, and comprehensive animation inheritance through use boundaries.
+The Flutter SVG library implements robust and comprehensive element symbol inheritance by resolving `<use>` references, applying symbol-specific viewport transforms, enforcing strict recursion limits, and providing advanced animation support. The enhanced CSS cascade system provides comprehensive specificity calculations, inheritance resolution, shadow DOM boundary respect, and custom property support that flows through use boundaries with animation context. The system now includes sophisticated ForeignObject boundary enforcement with comprehensive property categorization, boundary validation algorithms, and advanced inheritance resolution that ensures proper CSS cascade behavior across use boundaries while maintaining strict boundary enforcement for ForeignObject elements. The system supports comprehensive symbol animation with coordinate inheritance, transform composition, and proper animation state management. Attribute propagation follows predictable precedence rules with animation support, and both rendering and hit testing mirror these behaviors with proper use context inheritance and animation coordinate handling. The extensive test suite validates correctness across common scenarios, nested references, CSS cascade behavior, edge cases like circular dependencies, custom property resolution, foreign object inheritance, and comprehensive animation inheritance through use boundaries with boundary enforcement.

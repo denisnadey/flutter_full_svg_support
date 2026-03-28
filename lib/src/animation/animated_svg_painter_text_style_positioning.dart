@@ -637,6 +637,76 @@ extension AnimatedSvgPainterTextStylePositioningExtension
       return accumulated.xOffset;
     }
   }
+
+  /// Builds the bidirectional text context for a text element.
+  ///
+  /// This traverses the element hierarchy and builds a context that tracks
+  /// direction changes at each nesting level.
+  _BidiContext _buildBidiContext(SvgNode node) {
+    // Find root text element to get base direction
+    SvgNode? root = node;
+    while (root != null && root.tagName != 'text') {
+      root = root.parent;
+    }
+
+    final baseDirection = _resolveTextDirection(
+      root != null ? _getInheritedString(root, 'direction') : null,
+    );
+
+    // Build levels from root to current node
+    final levels = <_BidiLevel>[];
+    final pathToNode = <SvgNode>[];
+
+    // Collect path from root to current node
+    SvgNode? current = node;
+    while (current != null && current != root) {
+      pathToNode.insert(0, current);
+      current = current.parent;
+    }
+
+    // Build bidi levels for each element in path
+    for (final element in pathToNode) {
+      final direction = _resolveTextDirection(
+        element.getAttributeValue('direction')?.toString(),
+      );
+      final unicodeBidi = _resolveUnicodeBidi(
+        element.getAttributeValue('unicode-bidi')?.toString(),
+      );
+      final isIsolate = unicodeBidi == 'isolate' ||
+          unicodeBidi == 'isolate-override';
+
+      levels.add(_BidiLevel(
+        direction: direction,
+        unicodeBidi: unicodeBidi,
+        isIsolate: isIsolate,
+      ));
+    }
+
+    return _BidiContext(baseDirection: baseDirection, levels: levels);
+  }
+
+  /// Resolves the effective text direction for a nested element.
+  ///
+  /// Handles the case where parent has direction="rtl" but child has
+  /// LTR content, respecting the Unicode Bidi Algorithm.
+  ui.TextDirection _resolveEffectiveBidiDirection(
+    SvgNode node,
+    _ResolvedTextStyle? parentStyle,
+  ) {
+    // Get explicit direction on this node
+    final explicitDirection = node.getAttributeValue('direction');
+    if (explicitDirection != null) {
+      return _resolveTextDirection(explicitDirection.toString());
+    }
+
+    // Inherit from parent style
+    if (parentStyle != null) {
+      return parentStyle.textDirection;
+    }
+
+    // Fall back to inherited direction
+    return _resolveTextDirection(_getInheritedString(node, 'direction'));
+  }
 }
 
 /// Information about a single ancestor in the baseline calculation chain.
@@ -676,4 +746,60 @@ class _AccumulatedBaselineOffset {
 
   final double yOffset;
   final double xOffset;
+}
+
+/// Handles bidirectional text direction inheritance in complex hierarchies.
+///
+/// When parent text element has direction="rtl" but inner tspan elements
+/// contain LTR content (or vice versa), this class tracks the effective
+/// direction at each nesting level.
+class _BidiContext {
+  const _BidiContext({
+    required this.baseDirection,
+    required this.levels,
+  });
+
+  /// The direction specified on the root text element.
+  final ui.TextDirection baseDirection;
+
+  /// Stack of direction levels for nested elements.
+  /// Each entry represents a tspan's effective direction.
+  final List<_BidiLevel> levels;
+
+  /// Gets the current effective direction at this nesting level.
+  ui.TextDirection get currentDirection =>
+      levels.isEmpty ? baseDirection : levels.last.direction;
+
+  /// Whether current position is a direction boundary (change from parent).
+  bool get isDirectionBoundary {
+    if (levels.isEmpty) return false;
+    if (levels.length == 1) return levels.first.direction != baseDirection;
+    return levels.last.direction != levels[levels.length - 2].direction;
+  }
+
+  /// Creates a new context with an added nesting level.
+  _BidiContext withLevel(_BidiLevel level) {
+    return _BidiContext(
+      baseDirection: baseDirection,
+      levels: [...levels, level],
+    );
+  }
+}
+
+/// A single level in the bidirectional text context.
+class _BidiLevel {
+  const _BidiLevel({
+    required this.direction,
+    required this.unicodeBidi,
+    required this.isIsolate,
+  });
+
+  /// The text direction at this level.
+  final ui.TextDirection direction;
+
+  /// The unicode-bidi property value.
+  final String? unicodeBidi;
+
+  /// Whether this level is isolated from surrounding text.
+  final bool isIsolate;
 }
