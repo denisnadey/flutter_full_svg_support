@@ -1,5 +1,12 @@
 part of 'animated_svg_painter.dart';
 
+/// Maximum recursion depth for nested mask references.
+const int _kMaxMaskPaintingRecursionDepth = 10;
+
+/// Tracks visited mask IDs during a single paint cycle to prevent infinite recursion.
+/// Used when masks reference each other in a cycle (A masks B which masks A).
+Set<String>? _currentPaintingMasksStack;
+
 /// Advanced composition chain support for SVG clip-path and mask.
 ///
 /// Implements proper nesting order per SVG 2 specification:
@@ -25,14 +32,13 @@ extension AnimatedSvgPainterMaskCompositionExtension on AnimatedSvgPainter {
   ///
   /// This method uses Canvas.saveLayer for proper compositing instead of
   /// simple path clipping. It supports:
-  /// - Luminosity masking (mask-type: luminance)
+  /// - Luminosity masking (mask-type: luminance, default per SVG spec)
   /// - Alpha masking (mask-type: alpha)
   /// - Edge feathering via blur filters
   /// - Proper rendering order for subgraph masking
   ///
   /// Returns true if masking was applied (caller should use provided callback).
   /// Returns false if no mask is present (caller should render normally).
-  // ignore: unused_element
   bool _applyAdvancedMask(
     ui.Canvas canvas,
     SvgNode node, {
@@ -49,6 +55,15 @@ extension AnimatedSvgPainterMaskCompositionExtension on AnimatedSvgPainter {
     final maskNode = document.root.findById(maskId);
     if (maskNode == null || maskNode.tagName != 'mask') {
       return false;
+    }
+
+    // Circular reference protection: check if we're already painting this mask
+    final visitedMasks = _currentPaintingMasksStack ??= <String>{};
+    if (visitedMasks.contains(maskId) ||
+        visitedMasks.length >= _kMaxMaskPaintingRecursionDepth) {
+      // Circular reference or max depth reached - paint content without mask
+      paintContent();
+      return true;
     }
 
     // Parse mask type and compute bounds
@@ -70,17 +85,29 @@ extension AnimatedSvgPainterMaskCompositionExtension on AnimatedSvgPainter {
         ? _expandMaskBoundsForFeathering(maskBounds, maskNode)
         : maskBounds;
 
-    // Apply layer-based masking
-    _renderWithMaskComposition(
-      canvas,
-      node: node,
-      maskNode: maskNode,
-      maskType: maskType,
-      maskBounds: effectiveBounds,
-      hasFeathering: hasFeathering,
-      useStack: useStack,
-      paintContent: paintContent,
-    );
+    // Track this mask as being painted (circular reference protection)
+    visitedMasks.add(maskId);
+
+    try {
+      // Apply layer-based masking
+      _renderWithMaskComposition(
+        canvas,
+        node: node,
+        maskNode: maskNode,
+        maskType: maskType,
+        maskBounds: effectiveBounds,
+        hasFeathering: hasFeathering,
+        useStack: useStack,
+        paintContent: paintContent,
+      );
+    } finally {
+      // Remove from visited set when done
+      visitedMasks.remove(maskId);
+      // Clear the stack if it's empty (reset for next paint cycle)
+      if (visitedMasks.isEmpty) {
+        _currentPaintingMasksStack = null;
+      }
+    }
 
     return true;
   }

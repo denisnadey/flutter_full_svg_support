@@ -7,11 +7,37 @@
 /// This test file compares Flutter-rendered SVGs against browser golden
 /// references captured via Puppeteer.
 ///
-/// Run tests:
+/// ## Running Tests
+///
+/// Full test suite (all golden tests):
 ///   flutter test test/golden_comparison/golden_comparison_test.dart
 ///
 /// Run with specific tag:
-///   flutter test test/golden_comparison/golden_comparison_test.dart --tags=golden
+///   flutter test --tags=golden
+///
+/// Exclude golden tests during development:
+///   flutter test --exclude-tags golden
+///
+/// ## Subset Mode (for faster development iteration)
+///
+/// Run only N random test cases:
+///   GOLDEN_SUBSET=3 flutter test test/golden_comparison/golden_comparison_test.dart
+///
+/// Run specific test by name:
+///   flutter test test/golden_comparison/golden_comparison_test.dart --name "dart"
+///
+/// ## Timeouts
+///
+/// Each test has a 30-second timeout. If a test hangs, it will fail fast
+/// rather than blocking indefinitely.
+///
+/// ## Progress Logging
+///
+/// Tests print progress to stdout showing:
+///   - Which test is running (e.g., "[1/12] Testing: dart")
+///   - Time elapsed per test
+///   - Overall progress percentage
+///
 @Tags(['golden'])
 library golden_comparison_test;
 
@@ -25,6 +51,15 @@ import 'package:flutter_svg/src/animation/animated_svg_picture.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../tool/golden_capture/image_compare.dart';
+
+/// Environment variable to run only a subset of tests.
+/// Set GOLDEN_SUBSET=N to run only N test cases.
+final int? _goldenSubset = int.tryParse(
+  Platform.environment['GOLDEN_SUBSET'] ?? '',
+);
+
+/// Timeout for each individual golden test.
+const Timeout _testTimeout = Timeout(Duration(seconds: 30));
 
 /// Viewport dimensions matching browser capture.
 const double kViewportWidth = 800.0;
@@ -77,36 +112,68 @@ final List<TestCase> testCases = [
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  // Determine which test cases to run
+  List<TestCase> activeCases = testCases;
+  if (_goldenSubset != null && _goldenSubset! > 0) {
+    // Shuffle and take subset for faster development iteration
+    final shuffled = List<TestCase>.from(testCases)..shuffle();
+    activeCases = shuffled.take(_goldenSubset!).toList();
+    // ignore: avoid_print
+    print('\n🔧 GOLDEN_SUBSET=$_goldenSubset: Running ${activeCases.length} of ${testCases.length} tests\n');
+  }
+
   group('Golden Comparison Tests', () {
-    for (final (svgPath, name, threshold) in testCases) {
-      testWidgets('Golden: $name matches browser render', (tester) async {
-        // Check if browser golden exists
-        final browserGoldenFile = File('$kBrowserGoldensDir/$name.png');
-        if (!browserGoldenFile.existsSync()) {
+    int testIndex = 0;
+    final totalTests = activeCases.length;
+
+    for (final (svgPath, name, threshold) in activeCases) {
+      testIndex++;
+      final currentIndex = testIndex; // Capture for closure
+
+      testWidgets(
+        'Golden: $name matches browser render',
+        (tester) async {
+          final stopwatch = Stopwatch()..start();
           // ignore: avoid_print
-          print('⚠️  Skipping $name: browser golden not found');
-          return;
-        }
-
-        // Read SVG
-        final svgFile = File(svgPath);
-        if (!svgFile.existsSync()) {
+          print('\n[$currentIndex/$totalTests] 🧪 Testing: $name');
           // ignore: avoid_print
-          print('⚠️  Skipping $name: SVG file not found at $svgPath');
-          return;
-        }
-        final svgString = svgFile.readAsStringSync();
+          print('    SVG: $svgPath');
+          // Check if browser golden exists
+          final browserGoldenFile = File('$kBrowserGoldensDir/$name.png');
+          if (!browserGoldenFile.existsSync()) {
+            // ignore: avoid_print
+            print('    ⚠️  Skipping: browser golden not found');
+            return;
+          }
+          // ignore: avoid_print
+          print('    ✓ Browser golden found');
 
-        // Set viewport
-        tester.view.physicalSize = const Size(kViewportWidth, kViewportHeight);
-        tester.view.devicePixelRatio = 1.0;
+          // Read SVG
+          final svgFile = File(svgPath);
+          if (!svgFile.existsSync()) {
+            // ignore: avoid_print
+            print('    ⚠️  Skipping: SVG file not found');
+            return;
+          }
+          final svgString = svgFile.readAsStringSync();
+          // ignore: avoid_print
+          print('    ✓ SVG loaded (${svgString.length} bytes)');
 
-        try {
-          // Create a GlobalKey for the RepaintBoundary
-          final repaintKey = GlobalKey();
+          // Set viewport
+          tester.view.physicalSize = const Size(kViewportWidth, kViewportHeight);
+          tester.view.devicePixelRatio = 1.0;
+          // ignore: avoid_print
+          print('    ✓ Viewport set to ${kViewportWidth.toInt()}x${kViewportHeight.toInt()}');
 
-          // Build and render widget
-          await tester.pumpWidget(
+          try {
+            // Create a GlobalKey for the RepaintBoundary
+            final repaintKey = GlobalKey();
+
+            // ignore: avoid_print
+            print('    ⏳ Building widget...');
+
+            // Build and render widget
+            await tester.pumpWidget(
             MaterialApp(
               debugShowCheckedModeBanner: false,
               home: Scaffold(
@@ -129,14 +196,21 @@ void main() {
             ),
           );
 
+          // ignore: avoid_print
+          print('    ✓ Widget built');
+
           // Wait for rendering
           await tester.pump();
           await tester.pump(const Duration(milliseconds: 100));
 
           // Additional pump for font loading
           await tester.pump(const Duration(milliseconds: 200));
+          // ignore: avoid_print
+          print('    ✓ Render pumped');
 
-          // Capture Flutter render
+          // Capture Flutter render with timeout
+          // ignore: avoid_print
+          print('    ⏳ Capturing Flutter render...');
           final flutterPng = await tester.runAsync<Uint8List?>(() async {
             final boundary =
                 repaintKey.currentContext?.findRenderObject()
@@ -154,35 +228,62 @@ void main() {
           if (flutterPng == null) {
             fail('Failed to capture $name - could not get PNG bytes');
           }
+          // ignore: avoid_print
+          print('    ✓ Flutter render captured (${flutterPng.length} bytes)');
 
-          // Save Flutter render
-          final flutterFile = File('$kFlutterGoldensDir/$name.png');
-          await flutterFile.parent.create(recursive: true);
-          await flutterFile.writeAsBytes(flutterPng);
+          // Save Flutter render (wrap in runAsync to avoid blocking)
+          // ignore: avoid_print
+          print('    ⏳ Saving Flutter golden...');
+          await tester.runAsync(() async {
+            final flutterFile = File('$kFlutterGoldensDir/$name.png');
+            await flutterFile.parent.create(recursive: true);
+            await flutterFile.writeAsBytes(flutterPng);
+          });
+          // ignore: avoid_print
+          print('    ✓ Flutter golden saved');
 
-          // Compare
+          // Compare (wrap in runAsync to avoid blocking)
+          // ignore: avoid_print
+          print('    ⏳ Comparing images...');
           final browserPng = browserGoldenFile.readAsBytesSync();
-          final result = await compareImages(
+          final result = await tester.runAsync(() => compareImages(
             imageA: Uint8List.fromList(flutterPng),
             imageB: Uint8List.fromList(browserPng),
             perPixelThreshold: 0.05,
             generateDiff: true,
-          );
+          ));
 
-          // Save diff
+          if (result == null) {
+            fail('Failed to compare images for $name');
+          }
+          // ignore: avoid_print
+          print('    ✓ Comparison complete');
+
+          // Save diff (wrap in runAsync to avoid blocking)
           if (result.diffImage != null) {
-            final diffFile = File('$kDiffOutputDir/$name.png');
-            await diffFile.parent.create(recursive: true);
-            await diffFile.writeAsBytes(result.diffImage!);
+            await tester.runAsync(() async {
+              final diffFile = File('$kDiffOutputDir/$name.png');
+              await diffFile.parent.create(recursive: true);
+              await diffFile.writeAsBytes(result.diffImage!);
+            });
           }
 
           // Report
+          stopwatch.stop();
           final percentage = (result.similarity * 100).toStringAsFixed(1);
+          final thresholdPct = (threshold * 100).toStringAsFixed(0);
+          final elapsed = stopwatch.elapsedMilliseconds;
+          final passed = result.similarity >= threshold;
+          final statusIcon = passed ? '✅' : '❌';
+
           // ignore: avoid_print
-          print(
-            '$name: $percentage% similar '
-            '(${result.differentPixels}/${result.totalPixels} different pixels)',
-          );
+          print('    $statusIcon Result: $percentage% similar (threshold: $thresholdPct%)');
+          // ignore: avoid_print
+          print('    📊 ${result.differentPixels}/${result.totalPixels} different pixels');
+          // ignore: avoid_print
+          print('    ⏱️  Completed in ${elapsed}ms');
+          // ignore: avoid_print
+          print('    📁 Diff saved to: $kDiffOutputDir/$name.png');
 
           expect(
             result.similarity,
@@ -196,7 +297,9 @@ void main() {
           tester.view.resetPhysicalSize();
           tester.view.resetDevicePixelRatio();
         }
-      });
+      },
+        timeout: _testTimeout,
+      );
     }
   });
 

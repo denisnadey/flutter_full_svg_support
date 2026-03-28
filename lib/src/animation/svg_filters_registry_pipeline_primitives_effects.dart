@@ -181,14 +181,24 @@ extension SvgFiltersPipelinePrimitiveEffectsExtension on SvgFilters {
       sourceAlpha: sourceAlpha,
     );
 
-    final colorFilter = lighting.colorFilter();
-    if (colorFilter == null) {
-      // No light source or zero intensity - pass through input
+    // If no light source, pass through unchanged
+    if (lighting.lightSource == null) {
       return input;
     }
 
+    // Create specialized paint passes for per-pixel lighting computation
     return input
-        .map((pass) => pass.copyWith(colorFilter: colorFilter))
+        .map(
+          (pass) => SvgDiffuseLightingPaintPass(
+            lightingFilter: lighting,
+            imageFilter: pass.imageFilter,
+            colorFilter: pass.colorFilter,
+            blendMode: pass.blendMode,
+            offset: pass.offset,
+            paintFill: pass.paintFill,
+            paintStroke: pass.paintStroke,
+          ),
+        )
         .toList(growable: false);
   }
 
@@ -207,14 +217,24 @@ extension SvgFiltersPipelinePrimitiveEffectsExtension on SvgFilters {
       sourceAlpha: sourceAlpha,
     );
 
-    final colorFilter = lighting.colorFilter();
-    if (colorFilter == null) {
-      // No light source or zero intensity - pass through input
+    // If no light source, pass through unchanged
+    if (lighting.lightSource == null) {
       return input;
     }
 
+    // Create specialized paint passes for per-pixel lighting computation
     return input
-        .map((pass) => pass.copyWith(colorFilter: colorFilter))
+        .map(
+          (pass) => SvgSpecularLightingPaintPass(
+            lightingFilter: lighting,
+            imageFilter: pass.imageFilter,
+            colorFilter: pass.colorFilter,
+            blendMode: pass.blendMode,
+            offset: pass.offset,
+            paintFill: pass.paintFill,
+            paintStroke: pass.paintStroke,
+          ),
+        )
         .toList(growable: false);
   }
 

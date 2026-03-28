@@ -195,3 +195,153 @@ class SvgSpecularLightingFilter extends SvgFilter {
     return ui.ColorFilter.mode(effectiveColor, ui.BlendMode.srcIn);
   }
 }
+
+/// Paint pass for feDiffuseLighting that requires pixel-level processing.
+///
+/// Implements full Blink-style diffuse lighting with:
+/// - Per-pixel surface normal computation from bump map
+/// - Light direction calculation based on light source type
+/// - Lambertian diffuse shading model
+class SvgDiffuseLightingPaintPass extends SvgFilterPaintPass {
+  const SvgDiffuseLightingPaintPass({
+    required this.lightingFilter,
+    super.imageFilter,
+    super.colorFilter,
+    super.blendMode,
+    super.offset,
+    super.paintFill,
+    super.paintStroke,
+  });
+
+  /// The diffuse lighting filter configuration.
+  final SvgDiffuseLightingFilter lightingFilter;
+
+  /// Get the light source from the filter.
+  SvgLightSource? get lightSource => lightingFilter.lightSource;
+
+  /// Get the surface scale.
+  double get surfaceScale => lightingFilter.surfaceScale;
+
+  /// Get the diffuse constant.
+  double get diffuseConstant => lightingFilter.diffuseConstant;
+
+  /// Get the lighting color.
+  ui.Color get lightingColor => lightingFilter.lightingColor;
+
+  /// Get kernel unit length X.
+  double? get kernelUnitLengthX => lightingFilter.kernelUnitLengthX;
+
+  /// Get kernel unit length Y.
+  double? get kernelUnitLengthY => lightingFilter.kernelUnitLengthY;
+
+  /// Create a LightingProcessor for this filter.
+  LightingProcessor? createProcessor() {
+    final source = lightSource;
+    if (source == null) return null;
+
+    return LightingProcessor(
+      surfaceScale: surfaceScale,
+      lightSource: source,
+      lightingColor: lightingColor,
+      kernelUnitLengthX: kernelUnitLengthX,
+      kernelUnitLengthY: kernelUnitLengthY,
+    );
+  }
+
+  @override
+  SvgFilterPaintPass copyWith({
+    ui.ImageFilter? imageFilter,
+    ui.ColorFilter? colorFilter,
+    ui.BlendMode? blendMode,
+    ui.Offset? offset,
+    bool? paintFill,
+    bool? paintStroke,
+  }) {
+    return SvgDiffuseLightingPaintPass(
+      lightingFilter: lightingFilter,
+      imageFilter: imageFilter ?? this.imageFilter,
+      colorFilter: colorFilter ?? this.colorFilter,
+      blendMode: blendMode ?? this.blendMode,
+      offset: offset ?? this.offset,
+      paintFill: paintFill ?? this.paintFill,
+      paintStroke: paintStroke ?? this.paintStroke,
+    );
+  }
+}
+
+/// Paint pass for feSpecularLighting that requires pixel-level processing.
+///
+/// Implements full Blink-style specular lighting with:
+/// - Per-pixel surface normal computation from bump map
+/// - Light direction calculation based on light source type
+/// - Blinn-Phong specular shading model
+/// - Alpha output equals max(r, g, b)
+class SvgSpecularLightingPaintPass extends SvgFilterPaintPass {
+  const SvgSpecularLightingPaintPass({
+    required this.lightingFilter,
+    super.imageFilter,
+    super.colorFilter,
+    super.blendMode,
+    super.offset,
+    super.paintFill,
+    super.paintStroke,
+  });
+
+  /// The specular lighting filter configuration.
+  final SvgSpecularLightingFilter lightingFilter;
+
+  /// Get the light source from the filter.
+  SvgLightSource? get lightSource => lightingFilter.lightSource;
+
+  /// Get the surface scale.
+  double get surfaceScale => lightingFilter.surfaceScale;
+
+  /// Get the specular constant.
+  double get specularConstant => lightingFilter.specularConstant;
+
+  /// Get the specular exponent.
+  double get specularExponent => lightingFilter.specularExponent;
+
+  /// Get the lighting color.
+  ui.Color get lightingColor => lightingFilter.lightingColor;
+
+  /// Get kernel unit length X.
+  double? get kernelUnitLengthX => lightingFilter.kernelUnitLengthX;
+
+  /// Get kernel unit length Y.
+  double? get kernelUnitLengthY => lightingFilter.kernelUnitLengthY;
+
+  /// Create a LightingProcessor for this filter.
+  LightingProcessor? createProcessor() {
+    final source = lightSource;
+    if (source == null) return null;
+
+    return LightingProcessor(
+      surfaceScale: surfaceScale,
+      lightSource: source,
+      lightingColor: lightingColor,
+      kernelUnitLengthX: kernelUnitLengthX,
+      kernelUnitLengthY: kernelUnitLengthY,
+    );
+  }
+
+  @override
+  SvgFilterPaintPass copyWith({
+    ui.ImageFilter? imageFilter,
+    ui.ColorFilter? colorFilter,
+    ui.BlendMode? blendMode,
+    ui.Offset? offset,
+    bool? paintFill,
+    bool? paintStroke,
+  }) {
+    return SvgSpecularLightingPaintPass(
+      lightingFilter: lightingFilter,
+      imageFilter: imageFilter ?? this.imageFilter,
+      colorFilter: colorFilter ?? this.colorFilter,
+      blendMode: blendMode ?? this.blendMode,
+      offset: offset ?? this.offset,
+      paintFill: paintFill ?? this.paintFill,
+      paintStroke: paintStroke ?? this.paintStroke,
+    );
+  }
+}

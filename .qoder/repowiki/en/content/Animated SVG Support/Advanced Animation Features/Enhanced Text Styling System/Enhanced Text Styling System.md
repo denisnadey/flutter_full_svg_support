@@ -47,27 +47,23 @@
 
 ## Update Summary
 **Changes Made**
-- **NEW**: Added comprehensive SVG Font Registry System with @font-face support, embedded font parsing, and advanced CSS font-face rule extraction
-- **NEW**: Implemented SvgFontRegistry class with 401 lines of functionality for parsing @font-face CSS rules, decoding base64 font data, and registering fonts with Flutter
-- **NEW**: Enhanced text styling now supports embedded fonts with improved font-family resolution that detects registered fonts
-- **NEW**: Added comprehensive error handling for font formats and external URLs in the font registry system
-- **NEW**: Integrated font registration lifecycle with AnimatedSvgPicture widget for automatic font loading
-- **NEW**: Added comprehensive testing for font registry functionality including error handling and lifecycle management
-- Enhanced text-decoration-style mapping with comprehensive style support (solid, double, dotted, dashed, wavy)
-- Implemented advanced text-shadow parsing with multiple shadows and color format support (named colors, hex, rgb/rgba)
-- Added font-variation-settings parsing for multiple axes with four-character axis codes
-- Enhanced font-family fallback chain parsing with comprehensive quote handling and whitespace normalization
-- Implemented stroke-only paragraph builder with paint-order processing for precise rendering control
-- Integrated extensive code quality improvements with better formatting and consistency across text styling modules
-- Added comprehensive emphasis marks support with dot, circle, double-circle, triangle, and sesame marks
-- Enhanced per-character hit-testing with grapheme cluster segmentation for precise character selection
-- Implemented advanced baseline reference calculation with comprehensive writing mode support
-- Added comprehensive font variant properties including caps, numeric, ligatures, and position variants
-- Enhanced text rendering pipeline with improved paint order processing and stroke handling
+- **NEW**: Enhanced SVG Font Registry System with comprehensive SvgFontRegistry class (401 lines) for @font-face support, embedded font parsing, and advanced CSS font-face rule extraction
+- **NEW**: Implemented comprehensive font registration lifecycle with AnimatedSvgPicture widget integration for automatic font loading
+- **NEW**: Enhanced font-family fallback parsing with robust quote handling, HTML entity decoding, and platform-specific generic family mapping
+- **NEW**: Added sophisticated ligature feature compatibility system with cache key integration for proper glyph formation across tspan boundaries
+- **NEW**: Enhanced font variation settings parsing with four-character OpenType axis code support and comprehensive feature hash key generation
+- **NEW**: Added extensive testing coverage for font registry functionality, error handling, lifecycle management, and comprehensive font feature compatibility
+- **NEW**: Enhanced text-decoration-style mapping with comprehensive style support (solid, double, dotted, dashed, wavy)
+- **NEW**: Implemented advanced text-shadow parsing with multiple shadows and color format support (named colors, hex, rgb/rgba)
+- **NEW**: Enhanced font-family fallback chain parsing with comprehensive quote handling and whitespace normalization
+- **NEW**: Implemented stroke-only paragraph builder with paint-order processing for precise rendering control
+- **NEW**: Added comprehensive emphasis marks support with dot, circle, double-circle, triangle, and sesame marks
+- **NEW**: Enhanced per-character hit-testing with grapheme cluster segmentation for precise character selection
+- **NEW**: Implemented advanced baseline reference calculation with comprehensive writing mode support
+- **NEW**: Added comprehensive font variant properties including caps, numeric, ligatures, and position variants
+- **NEW**: Enhanced text rendering pipeline with improved paint order processing and stroke handling
 - **NEW**: Added comprehensive hanging punctuation support with first/last/force-end/allow-end modes
 - **NEW**: Enhanced baseline calculation system with recursive offset accumulation through 5+ nesting levels
-- **NEW**: Implemented sophisticated ligature compatibility across tspan boundaries
-- **NEW**: Added comprehensive font feature hash key generation for cache optimization
 - **NEW**: Enhanced CSS text styling capabilities with 53+ properties including advanced font variants, text justification, and modern CSS features
 
 ## Table of Contents

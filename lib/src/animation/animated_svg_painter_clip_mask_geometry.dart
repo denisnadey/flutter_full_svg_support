@@ -6,7 +6,7 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
   /// Handles various SVG elements inside clipPath:
   /// - Container elements: clipPath, mask, g, svg, symbol, switch
   /// - Shape elements: rect, circle, ellipse, polygon, polyline, path, line
-  /// - Text elements: text, tspan (converted to bounding rectangle)
+  /// - Text elements: text, tspan (converted to glyph-approximate paths)
   /// - Reference elements: use (resolves referenced element)
   /// - Image elements: image (uses bounding rectangle)
   ///
@@ -81,11 +81,13 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
         return;
       case 'text':
       case 'tspan':
-        // Text as clip child: use text bounding box as clip region
+        // Text as clip child: use glyph-approximate path as clip region
         // Per SVG spec, text within clipPath uses glyph outlines.
-        // We approximate this with the text's bounding rectangle.
+        // We approximate this with character-level paths.
         final textPath = _buildTextClipPath(node);
         if (textPath != null) {
+          // Apply clip-rule to text path
+          _applyClipRuleToPath(textPath, node);
           target.addPath(textPath.transform(matrix.storage), ui.Offset.zero);
         }
         return;
@@ -94,6 +96,7 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
         // Per SVG spec, line contributes its geometry to clip region
         final linePath = _buildGeometryPath(node);
         if (linePath != null) {
+          _applyClipRuleToPath(linePath, node);
           target.addPath(linePath.transform(matrix.storage), ui.Offset.zero);
         }
         return;
@@ -102,6 +105,7 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
         // Per SVG spec, image contributes its bounding rectangle to clip region
         final imagePath = _buildImageClipPath(node);
         if (imagePath != null) {
+          _applyClipRuleToPath(imagePath, node);
           target.addPath(imagePath.transform(matrix.storage), ui.Offset.zero);
         }
         return;
@@ -110,7 +114,25 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
         if (path == null) {
           return;
         }
+        // Apply clip-rule to shape paths
+        _applyClipRuleToPath(path, node);
         target.addPath(path.transform(matrix.storage), ui.Offset.zero);
+    }
+  }
+
+  /// Applies the clip-rule attribute to a path.
+  ///
+  /// Per SVG spec, clip-rule determines how the interior of the clip region
+  /// is determined:
+  /// - nonzero (default): non-zero winding rule
+  /// - evenodd: even-odd rule
+  void _applyClipRuleToPath(ui.Path path, SvgNode node) {
+    final clipRule = _getInheritedString(node, 'clip-rule')?.toLowerCase();
+    if (clipRule == 'evenodd') {
+      path.fillType = ui.PathFillType.evenOdd;
+    } else {
+      // Default is nonzero
+      path.fillType = ui.PathFillType.nonZero;
     }
   }
 
@@ -213,7 +235,7 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
   ///
   /// Per SVG spec, text within a clipPath should be converted to glyph outlines.
   /// Since Flutter doesn't provide direct access to font glyph paths, we
-  /// approximate using the text's bounding rectangle. For more precise clipping,
+  /// approximate using per-character bounding rectangles. For more precise clipping,
   /// glyph metrics would need to be parsed from font data.
   ///
   /// Handles:
@@ -221,21 +243,15 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
   /// - Nested tspan elements with relative positioning
   /// - text-anchor alignment (start, middle, end)
   /// - Font metrics estimation
+  /// - Per-character positioning (x, y, dx, dy lists)
   ui.Path? _buildTextClipPath(SvgNode textNode) {
     final bounds = _computeTextClipBounds(textNode);
     if (bounds == null) {
       return null;
     }
     // Create a path from text bounds
-    final path = ui.Path()..addRect(bounds);
-
-    // Apply clip-rule if specified
-    final clipRule = _getInheritedString(textNode, 'clip-rule')?.toLowerCase();
-    if (clipRule == 'evenodd') {
-      path.fillType = ui.PathFillType.evenOdd;
-    }
-
-    return path;
+    // Note: clip-rule is applied by the caller (_appendClipGeometry)
+    return ui.Path()..addRect(bounds);
   }
 
   /// Computes text bounds for clip path geometry.

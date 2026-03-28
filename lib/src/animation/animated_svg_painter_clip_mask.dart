@@ -40,6 +40,14 @@ extension AnimatedSvgPainterClipMaskExtension on AnimatedSvgPainter {
     canvas.clipPath(clipPath, doAntiAlias: true);
   }
 
+  /// Applies mask to an element using layer-based compositing.
+  ///
+  /// Per SVG spec, masks support two modes:
+  /// - **luminance** (default): Uses RGB luminance (0.2126*R + 0.7152*G + 0.0722*B) * A
+  /// - **alpha**: Uses only the alpha channel
+  ///
+  /// This method prepares the mask layer for proper compositing. The actual
+  /// mask application happens via saveLayer with proper blend modes.
   void _applyMask(
     ui.Canvas canvas,
     SvgNode node, {
@@ -57,6 +65,8 @@ extension AnimatedSvgPainterClipMaskExtension on AnimatedSvgPainter {
       return;
     }
 
+    // For basic path-based clipping fallback, build the geometry mask
+    // This provides geometric clipping for the mask region
     final maskPath = _buildMaskPathForNode(
       maskedNode: node,
       maskNode: maskNode,
@@ -66,6 +76,9 @@ extension AnimatedSvgPainterClipMaskExtension on AnimatedSvgPainter {
       return;
     }
 
+    // Apply geometric mask region clipping
+    // Note: Full alpha/luminance masking requires layer-based composition
+    // which is handled at the group/element level for proper compositing
     canvas.clipPath(maskPath, doAntiAlias: true);
   }
 
@@ -142,6 +155,11 @@ extension AnimatedSvgPainterClipMaskExtension on AnimatedSvgPainter {
       return _computeGroupBoundsWithStroke(node);
     }
 
+    // For use elements, resolve the referenced element and compute bounds
+    if (node.tagName == 'use') {
+      return _computeUseBoundsWithStroke(node);
+    }
+
     final baseBounds = _computeNodeLocalBounds(node);
     if (baseBounds == null) return null;
 
@@ -170,6 +188,33 @@ extension AnimatedSvgPainterClipMaskExtension on AnimatedSvgPainter {
       }
     }
     return combinedBounds;
+  }
+
+  /// Computes bounds for a use element by resolving the referenced element
+  /// and applying the use element's x/y offset.
+  ui.Rect? _computeUseBoundsWithStroke(SvgNode useNode) {
+    // Extract href to find referenced element
+    final href = useNode.getAttributeValue('href')?.toString() ??
+        useNode.getAttributeValue('xlink:href')?.toString();
+    if (href == null || href.isEmpty) return null;
+
+    // Extract ID from href (remove leading #)
+    final hrefId = href.startsWith('#') ? href.substring(1) : href;
+    if (hrefId.isEmpty) return null;
+
+    // Find the referenced element
+    final referencedNode = document.root.findById(hrefId);
+    if (referencedNode == null) return null;
+
+    // Compute bounds of the referenced element
+    final refBounds = _computeNodeLocalBoundsWithStroke(referencedNode);
+    if (refBounds == null) return null;
+
+    // Apply the use element's x/y offset
+    final x = _getNumber(useNode, 'x') ?? 0.0;
+    final y = _getNumber(useNode, 'y') ?? 0.0;
+
+    return refBounds.translate(x, y);
   }
 
   /// Computes mask bounds for text elements including stroke, decorations,

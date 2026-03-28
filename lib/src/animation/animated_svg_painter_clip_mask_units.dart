@@ -50,14 +50,12 @@ extension AnimatedSvgPainterClipMaskUnitsExtension on AnimatedSvgPainter {
         targetBounds.height.abs() < _kMinBoundingBoxDimension) {
       return null;
     }
-    final x = _parseObjectBoundingBoxValue(maskNode.getAttributeValue('x'));
-    final y = _parseObjectBoundingBoxValue(maskNode.getAttributeValue('y'));
-    final width = _parseObjectBoundingBoxValue(
-      maskNode.getAttributeValue('width'),
-    );
-    final height = _parseObjectBoundingBoxValue(
-      maskNode.getAttributeValue('height'),
-    );
+    // Use raw attribute values to detect percentages since the parser
+    // strips the '%' suffix from numeric attributes.
+    final x = _parseMaskRegionBoundingBoxValue(maskNode, 'x');
+    final y = _parseMaskRegionBoundingBoxValue(maskNode, 'y');
+    final width = _parseMaskRegionBoundingBoxValue(maskNode, 'width');
+    final height = _parseMaskRegionBoundingBoxValue(maskNode, 'height');
 
     // Default: -10% for x/y, 120% for width/height (10% extension per side)
     final resolvedX = x ?? -_kDefaultMaskExtension;
@@ -172,27 +170,6 @@ extension AnimatedSvgPainterClipMaskUnitsExtension on AnimatedSvgPainter {
       return null;
     }
     return ui.Rect.fromLTWH(0, 0, width, height);
-  }
-
-  double? _parseObjectBoundingBoxValue(Object? rawValue) {
-    if (rawValue == null) {
-      return null;
-    }
-    if (rawValue is num) {
-      return rawValue.toDouble();
-    }
-    final raw = rawValue.toString().trim();
-    if (raw.isEmpty) {
-      return null;
-    }
-    if (raw.endsWith('%')) {
-      final percent = double.tryParse(raw.substring(0, raw.length - 1));
-      if (percent == null) {
-        return null;
-      }
-      return percent / 100.0;
-    }
-    return double.tryParse(raw);
   }
 
   /// Computes the transform matrix for clipPathUnits="objectBoundingBox".

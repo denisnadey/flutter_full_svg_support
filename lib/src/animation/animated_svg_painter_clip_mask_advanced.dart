@@ -1,8 +1,10 @@
 part of 'animated_svg_painter.dart';
 
-/// Mask type for SVG masks.
-/// - alpha: mask opacity from alpha channel (default)
-/// - luminance: mask opacity from luminance (0.2126*R + 0.7152*G + 0.0722*B) * A
+/// Mask type for SVG masks per SVG 2 specification.
+/// - **luminance** (default per SVG spec): mask opacity from luminance formula:
+///   `(0.2126*R + 0.7152*G + 0.0722*B) * A`
+///   White = fully visible, Black = fully hidden, Gray = partially visible
+/// - **alpha**: mask opacity from alpha channel only, ignoring color values
 enum _SvgMaskType { alpha, luminance }
 
 /// Luminance coefficients per ITU-R BT.709 / sRGB.
@@ -61,8 +63,9 @@ extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
       if (normalized == 'alpha') return _SvgMaskType.alpha;
     }
 
-    // Default to alpha masking
-    return _SvgMaskType.alpha;
+    // Default to luminance masking per SVG 2 specification
+    // SVG 2: "The initial value is luminance."
+    return _SvgMaskType.luminance;
   }
 
   /// Creates paint for luminance mask with proper color matrix.
@@ -134,15 +137,13 @@ extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
       return null;
     }
 
-    // Parse mask region attributes with defaults per SVG spec
-    final x = _parseObjectBoundingBoxValue(maskNode.getAttributeValue('x'));
-    final y = _parseObjectBoundingBoxValue(maskNode.getAttributeValue('y'));
-    final width = _parseObjectBoundingBoxValue(
-      maskNode.getAttributeValue('width'),
-    );
-    final height = _parseObjectBoundingBoxValue(
-      maskNode.getAttributeValue('height'),
-    );
+    // Parse mask region attributes with defaults per SVG spec.
+    // Use raw attribute values to detect percentages since the parser
+    // strips the '%' suffix from numeric attributes.
+    final x = _parseMaskRegionBoundingBoxValue(maskNode, 'x');
+    final y = _parseMaskRegionBoundingBoxValue(maskNode, 'y');
+    final width = _parseMaskRegionBoundingBoxValue(maskNode, 'width');
+    final height = _parseMaskRegionBoundingBoxValue(maskNode, 'height');
 
     // Default: -10% for x/y, 120% for width/height (10% extension per side)
     final resolvedX = x ?? -_kDefaultMaskExtension;
@@ -167,6 +168,36 @@ extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
       safeWidth * resolvedWidth,
       safeHeight * resolvedHeight,
     );
+  }
+
+  /// Parses a mask region attribute for objectBoundingBox units.
+  ///
+  /// Uses raw attribute values to properly detect percentage values,
+  /// since the SVG parser strips the '%' suffix from numeric attributes.
+  /// In objectBoundingBox mode, percentages like "25%" should be treated
+  /// as 0.25 (a fraction of the bounding box).
+  double? _parseMaskRegionBoundingBoxValue(SvgNode maskNode, String attrName) {
+    // First check the raw value to detect percentages
+    final rawValue = maskNode.getRawAttributeValue(attrName);
+    if (rawValue != null) {
+      final trimmed = rawValue.trim();
+      if (trimmed.endsWith('%')) {
+        // Parse as percentage and convert to fraction
+        final numericPart = trimmed.substring(0, trimmed.length - 1);
+        final percent = double.tryParse(numericPart);
+        if (percent != null) {
+          return percent / 100.0;
+        }
+      }
+      // Try parsing as a plain number
+      return double.tryParse(trimmed);
+    }
+
+    // Fall back to parsed value (handles numeric values)
+    final parsedValue = maskNode.getAttributeValue(attrName);
+    if (parsedValue == null) return null;
+    if (parsedValue is num) return parsedValue.toDouble();
+    return double.tryParse(parsedValue.toString());
   }
 
   /// Computes mask bounds for userSpaceOnUse units.

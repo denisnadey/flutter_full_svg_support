@@ -309,14 +309,16 @@ class _ImageCompleter {
 
     await Future<void>.delayed(Duration.zero);
 
-    // Poll for completion (simple approach for test environment)
-    for (int i = 0; i < 1000; i++) {
+    // Poll for completion with timeout (max 5 seconds instead of 10)
+    // This prevents indefinite hangs during golden tests
+    for (int i = 0; i < 500; i++) {
       if (_completed) {
         return _image;
       }
       await Future<void>.delayed(const Duration(milliseconds: 10));
     }
 
+    // Return null after timeout to fail fast rather than hang
     return _image;
   }
 }

@@ -374,11 +374,14 @@ void main() {
       testWidgets('maskUnits objectBoundingBox (default)', (
         WidgetTester tester,
       ) async {
+        // maskUnits affects the mask region coordinates (x, y, width, height on mask)
+        // maskContentUnits (default: userSpaceOnUse) affects the mask content coordinates
+        // The mask content must cover the masked element area in user space
         const svgXml = '''
           <svg viewBox="0 0 100 100">
             <defs>
               <mask id="mask" maskUnits="objectBoundingBox">
-                <rect x="0" y="0" width="1" height="1" fill="white"/>
+                <rect x="0" y="0" width="100" height="100" fill="white"/>
               </mask>
             </defs>
             <rect x="20" y="20" width="60" height="60" fill="red" 

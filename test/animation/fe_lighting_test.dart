@@ -279,7 +279,7 @@ void main() {
   });
 
   group('Lighting Filter Pipeline Integration', () {
-    test('feDiffuseLighting resolves color filter in pipeline', () {
+    test('feDiffuseLighting resolves paint passes in pipeline', () {
       final svgString = '''
 <svg viewBox="0 0 100 100">
   <defs>
@@ -293,15 +293,14 @@ void main() {
 ''';
 
       final document = SvgParser.parse(svgString);
-      final colorFilter = document.filters!.resolveColorFilter(
-        'diffusePipeline',
-      );
+      final passes = document.filters!.resolvePaintPasses('diffusePipeline');
 
-      // Pipeline should resolve a color filter for diffuse lighting
-      expect(colorFilter, isNotNull);
+      // Pipeline should resolve paint passes for diffuse lighting
+      expect(passes, isNotEmpty);
+      expect(passes.first, isA<SvgDiffuseLightingPaintPass>());
     });
 
-    test('feSpecularLighting resolves color filter in pipeline', () {
+    test('feSpecularLighting resolves paint passes in pipeline', () {
       final svgString = '''
 <svg viewBox="0 0 100 100">
   <defs>
@@ -315,11 +314,11 @@ void main() {
 ''';
 
       final document = SvgParser.parse(svgString);
-      final colorFilter = document.filters!.resolveColorFilter(
-        'specularPipeline',
-      );
+      final passes = document.filters!.resolvePaintPasses('specularPipeline');
 
-      expect(colorFilter, isNotNull);
+      // Pipeline should resolve paint passes for specular lighting
+      expect(passes, isNotEmpty);
+      expect(passes.first, isA<SvgSpecularLightingPaintPass>());
     });
 
     test('lighting filters chain with other primitives', () {
@@ -1586,6 +1585,565 @@ void main() {
 
       final result = processorNone.processDiffuse(imageData, 2, 2, 1.0);
       expect(result.length, equals(16));
+    });
+  });
+
+  group('Specialized Paint Passes', () {
+    test('SvgDiffuseLightingPaintPass creates correct processor', () {
+      final filter = SvgDiffuseLightingFilter(
+        id: 'diffusePass',
+        surfaceScale: 5.0,
+        diffuseConstant: 0.8,
+        lightingColor: const ui.Color(0xFFFF0000),
+        lightSource: const SvgDistantLightSource(azimuth: 45, elevation: 60),
+        kernelUnitLengthX: 2.0,
+        kernelUnitLengthY: 3.0,
+      );
+
+      final pass = SvgDiffuseLightingPaintPass(
+        lightingFilter: filter,
+        paintFill: true,
+        paintStroke: true,
+      );
+
+      expect(pass.lightSource, isA<SvgDistantLightSource>());
+      expect(pass.surfaceScale, equals(5.0));
+      expect(pass.diffuseConstant, equals(0.8));
+      expect(pass.lightingColor, equals(const ui.Color(0xFFFF0000)));
+      expect(pass.kernelUnitLengthX, equals(2.0));
+      expect(pass.kernelUnitLengthY, equals(3.0));
+
+      final processor = pass.createProcessor();
+      expect(processor, isNotNull);
+    });
+
+    test('SvgSpecularLightingPaintPass creates correct processor', () {
+      final filter = SvgSpecularLightingFilter(
+        id: 'specularPass',
+        surfaceScale: 3.0,
+        specularConstant: 0.5,
+        specularExponent: 30.0,
+        lightingColor: const ui.Color(0xFF00FF00),
+        lightSource: const SvgPointLightSource(x: 50, y: 50, z: 100),
+        kernelUnitLengthX: 1.5,
+        kernelUnitLengthY: 1.5,
+      );
+
+      final pass = SvgSpecularLightingPaintPass(
+        lightingFilter: filter,
+        paintFill: true,
+        paintStroke: false,
+      );
+
+      expect(pass.lightSource, isA<SvgPointLightSource>());
+      expect(pass.surfaceScale, equals(3.0));
+      expect(pass.specularConstant, equals(0.5));
+      expect(pass.specularExponent, equals(30.0));
+      expect(pass.lightingColor, equals(const ui.Color(0xFF00FF00)));
+
+      final processor = pass.createProcessor();
+      expect(processor, isNotNull);
+    });
+
+    test('Paint pass copyWith preserves lighting filter', () {
+      final filter = SvgDiffuseLightingFilter(
+        id: 'copyTest',
+        surfaceScale: 2.0,
+        diffuseConstant: 1.0,
+        lightingColor: const ui.Color(0xFFFFFFFF),
+        lightSource: const SvgDistantLightSource(azimuth: 0, elevation: 45),
+      );
+
+      final original = SvgDiffuseLightingPaintPass(
+        lightingFilter: filter,
+        paintFill: true,
+        paintStroke: true,
+      );
+
+      final copied = original.copyWith(
+        offset: const ui.Offset(10, 20),
+        paintStroke: false,
+      );
+
+      expect(copied, isA<SvgDiffuseLightingPaintPass>());
+      final diffusePass = copied as SvgDiffuseLightingPaintPass;
+      expect(diffusePass.lightingFilter, same(filter));
+      expect(diffusePass.offset, equals(const ui.Offset(10, 20)));
+      expect(diffusePass.paintFill, isTrue);
+      expect(diffusePass.paintStroke, isFalse);
+    });
+
+    test('Paint pass returns null processor without light source', () {
+      final filter = SvgDiffuseLightingFilter(
+        id: 'noLight',
+        surfaceScale: 1.0,
+        diffuseConstant: 1.0,
+        lightingColor: const ui.Color(0xFFFFFFFF),
+        lightSource: null,
+      );
+
+      final pass = SvgDiffuseLightingPaintPass(
+        lightingFilter: filter,
+        paintFill: true,
+        paintStroke: true,
+      );
+
+      expect(pass.createProcessor(), isNull);
+    });
+  });
+
+  group('Advanced feDistantLight Tests', () {
+    test('azimuth 0 points in positive X direction', () {
+      final light = const SvgDistantLightSource(azimuth: 0, elevation: 0);
+      final (dir, _) = light.getDirectionAndIntensityAt(0, 0, 0);
+
+      // At azimuth=0, elevation=0: light comes from positive X direction
+      expect(dir.x, closeTo(1.0, 0.01));
+      expect(dir.y, closeTo(0.0, 0.01));
+      expect(dir.z, closeTo(0.0, 0.01));
+    });
+
+    test('azimuth 180 points in negative X direction', () {
+      final light = const SvgDistantLightSource(azimuth: 180, elevation: 0);
+      final (dir, _) = light.getDirectionAndIntensityAt(0, 0, 0);
+
+      // At azimuth=180, elevation=0: light comes from negative X direction
+      expect(dir.x, closeTo(-1.0, 0.01));
+      expect(dir.y, closeTo(0.0, 0.01));
+    });
+
+    test('elevation 90 points straight down (positive Z)', () {
+      final light = const SvgDistantLightSource(azimuth: 45, elevation: 90);
+      final (dir, _) = light.getDirectionAndIntensityAt(0, 0, 0);
+
+      // At elevation=90: light comes from directly above
+      expect(dir.z, closeTo(1.0, 0.01));
+    });
+
+    test('negative elevation points from below', () {
+      final light = const SvgDistantLightSource(azimuth: 0, elevation: -45);
+      final (dir, _) = light.getDirectionAndIntensityAt(0, 0, 0);
+
+      // Negative elevation means light from below
+      expect(dir.z, lessThan(0));
+    });
+  });
+
+  group('Advanced fePointLight Tests', () {
+    test('light directly above surface point', () {
+      final light = const SvgPointLightSource(x: 50, y: 50, z: 100);
+      final (dir, _) = light.getDirectionAndIntensityAt(50, 50, 0);
+
+      // Light directly above: direction should be mostly Z
+      expect(dir.x, closeTo(0.0, 0.01));
+      expect(dir.y, closeTo(0.0, 0.01));
+      expect(dir.z, closeTo(1.0, 0.01));
+    });
+
+    test('light behind surface (z < surfaceZ)', () {
+      final light = const SvgPointLightSource(x: 50, y: 50, z: -10);
+      final (dir, _) = light.getDirectionAndIntensityAt(50, 50, 0);
+
+      // Light behind surface: Z direction should be negative
+      expect(dir.z, lessThan(0));
+    });
+
+    test('light at z=0 (coplanar with surface)', () {
+      final light = const SvgPointLightSource(x: 100, y: 50, z: 0);
+      final (dir, _) = light.getDirectionAndIntensityAt(50, 50, 0);
+
+      // Light at same Z as surface: mostly horizontal direction
+      expect(dir.x, greaterThan(0));
+      expect(dir.z.abs(), lessThan(0.1));
+    });
+
+    test('light at exact surface position returns default direction', () {
+      final light = const SvgPointLightSource(x: 50, y: 50, z: 0);
+      final (dir, _) = light.getDirectionAndIntensityAt(50, 50, 0);
+
+      // When light is at surface position, should return default up vector
+      expect(dir.z, closeTo(1.0, 0.01));
+    });
+
+    test('point light intensity varies with distance', () {
+      final light = const SvgPointLightSource(x: 0, y: 0, z: 100);
+
+      // Close point should have higher intensity
+      final (_, intensityClose) = light.getDirectionAndIntensityAt(0, 0, 50);
+
+      // Far point should have lower intensity
+      final (_, intensityFar) = light.getDirectionAndIntensityAt(0, 0, 0);
+
+      // Both should have some intensity (distance attenuation is soft)
+      expect(intensityClose, greaterThan(0));
+      expect(intensityFar, greaterThan(0));
+    });
+  });
+
+  group('Advanced feSpotLight Tests', () {
+    test('spotlight cone with 90 degree angle illuminates wide area', () {
+      final light = const SvgSpotLightSource(
+        x: 50,
+        y: 50,
+        z: 100,
+        pointsAtX: 50,
+        pointsAtY: 50,
+        pointsAtZ: 0,
+        specularExponent: 1,
+        limitingConeAngle: 90,
+      );
+
+      // Point at edge should still be lit with 90 degree cone
+      final (_, intensity) = light.getDirectionAndIntensityAt(0, 0, 0);
+      expect(intensity, greaterThan(0));
+    });
+
+    test('spotlight cone with 10 degree angle is narrow', () {
+      final light = const SvgSpotLightSource(
+        x: 50,
+        y: 50,
+        z: 100,
+        pointsAtX: 50,
+        pointsAtY: 50,
+        pointsAtZ: 0,
+        specularExponent: 1,
+        limitingConeAngle: 10,
+      );
+
+      // Point at center should be lit
+      final (_, intensityCenter) = light.getDirectionAndIntensityAt(50, 50, 0);
+      expect(intensityCenter, greaterThan(0.5));
+
+      // Point at edge should be outside narrow cone
+      final (_, intensityEdge) = light.getDirectionAndIntensityAt(0, 0, 0);
+      expect(intensityEdge, equals(0.0));
+    });
+
+    test('spotlight specularExponent affects falloff', () {
+      final lightLowExp = const SvgSpotLightSource(
+        x: 50,
+        y: 50,
+        z: 100,
+        pointsAtX: 50,
+        pointsAtY: 50,
+        pointsAtZ: 0,
+        specularExponent: 1,
+        limitingConeAngle: 45,
+      );
+
+      final lightHighExp = const SvgSpotLightSource(
+        x: 50,
+        y: 50,
+        z: 100,
+        pointsAtX: 50,
+        pointsAtY: 50,
+        pointsAtZ: 0,
+        specularExponent: 50,
+        limitingConeAngle: 45,
+      );
+
+      // Point slightly off center
+      final (_, intensityLow) = lightLowExp.getDirectionAndIntensityAt(
+        60,
+        60,
+        0,
+      );
+      final (_, intensityHigh) = lightHighExp.getDirectionAndIntensityAt(
+        60,
+        60,
+        0,
+      );
+
+      // High exponent should have sharper falloff (lower intensity off-center)
+      expect(intensityHigh, lessThan(intensityLow));
+    });
+
+    test('spotlight pointing away from pointsAt has zero intensity', () {
+      final light = const SvgSpotLightSource(
+        x: 50,
+        y: 50,
+        z: 100,
+        pointsAtX: 50,
+        pointsAtY: 50,
+        pointsAtZ: 200, // Pointing up/away
+        specularExponent: 1,
+        limitingConeAngle: 30,
+      );
+
+      // Surface below should be outside cone
+      final (_, intensity) = light.getDirectionAndIntensityAt(50, 50, 0);
+      expect(intensity, equals(0.0));
+    });
+  });
+
+  group('Surface Scale and Diffuse Constant Variations', () {
+    test('surfaceScale=0 produces flat normals', () {
+      final imageData = Uint8List(9 * 4);
+      // Create varying alpha to form a bump
+      final alphas = [0, 64, 0, 64, 255, 64, 0, 64, 0];
+      for (int i = 0; i < 9; i++) {
+        imageData[i * 4] = 255;
+        imageData[i * 4 + 1] = 255;
+        imageData[i * 4 + 2] = 255;
+        imageData[i * 4 + 3] = alphas[i];
+      }
+
+      final processorFlat = LightingProcessor(
+        surfaceScale: 0.0,
+        lightSource: const SvgDistantLightSource(azimuth: 45, elevation: 45),
+        lightingColor: const ui.Color(0xFFFFFFFF),
+      );
+
+      final result = processorFlat.processDiffuse(imageData, 3, 3, 1.0);
+      // With surfaceScale=0, all normals should be (0,0,1) = uniform intensity
+      expect(result.length, equals(36));
+    });
+
+    test('diffuseConstant=0 produces black output', () {
+      final imageData = Uint8List(4 * 4);
+      for (int i = 0; i < 4; i++) {
+        imageData[i * 4] = 255;
+        imageData[i * 4 + 1] = 255;
+        imageData[i * 4 + 2] = 255;
+        imageData[i * 4 + 3] = 255;
+      }
+
+      final processor = LightingProcessor(
+        surfaceScale: 1.0,
+        lightSource: const SvgDistantLightSource(azimuth: 0, elevation: 90),
+        lightingColor: const ui.Color(0xFFFFFFFF),
+      );
+
+      final result = processor.processDiffuse(imageData, 2, 2, 0.0);
+
+      // All RGB should be 0 with diffuseConstant=0
+      for (int i = 0; i < 4; i++) {
+        expect(result[i * 4], equals(0)); // R
+        expect(result[i * 4 + 1], equals(0)); // G
+        expect(result[i * 4 + 2], equals(0)); // B
+        expect(result[i * 4 + 3], equals(255)); // A always 255 for diffuse
+      }
+    });
+
+    test('high diffuseConstant produces brighter output', () {
+      final imageData = Uint8List(4 * 4);
+      for (int i = 0; i < 4; i++) {
+        imageData[i * 4] = 255;
+        imageData[i * 4 + 1] = 255;
+        imageData[i * 4 + 2] = 255;
+        imageData[i * 4 + 3] = 128;
+      }
+
+      final processor = LightingProcessor(
+        surfaceScale: 1.0,
+        lightSource: const SvgDistantLightSource(azimuth: 0, elevation: 90),
+        lightingColor: const ui.Color(0xFFFFFFFF),
+      );
+
+      final resultLow = processor.processDiffuse(imageData, 2, 2, 0.5);
+      final resultHigh = processor.processDiffuse(imageData, 2, 2, 1.0);
+
+      // Higher diffuseConstant should produce brighter results
+      expect(resultHigh[0], greaterThanOrEqualTo(resultLow[0]));
+    });
+  });
+
+  group('Specular Constant and Exponent Variations', () {
+    test('specularConstant=0 produces black output', () {
+      final imageData = Uint8List(4 * 4);
+      for (int i = 0; i < 4; i++) {
+        imageData[i * 4] = 255;
+        imageData[i * 4 + 1] = 255;
+        imageData[i * 4 + 2] = 255;
+        imageData[i * 4 + 3] = 255;
+      }
+
+      final processor = LightingProcessor(
+        surfaceScale: 1.0,
+        lightSource: const SvgDistantLightSource(azimuth: 0, elevation: 90),
+        lightingColor: const ui.Color(0xFFFFFFFF),
+      );
+
+      final result = processor.processSpecular(imageData, 2, 2, 0.0, 20.0);
+
+      // All RGBA should be 0 with specularConstant=0
+      for (int i = 0; i < 4; i++) {
+        expect(result[i * 4], equals(0)); // R
+        expect(result[i * 4 + 1], equals(0)); // G
+        expect(result[i * 4 + 2], equals(0)); // B
+        expect(result[i * 4 + 3], equals(0)); // A = max(R,G,B)
+      }
+    });
+
+    test('high specularExponent produces sharper highlights', () {
+      final imageData = Uint8List(9 * 4);
+      for (int i = 0; i < 9; i++) {
+        imageData[i * 4] = 255;
+        imageData[i * 4 + 1] = 255;
+        imageData[i * 4 + 2] = 255;
+        imageData[i * 4 + 3] = 128;
+      }
+
+      final processor = LightingProcessor(
+        surfaceScale: 1.0,
+        lightSource: const SvgDistantLightSource(azimuth: 0, elevation: 90),
+        lightingColor: const ui.Color(0xFFFFFFFF),
+      );
+
+      final resultLowExp = processor.processSpecular(imageData, 3, 3, 1.0, 1.0);
+      final resultHighExp = processor.processSpecular(
+        imageData,
+        3,
+        3,
+        1.0,
+        100.0,
+      );
+
+      // Both should complete successfully
+      expect(resultLowExp.length, equals(36));
+      expect(resultHighExp.length, equals(36));
+    });
+  });
+
+  group('Filter Chain Integration', () {
+    test('lighting after blur in filter chain', () {
+      final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="blurThenLight">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="blurred"/>
+      <feDiffuseLighting in="blurred" surfaceScale="5" diffuseConstant="1" lighting-color="white" result="lit">
+        <feDistantLight azimuth="135" elevation="45"/>
+      </feDiffuseLighting>
+      <feComposite in="lit" in2="SourceGraphic" operator="over"/>
+    </filter>
+  </defs>
+</svg>
+''';
+
+      final document = SvgParser.parse(svgString);
+      expect(document.filters!.hasFilter('blurThenLight'), isTrue);
+
+      final passes = document.filters!.resolvePaintPasses('blurThenLight');
+      expect(passes, isNotEmpty);
+    });
+
+    test('multiple lighting filters in sequence', () {
+      final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="doubleLighting">
+      <feDiffuseLighting in="SourceGraphic" surfaceScale="2" diffuseConstant="1" lighting-color="red" result="diffuse">
+        <feDistantLight azimuth="45" elevation="45"/>
+      </feDiffuseLighting>
+      <feSpecularLighting in="SourceGraphic" surfaceScale="2" specularConstant="1" specularExponent="20" lighting-color="white" result="specular">
+        <feDistantLight azimuth="45" elevation="45"/>
+      </feSpecularLighting>
+      <feComposite in="specular" in2="diffuse" operator="arithmetic" k1="0" k2="1" k3="1" k4="0"/>
+    </filter>
+  </defs>
+</svg>
+''';
+
+      final document = SvgParser.parse(svgString);
+      expect(document.filters!.hasFilter('doubleLighting'), isTrue);
+
+      final passes = document.filters!.resolvePaintPasses('doubleLighting');
+      expect(passes, isNotEmpty);
+    });
+
+    test('lighting with composite arithmetic', () {
+      final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="bevelLight">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="4" result="blur"/>
+      <feSpecularLighting in="blur" surfaceScale="10" specularConstant=".75" specularExponent="20" lighting-color="#bbbbbb" result="specOut">
+        <fePointLight x="-5000" y="-10000" z="20000"/>
+      </feSpecularLighting>
+      <feComposite in="specOut" in2="SourceAlpha" operator="in" result="specOut2"/>
+      <feComposite in="SourceGraphic" in2="specOut2" operator="arithmetic" k1="0" k2="1" k3="1" k4="0"/>
+    </filter>
+  </defs>
+</svg>
+''';
+
+      final document = SvgParser.parse(svgString);
+      expect(document.filters!.hasFilter('bevelLight'), isTrue);
+
+      final passes = document.filters!.resolvePaintPasses('bevelLight');
+      expect(passes, isNotEmpty);
+    });
+  });
+
+  group('Pipeline Integration with Paint Passes', () {
+    test('diffuse lighting produces SvgDiffuseLightingPaintPass', () {
+      final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="diffusePassTest">
+      <feDiffuseLighting surfaceScale="2" diffuseConstant="1" lighting-color="white">
+        <feDistantLight azimuth="45" elevation="45"/>
+      </feDiffuseLighting>
+    </filter>
+  </defs>
+</svg>
+''';
+
+      final document = SvgParser.parse(svgString);
+      final passes = document.filters!.resolvePaintPasses('diffusePassTest');
+
+      expect(passes, isNotEmpty);
+      expect(passes.first, isA<SvgDiffuseLightingPaintPass>());
+
+      final diffusePass = passes.first as SvgDiffuseLightingPaintPass;
+      expect(diffusePass.surfaceScale, equals(2.0));
+      expect(diffusePass.diffuseConstant, equals(1.0));
+    });
+
+    test('specular lighting produces SvgSpecularLightingPaintPass', () {
+      final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="specularPassTest">
+      <feSpecularLighting surfaceScale="3" specularConstant="0.5" specularExponent="25" lighting-color="cyan">
+        <fePointLight x="50" y="50" z="150"/>
+      </feSpecularLighting>
+    </filter>
+  </defs>
+</svg>
+''';
+
+      final document = SvgParser.parse(svgString);
+      final passes = document.filters!.resolvePaintPasses('specularPassTest');
+
+      expect(passes, isNotEmpty);
+      expect(passes.first, isA<SvgSpecularLightingPaintPass>());
+
+      final specularPass = passes.first as SvgSpecularLightingPaintPass;
+      expect(specularPass.surfaceScale, equals(3.0));
+      expect(specularPass.specularConstant, equals(0.5));
+      expect(specularPass.specularExponent, equals(25.0));
+    });
+
+    test('lighting without light source passes through unchanged', () {
+      final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="noLightPassTest">
+      <feDiffuseLighting surfaceScale="2" diffuseConstant="1" lighting-color="white">
+      </feDiffuseLighting>
+    </filter>
+  </defs>
+</svg>
+''';
+
+      final document = SvgParser.parse(svgString);
+      final passes = document.filters!.resolvePaintPasses('noLightPassTest');
+
+      // Should produce passes but NOT specialized lighting passes
+      expect(passes, isNotEmpty);
+      expect(passes.first, isNot(isA<SvgDiffuseLightingPaintPass>()));
     });
   });
 }

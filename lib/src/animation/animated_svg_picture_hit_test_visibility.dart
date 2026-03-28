@@ -3,6 +3,15 @@ part of 'animated_svg_picture.dart';
 /// Maximum recursion depth for nested clipPath/mask references.
 const int _kMaxClipMaskRecursionDepth = 10;
 
+/// Luminance coefficients per ITU-R BT.709 / sRGB for hit-testing.
+const double _kHitTestLuminanceR = 0.2126;
+const double _kHitTestLuminanceG = 0.7152;
+const double _kHitTestLuminanceB = 0.0722;
+
+/// Minimum luminance threshold for hit detection in luminance masks.
+/// Points under mask content with luminance below this are not hittable.
+const double _kMinLuminanceForHit = 0.05;
+
 extension _AnimatedSvgPictureStateHitTestVisibilityExtension
     on _AnimatedSvgPictureState {
   bool _isPointVisibleForNode(
@@ -190,14 +199,26 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
         if (geometry == null) {
           return false;
         }
+        // Apply clip-rule for proper fill type in hit-testing
+        _applyClipRuleToHitTestPath(geometry, node);
         target.addPath(geometry.transform(matrix.storage), Offset.zero);
         return true;
     }
   }
 
+  /// Applies clip-rule to a hit-test path.
+  void _applyClipRuleToHitTestPath(Path path, SvgNode node) {
+    final clipRule = _getInheritedString(node, 'clip-rule')?.toLowerCase();
+    if (clipRule == 'evenodd') {
+      path.fillType = PathFillType.evenOdd;
+    } else {
+      path.fillType = PathFillType.nonZero;
+    }
+  }
+
   /// Checks if a point is inside the mask region.
   /// Handles mask transforms, maskUnits/maskContentUnits, nested masks,
-  /// and gradient alpha threshold-based hit detection.
+  /// luminance-based hit detection, and gradient alpha threshold-based hit detection.
   bool _isPointInsideMask(
     SvgNode node,
     Offset localPoint, {
@@ -245,11 +266,16 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
       return true;
     }
 
-    // Build path from mask content that has visible paint
+    // Determine mask type for luminance-aware hit testing
+    final maskType = _resolveMaskTypeForHitTest(maskNode, node);
+    final useLuminanceHitTest = maskType == 'luminance';
+
+    // Build path from mask content that has visible paint (considering luminance)
     final maskPath = _buildVisibleMaskGeometryPath(
       maskNode,
       rootTransform: rootTransform,
       visitedMasks: nestedVisited,
+      useLuminanceHitTest: useLuminanceHitTest,
     );
     if (maskPath == null) {
       // No visible mask content - allow hit
@@ -258,13 +284,57 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
     return maskPath.contains(localPoint);
   }
 
+  /// Resolves the mask-type for hit-testing purposes.
+  ///
+  /// Returns 'luminance' (default per SVG spec) or 'alpha'.
+  String _resolveMaskTypeForHitTest(SvgNode maskNode, SvgNode maskedNode) {
+    // Check CSS mask-mode property on masked element
+    final maskMode = _extractStyleValue(maskedNode, 'mask-mode');
+    if (maskMode != null) {
+      final normalized = maskMode.toString().trim().toLowerCase();
+      if (normalized == 'luminance') return 'luminance';
+      if (normalized == 'alpha') return 'alpha';
+    }
+
+    // Check CSS mask-type property on masked element
+    final maskType = _extractStyleValue(maskedNode, 'mask-type');
+    if (maskType != null) {
+      final normalized = maskType.toString().trim().toLowerCase();
+      if (normalized == 'luminance') return 'luminance';
+      if (normalized == 'alpha') return 'alpha';
+    }
+
+    // Check type attribute on mask element
+    final typeAttr = maskNode.getAttributeValue('type')?.toString();
+    if (typeAttr != null) {
+      final normalized = typeAttr.trim().toLowerCase();
+      if (normalized == 'luminance') return 'luminance';
+      if (normalized == 'alpha') return 'alpha';
+    }
+
+    // Check mask-type style on mask element
+    final maskElementType = _extractStyleValue(maskNode, 'mask-type');
+    if (maskElementType != null) {
+      final normalized = maskElementType.toString().trim().toLowerCase();
+      if (normalized == 'luminance') return 'luminance';
+      if (normalized == 'alpha') return 'alpha';
+    }
+
+    // Default to luminance per SVG 2 spec
+    return 'luminance';
+  }
+
   /// Builds a geometry path from mask content that has visible paint.
   /// Excludes shapes with both fill:none and stroke:none, since they
   /// contribute nothing to the mask's visual output (zero alpha/luminance).
+  ///
+  /// When [useLuminanceHitTest] is true, also excludes black/dark content
+  /// that would have near-zero luminance in a luminance mask.
   Path? _buildVisibleMaskGeometryPath(
     SvgNode containerNode, {
     required Matrix4 rootTransform,
     required Set<String> visitedMasks,
+    bool useLuminanceHitTest = false,
   }) {
     final path = Path();
     final added = _appendVisibleMaskGeometry(
@@ -273,6 +343,7 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
       currentTransform: rootTransform,
       useStack: <String>{},
       visitedMasks: visitedMasks,
+      useLuminanceHitTest: useLuminanceHitTest,
     );
     return added ? path : null;
   }
@@ -283,6 +354,7 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
     required Matrix4 currentTransform,
     required Set<String> useStack,
     required Set<String> visitedMasks,
+    bool useLuminanceHitTest = false,
   }) {
     final matrix = Matrix4.copy(currentTransform);
     _applyNodeTransform(matrix, node);
@@ -301,6 +373,7 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
             currentTransform: matrix,
             useStack: useStack,
             visitedMasks: visitedMasks,
+            useLuminanceHitTest: useLuminanceHitTest,
           )) {
             added = true;
           }
@@ -317,6 +390,7 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
           currentTransform: matrix,
           useStack: useStack,
           visitedMasks: visitedMasks,
+          useLuminanceHitTest: useLuminanceHitTest,
         );
       case 'use':
         final hrefId = _extractHrefId(node);
@@ -345,6 +419,7 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
             currentTransform: useReferenceTransform,
             useStack: nextUseStack,
             visitedMasks: visitedMasks,
+            useLuminanceHitTest: useLuminanceHitTest,
           );
         }
         return _appendVisibleMaskGeometry(
@@ -353,11 +428,13 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
           currentTransform: translated,
           useStack: nextUseStack,
           visitedMasks: visitedMasks,
+          useLuminanceHitTest: useLuminanceHitTest,
         );
       default:
         // Check if this element has any visible paint contribution
         // For masks, elements with fill:none and stroke:none contribute zero alpha
-        if (!_hasMaskVisiblePaint(node)) {
+        // For luminance masks, also check if the color has luminance > threshold
+        if (!_hasMaskVisiblePaint(node, useLuminanceHitTest: useLuminanceHitTest)) {
           return false;
         }
         final geometry = _buildGeometryPath(node);
@@ -371,7 +448,10 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
 
   /// Checks if a mask content element has any visible paint that would
   /// contribute to the mask's alpha/luminance output.
-  bool _hasMaskVisiblePaint(SvgNode node) {
+  ///
+  /// When [useLuminanceHitTest] is true, also checks that the fill/stroke
+  /// color has sufficient luminance (black = 0 luminance = not hittable).
+  bool _hasMaskVisiblePaint(SvgNode node, {bool useLuminanceHitTest = false}) {
     // Check fill - default is black which contributes to mask
     final fillValue = _getInheritedAttributeValue(node, 'fill');
     final hasFill = !_isPaintNone(fillValue);
@@ -390,8 +470,146 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
     final fillOpacity = _getInheritedNumber(node, 'fill-opacity') ?? 1.0;
     final strokeOpacity = _getInheritedNumber(node, 'stroke-opacity') ?? 1.0;
 
-    // Element is visible in mask if it has non-transparent fill or stroke
+    // For luminance-based hit testing, check if colors have sufficient luminance
+    if (useLuminanceHitTest) {
+      bool fillHasLuminance = false;
+      bool strokeHasLuminance = false;
+
+      if (hasFill && fillOpacity > 0 && fillValue != null) {
+        final luminance = _computeColorLuminanceForHitTest(fillValue);
+        fillHasLuminance = luminance >= _kMinLuminanceForHit;
+      }
+
+      if (hasStroke && strokeOpacity > 0) {
+        final luminance = _computeColorLuminanceForHitTest(strokeValue);
+        strokeHasLuminance = luminance >= _kMinLuminanceForHit;
+      }
+
+      return fillHasLuminance || strokeHasLuminance;
+    }
+
+    // For alpha-based hit testing, just check opacity
     return (hasFill && fillOpacity > 0) || (hasStroke && strokeOpacity > 0);
+  }
+
+  /// Computes the luminance of a color value for hit-testing purposes.
+  ///
+  /// Returns 1.0 for white, 0.0 for black, and intermediate values for
+  /// other colors. For gradient references, returns 0.5 as a safe default.
+  double _computeColorLuminanceForHitTest(Object? colorValue) {
+    if (colorValue == null) {
+      return 0.0; // No color = black = 0 luminance
+    }
+
+    final colorStr = colorValue.toString().trim().toLowerCase();
+
+    // Handle 'none' - no paint = 0 luminance
+    if (colorStr == 'none') {
+      return 0.0;
+    }
+
+    // Handle gradient references - assume partial visibility
+    if (colorStr.startsWith('url(')) {
+      return 0.5; // Conservative: assume gradient has some visible parts
+    }
+
+    // Handle named colors
+    final namedColor = _resolveNamedColorForHitTest(colorStr);
+    if (namedColor != null) {
+      return _computeRgbLuminance(namedColor);
+    }
+
+    // Handle hex colors
+    if (colorStr.startsWith('#')) {
+      final hex = colorStr.substring(1);
+      int? r, g, b;
+
+      if (hex.length == 3) {
+        // #RGB
+        r = int.tryParse(hex[0] + hex[0], radix: 16);
+        g = int.tryParse(hex[1] + hex[1], radix: 16);
+        b = int.tryParse(hex[2] + hex[2], radix: 16);
+      } else if (hex.length == 6) {
+        // #RRGGBB
+        r = int.tryParse(hex.substring(0, 2), radix: 16);
+        g = int.tryParse(hex.substring(2, 4), radix: 16);
+        b = int.tryParse(hex.substring(4, 6), radix: 16);
+      }
+
+      if (r != null && g != null && b != null) {
+        return _computeRgbLuminance((r, g, b));
+      }
+    }
+
+    // Handle rgb() function
+    final rgbMatch = RegExp(r'rgb\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)')
+        .firstMatch(colorStr);
+    if (rgbMatch != null) {
+      final r = int.tryParse(rgbMatch.group(1)!);
+      final g = int.tryParse(rgbMatch.group(2)!);
+      final b = int.tryParse(rgbMatch.group(3)!);
+      if (r != null && g != null && b != null) {
+        return _computeRgbLuminance((r, g, b));
+      }
+    }
+
+    // Default: assume some visibility
+    return 0.5;
+  }
+
+  /// Computes luminance from RGB components (0-255 each).
+  double _computeRgbLuminance((int, int, int) rgb) {
+    final (r, g, b) = rgb;
+    // Normalize to 0-1 range and apply luminance coefficients
+    return (r / 255.0) * _kHitTestLuminanceR +
+        (g / 255.0) * _kHitTestLuminanceG +
+        (b / 255.0) * _kHitTestLuminanceB;
+  }
+
+  /// Resolves common named colors for luminance calculation.
+  (int, int, int)? _resolveNamedColorForHitTest(String colorName) {
+    switch (colorName) {
+      case 'white':
+        return (255, 255, 255);
+      case 'black':
+        return (0, 0, 0);
+      case 'red':
+        return (255, 0, 0);
+      case 'lime':
+      case 'green':
+        return (0, 255, 0);
+      case 'blue':
+        return (0, 0, 255);
+      case 'yellow':
+        return (255, 255, 0);
+      case 'cyan':
+      case 'aqua':
+        return (0, 255, 255);
+      case 'magenta':
+      case 'fuchsia':
+        return (255, 0, 255);
+      case 'gray':
+      case 'grey':
+        return (128, 128, 128);
+      case 'silver':
+        return (192, 192, 192);
+      case 'maroon':
+        return (128, 0, 0);
+      case 'olive':
+        return (128, 128, 0);
+      case 'purple':
+        return (128, 0, 128);
+      case 'teal':
+        return (0, 128, 128);
+      case 'navy':
+        return (0, 0, 128);
+      case 'orange':
+        return (255, 165, 0);
+      case 'transparent':
+        return (0, 0, 0); // Transparent has 0 luminance contribution
+      default:
+        return null; // Unknown named color
+    }
   }
 
   Matrix4? _resolveContainerRootTransformForUnits({
@@ -430,14 +648,14 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
       if (targetBounds == null) {
         return null;
       }
-      final x = _parseObjectBoundingBoxValue(maskNode.getAttributeValue('x'));
-      final y = _parseObjectBoundingBoxValue(maskNode.getAttributeValue('y'));
-      final width = _parseObjectBoundingBoxValue(
-        maskNode.getAttributeValue('width'),
-      );
-      final height = _parseObjectBoundingBoxValue(
-        maskNode.getAttributeValue('height'),
-      );
+      // Use raw attribute values to detect percentages since the parser
+      // strips the '%' suffix from numeric attributes.
+      final x = _parseMaskRegionBoundingBoxValueForHitTest(maskNode, 'x');
+      final y = _parseMaskRegionBoundingBoxValueForHitTest(maskNode, 'y');
+      final width =
+          _parseMaskRegionBoundingBoxValueForHitTest(maskNode, 'width');
+      final height =
+          _parseMaskRegionBoundingBoxValueForHitTest(maskNode, 'height');
       final resolvedX = x ?? -0.1;
       final resolvedY = y ?? -0.1;
       final resolvedWidth = width ?? 1.2;
@@ -537,25 +755,37 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
     return Rect.fromLTWH(0, 0, width, height);
   }
 
-  double? _parseObjectBoundingBoxValue(Object? rawValue) {
-    if (rawValue == null) {
-      return null;
-    }
-    if (rawValue is num) {
-      return rawValue.toDouble();
-    }
-    final raw = rawValue.toString().trim();
-    if (raw.isEmpty) {
-      return null;
-    }
-    if (raw.endsWith('%')) {
-      final percent = double.tryParse(raw.substring(0, raw.length - 1));
-      if (percent == null) {
-        return null;
+  /// Parses a mask region attribute for objectBoundingBox units in hit-testing.
+  ///
+  /// Uses raw attribute values to properly detect percentage values,
+  /// since the SVG parser strips the '%' suffix from numeric attributes.
+  /// In objectBoundingBox mode, percentages like "25%" should be treated
+  /// as 0.25 (a fraction of the bounding box).
+  double? _parseMaskRegionBoundingBoxValueForHitTest(
+    SvgNode maskNode,
+    String attrName,
+  ) {
+    // First check the raw value to detect percentages
+    final rawValue = maskNode.getRawAttributeValue(attrName);
+    if (rawValue != null) {
+      final trimmed = rawValue.trim();
+      if (trimmed.endsWith('%')) {
+        // Parse as percentage and convert to fraction
+        final numericPart = trimmed.substring(0, trimmed.length - 1);
+        final percent = double.tryParse(numericPart);
+        if (percent != null) {
+          return percent / 100.0;
+        }
       }
-      return percent / 100.0;
+      // Try parsing as a plain number
+      return double.tryParse(trimmed);
     }
-    return double.tryParse(raw);
+
+    // Fall back to parsed value (handles numeric values)
+    final parsedValue = maskNode.getAttributeValue(attrName);
+    if (parsedValue == null) return null;
+    if (parsedValue is num) return parsedValue.toDouble();
+    return double.tryParse(parsedValue.toString());
   }
 
   bool _isPointInsideForeignObjectViewport(SvgNode node, Offset localPoint) {

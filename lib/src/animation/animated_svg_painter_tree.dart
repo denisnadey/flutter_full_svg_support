@@ -73,7 +73,29 @@ void _paintNodeImplWithUseContext(
   // Применяем clipPath если есть.
   painter._applyClipPath(canvas, node, useStack: currentUseStack);
 
-  // Применяем mask если есть (baseline geometry mask).
+  // Check if node has a mask - use advanced layer-based masking
+  final hasMaskApplied = _applyAdvancedMaskWrapper(
+    painter,
+    canvas,
+    node,
+    currentUseStack: currentUseStack,
+    isHidden: isHidden,
+    foreignObjectParent: foreignObjectParent,
+    useContext: useContext,
+  );
+
+  // If mask was applied via layer, content was painted in the callback
+  // Skip normal rendering
+  if (hasMaskApplied) {
+    // Restore previous use context and CSS variable lookup
+    _currentUseContext = previousUseContext;
+    useContextCustomPropertyLookup = previousUseContextLookup;
+    canvas.restore();
+    return;
+  }
+
+  // No mask or fallback to basic masking - continue normal rendering
+  // Apply basic geometry mask as fallback
   painter._applyMask(canvas, node, useStack: currentUseStack);
 
   final filterPasses = _resolveFilterPassesImpl(painter, node);
@@ -453,4 +475,226 @@ void _paintWithFilterPassesImpl(
   }
   painter._currentPassPaintFill = previousFillFlag;
   painter._currentPassPaintStroke = previousStrokeFlag;
+}
+
+/// Wrapper function for applying advanced layer-based masks.
+///
+/// This checks if the node has a mask and applies it using the advanced
+/// masking system with proper luminance/alpha handling. If the node has
+/// a mask, this function paints the entire subtree content within the
+/// mask layer and returns true. Otherwise, returns false to allow
+/// normal rendering to proceed.
+bool _applyAdvancedMaskWrapper(
+  AnimatedSvgPainter painter,
+  ui.Canvas canvas,
+  SvgNode node, {
+  required Set<String> currentUseStack,
+  required bool isHidden,
+  SvgNode? foreignObjectParent,
+  _UseInheritanceContext? useContext,
+}) {
+  // Check if node has a mask reference
+  final maskValue = painter._getStyleOrAttributeValue(node, 'mask');
+  final maskId = painter._extractPaintServerId(maskValue);
+  if (maskId == null || maskId.isEmpty) {
+    return false;
+  }
+
+  // Apply advanced mask with content callback
+  return painter._applyAdvancedMask(
+    canvas,
+    node,
+    useStack: currentUseStack,
+    paintContent: () {
+      // Paint the node content and children within the mask layer
+      _paintNodeContentWithinMask(
+        painter,
+        canvas,
+        node,
+        isHidden: isHidden,
+        currentUseStack: currentUseStack,
+        foreignObjectParent: foreignObjectParent,
+        useContext: useContext,
+      );
+    },
+  );
+}
+
+/// Paints the node content and children within a mask layer context.
+void _paintNodeContentWithinMask(
+  AnimatedSvgPainter painter,
+  ui.Canvas canvas,
+  SvgNode node, {
+  required bool isHidden,
+  required Set<String> currentUseStack,
+  SvgNode? foreignObjectParent,
+  _UseInheritanceContext? useContext,
+}) {
+  final filterPasses = _resolveFilterPassesImpl(painter, node);
+
+  // Render the node content if not hidden
+  if (!isHidden) {
+    switch (node.tagName) {
+      case 'rect':
+        _paintWithFilterPassesImpl(
+          painter,
+          canvas,
+          filterPasses,
+          (imageFilter, colorFilter, blendMode) => painter._paintRect(
+            canvas,
+            node,
+            imageFilter: imageFilter,
+            colorFilter: colorFilter,
+            blendMode: blendMode,
+          ),
+        );
+        break;
+      case 'circle':
+        _paintWithFilterPassesImpl(
+          painter,
+          canvas,
+          filterPasses,
+          (imageFilter, colorFilter, blendMode) => painter._paintCircle(
+            canvas,
+            node,
+            imageFilter: imageFilter,
+            colorFilter: colorFilter,
+            blendMode: blendMode,
+          ),
+        );
+        break;
+      case 'ellipse':
+        _paintWithFilterPassesImpl(
+          painter,
+          canvas,
+          filterPasses,
+          (imageFilter, colorFilter, blendMode) => painter._paintEllipse(
+            canvas,
+            node,
+            imageFilter: imageFilter,
+            colorFilter: colorFilter,
+            blendMode: blendMode,
+          ),
+        );
+        break;
+      case 'path':
+        _paintWithFilterPassesImpl(
+          painter,
+          canvas,
+          filterPasses,
+          (imageFilter, colorFilter, blendMode) => painter._paintPath(
+            canvas,
+            node,
+            imageFilter: imageFilter,
+            colorFilter: colorFilter,
+            blendMode: blendMode,
+          ),
+        );
+        break;
+      case 'polygon':
+        _paintWithFilterPassesImpl(
+          painter,
+          canvas,
+          filterPasses,
+          (imageFilter, colorFilter, blendMode) => painter._paintPolygon(
+            canvas,
+            node,
+            imageFilter: imageFilter,
+            colorFilter: colorFilter,
+            blendMode: blendMode,
+          ),
+        );
+        break;
+      case 'polyline':
+        _paintWithFilterPassesImpl(
+          painter,
+          canvas,
+          filterPasses,
+          (imageFilter, colorFilter, blendMode) => painter._paintPolyline(
+            canvas,
+            node,
+            imageFilter: imageFilter,
+            colorFilter: colorFilter,
+            blendMode: blendMode,
+          ),
+        );
+        break;
+      case 'line':
+        _paintWithFilterPassesImpl(
+          painter,
+          canvas,
+          filterPasses,
+          (imageFilter, colorFilter, blendMode) => painter._paintLine(
+            canvas,
+            node,
+            imageFilter: imageFilter,
+            colorFilter: colorFilter,
+            blendMode: blendMode,
+          ),
+        );
+        break;
+      case 'image':
+        _paintWithFilterPassesImpl(
+          painter,
+          canvas,
+          filterPasses,
+          (imageFilter, colorFilter, blendMode) => painter._paintImage(
+            canvas,
+            node,
+            imageFilter: imageFilter,
+            colorFilter: colorFilter,
+            blendMode: blendMode,
+          ),
+        );
+        break;
+      case 'text':
+        _paintWithFilterPassesImpl(
+          painter,
+          canvas,
+          filterPasses,
+          (imageFilter, colorFilter, blendMode) => painter._paintText(
+            canvas,
+            node,
+            imageFilter: imageFilter,
+            colorFilter: colorFilter,
+            blendMode: blendMode,
+          ),
+        );
+        break;
+      case 'use':
+        painter._paintUse(
+          canvas,
+          node,
+          useStack: currentUseStack,
+          useContext: useContext,
+        );
+        break;
+      case 'a':
+      case 'g':
+      case 'svg':
+      case 'foreignObject':
+        // Groups painted through children recursion below
+        break;
+      case 'switch':
+        painter._paintSwitch(canvas, node, useStack: currentUseStack);
+        break;
+      default:
+        break;
+    }
+  }
+
+  // Paint children
+  if (painter._shouldPaintChildren(node)) {
+    final foParent = node.tagName == 'foreignObject' ? node : foreignObjectParent;
+    for (final child in node.children) {
+      _paintNodeImplWithUseContext(
+        painter,
+        canvas,
+        child,
+        useStack: currentUseStack,
+        foreignObjectParent: foParent,
+        useContext: useContext,
+      );
+    }
+  }
 }

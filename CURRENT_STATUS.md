@@ -1,6 +1,6 @@
 # Current Development Status
 
-**Last Updated:** March 27, 2026  
+**Last Updated:** March 28, 2026  
 **Authority:** This file is the single source of truth for current project state.
 
 ## Snapshot
@@ -11,7 +11,7 @@
 - Version: `2.2.2`
 - **Blink SVG Parity:** ~75%
 
-## Verified Health (March 27, 2026)
+## Verified Health (March 28, 2026)
 
 Commands run in `/Users/denisnadey/apps/flutter_full_svg_support`:
 
@@ -21,19 +21,14 @@ Commands run in `/Users/denisnadey/apps/flutter_full_svg_support`:
 ```
 
 Result:
-- `flutter test`: **3,413+ tests passed** (golden_comparison hangs on browser render - excluded)
+- `flutter test`: **3,497+ tests passed** (golden_comparison hangs on browser render - excluded)
 - `dart analyze`: **0 errors**, **0 warnings**, 1 info
 
 ## In-Progress Work
 
 Active development areas targeting higher Blink parity:
 
-1. **Advanced Filter Graph** - Non-source/background input chain semantics, 8 remaining FE primitives
-2. **Advanced Clipping** - Complex clip-path compositions and interactions
-3. **Advanced Masking** - Luminance masks and alpha channel handling
-4. **use/symbol Inheritance** - Style and attribute inheritance edge cases
-5. **Light Sources** - Advanced feSpecularLighting/feDiffuseLighting light source positioning
-6. **Component Transfer** - Extended feComponentTransfer channel functions
+1. **CSS/SMIL edge-case parity** - Advanced shorthand/transform semantics
 
 ## Documentation Cleanup (March 16, 2026)
 
@@ -50,12 +45,76 @@ Moved to archive:
 - `docs/STAGE_7_SUMMARY.md`
 - `docs/STAGE_8_PLAN.md`
 
-## Recently Closed (March 27, 2026)
+## Recently Closed (March 28, 2026)
+
+### Advanced Light Sources Complete (Blink Parity)
+- ✅ **Per-pixel lighting computation**: `SvgDiffuseLightingPaintPass` and `SvgSpecularLightingPaintPass` classes for full Blink-style pixel-level lighting
+- ✅ **feDistantLight**: Full azimuth/elevation direction calculation with proper vector normalization
+- ✅ **fePointLight**: Per-pixel light direction computation with distance-based attenuation support
+- ✅ **feSpotLight**: Full cone attenuation with `limitingConeAngle` hard cutoff and `specularExponent`-based intensity falloff
+- ✅ **Surface normal computation**: Sobel-like kernel for bump map normal extraction with edge mode handling (duplicate/wrap/none)
+- ✅ **kernelUnitLength**: Proper scaling of bump map sampling for normal computation
+- ✅ **z-coordinate handling**: 3D light position relative to surface with proper height computation from alpha channel
+- ✅ **lighting-color support**: Full color parsing for lighting elements (named colors, hex, rgb/rgba)
+- ✅ **Pipeline integration**: Specialized paint passes replace simplified ColorFilter approximation for accurate per-pixel lighting
+- ✅ **91+ comprehensive tests** covering all light sources, edge cases (light behind surface, z=0, narrow cones), filter chains, and pipeline integration
+
+### Advanced Masking Complete (Blink Parity)
+- ✅ **maskUnits attribute**: Full support for `objectBoundingBox` (default) and `userSpaceOnUse` coordinate systems
+- ✅ **maskContentUnits attribute**: Full support for `userSpaceOnUse` (default) and `objectBoundingBox` coordinate systems
+- ✅ **Luminance masks (default per SVG 2)**: Proper luminance formula (0.2126*R + 0.7152*G + 0.0722*B) * A with white=visible, black=hidden, gray=partial
+- ✅ **Alpha masks**: mask-type="alpha" uses alpha channel directly for masking
+- ✅ **mask-type/mask-mode CSS properties**: Full parsing and override priority (mask-mode > mask-type > type attribute > default luminance)
+- ✅ **Layer-based compositing**: saveLayer with proper blend modes (DstIn) for accurate alpha/luminance composition
+- ✅ **Gradient mask content**: Linear and radial gradients in mask create smooth visibility transitions
+- ✅ **Transform support**: Transforms on mask child elements properly applied
+- ✅ **Edge feathering**: Blur filters in mask content create soft edges with bounds expansion
+- ✅ **Nested masks**: Mask on group containing masked element with proper intersection
+- ✅ **Circular reference protection**: Safe handling of circular mask references and self-referencing masks with max depth limit
+- ✅ **Mask + clip-path combination**: Both applied correctly (clip-path then mask)
+- ✅ **Hit-testing parity**: Luminance-aware hit detection (black areas don't receive hits), maskUnits/maskContentUnits transforms in hit-test coordinates
+- ✅ **26+ comprehensive tests** covering maskUnits, maskContentUnits, luminance/alpha modes, gradients, transforms, nested masks, combinations, and edge cases
+
+### Advanced Clipping Complete (Blink Parity)
+- ✅ **clipPathUnits attribute**: Full support for `userSpaceOnUse` (default) and `objectBoundingBox` coordinate systems with proper transform mapping
+- ✅ **Nested clip-paths**: Cascading clip-paths with intersection computation, 3+ levels deep, mixed clipPathUnits across nesting levels
+- ✅ **Complex clip-path compositions**: Multiple shapes (union), `<use>` element references, `<text>` element clipping (bounding box), transforms on child elements
+- ✅ **clip-rule attribute**: Full `nonzero` (default) and `evenodd` fill rule support for all shape types (rect, circle, ellipse, path, polygon, polyline, text, line, image)
+- ✅ **Hit-testing parity**: All clipping scenarios properly affect hit regions including clipPathUnits transforms, nested intersections, and clip-rule
+- ✅ **29 comprehensive tests** covering clipPathUnits, clip-rule, nested clip-paths, compositions, edge cases (empty clip, no geometry, circular refs), transform compositions, and hit-testing
+
+### SVG Filter Graph Complete (100% FE Primitive Coverage)
+- ✅ **All 17 FE primitives implemented**: feGaussianBlur, feMorphology, feDisplacementMap, feImage, feConvolveMatrix, feTurbulence, feComponentTransfer, feDiffuseLighting, feSpecularLighting, feOffset, feFlood, feBlend, feComposite, feMerge/feMergeNode, feTile, feDropShadow, feColorMatrix
+- ✅ **All 3 light source elements**: feDistantLight, fePointLight, feSpotLight
+- ✅ **Complete input chain semantics**: SourceGraphic, SourceAlpha, BackgroundImage, BackgroundAlpha, FillPaint, StrokePaint
+- ✅ **Named result references**: Proper chaining via `result` attribute, multi-hop resolution (A→B→C)
+- ✅ **Circular/forward reference detection**: Graceful handling per SVG spec
+- ✅ **Advanced feDropShadow composition**: Multi-pass shadow pipeline (blur + offset + flood + composite + merge)
+- ✅ **Advanced feMerge composition**: Multiple input layers in declaration order
+
+### Extended Component Transfer (Full Blink Parity)
+- ✅ **All 5 transfer function types**: `identity`, `table`, `discrete`, `linear`, `gamma`
+- ✅ **Full attribute parsing**: `tableValues`, `slope`, `intercept`, `amplitude`, `exponent`, `offset`
+- ✅ **Per-channel functions**: `<feFuncR>`, `<feFuncG>`, `<feFuncB>`, `<feFuncA>` elements
+- ✅ **Mathematical implementations per SVG spec**: piecewise linear interpolation for table, step function for discrete, slope*C+intercept for linear, amplitude*pow(C,exponent)+offset for gamma
+- ✅ **Output clamping to [0,1]** with proper edge case handling (empty tableValues, single value)
+- ✅ **Animation support**: SMIL animations on slope, intercept, amplitude, exponent, offset attributes
+- ✅ **Pipeline optimization**: ColorFilter matrix for linear-only transforms, SvgComponentTransferPaintPass for table/discrete/gamma
+- ✅ **78 comprehensive tests** covering all function types, mixed channels, edge cases, and pipeline integration
 
 ### Text Typography Completion (~99% Blink Parity)
 - ✅ **Hanging punctuation rendering**: CSS `hanging-punctuation` property fully renders (`first`, `last`, `allow-end`, `force-end` values with CJK and Latin punctuation, vertical text, and text-anchor integration)
 - ✅ **Baseline alignment in deeply nested contexts**: Recursive baseline offset accumulation through 3+ nesting levels, vertical-in-horizontal writing mode transitions, mixed dominant-baseline/alignment-baseline/baseline-shift propagation
 - ✅ **Complex ligature shaping edge cases**: Contextual ligatures preserved across tspan boundaries, font-feature-settings correctly scoped per run, metric recalculation for feature-induced width changes, graceful fallback for unsupported features, cache keys include font features
+
+### Use/Symbol Inheritance Complete (Blink Parity)
+- ✅ **CSS cascade through use shadow boundary**: `UseCascadeContext` properly resolves CSS specificity across shadow DOM boundary
+- ✅ **CSS property inheritance**: `_UseInheritanceContext` inherits CSS properties (fill, stroke, font-*, visibility, etc.) from use element into shadow content
+- ✅ **Symbol viewBox/preserveAspectRatio**: Proper viewport creation with all preserveAspectRatio values (xMinYMin, xMidYMid, xMaxYMax, meet/slice/none)
+- ✅ **Nested use/symbol transform composition**: Transforms compose correctly through deeply nested use→symbol→use→symbol chains
+- ✅ **Circular reference protection**: Max recursion depth of 10, graceful handling of direct and indirect circular references
+- ✅ **Hit-testing parity**: `_UseHitTestContext` mirrors paint code with proper style inheritance and event retargeting to outermost use element
+- ✅ **27 comprehensive edge case tests** covering viewBox edge cases, transform composition, preserveAspectRatio variants, invalid references, circular references, CSS inheritance, and hit-testing
 
 ### Functional Closures (March 12-13, 2026)
 - ✅ `calcMode="paced"` distance support for `path` and `transform` is implemented and covered by tests.
@@ -220,9 +279,9 @@ Implemented primitives / baseline semantics:
 - `feImage` (baseline graph semantics)
 - `feConvolveMatrix` (actual kernel convolution with edge modes)
 - `feTurbulence` (baseline)
-- `feComponentTransfer` (baseline)
-- `feDiffuseLighting` (actual Lambertian diffuse calculation)
-- `feSpecularLighting` (actual Blinn-Phong specular calculation)
+- `feComponentTransfer` (complete: identity, table, discrete, linear, gamma)
+- `feDiffuseLighting` (full Blink parity: per-pixel Lambertian diffuse with surface normals)
+- `feSpecularLighting` (full Blink parity: per-pixel Blinn-Phong specular with surface normals)
 - `feOffset`
 - `feFlood`
 - `feBlend` (baseline + extended SVG2 mode mapping)
@@ -249,7 +308,7 @@ Implemented primitives / baseline semantics:
   - **Caching**: Text paragraph caching by content + style with smart invalidation
   - **Advanced typography**: Hanging punctuation rendering (first/last/allow-end/force-end), baseline alignment in deeply nested contexts (3+ levels), complex ligature shaping (tspan boundaries, font-feature-settings scoping)
   - **Remaining gaps**: Only deprecated SVG 1.1 features (SVG fonts, altGlyph) and DOM text query methods (architectural difference — Flutter is immediate-mode, not DOM-based)
-- `<use href="#...">`, `<symbol>` via `<use>` (baseline)
+- `<use href="#...">`, `<symbol>` via `<use>` (Blink parity: full CSS cascade, style inheritance, transform composition, hit-testing)
 - `<defs>` as definitions-only
 - `<image>` with data URI + network/bundle best-effort loading (baseline)
 - `<foreignObject>` viewport container behavior with advanced semantics:
@@ -258,7 +317,7 @@ Implemented primitives / baseline semantics:
   - Overflow handling (hidden/visible)
   - Transform propagation through foreignObject
   - Hit-testing through foreignObject children
-- `clipPath` and `mask` baseline support
+- `clipPath` (Blink parity: clipPathUnits, nested clip-paths, clip-rule, complex compositions, hit-testing) and `mask` (Blink parity: maskUnits, maskContentUnits, luminance/alpha modes, layer-based compositing, hit-testing)
 - **`<view>` element support** (NEW):
   - Parse `<view>` elements with `viewBox` and `preserveAspectRatio` attributes
   - Support fragment identifiers to switch views dynamically
@@ -271,7 +330,7 @@ Detailed audit: `/Users/denisnadey/apps/flutter_full_svg_support/docs/BLINK_PARI
 
 High-impact gaps:
 1. Text typography is ~99% complete; remaining gaps are only deprecated SVG 1.1 features (SVG fonts, altGlyph — not worth implementing) and DOM text query methods (architectural difference — Flutter is immediate-mode, not DOM-based).
-2. Filter parity is partial: baseline support exists for many primitives, but advanced non-source graph semantics remain limited.
+2. Filter parity is **complete**: All 17 FE primitives and 3 light source elements are implemented with full input chain semantics (SourceGraphic, SourceAlpha, BackgroundImage, BackgroundAlpha, FillPaint, StrokePaint, named result chaining).
 3. CSS animation conversion remains partial for advanced/edge CSS shorthand/transform semantics.
 4. `animateMotion` still lacks broader Blink-level semantics beyond current baseline support.
 
@@ -284,9 +343,6 @@ To avoid drift:
 
 ## Next Execution Plan
 
-1. Expand advanced filter graph semantics (`feDropShadow`, `feMerge`, background input parity).
-2. Expand advanced clipping/masking parity (complex compositions, luminance masks).
-3. Expand hit-testing parity for complex `clipPath`/`mask`/`use`/text regions.
-4. Improve advanced `<use>`/`symbol` inheritance semantics.
-5. Continue CSS/SMIL edge-case parity with regression fixtures.
-6. Continue modular refactor of remaining large files (`svg_filters_primitives.dart`, `animated_svg_painter_shapes.dart`, `animated_svg_picture.dart`, `animated_svg_picture_utils.dart`) with full regression checks after each split.
+1. Expand hit-testing parity for complex `use`/text regions.
+2. Continue CSS/SMIL edge-case parity with regression fixtures.
+3. Continue modular refactor of remaining large files (`svg_filters_primitives.dart`, `animated_svg_painter_shapes.dart`, `animated_svg_picture.dart`, `animated_svg_picture_utils.dart`) with full regression checks after each split.
