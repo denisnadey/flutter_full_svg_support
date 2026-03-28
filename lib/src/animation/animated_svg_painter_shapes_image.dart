@@ -198,12 +198,16 @@ extension AnimatedSvgPainterShapesImageExtension on AnimatedSvgPainter {
     }
 
     // For 'slice' mode, clip to viewport to hide overflow
+    // Unless overflow:visible is set on the element
     if (layout.clipToViewport) {
-      canvas.save();
-      canvas.clipRect(viewport, doAntiAlias: true);
-      canvas.drawImageRect(image, srcRect, layout.destinationRect, paint);
-      canvas.restore();
-      return;
+      final overflow = _getInheritedString(node, 'overflow')?.toLowerCase();
+      if (overflow != 'visible') {
+        canvas.save();
+        canvas.clipRect(viewport, doAntiAlias: true);
+        canvas.drawImageRect(image, srcRect, layout.destinationRect, paint);
+        canvas.restore();
+        return;
+      }
     }
 
     canvas.drawImageRect(image, srcRect, layout.destinationRect, paint);

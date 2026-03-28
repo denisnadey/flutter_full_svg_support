@@ -247,7 +247,17 @@ abstract class CssVariablesCascadeResolver {
 }
 
 /// calc() expression parser and evaluator.
+///
+/// Supports:
+/// - Basic arithmetic: +, -, *, /
+/// - Nested calc(): calc(calc(100% - 10px) * 2)
+/// - CSS math functions: min(), max(), clamp()
+/// - Mixed units: calc(100% - 50px)
+/// - Deeply nested expressions (up to 20 levels)
 class CssCalcEvaluator {
+  /// Maximum nesting depth for recursive evaluations.
+  static const int _maxNestingDepth = 20;
+
   /// Evaluate a calc() expression to a numeric value.
   /// Returns null if evaluation fails.
   ///
@@ -261,34 +271,62 @@ class CssCalcEvaluator {
     double? containerSize,
     double? parentFontSize,
   }) {
+    return _evaluateWithDepth(
+      value,
+      fontSize: fontSize,
+      containerSize: containerSize,
+      parentFontSize: parentFontSize,
+      depth: 0,
+    );
+  }
+
+  /// Internal evaluation with depth tracking to prevent infinite recursion.
+  static double? _evaluateWithDepth(
+    String value, {
+    required double fontSize,
+    double? containerSize,
+    double? parentFontSize,
+    required int depth,
+  }) {
+    if (depth > _maxNestingDepth) {
+      return null; // Prevent infinite recursion
+    }
+
     final trimmed = value.trim();
+    if (trimmed.isEmpty) {
+      return null; // Empty expression is invalid
+    }
+
     final lower = trimmed.toLowerCase();
 
     // Check for CSS math functions first
     if (lower.startsWith('clamp(')) {
-      return _evaluateClamp(
+      return _evaluateClampWithDepth(
         trimmed,
         fontSize: fontSize,
         containerSize: containerSize,
         parentFontSize: parentFontSize,
+        depth: depth,
       );
     }
 
     if (lower.startsWith('min(')) {
-      return _evaluateMin(
+      return _evaluateMinWithDepth(
         trimmed,
         fontSize: fontSize,
         containerSize: containerSize,
         parentFontSize: parentFontSize,
+        depth: depth,
       );
     }
 
     if (lower.startsWith('max(')) {
-      return _evaluateMax(
+      return _evaluateMaxWithDepth(
         trimmed,
         fontSize: fontSize,
         containerSize: containerSize,
         parentFontSize: parentFontSize,
+        depth: depth,
       );
     }
 
@@ -305,26 +343,28 @@ class CssCalcEvaluator {
 
     // Extract the calc() content
     final content = _extractCalcContent(trimmed);
-    if (content == null) {
-      return null;
+    if (content == null || content.trim().isEmpty) {
+      return null; // Invalid calc() expression
     }
 
     // Evaluate the expression
-    return _evaluateExpression(
+    return _evaluateExpressionWithDepth(
       content,
       fontSize: fontSize,
       containerSize: containerSize,
       parentFontSize: parentFontSize,
+      depth: depth,
     );
   }
 
   /// Evaluate a clamp(min, val, max) expression.
   /// clamp(MIN, VAL, MAX) is equivalent to max(MIN, min(VAL, MAX))
-  static double? _evaluateClamp(
+  static double? _evaluateClampWithDepth(
     String expr, {
     required double fontSize,
     double? containerSize,
     double? parentFontSize,
+    required int depth,
   }) {
     final content = _extractFunctionContent(expr, 'clamp');
     if (content == null) return null;
@@ -332,23 +372,26 @@ class CssCalcEvaluator {
     final args = _splitFunctionArgs(content);
     if (args.length != 3) return null;
 
-    final minVal = evaluate(
+    final minVal = _evaluateWithDepth(
       args[0],
       fontSize: fontSize,
       containerSize: containerSize,
       parentFontSize: parentFontSize,
+      depth: depth + 1,
     );
-    final val = evaluate(
+    final val = _evaluateWithDepth(
       args[1],
       fontSize: fontSize,
       containerSize: containerSize,
       parentFontSize: parentFontSize,
+      depth: depth + 1,
     );
-    final maxVal = evaluate(
+    final maxVal = _evaluateWithDepth(
       args[2],
       fontSize: fontSize,
       containerSize: containerSize,
       parentFontSize: parentFontSize,
+      depth: depth + 1,
     );
 
     if (minVal == null || val == null || maxVal == null) return null;
@@ -358,11 +401,12 @@ class CssCalcEvaluator {
   }
 
   /// Evaluate a min(...) expression - returns the smallest value.
-  static double? _evaluateMin(
+  static double? _evaluateMinWithDepth(
     String expr, {
     required double fontSize,
     double? containerSize,
     double? parentFontSize,
+    required int depth,
   }) {
     final content = _extractFunctionContent(expr, 'min');
     if (content == null) return null;
@@ -372,11 +416,12 @@ class CssCalcEvaluator {
 
     double? result;
     for (final arg in args) {
-      final val = evaluate(
+      final val = _evaluateWithDepth(
         arg,
         fontSize: fontSize,
         containerSize: containerSize,
         parentFontSize: parentFontSize,
+        depth: depth + 1,
       );
       if (val == null) return null;
       if (result == null || val < result) {
@@ -388,11 +433,12 @@ class CssCalcEvaluator {
   }
 
   /// Evaluate a max(...) expression - returns the largest value.
-  static double? _evaluateMax(
+  static double? _evaluateMaxWithDepth(
     String expr, {
     required double fontSize,
     double? containerSize,
     double? parentFontSize,
+    required int depth,
   }) {
     final content = _extractFunctionContent(expr, 'max');
     if (content == null) return null;
@@ -402,11 +448,12 @@ class CssCalcEvaluator {
 
     double? result;
     for (final arg in args) {
-      final val = evaluate(
+      final val = _evaluateWithDepth(
         arg,
         fontSize: fontSize,
         containerSize: containerSize,
         parentFontSize: parentFontSize,
+        depth: depth + 1,
       );
       if (val == null) return null;
       if (result == null || val > result) {
@@ -496,19 +543,21 @@ class CssCalcEvaluator {
     return null;
   }
 
-  /// Evaluate an expression string.
-  static double? _evaluateExpression(
+  /// Evaluate an expression string with depth tracking.
+  static double? _evaluateExpressionWithDepth(
     String expr, {
     required double fontSize,
     double? containerSize,
     double? parentFontSize,
+    required int depth,
   }) {
     // First, handle nested calc() expressions and math functions
-    var resolved = _resolveNestedFunctions(
+    var resolved = _resolveNestedFunctionsWithDepth(
       expr,
       fontSize: fontSize,
       containerSize: containerSize,
       parentFontSize: parentFontSize,
+      depth: depth,
     );
 
     if (resolved == null) {
@@ -525,35 +574,35 @@ class CssCalcEvaluator {
   }
 
   /// Resolve nested calc(), min(), max(), clamp() expressions recursively.
-  static String? _resolveNestedFunctions(
+  static String? _resolveNestedFunctionsWithDepth(
     String expr, {
     required double fontSize,
     double? containerSize,
     double? parentFontSize,
+    required int depth,
   }) {
     var result = expr;
     var iterations = 0;
-    const maxIterations = 10;
 
     // Handle all CSS math functions: calc(), min(), max(), clamp()
     final funcRegex = RegExp(r'(calc|min|max|clamp)\(', caseSensitive: false);
 
-    while (funcRegex.hasMatch(result) && iterations < maxIterations) {
+    while (funcRegex.hasMatch(result) && iterations < _maxNestingDepth) {
       final match = funcRegex.firstMatch(result);
       if (match == null) break;
 
       final funcName = match.group(1)!.toLowerCase();
       final start = match.start;
       // Find the matching closing paren
-      var depth = 1;
+      var parenDepth = 1;
       var end = match.end;
-      while (end < result.length && depth > 0) {
-        if (result[end] == '(') depth++;
-        if (result[end] == ')') depth--;
+      while (end < result.length && parenDepth > 0) {
+        if (result[end] == '(') parenDepth++;
+        if (result[end] == ')') parenDepth--;
         end++;
       }
 
-      if (depth != 0) {
+      if (parenDepth != 0) {
         return null; // Unmatched parentheses
       }
 
@@ -562,19 +611,21 @@ class CssCalcEvaluator {
 
       if (funcName == 'calc') {
         final nestedExpr = result.substring(match.end, end - 1);
-        nestedValue = _evaluateExpression(
+        nestedValue = _evaluateExpressionWithDepth(
           nestedExpr,
           fontSize: fontSize,
           containerSize: containerSize,
           parentFontSize: parentFontSize,
+          depth: depth + 1,
         );
       } else {
-        // min, max, clamp - use the full evaluation
-        nestedValue = evaluate(
+        // min, max, clamp - use the full evaluation with depth
+        nestedValue = _evaluateWithDepth(
           fullExpr,
           fontSize: fontSize,
           containerSize: containerSize,
           parentFontSize: parentFontSize,
+          depth: depth + 1,
         );
       }
 
@@ -648,6 +699,23 @@ class CssCalcEvaluator {
 
     if (values.isEmpty) {
       return null;
+    }
+
+    // Validate: number of values should be operators + 1
+    // e.g., "10 + 20 - 5" has 3 values and 2 operators
+    if (operators.isNotEmpty && values.length != operators.length + 1) {
+      // Invalid expression: mismatched values and operators
+      // If we have more values than expected, use what we have
+      // If we have fewer values, return the last valid value or null
+      if (values.length < operators.length + 1) {
+        // Not enough values for operators (trailing operator)
+        // Remove trailing operators until we have a valid expression
+        while (operators.length >= values.length && operators.isNotEmpty) {
+          operators.removeLast();
+        }
+        if (values.isEmpty) return null;
+        if (operators.isEmpty) return values.first;
+      }
     }
 
     // Evaluate: first * and /, then + and -

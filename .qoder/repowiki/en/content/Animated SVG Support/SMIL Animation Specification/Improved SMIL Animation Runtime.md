@@ -21,15 +21,18 @@
 - [smil_animation_value_computation.dart](file://lib/src/animation/smil/smil_animation_value_computation.dart)
 - [smil_animation_curves.dart](file://lib/src/animation/smil/smil_animation_curves.dart)
 - [interpolators.dart](file://lib/src/animation/smil/interpolators.dart)
+- [motion_path.dart](file://lib/src/animation/smil/motion_path.dart)
+- [distance_calculator.dart](file://lib/src/animation/smil/distance_calculator.dart)
 </cite>
 
 ## Update Summary
 **Changes Made**
-- Enhanced SMIL animation runtime with improved timeline synchronization and DOM event dispatching
-- Added comprehensive event model handling with beginEvent, endEvent, and repeatEvent support
-- Implemented advanced animation value computation for complex interpolations including path morphing and transform interpolation
-- Integrated enhanced timing parser with DOM event form support (beginEvent, endEvent, repeatEvent)
-- Added sophisticated animation sandwich model for priority resolution and additive composition
+- Enhanced SMIL animation runtime with discrete calcMode support for improved animation value computation
+- Implemented per-segment spline easing for motion animations with enhanced keySplines handling
+- Added comprehensive accumulate='sum' handling for motion animations with position accumulation
+- Enhanced rotate modes support including auto, auto-reverse, and fixed angle rotations
+- Improved distance calculation system for paced calcMode with specialized calculators
+- Enhanced motion path computation with per-segment spline application and discrete motion handling
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -38,15 +41,19 @@
 4. [Architecture Overview](#architecture-overview)
 5. [Enhanced Event System](#enhanced-event-system)
 6. [Advanced Animation Value Computation](#advanced-animation-value-computation)
-7. [Detailed Component Analysis](#detailed-component-analysis)
-8. [DOM Event Dispatching](#dom-event-dispatching)
-9. [Dependency Analysis](#dependency-analysis)
-10. [Performance Considerations](#performance-considerations)
-11. [Troubleshooting Guide](#troubleshooting-guide)
-12. [Conclusion](#conclusion)
+7. [Discrete CalcMode Support](#discrete-calcmode-support)
+8. [Per-Segment Spline Easing](#per-segment-spline-easing)
+9. [Enhanced Motion Animation Features](#enhanced-motion-animation-features)
+10. [Advanced Distance Calculation System](#advanced-distance-calculation-system)
+11. [Detailed Component Analysis](#detailed-component-analysis)
+12. [DOM Event Dispatching](#dom-event-dispatching)
+13. [Dependency Analysis](#dependency-analysis)
+14. [Performance Considerations](#performance-considerations)
+15. [Troubleshooting Guide](#troubleshooting-guide)
+16. [Conclusion](#conclusion)
 
 ## Introduction
-This document describes the significantly enhanced SMIL (Synchronized Multimedia Integration Language) animation runtime implemented in the Blink engine core and integrated with the Flutter SVG package. The runtime provides precise timing control, flexible begin/end conditions, repeat semantics, and **comprehensive DOM event dispatching capabilities** including beginEvent, endEvent, and repeatEvent triggering for external listeners and event-driven animations. It supports multiple animation elements (<animate>, <set>, <animateMotion>, <animateTransform>, <animateColor>) and integrates with the broader SVG rendering pipeline. The enhanced runtime now features advanced animation value computation for complex interpolations, improved timeline synchronization, and sophisticated event model handling.
+This document describes the significantly enhanced SMIL (Synchronized Multimedia Integration Language) animation runtime implemented in the Blink engine core and integrated with the Flutter SVG package. The runtime provides precise timing control, flexible begin/end conditions, repeat semantics, and **comprehensive DOM event dispatching capabilities** including beginEvent, endEvent, and repeatEvent triggering for external listeners and event-driven animations. It supports multiple animation elements (<animate>, <set>, <animateMotion>, <animateTransform>, <animateColor>) and integrates with the broader SVG rendering pipeline. The enhanced runtime now features advanced animation value computation for complex interpolations, improved timeline synchronization, sophisticated event model handling, and **specialized support for discrete calcMode, per-segment spline easing, accumulate='sum' for motion animations, and enhanced rotate modes**.
 
 ## Project Structure
 The SMIL animation runtime spans several core modules with enhanced event handling and advanced interpolation capabilities:
@@ -55,6 +62,8 @@ The SMIL animation runtime spans several core modules with enhanced event handli
 - **Enhanced timing system**: Event-based conditions, DOM event dispatching, external listener support
 - **Advanced property animation infrastructure**: SVGAnimatedType, SVGAnimatedTypeAnimator, specific animators (e.g., SVGAnimatedNumberAnimator)
 - **Complex interpolation system**: Path morphing, transform interpolation, color interpolation, and advanced easing functions
+- **Enhanced motion animation system**: Per-segment spline easing, discrete calcMode support, accumulate='sum' handling, and improved rotate modes
+- **Advanced distance calculation system**: Specialized calculators for different attribute types supporting paced calcMode
 - **Test coverage**: Dart-based tests for interpolators, SMIL animation logic, event-driven scenarios, and edge cases
 
 ```mermaid
@@ -84,6 +93,8 @@ subgraph "Advanced Interpolation"
 N["Interpolators<br/>Multi-type interpolation"]
 O["CubicBezier<br/>Easing functions"]
 P["Path Morphing<br/>SVG path interpolation"]
+Q["DistanceCalculator<br/>Paced calcMode support"]
+R["MotionPath<br/>Enhanced path computation"]
 end
 A --> B
 B --> C
@@ -97,6 +108,7 @@ H --> I
 I --> J
 N --> O
 N --> P
+Q --> R
 ```
 
 **Diagram sources**
@@ -112,8 +124,10 @@ N --> P
 - [smil_timeline_runtime.dart:41-69](file://lib/src/animation/smil/smil_timeline_runtime.dart#L41-L69)
 - [timing_condition.dart:126-161](file://lib/src/animation/smil/timing_condition.dart#L126-L161)
 - [interpolators.dart:18-42](file://lib/src/animation/smil/interpolators.dart#L18-L42)
-- [smil_animation_curves.dart:24-44](file://lib/src/animation/smil/smil_animation_curves.dart#L24-44)
+- [smil_animation_curves.dart:24-44](file://lib/src/animation/smil/smil_animation_curves.dart#L24-L44)
 - [smil_animation_value_computation.dart:80-100](file://lib/src/animation/smil/smil_animation_value_computation.dart#L80-L100)
+- [motion_path.dart:19-22](file://lib/src/animation/smil/motion_path.dart#L19-L22)
+- [distance_calculator.dart:8-14](file://lib/src/animation/smil/distance_calculator.dart#L8-L14)
 
 **Section sources**
 - [SMILTime.cpp:34-66](file://blink-b87d44f-Source-core-svg/animation/SMILTime.cpp#L34-L66)
@@ -138,6 +152,8 @@ N --> P
 - **Enhanced Timing System**: Event-based conditions, DOM event parsing, external listener registration, and event-driven animation activation.
 - **Advanced Property Animators**: Typed animators (e.g., SVGAnimatedNumberAnimator) compute interpolated values and handle additive composition.
 - **Complex Interpolation System**: Multi-type interpolators for numbers, colors, transforms, paths, and lists with advanced easing functions and path morphing capabilities.
+- **Enhanced Motion Animation System**: Specialized motion path computation with per-segment spline easing, discrete calcMode support, and accumulate='sum' handling.
+- **Advanced Distance Calculation System**: Specialized calculators for different attribute types (numeric, color, length, path, transform) supporting paced calcMode.
 
 **Section sources**
 - [SMILTime.h:34-55](file://blink-b87d44f-Source-core-svg/animation/SMILTime.h#L34-L55)
@@ -159,6 +175,8 @@ The runtime follows a layered design with enhanced event-driven capabilities and
 - Property layer: SVGAnimationElement and SVGAnimateElement coordinate typed animated values and animators.
 - **Event layer**: Enhanced timing system with DOM event dispatching and external listener support.
 - **Interpolation layer**: Advanced interpolators handle complex value transformations including path morphing and transform interpolation.
+- **Motion animation layer**: Enhanced motion path computation with per-segment spline easing and discrete calcMode support.
+- **Distance calculation layer**: Specialized calculators for paced calcMode supporting different attribute types.
 - Application layer: Flutter integration consumes SMIL timing and applies computed values to render nodes.
 
 ```mermaid
@@ -170,6 +188,8 @@ participant Animator as "SVGAnimateElement"
 participant Timeline as "SvgTimeline"
 participant DOM as "DOM Event System"
 participant Interpolator as "Interpolators"
+participant MotionPath as "MotionPath"
+participant DistanceCalc as "DistanceCalculator"
 participant Target as "Target SVGElement"
 Timer->>Scheduler : timerFired()
 Scheduler->>Scheduler : updateAnimations(elapsed)
@@ -180,7 +200,11 @@ Timeline->>DOM : dispatch beginEvent/endEvent
 DOM->>Timeline : triggerEvent listeners
 Timeline->>Element : activate dependent animations
 Element->>Interpolator : compute interpolated values
+Element->>MotionPath : enhanced motion computation
+Element->>DistanceCalc : paced calcMode distance calculation
 Interpolator->>Target : apply results to animated properties
+MotionPath->>Target : apply transform matrices
+DistanceCalc->>Element : generate paced keyTimes
 Scheduler->>Timer : startTimer(nextFireTime)
 ```
 
@@ -233,15 +257,16 @@ The runtime now features sophisticated animation value computation for complex i
 - **Step Functions**: CSS-like step timing for discrete animations
 - **KeySplines Integration**: Per-segment easing for complex animations
 
-### Path Morphing Capabilities
-- Automatic path command normalization for different path structures
-- Curve interpolation preserving path topology
-- Graceful fallback for invalid or mismatched path data
+### Enhanced Motion Animation Features
+- **Per-Segment Spline Easing**: Different easing curves for each segment in motion animations
+- **Discrete CalcMode Support**: Waypoint jumping without interpolation for motion animations
+- **Accumulate='sum' Handling**: Position accumulation across motion animation repeats
+- **Enhanced Rotate Modes**: Support for auto, auto-reverse, and fixed angle rotations
 
 ### Accumulate and Additive Composition
 - **Accumulate="sum"**: Repeated value addition across animation cycles
 - **Additive="sum"**: Multiple animation stacking with sandwich model priority
-- Nested additive animation support with proper ordering
+- **Nested additive animation support**: Proper ordering and precedence resolution
 
 **Section sources**
 - [smil_animation_value_computation.dart:26-77](file://lib/src/animation/smil/smil_animation_value_computation.dart#L26-L77)
@@ -249,6 +274,131 @@ The runtime now features sophisticated animation value computation for complex i
 - [smil_animation_value_computation.dart:220-270](file://lib/src/animation/smil/smil_animation_value_computation.dart#L220-L270)
 - [smil_animation_curves.dart:24-44](file://lib/src/animation/smil/smil_animation_curves.dart#L24-L44)
 - [interpolators.dart:18-42](file://lib/src/animation/smil/interpolators.dart#L18-L42)
+
+## Discrete CalcMode Support
+The runtime now provides comprehensive support for discrete calcMode animations:
+
+### Discrete Animation Behavior
+- **Waypoint Jumping**: For motion animations with keyPoints, discrete calcMode jumps between waypoints without interpolation
+- **Segment-Based Selection**: Determines which keyPoint segment the current time falls into
+- **Exact Position Retrieval**: Retrieves the exact keyPoint position without intermediate interpolation
+
+### Implementation Details
+- **Discrete Motion Value Computation**: Specialized method for discrete calcMode in motion animations
+- **KeyPoints Integration**: Uses keyPoints and keyTimes arrays to determine segment boundaries
+- **Accumulate Support**: Maintains accumulate='sum' functionality even in discrete mode
+- **Rotate Mode Preservation**: Preserves rotate modes (auto, auto-reverse, fixed) in discrete calcMode
+
+```mermaid
+flowchart TD
+Start(["Discrete CalcMode Request"]) --> CheckKeyPoints{"Check keyPoints & keyTimes"}
+CheckKeyPoints --> |"Present"| FindSegment["Find keyPoint segment for time t"]
+CheckKeyPoints --> |"Absent"| DefaultBehavior["Use default discrete behavior"]
+FindSegment --> GetKeyPoint["Get exact keyPoint position"]
+GetKeyPoint --> ApplyAccumulate["Apply accumulate='sum' if enabled"]
+ApplyAccumulate --> ApplyRotate["Apply rotate mode (auto/auto-reverse/fixed)"]
+DefaultBehavior --> ApplyRotate
+ApplyRotate --> ReturnResult["Return discrete motion value"]
+```
+
+**Diagram sources**
+- [smil_animation_value_computation.dart:190-245](file://lib/src/animation/smil/smil_animation_value_computation.dart#L190-L245)
+
+**Section sources**
+- [smil_animation_value_computation.dart:190-245](file://lib/src/animation/smil/smil_animation_value_computation.dart#L190-L245)
+- [smil_animation_value_computation.dart:393-402](file://lib/src/animation/smil/smil_animation_value_computation.dart#L393-L402)
+
+## Per-Segment Spline Easing
+The runtime now supports advanced per-segment spline easing for motion animations:
+
+### Segment-Based Easing Application
+- **Multi-Segment Support**: Different keySplines can be applied to each segment of motion animations
+- **Local Time Calculation**: Computes local progress within each segment for proper easing application
+- **Segment Boundary Detection**: Identifies which segment contains the current global time
+
+### Implementation Details
+- **Segment Progress Calculation**: Determines local progress within the identified segment
+- **Per-Segment Spline Application**: Applies the appropriate keySpline to the local progress
+- **Global Progress Reconstruction**: Converts local eased progress back to global animation progress
+- **Motion Path Integration**: Seamlessly integrates with motion path computation
+
+```mermaid
+flowchart TD
+Start(["Motion Animation with KeySplines"]) --> FindSegment["Find segment containing time t"]
+FindSegment --> CalcLocalT["Calculate local progress within segment"]
+CalcLocalT --> CheckSpline{"Check if spline exists for segment"}
+CheckSpline --> |"Yes"| ApplySpline["Apply keySpline to local progress"]
+CheckSpline --> |"No"| UseLinear["Use linear progression"]
+ApplySpline --> ReconstructGlobal["Reconstruct global eased time"]
+UseLinear --> ReconstructGlobal
+ReconstructGlobal --> GetPoint["Get motion path point at eased time"]
+GetPoint --> ApplyTransform["Apply transform with rotate mode"]
+```
+
+**Diagram sources**
+- [smil_animation_value_computation.dart:247-276](file://lib/src/animation/smil/smil_animation_value_computation.dart#L247-L276)
+
+**Section sources**
+- [smil_animation_value_computation.dart:247-276](file://lib/src/animation/smil/smil_animation_value_computation.dart#L247-L276)
+- [motion_path.dart:533-603](file://lib/src/animation/smil/motion_path.dart#L533-L603)
+
+## Enhanced Motion Animation Features
+The runtime now provides enhanced motion animation capabilities:
+
+### Accumulate='sum' for Motion Animations
+- **Position Accumulation**: Adds the end position of each completed motion cycle to subsequent cycles
+- **Cumulative Translation**: Maintains cumulative translation across all completed repeats
+- **Motion Path Integration**: Uses motion path end positions for accurate accumulation
+
+### Enhanced Rotate Modes
+- **Auto Rotation**: Automatically rotates based on path tangent angle
+- **Auto-Reverse Rotation**: Adds 180 degrees to auto rotation for reversed orientation
+- **Fixed Angle Rotation**: Allows specifying custom rotation angles in degrees
+
+### Motion Path Enhancements
+- **Closed Path Detection**: Improved detection of closed paths with epsilon comparison
+- **Tangent Angle Averaging**: Smooth rotation transitions at path segment boundaries
+- **Boundary Handling**: Proper handling of path discontinuities and moveTo commands
+
+**Section sources**
+- [smil_animation_value_computation.dart:152-188](file://lib/src/animation/smil/smil_animation_value_computation.dart#L152-L188)
+- [motion_path.dart:342-531](file://lib/src/animation/smil/motion_path.dart#L342-L531)
+
+## Advanced Distance Calculation System
+The runtime now features a sophisticated distance calculation system for paced calcMode:
+
+### Specialized Distance Calculators
+- **NumericDistanceCalculator**: Absolute difference for numeric and length values
+- **ColorDistanceCalculator**: Euclidean distance in RGB color space
+- **LengthDistanceCalculator**: Absolute difference for length measurements
+- **PathDistanceCalculator**: Combined length and point sampling distance for path morphing
+- **TransformDistanceCalculator**: Normalized Euclidean distance for transform decompositions
+
+### Paced CalcMode Implementation
+- **Distance-Based KeyTimes Generation**: Creates uniform keyTimes based on calculated distances
+- **Total Distance Calculation**: Sums distances between consecutive values
+- **Normalized Distribution**: Distributes keyTimes proportionally to segment distances
+- **Fallback Handling**: Provides uniform distribution when distances cannot be calculated
+
+```mermaid
+flowchart TD
+Start(["Paced CalcMode Request"]) --> CreateCalculator["Create distance calculator for attribute type"]
+CreateCalculator --> CalculateDistances["Calculate distances between values"]
+CalculateDistances --> CheckTotal{"Check total distance"}
+CheckTotal --> |"Zero or invalid"| UniformDistribution["Generate uniform keyTimes"]
+CheckTotal --> |"Valid"| NormalizeDistances["Normalize distances to total"]
+NormalizeDistances --> GenerateKeyTimes["Generate keyTimes from cumulative distances"]
+UniformDistribution --> GenerateKeyTimes
+GenerateKeyTimes --> ApplyToAnimation["Apply keyTimes to animation"]
+```
+
+**Diagram sources**
+- [distance_calculator.dart:10-236](file://lib/src/animation/smil/distance_calculator.dart#L10-L236)
+- [smil_animation.dart:141-186](file://lib/src/animation/smil/smil_animation.dart#L141-L186)
+
+**Section sources**
+- [distance_calculator.dart:10-236](file://lib/src/animation/smil/distance_calculator.dart#L10-L236)
+- [smil_animation.dart:141-186](file://lib/src/animation/smil/smil_animation.dart#L141-L186)
 
 ## Detailed Component Analysis
 
@@ -553,6 +703,12 @@ DOMEventSystem --> ExternalListeners["External Listeners"]
 Interpolators["Interpolators"] --> CubicBezier["CubicBezier"]
 Interpolators --> PathMorphing["Path Morphing"]
 Interpolators --> TransformInterpolation["Transform Interpolation"]
+MotionPath["MotionPath"] --> DistanceCalculator["DistanceCalculator"]
+DistanceCalculator --> NumericDistance["NumericDistanceCalculator"]
+DistanceCalculator --> ColorDistance["ColorDistanceCalculator"]
+DistanceCalculator --> LengthDistance["LengthDistanceCalculator"]
+DistanceCalculator --> PathDistance["PathDistanceCalculator"]
+DistanceCalculator --> TransformDistance["TransformDistanceCalculator"]
 ```
 
 **Diagram sources**
@@ -567,6 +723,8 @@ Interpolators --> TransformInterpolation["Transform Interpolation"]
 - [timing_condition.dart:126-161](file://lib/src/animation/smil/timing_condition.dart#L126-L161)
 - [interpolators.dart:18-42](file://lib/src/animation/smil/interpolators.dart#L18-L42)
 - [smil_animation_curves.dart:24-44](file://lib/src/animation/smil/smil_animation_curves.dart#L24-L44)
+- [motion_path.dart:19-22](file://lib/src/animation/smil/motion_path.dart#L19-L22)
+- [distance_calculator.dart:207-236](file://lib/src/animation/smil/distance_calculator.dart#L207-236)
 
 **Section sources**
 - [SMILTimeContainer.h:45-98](file://blink-b87d44f-Source-core-svg/animation/SMILTimeContainer.h#L45-L98)
@@ -587,6 +745,9 @@ Interpolators --> TransformInterpolation["Transform Interpolation"]
 - **Event optimization**: DOM event dispatching uses efficient event key lookup and minimal memory allocation for event tracking.
 - **Advanced interpolation caching**: Complex interpolations (paths, transforms) are computed efficiently with proper caching strategies.
 - **Animation sandwich model**: Priority resolution prevents redundant computations by applying animations in document order.
+- **Distance calculation optimization**: Specialized calculators avoid expensive geometric computations when possible.
+- **Motion path caching**: MotionPath instances can be cached for repeated use in motion animations.
+- **Per-segment spline optimization**: Local time calculations are performed efficiently for segment-based easing.
 
 ## Troubleshooting Guide
 Common issues and diagnostics:
@@ -598,6 +759,10 @@ Common issues and diagnostics:
 - **Interpolation errors**: Complex path morphing requires compatible path structures; check for invalid SVG path data and ensure proper path normalization.
 - **Easing function issues**: Cubic bezier curves require valid control points; verify keySplines format and range constraints.
 - **Memory leaks**: Ensure proper cleanup of event listeners and animation references when elements are removed from the DOM.
+- **Discrete calcMode issues**: Verify that keyPoints and keyTimes arrays are properly synchronized for discrete motion animations.
+- **Per-segment spline problems**: Ensure that keySplines array length equals values.length - 1 for proper segment-based easing.
+- **Accumulate='sum' behavior**: Remember that accumulate adds final values from completed repeats, not ongoing progress.
+- **Rotate mode issues**: Verify that rotate modes are properly formatted (auto, auto-reverse, or numeric degrees).
 
 **Section sources**
 - [SVGSMILElement.cpp:141-146](file://blink-b87d44f-Source-core-svg/animation/SVGSMILElement.cpp#L141-L146)
@@ -609,4 +774,4 @@ Common issues and diagnostics:
 - [timing_parser.dart:96-147](file://lib/src/animation/smil/timing_parser.dart#L96-L147)
 
 ## Conclusion
-The significantly enhanced SMIL animation runtime delivers robust timing semantics, flexible begin/end conditions, and **comprehensive DOM event dispatching capabilities** including beginEvent, endEvent, and repeatEvent triggering for external listeners and event-driven animations. Its modular design enables extensibility for new animation elements and property types while maintaining high performance through coalesced updates, priority sorting, and cached computations. The enhanced event system allows for sophisticated animation choreography and external listener integration, making it suitable for complex interactive SVG applications. The advanced interpolation system provides sophisticated value computation for complex animations including path morphing, transform interpolation, and multi-type easing functions. Integration with Flutter's SVG package allows precise control over animated attributes and seamless rendering updates with full support for DOM event-driven animation workflows and sophisticated animation sandwich model priority resolution.
+The significantly enhanced SMIL animation runtime delivers robust timing semantics, flexible begin/end conditions, and **comprehensive DOM event dispatching capabilities** including beginEvent, endEvent, and repeatEvent triggering for external listeners and event-driven animations. Its modular design enables extensibility for new animation elements and property types while maintaining high performance through coalesced updates, priority sorting, and cached computations. The enhanced event system allows for sophisticated animation choreography and external listener integration, making it suitable for complex interactive SVG applications. The advanced interpolation system provides sophisticated value computation for complex animations including path morphing, transform interpolation, and multi-type easing functions. **The runtime now features specialized support for discrete calcMode with waypoint jumping, per-segment spline easing for motion animations, accumulate='sum' handling for motion animations, and enhanced rotate modes (auto, auto-reverse, fixed angle)**. Integration with Flutter's SVG package allows precise control over animated attributes and seamless rendering updates with full support for DOM event-driven animation workflows and sophisticated animation sandwich model priority resolution.

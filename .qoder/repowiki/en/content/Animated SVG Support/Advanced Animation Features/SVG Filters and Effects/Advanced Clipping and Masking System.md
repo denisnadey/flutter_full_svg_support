@@ -22,9 +22,11 @@
 - Enhanced layer-based masking system with circular reference protection to prevent infinite loops
 - Added _applyAdvancedMaskWrapper method for improved mask composition workflow
 - Enhanced mask geometry processing with improved text clipping using glyph-approximate paths
-- Improved luminance-based hit testing with proper RGB-to-luminance conversion
+- Improved luminance-based hit testing with proper RGB-to-luminance conversion using ITU-R BT.709 coefficients
 - Added advanced mask composition support for complex nested scenarios
 - Enhanced performance optimizations with better cache invalidation and animation awareness
+- Implemented comprehensive text clipping with glyph-approximate path generation
+- Added robust circular reference protection with graceful fallback mechanisms
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -48,7 +50,7 @@ The Advanced Clipping and Masking System represents a complete architectural ove
 
 The new implementation provides comprehensive support for SVG 2.0 specification compliance while delivering superior performance and visual fidelity. The system now utilizes Flutter's Canvas.saveLayer mechanism for proper compositing, enabling advanced features like luminance-based masking, alpha masking, edge feathering, and complex nested composition scenarios.
 
-**Updated** The system now implements a layer-based approach using Canvas.saveLayer for proper compositing instead of simple path clipping, providing better performance and more accurate rendering of complex masking scenarios. Enhanced with circular reference protection, improved text clipping with glyph-approximate paths, and advanced luminance-based hit testing.
+**Updated** The system now implements a layer-based approach using Canvas.saveLayer for proper compositing instead of simple path clipping, providing better performance and more accurate rendering of complex masking scenarios. Enhanced with circular reference protection, improved text clipping with glyph-approximate paths, and advanced luminance-based hit testing using ITU-R BT.709 coefficients.
 
 ## System Architecture
 
@@ -327,7 +329,7 @@ EP --> |Empty| NP[No Clip Effect]
 
 ## Improved Luminance-Based Hit Testing
 
-**Updated** The system now includes enhanced luminance-based hit testing with proper RGB-to-luminance conversion:
+**Updated** The system now includes enhanced luminance-based hit testing with proper RGB-to-luminance conversion using ITU-R BT.709 coefficients:
 
 ### Hit Testing Architecture
 
@@ -349,7 +351,7 @@ RESULT --> |Outside| HIDDEN[Hidden]
 
 ### Luminance Conversion for Hit Testing
 
-**Coefficients**: Uses ITU-R BT.709 standard coefficients:
+**ITU-R BT.709 Coefficients**: Uses standard coefficients for accurate RGB-to-luminance conversion:
 - Red: 0.2126
 - Green: 0.7152  
 - Blue: 0.0722
@@ -498,20 +500,20 @@ The testing framework has been enhanced to validate the new layer-based masking 
 ### Test Categories
 
 **Enhanced Coverage Areas:**
-- **Luminance Masking**: RGB to grayscale conversion accuracy
+- **Luminance Masking**: RGB to grayscale conversion accuracy using ITU-R BT.709 coefficients
 - **Alpha Masking**: Direct alpha channel compositing validation
 - **Edge Feathering**: Blur filter detection and bounds expansion
 - **Nested Composition**: Complex masking scenario testing
 - **Performance Optimization**: Cache effectiveness and invalidation
 - **Circular References**: Infinite loop prevention testing
 - **Text Clipping**: Glyph-approximate path accuracy
-- **Hit Testing**: Luminance-based point testing
+- **Hit Testing**: Luminance-based point testing with proper threshold handling
 
 ### Advanced Visual Testing
 
 **Testing Capabilities:**
 - **Pixel-Perfect Comparison**: Direct pixel analysis for masking accuracy
-- **Color Space Validation**: Luminance calculation verification
+- **Color Space Validation**: Luminance calculation verification using standard coefficients
 - **Bounds Expansion Testing**: Blur effect capture validation
 - **Animation Performance**: Cache invalidation timing analysis
 - **Text Geometry Testing**: Glyph approximation accuracy
@@ -524,7 +526,7 @@ The testing framework has been enhanced to validate the new layer-based masking 
 - **Integration Testing**: Use elements, symbols, and CSS inheritance
 - **Performance Testing**: Cache utilization and memory optimization
 - **Edge Case Testing**: Circular references, text content, deep nesting
-- **Hit Testing Validation**: Proper luminance-based hit detection
+- **Hit Testing Validation**: Proper luminance-based hit detection with threshold filtering
 
 **Section sources**
 - [advanced_mask_hit_test.dart:1-744](file://test/animation/advanced_mask_hit_test.dart#L1-L744)
@@ -583,7 +585,7 @@ The Advanced Clipping and Masking System represents a revolutionary advancement 
 - **Edge Feathering**: Sophisticated blur filter detection and bounds expansion for soft edges
 - **Circular Reference Protection**: Robust prevention of infinite loops in nested mask scenarios
 - **Enhanced Text Clipping**: Improved glyph-approximate path generation for accurate text masking
-- **Luminance-Based Hit Testing**: Proper RGB-to-luminance conversion for accurate point testing
+- **Luminance-Based Hit Testing**: Proper RGB-to-luminance conversion using ITU-R BT.709 coefficients for accurate point testing
 - **Performance Optimization**: Advanced caching system with animation-aware invalidation
 - **Complex Composition**: Full support for nested masking scenarios and mixed composition chains
 

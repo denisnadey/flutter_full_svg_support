@@ -68,6 +68,22 @@ extension _AnimatedSvgPictureStateImagesExtension on _AnimatedSvgPictureState {
           return;
         }
 
+        // Guard against invalid image dimensions
+        if (image.width <= 0 || image.height <= 0) {
+          image.dispose();
+          _trace(
+            category: 'image',
+            level: SvgTraceLevel.warning,
+            message: 'Image has invalid dimensions',
+            data: <String, Object?>{
+              'href': href,
+              'width': image.width,
+              'height': image.height,
+            },
+          );
+          return;
+        }
+
         final previous = _imagesByHref[href];
         if (!identical(previous, image)) {
           previous?.dispose();
@@ -111,12 +127,26 @@ extension _AnimatedSvgPictureStateImagesExtension on _AnimatedSvgPictureState {
 
     final uri = Uri.tryParse(href);
     if (uri != null && (uri.scheme == 'http' || uri.scheme == 'https')) {
-      final data = await NetworkAssetBundle(uri).load(uri.toString());
-      return data.buffer.asUint8List();
+      try {
+        final data = await NetworkAssetBundle(uri).load(uri.toString());
+        final bytes = data.buffer.asUint8List();
+        // Guard against empty network response
+        return bytes.isNotEmpty ? bytes : null;
+      } catch (_) {
+        // Network error - return null to trigger graceful fallback
+        return null;
+      }
     }
 
-    final data = await rootBundle.load(href);
-    return data.buffer.asUint8List();
+    try {
+      final data = await rootBundle.load(href);
+      final bytes = data.buffer.asUint8List();
+      // Guard against empty asset
+      return bytes.isNotEmpty ? bytes : null;
+    } catch (_) {
+      // Asset not found - return null to trigger graceful fallback
+      return null;
+    }
   }
 
   Uint8List? _decodeDataUriBytes(String href) {

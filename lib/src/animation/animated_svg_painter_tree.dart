@@ -255,12 +255,21 @@ void _paintNodeImplWithUseContext(
         }
         // Groups apply saveLayer for opacity compositing if needed.
         // Returns true if children were painted in the layer.
+        // Determine the foreignObjectParent context for the group
+        final SvgNode? groupFoParent;
+        if (node.tagName == 'foreignObject') {
+          groupFoParent = node;
+        } else if (node.tagName == 'svg') {
+          groupFoParent = null;
+        } else {
+          groupFoParent = foreignObjectParent;
+        }
         if (_paintGroupWithOpacity(
           painter,
           canvas,
           node,
           currentUseStack,
-          foreignObjectParent: node.tagName == 'foreignObject' ? node : null,
+          foreignObjectParent: groupFoParent,
           useContext: useContext,
         )) {
           // Restore previous use context and CSS variable lookup
@@ -282,7 +291,17 @@ void _paintNodeImplWithUseContext(
   // Рекурсивно рисуем детей.
   if (painter._shouldPaintChildren(node)) {
     // Determine if this node establishes a foreignObject context for children
-    final foParent = node.tagName == 'foreignObject' ? node : null;
+    // - foreignObject: sets new FO context for direct children
+    // - svg: resets FO context (SVG establishes new viewport, not affected by FO)
+    // - other elements: preserve FO context from parent
+    final SvgNode? foParent;
+    if (node.tagName == 'foreignObject') {
+      foParent = node;
+    } else if (node.tagName == 'svg') {
+      foParent = null; // SVG resets the FO context
+    } else {
+      foParent = foreignObjectParent;
+    }
     for (final child in node.children) {
       _paintNodeImplWithUseContext(
         painter,
@@ -336,9 +355,17 @@ bool _paintGroupWithOpacity(
   // Paint children into the layer
   if (painter._shouldPaintChildren(node)) {
     // Determine if this node establishes a foreignObject context for children
-    final foParent = node.tagName == 'foreignObject'
-        ? node
-        : foreignObjectParent;
+    // - foreignObject: sets new FO context for direct children
+    // - svg: resets FO context (SVG establishes new viewport)
+    // - other elements: preserve FO context from parent
+    final SvgNode? foParent;
+    if (node.tagName == 'foreignObject') {
+      foParent = node;
+    } else if (node.tagName == 'svg') {
+      foParent = null;
+    } else {
+      foParent = foreignObjectParent;
+    }
     for (final child in node.children) {
       _paintNodeImplWithUseContext(
         painter,
@@ -685,9 +712,18 @@ void _paintNodeContentWithinMask(
 
   // Paint children
   if (painter._shouldPaintChildren(node)) {
-    final foParent = node.tagName == 'foreignObject'
-        ? node
-        : foreignObjectParent;
+    // Determine foreignObject context for children
+    // - foreignObject: sets new FO context
+    // - svg: resets FO context (new viewport)
+    // - other elements: preserve from parent
+    final SvgNode? foParent;
+    if (node.tagName == 'foreignObject') {
+      foParent = node;
+    } else if (node.tagName == 'svg') {
+      foParent = null;
+    } else {
+      foParent = foreignObjectParent;
+    }
     for (final child in node.children) {
       _paintNodeImplWithUseContext(
         painter,

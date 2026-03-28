@@ -1,18 +1,42 @@
 part of 'smil_timeline.dart';
 
+/// Maximum number of resolution passes to prevent infinite loops
+const int _kMaxResolutionPasses = 10;
+
+/// Represents a resolved syncbase time with metadata for tiebreaking
+class _ResolvedTiming {
+  final Duration time;
+  final int documentOrder;
+  final bool isResolved;
+
+  const _ResolvedTiming({
+    required this.time,
+    required this.documentOrder,
+    required this.isResolved,
+  });
+
+  /// Compare for tiebreaking: earlier time wins, then lower document order
+  int compareTo(_ResolvedTiming other) {
+    final timeCompare = time.compareTo(other.time);
+    if (timeCompare != 0) return timeCompare;
+    // Document order tiebreaker: earlier in document = lower priority number
+    return documentOrder.compareTo(other.documentOrder);
+  }
+}
+
 void _triggerSyncbaseEventImpl(
   SvgTimeline timeline,
   SmilAnimation sourceAnim,
   String eventType,
   Duration time,
 ) {
-  // Найти все анимации, зависящие от этого события
+  // Find all animations dependent on this event
   final dependents = timeline._dependents[sourceAnim];
   if (dependents == null || dependents.isEmpty) {
     return;
   }
 
-  // Преобразовать строку в SyncbaseType
+  // Convert string to SyncbaseType
   SyncbaseType? syncType;
   if (eventType == 'begin') {
     syncType = SyncbaseType.begin;
@@ -27,16 +51,16 @@ void _triggerSyncbaseEventImpl(
   }
 
   for (final dependent in dependents) {
-    // Проверить, есть ли у зависимой анимации syncbase условие на это событие
+    // Check if dependent animation has a syncbase condition for this event
     for (final condition in dependent.beginConditions) {
       if (condition is SyncbaseCondition) {
         if (condition.animationId == sourceAnim.id &&
             condition.type == syncType) {
-          // Вычислить время начала с учётом offset
+          // Calculate begin time with offset
           final resolvedTime = time + condition.offset;
           dependent.setResolvedBeginTime(resolvedTime);
 
-          // Сразу обновить зависимую анимацию с текущим временем
+          // Immediately update the dependent animation with current time
           dependent.updateForTime(timeline._currentTime);
         }
       }
@@ -180,25 +204,100 @@ Duration? _resolveSyncbaseConditionImpl(
 }
 
 void _resolveTimingConditionsImpl(SvgTimeline timeline) {
-  // Проход по всем анимациям для разрешения syncbase dependencies
-  // Используем топологическую сортировку для правильного порядка
-  final resolved = <SmilAnimation>{};
-  final processing = <SmilAnimation>{};
+  // Multi-pass syncbase resolution with circular dependency detection
+  // This handles:
+  // 1. Forward references (B references C where C is defined after B)
+  // 2. Chain dependencies (A -> B -> C)
+  // 3. Circular dependencies (A -> B -> A, gracefully broken)
+  // 4. Document order tiebreaking for simultaneous begin times
 
-  void resolveAnimation(SmilAnimation anim) {
-    if (resolved.contains(anim)) {
-      return;
+  // Track which animations have fully resolved begin times
+  final fullyResolved = <SmilAnimation>{};
+
+  // Track animations in circular dependency chains to break them gracefully
+  final circularDependencies = <SmilAnimation>{};
+
+  // Detect circular dependencies using DFS with path tracking
+  void detectCircularDependencies() {
+    final visited = <SmilAnimation>{};
+    final inStack = <SmilAnimation>{};
+
+    void dfs(SmilAnimation anim) {
+      if (circularDependencies.contains(anim)) return;
+      if (inStack.contains(anim)) {
+        // Circular dependency detected
+        circularDependencies.add(anim);
+        return;
+      }
+      if (visited.contains(anim)) return;
+
+      visited.add(anim);
+      inStack.add(anim);
+
+      // Check all syncbase dependencies
+      for (final condition in anim.beginConditions) {
+        if (condition is SyncbaseCondition) {
+          final sourceAnim = timeline._animationById[condition.animationId];
+          if (sourceAnim != null) {
+            dfs(sourceAnim);
+          }
+        }
+      }
+
+      inStack.remove(anim);
     }
-    if (processing.contains(anim)) {
-      // Circular dependency detected - use simple begin
-      timeline._resolvedBeginTimes[anim] = anim.begin;
-      return;
+
+    for (final anim in timeline.animations) {
+      dfs(anim);
+    }
+  }
+
+  // Check if an animation has only event/indefinite conditions
+  bool hasOnlyEventConditions(SmilAnimation anim) {
+    return anim.beginConditions.isNotEmpty &&
+        anim.beginConditions.every(
+          (c) => c is EventCondition || c is IndefiniteCondition,
+        );
+  }
+
+  // Check if all syncbase dependencies are resolved
+  bool canResolve(SmilAnimation anim) {
+    // Animations with empty beginConditions use their default begin time
+    if (anim.beginConditions.isEmpty) return true;
+
+    // Event-only animations are always "resolved" to infinity
+    if (hasOnlyEventConditions(anim)) return true;
+
+    // Check if we have at least one resolvable condition
+    for (final condition in anim.beginConditions) {
+      if (condition is OffsetCondition) {
+        return true; // Offset conditions are always resolvable
+      }
+      if (condition is SyncbaseCondition) {
+        final sourceAnim = timeline._animationById[condition.animationId];
+        // Can resolve if:
+        // 1. Source animation not found (will use fallback)
+        // 2. Source animation is fully resolved
+        // 3. Source animation is in a circular dependency (will be broken)
+        if (sourceAnim == null ||
+            fullyResolved.contains(sourceAnim) ||
+            circularDependencies.contains(sourceAnim)) {
+          return true;
+        }
+      }
     }
 
-    processing.add(anim);
+    return false;
+  }
 
-    // Find earliest resolved time from all begin conditions
-    Duration? earliestTime;
+  // Resolve a single animation's begin time
+  Duration? resolveBeginTime(SmilAnimation anim) {
+    if (hasOnlyEventConditions(anim)) {
+      return _kTimelineInfinity;
+    }
+
+    // Collect all resolved times from conditions for tiebreaking
+    final resolvedTimings = <_ResolvedTiming>[];
 
     for (final condition in anim.beginConditions) {
       Duration? conditionTime;
@@ -206,47 +305,93 @@ void _resolveTimingConditionsImpl(SvgTimeline timeline) {
       if (condition is OffsetCondition) {
         conditionTime = condition.offset;
       } else if (condition is SyncbaseCondition) {
-        // Resolve dependency first
         final sourceAnim = timeline._animationById[condition.animationId];
         if (sourceAnim != null) {
-          resolveAnimation(sourceAnim);
+          // Check if source is in a circular dependency
+          if (circularDependencies.contains(sourceAnim) &&
+              !fullyResolved.contains(sourceAnim)) {
+            // Break circular dependency: use source's simple begin time
+            conditionTime = sourceAnim.begin + condition.offset;
+          } else {
+            conditionTime = timeline._resolveSyncbaseCondition(condition);
+          }
         }
-        conditionTime = timeline._resolveSyncbaseCondition(condition);
       }
 
       if (conditionTime != null) {
-        if (earliestTime == null || conditionTime < earliestTime) {
-          earliestTime = conditionTime;
-        }
+        resolvedTimings.add(_ResolvedTiming(
+          time: conditionTime,
+          documentOrder: anim.documentOrder,
+          isResolved: true,
+        ));
       }
     }
 
-    // Use resolved time or fallback to simple begin
-    // НО: не перезаписываем infinity begin times для event-based анимаций
-    final hasOnlyEventConditions =
-        anim.beginConditions.isNotEmpty &&
-        anim.beginConditions.every(
-          (c) => c is EventCondition || c is IndefiniteCondition,
-        );
-
-    if (hasOnlyEventConditions) {
-      // Оставляем infinity begin time, установленный в _initializeEventBasedAnimations
-      timeline._resolvedBeginTimes[anim] = _kTimelineInfinity;
-    } else {
-      timeline._resolvedBeginTimes[anim] = earliestTime ?? anim.begin;
+    if (resolvedTimings.isEmpty) {
+      return anim.begin; // Fallback to simple begin
     }
 
-    processing.remove(anim);
-    resolved.add(anim);
+    // Find earliest time, using document order as tiebreaker
+    resolvedTimings.sort((a, b) => a.compareTo(b));
+    return resolvedTimings.first.time;
   }
 
-  // Resolve all animations
-  for (final anim in timeline.animations) {
-    resolveAnimation(anim);
+  // First, detect circular dependencies
+  detectCircularDependencies();
+
+  if (circularDependencies.isNotEmpty) {
+    debugPrint(
+      'SMIL timing: Detected ${circularDependencies.length} animation(s) '
+      'in circular dependency chains. Breaking cycles gracefully.',
+    );
   }
 
-  // Apply resolved times to animations
-  for (final anim in timeline.animations) {
+  // Multi-pass resolution: iterate until stable or max passes reached
+  int passCount = 0;
+  bool madeProgress = true;
+
+  while (madeProgress && passCount < _kMaxResolutionPasses) {
+    madeProgress = false;
+    passCount++;
+
+    for (final anim in timeline.animations) {
+      if (fullyResolved.contains(anim)) continue;
+
+      if (canResolve(anim)) {
+        final resolvedTime = resolveBeginTime(anim);
+        if (resolvedTime != null) {
+          timeline._resolvedBeginTimes[anim] = resolvedTime;
+          fullyResolved.add(anim);
+          madeProgress = true;
+        }
+      }
+    }
+  }
+
+  // Handle any remaining unresolved animations
+  final unresolved = timeline.animations
+      .where((anim) => !fullyResolved.contains(anim))
+      .toList();
+
+  if (unresolved.isNotEmpty) {
+    debugPrint(
+      'SMIL timing: After $_kMaxResolutionPasses passes, '
+      '${unresolved.length} animation(s) still have unresolved begin times. '
+      'Treating as indefinite.',
+    );
+
+    for (final anim in unresolved) {
+      // Treat unresolved as indefinite
+      timeline._resolvedBeginTimes[anim] = _kTimelineInfinity;
+      fullyResolved.add(anim);
+    }
+  }
+
+  // Apply resolved times to animations, sorted by document order for consistency
+  final sortedAnimations = List<SmilAnimation>.from(timeline.animations)
+    ..sort((a, b) => a.documentOrder.compareTo(b.documentOrder));
+
+  for (final anim in sortedAnimations) {
     final resolvedTime = timeline._resolvedBeginTimes[anim];
     if (resolvedTime != null) {
       anim.setResolvedBeginTime(resolvedTime);
