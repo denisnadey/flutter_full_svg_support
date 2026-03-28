@@ -104,6 +104,76 @@ final List<TestCase> testCases = [
     0.95,
   ),
 
+  // Advanced clipping and masking
+  (
+    'test/golden_comparison/svg_fixtures/clip_path_nested.svg',
+    'clip_path_nested',
+    0.90,
+  ),
+  (
+    'test/golden_comparison/svg_fixtures/clip_rule_modes.svg',
+    'clip_rule_modes',
+    0.90,
+  ),
+  (
+    'test/golden_comparison/svg_fixtures/mask_luminance_alpha.svg',
+    'mask_luminance_alpha',
+    0.85,
+  ),
+
+  // Use/symbol with viewBox and CSS cascade
+  (
+    'test/golden_comparison/svg_fixtures/use_symbol_viewbox.svg',
+    'use_symbol_viewbox',
+    0.90,
+  ),
+  (
+    'test/golden_comparison/svg_fixtures/use_css_cascade.svg',
+    'use_css_cascade',
+    0.90,
+  ),
+
+  // Advanced text styling
+  (
+    'test/golden_comparison/svg_fixtures/text_vertical_writing.svg',
+    'text_vertical_writing',
+    0.85,
+  ),
+  (
+    'test/golden_comparison/svg_fixtures/text_decorations.svg',
+    'text_decorations',
+    0.90,
+  ),
+  (
+    'test/golden_comparison/svg_fixtures/text_length_adjust.svg',
+    'text_length_adjust',
+    0.85,
+  ),
+
+  // Filter composition chains
+  (
+    'test/golden_comparison/svg_fixtures/filter_chain.svg',
+    'filter_chain',
+    0.85,
+  ),
+  (
+    'test/golden_comparison/svg_fixtures/filter_composite.svg',
+    'filter_composite',
+    0.85,
+  ),
+
+  // CSS selectors and stroke patterns
+  (
+    'test/golden_comparison/svg_fixtures/nth_child_selectors.svg',
+    'nth_child_selectors',
+    0.95,
+  ),
+  (
+    'test/golden_comparison/svg_fixtures/stroke_dasharray_advanced.svg',
+    'stroke_dasharray_advanced',
+    0.95,
+  ),
+
   // Complex example assets (may take longer to process)
   // Uncomment when needed:
   // ('example/assets/astronaut_helmet.svg', 'astronaut_helmet', 0.90),

@@ -13,6 +13,7 @@
 - [SVGSetElement.cpp](file://blink-b87d44f-Source-core-svg/SVGSetElement.cpp)
 - [SVGAnimatedNumber.cpp](file://blink-b87d44f-Source-core-svg/SVGAnimatedNumber.cpp)
 - [smil_test.dart](file://test/animation/smil_test.dart)
+- [smil_timing_precision_test.dart](file://test/animation/smil_timing_precision_test.dart)
 - [smil_timeline.dart](file://lib/src/animation/smil/smil_timeline.dart)
 - [smil_timeline_runtime.dart](file://lib/src/animation/smil/smil_timeline_runtime.dart)
 - [smil_timeline_syncbase.dart](file://lib/src/animation/smil/smil_timeline_syncbase.dart)
@@ -28,13 +29,11 @@
 
 ## Update Summary
 **Changes Made**
-- Enhanced SMIL animation runtime with circular dependency detection, multi-pass timing resolution, and graceful error recovery mechanisms
-- Added _kMaxResolutionPasses constant and _ResolvedTiming class for tiebreaking scenarios
-- Implemented sophisticated dependency graph construction with forward reference support
-- Enhanced syncbase timing resolution with document order tiebreaking
-- Added comprehensive circular dependency detection using DFS with path tracking
-- Implemented multi-pass resolution algorithm with configurable pass limits
-- Added graceful error recovery for unresolved animations with fallback to indefinite timing
+- Enhanced SMIL animation runtime with major timing precision improvements including fractional repeatCount handling, high-precision arithmetic, and boundary handling with epsilon corrections
+- Added comprehensive timing precision testing covering fractional repeatCount scenarios, very small durations, long-running precision, and boundary condition handling
+- Implemented robust high-precision duration multiplication using microsecond arithmetic to prevent floating-point drift
+- Enhanced boundary handling with epsilon-based snapping to prevent floating-point precision errors near 0.0 and 1.0
+- Added extensive test coverage for timing precision edge cases and long-running scenarios
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -51,15 +50,19 @@
 12. [Circular Dependency Detection](#circular-dependency-detection)
 13. [Multi-Pass Resolution Algorithm](#multi-pass-resolution-algorithm)
 14. [Graceful Error Recovery](#graceful-error-recovery)
-15. [Detailed Component Analysis](#detailed-component-analysis)
-16. [DOM Event Dispatching](#dom-event-dispatching)
-17. [Dependency Analysis](#dependency-analysis)
-18. [Performance Considerations](#performance-considerations)
-19. [Troubleshooting Guide](#troubleshooting-guide)
-20. [Conclusion](#conclusion)
+15. [Major Timing Precision Improvements](#major-timing-precision-improvements)
+16. [High-Precision Arithmetic Implementation](#high-precision-arithmetic-implementation)
+17. [Boundary Handling with Epsilon Corrections](#boundary-handling-with-epsilon-corrections)
+18. [Comprehensive Timing Precision Testing](#comprehensive-timing-precision-testing)
+19. [Detailed Component Analysis](#detailed-component-analysis)
+20. [DOM Event Dispatching](#dom-event-dispatching)
+21. [Dependency Analysis](#dependency-analysis)
+22. [Performance Considerations](#performance-considerations)
+23. [Troubleshooting Guide](#troubleshooting-guide)
+24. [Conclusion](#conclusion)
 
 ## Introduction
-This document describes the significantly enhanced SMIL (Synchronized Multimedia Integration Language) animation runtime implemented in the Blink engine core and integrated with the Flutter SVG package. The runtime provides precise timing control, flexible begin/end conditions, repeat semantics, and **comprehensive DOM event dispatching capabilities** including beginEvent, endEvent, and repeatEvent triggering for external listeners and event-driven animations. It supports multiple animation elements (<animate>, <set>, <animateMotion>, <animateTransform>, <animateColor>) and integrates with the broader SVG rendering pipeline. The enhanced runtime now features advanced animation value computation for complex interpolations, improved timeline synchronization, sophisticated event model handling, **specialized support for discrete calcMode, per-segment spline easing, accumulate='sum' for motion animations, enhanced rotate modes**, and **robust circular dependency detection with multi-pass timing resolution and graceful error recovery mechanisms**.
+This document describes the significantly enhanced SMIL (Synchronized Multimedia Integration Language) animation runtime implemented in the Blink engine core and integrated with the Flutter SVG package. The runtime provides precise timing control, flexible begin/end conditions, repeat semantics, and **comprehensive DOM event dispatching capabilities** including beginEvent, endEvent, and repeatEvent triggering for external listeners and event-driven animations. It supports multiple animation elements (<animate>, <set>, <animateMotion>, <animateTransform>, <animateColor>) and integrates with the broader SVG rendering pipeline. The enhanced runtime now features advanced animation value computation for complex interpolations, improved timeline synchronization, sophisticated event model handling, **specialized support for discrete calcMode, per-segment spline easing, accumulate='sum' for motion animations, enhanced rotate modes**, and **robust circular dependency detection with multi-pass timing resolution and graceful error recovery mechanisms**. **Most significantly, the runtime now includes major timing precision improvements with enhanced fractional repeatCount handling, high-precision arithmetic using microsecond-level calculations, and improved boundary handling with epsilon corrections to prevent floating-point drift and precision errors**.
 
 ## Project Structure
 The SMIL animation runtime spans several core modules with enhanced event handling, advanced interpolation capabilities, and sophisticated timing resolution:
@@ -71,7 +74,8 @@ The SMIL animation runtime spans several core modules with enhanced event handli
 - **Enhanced motion animation system**: Per-segment spline easing, discrete calcMode support, accumulate='sum' handling, and improved rotate modes
 - **Advanced distance calculation system**: Specialized calculators for different attribute types supporting paced calcMode
 - **Enhanced timing resolution system**: Multi-pass syncbase resolution with circular dependency detection and document order tiebreaking
-- **Test coverage**: Dart-based tests for interpolators, SMIL animation logic, event-driven scenarios, circular dependency handling, and edge cases
+- **Comprehensive timing precision system**: High-precision arithmetic, boundary handling, and extensive test coverage
+- **Test coverage**: Dart-based tests for interpolators, SMIL animation logic, event-driven scenarios, circular dependency handling, edge cases, and **extensive timing precision testing**
 
 ```mermaid
 graph TB
@@ -82,6 +86,8 @@ E["TimingParser<br/>DOM event parsing"]
 F["SvgTimeline<br/>Enhanced timing resolution"]
 G["_kMaxResolutionPasses<br/>Pass limit constant"]
 H["_ResolvedTiming<br/>Tiebreaking class"]
+I["_multiplyDuration<br/>High-precision arithmetic"]
+J["Epsilon boundary handling<br/>Floating-point precision"]
 end
 subgraph "Animation Elements"
 C["SVGSMILElement<br/>Base SMIL timing model"]
@@ -90,45 +96,49 @@ F1["SVGAnimateElement<br/>Concrete property animators"]
 F2["SVGSetElement<br/>Immediate value setter"]
 end
 subgraph "Event System"
-I["SvgTimeline<br/>Event-based timing"]
-J["_dispatchAnimationDOMEvent<br/>DOM event dispatching"]
-K["EventCondition<br/>External listener support"]
+K["SvgTimeline<br/>Event-based timing"]
+L["_dispatchAnimationDOMEvent<br/>DOM event dispatching"]
+M["EventCondition<br/>External listener support"]
 end
 subgraph "Property Types"
-L["SVGAnimatedType<br/>Typed animated values"]
-M["SVGAnimatedTypeAnimator<br/>Base animator interface"]
-N["SVGAnimatedNumberAnimator<br/>Number interpolation"]
+N["SVGAnimatedType<br/>Typed animated values"]
+O["SVGAnimatedTypeAnimator<br/>Base animator interface"]
+P["SVGAnimatedNumberAnimator<br/>Number interpolation"]
 end
 subgraph "Advanced Interpolation"
-O["Interpolators<br/>Multi-type interpolation"]
-P["CubicBezier<br/>Easing functions"]
-Q["Path Morphing<br/>SVG path interpolation"]
-R["DistanceCalculator<br/>Paced calcMode support"]
-S["MotionPath<br/>Enhanced path computation"]
+Q["Interpolators<br/>Multi-type interpolation"]
+R["CubicBezier<br/>Easing functions"]
+S["Path Morphing<br/>SVG path interpolation"]
+T["DistanceCalculator<br/>Paced calcMode support"]
+U["MotionPath<br/>Enhanced path computation"]
 end
 subgraph "Enhanced Timing Resolution"
-T["Circular Dependency Detection<br/>DFS with path tracking"]
-U["Multi-Pass Resolution<br/>Configurable pass limits"]
-V["Graceful Error Recovery<br/>Fallback to indefinite timing"]
-W["Document Order Tiebreaking<br/>Priority resolution"]
+V["Circular Dependency Detection<br/>DFS with path tracking"]
+W["Multi-Pass Resolution<br/>Configurable pass limits"]
+X["Graceful Error Recovery<br/>Fallback to indefinite timing"]
+Y["Document Order Tiebreaking<br/>Priority resolution"]
+Z["Timing Precision Testing<br/>Comprehensive edge case coverage"]
 end
 A --> B
 B --> C
 C --> D
 D --> F1
-F1 --> L
-L --> M
-M --> N
-E --> I
-I --> J
-J --> K
+F1 --> N
+N --> O
 O --> P
-O --> Q
-R --> S
-F --> T
-F --> U
+E --> K
+K --> L
+L --> M
+Q --> R
+Q --> S
+T --> U
 F --> V
 F --> W
+F --> X
+F --> Y
+F --> I
+F --> J
+F --> Z
 ```
 
 **Diagram sources**
@@ -150,6 +160,8 @@ F --> W
 - [distance_calculator.dart:8-14](file://lib/src/animation/smil/distance_calculator.dart#L8-L14)
 - [smil_timeline_syncbase.dart:3](file://lib/src/animation/smil/smil_timeline_syncbase.dart#L3-L4)
 - [smil_timeline_syncbase.dart:6](file://lib/src/animation/smil/smil_timeline_syncbase.dart#L6-L25)
+- [smil_animation.dart:427-436](file://lib/src/animation/smil/smil_animation.dart#L427-L436)
+- [smil_animation.dart:620-631](file://lib/src/animation/smil/smil_animation.dart#L620-L631)
 
 **Section sources**
 - [SMILTime.cpp:34-66](file://blink-b87d44f-Source-core-svg/animation/SMILTime.cpp#L34-L66)
@@ -177,6 +189,7 @@ F --> W
 - **Enhanced Motion Animation System**: Specialized motion path computation with per-segment spline easing, discrete calcMode support, and accumulate='sum' handling.
 - **Advanced Distance Calculation System**: Specialized calculators for different attribute types (numeric, color, length, path, transform) supporting paced calcMode.
 - **Enhanced Timing Resolution System**: Multi-pass syncbase resolution with circular dependency detection, document order tiebreaking, and graceful error recovery.
+- **Major Timing Precision Improvements**: High-precision arithmetic using microsecond-level calculations, boundary handling with epsilon corrections, and comprehensive precision testing.
 
 **Section sources**
 - [SMILTime.h:34-55](file://blink-b87d44f-Source-core-svg/animation/SMILTime.h#L34-L55)
@@ -201,6 +214,7 @@ The runtime follows a layered design with enhanced event-driven capabilities, ad
 - **Motion animation layer**: Enhanced motion path computation with per-segment spline easing and discrete calcMode support.
 - **Distance calculation layer**: Specialized calculators for paced calcMode supporting different attribute types.
 - **Enhanced timing resolution layer**: Multi-pass syncbase resolution with circular dependency detection and graceful error recovery.
+- **Timing precision layer**: High-precision arithmetic, boundary handling, and comprehensive precision testing.
 - Application layer: Flutter integration consumes SMIL timing and applies computed values to render nodes.
 
 ```mermaid
@@ -216,6 +230,8 @@ participant DOM as "DOM Event System"
 participant Interpolator as "Interpolators"
 participant MotionPath as "MotionPath"
 participant DistanceCalc as "DistanceCalculator"
+participant Precision as "High-Precision Arithmetic"
+participant Boundary as "Epsilon Boundary Handling"
 participant Target as "Target SVGElement"
 Timer->>Scheduler : timerFired()
 Scheduler->>Scheduler : updateAnimations(elapsed)
@@ -230,6 +246,10 @@ CircularDetect->>Resolver : circularDependencies detected
 Resolver->>Resolver : multi-pass resolution with _kMaxResolutionPasses
 Resolver->>Timeline : setResolvedBeginTimes
 Timeline->>Element : activate dependent animations
+Element->>Precision : _multiplyDuration(dur, repeatCount)
+Precision->>Element : microseconds arithmetic
+Element->>Boundary : epsilon boundary handling
+Boundary->>Element : floating-point precision correction
 Element->>Interpolator : compute interpolated values
 Element->>MotionPath : enhanced motion computation
 Element->>DistanceCalc : paced calcMode distance calculation
@@ -248,6 +268,8 @@ Scheduler->>Timer : startTimer(nextFireTime)
 - [smil_timeline.dart:128-158](file://lib/src/animation/smil/smil_timeline.dart#L128-L158)
 - [smil_timeline_syncbase.dart:206](file://lib/src/animation/smil/smil_timeline_syncbase.dart#L206-L253)
 - [smil_timeline_syncbase.dart:341](file://lib/src/animation/smil/smil_timeline_syncbase.dart#L341-L390)
+- [smil_animation.dart:427-436](file://lib/src/animation/smil/smil_animation.dart#L427-L436)
+- [smil_animation.dart:620-631](file://lib/src/animation/smil/smil_animation.dart#L620-L631)
 
 ## Enhanced Event System
 The enhanced SMIL animation runtime now includes comprehensive DOM event dispatching capabilities:
@@ -621,6 +643,120 @@ ApplyResolved --> End(["Resolution complete"])
 - [smil_timeline_syncbase.dart:373](file://lib/src/animation/smil/smil_timeline_syncbase.dart#L373-L390)
 - [smil_timeline_syncbase.dart:378](file://lib/src/animation/smil/smil_timeline_syncbase.dart#L378-L389)
 
+## Major Timing Precision Improvements
+The runtime now includes significant timing precision enhancements designed to address floating-point drift and boundary condition issues:
+
+### Fractional RepeatCount Precision
+- **Exact Duration Calculation**: Fractional repeatCount values (e.g., 2.5) are handled with microsecond precision
+- **High-Precision Multiplication**: Uses _multiplyDuration method with microsecond arithmetic to prevent floating-point errors
+- **Boundary Snapping**: Epsilon-based snapping prevents precision errors near 0.0 and 1.0 progress values
+- **Long-Running Stability**: Maintains accuracy over thousands of iterations without drift accumulation
+
+### High-Precision Arithmetic Implementation
+- **Microsecond-Level Calculations**: All duration multiplications use Duration(inMicroseconds) for exact arithmetic
+- **Rounding for Precision**: Results are rounded to nearest microsecond to avoid floating-point accumulation
+- **Overflow Prevention**: Large repeatCount values (up to 1000000) are handled without overflow
+- **Zero-Duration Handling**: Special case handling for dur=0 prevents division-by-zero and NaN issues
+
+### Boundary Handling with Epsilon Corrections
+- **Progress Value Correction**: Floating-point progress values are snapped to exact boundaries when within epsilon tolerance
+- **Epsilon Threshold**: Uses 1e-10 precision threshold to determine when values are effectively 0.0 or 1.0
+- **Iteration Boundary Accuracy**: Ensures exact iteration boundaries (0ms, 100ms, 1000ms) remain precise
+- **Mid-Iteration Precision**: Maintains accuracy for fractional progress values within iterations
+
+### Comprehensive Precision Testing
+- **Fractional RepeatCount Tests**: Validates exact timing for 0.0, 0.5, 1.0, 1.5, 2.0, 2.5 repeatCount values
+- **Very Small Duration Tests**: Handles durations from 1ms down to 100 microseconds without precision loss
+- **Long-Running Drift Tests**: Verifies no drift accumulation over 10,000+ iterations
+- **Boundary Condition Tests**: Ensures precise handling of edge cases and floating-point precision limits
+
+**Section sources**
+- [smil_animation.dart:427-436](file://lib/src/animation/smil/smil_animation.dart#L427-L436)
+- [smil_animation.dart:620-631](file://lib/src/animation/smil/smil_animation.dart#L620-L631)
+- [smil_timing_precision_test.dart:10-156](file://test/animation/smil_timing_precision_test.dart#L10-L156)
+- [smil_timing_precision_test.dart:531-616](file://test/animation/smil_timing_precision_test.dart#L531-L616)
+
+## High-Precision Arithmetic Implementation
+The runtime implements robust high-precision arithmetic to eliminate floating-point drift in timing calculations:
+
+### Microsecond-Level Duration Multiplication
+- **Precision Preservation**: All repeatCount calculations use Duration(inMicroseconds) for exact arithmetic
+- **Double Math with Rounding**: Multiplies microseconds by repeatCount and rounds to nearest microsecond
+- **Overflow Safety**: Prevents integer overflow for large repeatCount values (up to 1000000)
+- **Infinity Handling**: Properly handles infinite repeatCount values as "indefinite"
+
+### Implementation Details
+- **_multiplyDuration Method**: Static method that converts Duration to microseconds, multiplies by double, then converts back
+- **Round-to-Nearest**: Uses Duration(microseconds: micros.round()) to avoid floating-point accumulation
+- **Edge Case Handling**: Special handling for NaN, Infinity, and zero values
+- **Performance Optimization**: Minimal overhead compared to floating-point arithmetic
+
+### Usage Examples
+- **Fractional RepeatCount**: 2.5 × 1000ms = 2500000 microseconds = 2.5s (exact)
+- **Large Iterations**: 10000 × 100ms = 100000000 microseconds = 100s (exact)
+- **Small Durations**: 10000 × 100μs = 1000000μs = 1ms (exact)
+
+**Section sources**
+- [smil_animation.dart:427-436](file://lib/src/animation/smil/smil_animation.dart#L427-L436)
+
+## Boundary Handling with Epsilon Corrections
+The runtime implements sophisticated boundary handling to prevent floating-point precision errors:
+
+### Epsilon-Based Progress Correction
+- **Boundary Detection**: Checks if progress values are within 1e-10 of 0.0 or 1.0
+- **Automatic Snapping**: Values within epsilon tolerance are snapped to exact boundaries
+- **Precision Preservation**: Prevents accumulation of floating-point errors near iteration boundaries
+- **Consistent Behavior**: Ensures reliable iteration counting and boundary detection
+
+### Implementation Details
+- **Epsilon Threshold**: Uses 1e-10 as precision threshold for boundary detection
+- **Progress Adjustment**: Applies boundary correction before calculating iteration and local time
+- **Mid-Iteration Accuracy**: Maintains precision for fractional progress values within iterations
+- **Iteration Boundary Integrity**: Ensures exact iteration boundaries remain precise
+
+### Impact on Animation Timing
+- **Exact Fractional Progress**: 2.5 iterations are computed precisely without drift
+- **Boundary Reliability**: Iteration boundaries (0ms, 100ms, 200ms) remain exact
+- **Long-Running Stability**: No precision degradation over thousands of iterations
+- **Edge Case Robustness**: Handles near-boundary conditions reliably
+
+**Section sources**
+- [smil_animation.dart:620-631](file://lib/src/animation/smil/smil_animation.dart#L620-L631)
+- [smil_timing_precision_test.dart:37-120](file://test/animation/smil_timing_precision_test.dart#L37-L120)
+
+## Comprehensive Timing Precision Testing
+The runtime includes extensive test coverage for timing precision scenarios:
+
+### Fractional RepeatCount Test Coverage
+- **Exact Duration Validation**: Tests that repeatCount="2.5" produces exactly 2.5s active duration
+- **Boundary Value Testing**: Validates behavior at 0.0, 0.5, 1.0, 1.5, 2.0, 2.5 repeatCount values
+- **Progress Value Accuracy**: Ensures fractional progress values are computed precisely
+- **End-Time Precision**: Verifies exact end times for fractional repeatCount scenarios
+
+### Very Small Duration Test Coverage
+- **Millisecond Precision**: Tests with 1ms durations and larger repeatCount values
+- **Microsecond Precision**: Validates handling of 100μs durations without precision loss
+- **Zero-Duration Edge Cases**: Tests dur=0 behavior and prevents NaN/Infinity issues
+- **Large RepeatCount Stability**: Ensures precision with up to 1,000,000 repeatCount values
+
+### Long-Running Precision Test Coverage
+- **Drift Accumulation Testing**: Verifies no drift over 10,000+ iterations
+- **Iteration Boundary Accuracy**: Ensures exact iteration boundaries remain precise
+- **Mid-Iteration Precision**: Tests fractional progress values within iterations
+- **Real-Time Playback Simulation**: Validates precision during continuous tick() operations
+
+### Boundary Condition Test Coverage
+- **Floating-Point Precision Limits**: Tests edge cases at floating-point precision boundaries
+- **Iteration Transition Reliability**: Ensures reliable iteration boundary detection
+- **Progress Value Correction**: Validates epsilon-based boundary handling
+- **Stress Test Scenarios**: Comprehensive testing of extreme timing conditions
+
+**Section sources**
+- [smil_timing_precision_test.dart:10-156](file://test/animation/smil_timing_precision_test.dart#L10-L156)
+- [smil_timing_precision_test.dart:159-273](file://test/animation/smil_timing_precision_test.dart#L159-L273)
+- [smil_timing_precision_test.dart:531-616](file://test/animation/smil_timing_precision_test.dart#L531-L616)
+- [smil_timing_precision_test.dart:829-996](file://test/animation/smil_timing_precision_test.dart#L829-L996)
+
 ## Detailed Component Analysis
 
 ### SMILTime and SMILTimeWithOrigin
@@ -906,7 +1042,7 @@ ActivateRepeat --> Update
 - [timing_condition.dart:126-161](file://lib/src/animation/smil/timing_condition.dart#L126-L161)
 
 ## Dependency Analysis
-The following diagram shows key dependencies among core components with enhanced event handling, advanced interpolation, and sophisticated timing resolution:
+The following diagram shows key dependencies among core components with enhanced event handling, advanced interpolation, sophisticated timing resolution, and **major timing precision improvements**:
 
 ```mermaid
 graph LR
@@ -933,6 +1069,9 @@ DistanceCalculator --> TransformDistance["TransformDistanceCalculator"]
 SvgTimeline --> CircularDependencyDetector["_kMaxResolutionPasses<br/>_ResolvedTiming"]
 SvgTimeline --> MultiPassResolver["Multi-pass resolution algorithm"]
 SvgTimeline --> ErrorRecovery["Graceful error recovery"]
+SvgTimeline --> HighPrecisionArithmetic["_multiplyDuration<br/>High-precision arithmetic"]
+SvgTimeline --> BoundaryHandling["Epsilon boundary handling<br/>Floating-point precision"]
+SvgTimeline --> TimingPrecisionTesting["Comprehensive timing precision tests"]
 ```
 
 **Diagram sources**
@@ -951,6 +1090,8 @@ SvgTimeline --> ErrorRecovery["Graceful error recovery"]
 - [distance_calculator.dart:207-236](file://lib/src/animation/smil/distance_calculator.dart#L207-236)
 - [smil_timeline_syncbase.dart:3](file://lib/src/animation/smil/smil_timeline_syncbase.dart#L3-L4)
 - [smil_timeline_syncbase.dart:6](file://lib/src/animation/smil/smil_timeline_syncbase.dart#L6-L25)
+- [smil_animation.dart:427-436](file://lib/src/animation/smil/smil_animation.dart#L427-L436)
+- [smil_animation.dart:620-631](file://lib/src/animation/smil/smil_animation.dart#L620-L631)
 
 **Section sources**
 - [SMILTimeContainer.h:45-98](file://blink-b87d44f-Source-core-svg/animation/SMILTimeContainer.h#L45-L98)
@@ -977,6 +1118,9 @@ SvgTimeline --> ErrorRecovery["Graceful error recovery"]
 - **Circular dependency detection**: DFS algorithm runs in O(V+E) time complexity for dependency graph traversal.
 - **Multi-pass resolution**: Configurable pass limits prevent excessive computational overhead while ensuring convergence.
 - **Graceful error recovery**: Fallback mechanisms ensure system stability without impacting performance of working animations.
+- **High-precision arithmetic**: Microsecond-level calculations provide exact results without floating-point drift.
+- **Boundary handling optimization**: Epsilon corrections are applied only when needed, minimizing computational overhead.
+- **Timing precision testing**: Comprehensive test coverage ensures reliability without significant performance impact.
 
 ## Troubleshooting Guide
 Common issues and diagnostics:
@@ -995,6 +1139,10 @@ Common issues and diagnostics:
 - **Circular dependency issues**: Complex dependency chains may require multiple passes to resolve; check for circular references in syncbase conditions.
 - **Multi-pass resolution problems**: Animations with unresolved dependencies may require additional passes; verify _kMaxResolutionPasses configuration.
 - **Timing resolution failures**: Graceful error recovery treats unresolved animations as indefinitely delayed; check for missing referenced animations.
+- **Fractional repeatCount precision**: Verify that fractional repeatCount values are handled correctly with microsecond precision arithmetic.
+- **Very small duration issues**: Ensure that durations below 1ms are handled without precision loss using high-precision arithmetic.
+- **Long-running drift**: Monitor for drift accumulation over thousands of iterations; verify epsilon boundary handling is functioning correctly.
+- **Boundary precision errors**: Check that floating-point precision errors near 0.0 and 1.0 are being corrected by epsilon snapping.
 
 **Section sources**
 - [SVGSMILElement.cpp:141-146](file://blink-b87d44f-Source-core-svg/animation/SVGSMILElement.cpp#L141-L146)
@@ -1006,6 +1154,8 @@ Common issues and diagnostics:
 - [timing_parser.dart:96-147](file://lib/src/animation/smil/timing_parser.dart#L96-L147)
 - [smil_timeline_syncbase.dart:341](file://lib/src/animation/smil/smil_timeline_syncbase.dart#L341-L349)
 - [smil_timeline_syncbase.dart:378](file://lib/src/animation/smil/smil_timeline_syncbase.dart#L378-L389)
+- [smil_animation.dart:427-436](file://lib/src/animation/smil/smil_animation.dart#L427-L436)
+- [smil_animation.dart:620-631](file://lib/src/animation/smil/smil_animation.dart#L620-L631)
 
 ## Conclusion
-The significantly enhanced SMIL animation runtime delivers robust timing semantics, flexible begin/end conditions, and **comprehensive DOM event dispatching capabilities** including beginEvent, endEvent, and repeatEvent triggering for external listeners and event-driven animations. Its modular design enables extensibility for new animation elements and property types while maintaining high performance through coalesced updates, priority sorting, and cached computations. The enhanced event system allows for sophisticated animation choreography and external listener integration, making it suitable for complex interactive SVG applications. The advanced interpolation system provides sophisticated value computation for complex animations including path morphing, transform interpolation, and multi-type easing functions. **The runtime now features specialized support for discrete calcMode with waypoint jumping, per-segment spline easing for motion animations, accumulate='sum' handling for motion animations, and enhanced rotate modes (auto, auto-reverse, fixed angle)**. **Most significantly, the runtime now includes robust circular dependency detection using DFS with path tracking, multi-pass timing resolution with configurable pass limits via _kMaxResolutionPasses constant, and graceful error recovery mechanisms that treat unresolved animations as indefinitely delayed**. Integration with Flutter's SVG package allows precise control over animated attributes and seamless rendering updates with full support for DOM event-driven animation workflows, sophisticated animation sandwich model priority resolution, and comprehensive timing resolution with document order tiebreaking for simultaneous events.
+The significantly enhanced SMIL animation runtime delivers robust timing semantics, flexible begin/end conditions, and **comprehensive DOM event dispatching capabilities** including beginEvent, endEvent, and repeatEvent triggering for external listeners and event-driven animations. Its modular design enables extensibility for new animation elements and property types while maintaining high performance through coalesced updates, priority sorting, and cached computations. The enhanced event system allows for sophisticated animation choreography and external listener integration, making it suitable for complex interactive SVG applications. The advanced interpolation system provides sophisticated value computation for complex animations including path morphing, transform interpolation, and multi-type easing functions. **The runtime now features specialized support for discrete calcMode with waypoint jumping, per-segment spline easing for motion animations, accumulate='sum' handling for motion animations, and enhanced rotate modes (auto, auto-reverse, fixed angle)**. **Most significantly, the runtime now includes robust circular dependency detection using DFS with path tracking, multi-pass timing resolution with configurable pass limits via _kMaxResolutionPasses constant, and graceful error recovery mechanisms that treat unresolved animations as indefinitely delayed**. **Major timing precision improvements include enhanced fractional repeatCount handling with microsecond-level arithmetic, high-precision duration multiplication to prevent floating-point drift, and improved boundary handling with epsilon corrections for reliable iteration counting and boundary detection**. **The runtime now includes comprehensive timing precision testing covering fractional repeatCount scenarios, very small duration handling, long-running precision stability, and boundary condition edge cases**. Integration with Flutter's SVG package allows precise control over animated attributes and seamless rendering updates with full support for DOM event-driven animation workflows, sophisticated animation sandwich model priority resolution, and comprehensive timing resolution with document order tiebreaking for simultaneous events.

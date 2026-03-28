@@ -16,11 +16,15 @@
 - [animated_svg_picture_hit_test_advanced.dart](file://lib/src/animation/animated_svg_picture_hit_test_advanced.dart)
 - [animated_svg_picture_utils.dart](file://lib/src/animation/animated_svg_picture_utils.dart)
 - [animated_svg_picture_path_parser.dart](file://lib/src/animation/animated_svg_picture_path_parser.dart)
+- [animated_svg_picture_utils_transform.dart](file://lib/src/animation/animated_svg_picture_utils_transform.dart)
+- [animated_svg_painter_use_foreign_object.dart](file://lib/src/animation/animated_svg_painter_use_foreign_object.dart)
+- [animated_svg_painter_geometry_foreign_object.dart](file://lib/src/animation/animated_svg_painter_geometry_foreign_object.dart)
 - [svg_event_dispatcher.dart](file://lib/src/animation/svg_event_dispatcher.dart)
 - [svg_event.dart](file://lib/src/animation/svg_event.dart)
 - [hit_test_advanced_features_test.dart](file://test/animation/hit_test_advanced_features_test.dart)
 - [hit_test_advanced_test.dart](file://test/animation/hit_test_advanced_test.dart)
 - [hit_test_precision_test.dart](file://test/animation/hit_test_precision_test.dart)
+- [foreign_object_advanced_test.dart](file://test/animation/foreign_object_advanced_test.dart)
 - [animated_svg_painter_clip_mask_advanced.dart](file://lib/src/animation/animated_svg_painter_clip_mask_advanced.dart)
 - [animated_svg_painter_clip_mask.dart](file://lib/src/animation/animated_svg_painter_clip_mask.dart)
 - [animated_svg_painter_clip_mask_composition.dart](file://lib/src/animation/animated_svg_painter_clip_mask_composition.dart)
@@ -29,15 +33,13 @@
 
 ## Update Summary
 **Changes Made**
-- Enhanced mask hit testing system with comprehensive luminance-based precision using ITU-R BT.709 coefficients
-- Improved circular reference protection in mask composition with advanced recursion depth tracking
-- Added new _kHitTestLuminanceR/G/B constants and _computeColorLuminanceForHitTest method for accurate luminance computation
-- Enhanced mask composition with proper opacity blending and edge feathering support
-- Strengthened use element event delegation with comprehensive pointer-events inheritance
-- Enhanced pointer events system with robust mode resolution and semantic interpretation
-- Advanced precision testing capabilities for complex geometric scenarios with tolerance-based algorithms
-- Comprehensive event model implementation with W3C DOM compliance and shadow DOM integration
-- Enhanced visibility checking with recursive clipPath/mask handling and transform stacking
+- Enhanced viewport transform handling for foreign object positioning with improved nested SVG coordinate system management
+- Added comprehensive foreign object hit testing support with requiredExtensions attribute validation
+- Implemented advanced nested SVG viewport transformation within foreignObject contexts
+- Enhanced animation performance through optimized transform matrix operations and caching strategies
+- Strengthened foreign object CSS inheritance system with proper property boundary handling
+- Improved hit testing traversal with enhanced foreign object context management and coordinate transformation
+- Added support for foreign object viewport clipping and overflow handling in hit testing scenarios
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -52,10 +54,11 @@
 10. [Comprehensive Element Support](#comprehensive-element-support)
 11. [Advanced Text Hit Testing](#advanced-text-hit-testing)
 12. [Advanced Precision Testing](#advanced-precision-testing)
-13. [Dependency Analysis](#dependency-analysis)
-14. [Performance Considerations](#performance-considerations)
-15. [Troubleshooting Guide](#troubleshooting-guide)
-16. [Conclusion](#conclusion)
+13. [Enhanced Foreign Object Support](#enhanced-foreign-object-support)
+14. [Dependency Analysis](#dependency-analysis)
+15. [Performance Considerations](#performance-considerations)
+16. [Troubleshooting Guide](#troubleshooting-guide)
+17. [Conclusion](#conclusion)
 
 ## Introduction
 
@@ -63,7 +66,7 @@ The Advanced Hit Testing Features represent a sophisticated system for precise e
 
 The system implements W3C DOM event model compliance with advanced features like marker hit-testing, glyph-precision text selection, robust evenodd fill-rule handling, and seamless integration with SMIL animation event targeting. These features enable developers to create highly interactive SVG experiences with precise user interaction mapping.
 
-**Updated** Enhanced with comprehensive pointer events semantics supporting all major SVG elements with stroke and fill hit-testing using tolerance-based algorithms, glyph-precision text hit testing, advanced use element event delegation, and comprehensive precision testing capabilities for clipPath, mask, and complex geometric scenarios.
+**Updated** Enhanced with comprehensive pointer events semantics supporting all major SVG elements with stroke and fill hit-testing using tolerance-based algorithms, glyph-precision text hit testing, advanced use element event delegation, comprehensive precision testing capabilities for clipPath, mask, and complex geometric scenarios, enhanced viewport transform handling for foreign object positioning, improved foreign object hit testing with requiredExtensions validation, and advanced nested SVG coordinate system management.
 
 ## Project Structure
 
@@ -80,10 +83,12 @@ B --> F[Text Layer]
 B --> G[Advanced Features]
 B --> H[Event Model]
 B --> I[Pointer Events System]
+B --> J[Foreign Object Support]
 end
 subgraph "Core Extensions"
 C --> C1[Node Traversal]
 C --> C2[Anchor Tracking]
+C --> C3[Foreign Object Context]
 D --> D1[ClipPath/Mask]
 D --> D2[ForeignObject Viewport]
 E --> E1[Basic Shapes]
@@ -98,6 +103,9 @@ G --> G3[Advanced Fill Rules]
 I --> I1[Pointer Events Resolution]
 I --> I2[Fill/Stroke Detection]
 I --> I3[Tolerance Calculation]
+J --> J1[Viewport Transform]
+J --> J2[CSS Inheritance]
+J --> J3[Required Extensions]
 H --> H1[W3C Event Flow]
 H --> H2[Shadow DOM Integration]
 H --> H3[Event Path Construction]
@@ -187,16 +195,17 @@ The advanced hit testing system follows a layered architecture that processes us
 flowchart TD
 Start([User Interaction]) --> LocalToDocument["Convert Local Coordinates<br/>to Document Space"]
 LocalToDocument --> ComputeTransform["Compute ViewBox Transform"]
-ComputeTransform --> TraverseTree["Traverse DOM Tree<br/>(Reverse Paint Order)"]
+ComputeTransform --> CheckForeign{"foreignObject Context?"}
+CheckForeign --> |Yes| ApplyForeignTransform["Apply ForeignObject Transform"]
+CheckForeign --> |No| TraverseTree["Traverse DOM Tree<br/>(Reverse Paint Order)"]
+ApplyForeignTransform --> TraverseTree
 TraverseTree --> CheckDefinition{"Definition Only Tag?"}
 CheckDefinition --> |Yes| SkipNode["Skip Node"]
 CheckDefinition --> |No| CheckDisplay{"display='none'?"}
 CheckDisplay --> |Yes| SkipNode
-CheckDisplay --> |No| CheckForeign{"foreignObject?"}
-CheckForeign --> |Yes| CheckExtensions{"requiredExtensions empty?"}
+CheckDisplay --> |No| CheckExtensions{"requiredExtensions Empty?"}
 CheckExtensions --> |No| SkipNode
 CheckExtensions --> |Yes| ApplyTransform["Apply Transformations"]
-CheckForeign --> |No| ApplyTransform
 ApplyTransform --> CheckVisibility["Check Visibility<br/>(ClipPath/Mask/Viewport)"]
 CheckVisibility --> |Not Visible| SkipNode
 CheckVisibility --> |Visible| CheckPointerEvents{"pointer-events='none'?"}
@@ -529,7 +538,9 @@ DefinitionCheck --> DisplayCheck["Check Display None"]
 DisplayCheck --> ForeignObjectCheck["Check ForeignObject Extensions"]
 ForeignObjectCheck --> AnchorUpdate["Update Anchor Context"]
 AnchorUpdate --> TransformApply["Apply Node Transforms"]
-TransformApply --> VisibilityCheck["Check Point Visibility"]
+TransformApply --> CheckForeignContext["Check ForeignObject Context"]
+CheckForeignContext --> ApplyForeignTransform["Apply ForeignObject Transform"]
+ApplyForeignTransform --> VisibilityCheck["Check Point Visibility"]
 VisibilityCheck --> EventBoundary["Check Event Boundary"]
 EventBoundary --> BoundaryType{"Boundary Type?"}
 BoundaryType --> |None| ChildTraversal["Traverse Children"]
@@ -697,16 +708,19 @@ PrecisionTest --> MaskTest["Mask Precision"]
 PrecisionTest --> UseTest["Use Element Precision"]
 PrecisionTest --> TextPrecision["Text Character Precision"]
 PrecisionTest --> CombinedTest["Combined Scenarios"]
+PrecisionTest --> ForeignObjectTest["ForeignObject Precision"]
 ClipPathTest --> ClipPathValidation["Validate ClipPath Regions"]
 MaskTest --> MaskValidation["Validate Mask Alpha Regions"]
 UseTest --> UseValidation["Validate Use Transformations"]
 TextPrecision --> TextValidation["Validate Character Boundaries"]
 CombinedTest --> CombinedValidation["Validate Multiple Effects"]
+ForeignObjectTest --> FOValidation["Validate ForeignObject Context"]
 ClipPathValidation --> TestResult["Test Results"]
 MaskValidation --> TestResult
 UseValidation --> TestResult
 TextValidation --> TestResult
 CombinedValidation --> TestResult
+FOValidation --> TestResult
 ```
 
 **Diagram sources**
@@ -718,9 +732,50 @@ The precision testing covers:
 - **Use element transformations** including viewBox scaling and pointer-events inheritance
 - **Text character-level precision** with dx offsets and rotation
 - **Combined effects** where multiple precision factors interact
+- **ForeignObject scenarios** with requiredExtensions validation and viewport handling
 
 **Section sources**
 - [hit_test_precision_test.dart:1-1006](file://test/animation/hit_test_precision_test.dart#L1-L1006)
+
+## Enhanced Foreign Object Support
+
+The foreign object system provides comprehensive support for HTML content within SVG with advanced viewport management and coordinate transformation:
+
+```mermaid
+flowchart TD
+ForeignObjectStart["ForeignObject Processing"] --> CheckExtensions["Check requiredExtensions"]
+CheckExtensions --> |Unsupported| SkipRender["Skip Rendering"]
+CheckExtensions --> |Supported| ApplyViewport["Apply Viewport Transform"]
+ApplyViewport --> CheckSVG{"Nested SVG?"}
+CheckSVG --> |Yes| ApplyNestedSVG["Apply Nested SVG Transform"]
+CheckSVG --> |No| ProcessChildren["Process Children"]
+ApplyNestedSVG --> ProcessChildren
+ProcessChildren --> CheckOverflow["Check Overflow Settings"]
+CheckOverflow --> |Hidden/Scroll| ApplyClipping["Apply Clipping"]
+CheckOverflow --> |Visible| NoClipping["No Clipping"]
+ApplyClipping --> BuildCSSContext["Build CSS Context"]
+NoClipping --> BuildCSSContext
+BuildCSSContext --> HitTestSupport["Enable Hit Testing"]
+HitTestSupport --> End(["Processing Complete"])
+SkipRender --> End
+```
+
+**Diagram sources**
+- [animated_svg_picture_hit_test_traversal.dart:85-122](file://lib/src/animation/animated_svg_picture_hit_test_traversal.dart#L85-L122)
+- [animated_svg_painter_use_foreign_object.dart:36-140](file://lib/src/animation/animated_svg_painter_use_foreign_object.dart#L36-L140)
+
+The foreign object system includes:
+- **requiredExtensions validation** with fallback pattern support
+- **Nested SVG viewport transformation** with viewBox handling
+- **Percentage-based dimension resolution** relative to foreignObject viewport
+- **CSS inheritance boundary management** with property filtering
+- **Overflow clipping support** with preserveAspectRatio respect
+- **Coordinate system isolation** preventing transform leakage
+
+**Section sources**
+- [animated_svg_picture_hit_test_traversal.dart:85-122](file://lib/src/animation/animated_svg_picture_hit_test_traversal.dart#L85-L122)
+- [animated_svg_painter_use_foreign_object.dart:36-140](file://lib/src/animation/animated_svg_painter_use_foreign_object.dart#L36-L140)
+- [animated_svg_painter_geometry_foreign_object.dart:309-487](file://lib/src/animation/animated_svg_painter_geometry_foreign_object.dart#L309-L487)
 
 ## Dependency Analysis
 
@@ -742,39 +797,59 @@ A --> K[pointer_events.dart]
 A --> L[utils.dart]
 A --> M[path_parser.dart]
 A --> N[event_model.dart]
+A --> O[utils_transform.dart]
+A --> P[painter_use_foreign_object.dart]
+A --> Q[painter_geometry_foreign_object.dart]
 end
 subgraph "Shared Utilities"
-O[svg_dom.dart] --> B
-O --> C
-O --> D
-O --> E
-O --> F
-O --> G
-O --> H
-O --> I
-O --> J
-O --> K
-O --> L
-O --> M
-O --> N
-P[svg_transform.dart] --> B
-P --> C
-P --> D
-P --> E
-P --> F
-P --> G
-P --> H
-P --> I
-P --> M
-Q[path_parser.dart] --> D
-Q --> F
-Q --> H
-Q --> I
-Q --> L
-R[svg_event.dart] --> J
-R --> S[event_dispatcher.dart]
-T[pointer_events_system] --> J
-U[event_model.dart] --> N
+R[svg_dom.dart] --> B
+R --> C
+R --> D
+R --> E
+R --> F
+R --> G
+R --> H
+R --> I
+R --> J
+R --> K
+R --> L
+R --> M
+R --> N
+R --> O
+R --> P
+R --> Q
+S[svg_transform.dart] --> B
+S --> C
+S --> D
+S --> E
+S --> F
+S --> G
+S --> H
+S --> I
+S --> M
+S --> O
+T[path_parser.dart] --> D
+T --> F
+T --> H
+T --> I
+T --> L
+U[svg_event.dart] --> J
+U --> V[event_dispatcher.dart]
+W[pointer_events_system] --> J
+X[event_model.dart] --> N
+Y[render_cache] --> B
+Y --> C
+Y --> D
+Y --> E
+Y --> F
+Y --> G
+Y --> H
+Y --> I
+Y --> J
+Y --> K
+Y --> L
+Y --> M
+Y --> N
 end
 ```
 
@@ -786,6 +861,7 @@ The dependency structure ensures:
 - **Reusability** through shared utility functions
 - **Testability** with isolated component testing
 - **Maintainability** through well-defined interfaces
+- **Performance optimization** through render caching
 
 **Section sources**
 - [animated_svg_picture.dart:1-200](file://lib/src/animation/animated_svg_picture.dart#L1-L200)
@@ -798,22 +874,33 @@ The advanced hit testing system implements several optimization strategies:
 - **Hit test cache** per frame to avoid redundant calculations
 - **Transform matrix caching** to minimize expensive matrix operations
 - **Geometry path caching** for frequently accessed elements
+- **Render cache optimization** with animation-aware invalidation
+- **Foreign object context caching** to avoid repeated viewport computations
 
 ### Early Termination Strategies
 - **Short-circuit evaluation** for definition-only elements
 - **Display none optimization** to skip invisible elements
 - **Bounding box culling** before detailed geometry testing
+- **requiredExtensions validation** to skip unsupported foreign objects
+- **Pointer-events none optimization** to prevent unnecessary processing
 
 ### Memory Management
 - **Object pooling** for temporary calculation objects
 - **Lazy evaluation** for complex geometric operations
 - **Weak references** for event target registries
+- **Transform chain optimization** to minimize matrix multiplications
 
 ### Algorithmic Optimizations
 - **Spatial partitioning** for large SVG documents
 - **Hierarchical culling** using bounding boxes
 - **Early exit conditions** for pointer-events none
 - **Tolerance-based optimization** to reduce path sampling
+- **Foreign object viewport caching** to avoid repeated calculations
+
+**Updated** Enhanced performance optimizations including foreign object viewport transform caching, nested SVG coordinate system optimization, requiredExtensions validation caching, and improved render cache invalidation for animated content.
+
+**Section sources**
+- [animated_svg_painter.dart:62-125](file://lib/src/animation/animated_svg_painter.dart#L62-L125)
 
 ## Troubleshooting Guide
 
@@ -848,6 +935,19 @@ The advanced hit testing system implements several optimization strategies:
 - Check requiredExtensions attribute values
 - Verify foreignObject viewport clipping
 - Ensure proper overflow handling
+- Validate nested SVG coordinate system
+
+**Issue: Nested SVG viewport transformation issues**
+- Verify viewBox attribute presence and validity
+- Check preserveAspectRatio settings
+- Ensure proper percentage-based dimension resolution
+- Validate foreignObject viewport boundaries
+
+**Issue: Foreign object CSS inheritance problems**
+- Confirm inheritable properties are properly passed
+- Check for excluded SVG-specific properties
+- Verify CSS boundary crossing rules
+- Validate property value resolution
 
 **Issue: Precision testing failures**
 - Validate clipPath units (objectBoundingBox vs userspaceonuse)
@@ -855,12 +955,14 @@ The advanced hit testing system implements several optimization strategies:
 - Verify use element transformations and viewBox scaling
 - Test text character positioning with dx/rotate attributes
 - Ensure circular reference prevention in nested clipPath/mask scenarios
+- Validate foreign object requiredExtensions and viewport handling
 
-**Updated** Enhanced troubleshooting guidance for new luminance-based mask hit testing features, including proper ITU-R BT.709 coefficient handling and circular reference protection in mask composition.
+**Updated** Enhanced troubleshooting guidance for new foreign object viewport transform handling, nested SVG coordinate system management, requiredExtensions validation, and improved hit testing traversal with foreign object context awareness.
 
 **Section sources**
 - [hit_test_advanced_features_test.dart:1-604](file://test/animation/hit_test_advanced_features_test.dart#L1-L604)
 - [hit_test_precision_test.dart:1-1006](file://test/animation/hit_test_precision_test.dart#L1-L1006)
+- [foreign_object_advanced_test.dart:1-200](file://test/animation/foreign_object_advanced_test.dart#L1-L200)
 
 ## Conclusion
 
@@ -882,7 +984,11 @@ Key achievements include:
 - **Strengthened use element delegation** with comprehensive pointer-events inheritance
 - **New luminance computation system** with ITU-R BT.709 coefficients for accurate color-based masking
 - **Enhanced mask composition** with proper opacity blending and edge feathering support
+- **Advanced foreign object support** with requiredExtensions validation and viewport management
+- **Improved nested SVG coordinate system** with viewBox transformation handling
+- **Enhanced CSS inheritance** with proper property boundary management
+- **Optimized performance** through foreign object viewport caching and transform optimization
 
 The implementation serves as a foundation for building highly interactive SVG experiences while maintaining compatibility with existing Flutter and SVG ecosystems.
 
-**Updated** Enhanced with comprehensive pointer events semantics, stroke/fill tolerance-based hit testing, glyph-precision text hit testing, advanced use element event delegation, comprehensive precision testing capabilities, advanced clipPath precision with coordinate transformation, advanced mask hit testing with luminance support using ITU-R BT.709 coefficients, strengthened event delegation with pointer-events inheritance for complex geometric scenarios, and improved circular reference protection in mask composition with advanced recursion depth tracking.
+**Updated** Enhanced with comprehensive pointer events semantics, stroke/fill tolerance-based hit testing, glyph-precision text hit testing, advanced use element event delegation, comprehensive precision testing capabilities, advanced clipPath precision with coordinate transformation, advanced mask hit testing with luminance support using ITU-R BT.709 coefficients, strengthened event delegation with pointer-events inheritance for complex geometric scenarios, improved circular reference protection in mask composition with advanced recursion depth tracking, enhanced foreign object viewport transform handling, improved foreign object hit testing with requiredExtensions validation, advanced nested SVG coordinate system management, and optimized performance through foreign object caching strategies.

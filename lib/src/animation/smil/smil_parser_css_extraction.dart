@@ -204,7 +204,7 @@ bool _matchCombinatorChain(
   }
 }
 
-/// Match a node against a simple selector (tag, id, classes, attributes)
+/// Match a node against a simple selector (tag, id, classes, attributes, pseudo-classes)
 bool _matchesSimpleSelector(SvgNode node, CssSimpleSelector selector) {
   // Check tag name
   if (selector.tagName != null && selector.tagName != '*') {
@@ -230,7 +230,150 @@ bool _matchesSimpleSelector(SvgNode node, CssSimpleSelector selector) {
     if (!attrSel.matches(attrValue)) return false;
   }
 
+  // Check pseudo-classes
+  for (final pseudo in selector.pseudoClasses) {
+    if (!_matchesPseudoClass(pseudo, node)) return false;
+  }
+
+  // Check nth pseudo-classes
+  for (final nthPseudo in selector.nthPseudoClasses) {
+    if (!_matchesNthPseudoClass(nthPseudo, node)) return false;
+  }
+
+  // Check :not() selectors
+  for (final notSelector in selector.notSelectors) {
+    if (_matchesSimpleSelector(node, notSelector)) return false;
+  }
+
   return true;
+}
+
+/// Check if a node matches a structural pseudo-class
+bool _matchesPseudoClass(CssPseudoClass pseudo, SvgNode node) {
+  switch (pseudo) {
+    case CssPseudoClass.root:
+      return node.parent == null || node.parent?.tagName == 'svg';
+    case CssPseudoClass.empty:
+      return node.children.isEmpty;
+    case CssPseudoClass.firstChild:
+      return _isFirstChild(node);
+    case CssPseudoClass.lastChild:
+      return _isLastChild(node);
+    case CssPseudoClass.onlyChild:
+      return _isOnlyChild(node);
+    case CssPseudoClass.firstOfType:
+      return _isFirstOfType(node);
+    case CssPseudoClass.lastOfType:
+      return _isLastOfType(node);
+    case CssPseudoClass.onlyOfType:
+      return _isOnlyOfType(node);
+    case CssPseudoClass.hover:
+    case CssPseudoClass.active:
+    case CssPseudoClass.focus:
+    case CssPseudoClass.visited:
+    case CssPseudoClass.link:
+      // Dynamic pseudo-classes are handled separately at runtime
+      return true;
+  }
+}
+
+/// Check if a node matches an nth pseudo-class
+bool _matchesNthPseudoClass(CssNthPseudoClass nthPseudo, SvgNode node) {
+  final parent = node.parent;
+  if (parent == null) return false;
+
+  final siblings = parent.children;
+  final nodeIndex = siblings.indexOf(node);
+  if (nodeIndex == -1) return false;
+
+  switch (nthPseudo.type) {
+    case CssNthType.nthChild:
+      // 1-based index from start
+      return nthPseudo.matches(nodeIndex + 1);
+
+    case CssNthType.nthLastChild:
+      // 1-based index from end
+      return nthPseudo.matches(siblings.length - nodeIndex);
+
+    case CssNthType.nthOfType:
+      // Count only siblings of the same type, from start
+      final tagName = node.tagName.toLowerCase();
+      var typeIndex = 0;
+      for (var i = 0; i <= nodeIndex; i++) {
+        if (siblings[i].tagName.toLowerCase() == tagName) {
+          typeIndex++;
+        }
+      }
+      return nthPseudo.matches(typeIndex);
+
+    case CssNthType.nthLastOfType:
+      // Count only siblings of the same type, from end
+      final tagName2 = node.tagName.toLowerCase();
+      var typeIndexFromEnd = 0;
+      for (var i = siblings.length - 1; i >= nodeIndex; i--) {
+        if (siblings[i].tagName.toLowerCase() == tagName2) {
+          typeIndexFromEnd++;
+        }
+      }
+      return nthPseudo.matches(typeIndexFromEnd);
+  }
+}
+
+bool _isFirstChild(SvgNode node) {
+  final parent = node.parent;
+  if (parent == null) return true;
+  return parent.children.isNotEmpty && parent.children.first == node;
+}
+
+bool _isLastChild(SvgNode node) {
+  final parent = node.parent;
+  if (parent == null) return true;
+  return parent.children.isNotEmpty && parent.children.last == node;
+}
+
+bool _isOnlyChild(SvgNode node) {
+  final parent = node.parent;
+  if (parent == null) return true;
+  return parent.children.length == 1 && parent.children.first == node;
+}
+
+bool _isFirstOfType(SvgNode node) {
+  final parent = node.parent;
+  if (parent == null) return true;
+  final tagName = node.tagName.toLowerCase();
+  for (final sibling in parent.children) {
+    if (sibling.tagName.toLowerCase() == tagName) {
+      return sibling == node;
+    }
+  }
+  return true;
+}
+
+bool _isLastOfType(SvgNode node) {
+  final parent = node.parent;
+  if (parent == null) return true;
+  final tagName = node.tagName.toLowerCase();
+  for (var i = parent.children.length - 1; i >= 0; i--) {
+    final sibling = parent.children[i];
+    if (sibling.tagName.toLowerCase() == tagName) {
+      return sibling == node;
+    }
+  }
+  return true;
+}
+
+bool _isOnlyOfType(SvgNode node) {
+  final parent = node.parent;
+  if (parent == null) return true;
+  final tagName = node.tagName.toLowerCase();
+  var count = 0;
+  for (final sibling in parent.children) {
+    if (sibling.tagName.toLowerCase() == tagName) {
+      count++;
+      if (count > 1) return false;
+    }
+  }
+  return count == 1;
 }
 
 /// Get the immediate previous sibling of a node

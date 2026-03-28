@@ -1,0 +1,153 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+    <!-- Use and Symbol with viewBox and preserveAspectRatio test -->
+    <defs>
+        <!-- Simple symbol without viewBox -->
+        <symbol id="starSimple">
+            <polygon points="25,0 31,18 50,18 35,29 41,47 25,36 9,47 15,29 0,18 19,18" fill="#FF6600" />
+        </symbol>
+
+        <!-- Symbol with viewBox -->
+        <symbol id="starViewBox" viewBox="0 0 50 50">
+            <polygon points="25,2 31,18 50,18 35,29 41,47 25,36 9,47 15,29 0,18 19,18" fill="#0066FF" />
+        </symbol>
+
+        <!-- Symbol with viewBox and preserveAspectRatio -->
+        <symbol id="rectMeet" viewBox="0 0 100 50" preserveAspectRatio="xMidYMid meet">
+            <rect width="100" height="50" fill="#00CC66" />
+            <circle cx="50" cy="25" r="20" fill="#FFCC00" />
+        </symbol>
+
+        <symbol id="rectSlice" viewBox="0 0 100 50" preserveAspectRatio="xMidYMid slice">
+            <rect width="100" height="50" fill="#CC00CC" />
+            <circle cx="50" cy="25" r="20" fill="#FFCC00" />
+        </symbol>
+
+        <!-- Symbol with different alignment options -->
+        <symbol id="alignTest" viewBox="0 0 100 100">
+            <rect width="100" height="100" fill="#3366FF" />
+            <circle cx="10" cy="10" r="8" fill="white" />
+            <circle cx="90" cy="90" r="8" fill="white" />
+            <rect x="40" y="40" width="20" height="20" fill="white" />
+        </symbol>
+
+        <!-- Complex symbol -->
+        <symbol id="complexSym" viewBox="0 0 80 80">
+            <rect width="80" height="80" fill="#FF3366" rx="10" />
+            <circle cx="40" cy="40" r="25" fill="#FFFFFF" fill-opacity="0.5" />
+            <path d="M25,40 L40,25 L55,40 L40,55 Z" fill="#333333" />
+        </symbol>
+    </defs>
+
+    <text x="50" y="30" font-size="18" fill="#333333">Use &amp; Symbol: viewBox &amp; preserveAspectRatio</text>
+
+    <!-- Row 1: Basic use of symbols -->
+    <text x="50" y="70" font-size="14" fill="#666666">Basic Symbol Usage</text>
+
+    <g transform="translate(50, 90)">
+        <text x="0" y="-5" font-size="11" fill="#999999">Without viewBox</text>
+        <rect width="100" height="100" fill="#EEEEEE" stroke="#CCCCCC" />
+        <use href="#starSimple" />
+    </g>
+
+    <g transform="translate(200, 90)">
+        <text x="0" y="-5" font-size="11" fill="#999999">With viewBox (50x50)</text>
+        <rect width="100" height="100" fill="#EEEEEE" stroke="#CCCCCC" />
+        <use href="#starViewBox" width="100" height="100" />
+    </g>
+
+    <g transform="translate(350, 90)">
+        <text x="0" y="-5" font-size="11" fill="#999999">Scaled with viewBox</text>
+        <rect width="150" height="100" fill="#EEEEEE" stroke="#CCCCCC" />
+        <use href="#starViewBox" width="150" height="100" />
+    </g>
+
+    <!-- Row 2: preserveAspectRatio meet vs slice -->
+    <text x="50" y="220" font-size="14" fill="#666666">preserveAspectRatio: meet vs slice</text>
+
+    <g transform="translate(50, 240)">
+        <text x="0" y="-5" font-size="11" fill="#999999">meet (contain)</text>
+        <rect width="150" height="100" fill="#EEEEEE" stroke="#CCCCCC" />
+        <use href="#rectMeet" width="150" height="100" />
+    </g>
+
+    <g transform="translate(250, 240)">
+        <text x="0" y="-5" font-size="11" fill="#999999">slice (cover)</text>
+        <rect width="150" height="100" fill="#EEEEEE" stroke="#CCCCCC" />
+        <use href="#rectSlice" width="150" height="100" />
+    </g>
+
+    <!-- Row 3: Alignment options -->
+    <text x="50" y="370" font-size="14" fill="#666666">Alignment Options</text>
+
+    <g transform="translate(50, 390)">
+        <text x="15" y="-5" font-size="10" fill="#999999">xMinYMin</text>
+        <rect width="80" height="60" fill="#EEEEEE" stroke="#CCCCCC" />
+        <svg viewBox="0 0 100 100" width="80" height="60" preserveAspectRatio="xMinYMin meet">
+            <use href="#alignTest" />
+        </svg>
+    </g>
+
+    <g transform="translate(150, 390)">
+        <text x="15" y="-5" font-size="10" fill="#999999">xMidYMid</text>
+        <rect width="80" height="60" fill="#EEEEEE" stroke="#CCCCCC" />
+        <svg viewBox="0 0 100 100" width="80" height="60" preserveAspectRatio="xMidYMid meet">
+            <use href="#alignTest" />
+        </svg>
+    </g>
+
+    <g transform="translate(250, 390)">
+        <text x="15" y="-5" font-size="10" fill="#999999">xMaxYMax</text>
+        <rect width="80" height="60" fill="#EEEEEE" stroke="#CCCCCC" />
+        <svg viewBox="0 0 100 100" width="80" height="60" preserveAspectRatio="xMaxYMax meet">
+            <use href="#alignTest" />
+        </svg>
+    </g>
+
+    <g transform="translate(350, 390)">
+        <text x="20" y="-5" font-size="10" fill="#999999">none</text>
+        <rect width="80" height="60" fill="#EEEEEE" stroke="#CCCCCC" />
+        <svg viewBox="0 0 100 100" width="80" height="60" preserveAspectRatio="none">
+            <use href="#alignTest" />
+        </svg>
+    </g>
+
+    <!-- Row 4: Multiple use of same symbol -->
+    <text x="50" y="490" font-size="14" fill="#666666">Multiple Instances</text>
+
+    <g transform="translate(50, 510)">
+        <use href="#complexSym" width="60" height="60" />
+    </g>
+    <g transform="translate(120, 510)">
+        <use href="#complexSym" width="40" height="40" />
+    </g>
+    <g transform="translate(170, 510)">
+        <use href="#complexSym" width="80" height="80" />
+    </g>
+    <g transform="translate(260, 510)">
+        <use href="#complexSym" width="50" height="70" />
+    </g>
+
+    <!-- Complex use with transforms -->
+    <g transform="translate(550, 90)">
+        <text x="0" y="-5" font-size="11" fill="#999999">Transformed Use</text>
+        <rect width="200" height="150" fill="#EEEEEE" stroke="#CCCCCC" />
+        <use href="#starViewBox" x="10" y="10" width="50" height="50" />
+        <use href="#starViewBox" x="70" y="30" width="60" height="60" transform="rotate(30, 100, 60)" />
+        <use href="#starViewBox" x="140" y="80" width="40" height="40" transform="scale(0.8)" />
+    </g>
+
+    <!-- Nested symbols -->
+    <g transform="translate(550, 270)">
+        <text x="0" y="-5" font-size="11" fill="#999999">Grid of Symbols</text>
+        <rect width="200" height="180" fill="#EEEEEE" stroke="#CCCCCC" />
+        <use href="#complexSym" x="10" y="10" width="55" height="55" />
+        <use href="#complexSym" x="75" y="10" width="55" height="55" />
+        <use href="#complexSym" x="140" y="10" width="55" height="55" />
+        <use href="#complexSym" x="10" y="70" width="55" height="55" />
+        <use href="#complexSym" x="75" y="70" width="55" height="55" />
+        <use href="#complexSym" x="140" y="70" width="55" height="55" />
+        <use href="#complexSym" x="10" y="130" width="55" height="40" />
+        <use href="#complexSym" x="75" y="130" width="55" height="40" />
+        <use href="#complexSym" x="140" y="130" width="55" height="40" />
+    </g>
+</svg>

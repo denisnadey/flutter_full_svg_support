@@ -22,6 +22,14 @@
 - [SVGFETurbulenceElement.h](file://blink-b87d44f-Source-core-svg/SVGFETurbulenceElement.h)
 </cite>
 
+## Update Summary
+**Changes Made**
+- Added comprehensive documentation for three new filter primitive implementations: displacement map (feDisplacementMap), image (feImage), and turbulence (feTurbulence)
+- Updated primitive analysis sections to include detailed specifications for all four major filter primitives
+- Enhanced animation support documentation with specific examples for each primitive type
+- Expanded edge handling documentation covering comprehensive error scenarios
+- Updated architecture diagrams to reflect the complete filter primitive ecosystem
+
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
@@ -264,7 +272,7 @@ FEImg-->>Builder : return effect
 All primitives inherit standard attributes:
 - x, y: position of the primitive subregion.
 - width, height: size of the primitive subregion.
-- result: optional name to export the primitive’s output for later reuse.
+- result: optional name to export the primitive's output for later reuse.
 - Renderer integration: invalidation and layout marking when attributes change.
 
 Practical note: Empty result names are allowed; they still participate in the graph but are not exported.
@@ -309,12 +317,10 @@ N2 -. "clearResultsRecursive" .-> N1
 - Scale and units:
   - effectBBoxMode scales numeric values by target bounding box; large targets increase pixel counts and memory pressure.
 
-[No sources needed since this section provides general guidance]
-
 ## Troubleshooting Guide
 Common issues and remedies:
 - Missing input:
-  - If a primitive’s in attribute references a non-existent result, the build fails; ensure earlier primitives produce the named result.
+  - If a primitive's in attribute references a non-existent result, the build fails; ensure earlier primitives produce the named result.
 - Negative standard deviation:
   - Gaussian blur rejects negative values; clamp to zero or adjust animation targets.
 - Aspect ratio mismatch:
@@ -323,6 +329,10 @@ Common issues and remedies:
   - filterUnits and primitiveUnits determine coordinate spaces; confirm whether percentages refer to object bbox or user space.
 - Layout invalidation:
   - Changing primitive attributes triggers invalidation; if nothing updates, check that the renderer is attached and the element is in document.
+- Displacement map channel selection:
+  - Ensure xChannelSelector and yChannelSelector are valid (R, G, B, A); invalid selections may produce unexpected results.
+- Turbulence parameter validation:
+  - Base frequencies must be non-negative; negative values will cause the primitive to fail during build.
 
 **Section sources**
 - [SVGFEGaussianBlurElement.cpp:135-137](file://blink-b87d44f-Source-core-svg/SVGFEGaussianBlurElement.cpp#L135-L137)
@@ -330,4 +340,4 @@ Common issues and remedies:
 - [SVGFilterElement.cpp:121-174](file://blink-b87d44f-Source-core-svg/SVGFilterElement.cpp#L121-L174)
 
 ## Conclusion
-The Blink SVG filter implementation provides a robust, extensible pipeline for composing built-in primitives. By understanding primitive inputs, standard attributes, and the builder’s dependency model, developers can construct efficient and animated filter graphs. Use primitive subregions, appropriate units, and careful chaining to balance visual fidelity and performance.
+The Blink SVG filter implementation provides a robust, extensible pipeline for composing built-in primitives. By understanding primitive inputs, standard attributes, and the builder's dependency model, developers can construct efficient and animated filter graphs. Use primitive subregions, appropriate units, and careful chaining to balance visual fidelity and performance.

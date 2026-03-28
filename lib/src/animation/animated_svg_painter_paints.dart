@@ -234,7 +234,12 @@ extension AnimatedSvgPainterPaintsExtension on AnimatedSvgPainter {
       var segDrawing = drawing;
       var segPatternIndex = patternIndex;
 
-      while (pathPos < pathLength) {
+      // Safety counter to prevent infinite loops from degenerate patterns
+      int iterationCount = 0;
+      const int maxIterations = 100000;
+
+      while (pathPos < pathLength && iterationCount < maxIterations) {
+        iterationCount++;
         final segEnd = math.min(pathPos + segRemaining, pathLength);
         if (segDrawing) {
           dashedPath.addPath(
@@ -251,6 +256,19 @@ extension AnimatedSvgPainterPaintsExtension on AnimatedSvgPainter {
           segPatternIndex = (segPatternIndex + 1) % pattern.length;
           segDrawing = !segDrawing;
           segRemaining = pattern[segPatternIndex];
+
+          // Skip zero-length pattern segments to ensure forward progress
+          int skipCount = 0;
+          while (segRemaining <= 1e-6 && skipCount < pattern.length) {
+            segPatternIndex = (segPatternIndex + 1) % pattern.length;
+            segDrawing = !segDrawing;
+            segRemaining = pattern[segPatternIndex];
+            skipCount++;
+          }
+          // If all pattern values are effectively zero, force loop exit
+          if (segRemaining <= 1e-6) {
+            pathPos = pathLength;
+          }
         }
       }
     }
@@ -259,8 +277,9 @@ extension AnimatedSvgPainterPaintsExtension on AnimatedSvgPainter {
   }
 
   /// Parses stroke-dasharray value into a list of doubles.
+  /// Filters out near-zero values to prevent infinite loops in dashing.
   List<double> _parseDashArray(String value) {
-    return value
+    final parsed = value
         .split(RegExp(r'[\s,]+'))
         .map((s) {
           final cleaned = s.trim().replaceAll(RegExp(r'[a-zA-Z%]+$'), '');
@@ -268,5 +287,11 @@ extension AnimatedSvgPainterPaintsExtension on AnimatedSvgPainter {
         })
         .where((d) => d >= 0)
         .toList();
+
+    // Filter near-zero values to prevent degenerate patterns
+    final filtered = parsed.where((d) => d > 1e-6).toList();
+
+    // If all values were filtered out, return original to let caller handle it
+    return filtered.isNotEmpty ? filtered : parsed;
   }
 }
