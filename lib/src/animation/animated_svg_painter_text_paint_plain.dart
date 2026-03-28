@@ -34,8 +34,14 @@ extension AnimatedSvgPainterTextPlainExtension on AnimatedSvgPainter {
     }
     var effectiveX = x;
     if (isFirstLine && style.textIndent != 0.0) effectiveX += style.textIndent;
-    final hangingInfo = _calculateHangingPunctuation(text: text, style: style, isFirstLine: isFirstLine, isLastLine: isLastLine);
-    if (hangingInfo.startHangWidth > 0) effectiveX -= hangingInfo.startHangWidth;
+    final hangingInfo = _calculateHangingPunctuation(
+      text: text,
+      style: style,
+      isFirstLine: isFirstLine,
+      isLastLine: isLastLine,
+    );
+    if (hangingInfo.startHangWidth > 0)
+      effectiveX -= hangingInfo.startHangWidth;
     var effectiveStyle = style;
     var paragraph = _buildTextParagraph(text, effectiveStyle);
     var width = paragraph.maxIntrinsicWidth;
@@ -46,7 +52,9 @@ extension AnimatedSvgPainterTextPlainExtension on AnimatedSvgPainter {
       final glyphCount = text.runes.length;
       if (lengthAdjust == _SvgTextLengthAdjust.spacing && glyphCount > 1) {
         final extraSpacing = (targetLength - width) / (glyphCount - 1);
-        effectiveStyle = effectiveStyle.copyWith(letterSpacing: effectiveStyle.letterSpacing + extraSpacing);
+        effectiveStyle = effectiveStyle.copyWith(
+          letterSpacing: effectiveStyle.letterSpacing + extraSpacing,
+        );
         paragraph = _buildTextParagraph(text, effectiveStyle);
         width = paragraph.maxIntrinsicWidth;
       } else {
@@ -79,21 +87,53 @@ extension AnimatedSvgPainterTextPlainExtension on AnimatedSvgPainter {
         drawX -= width;
         break;
     }
-    final drawY = _resolveTextTopFromBaseline(paragraph: paragraph, style: effectiveStyle, baselineY: baselineY);
-    final strokeParagraph = _buildStrokeTextParagraph(text, effectiveStyle, node);
+    final drawY = _resolveTextTopFromBaseline(
+      paragraph: paragraph,
+      style: effectiveStyle,
+      baselineY: baselineY,
+    );
+    final strokeParagraph = _buildStrokeTextParagraph(
+      text,
+      effectiveStyle,
+      node,
+    );
     final paintOrderParts = effectiveStyle.paintOrder.split(RegExp(r'\s+'));
-    final strokeFirst = strokeParagraph != null && paintOrderParts.isNotEmpty && paintOrderParts.first == 'stroke';
+    final strokeFirst =
+        strokeParagraph != null &&
+        paintOrderParts.isNotEmpty &&
+        paintOrderParts.first == 'stroke';
     void drawFill() {
       if ((scaleX - 1.0).abs() > 1e-6) {
         canvas.save();
         canvas.translate(drawX, 0.0);
         canvas.scale(scaleX, 1.0);
-        _drawParagraphWithEffects(canvas, paragraph: paragraph, x: 0.0, y: drawY, imageFilter: imageFilter, colorFilter: colorFilter, blendMode: blendMode, style: effectiveStyle, text: text);
+        _drawParagraphWithEffects(
+          canvas,
+          paragraph: paragraph,
+          x: 0.0,
+          y: drawY,
+          imageFilter: imageFilter,
+          colorFilter: colorFilter,
+          blendMode: blendMode,
+          style: effectiveStyle,
+          text: text,
+        );
         canvas.restore();
       } else {
-        _drawParagraphWithEffects(canvas, paragraph: paragraph, x: drawX, y: drawY, imageFilter: imageFilter, colorFilter: colorFilter, blendMode: blendMode, style: effectiveStyle, text: text);
+        _drawParagraphWithEffects(
+          canvas,
+          paragraph: paragraph,
+          x: drawX,
+          y: drawY,
+          imageFilter: imageFilter,
+          colorFilter: colorFilter,
+          blendMode: blendMode,
+          style: effectiveStyle,
+          text: text,
+        );
       }
     }
+
     void drawStroke() {
       if (strokeParagraph == null) return;
       if ((scaleX - 1.0).abs() > 1e-6) {
@@ -106,6 +146,7 @@ extension AnimatedSvgPainterTextPlainExtension on AnimatedSvgPainter {
         canvas.drawParagraph(strokeParagraph, ui.Offset(drawX, drawY));
       }
     }
+
     if (strokeFirst) {
       drawStroke();
       drawFill();
@@ -131,7 +172,12 @@ extension AnimatedSvgPainterTextPlainExtension on AnimatedSvgPainter {
   }) {
     final glyphs = text.runes.map((r) => String.fromCharCode(r)).toList();
     if (glyphs.isEmpty) return 0.0;
-    final hangingInfo = _calculateHangingPunctuation(text: text, style: style, isFirstLine: isFirstLine, isLastLine: isLastLine);
+    final hangingInfo = _calculateHangingPunctuation(
+      text: text,
+      style: style,
+      isFirstLine: isFirstLine,
+      isLastLine: isLastLine,
+    );
     var totalHeight = 0.0;
     var cursorY = baselineY;
     if (hangingInfo.startHangWidth > 0) cursorY -= hangingInfo.startHangWidth;
@@ -143,7 +189,17 @@ extension AnimatedSvgPainterTextPlainExtension on AnimatedSvgPainter {
       canvas.save();
       canvas.translate(x, cursorY);
       canvas.rotate(math.pi / 2);
-      _drawParagraphWithEffects(canvas, paragraph: paragraph, x: 0.0, y: -glyphWidth / 2, imageFilter: imageFilter, colorFilter: colorFilter, blendMode: blendMode, style: style, text: glyph);
+      _drawParagraphWithEffects(
+        canvas,
+        paragraph: paragraph,
+        x: 0.0,
+        y: -glyphWidth / 2,
+        imageFilter: imageFilter,
+        colorFilter: colorFilter,
+        blendMode: blendMode,
+        style: style,
+        text: glyph,
+      );
       canvas.restore();
       cursorY += glyphHeight + style.letterSpacing;
       totalHeight += glyphHeight + style.letterSpacing;

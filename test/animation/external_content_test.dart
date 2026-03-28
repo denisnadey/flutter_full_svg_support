@@ -566,9 +566,7 @@ void main() {
         expect(find.byType(AnimatedSvgPicture), findsOneWidget);
       });
 
-      testWidgets('deeply nested transforms compose correctly', (
-        tester,
-      ) async {
+      testWidgets('deeply nested transforms compose correctly', (tester) async {
         // Multiple levels of nesting with transforms at each level
         const svgXml = '''
           <svg viewBox="0 0 100 100">

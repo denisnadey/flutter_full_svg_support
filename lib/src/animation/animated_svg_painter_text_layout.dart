@@ -11,12 +11,16 @@ extension AnimatedSvgPainterTextLayoutExtension on AnimatedSvgPainter {
   /// Builds a Flutter Paragraph with the resolved text style.
   ui.Paragraph _buildTextParagraph(String text, _ResolvedTextStyle style) {
     final normalizedText = _normalizeTextNfc(text);
-    var transformedText = _applyTextTransform(normalizedText, style.textTransform);
+    var transformedText = _applyTextTransform(
+      normalizedText,
+      style.textTransform,
+    );
 
     var effectiveFontSize = style.fontSize;
     if (style.fontSizeAdjust != null && style.fontSizeAdjust! > 0) {
       const estimatedAspectRatio = 0.48;
-      effectiveFontSize = style.fontSize * (style.fontSizeAdjust! / estimatedAspectRatio);
+      effectiveFontSize =
+          style.fontSize * (style.fontSizeAdjust! / estimatedAspectRatio);
     }
 
     final fontVariations = <ui.FontVariation>[];
@@ -27,14 +31,23 @@ extension AnimatedSvgPainterTextLayoutExtension on AnimatedSvgPainter {
       fontVariations.add(ui.FontVariation('opsz', effectiveFontSize));
     }
     if (style.fontVariationSettings != null) {
-      fontVariations.addAll(_parseFontVariationSettings(style.fontVariationSettings!));
+      fontVariations.addAll(
+        _parseFontVariationSettings(style.fontVariationSettings!),
+      );
     }
 
-    final processedText = _applyUnicodeBidi(transformedText, style.unicodeBidi, style.textDirection);
+    final processedText = _applyUnicodeBidi(
+      transformedText,
+      style.unicodeBidi,
+      style.textDirection,
+    );
     final allFontFeatures = <ui.FontFeature>[...style.fontFeatures];
     _addFontVariantCapsFeatures(allFontFeatures, style.fontVariantCaps);
     _addFontVariantNumericFeatures(allFontFeatures, style.fontVariantNumeric);
-    _addFontVariantLigaturesFeatures(allFontFeatures, style.fontVariantLigatures);
+    _addFontVariantLigaturesFeatures(
+      allFontFeatures,
+      style.fontVariantLigatures,
+    );
     _addFontVariantPositionFeatures(allFontFeatures, style.fontVariantPosition);
 
     if (style.fontKerning == 'none') {
@@ -44,11 +57,17 @@ extension AnimatedSvgPainterTextLayoutExtension on AnimatedSvgPainter {
     }
 
     final fontFeaturesKey = _fontFeaturesHashKey(allFontFeatures);
-    final cacheKey = _RenderCache.textKey(
-      processedText, effectiveFontSize, style.fontFamily,
-      style.fontWeight.index, style.fontStyle.index,
-      style.letterSpacing, style.color.toARGB32(),
-    ) + '|$fontFeaturesKey';
+    final cacheKey =
+        _RenderCache.textKey(
+          processedText,
+          effectiveFontSize,
+          style.fontFamily,
+          style.fontWeight.index,
+          style.fontStyle.index,
+          style.letterSpacing,
+          style.color.toARGB32(),
+        ) +
+        '|$fontFeaturesKey';
 
     final cached = _renderCache.textParagraphs[cacheKey];
     if (cached != null) return cached;
@@ -56,7 +75,11 @@ extension AnimatedSvgPainterTextLayoutExtension on AnimatedSvgPainter {
     List<String>? fontFamilyFallback;
     String? primaryFontFamily = style.fontFamily;
     if (style.fontFamily != null && style.fontFamily!.contains(',')) {
-      final families = style.fontFamily!.split(',').map((f) => f.trim()).where((f) => f.isNotEmpty).toList();
+      final families = style.fontFamily!
+          .split(',')
+          .map((f) => f.trim())
+          .where((f) => f.isNotEmpty)
+          .toList();
       if (families.isNotEmpty) {
         primaryFontFamily = families.first;
         if (families.length > 1) fontFamilyFallback = families.sublist(1);
@@ -65,24 +88,37 @@ extension AnimatedSvgPainterTextLayoutExtension on AnimatedSvgPainter {
 
     final paragraphBuilder = ui.ParagraphBuilder(
       ui.ParagraphStyle(
-        fontSize: effectiveFontSize, fontFamily: primaryFontFamily,
-        fontWeight: style.fontWeight, fontStyle: style.fontStyle,
+        fontSize: effectiveFontSize,
+        fontFamily: primaryFontFamily,
+        fontWeight: style.fontWeight,
+        fontStyle: style.fontStyle,
         textDirection: style.textDirection,
-        height: style.lineHeight != null ? style.lineHeight! / effectiveFontSize : null,
+        height: style.lineHeight != null
+            ? style.lineHeight! / effectiveFontSize
+            : null,
       ),
     );
     final decoration = _buildTextDecoration(style.decorations);
     paragraphBuilder.pushStyle(
       ui.TextStyle(
-        color: style.color, fontSize: effectiveFontSize,
-        fontFamily: primaryFontFamily, fontFamilyFallback: fontFamilyFallback,
-        fontWeight: style.fontWeight, fontStyle: style.fontStyle,
-        letterSpacing: style.letterSpacing, wordSpacing: style.wordSpacing,
-        decoration: decoration, decorationColor: style.decorationColor ?? style.color,
+        color: style.color,
+        fontSize: effectiveFontSize,
+        fontFamily: primaryFontFamily,
+        fontFamilyFallback: fontFamilyFallback,
+        fontWeight: style.fontWeight,
+        fontStyle: style.fontStyle,
+        letterSpacing: style.letterSpacing,
+        wordSpacing: style.wordSpacing,
+        decoration: decoration,
+        decorationColor: style.decorationColor ?? style.color,
         decorationStyle: _mapDecorationStyle(style.textDecorationStyle),
         decorationThickness: style.textDecorationThickness,
-        height: style.lineHeight != null ? style.lineHeight! / effectiveFontSize : null,
-        shadows: style.textShadow != null ? _parseTextShadows(style.textShadow!) : null,
+        height: style.lineHeight != null
+            ? style.lineHeight! / effectiveFontSize
+            : null,
+        shadows: style.textShadow != null
+            ? _parseTextShadows(style.textShadow!)
+            : null,
         fontFeatures: allFontFeatures.isNotEmpty ? allFontFeatures : null,
         fontVariations: fontVariations.isNotEmpty ? fontVariations : null,
       ),
@@ -102,7 +138,8 @@ extension AnimatedSvgPainterTextLayoutExtension on AnimatedSvgPainter {
       paragraph.layout(const ui.ParagraphConstraints(width: 1000000));
       return paragraph;
     }
-    if (runs.length == 1) return _buildTextParagraph(runs.first.text, runs.first.style);
+    if (runs.length == 1)
+      return _buildTextParagraph(runs.first.text, runs.first.style);
 
     final firstStyle = runs.first.style;
     final cacheKeyBuffer = StringBuffer('mr:');
@@ -119,13 +156,19 @@ extension AnimatedSvgPainterTextLayoutExtension on AnimatedSvgPainter {
     var effectiveFontSize = firstStyle.fontSize;
     if (firstStyle.fontSizeAdjust != null && firstStyle.fontSizeAdjust! > 0) {
       const estimatedAspectRatio = 0.48;
-      effectiveFontSize = firstStyle.fontSize * (firstStyle.fontSizeAdjust! / estimatedAspectRatio);
+      effectiveFontSize =
+          firstStyle.fontSize *
+          (firstStyle.fontSizeAdjust! / estimatedAspectRatio);
     }
 
     List<String>? fontFamilyFallback;
     String? primaryFontFamily = firstStyle.fontFamily;
     if (firstStyle.fontFamily != null && firstStyle.fontFamily!.contains(',')) {
-      final families = firstStyle.fontFamily!.split(',').map((f) => f.trim()).where((f) => f.isNotEmpty).toList();
+      final families = firstStyle.fontFamily!
+          .split(',')
+          .map((f) => f.trim())
+          .where((f) => f.isNotEmpty)
+          .toList();
       if (families.isNotEmpty) {
         primaryFontFamily = families.first;
         if (families.length > 1) fontFamilyFallback = families.sublist(1);
@@ -134,10 +177,14 @@ extension AnimatedSvgPainterTextLayoutExtension on AnimatedSvgPainter {
 
     final paragraphBuilder = ui.ParagraphBuilder(
       ui.ParagraphStyle(
-        fontSize: effectiveFontSize, fontFamily: primaryFontFamily,
-        fontWeight: firstStyle.fontWeight, fontStyle: firstStyle.fontStyle,
+        fontSize: effectiveFontSize,
+        fontFamily: primaryFontFamily,
+        fontWeight: firstStyle.fontWeight,
+        fontStyle: firstStyle.fontStyle,
         textDirection: firstStyle.textDirection,
-        height: firstStyle.lineHeight != null ? firstStyle.lineHeight! / effectiveFontSize : null,
+        height: firstStyle.lineHeight != null
+            ? firstStyle.lineHeight! / effectiveFontSize
+            : null,
       ),
     );
 
@@ -146,30 +193,52 @@ extension AnimatedSvgPainterTextLayoutExtension on AnimatedSvgPainter {
       final run = runs[i];
       final style = run.style;
       final normalizedText = _normalizeTextNfc(run.text);
-      var transformedText = _applyTextTransform(normalizedText, style.textTransform);
-      final processedText = _applyUnicodeBidi(transformedText, style.unicodeBidi, style.textDirection);
+      var transformedText = _applyTextTransform(
+        normalizedText,
+        style.textTransform,
+      );
+      final processedText = _applyUnicodeBidi(
+        transformedText,
+        style.unicodeBidi,
+        style.textDirection,
+      );
 
-      final canShareLigatures = prevFeatures == null || _areLigatureFeaturesCompatible(prevFeatures, run.fontFeatures);
+      final canShareLigatures =
+          prevFeatures == null ||
+          _areLigatureFeaturesCompatible(prevFeatures, run.fontFeatures);
       if (!canShareLigatures && i > 0) paragraphBuilder.addText('\u200C');
 
       final fontVariations = <ui.FontVariation>[];
-      if ((style.fontStretch - 100.0).abs() > 0.1) fontVariations.add(ui.FontVariation('wdth', style.fontStretch));
-      if (style.fontOpticalSizing == 'auto') fontVariations.add(ui.FontVariation('opsz', style.fontSize));
-      if (style.fontVariationSettings != null) fontVariations.addAll(_parseFontVariationSettings(style.fontVariationSettings!));
+      if ((style.fontStretch - 100.0).abs() > 0.1)
+        fontVariations.add(ui.FontVariation('wdth', style.fontStretch));
+      if (style.fontOpticalSizing == 'auto')
+        fontVariations.add(ui.FontVariation('opsz', style.fontSize));
+      if (style.fontVariationSettings != null)
+        fontVariations.addAll(
+          _parseFontVariationSettings(style.fontVariationSettings!),
+        );
 
       final decoration = _buildTextDecoration(style.decorations);
       paragraphBuilder.pushStyle(
         ui.TextStyle(
-          color: style.color, fontSize: style.fontSize,
+          color: style.color,
+          fontSize: style.fontSize,
           fontFamily: style.fontFamily?.split(',').first.trim(),
           fontFamilyFallback: fontFamilyFallback,
-          fontWeight: style.fontWeight, fontStyle: style.fontStyle,
-          letterSpacing: style.letterSpacing, wordSpacing: style.wordSpacing,
-          decoration: decoration, decorationColor: style.decorationColor ?? style.color,
+          fontWeight: style.fontWeight,
+          fontStyle: style.fontStyle,
+          letterSpacing: style.letterSpacing,
+          wordSpacing: style.wordSpacing,
+          decoration: decoration,
+          decorationColor: style.decorationColor ?? style.color,
           decorationStyle: _mapDecorationStyle(style.textDecorationStyle),
           decorationThickness: style.textDecorationThickness,
-          height: style.lineHeight != null ? style.lineHeight! / style.fontSize : null,
-          shadows: style.textShadow != null ? _parseTextShadows(style.textShadow!) : null,
+          height: style.lineHeight != null
+              ? style.lineHeight! / style.fontSize
+              : null,
+          shadows: style.textShadow != null
+              ? _parseTextShadows(style.textShadow!)
+              : null,
           fontFeatures: run.fontFeatures.isNotEmpty ? run.fontFeatures : null,
           fontVariations: fontVariations.isNotEmpty ? fontVariations : null,
         ),
@@ -192,8 +261,10 @@ extension AnimatedSvgPainterTextLayoutExtension on AnimatedSvgPainter {
     _addFontVariantNumericFeatures(features, style.fontVariantNumeric);
     _addFontVariantLigaturesFeatures(features, style.fontVariantLigatures);
     _addFontVariantPositionFeatures(features, style.fontVariantPosition);
-    if (style.fontKerning == 'none') features.add(const ui.FontFeature.disable('kern'));
-    else if (style.fontKerning == 'normal') features.add(const ui.FontFeature.enable('kern'));
+    if (style.fontKerning == 'none')
+      features.add(const ui.FontFeature.disable('kern'));
+    else if (style.fontKerning == 'normal')
+      features.add(const ui.FontFeature.enable('kern'));
     return features;
   }
 
@@ -204,38 +275,63 @@ extension AnimatedSvgPainterTextLayoutExtension on AnimatedSvgPainter {
     final n = nextChar.toLowerCase();
     if (c == 'f' && (n == 'i' || n == 'l' || n == 'f')) return true;
     if ((c == 's' && n == 't') || (c == 'c' && n == 't')) return true;
-    if ((char == 'T' && nextChar == 'h') || (char == 'Q' && nextChar == 'u')) return true;
+    if ((char == 'T' && nextChar == 'h') || (char == 'Q' && nextChar == 'u'))
+      return true;
     return false;
   }
 
-  ui.Paragraph? _buildStrokeTextParagraph(String text, _ResolvedTextStyle style, SvgNode node) {
+  ui.Paragraph? _buildStrokeTextParagraph(
+    String text,
+    _ResolvedTextStyle style,
+    SvgNode node,
+  ) {
     final strokeValue = _getInheritedAttributeValue(node, 'stroke');
-    if (strokeValue == null || strokeValue.toString().trim() == 'none' || strokeValue.toString().trim().isEmpty) return null;
+    if (strokeValue == null ||
+        strokeValue.toString().trim() == 'none' ||
+        strokeValue.toString().trim().isEmpty)
+      return null;
 
     final strokeColor = _resolveColorForNode(strokeValue, node);
     if (strokeColor == null) return null;
 
-    final strokeWidth = (_getInheritedNumber(node, 'stroke-width') ?? 1.0).clamp(0.0, 100.0);
+    final strokeWidth = (_getInheritedNumber(node, 'stroke-width') ?? 1.0)
+        .clamp(0.0, 100.0);
     if (strokeWidth <= 0) return null;
 
-    final opacity = (_getInheritedNumber(node, 'opacity') ?? 1.0).clamp(0.0, 1.0);
-    final strokeOpacity = (_getInheritedNumber(node, 'stroke-opacity') ?? 1.0).clamp(0.0, 1.0);
+    final opacity = (_getInheritedNumber(node, 'opacity') ?? 1.0).clamp(
+      0.0,
+      1.0,
+    );
+    final strokeOpacity = (_getInheritedNumber(node, 'stroke-opacity') ?? 1.0)
+        .clamp(0.0, 1.0);
     final effectiveColor = _applyOpacity(strokeColor, opacity * strokeOpacity);
 
     final normalizedText = _normalizeTextNfc(text);
-    var transformedText = _applyTextTransform(normalizedText, style.textTransform);
-    final processedText = _applyUnicodeBidi(transformedText, style.unicodeBidi, style.textDirection);
+    var transformedText = _applyTextTransform(
+      normalizedText,
+      style.textTransform,
+    );
+    final processedText = _applyUnicodeBidi(
+      transformedText,
+      style.unicodeBidi,
+      style.textDirection,
+    );
 
     var effectiveFontSize = style.fontSize;
     if (style.fontSizeAdjust != null && style.fontSizeAdjust! > 0) {
       const estimatedAspectRatio = 0.48;
-      effectiveFontSize = style.fontSize * (style.fontSizeAdjust! / estimatedAspectRatio);
+      effectiveFontSize =
+          style.fontSize * (style.fontSizeAdjust! / estimatedAspectRatio);
     }
 
     List<String>? fontFamilyFallback;
     String? primaryFontFamily = style.fontFamily;
     if (style.fontFamily != null && style.fontFamily!.contains(',')) {
-      final families = style.fontFamily!.split(',').map((f) => f.trim()).where((f) => f.isNotEmpty).toList();
+      final families = style.fontFamily!
+          .split(',')
+          .map((f) => f.trim())
+          .where((f) => f.isNotEmpty)
+          .toList();
       if (families.isNotEmpty) {
         primaryFontFamily = families.first;
         if (families.length > 1) fontFamilyFallback = families.sublist(1);
@@ -250,26 +346,51 @@ extension AnimatedSvgPainterTextLayoutExtension on AnimatedSvgPainter {
     final lineCap = _getInheritedString(node, 'stroke-linecap');
     if (lineCap != null) {
       switch (lineCap.toLowerCase()) {
-        case 'round': strokePaint.strokeCap = ui.StrokeCap.round; break;
-        case 'square': strokePaint.strokeCap = ui.StrokeCap.square; break;
-        default: strokePaint.strokeCap = ui.StrokeCap.butt;
+        case 'round':
+          strokePaint.strokeCap = ui.StrokeCap.round;
+          break;
+        case 'square':
+          strokePaint.strokeCap = ui.StrokeCap.square;
+          break;
+        default:
+          strokePaint.strokeCap = ui.StrokeCap.butt;
       }
     }
 
     final lineJoin = _getInheritedString(node, 'stroke-linejoin');
     if (lineJoin != null) {
       switch (lineJoin.toLowerCase()) {
-        case 'round': strokePaint.strokeJoin = ui.StrokeJoin.round; break;
-        case 'bevel': strokePaint.strokeJoin = ui.StrokeJoin.bevel; break;
-        default: strokePaint.strokeJoin = ui.StrokeJoin.miter;
+        case 'round':
+          strokePaint.strokeJoin = ui.StrokeJoin.round;
+          break;
+        case 'bevel':
+          strokePaint.strokeJoin = ui.StrokeJoin.bevel;
+          break;
+        default:
+          strokePaint.strokeJoin = ui.StrokeJoin.miter;
       }
     }
 
     final paragraphBuilder = ui.ParagraphBuilder(
-      ui.ParagraphStyle(fontSize: effectiveFontSize, fontFamily: primaryFontFamily, fontWeight: style.fontWeight, fontStyle: style.fontStyle, textDirection: style.textDirection),
+      ui.ParagraphStyle(
+        fontSize: effectiveFontSize,
+        fontFamily: primaryFontFamily,
+        fontWeight: style.fontWeight,
+        fontStyle: style.fontStyle,
+        textDirection: style.textDirection,
+      ),
     );
     paragraphBuilder.pushStyle(
-      ui.TextStyle(foreground: strokePaint, fontSize: effectiveFontSize, fontFamily: primaryFontFamily, fontFamilyFallback: fontFamilyFallback, fontWeight: style.fontWeight, fontStyle: style.fontStyle, letterSpacing: style.letterSpacing, wordSpacing: style.wordSpacing),
+      ui.TextStyle(
+        foreground: strokePaint,
+        fontSize: effectiveFontSize,
+        fontFamily: primaryFontFamily,
+        fontFamilyFallback: fontFamilyFallback,
+        fontWeight: style.fontWeight,
+        fontStyle: style.fontStyle,
+        letterSpacing: style.letterSpacing,
+        wordSpacing: style.wordSpacing,
+      ),
     );
     paragraphBuilder.addText(processedText);
     final paragraph = paragraphBuilder.build();
@@ -277,15 +398,27 @@ extension AnimatedSvgPainterTextLayoutExtension on AnimatedSvgPainter {
     return paragraph;
   }
 
-  double _textPathSpacingAfterGlyph({required String glyph, required bool isLast, required _ResolvedTextStyle style}) {
+  double _textPathSpacingAfterGlyph({
+    required String glyph,
+    required bool isLast,
+    required _ResolvedTextStyle style,
+  }) {
     if (isLast) return 0.0;
     var spacing = style.letterSpacing;
     if (glyph == ' ' || glyph == '\u00A0') spacing += style.wordSpacing;
     return spacing;
   }
 
-  double _resolveTextTopFromBaseline({required ui.Paragraph paragraph, required _ResolvedTextStyle style, required double baselineY}) {
-    final baselineRef = _resolveBaselineReference(paragraph: paragraph, dominantBaseline: style.dominantBaseline, writingMode: style.writingMode);
+  double _resolveTextTopFromBaseline({
+    required ui.Paragraph paragraph,
+    required _ResolvedTextStyle style,
+    required double baselineY,
+  }) {
+    final baselineRef = _resolveBaselineReference(
+      paragraph: paragraph,
+      dominantBaseline: style.dominantBaseline,
+      writingMode: style.writingMode,
+    );
     final shiftedBaselineY = baselineY - style.baselineShift;
     return shiftedBaselineY - baselineRef;
   }
@@ -293,7 +426,10 @@ extension AnimatedSvgPainterTextLayoutExtension on AnimatedSvgPainter {
   double? _resolveTextLength(SvgNode node) {
     final value = node.getAttributeValue('textLength');
     if (value == null) return null;
-    if (value is num) { final length = value.toDouble(); return length > 0 ? length : null; }
+    if (value is num) {
+      final length = value.toDouble();
+      return length > 0 ? length : null;
+    }
     final raw = value.toString().trim();
     if (raw.isEmpty) return null;
     final cleaned = raw.replaceAll(RegExp(r'[a-zA-Z%]+$'), '');
@@ -305,7 +441,9 @@ extension AnimatedSvgPainterTextLayoutExtension on AnimatedSvgPainter {
   _SvgTextLengthAdjust _resolveLengthAdjust(SvgNode node) {
     final raw = node.getAttributeValue('lengthAdjust')?.toString().trim();
     if (raw == null || raw.isEmpty) return _SvgTextLengthAdjust.spacing;
-    return raw.toLowerCase() == 'spacingandglyphs' ? _SvgTextLengthAdjust.spacingAndGlyphs : _SvgTextLengthAdjust.spacing;
+    return raw.toLowerCase() == 'spacingandglyphs'
+        ? _SvgTextLengthAdjust.spacingAndGlyphs
+        : _SvgTextLengthAdjust.spacing;
   }
 
   ui.Path? _resolveTextPathGeometry(SvgNode textPathNode) {
@@ -315,7 +453,9 @@ extension AnimatedSvgPainterTextLayoutExtension on AnimatedSvgPainter {
     if (referenced == null || referenced.tagName != 'path') return null;
     final path = _buildGeometryPath(referenced);
     if (path == null) return null;
-    final transform = _buildTransformMatrixFromValue(referenced.getAttributeValue('transform'));
+    final transform = _buildTransformMatrixFromValue(
+      referenced.getAttributeValue('transform'),
+    );
     if (transform == null) return path;
     return path.transform(transform.storage);
   }
@@ -340,13 +480,17 @@ extension AnimatedSvgPainterTextLayoutExtension on AnimatedSvgPainter {
     final whiteSpace = _getInheritedString(node, 'white-space')?.toLowerCase();
     if (whiteSpace != null) {
       switch (whiteSpace) {
-        case 'pre': case 'pre-wrap': case 'break-spaces':
+        case 'pre':
+        case 'pre-wrap':
+        case 'break-spaces':
           final preserved = raw.replaceAll('\n', ' ').replaceAll('\r', ' ');
           return preserved.isEmpty ? null : preserved;
         case 'pre-line':
           final preLine = raw.replaceAll(RegExp(r'[ \t]+'), ' ');
           return preLine.isEmpty ? null : preLine;
-        case 'normal': case 'nowrap': default:
+        case 'normal':
+        case 'nowrap':
+        default:
           final collapsed = raw.replaceAll(RegExp(r'\s+'), ' ').trim();
           return collapsed.isEmpty ? null : collapsed;
       }
@@ -360,12 +504,19 @@ extension AnimatedSvgPainterTextLayoutExtension on AnimatedSvgPainter {
     return normalized.isEmpty ? null : normalized;
   }
 
-  String? _extractTextContentWithWhitespaceNormalization(SvgNode node, _ResolvedTextStyle? parentStyle) {
+  String? _extractTextContentWithWhitespaceNormalization(
+    SvgNode node,
+    _ResolvedTextStyle? parentStyle,
+  ) {
     final raw = _getString(node, '__text');
     if (raw == null) return null;
     final xmlSpace = _getInheritedString(node, 'xml:space')?.toLowerCase();
     final whiteSpace = _getInheritedString(node, 'white-space')?.toLowerCase();
-    final preserveWhitespace = xmlSpace == 'preserve' || whiteSpace == 'pre' || whiteSpace == 'pre-wrap' || whiteSpace == 'break-spaces';
+    final preserveWhitespace =
+        xmlSpace == 'preserve' ||
+        whiteSpace == 'pre' ||
+        whiteSpace == 'pre-wrap' ||
+        whiteSpace == 'break-spaces';
     if (preserveWhitespace) {
       final preserved = raw.replaceAll('\n', ' ').replaceAll('\r', ' ');
       return preserved.isEmpty ? null : preserved;
@@ -383,17 +534,37 @@ extension AnimatedSvgPainterTextLayoutExtension on AnimatedSvgPainter {
   List<ui.FontFeature> _resolveTextRenderingFeatures(String? value) {
     if (value == null || value.trim().isEmpty) return const <ui.FontFeature>[];
     switch (value.trim().toLowerCase()) {
-      case 'optimizespeed': return const <ui.FontFeature>[ui.FontFeature.disable('kern'), ui.FontFeature.disable('liga')];
-      case 'optimizelegibility': return const <ui.FontFeature>[ui.FontFeature.enable('kern'), ui.FontFeature.enable('liga'), ui.FontFeature.enable('clig')];
-      case 'geometricprecision': return const <ui.FontFeature>[ui.FontFeature.enable('kern')];
-      case 'auto': default: return const <ui.FontFeature>[];
+      case 'optimizespeed':
+        return const <ui.FontFeature>[
+          ui.FontFeature.disable('kern'),
+          ui.FontFeature.disable('liga'),
+        ];
+      case 'optimizelegibility':
+        return const <ui.FontFeature>[
+          ui.FontFeature.enable('kern'),
+          ui.FontFeature.enable('liga'),
+          ui.FontFeature.enable('clig'),
+        ];
+      case 'geometricprecision':
+        return const <ui.FontFeature>[ui.FontFeature.enable('kern')];
+      case 'auto':
+      default:
+        return const <ui.FontFeature>[];
     }
   }
 
   String _resolveForcedColorAdjust(String? value) {
     if (value == null || value.trim().isEmpty) return 'auto';
     final normalized = value.trim().toLowerCase();
-    switch (normalized) { case 'none': return 'none'; case 'preserve-parent-color': return 'preserve-parent-color'; case 'auto': default: return 'auto'; }
+    switch (normalized) {
+      case 'none':
+        return 'none';
+      case 'preserve-parent-color':
+        return 'preserve-parent-color';
+      case 'auto':
+      default:
+        return 'auto';
+    }
   }
 
   String _resolvePrintColorAdjust(String? value) {
@@ -406,7 +577,15 @@ extension AnimatedSvgPainterTextLayoutExtension on AnimatedSvgPainter {
   String _resolveContentVisibility(String? value) {
     if (value == null || value.trim().isEmpty) return 'visible';
     final normalized = value.trim().toLowerCase();
-    switch (normalized) { case 'hidden': return 'hidden'; case 'auto': return 'auto'; case 'visible': default: return 'visible'; }
+    switch (normalized) {
+      case 'hidden':
+        return 'hidden';
+      case 'auto':
+        return 'auto';
+      case 'visible':
+      default:
+        return 'visible';
+    }
   }
 
   String? _resolveContainIntrinsicSize(String? value) {
@@ -426,65 +605,152 @@ extension AnimatedSvgPainterTextLayoutExtension on AnimatedSvgPainter {
   String _resolveCssMixBlendMode(String? value) {
     if (value == null || value.trim().isEmpty) return 'normal';
     final normalized = value.trim().toLowerCase();
-    const validModes = <String>{'normal', 'multiply', 'screen', 'overlay', 'darken', 'lighten', 'color-dodge', 'color-burn', 'hard-light', 'soft-light', 'difference', 'exclusion', 'hue', 'saturation', 'color', 'luminosity'};
+    const validModes = <String>{
+      'normal',
+      'multiply',
+      'screen',
+      'overlay',
+      'darken',
+      'lighten',
+      'color-dodge',
+      'color-burn',
+      'hard-light',
+      'soft-light',
+      'difference',
+      'exclusion',
+      'hue',
+      'saturation',
+      'color',
+      'luminosity',
+    };
     if (validModes.contains(normalized)) return normalized;
     return 'normal';
   }
 
-  void _addFontVariantCapsFeatures(List<ui.FontFeature> features, String value) {
+  void _addFontVariantCapsFeatures(
+    List<ui.FontFeature> features,
+    String value,
+  ) {
     if (value == 'normal') return;
     switch (value) {
-      case 'small-caps': features.add(const ui.FontFeature.enable('smcp')); break;
-      case 'all-small-caps': features.add(const ui.FontFeature.enable('smcp')); features.add(const ui.FontFeature.enable('c2sc')); break;
-      case 'petite-caps': features.add(const ui.FontFeature.enable('pcap')); break;
-      case 'all-petite-caps': features.add(const ui.FontFeature.enable('pcap')); features.add(const ui.FontFeature.enable('c2pc')); break;
-      case 'unicase': features.add(const ui.FontFeature.enable('unic')); break;
-      case 'titling-caps': features.add(const ui.FontFeature.enable('titl')); break;
+      case 'small-caps':
+        features.add(const ui.FontFeature.enable('smcp'));
+        break;
+      case 'all-small-caps':
+        features.add(const ui.FontFeature.enable('smcp'));
+        features.add(const ui.FontFeature.enable('c2sc'));
+        break;
+      case 'petite-caps':
+        features.add(const ui.FontFeature.enable('pcap'));
+        break;
+      case 'all-petite-caps':
+        features.add(const ui.FontFeature.enable('pcap'));
+        features.add(const ui.FontFeature.enable('c2pc'));
+        break;
+      case 'unicase':
+        features.add(const ui.FontFeature.enable('unic'));
+        break;
+      case 'titling-caps':
+        features.add(const ui.FontFeature.enable('titl'));
+        break;
     }
   }
 
-  void _addFontVariantNumericFeatures(List<ui.FontFeature> features, String value) {
+  void _addFontVariantNumericFeatures(
+    List<ui.FontFeature> features,
+    String value,
+  ) {
     if (value == 'normal') return;
     final parts = value.split(RegExp(r'\s+'));
     for (final part in parts) {
       switch (part) {
-        case 'lining-nums': features.add(const ui.FontFeature.liningFigures()); break;
-        case 'oldstyle-nums': features.add(const ui.FontFeature.oldstyleFigures()); break;
-        case 'proportional-nums': features.add(const ui.FontFeature.proportionalFigures()); break;
-        case 'tabular-nums': features.add(const ui.FontFeature.tabularFigures()); break;
-        case 'diagonal-fractions': features.add(const ui.FontFeature.enable('frac')); break;
-        case 'stacked-fractions': features.add(const ui.FontFeature.enable('afrc')); break;
-        case 'ordinal': features.add(const ui.FontFeature.enable('ordn')); break;
-        case 'slashed-zero': features.add(const ui.FontFeature.slashedZero()); break;
+        case 'lining-nums':
+          features.add(const ui.FontFeature.liningFigures());
+          break;
+        case 'oldstyle-nums':
+          features.add(const ui.FontFeature.oldstyleFigures());
+          break;
+        case 'proportional-nums':
+          features.add(const ui.FontFeature.proportionalFigures());
+          break;
+        case 'tabular-nums':
+          features.add(const ui.FontFeature.tabularFigures());
+          break;
+        case 'diagonal-fractions':
+          features.add(const ui.FontFeature.enable('frac'));
+          break;
+        case 'stacked-fractions':
+          features.add(const ui.FontFeature.enable('afrc'));
+          break;
+        case 'ordinal':
+          features.add(const ui.FontFeature.enable('ordn'));
+          break;
+        case 'slashed-zero':
+          features.add(const ui.FontFeature.slashedZero());
+          break;
       }
     }
   }
 
-  void _addFontVariantLigaturesFeatures(List<ui.FontFeature> features, String value) {
+  void _addFontVariantLigaturesFeatures(
+    List<ui.FontFeature> features,
+    String value,
+  ) {
     if (value == 'normal') return;
     if (value == 'none') {
-      features.add(const ui.FontFeature.disable('liga')); features.add(const ui.FontFeature.disable('clig'));
-      features.add(const ui.FontFeature.disable('dlig')); features.add(const ui.FontFeature.disable('hlig'));
-      features.add(const ui.FontFeature.disable('calt')); return;
+      features.add(const ui.FontFeature.disable('liga'));
+      features.add(const ui.FontFeature.disable('clig'));
+      features.add(const ui.FontFeature.disable('dlig'));
+      features.add(const ui.FontFeature.disable('hlig'));
+      features.add(const ui.FontFeature.disable('calt'));
+      return;
     }
     final parts = value.split(RegExp(r'\s+'));
     for (final part in parts) {
       switch (part) {
-        case 'common-ligatures': features.add(const ui.FontFeature.enable('liga')); features.add(const ui.FontFeature.enable('clig')); break;
-        case 'no-common-ligatures': features.add(const ui.FontFeature.disable('liga')); features.add(const ui.FontFeature.disable('clig')); break;
-        case 'discretionary-ligatures': features.add(const ui.FontFeature.enable('dlig')); break;
-        case 'no-discretionary-ligatures': features.add(const ui.FontFeature.disable('dlig')); break;
-        case 'historical-ligatures': features.add(const ui.FontFeature.enable('hlig')); break;
-        case 'no-historical-ligatures': features.add(const ui.FontFeature.disable('hlig')); break;
-        case 'contextual': features.add(const ui.FontFeature.enable('calt')); break;
-        case 'no-contextual': features.add(const ui.FontFeature.disable('calt')); break;
+        case 'common-ligatures':
+          features.add(const ui.FontFeature.enable('liga'));
+          features.add(const ui.FontFeature.enable('clig'));
+          break;
+        case 'no-common-ligatures':
+          features.add(const ui.FontFeature.disable('liga'));
+          features.add(const ui.FontFeature.disable('clig'));
+          break;
+        case 'discretionary-ligatures':
+          features.add(const ui.FontFeature.enable('dlig'));
+          break;
+        case 'no-discretionary-ligatures':
+          features.add(const ui.FontFeature.disable('dlig'));
+          break;
+        case 'historical-ligatures':
+          features.add(const ui.FontFeature.enable('hlig'));
+          break;
+        case 'no-historical-ligatures':
+          features.add(const ui.FontFeature.disable('hlig'));
+          break;
+        case 'contextual':
+          features.add(const ui.FontFeature.enable('calt'));
+          break;
+        case 'no-contextual':
+          features.add(const ui.FontFeature.disable('calt'));
+          break;
       }
     }
   }
 
-  void _addFontVariantPositionFeatures(List<ui.FontFeature> features, String value) {
+  void _addFontVariantPositionFeatures(
+    List<ui.FontFeature> features,
+    String value,
+  ) {
     if (value == 'normal') return;
-    switch (value) { case 'sub': features.add(const ui.FontFeature.enable('subs')); break; case 'super': features.add(const ui.FontFeature.enable('sups')); break; }
+    switch (value) {
+      case 'sub':
+        features.add(const ui.FontFeature.enable('subs'));
+        break;
+      case 'super':
+        features.add(const ui.FontFeature.enable('sups'));
+        break;
+    }
   }
 
   List<ui.FontVariation> _parseFontVariationSettings(String value) {
@@ -493,7 +759,9 @@ extension AnimatedSvgPainterTextLayoutExtension on AnimatedSvgPainter {
     for (final setting in settings) {
       final trimmed = setting.trim();
       if (trimmed.isEmpty) continue;
-      final match = RegExp(r"""['"]([a-zA-Z0-9]{4})['"](?:\s+([\d.+-]+))?""").firstMatch(trimmed);
+      final match = RegExp(
+        r"""['"]([a-zA-Z0-9]{4})['"](?:\s+([\d.+-]+))?""",
+      ).firstMatch(trimmed);
       if (match != null) {
         final axis = match.group(1)!;
         final val = double.tryParse(match.group(2) ?? '1') ?? 1.0;
@@ -506,7 +774,11 @@ extension AnimatedSvgPainterTextLayoutExtension on AnimatedSvgPainter {
 
 /// Represents a text run within a multi-run paragraph.
 class _MultiRunTextRun {
-  const _MultiRunTextRun({required this.text, required this.style, required this.fontFeatures});
+  const _MultiRunTextRun({
+    required this.text,
+    required this.style,
+    required this.fontFeatures,
+  });
   final String text;
   final _ResolvedTextStyle style;
   final List<ui.FontFeature> fontFeatures;

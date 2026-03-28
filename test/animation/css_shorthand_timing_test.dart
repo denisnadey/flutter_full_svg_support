@@ -54,8 +54,10 @@ void main() {
         'linear-gradient(to right, red, blue)',
       );
 
-      expect(result['background-image'],
-          equals('linear-gradient(to right, red, blue)'));
+      expect(
+        result['background-image'],
+        equals('linear-gradient(to right, red, blue)'),
+      );
     });
 
     test('expands background with linear-gradient and no-repeat', () {
@@ -64,8 +66,10 @@ void main() {
         'linear-gradient(to right, red, blue) no-repeat',
       );
 
-      expect(result['background-image'],
-          equals('linear-gradient(to right, red, blue)'));
+      expect(
+        result['background-image'],
+        equals('linear-gradient(to right, red, blue)'),
+      );
       expect(result['background-repeat'], equals('no-repeat'));
     });
 
@@ -84,10 +88,7 @@ void main() {
     });
 
     test('provides defaults for unspecified properties', () {
-      final result = CssParser.expandShorthand(
-        'background',
-        'url(img.png)',
-      );
+      final result = CssParser.expandShorthand('background', 'url(img.png)');
 
       expect(result['background-image'], equals('url(img.png)'));
       expect(result['background-color'], equals('transparent'));
@@ -117,10 +118,7 @@ void main() {
     });
 
     test('preserves explicit timing function', () {
-      final result = CssParser.expandShorthand(
-        'animation',
-        'fadeIn 1s linear',
-      );
+      final result = CssParser.expandShorthand('animation', 'fadeIn 1s linear');
 
       expect(result['animation-timing-function'], equals('linear'));
     });
@@ -183,8 +181,10 @@ void main() {
           'fadeIn 1s steps(5, jump-start)',
         );
 
-        expect(result['animation-timing-function'],
-            equals('steps(5, jump-start)'));
+        expect(
+          result['animation-timing-function'],
+          equals('steps(5, jump-start)'),
+        );
       });
 
       test('recognizes steps(n, jump-end)', () {
@@ -193,8 +193,10 @@ void main() {
           'fadeIn 1s steps(5, jump-end)',
         );
 
-        expect(result['animation-timing-function'],
-            equals('steps(5, jump-end)'));
+        expect(
+          result['animation-timing-function'],
+          equals('steps(5, jump-end)'),
+        );
       });
 
       test('recognizes steps(n, jump-none)', () {
@@ -203,8 +205,10 @@ void main() {
           'fadeIn 1s steps(5, jump-none)',
         );
 
-        expect(result['animation-timing-function'],
-            equals('steps(5, jump-none)'));
+        expect(
+          result['animation-timing-function'],
+          equals('steps(5, jump-none)'),
+        );
       });
 
       test('recognizes steps(n, jump-both)', () {
@@ -213,8 +217,10 @@ void main() {
           'fadeIn 1s steps(5, jump-both)',
         );
 
-        expect(result['animation-timing-function'],
-            equals('steps(5, jump-both)'));
+        expect(
+          result['animation-timing-function'],
+          equals('steps(5, jump-both)'),
+        );
       });
     });
 
@@ -237,8 +243,10 @@ void main() {
           'animation',
           'fadeIn 1s steps(5, jump-start)',
         );
-        expect(result['animation-timing-function'],
-            equals('steps(5, jump-start)'));
+        expect(
+          result['animation-timing-function'],
+          equals('steps(5, jump-start)'),
+        );
       });
 
       test('steps with jump-end is recognized', () {
@@ -246,8 +254,10 @@ void main() {
           'animation',
           'fadeIn 1s steps(5, jump-end)',
         );
-        expect(result['animation-timing-function'],
-            equals('steps(5, jump-end)'));
+        expect(
+          result['animation-timing-function'],
+          equals('steps(5, jump-end)'),
+        );
       });
 
       test('steps with jump-none is recognized', () {
@@ -255,8 +265,10 @@ void main() {
           'animation',
           'fadeIn 1s steps(5, jump-none)',
         );
-        expect(result['animation-timing-function'],
-            equals('steps(5, jump-none)'));
+        expect(
+          result['animation-timing-function'],
+          equals('steps(5, jump-none)'),
+        );
       });
 
       test('steps with jump-both is recognized', () {
@@ -264,8 +276,10 @@ void main() {
           'animation',
           'fadeIn 1s steps(5, jump-both)',
         );
-        expect(result['animation-timing-function'],
-            equals('steps(5, jump-both)'));
+        expect(
+          result['animation-timing-function'],
+          equals('steps(5, jump-both)'),
+        );
       });
     });
   });
@@ -382,8 +396,10 @@ void main() {
         'radial-gradient(circle at center, red 0%, blue 100%) no-repeat',
       );
 
-      expect(result['background-image'],
-          contains('radial-gradient(circle at center, red 0%, blue 100%)'));
+      expect(
+        result['background-image'],
+        contains('radial-gradient(circle at center, red 0%, blue 100%)'),
+      );
       expect(result['background-repeat'], equals('no-repeat'));
     });
 
@@ -395,8 +411,10 @@ void main() {
 
       expect(result['animation-name'], equals('bounce'));
       expect(result['animation-duration'], equals('2s'));
-      expect(result['animation-timing-function'],
-          equals('steps(4, jump-both)'));
+      expect(
+        result['animation-timing-function'],
+        equals('steps(4, jump-both)'),
+      );
       expect(result['animation-delay'], equals('500ms'));
       expect(result['animation-iteration-count'], equals('infinite'));
       expect(result['animation-direction'], equals('alternate'));

@@ -355,17 +355,20 @@ Map<String, String> _expandBackground(String value) {
   }
 
   final result = <String, String>{};
-  
+
   // Extract url() or gradient function
-  final imageMatch = RegExp(r'(url\([^)]+\)|(?:linear-gradient|radial-gradient|repeating-linear-gradient|repeating-radial-gradient|conic-gradient)\([^)]+\))', caseSensitive: false).firstMatch(value);
-  
+  final imageMatch = RegExp(
+    r'(url\([^)]+\)|(?:linear-gradient|radial-gradient|repeating-linear-gradient|repeating-radial-gradient|conic-gradient)\([^)]+\))',
+    caseSensitive: false,
+  ).firstMatch(value);
+
   if (imageMatch != null) {
     result['background-image'] = imageMatch.group(0)!;
-    
+
     // Extract remaining tokens (not inside the function call)
     final remaining = value.replaceFirst(imageMatch.group(0)!, '').trim();
     _parseBackgroundTokens(remaining, result);
-    
+
     // Apply defaults for unspecified properties when image is specified
     result['background-color'] ??= 'transparent';
     result['background-position'] ??= '0% 0%';
@@ -396,7 +399,8 @@ void _parseBackgroundTokens(String remaining, Map<String, String> result) {
       result['background-repeat'] = token;
     } else if (_isBackgroundPosition(token)) {
       if (result.containsKey('background-position')) {
-        result['background-position'] = '${result['background-position']} $token';
+        result['background-position'] =
+            '${result['background-position']} $token';
       } else {
         result['background-position'] = token;
       }
@@ -411,10 +415,10 @@ List<String> _tokenizeBackgroundValue(String value) {
   final tokens = <String>[];
   final buffer = StringBuffer();
   int parenDepth = 0;
-  
+
   for (int i = 0; i < value.length; i++) {
     final char = value[i];
-    
+
     if (char == '(') {
       parenDepth++;
       buffer.write(char);
@@ -430,27 +434,30 @@ List<String> _tokenizeBackgroundValue(String value) {
       buffer.write(char);
     }
   }
-  
+
   if (buffer.isNotEmpty) {
     tokens.add(buffer.toString().trim());
   }
-  
+
   return tokens.where((t) => t.isNotEmpty).toList();
 }
 
 /// Checks if a token is a background repeat value
 bool _isBackgroundRepeat(String value) {
   const repeatValues = {
-    'repeat', 'repeat-x', 'repeat-y', 'no-repeat', 'space', 'round'
+    'repeat',
+    'repeat-x',
+    'repeat-y',
+    'no-repeat',
+    'space',
+    'round',
   };
   return repeatValues.contains(value.toLowerCase());
 }
 
 /// Checks if a token is a background position value
 bool _isBackgroundPosition(String value) {
-  const positionKeywords = {
-    'top', 'right', 'bottom', 'left', 'center'
-  };
+  const positionKeywords = {'top', 'right', 'bottom', 'left', 'center'};
   final lower = value.toLowerCase();
   if (positionKeywords.contains(lower)) return true;
   // Check for percentage or length values
@@ -507,7 +514,7 @@ bool _isNamedColor(String value) {
 ///   offset: polygon(0 0, 100% 0, 100% 100%)
 Map<String, String> _expandOffset(String value) {
   final lower = value.toLowerCase().trim();
-  
+
   // Handle 'none' keyword
   if (lower == 'none') {
     return {
@@ -516,18 +523,18 @@ Map<String, String> _expandOffset(String value) {
       'offset-rotate': 'auto',
     };
   }
-  
+
   final result = <String, String>{};
-  
+
   // Try to extract path(), url(), ray(), or polygon() function
   final pathMatch = RegExp(
     r'(path\([^)]+\)|url\([^)]+\)|ray\([^)]+\)|polygon\([^)]+\))',
     caseSensitive: false,
   ).firstMatch(value);
-  
+
   if (pathMatch != null) {
     result['offset-path'] = pathMatch.group(0)!;
-    
+
     // Extract remaining tokens
     final remaining = value.replaceFirst(pathMatch.group(0)!, '').trim();
     _parseOffsetTokens(remaining, result);
@@ -535,14 +542,17 @@ Map<String, String> _expandOffset(String value) {
     // No recognized path function, return as-is
     return {'offset': value};
   }
-  
+
   return result;
 }
 
 /// Parses remaining offset tokens (after path extraction)
 void _parseOffsetTokens(String remaining, Map<String, String> result) {
-  final tokens = remaining.split(RegExp(r'\s+')).where((t) => t.isNotEmpty).toList();
-  
+  final tokens = remaining
+      .split(RegExp(r'\s+'))
+      .where((t) => t.isNotEmpty)
+      .toList();
+
   for (final token in tokens) {
     // Check for distance (percentage or length)
     if (_isOffsetDistance(token)) {
@@ -567,5 +577,7 @@ bool _isOffsetRotate(String value) {
   final lower = value.toLowerCase();
   if (rotateKeywords.contains(lower)) return true;
   // Check for angle values
-  return RegExp(r'^[+-]?(\d+\.?\d*|\.\d+)(deg|rad|grad|turn)?$').hasMatch(value);
+  return RegExp(
+    r'^[+-]?(\d+\.?\d*|\.\d+)(deg|rad|grad|turn)?$',
+  ).hasMatch(value);
 }

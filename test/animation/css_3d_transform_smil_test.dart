@@ -83,8 +83,7 @@ void main() {
 
   group('Css3DTransformDecomposer - translate3d', () {
     test('decomposes translate3d extracting x and y', () {
-      final result =
-          Css3DTransformDecomposer.decomposeTranslate3d(10, 20, 30);
+      final result = Css3DTransformDecomposer.decomposeTranslate3d(10, 20, 30);
 
       expect(result.smilType, 'translate');
       expect(result.values, [10.0, 20.0]);
@@ -101,8 +100,11 @@ void main() {
     });
 
     test('decomposes translate3d with negative values', () {
-      final result =
-          Css3DTransformDecomposer.decomposeTranslate3d(-50, -100, -200);
+      final result = Css3DTransformDecomposer.decomposeTranslate3d(
+        -50,
+        -100,
+        -200,
+      );
 
       expect(result.smilType, 'translate');
       expect(result.values, [-50.0, -100.0]);
@@ -225,8 +227,7 @@ void main() {
     });
 
     test('rotate3d with arbitrary axis uses matrix', () {
-      final result =
-          Css3DTransformDecomposer.decomposeRotate3d(1, 1, 1, 45);
+      final result = Css3DTransformDecomposer.decomposeRotate3d(1, 1, 1, 45);
 
       expect(result.smilType, 'matrix');
       expect(result.values.length, 6);
@@ -278,10 +279,22 @@ void main() {
   group('Css3DTransformDecomposer - matrix3d', () {
     test('decomposes matrix3d identity', () {
       final result = Css3DTransformDecomposer.decomposeMatrix3d([
-        1, 0, 0, 0,
-        0, 1, 0, 0,
-        0, 0, 1, 0,
-        0, 0, 0, 1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
       ]);
 
       expect(result.smilType, 'matrix');
@@ -293,10 +306,22 @@ void main() {
 
     test('decomposes matrix3d with translation', () {
       final result = Css3DTransformDecomposer.decomposeMatrix3d([
-        1, 0, 0, 0,
-        0, 1, 0, 0,
-        0, 0, 1, 0,
-        100, 200, 0, 1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        100,
+        200,
+        0,
+        1,
       ]);
 
       expect(result.values[4], closeTo(100.0, 0.001)); // tx
@@ -344,8 +369,7 @@ void main() {
     });
 
     test('handles empty string', () {
-      final results =
-          Css3DTransformDecomposer.decomposeTransformString('');
+      final results = Css3DTransformDecomposer.decomposeTransformString('');
 
       expect(results.isEmpty, true);
     });
@@ -358,10 +382,7 @@ void main() {
           smilType: 'translate',
           values: [10.0, 20.0],
         ),
-        const Css3DDecompositionResult(
-          smilType: 'scale',
-          values: [2.0, 2.0],
-        ),
+        const Css3DDecompositionResult(smilType: 'scale', values: [2.0, 2.0]),
       ];
 
       final combined = Css3DTransformDecomposer.combineResults(results);
@@ -586,10 +607,7 @@ void main() {
       final keyframes = CssKeyframes(
         name: 'flip',
         keyframes: [
-          CssKeyframe(
-            offset: 0.0,
-            properties: {'transform': 'rotateX(0deg)'},
-          ),
+          CssKeyframe(offset: 0.0, properties: {'transform': 'rotateX(0deg)'}),
           CssKeyframe(
             offset: 1.0,
             properties: {'transform': 'rotateX(180deg)'},

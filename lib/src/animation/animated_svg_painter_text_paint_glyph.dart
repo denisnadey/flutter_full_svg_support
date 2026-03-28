@@ -20,7 +20,12 @@ extension AnimatedSvgPainterTextGlyphExtension on AnimatedSvgPainter {
     _ResolvedTextStyle? parentStyle,
   }) {
     final glyphs = text.runes.map((r) => String.fromCharCode(r)).toList();
-    final hasMultiPositions = xList.length > 1 || yList.length > 1 || dxList.length > 1 || dyList.length > 1 || rotateList.isNotEmpty;
+    final hasMultiPositions =
+        xList.length > 1 ||
+        yList.length > 1 ||
+        dxList.length > 1 ||
+        dyList.length > 1 ||
+        rotateList.isNotEmpty;
     final hasExplicitPositions = xList.length > 1 || yList.length > 1;
     if (!hasMultiPositions) {
       return _paintPlainText(
@@ -73,9 +78,15 @@ extension AnimatedSvgPainterTextGlyphExtension on AnimatedSvgPainter {
       textIndentOffset = style.textIndent;
       cursor.isFirstLine = false;
     }
-    final hangingInfo = _calculateHangingPunctuation(text: text, style: style, isFirstLine: true, isLastLine: true);
+    final hangingInfo = _calculateHangingPunctuation(
+      text: text,
+      style: style,
+      isFirstLine: true,
+      isLastLine: true,
+    );
     double startHangOffset = 0.0;
-    if (hangingInfo.startHangWidth > 0) startHangOffset = -hangingInfo.startHangWidth;
+    if (hangingInfo.startHangWidth > 0)
+      startHangOffset = -hangingInfo.startHangWidth;
     double mixedBaselineOffset = 0.0;
     if (parentStyle != null && parentStyle.fontSize != style.fontSize) {
       final parentParagraph = _buildTextParagraph('X', parentStyle);
@@ -85,19 +96,28 @@ extension AnimatedSvgPainterTextGlyphExtension on AnimatedSvgPainter {
       mixedBaselineOffset = parentBaseline - childBaseline;
     }
     final paintOrderParts = style.paintOrder.split(RegExp(r'\s+'));
-    final strokeFirst = paintOrderParts.isNotEmpty && paintOrderParts.first == 'stroke';
+    final strokeFirst =
+        paintOrderParts.isNotEmpty && paintOrderParts.first == 'stroke';
     for (int i = 0; i < glyphs.length; i++) {
       final charIdx = cursor.charIndex + i;
       if (charIdx < xList.length) cursor.x = xList[charIdx];
       if (charIdx < yList.length) cursor.y = yList[charIdx];
       if (charIdx < dxList.length) cursor.x += dxList[charIdx];
       if (charIdx < dyList.length) cursor.y += dyList[charIdx];
-      final rotation = rotateList.isNotEmpty ? rotateList[charIdx.clamp(0, rotateList.length - 1)] : 0.0;
+      final rotation = rotateList.isNotEmpty
+          ? rotateList[charIdx.clamp(0, rotateList.length - 1)]
+          : 0.0;
       final glyph = glyphs[i];
       final paragraph = _buildTextParagraph(glyph, style);
       final glyphWidth = paragraph.maxIntrinsicWidth;
-      var drawX = cursor.x + (i == 0 ? anchorOffset + textIndentOffset + startHangOffset : 0.0);
-      final drawY = _resolveTextTopFromBaseline(paragraph: paragraph, style: style, baselineY: cursor.y + mixedBaselineOffset);
+      var drawX =
+          cursor.x +
+          (i == 0 ? anchorOffset + textIndentOffset + startHangOffset : 0.0);
+      final drawY = _resolveTextTopFromBaseline(
+        paragraph: paragraph,
+        style: style,
+        baselineY: cursor.y + mixedBaselineOffset,
+      );
       final strokeParagraph = _buildStrokeTextParagraph(glyph, style, node);
       if (rotation != 0.0) {
         canvas.save();
@@ -107,10 +127,31 @@ extension AnimatedSvgPainterTextGlyphExtension on AnimatedSvgPainter {
       }
       if (strokeFirst && strokeParagraph != null) {
         canvas.drawParagraph(strokeParagraph, ui.Offset(drawX, drawY));
-        _drawParagraphWithEffects(canvas, paragraph: paragraph, x: drawX, y: drawY, imageFilter: imageFilter, colorFilter: colorFilter, blendMode: blendMode, style: style, text: glyph);
+        _drawParagraphWithEffects(
+          canvas,
+          paragraph: paragraph,
+          x: drawX,
+          y: drawY,
+          imageFilter: imageFilter,
+          colorFilter: colorFilter,
+          blendMode: blendMode,
+          style: style,
+          text: glyph,
+        );
       } else {
-        _drawParagraphWithEffects(canvas, paragraph: paragraph, x: drawX, y: drawY, imageFilter: imageFilter, colorFilter: colorFilter, blendMode: blendMode, style: style, text: glyph);
-        if (strokeParagraph != null) canvas.drawParagraph(strokeParagraph, ui.Offset(drawX, drawY));
+        _drawParagraphWithEffects(
+          canvas,
+          paragraph: paragraph,
+          x: drawX,
+          y: drawY,
+          imageFilter: imageFilter,
+          colorFilter: colorFilter,
+          blendMode: blendMode,
+          style: style,
+          text: glyph,
+        );
+        if (strokeParagraph != null)
+          canvas.drawParagraph(strokeParagraph, ui.Offset(drawX, drawY));
       }
       if (rotation != 0.0) canvas.restore();
       cursor.x += glyphWidth + style.letterSpacing;

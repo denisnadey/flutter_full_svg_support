@@ -52,13 +52,20 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
     final yList = nodeYList.isNotEmpty ? nodeYList : parentYList;
     final dxList = nodeDxList.isNotEmpty ? nodeDxList : parentDxList;
     final dyList = nodeDyList.isNotEmpty ? nodeDyList : parentDyList;
-    final rotateList = nodeRotateList.isNotEmpty ? nodeRotateList : parentRotateList;
+    final rotateList = nodeRotateList.isNotEmpty
+        ? nodeRotateList
+        : parentRotateList;
     if (hasAbsoluteX && nodeXList.isNotEmpty) cursor.x = nodeXList[0];
     if (hasAbsoluteY && nodeYList.isNotEmpty) cursor.y = nodeYList[0];
-    if (dxList.isNotEmpty && cursor.charIndex < dxList.length) cursor.x += dxList[cursor.charIndex];
-    if (dyList.isNotEmpty && cursor.charIndex < dyList.length) cursor.y += dyList[cursor.charIndex];
+    if (dxList.isNotEmpty && cursor.charIndex < dxList.length)
+      cursor.x += dxList[cursor.charIndex];
+    if (dyList.isNotEmpty && cursor.charIndex < dyList.length)
+      cursor.y += dyList[cursor.charIndex];
     final style = _resolveTextStyle(node);
-    final text = _extractTextContentWithWhitespaceNormalization(node, parentStyle);
+    final text = _extractTextContentWithWhitespaceNormalization(
+      node,
+      parentStyle,
+    );
     if (text != null && text.isNotEmpty) {
       final consumed = _paintPlainTextWithPositions(
         canvas,
@@ -162,11 +169,15 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
     final yList = nodeYList.isNotEmpty ? nodeYList : parentYList;
     final dxList = nodeDxList.isNotEmpty ? nodeDxList : parentDxList;
     final dyList = nodeDyList.isNotEmpty ? nodeDyList : parentDyList;
-    final rotateList = nodeRotateList.isNotEmpty ? nodeRotateList : parentRotateList;
+    final rotateList = nodeRotateList.isNotEmpty
+        ? nodeRotateList
+        : parentRotateList;
     if (hasAbsoluteX && nodeXList.isNotEmpty) cursor.x = nodeXList[0];
     if (hasAbsoluteY && nodeYList.isNotEmpty) cursor.y = nodeYList[0];
-    if (dxList.isNotEmpty && cursor.charIndex < dxList.length) cursor.x += dxList[cursor.charIndex];
-    if (dyList.isNotEmpty && cursor.charIndex < dyList.length) cursor.y += dyList[cursor.charIndex];
+    if (dxList.isNotEmpty && cursor.charIndex < dxList.length)
+      cursor.x += dxList[cursor.charIndex];
+    if (dyList.isNotEmpty && cursor.charIndex < dyList.length)
+      cursor.y += dyList[cursor.charIndex];
     final style = _resolveTextStyle(trefNode);
     final consumed = _paintPlainTextWithPositions(
       canvas,

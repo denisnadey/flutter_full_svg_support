@@ -924,20 +924,18 @@ class CssCalcEvaluator {
       case 'vmin':
         // vmin = 1% of smaller viewport dimension
         if (viewportSize != null) {
-          final minDim =
-              viewportSize.width < viewportSize.height
-                  ? viewportSize.width
-                  : viewportSize.height;
+          final minDim = viewportSize.width < viewportSize.height
+              ? viewportSize.width
+              : viewportSize.height;
           return num * minDim / 100.0;
         }
         return num;
       case 'vmax':
         // vmax = 1% of larger viewport dimension
         if (viewportSize != null) {
-          final maxDim =
-              viewportSize.width > viewportSize.height
-                  ? viewportSize.width
-                  : viewportSize.height;
+          final maxDim = viewportSize.width > viewportSize.height
+              ? viewportSize.width
+              : viewportSize.height;
           return num * maxDim / 100.0;
         }
         return num;

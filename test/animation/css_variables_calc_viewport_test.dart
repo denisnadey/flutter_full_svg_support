@@ -207,14 +207,17 @@ void main() {
       expect(result, equals(100.0));
     });
 
-    test('percentage falls back to viewport width when containerSize is null', () {
-      final result = CssCalcEvaluator.evaluate(
-        '50%',
-        viewportSize: viewportSize,
-      );
-      // Falls back to viewportSize.width: 50% of 1000 = 500
-      expect(result, equals(500.0));
-    });
+    test(
+      'percentage falls back to viewport width when containerSize is null',
+      () {
+        final result = CssCalcEvaluator.evaluate(
+          '50%',
+          viewportSize: viewportSize,
+        );
+        // Falls back to viewportSize.width: 50% of 1000 = 500
+        expect(result, equals(500.0));
+      },
+    );
 
     test('percentage returns raw value when both are null', () {
       final result = CssCalcEvaluator.evaluate('50%');
@@ -497,10 +500,7 @@ void main() {
     test('resolve method preserves viewport units as string', () {
       final node = SvgNode(tagName: 'rect');
 
-      final result = CssValueResolver.resolve(
-        'calc(50vw + 100px)',
-        node,
-      );
+      final result = CssValueResolver.resolve('calc(50vw + 100px)', node);
       // resolve() returns string, doesn't evaluate calc()
       expect(result, equals('calc(50vw + 100px)'));
     });
@@ -508,19 +508,13 @@ void main() {
 
   group('ch and lh unit approximation', () {
     test('ch unit approximated as 0.5em', () {
-      final result = CssCalcEvaluator.evaluate(
-        '2ch',
-        fontSize: 16.0,
-      );
+      final result = CssCalcEvaluator.evaluate('2ch', fontSize: 16.0);
       // 2 * 0.5 * 16 = 16
       expect(result, equals(16.0));
     });
 
     test('lh unit approximated as 1.2em', () {
-      final result = CssCalcEvaluator.evaluate(
-        '2lh',
-        fontSize: 16.0,
-      );
+      final result = CssCalcEvaluator.evaluate('2lh', fontSize: 16.0);
       // 2 * 1.2 * 16 = 38.4
       expect(result, closeTo(38.4, 0.01));
     });

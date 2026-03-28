@@ -60,7 +60,7 @@ Map<String, String> _expandAnimation(String value) {
 
 Map<String, String> _expandSingleAnimation(String value) {
   final parsed = _parseSingleAnimationToComponents(value);
-  
+
   // Return all animation properties with defaults for unspecified ones
   return {
     'animation-name': parsed['animation-name'] ?? 'none',

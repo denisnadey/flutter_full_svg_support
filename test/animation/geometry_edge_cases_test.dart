@@ -188,9 +188,7 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('SVG with cubic bezier path renders correctly', (
-      tester,
-    ) async {
+    testWidgets('SVG with cubic bezier path renders correctly', (tester) async {
       const svg = '''
         <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <path d="M10,50 C20,10 80,10 90,50" stroke="blue" fill="none"/>
@@ -463,9 +461,7 @@ void main() {
   });
 
   group('Combined Edge Cases', () {
-    testWidgets('complex SVG with multiple edge cases renders', (
-      tester,
-    ) async {
+    testWidgets('complex SVG with multiple edge cases renders', (tester) async {
       const svg = '''
         <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
           <!-- Zero-radius ellipse (should not render) -->

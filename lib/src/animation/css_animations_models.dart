@@ -34,13 +34,15 @@ class Css3DDecompositionResult {
   /// Converts this decomposition result to a SMIL transform string.
   String toSmilString() {
     if (values.isEmpty) return '';
-    final formattedValues = values.map((v) {
-      // Format: remove trailing zeros and unnecessary decimal points
-      if (v == v.truncateToDouble()) {
-        return v.toStringAsFixed(0);
-      }
-      return v.toString();
-    }).join(', ');
+    final formattedValues = values
+        .map((v) {
+          // Format: remove trailing zeros and unnecessary decimal points
+          if (v == v.truncateToDouble()) {
+            return v.toStringAsFixed(0);
+          }
+          return v.toString();
+        })
+        .join(', ');
     return '$smilType($formattedValues)';
   }
 
@@ -57,13 +59,13 @@ class Css3DDecompositionResult {
 
   @override
   int get hashCode => Object.hash(
-        smilType,
-        Object.hashAll(values),
-        zTranslation,
-        zScale,
-        perspectiveDistance,
-        is3D,
-      );
+    smilType,
+    Object.hashAll(values),
+    zTranslation,
+    zScale,
+    perspectiveDistance,
+    is3D,
+  );
 
   static bool _listEquals(List<double> a, List<double> b) {
     if (a.length != b.length) return false;
@@ -230,10 +232,10 @@ class Css3DTransformDecomposer {
     return Css3DDecompositionResult(
       smilType: 'matrix',
       values: [
-        values[0],  // a (m00)
-        values[1],  // b (m10)
-        values[4],  // c (m01)
-        values[5],  // d (m11)
+        values[0], // a (m00)
+        values[1], // b (m10)
+        values[4], // c (m01)
+        values[5], // d (m11)
         values[12], // e (tx)
         values[13], // f (ty)
       ],
@@ -337,7 +339,9 @@ class Css3DTransformDecomposer {
 
   /// Parse a transform string and decompose each function.
   /// Returns a list of decomposition results.
-  static List<Css3DDecompositionResult> decomposeTransformString(String transform) {
+  static List<Css3DDecompositionResult> decomposeTransformString(
+    String transform,
+  ) {
     if (transform.isEmpty) return [];
 
     final results = <Css3DDecompositionResult>[];
@@ -410,8 +414,9 @@ class Css3DTransformDecomposer {
     if (value.isEmpty) return null;
 
     // Handle units: deg, rad, turn, px, %, etc.
-    final match = RegExp(r'^([+-]?[\d.]+(?:[eE][+-]?\d+)?)\s*(deg|rad|turn|px|%)?$')
-        .firstMatch(value.toLowerCase());
+    final match = RegExp(
+      r'^([+-]?[\d.]+(?:[eE][+-]?\d+)?)\s*(deg|rad|turn|px|%)?$',
+    ).firstMatch(value.toLowerCase());
     if (match == null) return double.tryParse(value);
 
     final num = double.tryParse(match.group(1) ?? '');
@@ -524,7 +529,9 @@ class Css3DTransformDecomposer {
       case 'matrix':
         return Css3DDecompositionResult(
           smilType: 'matrix',
-          values: args.length >= 6 ? args.sublist(0, 6) : [1.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+          values: args.length >= 6
+              ? args.sublist(0, 6)
+              : [1.0, 0.0, 0.0, 1.0, 0.0, 0.0],
           is3D: false,
         );
       case 'matrix3d':
