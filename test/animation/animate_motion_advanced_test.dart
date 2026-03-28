@@ -852,23 +852,34 @@ void main() {
         final animations = SmilParser.parseAnimations(document);
 
         expect(animations.length, equals(1));
-        
+
         // At t=0.5, should NOT be at 50% of path due to non-uniform keyTimes
         // With keyTimes="0;0.9;1" and uniform keyPoints [0, 0.5, 1]:
         // t=0.5 is in segment [0, 0.9], local t = 0.5/0.9 ≈ 0.556
         // position = lerp(0, 0.5, 0.556) ≈ 0.278, so x ≈ 27.8
         final valueAt05 = animations[0].computeValue(0.5) as String?;
         expect(valueAt05, isNotNull);
-        
+
         // Extract x value from translate string
-        final translateMatch = RegExp(r'translate\(([\d.]+),').firstMatch(valueAt05!);
+        final translateMatch = RegExp(
+          r'translate\(([\d.]+),',
+        ).firstMatch(valueAt05!);
         expect(translateMatch, isNotNull);
         final xValue = double.parse(translateMatch!.group(1)!);
-        
+
         // x should be around 27.8, NOT 50 (which would indicate no pacing effect)
-        expect(xValue, lessThan(35), reason: 'At t=0.5 with keyTimes="0;0.9;1", '
-            'position should be well below 50% of path (~27.8)');
-        expect(xValue, greaterThan(20), reason: 'Position should be around 27.8');
+        expect(
+          xValue,
+          lessThan(35),
+          reason:
+              'At t=0.5 with keyTimes="0;0.9;1", '
+              'position should be well below 50% of path (~27.8)',
+        );
+        expect(
+          xValue,
+          greaterThan(20),
+          reason: 'Position should be around 27.8',
+        );
       });
 
       test('at keyTime boundary, position matches keyPoint', () {
@@ -891,9 +902,11 @@ void main() {
         final valueAt09 = animations[0].computeValue(0.9) as String?;
         expect(valueAt09, isNotNull);
         expect(valueAt09, contains('translate'));
-        
+
         // Extract and verify x value
-        final translateMatch = RegExp(r'translate\(([\d.]+),').firstMatch(valueAt09!);
+        final translateMatch = RegExp(
+          r'translate\(([\d.]+),',
+        ).firstMatch(valueAt09!);
         expect(translateMatch, isNotNull);
         final xValue = double.parse(translateMatch!.group(1)!);
         expect(xValue, closeTo(50, 1));
@@ -963,7 +976,7 @@ void main() {
       test('zero-length path returns start position', () {
         // Path with same start and end point
         final path = MotionPath('M50,75 L50,75');
-        
+
         // Should return the position at the start point
         final point = path.getPointAtTime(0.5);
         expect(point.position.dx, closeTo(50, 1));
@@ -987,7 +1000,7 @@ void main() {
         // Should stay at the from position
         final valueAt0 = animations[0].computeValue(0.0) as String?;
         final valueAt1 = animations[0].computeValue(1.0) as String?;
-        
+
         // Both should be at or near (50,50)
         expect(valueAt0, contains('50'));
         expect(valueAt1, contains('50'));
@@ -1091,7 +1104,7 @@ void main() {
 
         final start = path.getPointAtTime(0.0);
         final end = path.getPointAtTime(1.0);
-        
+
         // Start and end should be at (0,0)
         expect(start.position.dx, closeTo(0, 1));
         expect(start.position.dy, closeTo(0, 1));

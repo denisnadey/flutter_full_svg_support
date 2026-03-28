@@ -69,24 +69,27 @@ SmilAnimation? _parseAnimateMotion(
         // Per Blink: from value is underlying value (0,0 for motion)
         pathData = 'M0.0,0.0 L${toOffset.dx},${toOffset.dy}';
       } else if (byOffset != null && fromOffset == null && toOffset == null) {
-        // ByAnimation: only 'by' specified  
+        // ByAnimation: only 'by' specified
         // Per Blink: additive from 0,0 - moves BY the amount
         pathData = 'M0.0,0.0 L${byOffset.dx},${byOffset.dy}';
       } else if (fromOffset != null && toOffset != null) {
         // FromToAnimation: both from and to specified
-        pathData = 'M${fromOffset.dx},${fromOffset.dy} L${toOffset.dx},${toOffset.dy}';
+        pathData =
+            'M${fromOffset.dx},${fromOffset.dy} L${toOffset.dx},${toOffset.dy}';
       } else if (fromOffset != null && byOffset != null) {
         // FromByAnimation: from and by specified
         final endPoint = Offset(
           fromOffset.dx + byOffset.dx,
           fromOffset.dy + byOffset.dy,
         );
-        pathData = 'M${fromOffset.dx},${fromOffset.dy} L${endPoint.dx},${endPoint.dy}';
+        pathData =
+            'M${fromOffset.dx},${fromOffset.dy} L${endPoint.dx},${endPoint.dy}';
       } else if (fromOffset != null) {
         // FromOnly: only from specified - use element's current position as implicit 'to'
         // For now, create a zero-length motion at the from point
         // The underlying value should be used at runtime
-        pathData = 'M${fromOffset.dx},${fromOffset.dy} L${fromOffset.dx},${fromOffset.dy}';
+        pathData =
+            'M${fromOffset.dx},${fromOffset.dy} L${fromOffset.dx},${fromOffset.dy}';
       }
     }
 
@@ -198,10 +201,7 @@ SmilAnimation? _parseAnimateMotion(
         keyPoints = [0.0];
       } else {
         // Generate uniform keyPoints: 0, 1/(n-1), 2/(n-1), ..., 1
-        keyPoints = List<double>.generate(
-          n,
-          (i) => i / (n - 1),
-        );
+        keyPoints = List<double>.generate(n, (i) => i / (n - 1));
       }
     }
 

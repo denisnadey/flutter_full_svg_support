@@ -343,8 +343,11 @@ class MotionPath {
   bool get isClosed => _isClosed;
 
   /// Check if two points are coincident within tolerance
-  static bool arePointsCoincident(Offset a, Offset b,
-      {double tolerance = _closedPathTolerance}) {
+  static bool arePointsCoincident(
+    Offset a,
+    Offset b, {
+    double tolerance = _closedPathTolerance,
+  }) {
     return (a - b).distance < tolerance;
   }
 
