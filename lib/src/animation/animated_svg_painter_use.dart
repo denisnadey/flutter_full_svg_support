@@ -28,8 +28,7 @@ extension AnimatedSvgPainterUseExtension on AnimatedSvgPainter {
 
     // Check display:none on the use element itself
     final useDisplay = _getStyleOrAttributeValue(node, 'display');
-    if (useDisplay != null &&
-        useDisplay.toString().toLowerCase() == 'none') {
+    if (useDisplay != null && useDisplay.toString().toLowerCase() == 'none') {
       return;
     }
 
@@ -59,11 +58,13 @@ extension AnimatedSvgPainterUseExtension on AnimatedSvgPainter {
     // Check visibility from use context - if hidden, skip rendering
     // but respect visibility:visible on referenced content that overrides
     final useVisibility = _getStyleOrAttributeValue(node, 'visibility');
-    final isUseHidden = useVisibility != null &&
+    final isUseHidden =
+        useVisibility != null &&
         (useVisibility.toString().toLowerCase() == 'hidden' ||
             useVisibility.toString().toLowerCase() == 'collapse');
     final refVisibility = _getStyleOrAttributeValue(referenced, 'visibility');
-    final refOverridesHidden = refVisibility != null &&
+    final refOverridesHidden =
+        refVisibility != null &&
         refVisibility.toString().toLowerCase() == 'visible';
 
     // If use is hidden and ref doesn't override, skip rendering

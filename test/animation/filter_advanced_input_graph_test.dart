@@ -37,7 +37,9 @@ void main() {
 ''';
 
       final document = SvgParser.parse(svgString);
-      final passes = document.filters!.resolvePaintPasses('fillPaintGradientFx');
+      final passes = document.filters!.resolvePaintPasses(
+        'fillPaintGradientFx',
+      );
 
       expect(passes, hasLength(2));
       // FillPaint should have paintFill=true, paintStroke=false
@@ -62,7 +64,9 @@ void main() {
 ''';
 
       final document = SvgParser.parse(svgString);
-      final passes = document.filters!.resolvePaintPasses('strokePaintPatternFx');
+      final passes = document.filters!.resolvePaintPasses(
+        'strokePaintPatternFx',
+      );
 
       expect(passes, hasLength(1));
       // StrokePaint should have paintFill=false, paintStroke=true
@@ -206,7 +210,8 @@ void main() {
         }
       }
 
-      final svgString = '''
+      final svgString =
+          '''
 <svg viewBox="0 0 100 100">
   <defs>
     <filter id="maxDepthFx">
@@ -384,7 +389,9 @@ void main() {
 ''';
 
       final document = SvgParser.parse(svgString);
-      final passes = document.filters!.resolvePaintPasses('tripleShadowChainFx');
+      final passes = document.filters!.resolvePaintPasses(
+        'tripleShadowChainFx',
+      );
 
       // Each shadow doubles passes: 1->2->4->8
       expect(passes, hasLength(8));
@@ -423,7 +430,9 @@ void main() {
 ''';
 
       final document = SvgParser.parse(svgString);
-      final passes = document.filters!.resolvePaintPasses('colorMatrixShadowFx');
+      final passes = document.filters!.resolvePaintPasses(
+        'colorMatrixShadowFx',
+      );
 
       expect(passes, hasLength(2));
       expect(passes[0].offset, const ui.Offset(4, 4)); // shadow
@@ -431,8 +440,10 @@ void main() {
   });
 
   group('Advanced feMerge with explicit unresolved inputs', () {
-    test('feMerge with unresolvable in produces transparent black for that node', () {
-      final svgString = '''
+    test(
+      'feMerge with unresolvable in produces transparent black for that node',
+      () {
+        final svgString = '''
 <svg viewBox="0 0 100 100">
   <defs>
     <filter id="unresolvedMergeFx">
@@ -448,15 +459,18 @@ void main() {
 </svg>
 ''';
 
-      final document = SvgParser.parse(svgString);
-      final passes = document.filters!.resolvePaintPasses('unresolvedMergeFx');
+        final document = SvgParser.parse(svgString);
+        final passes = document.filters!.resolvePaintPasses(
+          'unresolvedMergeFx',
+        );
 
-      // Per SVG spec: unresolved reference produces transparent black (empty)
-      // Should have 2 passes: valid + SourceGraphic (doesNotExist produces empty)
-      expect(passes, hasLength(2));
-      expect(passes[0].offset, const ui.Offset(5, 0)); // valid
-      expect(passes[1].offset, ui.Offset.zero); // SourceGraphic
-    });
+        // Per SVG spec: unresolved reference produces transparent black (empty)
+        // Should have 2 passes: valid + SourceGraphic (doesNotExist produces empty)
+        expect(passes, hasLength(2));
+        expect(passes[0].offset, const ui.Offset(5, 0)); // valid
+        expect(passes[1].offset, ui.Offset.zero); // SourceGraphic
+      },
+    );
 
     test('Empty feMerge (no children) uses previous gracefully', () {
       final svgString = '''
@@ -628,7 +642,8 @@ void main() {
         }
       }
 
-      final svgString = '''
+      final svgString =
+          '''
 <svg viewBox="0 0 100 100">
   <defs>
     <filter id="depthLimitFx">

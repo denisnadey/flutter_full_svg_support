@@ -620,7 +620,7 @@ extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
     // Both paths are now in the same coordinate space (user space)
     return ui.Path.combine(ui.PathOperation.intersect, clipPath, cascadePath);
   }
-  
+
   /// Computes objectBoundingBox transform and returns both transform and bounds.
   ///
   /// Returns null if the element has zero-size bounding box.
@@ -655,7 +655,7 @@ extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
       ..setEntry(1, 1, safeHeight) // Scale Y
       ..setEntry(0, 3, bounds.left) // Translate X
       ..setEntry(1, 3, bounds.top); // Translate Y
-    
+
     return (matrix, bounds);
   }
 

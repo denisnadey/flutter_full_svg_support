@@ -172,8 +172,7 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
 
     // Check display:none on use element - if hidden, contributes nothing
     final useDisplay = _getStyleOrAttributeValue(useNode, 'display');
-    if (useDisplay != null &&
-        useDisplay.toString().toLowerCase() == 'none') {
+    if (useDisplay != null && useDisplay.toString().toLowerCase() == 'none') {
       return;
     }
 
@@ -278,7 +277,7 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
     if (charPaths != null && !charPaths.getBounds().isEmpty) {
       return charPaths;
     }
-    
+
     // Fall back to bounding box if character-level fails
     final bounds = _computeTextClipBounds(textNode);
     if (bounds == null) {
@@ -288,7 +287,7 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
     // Note: clip-rule is applied by the caller (_appendClipGeometry)
     return ui.Path()..addRect(bounds);
   }
-  
+
   /// Builds character-level paths for more precise text clipping.
   ///
   /// Creates individual rounded rectangles for each character position,
@@ -298,20 +297,23 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
     if (textContent.isEmpty) {
       return null;
     }
-    
+
     // Get text position and font metrics
     final x = _getNumber(textNode, 'x') ?? 0.0;
     final y = _getNumber(textNode, 'y') ?? 0.0;
     final fontSize = _getInheritedNumber(textNode, 'font-size') ?? 16.0;
-    
+
     // Character metrics estimation
     final charWidth = fontSize * 0.55; // Average character width
     final charHeight = fontSize * 0.85; // Character height (ascent)
     final descender = fontSize * 0.15; // Descender depth
     final charCornerRadius = fontSize * 0.1; // Rounded corners for better shape
-    
+
     // Handle text-anchor for horizontal alignment
-    final textAnchor = _getInheritedString(textNode, 'text-anchor')?.toLowerCase();
+    final textAnchor = _getInheritedString(
+      textNode,
+      'text-anchor',
+    )?.toLowerCase();
     final textWidth = textContent.length * charWidth;
     double adjustedX = x;
     if (textAnchor == 'middle') {
@@ -319,7 +321,7 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
     } else if (textAnchor == 'end') {
       adjustedX = x - textWidth;
     }
-    
+
     final path = ui.Path();
     for (int i = 0; i < textContent.length; i++) {
       final char = textContent[i];
@@ -327,10 +329,11 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
       if (char == ' ' || char == '\t' || char == '\n') {
         continue;
       }
-      
+
       final charX = adjustedX + i * charWidth;
-      final charY = y - charHeight; // Baseline is at y, so character extends upward
-      
+      final charY =
+          y - charHeight; // Baseline is at y, so character extends upward
+
       // Create rounded rectangle for each character
       final charRect = ui.Rect.fromLTWH(
         charX,
@@ -338,13 +341,13 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
         charWidth * 0.9, // Slight gap between characters
         charHeight + descender,
       );
-      
+
       // Use rounded rect for more natural character shape
       path.addRRect(
         ui.RRect.fromRectXY(charRect, charCornerRadius, charCornerRadius),
       );
     }
-    
+
     return path;
   }
 

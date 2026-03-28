@@ -407,8 +407,9 @@ class _UseInheritanceContext {
       if (ancestorEvents != null && ancestorEvents.toLowerCase() != 'inherit') {
         return ancestorEvents;
       }
-      final ancestorAttr =
-          ancestor.getAttributeValue('pointer-events')?.toString();
+      final ancestorAttr = ancestor
+          .getAttributeValue('pointer-events')
+          ?.toString();
       if (ancestorAttr != null &&
           ancestorAttr.isNotEmpty &&
           ancestorAttr.toLowerCase() != 'inherit') {
