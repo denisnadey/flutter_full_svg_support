@@ -434,7 +434,10 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
         // Check if this element has any visible paint contribution
         // For masks, elements with fill:none and stroke:none contribute zero alpha
         // For luminance masks, also check if the color has luminance > threshold
-        if (!_hasMaskVisiblePaint(node, useLuminanceHitTest: useLuminanceHitTest)) {
+        if (!_hasMaskVisiblePaint(
+          node,
+          useLuminanceHitTest: useLuminanceHitTest,
+        )) {
           return false;
         }
         final geometry = _buildGeometryPath(node);
@@ -542,8 +545,9 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
     }
 
     // Handle rgb() function
-    final rgbMatch = RegExp(r'rgb\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)')
-        .firstMatch(colorStr);
+    final rgbMatch = RegExp(
+      r'rgb\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)',
+    ).firstMatch(colorStr);
     if (rgbMatch != null) {
       final r = int.tryParse(rgbMatch.group(1)!);
       final g = int.tryParse(rgbMatch.group(2)!);
@@ -652,10 +656,14 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
       // strips the '%' suffix from numeric attributes.
       final x = _parseMaskRegionBoundingBoxValueForHitTest(maskNode, 'x');
       final y = _parseMaskRegionBoundingBoxValueForHitTest(maskNode, 'y');
-      final width =
-          _parseMaskRegionBoundingBoxValueForHitTest(maskNode, 'width');
-      final height =
-          _parseMaskRegionBoundingBoxValueForHitTest(maskNode, 'height');
+      final width = _parseMaskRegionBoundingBoxValueForHitTest(
+        maskNode,
+        'width',
+      );
+      final height = _parseMaskRegionBoundingBoxValueForHitTest(
+        maskNode,
+        'height',
+      );
       final resolvedX = x ?? -0.1;
       final resolvedY = y ?? -0.1;
       final resolvedWidth = width ?? 1.2;

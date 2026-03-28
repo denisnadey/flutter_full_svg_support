@@ -685,7 +685,9 @@ void _paintNodeContentWithinMask(
 
   // Paint children
   if (painter._shouldPaintChildren(node)) {
-    final foParent = node.tagName == 'foreignObject' ? node : foreignObjectParent;
+    final foParent = node.tagName == 'foreignObject'
+        ? node
+        : foreignObjectParent;
     for (final child in node.children) {
       _paintNodeImplWithUseContext(
         painter,

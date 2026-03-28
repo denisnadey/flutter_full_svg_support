@@ -119,7 +119,9 @@ void main() {
     final shuffled = List<TestCase>.from(testCases)..shuffle();
     activeCases = shuffled.take(_goldenSubset!).toList();
     // ignore: avoid_print
-    print('\n🔧 GOLDEN_SUBSET=$_goldenSubset: Running ${activeCases.length} of ${testCases.length} tests\n');
+    print(
+      '\n🔧 GOLDEN_SUBSET=$_goldenSubset: Running ${activeCases.length} of ${testCases.length} tests\n',
+    );
   }
 
   group('Golden Comparison Tests', () {
@@ -130,50 +132,50 @@ void main() {
       testIndex++;
       final currentIndex = testIndex; // Capture for closure
 
-      testWidgets(
-        'Golden: $name matches browser render',
-        (tester) async {
-          final stopwatch = Stopwatch()..start();
+      testWidgets('Golden: $name matches browser render', (tester) async {
+        final stopwatch = Stopwatch()..start();
+        // ignore: avoid_print
+        print('\n[$currentIndex/$totalTests] 🧪 Testing: $name');
+        // ignore: avoid_print
+        print('    SVG: $svgPath');
+        // Check if browser golden exists
+        final browserGoldenFile = File('$kBrowserGoldensDir/$name.png');
+        if (!browserGoldenFile.existsSync()) {
           // ignore: avoid_print
-          print('\n[$currentIndex/$totalTests] 🧪 Testing: $name');
+          print('    ⚠️  Skipping: browser golden not found');
+          return;
+        }
+        // ignore: avoid_print
+        print('    ✓ Browser golden found');
+
+        // Read SVG
+        final svgFile = File(svgPath);
+        if (!svgFile.existsSync()) {
           // ignore: avoid_print
-          print('    SVG: $svgPath');
-          // Check if browser golden exists
-          final browserGoldenFile = File('$kBrowserGoldensDir/$name.png');
-          if (!browserGoldenFile.existsSync()) {
-            // ignore: avoid_print
-            print('    ⚠️  Skipping: browser golden not found');
-            return;
-          }
+          print('    ⚠️  Skipping: SVG file not found');
+          return;
+        }
+        final svgString = svgFile.readAsStringSync();
+        // ignore: avoid_print
+        print('    ✓ SVG loaded (${svgString.length} bytes)');
+
+        // Set viewport
+        tester.view.physicalSize = const Size(kViewportWidth, kViewportHeight);
+        tester.view.devicePixelRatio = 1.0;
+        // ignore: avoid_print
+        print(
+          '    ✓ Viewport set to ${kViewportWidth.toInt()}x${kViewportHeight.toInt()}',
+        );
+
+        try {
+          // Create a GlobalKey for the RepaintBoundary
+          final repaintKey = GlobalKey();
+
           // ignore: avoid_print
-          print('    ✓ Browser golden found');
+          print('    ⏳ Building widget...');
 
-          // Read SVG
-          final svgFile = File(svgPath);
-          if (!svgFile.existsSync()) {
-            // ignore: avoid_print
-            print('    ⚠️  Skipping: SVG file not found');
-            return;
-          }
-          final svgString = svgFile.readAsStringSync();
-          // ignore: avoid_print
-          print('    ✓ SVG loaded (${svgString.length} bytes)');
-
-          // Set viewport
-          tester.view.physicalSize = const Size(kViewportWidth, kViewportHeight);
-          tester.view.devicePixelRatio = 1.0;
-          // ignore: avoid_print
-          print('    ✓ Viewport set to ${kViewportWidth.toInt()}x${kViewportHeight.toInt()}');
-
-          try {
-            // Create a GlobalKey for the RepaintBoundary
-            final repaintKey = GlobalKey();
-
-            // ignore: avoid_print
-            print('    ⏳ Building widget...');
-
-            // Build and render widget
-            await tester.pumpWidget(
+          // Build and render widget
+          await tester.pumpWidget(
             MaterialApp(
               debugShowCheckedModeBanner: false,
               home: Scaffold(
@@ -246,12 +248,14 @@ void main() {
           // ignore: avoid_print
           print('    ⏳ Comparing images...');
           final browserPng = browserGoldenFile.readAsBytesSync();
-          final result = await tester.runAsync(() => compareImages(
-            imageA: Uint8List.fromList(flutterPng),
-            imageB: Uint8List.fromList(browserPng),
-            perPixelThreshold: 0.05,
-            generateDiff: true,
-          ));
+          final result = await tester.runAsync(
+            () => compareImages(
+              imageA: Uint8List.fromList(flutterPng),
+              imageB: Uint8List.fromList(browserPng),
+              perPixelThreshold: 0.05,
+              generateDiff: true,
+            ),
+          );
 
           if (result == null) {
             fail('Failed to compare images for $name');
@@ -277,9 +281,13 @@ void main() {
           final statusIcon = passed ? '✅' : '❌';
 
           // ignore: avoid_print
-          print('    $statusIcon Result: $percentage% similar (threshold: $thresholdPct%)');
+          print(
+            '    $statusIcon Result: $percentage% similar (threshold: $thresholdPct%)',
+          );
           // ignore: avoid_print
-          print('    📊 ${result.differentPixels}/${result.totalPixels} different pixels');
+          print(
+            '    📊 ${result.differentPixels}/${result.totalPixels} different pixels',
+          );
           // ignore: avoid_print
           print('    ⏱️  Completed in ${elapsed}ms');
           // ignore: avoid_print
@@ -297,9 +305,7 @@ void main() {
           tester.view.resetPhysicalSize();
           tester.view.resetDevicePixelRatio();
         }
-      },
-        timeout: _testTimeout,
-      );
+      }, timeout: _testTimeout);
     }
   });
 

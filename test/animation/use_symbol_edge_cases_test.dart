@@ -236,9 +236,7 @@ void main() {
         expect(analysis.boundingBox.left, lessThan(100));
       });
 
-      testWidgets('xMidYMid meet centers content', (
-        WidgetTester tester,
-      ) async {
+      testWidgets('xMidYMid meet centers content', (WidgetTester tester) async {
         const svgXml = '''
           <svg viewBox="0 0 100 100">
             <defs>
@@ -681,23 +679,26 @@ void main() {
         expect(use.getAttributeValue('href'), '#target');
       });
 
-      test('use element parses xlink:href correctly (stored without prefix)', () {
-        // Note: The SVG parser uses attr.name.local which strips the namespace
-        // prefix, so 'xlink:href' is stored as just 'href'
-        const svgString = '''
+      test(
+        'use element parses xlink:href correctly (stored without prefix)',
+        () {
+          // Note: The SVG parser uses attr.name.local which strips the namespace
+          // prefix, so 'xlink:href' is stored as just 'href'
+          const svgString = '''
           <svg xmlns:xlink="http://www.w3.org/1999/xlink">
             <use xlink:href="#target"/>
           </svg>
         ''';
 
-        final document = SvgParser.parse(svgString);
-        final use = document.root.children.firstWhere(
-          (n) => n.tagName == 'use',
-        );
+          final document = SvgParser.parse(svgString);
+          final use = document.root.children.firstWhere(
+            (n) => n.tagName == 'use',
+          );
 
-        // xlink:href is stored as 'href' due to local name extraction
-        expect(use.getAttributeValue('href'), '#target');
-      });
+          // xlink:href is stored as 'href' due to local name extraction
+          expect(use.getAttributeValue('href'), '#target');
+        },
+      );
 
       test('symbol viewBox and preserveAspectRatio parse correctly', () {
         const svgString = '''
@@ -717,7 +718,10 @@ void main() {
         final symbol = defs.children.firstWhere((n) => n.tagName == 'symbol');
 
         expect(symbol.getAttributeValue('viewBox'), '0 0 24 24');
-        expect(symbol.getAttributeValue('preserveAspectRatio'), 'xMidYMid slice');
+        expect(
+          symbol.getAttributeValue('preserveAspectRatio'),
+          'xMidYMid slice',
+        );
       });
 
       test('use element position and size attributes parse correctly', () {

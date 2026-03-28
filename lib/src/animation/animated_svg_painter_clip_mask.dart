@@ -194,7 +194,8 @@ extension AnimatedSvgPainterClipMaskExtension on AnimatedSvgPainter {
   /// and applying the use element's x/y offset.
   ui.Rect? _computeUseBoundsWithStroke(SvgNode useNode) {
     // Extract href to find referenced element
-    final href = useNode.getAttributeValue('href')?.toString() ??
+    final href =
+        useNode.getAttributeValue('href')?.toString() ??
         useNode.getAttributeValue('xlink:href')?.toString();
     if (href == null || href.isEmpty) return null;
 

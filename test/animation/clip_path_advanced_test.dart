@@ -98,8 +98,9 @@ void main() {
       expect(analysis.pixelCount, greaterThan(100));
     });
 
-    testWidgets('clipPathUnits objectBoundingBox non-square element',
-        (tester) async {
+    testWidgets('clipPathUnits objectBoundingBox non-square element', (
+      tester,
+    ) async {
       // Test non-uniform scaling with non-square bounding box
       const svgXml = '''
         <svg viewBox="0 0 100 100">

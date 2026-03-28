@@ -22,12 +22,12 @@ import 'visual_test_utils.dart';
 /// - Edge cases
 void main() {
   group('maskUnits Coordinate Systems', () {
-    testWidgets(
-      'maskUnits="objectBoundingBox" (default) - basic test',
-      (WidgetTester tester) async {
-        // Default: mask region is relative to element bounding box
-        // Default region extends 10% beyond bbox (-10%, -10%, 120%, 120%)
-        const svgXml = '''
+    testWidgets('maskUnits="objectBoundingBox" (default) - basic test', (
+      WidgetTester tester,
+    ) async {
+      // Default: mask region is relative to element bounding box
+      // Default region extends 10% beyond bbox (-10%, -10%, 120%, 120%)
+      const svgXml = '''
         <svg viewBox="0 0 100 100">
           <defs>
             <mask id="mask" maskUnits="objectBoundingBox">
@@ -39,30 +39,29 @@ void main() {
         </svg>
       ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-            ),
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
           ),
-        );
+        ),
+      );
 
-        await tester.pump();
+      await tester.pump();
 
-        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
-        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+      final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
 
-        // Element should be visible with default mask
-        expect(analysis.pixelCount, greaterThan(500));
-        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-      },
-    );
+      // Element should be visible with default mask
+      expect(analysis.pixelCount, greaterThan(500));
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
 
-    testWidgets(
-      'maskUnits="userSpaceOnUse" - explicit region in user coords',
-      (WidgetTester tester) async {
-        // userSpaceOnUse: mask region is in absolute user coordinates
-        const svgXml = '''
+    testWidgets('maskUnits="userSpaceOnUse" - explicit region in user coords', (
+      WidgetTester tester,
+    ) async {
+      // userSpaceOnUse: mask region is in absolute user coordinates
+      const svgXml = '''
         <svg viewBox="0 0 100 100">
           <defs>
             <mask id="mask" maskUnits="userSpaceOnUse" 
@@ -75,32 +74,31 @@ void main() {
         </svg>
       ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-            ),
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
           ),
-        );
+        ),
+      );
 
-        await tester.pump();
+      await tester.pump();
 
-        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
-        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+      final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
 
-        // Only center 40x40 region should be visible
-        expect(analysis.pixelCount, greaterThan(100));
-        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-      },
-    );
+      // Only center 40x40 region should be visible
+      expect(analysis.pixelCount, greaterThan(100));
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
   });
 
   group('maskContentUnits Coordinate Systems', () {
-    testWidgets(
-      'maskContentUnits="userSpaceOnUse" (default)',
-      (WidgetTester tester) async {
-        // Default: mask content is in absolute user coordinates
-        const svgXml = '''
+    testWidgets('maskContentUnits="userSpaceOnUse" (default)', (
+      WidgetTester tester,
+    ) async {
+      // Default: mask content is in absolute user coordinates
+      const svgXml = '''
         <svg viewBox="0 0 100 100">
           <defs>
             <mask id="mask" maskContentUnits="userSpaceOnUse">
@@ -112,23 +110,22 @@ void main() {
         </svg>
       ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-            ),
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
           ),
-        );
+        ),
+      );
 
-        await tester.pump();
+      await tester.pump();
 
-        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
-        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+      final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
 
-        // Central 40x40 area should be visible
-        expect(analysis.pixelCount, greaterThan(100));
-      },
-    );
+      // Central 40x40 area should be visible
+      expect(analysis.pixelCount, greaterThan(100));
+    });
 
     testWidgets(
       'maskContentUnits="objectBoundingBox" - scales content to element bbox',
@@ -237,11 +234,11 @@ void main() {
   });
 
   group('Luminance Masks', () {
-    testWidgets(
-      'Luminance mask: white region fully visible',
-      (WidgetTester tester) async {
-        // White has luminance 1.0 -> fully visible
-        const svgXml = '''
+    testWidgets('Luminance mask: white region fully visible', (
+      WidgetTester tester,
+    ) async {
+      // White has luminance 1.0 -> fully visible
+      const svgXml = '''
         <svg viewBox="0 0 100 100">
           <defs>
             <mask id="mask" type="luminance">
@@ -253,28 +250,27 @@ void main() {
         </svg>
       ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-            ),
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
           ),
-        );
+        ),
+      );
 
-        await tester.pump();
+      await tester.pump();
 
-        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
-        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+      final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
 
-        expect(analysis.pixelCount, greaterThan(500));
-      },
-    );
+      expect(analysis.pixelCount, greaterThan(500));
+    });
 
-    testWidgets(
-      'Luminance mask: black region hidden',
-      (WidgetTester tester) async {
-        // Black has luminance 0.0 -> fully hidden
-        const svgXml = '''
+    testWidgets('Luminance mask: black region hidden', (
+      WidgetTester tester,
+    ) async {
+      // Black has luminance 0.0 -> fully hidden
+      const svgXml = '''
         <svg viewBox="0 0 100 100">
           <defs>
             <mask id="mask" type="luminance">
@@ -286,26 +282,25 @@ void main() {
         </svg>
       ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-            ),
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
           ),
-        );
+        ),
+      );
 
-        await tester.pump();
+      await tester.pump();
 
-        // Should render without errors (content may be hidden)
-        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-      },
-    );
+      // Should render without errors (content may be hidden)
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
 
-    testWidgets(
-      'Luminance mask: gray region partially visible',
-      (WidgetTester tester) async {
-        // Gray (#808080) has luminance ~0.5 -> partially visible
-        const svgXml = '''
+    testWidgets('Luminance mask: gray region partially visible', (
+      WidgetTester tester,
+    ) async {
+      // Gray (#808080) has luminance ~0.5 -> partially visible
+      const svgXml = '''
         <svg viewBox="0 0 100 100">
           <defs>
             <mask id="mask" type="luminance">
@@ -317,26 +312,25 @@ void main() {
         </svg>
       ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-            ),
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
           ),
-        );
+        ),
+      );
 
-        await tester.pump();
+      await tester.pump();
 
-        // Should render with partial opacity
-        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-      },
-    );
+      // Should render with partial opacity
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
 
-    testWidgets(
-      'Default mask-type is luminance per SVG spec',
-      (WidgetTester tester) async {
-        // Without explicit type, mask should use luminance mode
-        const svgXml = '''
+    testWidgets('Default mask-type is luminance per SVG spec', (
+      WidgetTester tester,
+    ) async {
+      // Without explicit type, mask should use luminance mode
+      const svgXml = '''
         <svg viewBox="0 0 100 100">
           <defs>
             <mask id="mask">
@@ -348,30 +342,29 @@ void main() {
         </svg>
       ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-            ),
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
           ),
-        );
+        ),
+      );
 
-        await tester.pump();
+      await tester.pump();
 
-        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
-        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+      final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
 
-        // White mask with luminance mode should show content
-        expect(analysis.pixelCount, greaterThan(500));
-      },
-    );
+      // White mask with luminance mode should show content
+      expect(analysis.pixelCount, greaterThan(500));
+    });
   });
 
   group('Alpha Masks', () {
-    testWidgets(
-      'Alpha mask uses fill-opacity directly',
-      (WidgetTester tester) async {
-        const svgXml = '''
+    testWidgets('Alpha mask uses fill-opacity directly', (
+      WidgetTester tester,
+    ) async {
+      const svgXml = '''
         <svg viewBox="0 0 100 100">
           <defs>
             <mask id="mask" type="alpha">
@@ -383,25 +376,24 @@ void main() {
         </svg>
       ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-            ),
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
           ),
-        );
+        ),
+      );
 
-        await tester.pump();
+      await tester.pump();
 
-        // Content should be visible at 50% opacity
-        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-      },
-    );
+      // Content should be visible at 50% opacity
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
 
-    testWidgets(
-      'Alpha mask with fully transparent content hides element',
-      (WidgetTester tester) async {
-        const svgXml = '''
+    testWidgets('Alpha mask with fully transparent content hides element', (
+      WidgetTester tester,
+    ) async {
+      const svgXml = '''
         <svg viewBox="0 0 100 100">
           <defs>
             <mask id="mask" type="alpha">
@@ -413,27 +405,26 @@ void main() {
         </svg>
       ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-            ),
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
           ),
-        );
+        ),
+      );
 
-        await tester.pump();
+      await tester.pump();
 
-        // Element should be hidden
-        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-      },
-    );
+      // Element should be hidden
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
   });
 
   group('Mask with Gradient Content', () {
-    testWidgets(
-      'Linear gradient in mask creates smooth transition',
-      (WidgetTester tester) async {
-        const svgXml = '''
+    testWidgets('Linear gradient in mask creates smooth transition', (
+      WidgetTester tester,
+    ) async {
+      const svgXml = '''
         <svg viewBox="0 0 100 100">
           <defs>
             <linearGradient id="grad" x1="0" y1="0" x2="1" y2="0">
@@ -449,28 +440,25 @@ void main() {
         </svg>
       ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-            ),
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
           ),
-        );
+        ),
+      );
 
-        await tester.pump();
+      await tester.pump();
 
-        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
-        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+      final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
 
-        // Left side should be more visible than right side
-        expect(analysis.pixelCount, greaterThan(50));
-      },
-    );
+      // Left side should be more visible than right side
+      expect(analysis.pixelCount, greaterThan(50));
+    });
 
-    testWidgets(
-      'Radial gradient in mask',
-      (WidgetTester tester) async {
-        const svgXml = '''
+    testWidgets('Radial gradient in mask', (WidgetTester tester) async {
+      const svgXml = '''
         <svg viewBox="0 0 100 100">
           <defs>
             <radialGradient id="radGrad">
@@ -486,27 +474,24 @@ void main() {
         </svg>
       ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-            ),
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
           ),
-        );
+        ),
+      );
 
-        await tester.pump();
+      await tester.pump();
 
-        // Center should be visible (white), edges fading to black
-        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-      },
-    );
+      // Center should be visible (white), edges fading to black
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
   });
 
   group('Mask with Transform', () {
-    testWidgets(
-      'Transform on mask child element',
-      (WidgetTester tester) async {
-        const svgXml = '''
+    testWidgets('Transform on mask child element', (WidgetTester tester) async {
+      const svgXml = '''
         <svg viewBox="0 0 100 100">
           <defs>
             <mask id="mask">
@@ -519,28 +504,27 @@ void main() {
         </svg>
       ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-            ),
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
           ),
-        );
+        ),
+      );
 
-        await tester.pump();
+      await tester.pump();
 
-        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
-        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+      final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
 
-        // Centered 50x50 area should be visible
-        expect(analysis.pixelCount, greaterThan(50));
-      },
-    );
+      // Centered 50x50 area should be visible
+      expect(analysis.pixelCount, greaterThan(50));
+    });
 
-    testWidgets(
-      'Rotate transform on mask content',
-      (WidgetTester tester) async {
-        const svgXml = '''
+    testWidgets('Rotate transform on mask content', (
+      WidgetTester tester,
+    ) async {
+      const svgXml = '''
         <svg viewBox="0 0 100 100">
           <defs>
             <mask id="mask">
@@ -553,27 +537,26 @@ void main() {
         </svg>
       ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-            ),
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
           ),
-        );
+        ),
+      );
 
-        await tester.pump();
+      await tester.pump();
 
-        // Rotated diamond shape in center should be visible
-        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-      },
-    );
+      // Rotated diamond shape in center should be visible
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
   });
 
   group('Nested Masks', () {
-    testWidgets(
-      'Mask on group containing masked element',
-      (WidgetTester tester) async {
-        const svgXml = '''
+    testWidgets('Mask on group containing masked element', (
+      WidgetTester tester,
+    ) async {
+      const svgXml = '''
         <svg viewBox="0 0 100 100">
           <defs>
             <mask id="outerMask">
@@ -590,30 +573,29 @@ void main() {
         </svg>
       ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-            ),
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
           ),
-        );
+        ),
+      );
 
-        await tester.pump();
+      await tester.pump();
 
-        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
-        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+      final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
 
-        // Only top-left quadrant should be visible (intersection)
-        expect(analysis.pixelCount, greaterThan(100));
-      },
-    );
+      // Only top-left quadrant should be visible (intersection)
+      expect(analysis.pixelCount, greaterThan(100));
+    });
   });
 
   group('Mask + clip-path Combination', () {
-    testWidgets(
-      'Element with both clip-path and mask',
-      (WidgetTester tester) async {
-        const svgXml = '''
+    testWidgets('Element with both clip-path and mask', (
+      WidgetTester tester,
+    ) async {
+      const svgXml = '''
         <svg viewBox="0 0 100 100">
           <defs>
             <clipPath id="clip">
@@ -628,30 +610,27 @@ void main() {
         </svg>
       ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-            ),
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
           ),
-        );
+        ),
+      );
 
-        await tester.pump();
+      await tester.pump();
 
-        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
-        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+      final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
 
-        // Result should be intersection of clip and mask
-        expect(analysis.pixelCount, greaterThan(100));
-      },
-    );
+      // Result should be intersection of clip and mask
+      expect(analysis.pixelCount, greaterThan(100));
+    });
   });
 
   group('Edge Cases', () {
-    testWidgets(
-      'Empty mask (no content)',
-      (WidgetTester tester) async {
-        const svgXml = '''
+    testWidgets('Empty mask (no content)', (WidgetTester tester) async {
+      const svgXml = '''
         <svg viewBox="0 0 100 100">
           <defs>
             <mask id="emptyMask">
@@ -663,25 +642,24 @@ void main() {
         </svg>
       ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-            ),
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
           ),
-        );
+        ),
+      );
 
-        await tester.pump();
+      await tester.pump();
 
-        // Should render without errors
-        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-      },
-    );
+      // Should render without errors
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
 
-    testWidgets(
-      'Mask with no geometry (only defs)',
-      (WidgetTester tester) async {
-        const svgXml = '''
+    testWidgets('Mask with no geometry (only defs)', (
+      WidgetTester tester,
+    ) async {
+      const svgXml = '''
         <svg viewBox="0 0 100 100">
           <defs>
             <mask id="noGeomMask">
@@ -695,24 +673,21 @@ void main() {
         </svg>
       ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-            ),
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
           ),
-        );
+        ),
+      );
 
-        await tester.pump();
+      await tester.pump();
 
-        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-      },
-    );
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
 
-    testWidgets(
-      'Mask outside viewport',
-      (WidgetTester tester) async {
-        const svgXml = '''
+    testWidgets('Mask outside viewport', (WidgetTester tester) async {
+      const svgXml = '''
         <svg viewBox="0 0 100 100">
           <defs>
             <mask id="outsideMask" maskUnits="userSpaceOnUse"
@@ -725,25 +700,24 @@ void main() {
         </svg>
       ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-            ),
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
           ),
-        );
+        ),
+      );
 
-        await tester.pump();
+      await tester.pump();
 
-        // Mask region is outside viewport, content may be hidden
-        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-      },
-    );
+      // Mask region is outside viewport, content may be hidden
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
 
-    testWidgets(
-      'Very small element with objectBoundingBox mask',
-      (WidgetTester tester) async {
-        const svgXml = '''
+    testWidgets('Very small element with objectBoundingBox mask', (
+      WidgetTester tester,
+    ) async {
+      const svgXml = '''
         <svg viewBox="0 0 100 100">
           <defs>
             <mask id="mask" maskContentUnits="objectBoundingBox">
@@ -755,28 +729,25 @@ void main() {
         </svg>
       ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-            ),
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
           ),
-        );
+        ),
+      );
 
-        await tester.pump();
+      await tester.pump();
 
-        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
-        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+      final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
 
-        // Small element should still be visible
-        expect(analysis.pixelCount, greaterThan(10));
-      },
-    );
+      // Small element should still be visible
+      expect(analysis.pixelCount, greaterThan(10));
+    });
 
-    testWidgets(
-      'Mask with use element reference',
-      (WidgetTester tester) async {
-        const svgXml = '''
+    testWidgets('Mask with use element reference', (WidgetTester tester) async {
+      const svgXml = '''
         <svg viewBox="0 0 100 100">
           <defs>
             <rect id="maskRect" x="25" y="25" width="50" height="50"/>
@@ -789,28 +760,27 @@ void main() {
         </svg>
       ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-            ),
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
           ),
-        );
+        ),
+      );
 
-        await tester.pump();
+      await tester.pump();
 
-        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
-        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+      final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
 
-        // Use reference should work in mask
-        expect(analysis.pixelCount, greaterThan(100));
-      },
-    );
+      // Use reference should work in mask
+      expect(analysis.pixelCount, greaterThan(100));
+    });
 
-    testWidgets(
-      'Percentage values in mask region',
-      (WidgetTester tester) async {
-        const svgXml = '''
+    testWidgets('Percentage values in mask region', (
+      WidgetTester tester,
+    ) async {
+      const svgXml = '''
         <svg viewBox="0 0 100 100">
           <defs>
             <mask id="mask" x="25%" y="25%" width="50%" height="50%">
@@ -822,30 +792,29 @@ void main() {
         </svg>
       ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-            ),
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
           ),
-        );
+        ),
+      );
 
-        await tester.pump();
+      await tester.pump();
 
-        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
-        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+      final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
 
-        // 50% x 50% region should be visible
-        expect(analysis.pixelCount, greaterThan(100));
-      },
-    );
+      // 50% x 50% region should be visible
+      expect(analysis.pixelCount, greaterThan(100));
+    });
   });
 
   group('CSS mask-mode Property', () {
-    testWidgets(
-      'mask-mode: luminance overrides type attribute',
-      (WidgetTester tester) async {
-        const svgXml = '''
+    testWidgets('mask-mode: luminance overrides type attribute', (
+      WidgetTester tester,
+    ) async {
+      const svgXml = '''
         <svg viewBox="0 0 100 100">
           <defs>
             <mask id="mask" type="alpha">
@@ -857,22 +826,21 @@ void main() {
         </svg>
       ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-            ),
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
           ),
-        );
+        ),
+      );
 
-        await tester.pump();
+      await tester.pump();
 
-        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
-        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+      final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
 
-        // mask-mode: luminance should apply luminance masking
-        expect(analysis.pixelCount, greaterThan(500));
-      },
-    );
+      // mask-mode: luminance should apply luminance masking
+      expect(analysis.pixelCount, greaterThan(500));
+    });
   });
 }
