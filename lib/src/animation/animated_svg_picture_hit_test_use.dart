@@ -14,12 +14,15 @@ const int _kMaxUseRecursionDepthHitTest = 10;
 /// - Hit-test results should report the <use> element's ID (not the referenced
 ///   element's ID) when the SVG uses event retargeting
 /// - The outermost <use> element with an ID is the event target
+/// - Nested <use> elements bubble events from innermost to outermost
+/// - pointer-events on a <use> element affects the entire shadow tree
 class _UseHitTestContext {
   const _UseHitTestContext({
     this.inheritedPointerEvents,
     this.useElementId,
     this.parentContext,
     this.useNode,
+    this.nestingLevel = 1,
   });
 
   /// Pointer-events value inherited from <use> element.
@@ -36,6 +39,9 @@ class _UseHitTestContext {
   /// Parent hit-test context for nested <use> chains.
   final _UseHitTestContext? parentContext;
 
+  /// Nesting level for nested <use> elements (1-based).
+  final int nestingLevel;
+
   /// Creates a new context inheriting from this one.
   _UseHitTestContext copyWith({
     String? inheritedPointerEvents,
@@ -48,6 +54,7 @@ class _UseHitTestContext {
       useElementId: useElementId ?? this.useElementId,
       useNode: useNode ?? this.useNode,
       parentContext: this,
+      nestingLevel: nestingLevel + 1,
     );
   }
 
@@ -57,6 +64,9 @@ class _UseHitTestContext {
   ///
   /// This implements the SVG event retargeting behavior where events from
   /// shadow content bubble up to and are retargeted to the <use> element.
+  ///
+  /// For nested use elements, the event path goes:
+  /// innermost-content -> inner-use -> outer-use -> document
   String? getRetargetedId(String? innerElementId) {
     // First, try to get the outermost use element ID (event bubbling)
     final outermost = outermostUseElementId;
@@ -65,6 +75,16 @@ class _UseHitTestContext {
     }
     // If no use element has an ID, fall back to inner element
     return innerElementId;
+  }
+
+  /// Gets the immediate use element ID (for innermost event targeting).
+  /// Unlike getRetargetedId which returns outermost, this returns
+  /// the immediate <use> element's ID.
+  String? get immediateUseElementId {
+    if (useElementId != null && useElementId!.isNotEmpty) {
+      return useElementId;
+    }
+    return null;
   }
 
   /// Gets the outermost use element ID in the chain.
@@ -82,6 +102,7 @@ class _UseHitTestContext {
 
   /// Gets all use element IDs in the chain from outermost to current.
   /// This is useful for understanding the full event bubbling path.
+  /// Per SVG spec, events should bubble from innermost to outermost.
   List<String?> get useChainIds {
     final ids = <String?>[];
     if (parentContext != null) {
@@ -91,15 +112,40 @@ class _UseHitTestContext {
     return ids;
   }
 
-  /// Gets the nesting depth of use contexts.
-  int get depth {
-    int d = 1;
-    _UseHitTestContext? current = parentContext;
+  /// Gets the composed event path through all nested use elements.
+  /// This returns IDs from outermost to innermost (reversed from useChainIds).
+  /// The returned list only includes non-null IDs.
+  List<String> get composedEventPath {
+    final ids = <String>[];
+    _UseHitTestContext? current = this;
     while (current != null) {
-      d++;
+      if (current.useElementId != null && current.useElementId!.isNotEmpty) {
+        ids.insert(0, current.useElementId!);
+      }
       current = current.parentContext;
     }
-    return d;
+    return ids;
+  }
+
+  /// Gets the nesting depth of use contexts.
+  int get depth {
+    return nestingLevel;
+  }
+
+  /// Gets the effective pointer-events value through the use context chain.
+  /// Walks from current context to root, returning first non-inherit value.
+  String? get effectivePointerEvents {
+    if (inheritedPointerEvents != null &&
+        inheritedPointerEvents!.toLowerCase() != 'inherit') {
+      return inheritedPointerEvents;
+    }
+    return parentContext?.effectivePointerEvents;
+  }
+
+  /// Checks if pointer-events is 'none' anywhere in the use chain.
+  bool get isPointerEventsNone {
+    final effective = effectivePointerEvents;
+    return effective != null && effective.toLowerCase() == 'none';
   }
 
   /// Checks if this context or any parent context already references
@@ -169,10 +215,20 @@ extension _AnimatedSvgPictureStateHitTestUseExtension
       return null;
     }
 
+    // Check display:none on the use element - not hit-testable
+    if (_isDisplayNone(useNode)) {
+      return null;
+    }
+
     // Check pointer-events on the <use> element itself
     // Per SVG spec, pointer-events on <use> affects the entire shadow tree
     final usePointerEvents = _resolvePointerEventsMode(useNode);
     if (usePointerEvents == 'none') {
+      return null;
+    }
+
+    // Check if pointer-events is 'none' in parent use context chain
+    if (context != null && context.isPointerEventsNone) {
       return null;
     }
 

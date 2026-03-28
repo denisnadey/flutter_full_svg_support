@@ -4,6 +4,7 @@
 **Referenced Files in This Document**
 - [dart_test.yaml](file://dart_test.yaml)
 - [pubspec.yaml](file://pubspec.yaml)
+- [css_nth_selectors_test.dart](file://test/animation/css_nth_selectors_test.dart)
 - [css_calc_edge_cases_test.dart](file://test/animation/css_calc_edge_cases_test.dart)
 - [foreign_object_nesting_test.dart](file://test/animation/foreign_object_nesting_test.dart)
 - [hit_test_deep_nesting_test.dart](file://test/animation/hit_test_deep_nesting_test.dart)
@@ -16,6 +17,10 @@
 - [text_font_face_test.dart](file://test/animation/text_font_face_test.dart)
 - [svg_font_registry.dart](file://lib/src/animation/svg_font_registry.dart)
 - [animated_svg_picture_lifecycle.dart](file://lib/src/animation/animated_svg_picture_lifecycle.dart)
+- [css_selectors.dart](file://lib/src/animation/css_selectors.dart)
+- [css_cascade_selector_matching.dart](file://lib/src/animation/css_cascade_selector_matching.dart)
+- [smil_animation_runtime.dart](file://lib/src/animation/smil/smil_animation_runtime.dart)
+- [smil_timeline_runtime.dart](file://lib/src/animation/smil/smil_timeline_runtime.dart)
 - [VISUAL_TESTING_GUIDELINES.md](file://VISUAL_TESTING_GUIDELINES.md)
 - [widget_svg_test.dart](file://test/widget_svg_test.dart)
 - [cache_test.dart](file://test/cache_test.dart)
@@ -36,13 +41,12 @@
 
 ## Update Summary
 **Changes Made**
-- Added comprehensive CSS calc edge cases testing covering nested expressions, min/max/clamp functions, and unit conversions
-- Expanded foreignObject nesting and coordinate system testing with deep nesting scenarios
-- Enhanced hit testing capabilities with deep nesting regression tests for use/clip/mask compositions
-- Added image transformation edge cases including preserveAspectRatio variants and overflow handling
-- Implemented SMIL timing precision tests for animation synchronization and dependency resolution
-- Integrated CSS variables and calc() evaluation testing with SVG integration scenarios
-- Enhanced visual regression testing with comprehensive edge case coverage
+- Added comprehensive CSS nth selectors test suite with 1000+ test cases covering all structural pseudo-classes
+- Enhanced SMIL animation runtime testing with precision validation for long-running animations
+- Expanded CSS selector parsing and matching capabilities for structural pseudo-classes
+- Improved SMIL animation runtime with enhanced precision handling and boundary value corrections
+- Added comprehensive test coverage for :nth-child, :nth-last-child, :nth-of-type, and :nth-last-of-type pseudo-classes
+- Enhanced SMIL timeline runtime with improved event handling and animation sandwich model implementation
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -50,27 +54,31 @@
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
 5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [CSS Calc Edge Cases Testing](#css-calc-edge-cases-testing)
-7. [ForeignObject Nesting and Coordinate Systems](#foreignobject-nesting-and-coordinate-systems)
-8. [Deep Hit Testing and Event System](#deep-hit-testing-and-event-system)
-9. [Image Transform Edge Cases](#image-transform-edge-cases)
-10. [SMIL Timing Precision Testing](#smil-timing-precision-testing)
-11. [CSS Variables and Calc Integration](#css-variables-and-calc-integration)
-12. [Enhanced Visual Regression Testing](#enhanced-visual-regression-testing)
-13. [Font Registration Lifecycle Testing](#font-registration-lifecycle-testing)
-14. [Embedded Font Scenarios](#embedded-font-scenarios)
-15. [Dependency Analysis](#dependency-analysis)
-16. [Performance Considerations](#performance-considerations)
-17. [Troubleshooting Guide](#troubleshooting-guide)
-18. [Conclusion](#conclusion)
+6. [CSS Nth Selectors Test Suite](#css-nth-selectors-test-suite)
+7. [Enhanced SMIL Animation Runtime Testing](#enhanced-smil-animation-runtime-testing)
+8. [CSS Calc Edge Cases Testing](#css-calc-edge-cases-testing)
+9. [ForeignObject Nesting and Coordinate Systems](#foreignobject-nesting-and-coordinate-systems)
+10. [Deep Hit Testing and Event System](#deep-hit-testing-and-event-system)
+11. [Image Transform Edge Cases](#image-transform-edge-cases)
+12. [SMIL Timing Precision Testing](#smil-timing-precision-testing)
+13. [CSS Variables and Calc Integration](#css-variables-and-calc-integration)
+14. [Enhanced Visual Regression Testing](#enhanced-visual-regression-testing)
+15. [Font Registration Lifecycle Testing](#font-registration-lifecycle-testing)
+16. [Embedded Font Scenarios](#embedded-font-scenarios)
+17. [Dependency Analysis](#dependency-analysis)
+18. [Performance Considerations](#performance-considerations)
+19. [Troubleshooting Guide](#troubleshooting-guide)
+20. [Conclusion](#conclusion)
 
 ## Introduction
-This document provides a comprehensive overview of the expanded testing suite for the Flutter SVG project, reflecting the recent addition of five new comprehensive test files totaling over 4,500 lines of test coverage. The testing suite now includes extensive coverage for CSS calc edge cases, foreignObject nesting scenarios, deep hit testing for complex compositions, image transformation edge cases, and SMIL timing precision testing. These additions significantly enhance the reliability and robustness of SVG rendering across various edge cases and complex scenarios.
+This document provides a comprehensive overview of the expanded testing suite for the Flutter SVG project, reflecting the recent addition of a comprehensive CSS nth selectors test suite with over 1000 test cases and enhanced SMIL animation runtime testing. The testing suite now includes extensive coverage for CSS structural pseudo-classes, animation precision validation, and comprehensive edge case testing across multiple domains. These additions significantly enhance the reliability and robustness of SVG rendering, CSS selector parsing, and animation timing across various edge cases and complex scenarios.
 
 ## Project Structure
 The testing suite has been expanded with focused groups covering the newly added test categories:
 - Core widget and rendering tests
 - Animation and visual transformation tests
+- CSS nth selectors test suite with comprehensive structural pseudo-class coverage
+- Enhanced SMIL animation runtime precision testing
 - CSS calc edge cases and mathematical function testing
 - ForeignObject nesting and coordinate system tests
 - Deep hit testing for complex compositions
@@ -94,6 +102,12 @@ VS["visual_scale_test.dart"]
 VT["visual_translation_test.dart"]
 VM["visual_morph_test.dart"]
 VU["visual_test_utils.dart"]
+end
+subgraph "CSS Nth Selectors Tests"
+CNST["css_nth_selectors_test.dart"]
+end
+subgraph "SMIL Runtime Tests"
+SART["smil_animation_runtime_tests"]
 end
 subgraph "CSS Calc Tests"
 CCE["css_calc_edge_cases_test.dart"]
@@ -133,6 +147,8 @@ VR --> VU
 VS --> VU
 VT --> VU
 VM --> VU
+CNST --> VU
+SART --> VU
 FRL --> TF
 FRL --> VU
 TF --> FRL
@@ -148,6 +164,7 @@ LT --> CT
 **Diagram sources**
 - [widget_svg_test.dart:1-1157](file://test/widget_svg_test.dart#L1-L1157)
 - [visual_test_utils.dart:1-231](file://test/animation/visual_test_utils.dart#L1-L231)
+- [css_nth_selectors_test.dart:1-1001](file://test/animation/css_nth_selectors_test.dart#L1-L1001)
 - [css_calc_edge_cases_test.dart:1-658](file://test/animation/css_calc_edge_cases_test.dart#L1-L658)
 - [foreign_object_nesting_test.dart:1-869](file://test/animation/foreign_object_nesting_test.dart#L1-L869)
 - [hit_test_deep_nesting_test.dart:1-1266](file://test/animation/hit_test_deep_nesting_test.dart#L1-L1266)
@@ -163,6 +180,7 @@ LT --> CT
 **Section sources**
 - [widget_svg_test.dart:1-1157](file://test/widget_svg_test.dart#L1-L1157)
 - [visual_test_utils.dart:1-231](file://test/animation/visual_test_utils.dart#L1-L231)
+- [css_nth_selectors_test.dart:1-1001](file://test/animation/css_nth_selectors_test.dart#L1-L1001)
 - [css_calc_edge_cases_test.dart:1-658](file://test/animation/css_calc_edge_cases_test.dart#L1-L658)
 - [foreign_object_nesting_test.dart:1-869](file://test/animation/foreign_object_nesting_test.dart#L1-L869)
 - [hit_test_deep_nesting_test.dart:1-1266](file://test/animation/hit_test_deep_nesting_test.dart#L1-L1266)
@@ -179,6 +197,8 @@ LT --> CT
 The testing suite now encompasses comprehensive coverage across multiple domains:
 - Visual test utilities: Enhanced pixel capture, analysis, hashing, and difference computation for visual regression testing
 - Widget rendering tests: Validate SvgPicture across string, memory, asset, and network sources, including strategies and color mapping
+- CSS nth selectors test suite: Comprehensive structural pseudo-class testing with 1000+ test cases covering :nth-child, :nth-last-child, :nth-of-type, and :nth-last-of-type
+- Enhanced SMIL animation runtime testing: Precision validation for long-running animations, boundary value corrections, and floating-point drift prevention
 - CSS calc edge cases testing: Comprehensive mathematical function evaluation including nested expressions, min/max/clamp functions, and unit conversions
 - ForeignObject nesting tests: Validate complex nesting scenarios, coordinate systems, overflow handling, and transform propagation
 - Deep hit testing: Regression tests for complex use/clip/mask compositions with multiple nesting levels
@@ -194,6 +214,7 @@ The testing suite now encompasses comprehensive coverage across multiple domains
 **Section sources**
 - [visual_test_utils.dart:1-231](file://test/animation/visual_test_utils.dart#L1-L231)
 - [widget_svg_test.dart:1-1157](file://test/widget_svg_test.dart#L1-L1157)
+- [css_nth_selectors_test.dart:1-1001](file://test/animation/css_nth_selectors_test.dart#L1-L1001)
 - [css_calc_edge_cases_test.dart:1-658](file://test/animation/css_calc_edge_cases_test.dart#L1-L658)
 - [foreign_object_nesting_test.dart:1-869](file://test/animation/foreign_object_nesting_test.dart#L1-L869)
 - [hit_test_deep_nesting_test.dart:1-1266](file://test/animation/hit_test_deep_nesting_test.dart#L1-L1266)
@@ -207,7 +228,7 @@ The testing suite now encompasses comprehensive coverage across multiple domains
 - [font_variant_test.dart:1-196](file://test/animation/font_variant_test.dart#L1-L196)
 
 ## Architecture Overview
-The expanded testing suite leverages Flutter's widget testing framework with specialized utilities for visual comparisons, animation verification, mathematical function evaluation, and comprehensive edge case testing. Core patterns include:
+The expanded testing suite leverages Flutter's widget testing framework with specialized utilities for visual comparisons, animation verification, mathematical function evaluation, CSS selector parsing, and comprehensive edge case testing. Core patterns include:
 - Golden file comparisons for rasterized widget outputs
 - Pixel-level analysis for animation correctness
 - Custom comparators with tolerance thresholds
@@ -220,16 +241,24 @@ The expanded testing suite leverages Flutter's widget testing framework with spe
 - Deep composition hit testing
 - Animation timing precision verification
 - CSS variables and calc() integration testing
+- Structural pseudo-class selector matching validation
+- Enhanced SMIL animation runtime precision testing
 
 ```mermaid
 sequenceDiagram
 participant T as "WidgetTester"
 participant U as "VisualTestUtils"
+participant CNST as "CssNthSelectors"
+participant SART as "SmilRuntime"
 participant CE as "CssCalcEvaluator"
 participant FO as "ForeignObjectRenderer"
 participant HT as "HitTester"
 participant IT as "ImageTransformer"
 participant ST as "SmilTimeline"
+T->>CNST : "testNthSelectors()"
+CNST-->>T : "structural pseudo-class validation"
+T->>SART : "testAnimationPrecision()"
+SART-->>T : "long-running animation precision"
 T->>CE : "evaluate(cssExpression)"
 CE-->>T : "double result"
 T->>FO : "renderNestedForeignObjects()"
@@ -246,6 +275,8 @@ U-->>T : "pixel analysis"
 
 **Diagram sources**
 - [visual_test_utils.dart:11-37](file://test/animation/visual_test_utils.dart#L11-L37)
+- [css_nth_selectors_test.dart:8-416](file://test/animation/css_nth_selectors_test.dart#L8-L416)
+- [smil_animation_runtime.dart:27-122](file://lib/src/animation/smil/smil_animation_runtime.dart#L27-L122)
 - [css_calc_edge_cases_test.dart:8-47](file://test/animation/css_calc_edge_cases_test.dart#L8-L47)
 - [foreign_object_nesting_test.dart:10-55](file://test/animation/foreign_object_nesting_test.dart#L10-L55)
 - [hit_test_deep_nesting_test.dart:17-83](file://test/animation/hit_test_deep_nesting_test.dart#L17-L83)
@@ -254,6 +285,8 @@ U-->>T : "pixel analysis"
 
 **Section sources**
 - [visual_test_utils.dart:1-231](file://test/animation/visual_test_utils.dart#L1-L231)
+- [css_nth_selectors_test.dart:1-1001](file://test/animation/css_nth_selectors_test.dart#L1-L1001)
+- [smil_animation_runtime.dart:1-132](file://lib/src/animation/smil/smil_animation_runtime.dart#L1-L132)
 - [css_calc_edge_cases_test.dart:1-658](file://test/animation/css_calc_edge_cases_test.dart#L1-L658)
 - [foreign_object_nesting_test.dart:1-869](file://test/animation/foreign_object_nesting_test.dart#L1-L869)
 - [hit_test_deep_nesting_test.dart:1-1266](file://test/animation/hit_test_deep_nesting_test.dart#L1-L1266)
@@ -461,6 +494,202 @@ Typography tests validate CSS font properties and their rendering with comprehen
 - [font_synthesis_test.dart:1-53](file://test/animation/font_synthesis_test.dart#L1-L53)
 - [font_variant_test.dart:1-196](file://test/animation/font_variant_test.dart#L1-L196)
 
+## CSS Nth Selectors Test Suite
+
+### Comprehensive Structural Pseudo-Class Testing
+The CSS nth selectors test suite provides extensive coverage for structural pseudo-classes with over 1000 test cases:
+
+#### CSS Nth Pseudo-Class Parsing
+- **Keyword parsing**: Validates "odd" and "even" keyword parsing with case-insensitive handling
+- **Simple number parsing**: Tests direct number parsing for nth-child(1), nth-child(3), nth-child(10)
+- **An+B formula parsing**: Comprehensive testing of formulas like "n", "2n", "2n+1", "3n+2", "n+3", "-n+3", "2n-1", "-2n+6"
+- **Whitespace handling**: Validates trimming of leading/trailing whitespace in nth expressions
+- **Case-insensitive parsing**: Tests uppercase and mixed case keyword handling
+
+#### CSS Nth Pseudo-Class Matching
+- **Simple number matching**: Validates exact position matching for nth-child(1), nth-child(3)
+- **Odd/even matching**: Comprehensive testing of :nth-child(odd) and :nth-child(even) patterns
+- **An+B formula matching**: Extensive testing of mathematical formula matching including:
+  - :nth-child(n) matches all elements
+  - :nth-child(2n) matches every even element
+  - :nth-child(2n+1) matches odd elements
+  - :nth-child(3n) matches multiples of 3
+  - :nth-child(3n+1) matches 1, 4, 7, 10...
+  - :nth-child(n+4) matches from 4th onward
+  - :nth-child(-n+3) matches first 3 elements
+  - :nth-child(-2n+6) matches 6, 4, 2
+
+#### CSS Selector Parser Integration
+- **nth pseudo-class parsing**: Validates CSS parser integration for selectors like rect:nth-child(2n+1), :nth-last-child(3), circle:nth-of-type(odd), rect:nth-last-of-type(even)
+- **Multiple nth pseudo-classes**: Tests selectors with multiple nth pseudo-classes like rect:nth-child(n+2):nth-child(-n+5)
+- **Edge case handling**: Validates behavior with single child elements and boundary conditions
+
+#### CSS Selector Matching Integration
+- **:nth-child selectors**: Comprehensive animation targeting validation for rect:nth-child(1), rect:nth-child(2), rect:nth-child(odd), rect:nth-child(even), rect:nth-child(3n), rect:nth-child(n+3), rect:nth-child(-n+3)
+- **:nth-last-child selectors**: Validates last-child positioning with rect:nth-last-child(1), rect:nth-last-child(2), rect:nth-last-child(odd), rect:nth-last-child(-n+2)
+- **:nth-of-type selectors**: Tests type-specific matching with rect:nth-of-type(1), rect:nth-of-type(2), rect:nth-of-type(odd), rect:nth-of-type(2n)
+- **:nth-last-of-type selectors**: Validates last-of-type positioning with rect:nth-last-of-type(1), rect:nth-last-of-type(2), rect:nth-last-of-type(odd)
+- **Integration with other selectors**: Tests combinations with tag selectors, class selectors, child combinators, attribute selectors, and :not() pseudo-class
+
+#### Edge Cases and Complex Scenarios
+- **Single child validation**: Tests :nth-child(1) and :nth-last-child(1) with single child elements
+- **Boundary condition testing**: Validates :nth-child(100) with fewer children and :nth-of-type(1) with single element of type
+- **Integration edge cases**: Tests complex selector combinations like tag:nth-child(n).class, g > rect:nth-child(odd), rect:nth-child(n+2)[fill=red]:not(.excluded)
+- **Multiple nth-pseudo-classes**: Validates intersection of multiple nth conditions like :nth-child(n+2):nth-child(-n+4) and :nth-child(3n):nth-of-type(odd)
+- **toString representation**: Validates proper string representation of nth pseudo-classes
+
+```mermaid
+flowchart TD
+NthSelectors["CSS Nth Selectors Test Suite"] --> Parsing["Parsing Tests"]
+NthSelectors --> Matching["Matching Tests"]
+NthSelectors --> Integration["Integration Tests"]
+NthSelectors --> EdgeCases["Edge Cases"]
+Parsing --> Keywords["Keyword Parsing"]
+Parsing --> Numbers["Number Parsing"]
+Parsing --> Formulas["Formula Parsing"]
+Keywords --> OddEven["odd/even keywords"]
+Numbers --> DirectNumbers["Direct numbers"]
+Formulas --> AnB["An+B formulas"]
+Matching --> Simple["Simple Matching"]
+Matching --> OddEvenMatch["Odd/Even Matching"]
+Matching --> FormulaMatch["Formula Matching"]
+Integration --> Parser["CSS Parser Integration"]
+Integration --> Selector["Selector Matching"]
+Integration --> Animations["Animation Integration"]
+EdgeCases --> SingleChild["Single Child"]
+EdgeCases --> Boundaries["Boundary Conditions"]
+EdgeCases --> Complex["Complex Combinations"]
+```
+
+**Diagram sources**
+- [css_nth_selectors_test.dart:8-416](file://test/animation/css_nth_selectors_test.dart#L8-L416)
+- [css_nth_selectors_test.dart:417-823](file://test/animation/css_nth_selectors_test.dart#L417-L823)
+- [css_nth_selectors_test.dart:824-1001](file://test/animation/css_nth_selectors_test.dart#L824-L1001)
+
+**Section sources**
+- [css_nth_selectors_test.dart:1-1001](file://test/animation/css_nth_selectors_test.dart#L1-L1001)
+
+### CSS Selectors Implementation
+The CSS selectors implementation provides comprehensive structural pseudo-class support:
+
+#### CssNthPseudoClass Class
+- **Parse method**: Handles keyword parsing ("odd", "even"), number parsing, and An+B formula parsing with regex validation
+- **Matches method**: Implements mathematical formula evaluation with proper integer division and remainder handling
+- **toString method**: Provides proper CSS string representation with coefficient normalization
+
+#### Selector Matching Logic
+- **nthChild**: Uses 1-based index from start of siblings
+- **nthLastChild**: Uses 1-based index from end of siblings  
+- **nthOfType**: Counts only siblings of the same tag name from start
+- **nthLastOfType**: Counts only siblings of the same tag name from end
+
+#### CSS Parser Integration
+- **Functional pseudo-classes**: Parses :nth-child(2n+1), :nth-last-child(3), :nth-of-type(odd), :nth-last-of-type(even)
+- **Multiple nth pseudo-classes**: Supports selectors with multiple nth pseudo-classes
+- **Integration with other selectors**: Works with tag selectors, class selectors, attribute selectors, and combinators
+
+**Section sources**
+- [css_selectors.dart:47-152](file://lib/src/animation/css_selectors.dart#L47-L152)
+- [css_cascade_selector_matching.dart:304-343](file://lib/src/animation/css_cascade_selector_matching.dart#L304-L343)
+
+## Enhanced SMIL Animation Runtime Testing
+
+### Precision Validation for Long-Running Animations
+The enhanced SMIL animation runtime testing provides comprehensive validation for animation precision and boundary handling:
+
+#### Animation Progress Computation
+- **High-precision math**: Uses microsecond-level precision to avoid floating-point drift in long-running animations
+- **Boundary value correction**: Implements epsilon correction for values near 0.0 and 1.0 to prevent boundary artifacts
+- **Fractional repeatCount handling**: Accurately calculates progress for fractional repeat counts with exact fractional part determination
+- **Iteration boundary detection**: Identifies exact iteration boundaries and handles them correctly
+
+#### Floating-Point Drift Prevention
+- **Epsilon tolerance**: Uses 1 microsecond tolerance for boundary value comparisons
+- **Exact end-time calculation**: Determines when animations reach exactly the end of repeat cycles
+- **Progress normalization**: Normalizes progress values to prevent accumulation of floating-point errors
+
+#### Repeat Count Precision
+- **Whole number repeatCount**: Correctly handles animations ending at t=1.0 of the last iteration
+- **Fractional repeatCount**: Calculates exact fractional progress for animations ending mid-iteration
+- **Large repeatCount validation**: Tests precision with 10,000+ iterations without drift accumulation
+
+#### Playback Direction Handling
+- **Normal direction**: Standard 0.0 to 1.0 progression
+- **Reverse direction**: 1.0 to 0.0 progression for reverse playback
+- **Alternate direction**: Alternating normal/reverse for each iteration
+- **Alternate reverse direction**: Alternating reverse/normal for each iteration
+
+```mermaid
+sequenceDiagram
+participant Anim as "SmilAnimation"
+participant Runtime as "SmilAnimationRuntime"
+participant Timeline as "SvgTimeline"
+Anim->>Runtime : "_computeProgressAtEnd()"
+Runtime->>Runtime : "Calculate elapsed microseconds"
+Runtime->>Runtime : "Check for exact end boundary"
+alt Exact end boundary
+Runtime->>Runtime : "Use fractional part for progress"
+else General case
+Runtime->>Runtime : "Calculate completed iterations"
+Runtime->>Runtime : "Compute remainder and baseT"
+end
+Runtime->>Runtime : "Apply epsilon correction"
+Runtime->>Runtime : "Resolve directed progress"
+Runtime-->>Anim : "_AnimationProgress(t, completedRepeats)"
+```
+
+**Diagram sources**
+- [smil_animation_runtime.dart:38-122](file://lib/src/animation/smil/smil_animation_runtime.dart#L38-L122)
+
+**Section sources**
+- [smil_animation_runtime.dart:1-132](file://lib/src/animation/smil/smil_animation_runtime.dart#L1-L132)
+
+### SMIL Timeline Runtime Enhancements
+The SMIL timeline runtime provides enhanced event handling and animation sandwich model implementation:
+
+#### Event-Based Animation Activation
+- **Event condition matching**: Finds matching EventCondition in begin conditions for event-triggered animations
+- **Offset calculation**: Computes start time with proper offset handling for event-triggered animations
+- **Resolved begin time management**: Updates resolved begin times in both timeline and animation instances
+
+#### Animation Sandwich Model
+- **Priority resolution**: Applies "last wins" rule for non-additive animations targeting the same attribute
+- **Additive stacking**: Stacks additive animations in document order for proper value computation
+- **Document order preservation**: Maintains animation order through sort operations for priority resolution
+
+#### State Transition Detection
+- **Active state tracking**: Monitors animation activation and deactivation states for transition detection
+- **Iteration tracking**: Tracks current iteration changes for repeat event firing
+- **Event dispatching**: Dispatches beginEvent, endEvent, and repeatEvent for external listeners
+
+#### DOM Event Integration
+- **Event key generation**: Creates unique event keys combining elementId and eventType
+- **Event time registration**: Registers event times for event-based animation resolution
+- **Listener notification**: Notifies waiting animations when matching events occur
+
+```mermaid
+flowchart TD
+Timeline["SvgTimeline"] --> EventActivation["Event-Based Activation"]
+Timeline --> PriorityResolution["Animation Priority Resolution"]
+Timeline --> StateTracking["State Transition Tracking"]
+EventActivation --> FindCondition["Find Matching EventCondition"]
+FindCondition --> CalculateStart["Calculate Start Time with Offset"]
+CalculateStart --> UpdateResolved["Update Resolved Begin Times"]
+UpdateResolved --> UpdateAnimation["Update Animation State"]
+PriorityResolution --> GroupAnimations["Group by Target Element and Attribute"]
+GroupAnimations --> SortDocumentOrder["Sort by Document Order"]
+SortDocumentOrder --> ApplySandwich["Apply Sandwich Model"]
+StateTracking --> DetectTransitions["Detect Active/Inactive Transitions"]
+DetectTransitions --> FireEvents["Fire Begin/End/Repeat Events"]
+```
+
+**Diagram sources**
+- [smil_timeline_runtime.dart:3-69](file://lib/src/animation/smil/smil_timeline_runtime.dart#L3-L69)
+- [smil_timeline_runtime.dart:128-177](file://lib/src/animation/smil/smil_timeline_runtime.dart#L128-L177)
+
+**Section sources**
+- [smil_timeline_runtime.dart:1-178](file://lib/src/animation/smil/smil_timeline_runtime.dart#L1-L178)
+
 ## CSS Calc Edge Cases Testing
 
 ### Comprehensive Mathematical Function Testing
@@ -603,7 +832,7 @@ PointerEvents --> FillMode["pointer-events:fill"]
 ### Comprehensive Image Transformation Testing
 The image transform edge cases testing suite provides extensive coverage for image rendering scenarios:
 
-- **All 9 preserveAspectRatio combinations**: Tests xMinYMin, xMidYMin, xMaxYMin, xMinYMid, xMidYMid, xMaxYMid, xMinYMax, xMidYMax, xMaxYMax with both meet and slice modes
+- **All 9 preserveAspectRatio combinations**: Tests xMinYMin, xMidYMid, xMaxYMin, xMinYMid, xMidYMid, xMaxYMid, xMinYMax, xMidYMax, xMaxYMax with both meet and slice modes
 - **Negative dimension handling**: Validates behavior with negative width/height values
 - **Zero dimension handling**: Tests rendering with zero width/height values
 - **Overflow handling**: Validates overflow="visible" vs "hidden" behavior in slice mode
@@ -838,6 +1067,8 @@ Comprehensive error handling testing ensures robust font processing:
 ## Dependency Analysis
 The expanded testing suite exhibits clear separation of concerns with comprehensive coverage across multiple domains:
 - Animation tests depend on visual utilities for pixel-level validation
+- CSS nth selectors tests depend on CSS selector parsing and matching implementations
+- SMIL animation runtime tests depend on enhanced precision handling and boundary value corrections
 - CSS calc tests depend on mathematical evaluation utilities and edge case handling
 - ForeignObject tests depend on coordinate system and transform utilities
 - Hit testing depends on complex composition analysis and event system validation
@@ -856,6 +1087,8 @@ VU["visual_test_utils.dart"] --> VR["visual_rotation_test.dart"]
 VU --> VS["visual_scale_test.dart"]
 VU --> VT["visual_translation_test.dart"]
 VU --> VM["visual_morph_test.dart"]
+VU --> CNST["css_nth_selectors_test.dart"]
+VU --> SART["smil_animation_runtime.dart"]
 VU --> CCE["css_calc_edge_cases_test.dart"]
 VU --> FON["foreign_object_nesting_test.dart"]
 VU --> HTDN["hit_test_deep_nesting_test.dart"]
@@ -876,31 +1109,47 @@ FS["font_synthesis_test.dart"] --> WS
 FV["font_variant_test.dart"] --> WS
 CVC["css_variables_calc_test.dart"] --> VU
 CVC --> FR
+CNST --> CSSSEL["css_selectors.dart"]
+CNST --> CSSMATCH["css_cascade_selector_matching.dart"]
+SART --> SMILRUNTIME["smil_animation_runtime.dart"]
+SART --> SMILTIMELINE["smil_timeline_runtime.dart"]
 ```
 
 **Diagram sources**
 - [visual_test_utils.dart:1-231](file://test/animation/visual_test_utils.dart#L1-L231)
+- [css_nth_selectors_test.dart:1-1001](file://test/animation/css_nth_selectors_test.dart#L1-L1001)
 - [css_calc_edge_cases_test.dart:1-658](file://test/animation/css_calc_edge_cases_test.dart#L1-L658)
 - [foreign_object_nesting_test.dart:1-869](file://test/animation/foreign_object_nesting_test.dart#L1-L869)
 - [hit_test_deep_nesting_test.dart:1-1266](file://test/animation/hit_test_deep_nesting_test.dart#L1-L1266)
 - [image_transform_edge_cases_test.dart:1-877](file://test/animation/image_transform_edge_cases_test.dart#L1-L877)
 - [smil_timing_precision_test.dart:1-849](file://test/animation/smil_timing_precision_test.dart#L1-L849)
+- [css_variables_calc_test.dart:1-402](file://test/animation/css_variables_calc_test.dart#L1-L402)
 - [font_registration_lifecycle_test.dart:1-345](file://test/animation/font_registration_lifecycle_test.dart#L1-L345)
 - [text_font_face_test.dart:1-509](file://test/animation/text_font_face_test.dart#L1-L509)
 - [svg_font_registry.dart:1-402](file://lib/src/animation/svg_font_registry.dart#L1-L402)
 - [animated_svg_picture_lifecycle.dart:325-384](file://lib/src/animation/animated_svg_picture_lifecycle.dart#L325-L384)
+- [css_selectors.dart:1-824](file://lib/src/animation/css_selectors.dart#L1-L824)
+- [css_cascade_selector_matching.dart:1-487](file://lib/src/animation/css_cascade_selector_matching.dart#L1-L487)
+- [smil_animation_runtime.dart:1-132](file://lib/src/animation/smil/smil_animation_runtime.dart#L1-L132)
+- [smil_timeline_runtime.dart:1-178](file://lib/src/animation/smil/smil_timeline_runtime.dart#L1-L178)
 
 **Section sources**
 - [visual_test_utils.dart:1-231](file://test/animation/visual_test_utils.dart#L1-L231)
+- [css_nth_selectors_test.dart:1-1001](file://test/animation/css_nth_selectors_test.dart#L1-L1001)
 - [css_calc_edge_cases_test.dart:1-658](file://test/animation/css_calc_edge_cases_test.dart#L1-L658)
 - [foreign_object_nesting_test.dart:1-869](file://test/animation/foreign_object_nesting_test.dart#L1-L869)
 - [hit_test_deep_nesting_test.dart:1-1266](file://test/animation/hit_test_deep_nesting_test.dart#L1-L1266)
 - [image_transform_edge_cases_test.dart:1-877](file://test/animation/image_transform_edge_cases_test.dart#L1-L877)
 - [smil_timing_precision_test.dart:1-849](file://test/animation/smil_timing_precision_test.dart#L1-L849)
+- [css_variables_calc_test.dart:1-402](file://test/animation/css_variables_calc_test.dart#L1-L402)
 - [font_registration_lifecycle_test.dart:1-345](file://test/animation/font_registration_lifecycle_test.dart#L1-L345)
 - [text_font_face_test.dart:1-509](file://test/animation/text_font_face_test.dart#L1-L509)
 - [svg_font_registry.dart:1-402](file://lib/src/animation/svg_font_registry.dart#L1-L402)
 - [animated_svg_picture_lifecycle.dart:325-384](file://lib/src/animation/animated_svg_picture_lifecycle.dart#L325-L384)
+- [css_selectors.dart:1-824](file://lib/src/animation/css_selectors.dart#L1-L824)
+- [css_cascade_selector_matching.dart:1-487](file://lib/src/animation/css_cascade_selector_matching.dart#L1-L487)
+- [smil_animation_runtime.dart:1-132](file://lib/src/animation/smil/smil_animation_runtime.dart#L1-L132)
+- [smil_timeline_runtime.dart:1-178](file://lib/src/animation/smil/smil_timeline_runtime.dart#L1-L178)
 
 ## Performance Considerations
 - Pixel capture uses a single-pixel ratio to balance fidelity and speed
@@ -916,6 +1165,8 @@ CVC --> FR
 - Image transform tests minimize unnecessary re-renders
 - SMIL timing resolution includes cycle detection to prevent infinite loops
 - CSS variables resolution includes iteration limits to prevent circular dependencies
+- CSS nth selectors parsing uses efficient regex patterns and mathematical formula evaluation
+- SMIL animation runtime includes epsilon corrections and boundary value handling for precision
 
 ## Troubleshooting Guide
 Common issues and resolutions across the expanded test suite:
@@ -933,11 +1184,14 @@ Common issues and resolutions across the expanded test suite:
 - Image transform problems: Validate preserveAspectRatio settings and dimension handling
 - SMIL timing resolution errors: Check for circular dependencies and missing animation references
 - CSS variables resolution failures: Verify variable existence and fallback handling
+- CSS nth selectors parsing failures: Check for proper An+B formula syntax and keyword handling
+- SMIL animation precision issues: Verify epsilon corrections and boundary value handling
 - Visual test debugging: Use detailed pixel analysis and geometric validation reports
 
 **Section sources**
 - [widget_svg_test.dart:12-36](file://test/widget_svg_test.dart#L12-L36)
 - [visual_test_utils.dart:11-37](file://test/animation/visual_test_utils.dart#L11-L37)
+- [css_nth_selectors_test.dart:271-324](file://test/animation/css_nth_selectors_test.dart#L271-L324)
 - [css_calc_edge_cases_test.dart:271-324](file://test/animation/css_calc_edge_cases_test.dart#L271-L324)
 - [foreign_object_nesting_test.dart:366-477](file://test/animation/foreign_object_nesting_test.dart#L366-L477)
 - [hit_test_deep_nesting_test.dart:219-386](file://test/animation/hit_test_deep_nesting_test.dart#L219-L386)
@@ -948,4 +1202,4 @@ Common issues and resolutions across the expanded test suite:
 - [text_font_face_test.dart:457-507](file://test/animation/text_font_face_test.dart#L457-L507)
 
 ## Conclusion
-The testing suite demonstrates a comprehensive approach to validating SVG rendering across multiple sources, themes, animations, font scenarios, mathematical functions, coordinate systems, hit testing, image transformations, and animation timing. The expansion with five new comprehensive test files totaling over 4,500 lines significantly enhances the reliability and robustness of the Flutter SVG project. The enhanced CSS calc edge cases testing provides extensive mathematical function coverage, foreignObject nesting tests validate complex coordinate system scenarios, deep hit testing ensures proper event handling through complex compositions, image transform edge cases cover preserveAspectRatio and overflow scenarios, and SMIL timing precision testing validates animation synchronization. The integration of CSS variables and calc() evaluation testing with SVG integration ensures proper handling of modern CSS features. The expanded visual regression testing capabilities with comprehensive edge case coverage ensure reliable rendering validation. Typography feature testing validates CSS font property compliance across various scenarios. The integration of all test components with the existing testing infrastructure ensures comprehensive quality assurance for the Flutter SVG project, providing confidence in handling complex real-world SVG rendering scenarios.
+The testing suite demonstrates a comprehensive approach to validating SVG rendering across multiple sources, themes, animations, font scenarios, mathematical functions, coordinate systems, hit testing, image transformations, CSS structural pseudo-classes, and animation timing. The expansion with the comprehensive CSS nth selectors test suite (1000+ test cases) and enhanced SMIL animation runtime testing significantly improves the reliability and robustness of the Flutter SVG project. The new CSS nth selectors testing provides extensive coverage for structural pseudo-classes including :nth-child, :nth-last-child, :nth-of-type, and :nth-last-of-type with comprehensive parsing, matching, and integration validation. The enhanced SMIL animation runtime testing validates precision handling for long-running animations, boundary value corrections, and floating-point drift prevention. The integration of CSS nth selectors with CSS parser and selector matching ensures proper handling of complex CSS selector scenarios. The expanded visual regression testing capabilities with comprehensive edge case coverage ensure reliable rendering validation. Typography feature testing validates CSS font property compliance across various scenarios. The integration of all test components with the existing testing infrastructure ensures comprehensive quality assurance for the Flutter SVG project, providing confidence in handling complex real-world SVG rendering scenarios with enhanced precision and reliability.

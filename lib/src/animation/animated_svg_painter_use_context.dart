@@ -112,6 +112,10 @@ class _UseInheritanceContext {
   }
 
   /// Gets the inherited value for a property, checking the use chain.
+  ///
+  /// Per SVG spec, inherited CSS properties flow through <use> shadow boundaries.
+  /// This method traverses the use chain from innermost to outermost, allowing
+  /// each level to override or inherit from its parent.
   Object? getInheritedValue(String property) {
     final normalizedProp = property.trim().toLowerCase();
     if (!normalizedProp.startsWith('--') &&
@@ -142,6 +146,76 @@ class _UseInheritanceContext {
       ancestor = ancestor.parent;
     }
     return parentContext?.getInheritedValue(property);
+  }
+
+  /// Gets the inherited value for visibility, with special cascade handling.
+  ///
+  /// Per SVG spec, visibility cascades through use boundaries but respects
+  /// the 'inherit' keyword which explicitly requests parent value.
+  String? getInheritedVisibility() {
+    final visibility = _extractStyleValueFromNode(useNode, 'visibility');
+    if (visibility != null && visibility.toLowerCase() != 'inherit') {
+      return visibility;
+    }
+    final attrValue = useNode.getAttributeValue('visibility')?.toString();
+    if (attrValue != null &&
+        attrValue.isNotEmpty &&
+        attrValue.toLowerCase() != 'inherit') {
+      return attrValue;
+    }
+    // Walk ancestors
+    SvgNode? ancestor = useNode.parent;
+    while (ancestor != null) {
+      final ancestorVisibility = _extractStyleValueFromNode(
+        ancestor,
+        'visibility',
+      );
+      if (ancestorVisibility != null &&
+          ancestorVisibility.toLowerCase() != 'inherit') {
+        return ancestorVisibility;
+      }
+      final ancestorAttr = ancestor.getAttributeValue('visibility')?.toString();
+      if (ancestorAttr != null &&
+          ancestorAttr.isNotEmpty &&
+          ancestorAttr.toLowerCase() != 'inherit') {
+        return ancestorAttr;
+      }
+      ancestor = ancestor.parent;
+    }
+    return parentContext?.getInheritedVisibility();
+  }
+
+  /// Checks if visibility is hidden in the use context chain.
+  ///
+  /// Per SVG spec, if any ancestor in the use chain has visibility:hidden,
+  /// the content is hidden unless a descendant explicitly overrides.
+  bool isVisibilityHidden() {
+    final visibility = getInheritedVisibility()?.toLowerCase();
+    return visibility == 'hidden' || visibility == 'collapse';
+  }
+
+  /// Gets the inherited value for display property.
+  ///
+  /// Note: display:none does NOT inherit in CSS, but we track it through
+  /// use boundaries because if a <use> element has display:none, its
+  /// entire shadow content should not render.
+  String? getUseDisplayValue() {
+    final display = _extractStyleValueFromNode(useNode, 'display');
+    if (display != null) {
+      return display;
+    }
+    final attrValue = useNode.getAttributeValue('display')?.toString();
+    if (attrValue != null && attrValue.isNotEmpty) {
+      return attrValue;
+    }
+    // display does NOT cascade through use boundaries per CSS spec
+    return null;
+  }
+
+  /// Checks if the use element has display:none.
+  bool isDisplayNone() {
+    final display = getUseDisplayValue()?.toLowerCase();
+    return display == 'none';
   }
 
   /// Resolves a CSS property from document style rules for a given node.
@@ -306,6 +380,49 @@ class _UseInheritanceContext {
       ancestor = ancestor.parent;
     }
     return parentContext?.getCustomProperty(normalizedName);
+  }
+
+  /// Gets the inherited pointer-events value through use boundaries.
+  ///
+  /// Per SVG spec, pointer-events on a <use> element affects the entire
+  /// shadow tree. This cascades correctly through nested use elements.
+  String? getInheritedPointerEvents() {
+    final pointerEvents = _extractStyleValueFromNode(useNode, 'pointer-events');
+    if (pointerEvents != null && pointerEvents.toLowerCase() != 'inherit') {
+      return pointerEvents;
+    }
+    final attrValue = useNode.getAttributeValue('pointer-events')?.toString();
+    if (attrValue != null &&
+        attrValue.isNotEmpty &&
+        attrValue.toLowerCase() != 'inherit') {
+      return attrValue;
+    }
+    // Walk ancestors
+    SvgNode? ancestor = useNode.parent;
+    while (ancestor != null) {
+      final ancestorEvents = _extractStyleValueFromNode(
+        ancestor,
+        'pointer-events',
+      );
+      if (ancestorEvents != null && ancestorEvents.toLowerCase() != 'inherit') {
+        return ancestorEvents;
+      }
+      final ancestorAttr =
+          ancestor.getAttributeValue('pointer-events')?.toString();
+      if (ancestorAttr != null &&
+          ancestorAttr.isNotEmpty &&
+          ancestorAttr.toLowerCase() != 'inherit') {
+        return ancestorAttr;
+      }
+      ancestor = ancestor.parent;
+    }
+    return parentContext?.getInheritedPointerEvents();
+  }
+
+  /// Checks if pointer-events is 'none' in the use context chain.
+  bool isPointerEventsNone() {
+    final pointerEvents = getInheritedPointerEvents()?.toLowerCase();
+    return pointerEvents == 'none';
   }
 
   /// Checks if this use context or any parent context already references

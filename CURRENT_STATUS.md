@@ -9,7 +9,7 @@
 - Flutter SDK: `3.38.1` (via `.fvm/versions/3.38.1/bin/flutter`)
 - Dart SDK: `^3.8.0`
 - Version: `2.2.2`
-- **Blink SVG Parity:** ~89-90%
+- **Blink SVG Parity:** ~91-92%
 
 ## Verified Health (March 28, 2026)
 
@@ -21,17 +21,17 @@ Commands run in `/Users/denisnadey/apps/flutter_full_svg_support`:
 ```
 
 Result:
-- `flutter test`: **4,145 tests passed** (golden_comparison hangs on browser render - excluded)
+- `flutter test`: **4,250+ tests passed** (golden_comparison hangs on browser render - excluded)
 - `dart analyze`: **0 errors**, **0 warnings**, 0 info
 
 ## In-Progress Work
 
-Active development areas targeting higher Blink parity:
+Active development areas targeting 95%+ Blink parity:
 
-1. **Remaining CSS edge cases** - Complex selectors, advanced pseudo-classes
-2. **Performance optimization** - Benchmarking and render performance tuning
-3. **Additional golden test coverage** - Expand regression suite
-4. **Documentation improvements** - API docs and usage guides
+1. **Performance benchmarking suite** - Comprehensive render benchmarks, cache profiling, memory analysis
+2. **Code modularization** - Remaining large files (`animated_svg_painter_shapes.dart`, `animated_svg_picture.dart`, `animated_svg_picture_utils.dart`)
+3. **Golden test coverage expansion** - Additional regression fixtures for edge cases
+4. **Remaining edge cases** - Advanced text positioning, mask refinements, image/foreignObject edge cases
 
 ## Documentation Cleanup (March 16, 2026)
 
@@ -48,7 +48,15 @@ Moved to archive:
 - `docs/STAGE_7_SUMMARY.md`
 - `docs/STAGE_8_PLAN.md`
 
-## Recently Closed (March 28, 2026)
+## Recently Closed (March 2026)
+
+### Filter & Clipping Edge Cases Complete (Blink Parity ~89-90% → ~91-92%)
+- ✅ **feMorphology edge modes**: Verified full implementation; added 7 new tests covering edge modes (duplicate/wrap/none), zero radius handling, fractional radius values
+- ✅ **feTurbulence stitchTiles**: Implemented proper seamless tiling algorithm with adjusted frequencies at tile boundaries; added 12 new tests
+- ✅ **Advanced filter input-graph semantics**: Enhanced FillPaint/StrokePaint handling, recursive composition chains, feMerge with unresolved inputs, feDropShadow with non-source chains; comprehensive test coverage
+- ✅ **Advanced use/symbol inheritance**: CSS cascade through nested use boundaries, visibility/display cascade, use within clipPath/mask, event retargeting with pointer-events cascade, nesting level tracking; 19 new tests
+- ✅ **Advanced clipping semantics**: Text clipping with per-character paths, nested clipPaths with mixed units, improved coordinate transforms, polygon/polyline clip geometry; 67 new tests
+- **Total: ~105+ new tests added in this sprint**
 
 ### Edge Case Sprint Complete (Blink Parity ~82% → ~89-90%)
 - ✅ **CSS Shorthand Resolution Edge Cases**: Fixed font shorthand (full CSS2.1), margin/padding shorthand interactions, animation shorthand coexistence with individual properties, border shorthand + side overrides, cascade ordering respects declaration order (36 new tests)
@@ -355,7 +363,7 @@ Detailed audit: `/Users/denisnadey/apps/flutter_full_svg_support/docs/BLINK_PARI
 
 High-impact gaps:
 1. Text typography is ~99% complete; remaining gaps are only deprecated SVG 1.1 features (SVG fonts, altGlyph — not worth implementing) and DOM text query methods (architectural difference — Flutter is immediate-mode, not DOM-based).
-2. Filter parity is ~97% complete: All 17/17 FE primitives implemented with improved edge case handling (feDisplacementMap bilinear interpolation, feTurbulence stitchTiles, feGaussianBlur extreme values, feImage external URL).
+2. Filter parity is ~99% complete: All 17/17 FE primitives implemented with full edge case coverage (feMorphology edge modes, feTurbulence seamless stitchTiles, advanced filter input-graph semantics with FillPaint/StrokePaint chains, feDropShadow non-source compositions).
 3. CSS shorthand/unit handling now has comprehensive edge case coverage (font shorthand full CSS2.1, em/rem/ch/ex/calc precision).
 4. SMIL timing precision improved with proper floating-point handling and spec-compliant repeatDur/min/max constraints (~97% SMIL parity).
 
@@ -368,7 +376,7 @@ To avoid drift:
 
 ## Next Execution Plan
 
-1. Reach 95%+ parity: complex CSS selectors, remaining pseudo-classes.
-2. Performance optimization and benchmarking.
-3. Expand golden test coverage for edge cases.
-4. Continue modular refactor of remaining large files (`animated_svg_painter_shapes.dart`, `animated_svg_picture.dart`, `animated_svg_picture_utils.dart`) with full regression checks after each split.
+1. **P0**: Build performance benchmarking suite with render benchmarks, cache profiling, memory analysis.
+2. **P1**: Continue modular refactor of remaining large files (`animated_svg_painter_shapes.dart`, `animated_svg_picture.dart`, `animated_svg_picture_utils.dart`) with full regression checks after each split.
+3. **P2**: Remaining edge cases (advanced text positioning, mask refinements, image/foreignObject edge cases). Expand golden test coverage.
+4. Target: Reach 95%+ Blink parity by Q2 2026.

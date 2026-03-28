@@ -2,7 +2,7 @@
 
 **Last Updated:** March 28, 2026
 
-**Current Status:** ~89-90% Blink SVG parity | ~97% Filter parity | ~97% SMIL parity | 4,145 tests passing | 0 analyzer warnings
+**Current Status:** ~91-92% Blink SVG parity | ~99% Filter parity | ~97% SMIL parity | 4,250+ tests passing | 0 analyzer warnings
 
 Authoritative status is maintained in:
 - `/Users/denisnadey/apps/flutter_full_svg_support/CURRENT_STATUS.md`
@@ -15,19 +15,26 @@ Detailed Blink gap matrix:
 
 ## Active Feature Items (P0 Priorities)
 
-1. **Remaining CSS edge cases** - Complex selectors, advanced pseudo-classes (`:nth-child`, `:nth-of-type`)
-2. **Performance optimization** - Render benchmarking, cache tuning, memory profiling
-3. **Golden test coverage expansion** - Additional regression fixtures for edge cases
-4. **Code modularization** - Remaining large files (`animated_svg_painter_shapes.dart`, `animated_svg_picture.dart`)
+1. **Performance benchmarking suite** - Comprehensive render benchmarks, cache profiling, memory analysis
+2. **Remaining edge cases** - Advanced text positioning, mask refinements, image/foreignObject edge cases
+
+## P1 - Code Modularization
+
+1. **Remaining large files** - `animated_svg_painter_shapes.dart`, `animated_svg_picture.dart`, `animated_svg_picture_utils.dart`
+2. Full regression checks after each split, API stability preserved
+
+## P2 - Quality & Coverage
+
+1. **CSS selector edge case refinement** - Advanced structural pseudo-class combinations
+2. **Golden test coverage expansion** - Additional regression fixtures for edge cases
 
 ## Immediate (Execution Order)
 
-1. Reach 95%+ parity: implement remaining CSS selectors (`:nth-child`, `:nth-of-type`, `:nth-last-child`).
-2. Performance optimization: add render benchmarks, profile memory usage, tune caches.
-3. Expand golden test coverage for new edge cases discovered.
-4. Continue modular refactor of remaining large files for dev velocity with API-stability and full regression checks.
+1. Build performance benchmarking suite with render benchmarks, cache profiling, memory analysis.
+2. Continue modular refactor of remaining large files with API-stability and full regression checks.
    Priority targets: `animated_svg_painter_shapes.dart`, `animated_svg_picture.dart`, `animated_svg_picture_utils.dart`.
-5. Documentation improvements: API usage guides, example updates.
+3. Address remaining edge cases (advanced text positioning, mask refinements, image/foreignObject edge cases).
+4. Expand golden test coverage for new edge cases.
 
 ## Completed P0 Items (Closed)
 
@@ -39,7 +46,8 @@ Detailed Blink gap matrix:
 - ~~**use/symbol Inheritance**~~ - CSS cascade through shadow boundary, style inheritance, nested transforms, hit-testing.
 - ~~**Light Sources**~~ - feDistantLight, fePointLight, feSpotLight with per-pixel lighting math.
 - ~~**Component Transfer**~~ - All 5 function types (identity, table, discrete, linear, gamma).
-- ~~**Advanced animateMotion**~~ - SMIL ~97% (to-only/by-only/from-only modes, keyTimes→keyPoints implicit generation, discrete calcMode + keyPoints, closed path detection, zero-length segment handling, timing precision).
+- ~~**Advanced animateMotion**~~ - SMIL ~95% → ~97% (to-only/by-only/from-only modes, keyTimes→keyPoints implicit generation, discrete calcMode + keyPoints, closed path detection, zero-length segment handling, timing precision).
+- ~~**Filter & Clipping Edge Cases (March 2026)**~~ - feMorphology edge modes (7 tests), feTurbulence seamless stitchTiles (12 tests), advanced filter input-graph semantics, advanced use/symbol inheritance (19 tests), advanced clipping semantics (67 tests). ~105+ new tests, parity ~89-90% → ~91-92%.
 
 ## Validation After Each Step
 

@@ -21,6 +21,12 @@
 - [SVGAnimatedString.h](file://blink-b87d44f-Source-core-svg/SVGAnimatedString.h)
 - [SVGAnimatedString.cpp](file://blink-b87d44f-Source-core-svg/SVGAnimatedString.cpp)
 - [SVGElement.cpp](file://blink-b87d44f-Source-core-svg/SVGElement.cpp)
+- [css_selectors.dart](file://lib/src/animation/css_selectors.dart)
+- [css_cascade_selector_matching.dart](file://lib/src/animation/css_cascade_selector_matching.dart)
+- [css_cascade_specificity.dart](file://lib/src/animation/css_cascade_specificity.dart)
+- [css_cascade_resolution.dart](file://lib/src/animation/css_cascade_resolution.dart)
+- [css_nth_selectors_test.dart](file://test/animation/css_nth_selectors_test.dart)
+- [css_pseudo_classes_view_test.dart](file://test/animation/css_pseudo_classes_view_test.dart)
 - [smil_parser_animation_parsing.dart](file://lib/src/animation/smil/smil_parser_animation_parsing.dart)
 - [smil_parser_motion.dart](file://lib/src/animation/smil/smil_parser_motion.dart)
 - [smil_timeline.dart](file://lib/src/animation/smil/smil_timeline.dart)
@@ -37,13 +43,11 @@
 
 ## Update Summary
 **Changes Made**
-- Enhanced SMIL animation system with comprehensive animateMotion implementation details
-- Added advanced path parsing capabilities with arc, curve, and degenerate case handling
-- Implemented detailed calcMode semantics including discrete mode with keyPoints support
-- Added closed path detection algorithms with epsilon comparison (1e-6 tolerance)
-- Enhanced zero-length path handling with graceful fallback mechanisms
-- Updated parity metrics reflecting ~95% SMIL animation parity achieved
-- Improved motion animation support with comprehensive path geometry calculations
+- Enhanced CSS selector system with comprehensive support for structural pseudo-classes (:first-child, :last-child, :only-child, :first-of-type, :last-of-type, :only-of-type)
+- Added robust nth pseudo-class parsing with An+B formula support including special keywords (odd, even)
+- Integrated CSS cascade resolution with pseudo-class state tracking for dynamic matching
+- Updated SMIL animation CSS extraction to leverage enhanced CSS selector capabilities
+- Added comprehensive test coverage for structural pseudo-classes and nth pseudo-classes
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -58,13 +62,15 @@
 10. [Appendices](#appendices)
 
 ## Introduction
-This document explains the SMIL (Synchronized Multimedia Integration Language) animation implementation in the SVG engine. It covers supported animation elements, timing semantics, interpolation modes, parser architecture, timeline management, and element processing. The implementation now includes enhanced discrete calcMode handling for string-type attributes, advanced edge case recovery, improved timeline synchronization with circular dependency detection, and comprehensive animateMotion support with advanced path parsing capabilities and detailed calcMode semantics.
+This document explains the SMIL (Synchronized Multimedia Integration Language) animation implementation in the SVG engine, with enhanced CSS selector capabilities for precise animation targeting. The implementation now includes comprehensive support for structural pseudo-classes and nth pseudo-classes, enabling sophisticated animation selection based on element position and type within the DOM hierarchy. This enhancement significantly improves the precision and flexibility of SMIL animation targeting, allowing developers to create complex animation sequences that respond to element positioning and content types.
 
 ## Project Structure
-The SMIL animation stack is organized around a robust timing model and a family of animation elements with comprehensive error handling:
+The enhanced SMIL animation stack builds upon the core timing model with expanded CSS selector capabilities:
 - Timing primitives and containers define time semantics and scheduling with advanced synchronization
 - A base SMIL element class coordinates begin/end timing, restart/fill policies, and per-frame progression
 - Concrete animation elements implement attribute/path/value animations and apply results to targets
+- Enhanced CSS selector system with structural pseudo-classes and nth pseudo-classes for precise targeting
+- CSS cascade resolution with pseudo-class state tracking for dynamic matching
 - Specialized animators handle discrete string-type attribute animations
 - Advanced parser with comprehensive validation and fallback mechanisms
 - Enhanced timeline with circular dependency detection and syncbase timing
@@ -81,6 +87,13 @@ subgraph "SMIL Core"
 S1["SVGSMILElement<br/>SVGSMILElement.cpp/.h"]
 A1["SVGAnimationElement<br/>SVGAnimationElement.cpp/.h"]
 AR["Animation Runtime<br/>smil_animation_runtime.dart"]
+end
+subgraph "Enhanced CSS Selector System"
+CSS1["Structural Pseudo-Classes<br/>:first-child, :last-child, :only-child"]
+CSS2["Type-based Pseudo-Classes<br/>:first-of-type, :last-of-type, :only-of-type"]
+CSS3["Nth Pseudo-Classes<br/>:nth-child, :nth-of-type, :nth-last-child, :nth-last-of-type"]
+CSS4["An+B Formula Parser<br/>Supports odd, even, 2n+1, -n+3, etc."]
+CSS5["CSS Cascade Resolver<br/>With Pseudo-Class State Tracking"]
 end
 subgraph "Concrete Animations"
 E1["SVGAnimateElement<br/>SVGAnimateElement.cpp/.h"]
@@ -116,6 +129,10 @@ P2 --> E3
 E3 --> MP1
 MP1 --> MP2
 MP1 --> MP3
+CSS5 --> CSS1
+CSS5 --> CSS2
+CSS5 --> CSS3
+CSS5 --> CSS4
 ```
 
 **Diagram sources**
@@ -131,6 +148,9 @@ MP1 --> MP3
 - [SVGSetElement.h:29-36](file://blink-b87d44f-Source-core-svg/SVGSetElement.h#L29-L36)
 - [SVGAnimatedString.h:40-55](file://blink-b87d44f-Source-core-svg/SVGAnimatedString.h#L40-L55)
 - [SVGElement.cpp:648-690](file://blink-b87d44f-Source-core-svg/SVGElement.cpp#L648-L690)
+- [css_selectors.dart:4-43](file://lib/src/animation/css_selectors.dart#L4-L43)
+- [css_selectors.dart:45-152](file://lib/src/animation/css_selectors.dart#L45-L152)
+- [css_cascade_selector_matching.dart:303-343](file://lib/src/animation/css_cascade_selector_matching.dart#L303-L343)
 - [smil_parser_animation_parsing.dart:1-493](file://lib/src/animation/smil/smil_parser_animation_parsing.dart#L1-L493)
 - [smil_parser_motion.dart:1-412](file://lib/src/animation/smil/smil_parser_motion.dart#L1-L412)
 - [smil_timeline_syncbase.dart:1-256](file://lib/src/animation/smil/smil_timeline_syncbase.dart#L1-L256)
@@ -148,6 +168,8 @@ MP1 --> MP3
 - **SMILTimeContainer**: Central scheduler that manages active animations, sorts by begin time and document order, applies results per frame, and handles interval seeking with improved precision
 - **SVGSMILElement**: Base for SMIL animation elements with enhanced seekToIntervalCorrespondingToTime functionality for precise timeline navigation and better interval management
 - **SVGAnimationElement**: Adds animation modes (from/to/by/values/path), calcMode (discrete/linear/paced/spline), and interpolation utilities with improved error recovery
+- **Enhanced CSS Selector System**: Comprehensive structural pseudo-class support with precise element positioning and type-based matching
+- **CSS Cascade Resolver**: Integrates with pseudo-class state tracking for dynamic animation targeting
 - **Concrete elements**:
   - **SVGAnimateElement**: Attribute animations supporting additive accumulation and CSS vs XML property application with enhanced validation
   - **SVGAnimateTransformElement**: Transform list animations with transform type validation and improved error handling
@@ -169,6 +191,9 @@ MP1 --> MP3
 - [SVGAnimateMotionElement.cpp:121-131](file://blink-b87d44f-Source-core-svg/SVGAnimateMotionElement.cpp#L121-L131)
 - [SVGSetElement.cpp:40-44](file://blink-b87d44f-Source-core-svg/SVGSetElement.cpp#L40-L44)
 - [SVGAnimatedString.cpp:75-89](file://blink-b87d44f-Source-core-svg/SVGAnimatedString.cpp#L75-L89)
+- [css_selectors.dart:4-43](file://lib/src/animation/css_selectors.dart#L4-L43)
+- [css_selectors.dart:45-152](file://lib/src/animation/css_selectors.dart#L45-L152)
+- [css_cascade_selector_matching.dart:303-343](file://lib/src/animation/css_cascade_selector_matching.dart#L303-L343)
 - [smil_parser_animation_parsing.dart:134-147](file://lib/src/animation/smil/smil_parser_animation_parsing.dart#L134-L147)
 - [smil_timeline_syncbase.dart:182-255](file://lib/src/animation/smil/smil_timeline_syncbase.dart#L182-L255)
 - [motion_path.dart:73-76](file://lib/src/animation/smil/motion_path.dart#L73-L76)
@@ -176,7 +201,7 @@ MP1 --> MP3
 - [motion_path.dart:358-452](file://lib/src/animation/smil/motion_path.dart#L358-L452)
 
 ## Architecture Overview
-The enhanced SMIL pipeline with advanced error handling, synchronization, and comprehensive motion animation support:
+The enhanced SMIL pipeline with advanced CSS selector capabilities for precise animation targeting:
 - Parse begin/end lists and conditions with comprehensive validation; resolve instance times with circular dependency detection
 - Compute active intervals and next progress time with improved precision
 - Advance per-frame with enhanced error recovery, interpolate values, accumulate/add with fallback mechanisms
@@ -185,6 +210,7 @@ The enhanced SMIL pipeline with advanced error handling, synchronization, and co
 - Enforce discrete calcMode for non-interpolatable string attributes with automatic enforcement
 - Handle complex syncbase timing including repeat-based synchronization with offset support
 - Process animateMotion with advanced path parsing, geometric calculations, and calcMode semantics
+- **Enhanced**: Integrate CSS cascade resolution with structural pseudo-classes for dynamic animation targeting
 
 ```mermaid
 sequenceDiagram
@@ -193,6 +219,7 @@ participant Container as "SMILTimeContainer"
 participant Element as "SVGSMILElement"
 participant Parser as "Enhanced Parser"
 participant Timeline as "Advanced Timeline"
+participant CSSResolver as "CSS Cascade Resolver"
 participant Animator as "SVGAnimatedStringAnimator"
 participant MotionPath as "MotionPath System"
 participant Target as "Target Element"
@@ -209,6 +236,10 @@ Element->>Element : calculate percent/repeat, calcMode
 Element->>Element : interpolate values (additive/accumulated)
 Element->>Animator : animateDiscreteType(percent, from, to, result)
 Animator->>Animator : enforce discrete semantics
+Element->>CSSResolver : resolveAnimationTargets()
+CSSResolver->>CSSResolver : match structural pseudo-classes
+CSSResolver->>CSSResolver : evaluate nth pseudo-classes
+CSSResolver->>CSSResolver : apply pseudo-class state
 Element->>MotionPath : calculate position & rotation
 MotionPath->>MotionPath : parse path, handle arcs/curves
 MotionPath->>MotionPath : detect closed paths, zero-length segments
@@ -225,11 +256,113 @@ Container->>Container : startTimer(nextProgressTime)
 - [SVGSMILElement.h:92-93](file://blink-b87d44f-Source-core-svg/animation/SVGSMILElement.h#L92-L93)
 - [SVGAnimateElement.cpp:346-368](file://blink-b87d44f-Source-core-svg/SVGAnimateElement.cpp#L346-L368)
 - [SVGAnimatedString.cpp:75-89](file://blink-b87d44f-Source-core-svg/SVGAnimatedString.cpp#L75-L89)
+- [css_cascade_selector_matching.dart:303-343](file://lib/src/animation/css_cascade_selector_matching.dart#L303-L343)
 - [smil_timeline_syncbase.dart:182-255](file://lib/src/animation/smil/smil_timeline_syncbase.dart#L182-L255)
 - [smil_parser_animation_parsing.dart:1-493](file://lib/src/animation/smil/smil_parser_animation_parsing.dart#L1-L493)
 - [motion_path.dart:358-452](file://lib/src/animation/smil/motion_path.dart#L358-L452)
 
 ## Detailed Component Analysis
+
+### Enhanced CSS Selector System for Animation Targeting
+**Updated** The CSS selector system now provides comprehensive support for structural pseudo-classes and nth pseudo-classes, enabling precise animation targeting based on element position and type.
+
+- **Structural Pseudo-Classes**:
+  - :first-child - matches elements that are the first child of their parent
+  - :last-child - matches elements that are the last child of their parent
+  - :only-child - matches elements that are the only child of their parent
+  - :first-of-type - matches the first sibling of its type within the parent
+  - :last-of-type - matches the last sibling of its type within the parent
+  - :only-of-type - matches the only sibling of its type within the parent
+- **Nth Pseudo-Classes**:
+  - :nth-child(An+B) - matches elements based on their position among siblings
+  - :nth-last-child(An+B) - matches elements based on their position from the end
+  - :nth-of-type(An+B) - matches elements based on their position among siblings of the same type
+  - :nth-last-of-type(An+B) - matches elements based on their position from the end among siblings of the same type
+- **An+B Formula Parser**:
+  - Supports special keywords: odd (2n+1), even (2n)
+  - Handles various formats: "n", "2n", "3n+1", "-n+3", "5", "-2n-1"
+  - Robust whitespace handling and normalization
+- **CSS Cascade Integration**:
+  - Pseudo-class state tracking for dynamic matching
+  - Shadow DOM boundary awareness for use/symbol elements
+  - Comprehensive specificity calculation including pseudo-classes
+
+```mermaid
+classDiagram
+class CssNthPseudoClass {
++type : CssNthType
++a : int
++b : int
++parse(type, formula) CssNthPseudoClass?
++matches(index) bool
++toString() String
+}
+class CssNthType {
+<<enumeration>>
+nthChild
+nthLastChild
+nthOfType
+nthLastOfType
+}
+class CssPseudoClass {
+<<enumeration>>
+hover
+active
+focus
+visited
+link
+firstChild
+lastChild
+onlyChild
+empty
+root
+firstOfType
+lastOfType
+onlyOfType
+}
+class CssSelector {
++parts : CssSelectorPart[]
++isSimple : bool
++subject : CssSelectorPart
++toString() String
+}
+class CssSimpleSelector {
++tagName : String?
++id : String?
++classes : String[]
++attributes : CssAttributeSelector[]
++pseudoClasses : CssPseudoClass[]
++nthPseudoClasses : CssNthPseudoClass[]
++notSelectors : CssSimpleSelector[]
++hasPseudoClasses : bool
+}
+class CssCascadeResolver {
++cssRules : CssSelectorRule[]
++shadowBoundaryId : String?
++pseudoClassState : SvgPseudoClassState?
++resolveProperty(node, property) String?
++withShadowBoundary(boundaryId) CssCascadeResolver
+}
+CssNthPseudoClass --> CssNthType
+CssSimpleSelector --> CssNthPseudoClass
+CssSelector --> CssSimpleSelector
+CssCascadeResolver --> CssSelector
+CssCascadeResolver --> CssPseudoClass
+```
+
+**Diagram sources**
+- [css_selectors.dart:45-152](file://lib/src/animation/css_selectors.dart#L45-L152)
+- [css_selectors.dart:4-43](file://lib/src/animation/css_selectors.dart#L4-L43)
+- [css_cascade_selector_matching.dart:303-343](file://lib/src/animation/css_cascade_selector_matching.dart#L303-L343)
+- [css_cascade_selector_matching.dart:345-379](file://lib/src/animation/css_cascade_selector_matching.dart#L345-L379)
+
+**Section sources**
+- [css_selectors.dart:45-152](file://lib/src/animation/css_selectors.dart#L45-L152)
+- [css_selectors.dart:65-105](file://lib/src/animation/css_selectors.dart#L65-L105)
+- [css_selectors.dart:107-124](file://lib/src/animation/css_selectors.dart#L107-L124)
+- [css_selectors.dart:303-343](file://lib/src/animation/css_selectors.dart#L303-L343)
+- [css_cascade_selector_matching.dart:303-343](file://lib/src/animation/css_cascade_selector_matching.dart#L303-L343)
+- [css_cascade_selector_matching.dart:345-379](file://lib/src/animation/css_cascade_selector_matching.dart#L345-L379)
 
 ### Enhanced SMIL Timing Model
 - **Time values**:
@@ -370,6 +503,7 @@ Resolve --> Wait["wait for first interval with validation"]
 - **Values animation**:
   - Supports keyTimes/keyPoints/keySplines for pacing with enhanced validation
 - **Enhanced**: Automatic discrete calcMode enforcement for non-interpolatable string attributes with comprehensive coverage
+- **Enhanced**: CSS cascade integration with structural pseudo-classes for dynamic animation targeting
 - **Improved Error Recovery**:
   - Graceful handling of invalid path data in motion animations
   - Better fallback mechanisms for malformed input
@@ -396,6 +530,11 @@ class EnhancedMotionSupport {
 +improveRotationHandling()
 +advancedCalcModeSemantics()
 }
+class CssCascadeIntegration {
++resolveAnimationTargets()
++evaluateStructuralPseudoClasses()
++applyNthFormulaMatching()
+}
 SVGAnimateElement --> SVGAnimationElement
 SVGAnimateTransformElement --> SVGAnimateElement
 SVGAnimateMotionElement --> SVGAnimationElement
@@ -403,6 +542,7 @@ SVGSetElement --> SVGAnimateElement
 SVGAnimatedStringAnimator --> SVGAnimationElement
 SVGAnimationElement --> EnhancedValidation
 SVGAnimateMotionElement --> EnhancedMotionSupport
+SVGAnimationElement --> CssCascadeIntegration
 ```
 
 **Diagram sources**
@@ -413,6 +553,7 @@ SVGAnimateMotionElement --> EnhancedMotionSupport
 - [SVGAnimateMotionElement.h:31-72](file://blink-b87d44f-Source-core-svg/SVGAnimateMotionElement.h#L31-L72)
 - [SVGSetElement.h:29-36](file://blink-b87d44f-Source-core-svg/SVGSetElement.h#L29-L36)
 - [SVGAnimatedString.h:40-55](file://blink-b87d44f-Source-core-svg/SVGAnimatedString.h#L40-L55)
+- [css_cascade_selector_matching.dart:303-343](file://lib/src/animation/css_cascade_selector_matching.dart#L303-L343)
 - [smil_parser_motion.dart:208-253](file://lib/src/animation/smil/smil_parser_motion.dart#L208-L253)
 
 **Section sources**
@@ -420,6 +561,7 @@ SVGAnimateMotionElement --> EnhancedMotionSupport
 - [SVGAnimationElement.cpp:170-200](file://blink-b87d44f-Source-core-svg/SVGAnimationElement.cpp#L170-L200)
 - [SVGAnimateElement.cpp:96-137](file://blink-b87d44f-Source-core-svg/SVGAnimateElement.cpp#L96-L137)
 - [SVGAnimatedString.cpp:75-89](file://blink-b87d44f-Source-core-svg/SVGAnimatedString.cpp#L75-L89)
+- [css_cascade_selector_matching.dart:303-343](file://lib/src/animation/css_cascade_selector_matching.dart#L303-L343)
 - [smil_parser_motion.dart:208-253](file://lib/src/animation/smil/smil_parser_motion.dart#L208-L253)
 
 ### Enhanced Attribute Animations (animate, set)
@@ -430,6 +572,7 @@ SVGAnimateMotionElement --> EnhancedMotionSupport
   - From/To/By/Values with distance calculation and enhanced error recovery
   - calcMode affects sampling; discrete forces step values with automatic enforcement
 - **Enhanced**: Automatic discrete calcMode enforcement for string attributes with comprehensive coverage
+- **Enhanced**: CSS cascade integration with structural pseudo-classes for dynamic animation targeting
 - **Application**:
   - CSS property path writes to animated style properties with priority resolution
   - SVG DOM path updates animated values and triggers change notifications with better error handling
@@ -439,13 +582,17 @@ sequenceDiagram
 participant AE as "SVGAnimateElement"
 participant AT as "SVGAnimatedTypeAnimator"
 participant SA as "SVGAnimatedStringAnimator"
+participant CSSResolver as "CSS Cascade Resolver"
 participant Target as "Target Element"
 AE->>AE : determineAnimatedPropertyType()
 AE->>AT : ensureAnimator()
 AE->>AT : calculateFromAndTo/By/Values()
 AE->>SA : animateDiscreteType(percent, from, to, result)
 SA->>SA : enforce discrete semantics with validation
-AE->>Target : applyResultsToTarget() with priority resolution
+AE->>CSSResolver : resolveAnimationTargets()
+CSSResolver->>CSSResolver : match structural pseudo-classes
+CSSResolver->>CSSResolver : evaluate nth pseudo-classes
+CSSResolver->>Target : applyResultsToTarget() with priority resolution
 ```
 
 **Diagram sources**
@@ -453,12 +600,14 @@ AE->>Target : applyResultsToTarget() with priority resolution
 - [SVGAnimateElement.cpp:147-174](file://blink-b87d44f-Source-core-svg/SVGAnimateElement.cpp#L147-L174)
 - [SVGAnimateElement.cpp:346-368](file://blink-b87d44f-Source-core-svg/SVGAnimateElement.cpp#L346-L368)
 - [SVGAnimatedString.cpp:75-89](file://blink-b87d44f-Source-core-svg/SVGAnimatedString.cpp#L75-L89)
+- [css_cascade_selector_matching.dart:303-343](file://lib/src/animation/css_cascade_selector_matching.dart#L303-L343)
 
 **Section sources**
 - [SVGAnimateElement.h:41-56](file://blink-b87d44f-Source-core-svg/SVGAnimateElement.h#L41-L56)
 - [SVGAnimateElement.cpp:96-137](file://blink-b87d44f-Source-core-svg/SVGAnimateElement.cpp#L96-L137)
 - [SVGAnimateElement.cpp:346-368](file://blink-b87d44f-Source-core-svg/SVGAnimateElement.cpp#L346-L368)
 - [SVGAnimatedString.cpp:75-89](file://blink-b87d44f-Source-core-svg/SVGAnimatedString.cpp#L75-L89)
+- [css_cascade_selector_matching.dart:303-343](file://lib/src/animation/css_cascade_selector_matching.dart#L303-L343)
 
 ### Enhanced Transform Animations (animateTransform)
 - Validates target supports transform list with improved error handling
@@ -597,7 +746,7 @@ Priority --> Complete["Complete Cycle"]
 **Section sources**
 - [smil_timeline_syncbase.dart:80-117](file://lib/src/animation/smil/smil_timeline_syncbase.dart#L80-L117)
 - [smil_timeline_syncbase.dart:182-255](file://lib/src/animation/smil/smil_timeline_syncbase.dart#L182-L255)
-- [smil_timeline_runtime.dart:128-177](file://lib/src/animation/smil/smil_timeline_runtime.dart#L128-L177)
+- [smil_timeline_runtime.dart:128-177](file://lib/src/animation/smil/smil_timeline_runtime.dart#L128-177)
 
 ### Enhanced Motion Path System
 **New Section** The motion path system provides comprehensive geometric calculations for animateMotion animations with advanced path parsing and edge case handling.
@@ -640,16 +789,62 @@ Rotation --> Output["Generate Motion Transform"]
 - [motion_path.dart:295-340](file://lib/src/animation/smil/motion_path.dart#L295-L340)
 - [motion_path.dart:471-502](file://lib/src/animation/smil/motion_path.dart#L471-L502)
 
+### Enhanced CSS Cascade Integration for Animation Targeting
+**New Section** The CSS cascade system now integrates seamlessly with SMIL animations, enabling precise targeting through structural pseudo-classes and nth pseudo-classes.
+
+- **Structural Pseudo-Class Support**: Comprehensive matching for :first-child, :last-child, :only-child, :first-of-type, :last-of-type, :only-of-type
+- **Nth Pseudo-Class Processing**: Robust An+B formula parsing with support for special keywords (odd, even) and complex mathematical expressions
+- **Dynamic State Tracking**: Pseudo-class state management for hover, active, and focus states with real-time animation updates
+- **Shadow DOM Awareness**: Proper handling of use/symbol elements with shadow boundary restrictions
+- **Specificity Calculation**: Enhanced specificity scoring that includes pseudo-classes for proper cascade ordering
+- **Performance Optimization**: Caching mechanisms for selector matching results with pseudo-class state keys
+
+```mermaid
+flowchart TD
+AnimationRequest["Animation Request"] --> ParseCSS["Parse CSS Selectors"]
+ParseCSS --> StructuralPC["Process Structural Pseudo-Classes"]
+ParseCSS --> NthPC["Process Nth Pseudo-Classes"]
+ParseCSS --> DynamicState["Track Dynamic Pseudo-State"]
+StructuralPC --> MatchChildren["Match Child Position"]
+StructuralPC --> MatchType["Match Element Type"]
+NthPC --> ParseFormula["Parse An+B Formula"]
+NthPC --> EvaluateFormula["Evaluate Position Formula"]
+DynamicState --> HoverState["Track Hover State"]
+DynamicState --> ActiveState["Track Active State"]
+DynamicState --> FocusState["Track Focus State"]
+MatchChildren --> CacheResult["Cache Matching Results"]
+MatchType --> CacheResult
+EvaluateFormula --> CacheResult
+HoverState --> CacheResult
+ActiveState --> CacheResult
+FocusState --> CacheResult
+CacheResult --> ApplyAnimation["Apply Animation to Targets"]
+```
+
+**Diagram sources**
+- [css_cascade_selector_matching.dart:303-343](file://lib/src/animation/css_cascade_selector_matching.dart#L303-L343)
+- [css_cascade_selector_matching.dart:345-379](file://lib/src/animation/css_cascade_selector_matching.dart#L345-L379)
+- [css_selectors.dart:65-105](file://lib/src/animation/css_selectors.dart#L65-L105)
+- [css_cascade_specificity.dart:18-63](file://lib/src/animation/css_cascade_specificity.dart#L18-L63)
+
+**Section sources**
+- [css_cascade_selector_matching.dart:303-343](file://lib/src/animation/css_cascade_selector_matching.dart#L303-L343)
+- [css_cascade_selector_matching.dart:345-379](file://lib/src/animation/css_cascade_selector_matching.dart#L345-L379)
+- [css_selectors.dart:65-105](file://lib/src/animation/css_selectors.dart#L65-L105)
+- [css_cascade_specificity.dart:18-63](file://lib/src/animation/css_cascade_specificity.dart#L18-L63)
+
 ## Dependency Analysis
 - **SVGSMILElement** depends on:
   - SMILTime/SMILTimeContainer for timing with enhanced error handling
   - SVGAnimationElement for animation semantics with improved validation
   - Concrete elements for specialized behaviors with better edge case management
   - Enhanced syncbase system for complex timing relationships
+  - **Enhanced**: CSS cascade resolver for structural pseudo-class integration
 - **SVGAnimationElement** depends on:
   - Animated property types and animators with comprehensive validation
   - CSS property mapping for CSS-application path with priority resolution
   - Enhanced runtime system for better error recovery
+  - **Enhanced**: CSS selector system for precise animation targeting
 - **Enhanced**: String attributes depend on SVGAnimatedStringAnimator for discrete semantics with automatic enforcement
 - **Concrete elements** specialize:
   - Value parsing and interpolation with improved error recovery
@@ -658,11 +853,17 @@ Rotation --> Output["Generate Motion Transform"]
   - Comprehensive validation with fallback mechanisms
   - Edge case handling for malformed input
   - Advanced path parsing for motion animations
+  - **Enhanced**: CSS selector parsing with structural pseudo-class support
 - **Motion Path Dependencies**:
   - Path parsing with comprehensive SVG command support
   - Geometric calculations with arc, curve, and boundary handling
   - Closed path detection with epsilon comparison
   - Zero-length segment fallback mechanisms
+- **CSS Cascade Dependencies**:
+  - Structural pseudo-class matching with precise element positioning
+  - Nth pseudo-class evaluation with An+B formula parsing
+  - Dynamic state tracking for hover/active/focus states
+  - Shadow DOM boundary awareness for use/symbol elements
 
 ```mermaid
 graph LR
@@ -682,6 +883,10 @@ SVGAnimateMotionElement --> MotionPath
 MotionPath --> PathParsing
 MotionPath --> GeometryCalculations
 MotionPath --> ClosedPathDetection
+CSSCascadeResolver --> StructuralPseudoClasses
+CSSCascadeResolver --> NthPseudoClasses
+CSSCascadeResolver --> DynamicStateTracking
+SVGAnimationElement --> CSSCascadeResolver
 ```
 
 **Diagram sources**
@@ -690,6 +895,7 @@ MotionPath --> ClosedPathDetection
 - [SVGAnimationElement.h:65-67](file://blink-b87d44f-Source-core-svg/SVGAnimationElement.h#L65-L67)
 - [SVGAnimateElement.h:36-38](file://blink-b87d44f-Source-core-svg/SVGAnimateElement.h#L36-L38)
 - [SVGAnimatedString.h:40-55](file://blink-b87d44f-Source-core-svg/SVGAnimatedString.h#L40-L55)
+- [css_cascade_selector_matching.dart:303-343](file://lib/src/animation/css_cascade_selector_matching.dart#L303-L343)
 - [smil_timeline_syncbase.dart:1-256](file://lib/src/animation/smil/smil_timeline_syncbase.dart#L1-L256)
 - [motion_path.dart:1-661](file://lib/src/animation/smil/motion_path.dart#L1-L661)
 
@@ -714,10 +920,15 @@ MotionPath --> ClosedPathDetection
 - **Improved Memory Management**:
   - Better cleanup of invalid animations and references
   - Enhanced resource management for complex animation graphs
+  - **Enhanced**: CSS selector caching with pseudo-class state keys for performance optimization
 - **Motion Path Optimization**:
   - Cached path metrics reduce repeated geometric calculations
   - Efficient arc and curve handling minimizes computational overhead
   - Boundary averaging optimizes rotation calculations at path junctions
+- **CSS Cascade Performance**:
+  - Selector matching cache with pseudo-class state keys
+  - Shadow boundary detection optimization for use/symbol elements
+  - Structural pseudo-class evaluation caching for repeated animations
 
 ## Troubleshooting Guide
 Common issues and diagnostics with enhanced error handling:
@@ -738,10 +949,12 @@ Common issues and diagnostics with enhanced error handling:
 - **CSS property not updating**:
   - Validate attributeType and CSS property mapping; ensure target is in document and instances updated
   - Priority resolution ensures correct behavior in complex animation scenarios
+  - **Enhanced**: Verify structural pseudo-class matching with element positioning
+  - **Enhanced**: Check nth pseudo-class formula parsing and evaluation
 - **Enhanced**: String attribute animations not working:
   - Verify attribute is in discrete attributes list; automatic discrete calcMode enforcement occurs for non-interpolatable string properties
   - Comprehensive test coverage ensures reliable behavior across edge cases
-- **Enhanced**: Visibility/display animations incorrect:
+- **Enhanced**: Visibility/display animations incorrect**:
   - Ensure discrete calcMode is being enforced; string properties automatically use discrete semantics per SMIL spec
 - **Enhanced**: Complex timing scenarios failing**:
   - Check for circular dependencies in syncbase timing
@@ -751,6 +964,11 @@ Common issues and diagnostics with enhanced error handling:
   - Check rotation calculations for discontinuous paths
   - **New**: Verify calcMode semantics with keyPoints support
   - **New**: Check closed path detection and zero-length segment handling
+- **Enhanced**: CSS selector matching issues**:
+  - Verify structural pseudo-class syntax and positioning
+  - Check nth pseudo-class formula correctness and An+B evaluation
+  - Ensure pseudo-class state tracking is properly initialized
+  - **New**: Validate shadow boundary handling for use/symbol elements
 
 **Section sources**
 - [SVGSMILElement.cpp:303-337](file://blink-b87d44f-Source-core-svg/animation/SVGSMILElement.cpp#L303-L337)
@@ -758,12 +976,18 @@ Common issues and diagnostics with enhanced error handling:
 - [SVGAnimateTransformElement.cpp:45-52](file://blink-b87d44f-Source-core-svg/SVGAnimateTransformElement.cpp#L45-L52)
 - [SVGAnimateMotionElement.cpp:133-154](file://blink-b87d44f-Source-core-svg/SVGAnimateMotionElement.cpp#L133-L154)
 - [SVGAnimateElement.cpp:237-293](file://blink-b87d44f-Source-core-svg/SVGAnimateElement.cpp#L237-L293)
+- [css_cascade_selector_matching.dart:303-343](file://lib/src/animation/css_cascade_selector_matching.dart#L303-L343)
+- [css_nth_selectors_test.dart:1-800](file://test/animation/css_nth_selectors_test.dart#L1-L800)
 - [smil_edge_cases_test.dart:1-507](file://test/animation/smil_edge_cases_test.dart#L1-L507)
 - [smil_edge_cases_advanced_test.dart:1-516](file://test/animation/smil_edge_cases_advanced_test.dart#L1-L516)
 - [animate_motion_advanced_test.dart:1-1126](file://test/animation/animate_motion_advanced_test.dart#L1-L1126)
 
 ## Conclusion
-The implementation provides a robust SMIL timing model with comprehensive support for attribute, transform, motion, and set animations. **Enhanced** with improved discrete calcMode handling for string-type attributes, advanced edge case recovery, improved timeline synchronization with circular dependency detection, and comprehensive animateMotion support with advanced path parsing capabilities and detailed calcMode semantics. The system now includes sophisticated error recovery mechanisms, comprehensive validation, extensive test coverage demonstrating reliable behavior across complex scenarios, and **~95% SMIL animation parity achieved**. The automatic enforcement of discrete semantics for visibility, display, fill-rule, stroke-linecap, and other string attributes ensures predictable animation behavior. The system integrates seamlessly with both CSS and SVG DOM property systems, offering flexible interpolation and accumulation semantics while maintaining strict compliance with SMIL standards.
+The implementation provides a robust SMIL timing model with comprehensive support for attribute, transform, motion, and set animations. **Enhanced** with improved discrete calcMode handling for string-type attributes, advanced edge case recovery, improved timeline synchronization with circular dependency detection, and comprehensive animateMotion support with advanced path parsing capabilities and detailed calcMode semantics. The system now includes sophisticated error recovery mechanisms, comprehensive validation, extensive test coverage demonstrating reliable behavior across complex scenarios, and **~95% SMIL animation parity achieved**. 
+
+**New Enhancement**: The integration of comprehensive CSS selector capabilities enables precise animation targeting through structural pseudo-classes (:first-child, :last-child, :only-child, :first-of-type, :last-of-type, :only-of-type) and nth pseudo-classes with robust An+B formula parsing. This enhancement significantly improves the flexibility and precision of SMIL animation targeting, allowing developers to create sophisticated animation sequences that respond to element positioning, type, and complex mathematical relationships within the DOM hierarchy.
+
+The automatic enforcement of discrete semantics for visibility, display, fill-rule, stroke-linecap, and other string attributes ensures predictable animation behavior. The system integrates seamlessly with both CSS and SVG DOM property systems, offering flexible interpolation and accumulation semantics while maintaining strict compliance with SMIL standards. The enhanced CSS cascade integration provides powerful animation targeting capabilities that were previously unavailable in SMIL implementations.
 
 ## Appendices
 
@@ -774,11 +998,15 @@ The implementation provides a robust SMIL timing model with comprehensive suppor
 - **animateMotion-specific**: path, rotate with comprehensive path parsing support
 - **Enhanced**: Comprehensive support for complex path types including arcs, curves, and degenerate cases
 - **Enhanced**: Advanced calcMode semantics with discrete mode support and keyPoints integration
+- **Enhanced**: Structural pseudo-classes for precise animation targeting
+- **Enhanced**: Nth pseudo-classes with An+B formula support
 
 **Section sources**
 - [SVGSMILElement.h:44-44](file://blink-b87d44f-Source-core-svg/animation/SVGSMILElement.h#L44-L44)
 - [SVGSMILElement.cpp:439-454](file://blink-b87d44f-Source-core-svg/animation/SVGSMILElement.cpp#L439-L454)
 - [SVGAnimateMotionElement.h:96-102](file://blink-b87d44f-Source-core-svg/SVGAnimateMotionElement.h#L96-L102)
+- [css_selectors.dart:4-43](file://lib/src/animation/css_selectors.dart#L4-L43)
+- [css_selectors.dart:45-152](file://lib/src/animation/css_selectors.dart#L45-L152)
 - [smil_parser_motion.dart:208-253](file://lib/src/animation/smil/smil_parser_motion.dart#L208-L253)
 
 ### Enhanced Interpolation Methods
@@ -792,11 +1020,13 @@ The implementation provides a robust SMIL timing model with comprehensive suppor
   - accumulate: sums across repeats with enhanced precision
 - **Enhanced**: String attributes automatically use discrete calcMode per SMIL specification with comprehensive coverage
 - **Enhanced**: Advanced calcMode semantics with keyPoints support and boundary condition handling
+- **Enhanced**: CSS cascade integration for dynamic animation targeting
 
 **Section sources**
 - [SVGAnimationElement.h:54-59](file://blink-b87d44f-Source-core-svg/SVGAnimationElement.h#L54-L59)
 - [SVGAnimationElement.cpp:147-162](file://blink-b87d44f-Source-core-svg/SVGAnimationElement.cpp#L147-L162)
 - [SVGAnimateElement.cpp:370-387](file://blink-b87d44f-Source-core-svg/SVGAnimateElement.cpp#L370-L387)
+- [css_cascade_selector_matching.dart:303-343](file://lib/src/animation/css_cascade_selector_matching.dart#L303-L343)
 
 ### Enhanced SMIL-to-CSS Conversion Guidance
 - **When applying to CSS properties**:
@@ -805,10 +1035,12 @@ The implementation provides a robust SMIL timing model with comprehensive suppor
 - **When applying to SVG DOM properties**:
   - Update animated values and notify via change hooks with enhanced error recovery
 - **Enhanced**: String attributes automatically handled as CSS properties for discrete semantics with priority resolution
+- **Enhanced**: CSS cascade integration enables dynamic animation targeting based on element state and position
 
 **Section sources**
 - [SVGAnimateElement.cpp:237-293](file://blink-b87d44f-Source-core-svg/SVGAnimateElement.cpp#L237-L293)
 - [SVGAnimateElement.cpp:346-368](file://blink-b87d44f-Source-core-svg/SVGAnimateElement.cpp#L346-L368)
+- [css_cascade_selector_matching.dart:303-343](file://lib/src/animation/css_cascade_selector_matching.dart#L303-L343)
 
 ### Enhanced Examples Index
 - **Attribute animation**: animate with from/to and calcMode with comprehensive validation
@@ -818,6 +1050,8 @@ The implementation provides a robust SMIL timing model with comprehensive suppor
 - **Enhanced**: String attribute animation**: visibility, display, fill-rule with discrete calcMode and automatic enforcement
 - **Enhanced**: Complex motion scenarios**: arcs, curves, and degenerate path cases with edge case handling
 - **Enhanced**: Advanced calcMode scenarios**: discrete mode with keyPoints, paced mode with distance calculation, spline mode with per-segment easing
+- **Enhanced**: Structural pseudo-class animations**: :first-child, :last-child, :only-child animations with precise targeting
+- **Enhanced**: Nth pseudo-class animations**: :nth-child(2n+1), :nth-of-type(odd), :nth-last-child(-n+4) with An+B formula support
 
 ### Enhanced Non-Interpolatable String Attributes
 **New Section** The following string-type attributes automatically use discrete calcMode semantics per SMIL specification with comprehensive coverage:
@@ -837,8 +1071,54 @@ The implementation provides a robust SMIL timing model with comprehensive suppor
 - [smil_parser_animation_parsing.dart:465-492](file://lib/src/animation/smil/smil_parser_animation_parsing.dart#L465-L492)
 - [SVGElement.cpp:648-690](file://blink-b87d44f-Source-core-svg/SVGElement.cpp#L648-L690)
 
+### Enhanced Structural Pseudo-Classes
+**New Section** Comprehensive support for structural pseudo-classes enabling precise animation targeting:
+
+- **:first-child** - Matches elements that are the first child of their parent
+- **:last-child** - Matches elements that are the last child of their parent
+- **:only-child** - Matches elements that are the only child of their parent
+- **:first-of-type** - Matches the first sibling of its type within the parent
+- **:last-of-type** - Matches the last sibling of its type within the parent
+- **:only-of-type** - Matches the only sibling of its type within the parent
+
+These pseudo-classes enable sophisticated animation patterns such as:
+- Sequential animations for child elements in a container
+- Type-specific animations for different element categories
+- Complex animation sequences based on element position and content type
+
+**Section sources**
+- [css_selectors.dart:4-43](file://lib/src/animation/css_selectors.dart#L4-L43)
+- [css_cascade_selector_matching.dart:381-436](file://lib/src/animation/css_cascade_selector_matching.dart#L381-L436)
+
+### Enhanced Nth Pseudo-Classes with An+B Formula Support
+**New Section** Robust nth pseudo-class parsing with comprehensive An+B formula support:
+
+- **Special Keywords**:
+  - odd → 2n+1 (matches 1st, 3rd, 5th, etc.)
+  - even → 2n (matches 2nd, 4th, 6th, etc.)
+- **Supported Formats**:
+  - Single numbers: "1", "3", "10" (matches exactly nth child)
+  - Linear terms: "n", "2n", "3n" (matches every nth child)
+  - Complete formulas: "2n+1", "3n+2", "n+3", "-n+3", "2n-1", "-2n+6"
+- **Advanced Features**:
+  - Negative coefficients for reverse counting
+  - Whitespace handling and normalization
+  - Case-insensitive keyword parsing
+  - Comprehensive validation and error recovery
+
+Examples of practical usage:
+- `:nth-child(odd)` - Animates every other element starting from the first
+- `:nth-of-type(2n+1)` - Animates elements of a specific type at odd positions
+- `:nth-last-child(-n+4)` - Animates the last four elements in reverse order
+- `:nth-of-type(n+2)` - Animates elements of a specific type starting from the second position
+
+**Section sources**
+- [css_selectors.dart:65-105](file://lib/src/animation/css_selectors.dart#L65-L105)
+- [css_selectors.dart:107-124](file://lib/src/animation/css_selectors.dart#L107-L124)
+- [css_nth_selectors_test.dart:1-800](file://test/animation/css_nth_selectors_test.dart#L1-L800)
+
 ### Enhanced Test Cases and Verification
-**New Section** Comprehensive test coverage demonstrates proper discrete calcMode behavior, edge case handling, and advanced motion animation support:
+**New Section** Comprehensive test coverage demonstrates proper discrete calcMode behavior, edge case handling, advanced motion animation support, and CSS selector functionality:
 
 - **Visibility animation** with discrete calcMode maintains step-wise transitions with comprehensive validation
 - **Display animation** with discrete calcMode properly handles show/hide states with edge case handling
@@ -852,10 +1132,15 @@ The implementation provides a robust SMIL timing model with comprehensive suppor
 - **Enhanced**: Zero-length path handling with graceful fallback to start position
 - **Enhanced**: Advanced calcMode semantics with discrete mode and keyPoints integration
 - **Enhanced**: Paced calcMode with proper distance-based progression and keyTimes handling
+- **Enhanced**: Structural pseudo-class matching with precise element positioning verification
+- **Enhanced**: Nth pseudo-class formula parsing and evaluation with comprehensive test coverage
+- **Enhanced**: CSS cascade integration with dynamic pseudo-class state tracking
 
 **Section sources**
 - [visibility_animation_test.dart:40-80](file://test/animation/visibility_animation_test.dart#L40-L80)
 - [visibility_animation_test.dart:180-212](file://test/animation/visibility_animation_test.dart#L180-L212)
+- [css_nth_selectors_test.dart:1-800](file://test/animation/css_nth_selectors_test.dart#L1-L800)
+- [css_pseudo_classes_view_test.dart:1-460](file://test/animation/css_pseudo_classes_view_test.dart#L1-L460)
 - [smil_edge_cases_test.dart:1-507](file://test/animation/smil_edge_cases_test.dart#L1-L507)
 - [smil_edge_cases_advanced_test.dart:1-516](file://test/animation/smil_edge_cases_advanced_test.dart#L1-L516)
 - [animate_motion_advanced_test.dart:1-1126](file://test/animation/animate_motion_advanced_test.dart#L1-L1126)

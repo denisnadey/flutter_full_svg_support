@@ -516,6 +516,13 @@ extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
   /// 1. The clipping region is the intersection of both clip regions
   /// 2. Each clipPath may use different clipPathUnits (userSpaceOnUse or objectBoundingBox)
   /// 3. Transforms on clipPath elements are applied to their content
+  /// 4. The intersection is computed in the same coordinate space
+  ///
+  /// For mixed units handling:
+  /// - userSpaceOnUse: clip path coordinates are in the current user coordinate system
+  /// - objectBoundingBox: coordinates are relative to the clipped element's bbox (0-1)
+  /// - When units differ between cascade levels, each path is computed in its own
+  ///   coordinate system before intersection
   ui.Path? _buildCascadingClipPathWithUnits({
     required SvgNode clippedNode,
     required SvgNode clipPathNode,
@@ -542,14 +549,15 @@ extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
     // Build primary clip path with correct coordinate system
     Matrix4 rootMatrix = Matrix4.identity();
     if (isObjectBoundingBox) {
-      final obbTransform = _computeObjectBoundingBoxTransformForClip(
+      final obbResult = _computeObjectBoundingBoxTransformForClipWithBounds(
         clippedNode,
       );
-      if (obbTransform == null) {
+      if (obbResult == null) {
         // Zero-size element with objectBoundingBox - hide all content
         return ui.Path();
       }
-      rootMatrix = obbTransform;
+      rootMatrix = obbResult.$1;
+      // obbResult.$2 contains the bounds, available for future use
     }
 
     // Apply clipPath's own transform attribute if present
@@ -594,8 +602,9 @@ extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
     }
 
     // Build cascading clip with its own unit system
-    // For nested clipPath, the coordinate system depends on the parent clipPath's bounds
-    // when using objectBoundingBox
+    // For nested clipPath, the coordinate system depends on:
+    // - userSpaceOnUse: use the same coordinate system
+    // - objectBoundingBox: relative to original clipped element's bbox
     final cascadePath = _buildCascadingClipPathWithUnits(
       clippedNode: clippedNode, // Use original clipped node for consistent OBB
       clipPathNode: cascadeClipNode,
@@ -608,35 +617,19 @@ extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
     }
 
     // Intersect both paths using Path.combine for proper cascading effect
+    // Both paths are now in the same coordinate space (user space)
     return ui.Path.combine(ui.PathOperation.intersect, clipPath, cascadePath);
   }
-
-  /// Appends clip geometry with proper clip-rule handling.
-  ///
-  /// Supports clip-rule attribute on clipPath children:
-  /// - nonzero (default): non-zero winding rule
-  /// - evenodd: even-odd rule
-  void _appendClipGeometryWithClipRule({
-    required ui.Path target,
-    required SvgNode node,
-    required Matrix4 currentTransform,
-    required Set<String> useStack,
-  }) {
-    _appendClipGeometry(
-      target: target,
-      node: node,
-      currentTransform: currentTransform,
-      useStack: useStack,
-    );
-  }
-
-  /// Computes objectBoundingBox transform for clip path.
+  
+  /// Computes objectBoundingBox transform and returns both transform and bounds.
   ///
   /// Returns null if the element has zero-size bounding box.
   /// In objectBoundingBox mode:
   /// - (0,0) maps to top-left of element's bounding box
   /// - (1,1) maps to bottom-right of element's bounding box
-  Matrix4? _computeObjectBoundingBoxTransformForClip(SvgNode targetNode) {
+  (Matrix4, ui.Rect)? _computeObjectBoundingBoxTransformForClipWithBounds(
+    SvgNode targetNode,
+  ) {
     final bounds = _computeNodeLocalBoundsWithStroke(targetNode);
     if (bounds == null) {
       return null;
@@ -657,11 +650,32 @@ extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
         : bounds.height;
 
     // Transform from objectBoundingBox coordinates (0-1) to user space
-    return Matrix4.identity()
+    final matrix = Matrix4.identity()
       ..setEntry(0, 0, safeWidth) // Scale X
       ..setEntry(1, 1, safeHeight) // Scale Y
       ..setEntry(0, 3, bounds.left) // Translate X
       ..setEntry(1, 3, bounds.top); // Translate Y
+    
+    return (matrix, bounds);
+  }
+
+  /// Appends clip geometry with proper clip-rule handling.
+  ///
+  /// Supports clip-rule attribute on clipPath children:
+  /// - nonzero (default): non-zero winding rule
+  /// - evenodd: even-odd rule
+  void _appendClipGeometryWithClipRule({
+    required ui.Path target,
+    required SvgNode node,
+    required Matrix4 currentTransform,
+    required Set<String> useStack,
+  }) {
+    _appendClipGeometry(
+      target: target,
+      node: node,
+      currentTransform: currentTransform,
+      useStack: useStack,
+    );
   }
 
   /// Handles empty clipPath edge case.

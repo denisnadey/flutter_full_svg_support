@@ -7,10 +7,12 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
   /// - Container elements: clipPath, mask, g, svg, symbol, switch
   /// - Shape elements: rect, circle, ellipse, polygon, polyline, path, line
   /// - Text elements: text, tspan (converted to glyph-approximate paths)
-  /// - Reference elements: use (resolves referenced element)
+  /// - Reference elements: use (resolves referenced element with CSS inheritance)
   /// - Image elements: image (uses bounding rectangle)
   ///
   /// Supports clip-rule attribute on individual shapes for evenodd/nonzero fill.
+  /// When <use> elements appear inside clipPath, CSS properties are properly
+  /// inherited through the use shadow boundary per SVG spec.
   void _appendClipGeometry({
     required ui.Path target,
     required SvgNode node,
@@ -143,6 +145,12 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
   /// - Resolving referenced element
   /// - Applying viewBox transform for symbol/svg references
   /// - Circular reference prevention
+  /// - Proper CSS property inheritance through use shadow boundary
+  ///
+  /// Per SVG spec, when <use> appears in clipPath:
+  /// - The referenced content contributes its geometry to the clip region
+  /// - CSS properties like fill-rule and clip-rule cascade correctly
+  /// - Transforms from the use element are applied to referenced content
   void _appendUseClipGeometry({
     required ui.Path target,
     required SvgNode useNode,
@@ -162,15 +170,16 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
       return;
     }
 
-    // Apply use element's x/y translation first
-    final x = _getNumber(useNode, 'x') ?? 0.0;
-    final y = _getNumber(useNode, 'y') ?? 0.0;
-    final translated = Matrix4.copy(currentTransform)
-      ..multiply(
-        Matrix4.identity()
-          ..setEntry(0, 3, x)
-          ..setEntry(1, 3, y),
-      );
+    // Check display:none on use element - if hidden, contributes nothing
+    final useDisplay = _getStyleOrAttributeValue(useNode, 'display');
+    if (useDisplay != null &&
+        useDisplay.toString().toLowerCase() == 'none') {
+      return;
+    }
+
+    // Build transform: first apply use element's transform attribute if present,
+    // then apply x/y translation for proper coordinate stacking
+    final translated = Matrix4.copy(currentTransform);
 
     // Apply use element's own transform attribute if present
     final useTransformStr = useNode.getAttributeValue('transform')?.toString();
@@ -179,6 +188,17 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
       if (useTransform != null) {
         translated.multiply(useTransform);
       }
+    }
+
+    // Apply use element's x/y translation
+    final x = _getNumber(useNode, 'x') ?? 0.0;
+    final y = _getNumber(useNode, 'y') ?? 0.0;
+    if (x != 0.0 || y != 0.0) {
+      translated.multiply(
+        Matrix4.identity()
+          ..setEntry(0, 3, x)
+          ..setEntry(1, 3, y),
+      );
     }
 
     // Apply viewport transform for symbol/svg references with viewBox
@@ -192,13 +212,20 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
       }
     }
 
-    final nextUseStack = <String>{...useStack, hrefId};
-    _appendClipGeometry(
-      target: target,
-      node: referenced,
-      currentTransform: translated,
-      useStack: nextUseStack,
-    );
+    // Temporarily set parent for proper CSS cascade resolution
+    final previousParent = referenced.parent;
+    referenced.parent = useNode;
+    try {
+      final nextUseStack = <String>{...useStack, hrefId};
+      _appendClipGeometry(
+        target: target,
+        node: referenced,
+        currentTransform: translated,
+        useStack: nextUseStack,
+      );
+    } finally {
+      referenced.parent = previousParent;
+    }
   }
 
   /// Builds a clip path from image element.
@@ -235,16 +262,24 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
   ///
   /// Per SVG spec, text within a clipPath should be converted to glyph outlines.
   /// Since Flutter doesn't provide direct access to font glyph paths, we
-  /// approximate using per-character bounding rectangles. For more precise clipping,
-  /// glyph metrics would need to be parsed from font data.
+  /// create per-character approximate paths that better represent the text shape
+  /// than a simple bounding box.
   ///
   /// Handles:
   /// - Simple text elements with x/y positioning
   /// - Nested tspan elements with relative positioning
   /// - text-anchor alignment (start, middle, end)
-  /// - Font metrics estimation
+  /// - Font metrics estimation with character-level approximation
   /// - Per-character positioning (x, y, dx, dy lists)
+  /// - Multiple tspan children
   ui.Path? _buildTextClipPath(SvgNode textNode) {
+    // Try to build character-level paths for better clipping precision
+    final charPaths = _buildTextCharacterPaths(textNode);
+    if (charPaths != null && !charPaths.getBounds().isEmpty) {
+      return charPaths;
+    }
+    
+    // Fall back to bounding box if character-level fails
     final bounds = _computeTextClipBounds(textNode);
     if (bounds == null) {
       return null;
@@ -252,6 +287,65 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
     // Create a path from text bounds
     // Note: clip-rule is applied by the caller (_appendClipGeometry)
     return ui.Path()..addRect(bounds);
+  }
+  
+  /// Builds character-level paths for more precise text clipping.
+  ///
+  /// Creates individual rounded rectangles for each character position,
+  /// providing a better approximation of glyph outlines than a single bounding box.
+  ui.Path? _buildTextCharacterPaths(SvgNode textNode) {
+    final textContent = _collectTextContent(textNode);
+    if (textContent.isEmpty) {
+      return null;
+    }
+    
+    // Get text position and font metrics
+    final x = _getNumber(textNode, 'x') ?? 0.0;
+    final y = _getNumber(textNode, 'y') ?? 0.0;
+    final fontSize = _getInheritedNumber(textNode, 'font-size') ?? 16.0;
+    
+    // Character metrics estimation
+    final charWidth = fontSize * 0.55; // Average character width
+    final charHeight = fontSize * 0.85; // Character height (ascent)
+    final descender = fontSize * 0.15; // Descender depth
+    final charCornerRadius = fontSize * 0.1; // Rounded corners for better shape
+    
+    // Handle text-anchor for horizontal alignment
+    final textAnchor = _getInheritedString(textNode, 'text-anchor')?.toLowerCase();
+    final textWidth = textContent.length * charWidth;
+    double adjustedX = x;
+    if (textAnchor == 'middle') {
+      adjustedX = x - textWidth / 2;
+    } else if (textAnchor == 'end') {
+      adjustedX = x - textWidth;
+    }
+    
+    final path = ui.Path();
+    for (int i = 0; i < textContent.length; i++) {
+      final char = textContent[i];
+      // Skip whitespace characters
+      if (char == ' ' || char == '\t' || char == '\n') {
+        continue;
+      }
+      
+      final charX = adjustedX + i * charWidth;
+      final charY = y - charHeight; // Baseline is at y, so character extends upward
+      
+      // Create rounded rectangle for each character
+      final charRect = ui.Rect.fromLTWH(
+        charX,
+        charY,
+        charWidth * 0.9, // Slight gap between characters
+        charHeight + descender,
+      );
+      
+      // Use rounded rect for more natural character shape
+      path.addRRect(
+        ui.RRect.fromRectXY(charRect, charCornerRadius, charCornerRadius),
+      );
+    }
+    
+    return path;
   }
 
   /// Computes text bounds for clip path geometry.

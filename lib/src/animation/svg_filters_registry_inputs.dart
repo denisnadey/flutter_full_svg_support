@@ -35,6 +35,8 @@ extension SvgFiltersInputResolverExtension on SvgFilters {
   /// - Case-insensitive built-in names: accepted for compatibility
   /// - Named result reuse: returns a copy to prevent mutation issues
   /// - `in="none"`: explicit transparent black, never falls back
+  /// - Deep chains (A→B→C→D): resolved via named result cache
+  /// - Paint "none": FillPaint/StrokePaint with none paint produces empty
   List<SvgFilterPaintPass> _resolveInputPasses({
     required String? requestedInput,
     required List<SvgFilterPaintPass> previous,
@@ -42,6 +44,7 @@ extension SvgFiltersInputResolverExtension on SvgFilters {
     required List<SvgFilterPaintPass> sourceGraphic,
     required List<SvgFilterPaintPass> sourceAlpha,
     bool fallbackToPreviousOnUnknown = false,
+    bool fallbackToSourceGraphicOnUnknown = false,
   }) {
     // HARDENING: Normalize input by trimming whitespace to handle edge cases
     // where the input might have leading/trailing whitespace.
@@ -98,7 +101,15 @@ extension SvgFiltersInputResolverExtension on SvgFilters {
       return builtInCaseInsensitive;
     }
 
-    // Handle fallback for unknown references.
+    // Handle fallback for unknown references per SVG spec:
+    // "If 'in' references an unknown result, the current filter primitive
+    // will receive as its input transparent black."
+    // However, for feMergeNode with unresolvable input, SVG spec allows
+    // fallback to SourceGraphic per implementation choice.
+    if (fallbackToSourceGraphicOnUnknown) {
+      // Per SVG spec: unresolved feMergeNode input can fall back to SourceGraphic
+      return <SvgFilterPaintPass>[...sourceGraphic];
+    }
     if (fallbackToPreviousOnUnknown) {
       return previous.isEmpty
           ? <SvgFilterPaintPass>[...sourceGraphic]

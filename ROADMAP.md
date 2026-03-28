@@ -39,34 +39,36 @@ Authoritative references:
 19. **Light Sources** - feDistantLight, fePointLight, feSpotLight with per-pixel lighting math (Lambertian/Blinn-Phong).
 20. **Component Transfer** - All 5 function types (identity, table, discrete, linear, gamma).
 21. **Edge Case Sprint (March 2026)** - CSS shorthand resolution (font CSS2.1, margin/padding, animation coexistence, border overrides), CSS unit handling precision (em/rem/ch/ex/calc), SMIL timing precision (repeatCount drift, repeatDur, min/max), advanced image transformations, filter primitive edge cases (feDisplacementMap bilinear, feTurbulence stitchTiles, feGaussianBlur extreme, feImage external URL), hit-testing refinements (~206 new tests, parity ~82% → ~89-90%).
+22. **CSS Structural Pseudo-classes** - `:nth-child`, `:nth-of-type`, `:nth-last-child`, `:first-child`, `:last-child`, `:only-child`, `:empty`, `:root` (complete).
 
 ## Current Priorities
 
 ### P0 - Reaching 95%+ Parity (In Progress)
 
-1. **Remaining CSS selectors** - `:nth-child`, `:nth-of-type`, `:nth-last-child`, complex selector combinations.
-2. **Performance optimization** - Render benchmarking, cache tuning, memory profiling.
-3. **Golden test coverage** - Expand regression fixtures for edge cases.
-4. **Code modularization** - Remaining large files (`animated_svg_painter_shapes.dart`, `animated_svg_picture.dart`).
+1. **Remaining filter primitive edge cases** - feMorphology advanced modes, feTurbulence stitchTiles refinements.
+2. **Performance benchmarking suite** - Comprehensive render benchmarks, cache profiling, memory analysis.
 
-### P1 - Core Feature Expansion
+### P1 - Code Modularization
 
-1. ~~Advanced text typography/positioning parity.~~ (Complete - ~99% parity)
-2. ~~`foreignObject` and `image` semantics beyond baseline.~~ (Complete)
-3. ~~`animateMotion` parity beyond current baseline behavior.~~ (Complete)
-4. ~~CSS/SMIL edge-case parity.~~ (Complete - full shorthand/unit/timing coverage)
+1. **Remaining large files** - `animated_svg_painter_shapes.dart`, `animated_svg_picture.dart`, `animated_svg_picture_utils.dart`.
+2. Full regression checks after each split, API stability preserved.
 
-### P2 - CSS/Timing Fidelity
+### P2 - Quality & Coverage
 
-1. ~~CSS transform/timing edge-case parity (complex shorthand and units).~~ (Complete)
-2. ~~Expand regression fixture coverage for CSS->SMIL conversion.~~ (Complete)
-3. Implement advanced pseudo-classes (`:nth-child`, `:nth-of-type`).
+1. **CSS selector edge case refinement** - Advanced structural pseudo-class combinations.
+2. **Golden test coverage expansion** - Additional regression fixtures for edge cases.
 
 ### P3 - Quality and Stability
 
 1. Keep full regression suite green after every milestone.
 2. Reduce analyzer info-level deprecations over time.
 3. Keep docs synchronized with completed tasks and resolved bugs.
+
+## Future Milestones (Q2 2026+)
+
+1. **95%+ Blink Parity** - Complete all P0/P1 items, comprehensive edge case coverage.
+2. **Performance Optimization Phase** - Profile and optimize critical render paths, reduce memory allocations.
+3. **Stabilization Phase** - API freeze, comprehensive documentation, pub.dev publication readiness.
 
 ## Validation Gate
 

@@ -25,6 +25,19 @@ extension AnimatedSvgPainterUseExtension on AnimatedSvgPainter {
     if (referenced == null || !_isUseReferenceAllowedTag(referenced.tagName)) {
       return;
     }
+
+    // Check display:none on the use element itself
+    final useDisplay = _getStyleOrAttributeValue(node, 'display');
+    if (useDisplay != null &&
+        useDisplay.toString().toLowerCase() == 'none') {
+      return;
+    }
+
+    // Also check display:none from parent use context
+    if (useContext != null && useContext.isDisplayNone()) {
+      return;
+    }
+
     final x = _getNumber(node, 'x') ?? 0.0;
     final y = _getNumber(node, 'y') ?? 0.0;
     canvas.save();
@@ -42,6 +55,23 @@ extension AnimatedSvgPainterUseExtension on AnimatedSvgPainter {
       cssRules: _currentDocumentCssRules ?? useContext?.cssRules,
       shadowRootId: hrefId,
     );
+
+    // Check visibility from use context - if hidden, skip rendering
+    // but respect visibility:visible on referenced content that overrides
+    final useVisibility = _getStyleOrAttributeValue(node, 'visibility');
+    final isUseHidden = useVisibility != null &&
+        (useVisibility.toString().toLowerCase() == 'hidden' ||
+            useVisibility.toString().toLowerCase() == 'collapse');
+    final refVisibility = _getStyleOrAttributeValue(referenced, 'visibility');
+    final refOverridesHidden = refVisibility != null &&
+        refVisibility.toString().toLowerCase() == 'visible';
+
+    // If use is hidden and ref doesn't override, skip rendering
+    if (isUseHidden && !refOverridesHidden) {
+      canvas.restore();
+      return;
+    }
+
     final opacityValue = node.getAttributeValue('opacity');
     final opacity = opacityValue != null
         ? (double.tryParse(opacityValue.toString()) ?? 1.0).clamp(0.0, 1.0)

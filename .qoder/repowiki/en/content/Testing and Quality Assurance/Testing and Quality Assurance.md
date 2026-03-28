@@ -4,6 +4,14 @@
 **Referenced Files in This Document**
 - [dart_test.yaml](file://dart_test.yaml)
 - [VISUAL_TESTING_GUIDELINES.md](file://VISUAL_TESTING_GUIDELINES.md)
+- [benchmark_config.dart](file://benchmark/benchmark_config.dart)
+- [svg_content.dart](file://benchmark/svg_content.dart)
+- [svg_render_benchmark.dart](file://benchmark/svg_render_benchmark.dart)
+- [parse_benchmark.dart](file://benchmark/benchmarks/parse_benchmark.dart)
+- [animation_benchmark.dart](file://benchmark/benchmarks/animation_benchmark.dart)
+- [filter_benchmark.dart](file://benchmark/benchmarks/filter_benchmark.dart)
+- [text_benchmark.dart](file://benchmark/benchmarks/text_benchmark.dart)
+- [dash_pattern_benchmark.dart](file://benchmark/benchmarks/dash_pattern_benchmark.dart)
 - [visual_test_utils.dart](file://test/animation/visual_test_utils.dart)
 - [visual_rotation_test.dart](file://test/animation/visual_rotation_test.dart)
 - [visual_scale_test.dart](file://test/animation/visual_scale_test.dart)
@@ -86,34 +94,35 @@
 - [animated_svg_painter_clip_mask.dart](file://lib/src/animation/animated_svg_painter_clip_mask.dart)
 - [animated_svg_painter_clip_mask_geometry.dart](file://lib/src/animation/animated_svg_painter_clip_mask_geometry.dart)
 - [animated_svg_painter_clip_mask_units.dart](file://lib/src/animation/animated_svg_painter_clip_mask_units.dart)
+- [performance_caching_test.dart](file://test/animation/performance_caching_test.dart)
+- [performance_metrics.dart](file://example/lib/widgets/performance_metrics.dart)
 </cite>
 
 ## Update Summary
 **Changes Made**
-- Added significantly expanded test infrastructure with new comprehensive test suites
-- Integrated advanced mask testing with 743 lines covering mask hit testing, layer testing, and edge cases
-- Added advanced clip path testing with 873 lines covering complex clip path semantics and advanced features
-- Added advanced use/symbol testing with 811 lines covering edge cases, circular references, and coordinate stacking
-- Enhanced visual regression testing capabilities with pixel-level geometric analysis and multi-frame comparison
-- Expanded testing framework to cover advanced SVG rendering precision and complex rendering scenarios
-- Integrated comprehensive testing for mask hit testing, mask layer coordination, and advanced clip path compositions
-- Added sophisticated use/symbol edge case testing including circular reference protection and coordinate transformation
-- Enhanced golden comparison testing with advanced pixel-level geometric analysis and multi-frame validation
+- Added comprehensive benchmark infrastructure with 5 specialized benchmark suites
+- Integrated standardized configuration system with warmup iterations, iterations, and timeouts
+- Added SVG test fixtures with realistic but controlled SVG content for performance testing
+- Implemented performance regression detection capabilities with JSON output support
+- Enhanced quality assurance with automated performance validation and CI integration
+- Added benchmark result aggregation and reporting with machine-parseable JSON format
+- Integrated benchmark execution with CI environment variables for automated performance monitoring
 
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
-5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Dependency Analysis](#dependency-analysis)
-7. [Performance Considerations](#performance-considerations)
-8. [Troubleshooting Guide](#troubleshooting-guide)
-9. [Conclusion](#conclusion)
-10. [Appendices](#appendices)
+5. [Benchmark Infrastructure](#benchmark-infrastructure)
+6. [Detailed Component Analysis](#detailed-component-analysis)
+7. [Dependency Analysis](#dependency-analysis)
+8. [Performance Considerations](#performance-considerations)
+9. [Troubleshooting Guide](#troubleshooting-guide)
+10. [Conclusion](#conclusion)
+11. [Appendices](#appendices)
 
 ## Introduction
-This document explains the comprehensive testing and quality assurance framework for the flutter_svg package with a focus on visual testing, automated animation testing, and validation approaches. The framework now includes extensive widget-level testing for advanced SVG features including marker rendering, paint order validation, pattern fills, comprehensive text styling capabilities, **advanced mask testing**, **advanced clip path testing**, **advanced use/symbol testing**, and **enhanced visual regression testing**.
+This document explains the comprehensive testing and quality assurance framework for the flutter_svg package with a focus on visual testing, automated animation testing, performance benchmarking, and validation approaches. The framework now includes extensive widget-level testing for advanced SVG features including marker rendering, paint order validation, pattern fills, comprehensive text styling capabilities, **advanced mask testing**, **advanced clip path testing**, **advanced use/symbol testing**, **enhanced visual regression testing**, and **comprehensive benchmark infrastructure**.
 
 Key areas covered:
 - Visual testing methodology for SMIL animations and complex SVG rendering
@@ -124,14 +133,18 @@ Key areas covered:
 - **Advanced clip path testing** with complex compositions, non-path clipping, and coordinate transformations (873 lines)
 - **Advanced use/symbol testing** with edge cases, circular reference protection, and coordinate stacking (811 lines)
 - **Enhanced visual regression testing** with pixel-level geometric analysis and multi-frame comparison
+- **Comprehensive benchmark infrastructure** with 5 specialized benchmark suites for parsing, animation, filters, text, and dash patterns
+- **Standardized configuration system** with warmup iterations, iterations, and timeouts for consistent performance testing
+- **SVG test fixtures** with realistic but controlled SVG content for performance validation
+- **Performance regression detection** capabilities with JSON output support for CI integration
 - Quality assurance processes, configuration, and CI considerations
 - Relationships between the animation system, rendering pipeline, and advanced SVG features
 - Best practices, debugging techniques, and performance validation
 
-The goal is to help developers implement robust tests, maintain the existing infrastructure, and extend it confidently with comprehensive validation of advanced SVG rendering features.
+The goal is to help developers implement robust tests, maintain the existing infrastructure, extend it confidently with comprehensive validation of advanced SVG rendering features, and establish reliable performance baselines for regression detection.
 
 ## Project Structure
-The testing surface is primarily under the test/animation directory, with supporting utilities and cross-cutting guidelines. The framework now includes extensive widget-level tests for advanced SVG features alongside traditional animation and visual testing, **plus comprehensive verification tests for advanced masks, clip paths, use/symbol edge cases, and enhanced visual regression testing**:
+The testing surface is primarily under the test/animation directory, with supporting utilities and cross-cutting guidelines. The framework now includes extensive widget-level tests for advanced SVG features alongside traditional animation and visual testing, **plus comprehensive verification tests for advanced masks, clip paths, use/symbol edge cases, enhanced visual regression testing, and comprehensive benchmark infrastructure**:
 
 - Animation logic and parsing tests (SMIL, CSS-to-SMIL conversion, path morphing)
 - Widget-level integration tests for AnimatedSvgPicture with comprehensive feature coverage
@@ -142,6 +155,9 @@ The testing surface is primarily under the test/animation directory, with suppor
 - **Advanced clip path testing** with complex compositions, non-path clipping, and coordinate transformations (873 lines)
 - **Advanced use/symbol testing** with edge cases, circular reference protection, and coordinate stacking (811 lines)
 - **Enhanced visual regression testing** with pixel-level geometric analysis and multi-frame comparison
+- **Benchmark infrastructure** with 5 specialized benchmark suites for parsing, animation, filters, text, and dash patterns
+- **SVG test fixtures** with realistic but controlled SVG content for performance validation
+- **Performance regression detection** with JSON output support for CI integration
 - CI configuration and platform constraints
 
 ```mermaid
@@ -208,6 +224,18 @@ end
 subgraph "Widget Tests"
 W["test/widget_svg_test.dart"]
 end
+subgraph "Benchmark Infrastructure"
+B["benchmark/"]
+B1["benchmark_config.dart"]
+B2["svg_content.dart"]
+B3["svg_render_benchmark.dart"]
+B4["benchmarks/"]
+B41["parse_benchmark.dart"]
+B42["animation_benchmark.dart"]
+B43["filter_benchmark.dart"]
+B44["text_benchmark.dart"]
+B45["dash_pattern_benchmark.dart"]
+end
 subgraph "Guidelines"
 G["VISUAL_TESTING_GUIDELINES.md"]
 end
@@ -273,72 +301,34 @@ A --> A56
 W --> A10
 G --> A1
 C --> A
-C --> W
+B --> B1
+B --> B2
+B --> B3
+B4 --> B41
+B4 --> B42
+B4 --> B43
+B4 --> B44
+B4 --> B45
 ```
 
 **Diagram sources**
 - [VISUAL_TESTING_GUIDELINES.md](file://VISUAL_TESTING_GUIDELINES.md)
 - [visual_test_utils.dart](file://test/animation/visual_test_utils.dart)
-- [visual_rotation_test.dart](file://test/animation/visual_rotation_test.dart)
-- [visual_scale_test.dart](file://test/animation/visual_scale_test.dart)
-- [visual_translation_test.dart](file://test/animation/visual_translation_test.dart)
-- [rotation_golden_test.dart](file://test/animation/rotation_golden_test.dart)
-- [animated_svg_picture_test.dart](file://test/animation/animated_svg_picture_test.dart)
-- [smil_test.dart](file://test/animation/smil_test.dart)
-- [path_morphing_test.dart](file://test/animation/path_morphing_test.dart)
-- [controller_test.dart](file://test/animation/controller_test.dart)
-- [css_animations_test.dart](file://test/animation/css_animations_test.dart)
-- [text_position_list_test.dart](file://test/animation/text_position_list_test.dart)
-- [marker_test.dart](file://test/animation/marker_test.dart)
-- [paint_order_test.dart](file://test/animation/paint_order_test.dart)
-- [pattern_test.dart](file://test/animation/pattern_test.dart)
-- [stroke_styling_test.dart](file://test/animation/stroke_styling_test.dart)
-- [text_rendering_test.dart](file://test/animation/text_rendering_test.dart)
-- [text_decoration_style_test.dart](file://test/animation/text_decoration_style_test.dart)
-- [text_decoration_thickness_test.dart](file://test/animation/text_decoration_thickness_test.dart)
-- [text_shadow_test.dart](file://test/animation/text_shadow_test.dart)
-- [text_wrap_test.dart](file://test/animation/text_wrap_test.dart)
-- [vertical_align_test.dart](file://test/animation/vertical_align_test.dart)
-- [line_height_test.dart](file://test/animation/line_height_test.dart)
-- [text_spacing_test.dart](file://test/animation/text_spacing_test.dart)
-- [text_justify_test.dart](file://test/animation/text_justify_test.dart)
-- [white_space_test.dart](file://test/animation/white_space_test.dart)
-- [css_transform_calc_test.dart](file://test/animation/css_transform_calc_test.dart)
-- [css_transform_edge_cases_test.dart](file://test/animation/css_transform_edge_cases_test.dart)
-- [css_variables_calc_test.dart](file://test/animation/css_variables_calc_test.dart)
-- [advanced_clip_mask_test.dart](file://test/animation/advanced_clip_mask_test.dart)
-- [svg_event_model_test.dart](file://test/animation/svg_event_model_test.dart)
-- [filter_component_transfer_test.dart](file://test/animation/filter_component_transfer_test.dart)
-- [image_contexts_test.dart](file://test/animation/image_contexts_test.dart)
-- [advanced_mask_test.dart](file://test/animation/advanced_mask_test.dart)
-- [filters_test.dart](file://test/animation/filters_test.dart)
-- [foreignobject_css_inheritance_test.dart](file://test/animation/foreignobject_css_inheritance_test.dart)
-- [image_foreignobject_edge_cases_test.dart](file://test/animation/image_foreignobject_edge_cases_test.dart)
-- [clip_mask_advanced_composition_test.dart](file://test/animation/clip_mask_advanced_composition_test.dart)
-- [clip_mask_use_verification_test.dart](file://test/animation/clip_mask_use_verification_test.dart)
-- [advanced_mask_semantics_test.dart](file://test/animation/advanced_mask_semantics_test.dart)
-- [filter_advanced_graph_test.dart](file://test/animation/filter_advanced_graph_test.dart)
-- [filter_advanced_semantics_test.dart](file://test/animation/filter_advanced_semantics_test.dart)
-- [filter_displacement_tile_test.dart](file://test/animation/filter_displacement_tile_test.dart)
-- [filter_drop_shadow_advanced_test.dart](file://test/animation/filter_drop_shadow_advanced_test.dart)
-- [filter_graph_semantics_test.dart](file://test/animation/filter_graph_semantics_test.dart)
-- [filter_input_graph_hardening_test.dart](file://test/animation/filter_input_graph_hardening_test.dart)
-- [filter_input_graph_test.dart](file://test/animation/filter_input_graph_test.dart)
-- [filter_light_sources_test.dart](file://test/animation/filter_light_sources_test.dart)
-- [filter_morphology_convolve_turbulence_test.dart](file://test/animation/filter_morphology_convolve_turbulence_test.dart)
-- [filter_primitive_edge_cases_test.dart](file://test/animation/filter_primitive_edge_cases_test.dart)
-- [advanced_mask_hit_test.dart](file://test/animation/advanced_mask_hit_test.dart)
-- [advanced_mask_layer_test.dart](file://test/animation/advanced_mask_layer_test.dart)
-- [clip_path_advanced_test.dart](file://test/animation/clip_path_advanced_test.dart)
-- [advanced_use_symbol_test.dart](file://test/animation/advanced_use_symbol_test.dart)
-- [advanced_clip_path_test.dart](file://test/animation/advanced_clip_path_test.dart)
-- [use_symbol_edge_cases_test.dart](file://test/animation/use_symbol_edge_cases_test.dart)
-- [widget_svg_test.dart](file://test/widget_svg_test.dart)
-- [dart_test.yaml](file://dart_test.yaml)
+- [benchmark_config.dart](file://benchmark/benchmark_config.dart)
+- [svg_content.dart](file://benchmark/svg_content.dart)
+- [svg_render_benchmark.dart](file://benchmark/svg_render_benchmark.dart)
+- [parse_benchmark.dart](file://benchmark/benchmarks/parse_benchmark.dart)
+- [animation_benchmark.dart](file://benchmark/benchmarks/animation_benchmark.dart)
+- [filter_benchmark.dart](file://benchmark/benchmarks/filter_benchmark.dart)
+- [text_benchmark.dart](file://benchmark/benchmarks/text_benchmark.dart)
+- [dash_pattern_benchmark.dart](file://benchmark/benchmarks/dash_pattern_benchmark.dart)
 
 **Section sources**
 - [VISUAL_TESTING_GUIDELINES.md](file://VISUAL_TESTING_GUIDELINES.md)
 - [dart_test.yaml](file://dart_test.yaml)
+- [benchmark_config.dart](file://benchmark/benchmark_config.dart)
+- [svg_content.dart](file://benchmark/svg_content.dart)
+- [svg_render_benchmark.dart](file://benchmark/svg_render_benchmark.dart)
 
 ## Core Components
 - **VisualTestUtils**: Captures widget pixels, performs red-pixel analysis, computes hashes and differences, and exposes geometric metrics (centroid, bounding box, estimated rotation).
@@ -355,6 +345,9 @@ C --> W
 - **Advanced clip path testing system**: **Validates complex clip path compositions, non-path clipping, and coordinate transformations with 873 lines of testing**.
 - **Advanced use/symbol testing system**: **Validates edge cases, circular reference protection, and coordinate stacking with 811 lines of testing**.
 - **Enhanced visual regression testing**: **Supports pixel-level geometric analysis and multi-frame comparison for animation verification**.
+- **Benchmark infrastructure**: **Provides comprehensive performance benchmarking across parsing, animation, filters, text, and dash pattern processing**.
+- **SVG test fixtures**: **Contains realistic but controlled SVG content for performance validation across different SVG features**.
+- **Performance regression detection**: **Enables automated performance monitoring with JSON output support for CI integration**.
 
 **Section sources**
 - [visual_test_utils.dart](file://test/animation/visual_test_utils.dart)
@@ -379,9 +372,12 @@ C --> W
 - [advanced_clip_path_test.dart](file://test/animation/advanced_clip_path_test.dart)
 - [use_symbol_edge_cases_test.dart](file://test/animation/use_symbol_edge_cases_test.dart)
 - [rotation_golden_test.dart](file://test/animation/rotation_golden_test.dart)
+- [benchmark_config.dart](file://benchmark/benchmark_config.dart)
+- [svg_content.dart](file://benchmark/svg_content.dart)
+- [svg_render_benchmark.dart](file://benchmark/svg_render_benchmark.dart)
 
 ## Architecture Overview
-The testing architecture separates concerns across nine layers with enhanced coverage of advanced SVG rendering features, **including comprehensive testing for advanced masks, clip paths, use/symbol edge cases, and enhanced visual regression testing**:
+The testing architecture separates concerns across ten layers with enhanced coverage of advanced SVG rendering features, **including comprehensive testing for advanced masks, clip paths, use/symbol edge cases, enhanced visual regression, and comprehensive benchmark infrastructure**:
 - **Logic tests**: Validate SMIL parsing, interpolation, and timeline mechanics.
 - **Rendering tests**: Validate widget-level rendering and animation progression.
 - **Visual tests**: Validate actual pixel output and geometric changes.
@@ -391,6 +387,8 @@ The testing architecture separates concerns across nine layers with enhanced cov
 - **CSS cascade system tests**: Validate inheritance and styling resolution for use-referenced elements.
 - **CSS transform system tests**: Validate calc() expressions, unit conversions, and 3D transform handling.
 - **CSS variables and calc() system tests**: Validate var() resolution and calc() arithmetic evaluation.
+- **Benchmark infrastructure layer**: Validate performance across parsing, animation, filters, text, and dash pattern processing.
+- **Performance regression detection layer**: Enable automated performance monitoring and CI integration.
 
 ```mermaid
 graph TB
@@ -424,6 +422,20 @@ subgraph "Enhanced Visual Regression Layer"
 EVR1["Pixel-Level Geometric Analysis"]
 EVR2["Multi-Frame Comparison"]
 EVR3["Advanced Golden Comparisons"]
+end
+subgraph "Benchmark Infrastructure Layer"
+BI1["Benchmark Configuration<br/>Warmup/Iterations/Timeouts"]
+BI2["SVG Test Fixtures<br/>Realistic Content"]
+BI3["Parsing Benchmarks"]
+BI4["Animation Benchmarks"]
+BI5["Filter Benchmarks"]
+BI6["Text Benchmarks"]
+BI7["Dash Pattern Benchmarks"]
+end
+subgraph "Performance Regression Layer"
+PR1["Performance Monitoring"]
+PR2["JSON Output<br/>CI Integration"]
+PR3["Regression Detection"]
 end
 subgraph "Advanced Feature Tests"
 AF1["Marker Rendering"]
@@ -461,6 +473,14 @@ AT3 --> R1
 EVR1 --> V2
 EVR2 --> V2
 EVR3 --> V3
+BI1 --> BI2
+BI2 --> BI3
+BI3 --> BI4
+BI4 --> BI5
+BI5 --> BI6
+BI6 --> BI7
+PR1 --> PR2
+PR2 --> PR3
 ```
 
 **Diagram sources**
@@ -492,6 +512,68 @@ EVR3 --> V3
 - [advanced_clip_path_test.dart](file://test/animation/advanced_clip_path_test.dart)
 - [use_symbol_edge_cases_test.dart](file://test/animation/use_symbol_edge_cases_test.dart)
 - [rotation_golden_test.dart](file://test/animation/rotation_golden_test.dart)
+- [benchmark_config.dart](file://benchmark/benchmark_config.dart)
+- [svg_content.dart](file://benchmark/svg_content.dart)
+- [svg_render_benchmark.dart](file://benchmark/svg_render_benchmark.dart)
+
+## Benchmark Infrastructure
+**New** The framework now includes comprehensive benchmark infrastructure designed to establish baseline performance metrics and enable regression detection:
+
+### Benchmark Configuration System
+- **Standardized configuration** with warmup iterations (5), measured iterations (50), and timeout (30 seconds)
+- **Consistent benchmark execution** across all benchmark suites with unified timing and statistics collection
+- **Machine-parseable JSON output** for CI integration and automated performance monitoring
+
+### SVG Test Fixtures
+- **Realistic but controlled SVG content** designed for performance validation
+- **Multiple fixture categories** including simple shapes, gradients, filters, animations, text-heavy content, dash patterns, nested structures, clipping, and large-scale stress tests
+- **Deterministic content** ensuring consistent benchmark results across environments
+
+### Specialized Benchmark Suites
+- **Parsing Benchmarks**: Validate SVG parsing performance across different content types and complexity levels
+- **Animation Benchmarks**: Measure SMIL animation parsing, timeline setup, and runtime performance
+- **Filter Benchmarks**: Test filter chain parsing and filter definition access performance
+- **Text Benchmarks**: Validate text element parsing and styling performance
+- **Dash Pattern Benchmarks**: Ensure dash pattern computation completes in bounded time
+
+### Performance Regression Detection
+- **Statistical analysis** with min/max/average timing metrics across iterations
+- **Warmup phase elimination** to remove startup overhead from performance measurements
+- **Memory delta tracking** capability for future memory profiling integration
+- **CI-friendly JSON output** enabling automated performance monitoring and alerting
+
+**Section sources**
+- [benchmark_config.dart](file://benchmark/benchmark_config.dart)
+- [svg_content.dart](file://benchmark/svg_content.dart)
+- [svg_render_benchmark.dart](file://benchmark/svg_render_benchmark.dart)
+- [parse_benchmark.dart](file://benchmark/benchmarks/parse_benchmark.dart)
+- [animation_benchmark.dart](file://benchmark/benchmarks/animation_benchmark.dart)
+- [filter_benchmark.dart](file://benchmark/benchmarks/filter_benchmark.dart)
+- [text_benchmark.dart](file://benchmark/benchmarks/text_benchmark.dart)
+- [dash_pattern_benchmark.dart](file://benchmark/benchmarks/dash_pattern_benchmark.dart)
+
+### Benchmark Execution and Results
+- **Unified benchmark runner** orchestrating all benchmark suites with consistent configuration
+- **Statistical result aggregation** providing min, max, and average timing metrics
+- **JSON output format** enabling integration with CI systems and performance monitoring tools
+- **Environment variable support** for JSON output control during CI execution
+
+**Section sources**
+- [svg_render_benchmark.dart](file://benchmark/svg_render_benchmark.dart)
+
+### SVG Test Fixture Categories
+- **Simple SVG**: Basic shapes (rectangles, circles, paths) for baseline parsing performance
+- **Gradients**: Linear and radial gradients with transforms for complex parsing scenarios
+- **Filter Chain**: Complex filter chains with multiple filter primitives for filter parsing performance
+- **Animation**: Multiple SMIL animations across different SVG elements for animation processing benchmarks
+- **Text Heavy**: Various text elements with different fonts, styles, and positioning for text parsing performance
+- **Dash Patterns**: Multiple dashed strokes with various dash array configurations for dash pattern computation
+- **Nested**: Complex nested groups with transforms for parsing performance under complex SVG structures
+- **Clipping**: Clip paths and masks for advanced SVG feature parsing performance
+- **Large Scale**: Stress test with hundreds of elements for scalability performance validation
+
+**Section sources**
+- [svg_content.dart](file://benchmark/svg_content.dart)
 
 ## Detailed Component Analysis
 
@@ -951,7 +1033,7 @@ E --> E1["Complex combinations"]
 
 #### Advanced Golden Comparison
 - **Background Color Control**: Validates consistent background color handling for pixel comparison
-- **Anti-Aliasing Handling**: Tests proper handling of anti-aliased edges in golden comparisons
+- **Anti-Alias Handling**: Tests proper handling of anti-aliased edges in golden comparisons
 - **Resolution Independence**: Validates golden comparison accuracy across different rendering resolutions
 - **Platform Consistency**: Ensures consistent visual output across different platforms and devices
 
@@ -1032,6 +1114,8 @@ E --> E1["Complex combinations"]
 - **Comprehensive filter tests depend** on the complete filter parsing and pipeline systems.
 - **Precision hit testing depends** on specialized hit testing components in animated_svg_picture_hit_test_* files.
 - **CSS cascade behavior tests depend** on the inheritance resolution and style application systems.
+- **Benchmark infrastructure depends** on the benchmark configuration system and SVG test fixtures.
+- **Performance caching tests depend** on the existing performance metrics and caching validation systems.
 
 ```mermaid
 graph LR
@@ -1138,6 +1222,23 @@ CPT --> CPT
 AUT --> AUT
 ACT --> ACT
 USECT --> USECT
+BC["benchmark_config.dart"] --> SRB["svg_render_benchmark.dart"]
+BC --> PB["parse_benchmark.dart"]
+BC --> AB["animation_benchmark.dart"]
+BC --> FB["filter_benchmark.dart"]
+BC --> TB["text_benchmark.dart"]
+BC --> DPB["dash_pattern_benchmark.dart"]
+SC["svg_content.dart"] --> SRB
+SC --> PB
+SC --> AB
+SC --> FB
+SC --> TB
+SC --> DPB
+SRB --> PB
+SRB --> AB
+SRB --> FB
+SRB --> TB
+SRB --> DPB
 ```
 
 **Diagram sources**
@@ -1198,6 +1299,14 @@ USECT --> USECT
 - [advanced_clip_path_test.dart](file://test/animation/advanced_clip_path_test.dart)
 - [use_symbol_edge_cases_test.dart](file://test/animation/use_symbol_edge_cases_test.dart)
 - [rotation_golden_test.dart](file://test/animation/rotation_golden_test.dart)
+- [benchmark_config.dart](file://benchmark/benchmark_config.dart)
+- [svg_content.dart](file://benchmark/svg_content.dart)
+- [svg_render_benchmark.dart](file://benchmark/svg_render_benchmark.dart)
+- [parse_benchmark.dart](file://benchmark/benchmarks/parse_benchmark.dart)
+- [animation_benchmark.dart](file://benchmark/benchmarks/animation_benchmark.dart)
+- [filter_benchmark.dart](file://benchmark/benchmarks/filter_benchmark.dart)
+- [text_benchmark.dart](file://benchmark/benchmarks/text_benchmark.dart)
+- [dash_pattern_benchmark.dart](file://benchmark/benchmarks/dash_pattern_benchmark.dart)
 
 **Section sources**
 - [dart_test.yaml](file://dart_test.yaml)
@@ -1224,6 +1333,9 @@ USECT --> USECT
 - **ForeignObject CSS inheritance testing** validates property resolution with efficient inheritance traversal.
 - **Comprehensive filter testing** validates filter parsing performance with optimized filter graph resolution.
 - **Precision hit testing** optimizes hit detection with spatial indexing and efficient coordinate transformation.
+- **Benchmark infrastructure** provides standardized performance measurement with warmup phases and statistical analysis.
+- **SVG test fixtures** ensure consistent performance validation across different SVG content types and complexity levels.
+- **Performance regression detection** enables automated monitoring of performance changes across benchmark suites.
 
 ## Troubleshooting Guide
 Common issues and resolutions:
@@ -1264,6 +1376,16 @@ Common issues and resolutions:
   - Check background color consistency and anti-aliasing handling.
   - Validate animation timing and interpolation accuracy.
   - Ensure proper handling of resolution independence and platform consistency.
+- **Benchmark execution issues**:
+  - Verify benchmark configuration settings (warmup iterations, iterations, timeout).
+  - Check SVG test fixtures for proper content and syntax validation.
+  - Ensure benchmark runner has proper permissions and environment setup.
+  - Validate JSON output format for CI integration compatibility.
+- **Performance regression detection issues**:
+  - Monitor benchmark results for statistical outliers and trends.
+  - Check for memory leaks or resource accumulation in long-running benchmarks.
+  - Validate benchmark isolation and environment consistency across runs.
+  - Ensure proper handling of external dependencies and system variations.
 - **Large test suite performance**:
   - Use selective testing for specific feature areas.
   - Leverage visual analysis for quick regression detection.
@@ -1274,6 +1396,7 @@ Common issues and resolutions:
   - Validate advanced mask hit testing with optimized algorithms.
   - Ensure efficient coordinate transformation and circular reference detection.
   - Test complex clip path compositions with geometric analysis optimization.
+  - Monitor benchmark performance regressions with automated alerts.
 
 **Section sources**
 - [VISUAL_TESTING_GUIDELINES.md](file://VISUAL_TESTING_GUIDELINES.md)
@@ -1293,15 +1416,22 @@ Common issues and resolutions:
 - [advanced_clip_path_test.dart](file://test/animation/advanced_clip_path_test.dart)
 - [use_symbol_edge_cases_test.dart](file://test/animation/use_symbol_edge_cases_test.dart)
 - [rotation_golden_test.dart](file://test/animation/rotation_golden_test.dart)
+- [benchmark_config.dart](file://benchmark/benchmark_config.dart)
+- [svg_content.dart](file://benchmark/svg_content.dart)
+- [svg_render_benchmark.dart](file://benchmark/svg_render_benchmark.dart)
 
 ## Conclusion
-The flutter_svg testing framework combines logic validation, widget integration, and robust visual verification to ensure accurate SMIL animation rendering and comprehensive advanced SVG feature support. With the addition of extensive tests covering marker functionality, paint order validation, pattern rendering, comprehensive text styling features, **advanced mask testing**, **advanced clip path testing**, **advanced use/symbol testing**, and **enhanced visual regression testing**, the suite now provides complete coverage of advanced SVG rendering capabilities.
+The flutter_svg testing framework combines logic validation, widget integration, robust visual verification, and comprehensive performance benchmarking to ensure accurate SMIL animation rendering and comprehensive advanced SVG feature support. With the addition of extensive tests covering marker functionality, paint order validation, pattern rendering, comprehensive text styling features, **advanced mask testing**, **advanced clip path testing**, **advanced use/symbol testing**, **enhanced visual regression testing**, and **comprehensive benchmark infrastructure**, the suite now provides complete coverage of advanced SVG rendering capabilities.
 
 The expanded framework includes:
 - **743 lines of comprehensive advanced mask testing** validating hit testing, layer coordination, and edge case handling
 - **873 lines of comprehensive advanced clip path testing** validating complex compositions, non-path clipping, and coordinate transformations
 - **811 lines of comprehensive advanced use/symbol testing** validating edge cases, circular reference protection, and coordinate stacking
 - **Enhanced visual regression testing** with pixel-level geometric analysis and multi-frame comparison capabilities
+- **Comprehensive benchmark infrastructure** with 5 specialized benchmark suites for parsing, animation, filters, text, and dash patterns
+- **Standardized configuration system** with warmup iterations, iterations, and timeouts for consistent performance testing
+- **SVG test fixtures** with realistic but controlled SVG content for performance validation
+- **Performance regression detection** capabilities with JSON output support for CI integration
 - **Advanced mask hit testing** with precise boundary detection and coordinate system integration
 - **Advanced clip path composition validation** with complex geometry handling and transform integration
 - **Advanced use/symbol edge case testing** with circular reference protection and deep nesting limits
@@ -1310,18 +1440,22 @@ The expanded framework includes:
 - **Advanced coordinate transformation** for complex use/symbol structures
 - **Robust circular reference protection** across all advanced testing components
 - **Comprehensive integration testing** for mask, clip path, and use/symbol interactions
+- **Automated performance monitoring** with statistical analysis and CI integration support
 
-By leveraging pixel-based geometry analysis, deterministic timelines, and careful controller-driven playback, the comprehensive suite provides reliable regression protection and clear debugging signals. The extensive advanced feature testing ensures backward compatibility while supporting modern SVG rendering features. The new comprehensive testing infrastructure validates complex rendering scenarios including advanced masks, clip paths, use/symbol edge cases, and enhanced visual regression testing with mathematical precision. **The new advanced mask testing validates hit testing, layer coordination, and edge case handling with detailed geometric analysis.** **The new advanced clip path testing validates complex compositions, non-path clipping, and coordinate transformations with 873 lines of coverage.** **The new advanced use/symbol testing validates edge cases, circular reference protection, and coordinate stacking with 811 lines of coverage.** **The new enhanced visual regression testing validates pixel-level geometric analysis and multi-frame comparison capabilities.** Adhering to the documented guidelines and patterns ensures maintainability and extensibility of the testing infrastructure.
+By leveraging pixel-based geometry analysis, deterministic timelines, careful controller-driven playback, and comprehensive benchmarking infrastructure, the comprehensive suite provides reliable regression protection, clear debugging signals, and established performance baselines for regression detection. The extensive advanced feature testing ensures backward compatibility while supporting modern SVG rendering features. The new comprehensive testing infrastructure validates complex rendering scenarios including advanced masks, clip paths, use/symbol edge cases, enhanced visual regression testing, and automated performance monitoring with mathematical precision. **The new benchmark infrastructure establishes baseline performance metrics and enables automated regression detection across parsing, animation, filters, text, and dash pattern processing.** **The new SVG test fixtures provide realistic but controlled content for comprehensive performance validation.** **The new performance regression detection capabilities enable automated monitoring and CI integration for sustained performance quality.** Adhering to the documented guidelines and patterns ensures maintainability and extensibility of the testing infrastructure.
 
 ## Appendices
 
 ### Configuration Options and CI Setup
 - **Test platform restriction**: dart_test.yaml targets VM to avoid web-specific comparator issues.
 - **Dependencies**: pubspec.yaml defines SDK and Flutter versions, plus vector graphics and XML packages used by the rendering pipeline.
+- **Benchmark configuration**: benchmark_config.dart provides standardized warmup iterations, iterations, and timeout settings for consistent performance testing.
+- **JSON output support**: Environment variable JSON_OUTPUT=true enables machine-parseable JSON output for CI integration and automated performance monitoring.
 
 **Section sources**
 - [dart_test.yaml](file://dart_test.yaml)
 - [pubspec.yaml](file://pubspec.yaml)
+- [benchmark_config.dart](file://benchmark/benchmark_config.dart)
 
 ### Example Test Case Creation Patterns
 - **Deterministic animation setup**:
@@ -1353,6 +1487,9 @@ By leveraging pixel-based geometry analysis, deterministic timelines, and carefu
   - **Validate comprehensive filter primitive parsing** with all SVG filter types and parameters.
   - **Test filter pipeline integration** with complex filter chains and result attribute handling.
   - **Validate advanced semantics testing** for masks, clip paths, and complex rendering scenarios.
+  - **Test benchmark execution** with standardized configuration and statistical analysis.
+  - **Validate SVG test fixtures** with realistic content for comprehensive performance validation.
+  - **Test performance regression detection** with JSON output and CI integration support.
 
 **Section sources**
 - [VISUAL_TESTING_GUIDELINES.md](file://VISUAL_TESTING_GUIDELINES.md)
@@ -1384,3 +1521,6 @@ By leveraging pixel-based geometry analysis, deterministic timelines, and carefu
 - [advanced_clip_path_test.dart](file://test/animation/advanced_clip_path_test.dart)
 - [use_symbol_edge_cases_test.dart](file://test/animation/use_symbol_edge_cases_test.dart)
 - [rotation_golden_test.dart](file://test/animation/rotation_golden_test.dart)
+- [benchmark_config.dart](file://benchmark/benchmark_config.dart)
+- [svg_content.dart](file://benchmark/svg_content.dart)
+- [svg_render_benchmark.dart](file://benchmark/svg_render_benchmark.dart)

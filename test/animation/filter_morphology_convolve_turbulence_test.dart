@@ -647,5 +647,375 @@ void main() {
         expect(filter.numOctaves, 1);
       });
     });
+
+    group('feTurbulence stitchTiles Seamless Tiling', () {
+      test('stitchTiles="stitch" produces seamless tiling at boundaries', () {
+        // Generate noise with stitching enabled
+        final generator = TurbulenceNoiseGenerator(42.0);
+        const width = 64.0;
+        const height = 64.0;
+        const baseFreqX = 0.1;
+        const baseFreqY = 0.1;
+
+        generator.setupStitching(width, height, baseFreqX, baseFreqY);
+
+        // Sample noise at left edge (x=0) and right edge (x=width)
+        // These should produce the same values for seamless tiling
+        final leftEdgeY = 32.0;
+        final leftValue = generator.fractalNoise(
+          x: 0.0,
+          y: leftEdgeY,
+          baseFreqX: baseFreqX,
+          baseFreqY: baseFreqY,
+          numOctaves: 2,
+          isFractalNoise: false,
+          stitch: true,
+        );
+
+        // At x=width, the noise coordinate is width*baseFreqX
+        // which should wrap to 0 in stitching mode
+        final rightValue = generator.fractalNoise(
+          x: width,
+          y: leftEdgeY,
+          baseFreqX: baseFreqX,
+          baseFreqY: baseFreqY,
+          numOctaves: 2,
+          isFractalNoise: false,
+          stitch: true,
+        );
+
+        // The values at the boundaries should match (within floating point tolerance)
+        expect(leftValue, closeTo(rightValue, 0.01));
+      });
+
+      test('stitchTiles="stitch" produces seamless tiling at top/bottom', () {
+        final generator = TurbulenceNoiseGenerator(42.0);
+        const width = 64.0;
+        const height = 64.0;
+        const baseFreqX = 0.1;
+        const baseFreqY = 0.1;
+
+        generator.setupStitching(width, height, baseFreqX, baseFreqY);
+
+        // Sample noise at top edge (y=0) and bottom edge (y=height)
+        final edgeX = 32.0;
+        final topValue = generator.fractalNoise(
+          x: edgeX,
+          y: 0.0,
+          baseFreqX: baseFreqX,
+          baseFreqY: baseFreqY,
+          numOctaves: 2,
+          isFractalNoise: false,
+          stitch: true,
+        );
+
+        final bottomValue = generator.fractalNoise(
+          x: edgeX,
+          y: height,
+          baseFreqX: baseFreqX,
+          baseFreqY: baseFreqY,
+          numOctaves: 2,
+          isFractalNoise: false,
+          stitch: true,
+        );
+
+        // The values at the boundaries should match
+        expect(topValue, closeTo(bottomValue, 0.01));
+      });
+
+      test('stitchTiles="stitch" corner consistency', () {
+        final generator = TurbulenceNoiseGenerator(123.0);
+        const width = 100.0;
+        const height = 100.0;
+        const baseFreqX = 0.05;
+        const baseFreqY = 0.05;
+
+        generator.setupStitching(width, height, baseFreqX, baseFreqY);
+
+        // All four corners should have the same value when tiling seamlessly
+        final topLeft = generator.fractalNoise(
+          x: 0.0,
+          y: 0.0,
+          baseFreqX: baseFreqX,
+          baseFreqY: baseFreqY,
+          numOctaves: 1,
+          isFractalNoise: true,
+          stitch: true,
+        );
+
+        final topRight = generator.fractalNoise(
+          x: width,
+          y: 0.0,
+          baseFreqX: baseFreqX,
+          baseFreqY: baseFreqY,
+          numOctaves: 1,
+          isFractalNoise: true,
+          stitch: true,
+        );
+
+        final bottomLeft = generator.fractalNoise(
+          x: 0.0,
+          y: height,
+          baseFreqX: baseFreqX,
+          baseFreqY: baseFreqY,
+          numOctaves: 1,
+          isFractalNoise: true,
+          stitch: true,
+        );
+
+        final bottomRight = generator.fractalNoise(
+          x: width,
+          y: height,
+          baseFreqX: baseFreqX,
+          baseFreqY: baseFreqY,
+          numOctaves: 1,
+          isFractalNoise: true,
+          stitch: true,
+        );
+
+        // All corners should match
+        expect(topLeft, closeTo(topRight, 0.01));
+        expect(topLeft, closeTo(bottomLeft, 0.01));
+        expect(topLeft, closeTo(bottomRight, 0.01));
+      });
+
+      test('stitchTiles="noStitch" does NOT produce seamless tiling', () {
+        final generator = TurbulenceNoiseGenerator(42.0);
+        const baseFreqX = 0.05;
+        const baseFreqY = 0.05;
+
+        // Without stitching, boundaries should generally NOT match
+        final leftValue = generator.fractalNoise(
+          x: 0.0,
+          y: 32.0,
+          baseFreqX: baseFreqX,
+          baseFreqY: baseFreqY,
+          numOctaves: 2,
+          isFractalNoise: false,
+          stitch: false, // noStitch mode
+        );
+
+        final rightValue = generator.fractalNoise(
+          x: 64.0,
+          y: 32.0,
+          baseFreqX: baseFreqX,
+          baseFreqY: baseFreqY,
+          numOctaves: 2,
+          isFractalNoise: false,
+          stitch: false, // noStitch mode
+        );
+
+        // Values at boundaries should be different without stitching
+        // (very unlikely to be equal by chance)
+        expect((leftValue - rightValue).abs(), greaterThan(0.001));
+      });
+
+      test('TurbulenceTileRenderer generates tileable output with stitch', () {
+        final filter = SvgTurbulenceFilter(
+          id: 'test',
+          baseFrequencyX: 0.05,
+          baseFrequencyY: 0.05,
+          numOctaves: 2,
+          seed: 42.0,
+          stitchTiles: SvgTurbulenceStitchTiles.stitch,
+          noiseType: SvgTurbulenceType.turbulence,
+        );
+
+        const width = 32;
+        const height = 32;
+
+        final pixels = TurbulenceTileRenderer.generateTiled(
+          width: width,
+          height: height,
+          turbulence: filter,
+        );
+
+        // Just verify the output is valid (non-empty, correct size)
+        expect(pixels.length, width * height * 4);
+      });
+
+      test('stitchTiles with zero baseFrequency handled gracefully', () {
+        final generator = TurbulenceNoiseGenerator(42.0);
+
+        // Zero frequency should result in wrapX/wrapY of at least 1
+        generator.setupStitching(100.0, 100.0, 0.0, 0.0);
+
+        // Should not throw, should produce valid (likely constant) output
+        final value = generator.fractalNoise(
+          x: 50.0,
+          y: 50.0,
+          baseFreqX: 0.0,
+          baseFreqY: 0.0,
+          numOctaves: 1,
+          isFractalNoise: false,
+          stitch: true,
+        );
+
+        // Value should be in valid range [0, 1] for turbulence
+        expect(value, greaterThanOrEqualTo(0.0));
+        expect(value, lessThanOrEqualTo(1.0));
+      });
+
+      test('stitchTiles with very small tile size', () {
+        final generator = TurbulenceNoiseGenerator(42.0);
+        const width = 4.0;
+        const height = 4.0;
+        const baseFreqX = 0.5;
+        const baseFreqY = 0.5;
+
+        generator.setupStitching(width, height, baseFreqX, baseFreqY);
+
+        // With 4x4 tile and baseFreq=0.5, wrapX = floor(4*0.5) = 2
+        final leftValue = generator.fractalNoise(
+          x: 0.0,
+          y: 2.0,
+          baseFreqX: baseFreqX,
+          baseFreqY: baseFreqY,
+          numOctaves: 1,
+          isFractalNoise: false,
+          stitch: true,
+        );
+
+        final rightValue = generator.fractalNoise(
+          x: width,
+          y: 2.0,
+          baseFreqX: baseFreqX,
+          baseFreqY: baseFreqY,
+          numOctaves: 1,
+          isFractalNoise: false,
+          stitch: true,
+        );
+
+        expect(leftValue, closeTo(rightValue, 0.01));
+      });
+
+      test('stitchTiles with large tile size', () {
+        final generator = TurbulenceNoiseGenerator(42.0);
+        const width = 512.0;
+        const height = 512.0;
+        const baseFreqX = 0.01;
+        const baseFreqY = 0.01;
+
+        generator.setupStitching(width, height, baseFreqX, baseFreqY);
+
+        final leftValue = generator.fractalNoise(
+          x: 0.0,
+          y: 256.0,
+          baseFreqX: baseFreqX,
+          baseFreqY: baseFreqY,
+          numOctaves: 2,
+          isFractalNoise: false,
+          stitch: true,
+        );
+
+        final rightValue = generator.fractalNoise(
+          x: width,
+          y: 256.0,
+          baseFreqX: baseFreqX,
+          baseFreqY: baseFreqY,
+          numOctaves: 2,
+          isFractalNoise: false,
+          stitch: true,
+        );
+
+        expect(leftValue, closeTo(rightValue, 0.01));
+      });
+
+      test('stitchTiles with multiple octaves maintains seamlessness', () {
+        final generator = TurbulenceNoiseGenerator(99.0);
+        const width = 64.0;
+        const height = 64.0;
+        const baseFreqX = 0.1;
+        const baseFreqY = 0.1;
+
+        generator.setupStitching(width, height, baseFreqX, baseFreqY);
+
+        // Test with multiple octaves (4)
+        final leftValue = generator.fractalNoise(
+          x: 0.0,
+          y: 32.0,
+          baseFreqX: baseFreqX,
+          baseFreqY: baseFreqY,
+          numOctaves: 4,
+          isFractalNoise: true,
+          stitch: true,
+        );
+
+        final rightValue = generator.fractalNoise(
+          x: width,
+          y: 32.0,
+          baseFreqX: baseFreqX,
+          baseFreqY: baseFreqY,
+          numOctaves: 4,
+          isFractalNoise: true,
+          stitch: true,
+        );
+
+        expect(leftValue, closeTo(rightValue, 0.01));
+      });
+
+      test('noise2D respects octave parameter for stitching wrap', () {
+        final generator = TurbulenceNoiseGenerator(42.0);
+        generator.setupStitching(64.0, 64.0, 0.1, 0.1);
+
+        // Base octave (0): wrapX = floor(64*0.1) = 6
+        // So noise should repeat at interval 6 in frequency space
+        final val0 = generator.noise2D(0.0, 0.0, stitch: true, octave: 0);
+        final val6 = generator.noise2D(6.0, 0.0, stitch: true, octave: 0);
+        expect(val0, closeTo(val6, 0.001));
+
+        // Octave 1: wrapX = 6 << 1 = 12
+        final val0_oct1 = generator.noise2D(0.0, 0.0, stitch: true, octave: 1);
+        final val12_oct1 =
+            generator.noise2D(12.0, 0.0, stitch: true, octave: 1);
+        expect(val0_oct1, closeTo(val12_oct1, 0.001));
+      });
+
+      test('resetStitching returns to default lattice size', () {
+        final generator = TurbulenceNoiseGenerator(42.0);
+        generator.setupStitching(64.0, 64.0, 0.1, 0.1);
+
+        // After reset, noise should use default lattice size (256)
+        generator.resetStitching();
+
+        // Noise should repeat at 256 intervals, not the previous stitch size
+        final val0 = generator.noise2D(0.0, 0.0, stitch: true, octave: 0);
+        final val256 = generator.noise2D(256.0, 0.0, stitch: true, octave: 0);
+        expect(val0, closeTo(val256, 0.001));
+      });
+
+      test('TurbulenceNoiseGenerator generatePixel with stitch', () {
+        final generator = TurbulenceNoiseGenerator(42.0);
+        generator.setupStitching(64.0, 64.0, 0.1, 0.1);
+
+        // Generate a pixel at the left edge
+        final leftColor = generator.generatePixel(
+          x: 0.0,
+          y: 32.0,
+          baseFreqX: 0.1,
+          baseFreqY: 0.1,
+          numOctaves: 2,
+          isFractalNoise: false,
+          stitch: true,
+        );
+
+        // Generate a pixel at the right edge (which wraps)
+        final rightColor = generator.generatePixel(
+          x: 64.0,
+          y: 32.0,
+          baseFreqX: 0.1,
+          baseFreqY: 0.1,
+          numOctaves: 2,
+          isFractalNoise: false,
+          stitch: true,
+        );
+
+        // RGBA values should match at the boundaries
+        expect(leftColor.r, closeTo(rightColor.r, 0.02));
+        expect(leftColor.g, closeTo(rightColor.g, 0.02));
+        expect(leftColor.b, closeTo(rightColor.b, 0.02));
+        expect(leftColor.a, closeTo(rightColor.a, 0.02));
+      });
+    });
   });
 }

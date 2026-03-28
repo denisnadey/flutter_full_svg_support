@@ -109,6 +109,11 @@ class TurbulenceNoiseGenerator {
   int _wrapX = _latticeSize;
   int _wrapY = _latticeSize;
 
+  // Tile dimensions for frequency adjustment
+  double _tileWidth = 0.0;
+  double _tileHeight = 0.0;
+  bool _stitchingEnabled = false;
+
   void _initPermutation(double seed) {
     // Create deterministic permutation based on seed
     final random = math.Random(seed.toInt().abs());
@@ -130,22 +135,52 @@ class TurbulenceNoiseGenerator {
   ///
   /// [width] and [height] are the tile dimensions in pixels.
   /// [baseFreqX] and [baseFreqY] are the base frequencies.
+  ///
+  /// Per SVG spec section 15.25.3, the base frequencies are adjusted so that
+  /// the tile contains an integral number of noise periods, ensuring seamless
+  /// tiling at tile boundaries.
   void setupStitching(
     double width,
     double height,
     double baseFreqX,
     double baseFreqY,
   ) {
+    // Store tile dimensions for adjusted frequency calculation
+    _tileWidth = width;
+    _tileHeight = height;
+    _stitchingEnabled = true;
+
     // Calculate the wrap period for each axis
     // Per SVG spec: wrapX = floor(width * baseFrequencyX)
+    // This is the number of noise "tiles" that fit in the filter region
     _wrapX = math.max(1, (width * baseFreqX).floor());
     _wrapY = math.max(1, (height * baseFreqY).floor());
+  }
+
+  /// Returns the adjusted frequency for X axis when stitching is enabled.
+  ///
+  /// The frequency is adjusted so that the tile width contains exactly
+  /// _wrapX noise periods, ensuring seamless tiling.
+  double getAdjustedFreqX(double baseFreqX) {
+    if (!_stitchingEnabled || _tileWidth <= 0) return baseFreqX;
+    // Adjusted frequency = wrapX / tileWidth
+    // This ensures that at x=tileWidth, the noise coord is exactly wrapX
+    return _wrapX / _tileWidth;
+  }
+
+  /// Returns the adjusted frequency for Y axis when stitching is enabled.
+  double getAdjustedFreqY(double baseFreqY) {
+    if (!_stitchingEnabled || _tileHeight <= 0) return baseFreqY;
+    return _wrapY / _tileHeight;
   }
 
   /// Resets stitching to default (no stitching).
   void resetStitching() {
     _wrapX = _latticeSize;
     _wrapY = _latticeSize;
+    _tileWidth = 0.0;
+    _tileHeight = 0.0;
+    _stitchingEnabled = false;
   }
 
   /// Compute single octave of Perlin noise at (x, y) with optional stitching.
@@ -208,9 +243,13 @@ class TurbulenceNoiseGenerator {
   }) {
     var sum = 0.0;
     var amplitude = 1.0;
-    var freqX = baseFreqX;
-    var freqY = baseFreqY;
     var maxAmplitude = 0.0;
+
+    // When stitching, use adjusted frequencies for seamless tiling
+    // Per SVG spec, frequencies are adjusted so the tile contains
+    // an integral number of noise periods
+    var freqX = stitch ? getAdjustedFreqX(baseFreqX) : baseFreqX;
+    var freqY = stitch ? getAdjustedFreqY(baseFreqY) : baseFreqY;
 
     for (var i = 0; i < numOctaves; i++) {
       final noiseValue = noise2D(

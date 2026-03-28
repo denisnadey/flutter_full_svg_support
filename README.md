@@ -8,22 +8,22 @@
 
 The most comprehensive SVG rendering library for Flutter. Two pipelines: a battle-tested **static renderer** (`SvgPicture`) for production, and a full-featured **animated renderer** (`AnimatedSvgPicture`) with DOM preservation, SMIL animations, CSS interop, SVG filters, interactive hit-testing, and accessibility.
 
-**~82% Blink SVG parity** | **3,563+ tests** | **0 analyzer warnings** | **123+ source modules**
+**~89-90% Blink SVG parity** | **4,145+ tests** | **0 analyzer warnings** | **200+ source modules**
 
-## Parity Snapshot
+## Parity Snapshot (March 2026)
 
 | Category | Coverage | Key Details |
 |---|---|---|
 | Geometry Rendering | ~95% | All 8 shapes + markers + patterns + gradients |
 | Text & Typography | **~99%** | Full positioning, textPath, writing-mode, decorations, bidi, emphasis, shadow, font-variant, paint-order stroke, hanging punctuation, deep baseline alignment, ligature shaping, per-character hit-testing |
 | SMIL Animation | ~95% | 5 elements, full timing/interpolation, paced/spline/event-based, advanced animateMotion |
-| CSS Animation Interop | ~85% | Selectors, cascade, variables, calc(), 3D transforms, @media |
-| Interaction & Events | ~80% | Hit-testing (12 element types), pointer-events, `<a>`, `<view>` |
+| CSS Animation Interop | ~90% | Selectors, cascade, structural pseudo-classes, variables, calc(), 3D transforms, @media |
+| SVG Filters | **~97%** | 17/17 FE primitives with actual math (lighting, convolution, displacement, turbulence) |
+| Clipping & Masking | **~100%** | Full Blink parity: clipPathUnits, nested clip-paths, maskUnits, luminance/alpha modes |
+| Interaction & Events | ~85% | Hit-testing (12 element types), pointer-events, `<a>`, `<view>` |
 | Accessibility | ~80% | title/desc, ARIA attributes, Flutter Semantics integration |
-| Structural Elements | ~80% | use/symbol/defs/view/a/switch/foreignObject |
-| Clipping & Masking | ~70% | Baseline clip-path/mask with hit-testing gates |
-| Filter Effects | ~68% | 17/25 Blink FE primitives with actual math (lighting, convolution) |
-| External Content | ~60% | image (data/network/bundle), foreignObject viewport |
+| Structural Elements | ~85% | use/symbol/defs/view/a/switch/foreignObject with full CSS cascade |
+| External Content | ~70% | image (data/network/bundle), foreignObject viewport |
 
 ## Feature Highlights
 
@@ -34,10 +34,13 @@ The most comprehensive SVG rendering library for Flutter. Two pipelines: a battl
 `@keyframes`, `animation-*` properties, CSS transitions, 3D transforms (`translate3d`, `rotate3d`, `matrix3d`, `perspective`), `calc()`, CSS custom properties (`var()`), `@media` queries (prefers-color-scheme, viewport).
 
 ### CSS Selectors & Cascade
-Combinators (descendant/child/sibling), attribute selectors, pseudo-classes (`:hover`, `:active`, `:focus`, `:not()`, `:first-child`, `:last-child`, `:only-child`, `:empty`, `:root`), full specificity resolution, `!important`, shorthand expansion.
+Combinators (descendant/child/sibling), attribute selectors, pseudo-classes (`:hover`, `:active`, `:focus`, `:not()`, `:first-child`, `:last-child`, `:only-child`, `:nth-child`, `:nth-of-type`, `:empty`, `:root`), full specificity resolution, `!important`, shorthand expansion.
 
-### 17/25 SVG Filter Primitives
-feGaussianBlur, feColorMatrix, feBlend (SVG2 modes), feComposite (arithmetic), feMorphology, feDisplacementMap, feDiffuseLighting (Lambertian), feSpecularLighting (Blinn-Phong), feConvolveMatrix (actual kernel), feTurbulence, feComponentTransfer, feOffset, feFlood, feMerge, feTile, feDropShadow, feImage.
+### 17/17 SVG Filter Primitives (~97% Parity)
+feGaussianBlur, feColorMatrix, feBlend (SVG2 modes), feComposite (arithmetic), feMorphology, feDisplacementMap (bilinear interpolation), feDiffuseLighting (Lambertian per-pixel), feSpecularLighting (Blinn-Phong per-pixel), feConvolveMatrix (actual kernel), feTurbulence, feComponentTransfer (all 5 function types), feOffset, feFlood, feMerge, feTile, feDropShadow, feImage.
+
+### Clipping & Masking (Full Blink Parity)
+clipPathUnits (objectBoundingBox, userSpaceOnUse), nested clip-paths, clip-rule (nonzero, evenodd), maskUnits, maskContentUnits, luminance/alpha modes, layer compositing, hit-testing through clip/mask regions.
 
 ### Geometry & Paint Servers
 All 8 SVG shapes. Linear/radial gradients (`gradientUnits`, focal point, stop animation), patterns (`patternUnits`/`patternContentUnits`/`patternTransform`), markers (`orient`/`markerUnits`/`viewBox`).
@@ -57,16 +60,14 @@ Gradient shaders, pattern images, text paragraphs, hit-test geometry - all cache
 ### 30+ CSS/SVG Presentation Attributes
 `paint-order`, `vector-effect`, `shape-rendering`, `overflow`, `mix-blend-mode`, `currentColor`, `transform-origin`, `color-interpolation`, `font-variant`, `xml:space`, `direction`, `pathLength`, `cursor`, `white-space`, `unicode-bidi`, `font-stretch`, and more.
 
-## Gaps to Close
+## Remaining Work (Q2 2026)
 
-6 active P0 priorities to reach higher Blink parity:
+Active P0 priorities to reach 95%+ Blink parity:
 
-1. **Advanced Filter Graph** - Non-source/background input chain semantics, 8 remaining FE primitives
-2. **Advanced Clipping** - Complex clip-path compositions, nested clip-paths, clipPathUnits edge cases
-3. **Advanced Masking** - Luminance masks, alpha channel handling, maskUnits/maskContentUnits
-4. **use/symbol Inheritance** - Style and attribute inheritance edge cases in nested references
-5. **Light Sources** - Advanced feSpecularLighting/feDiffuseLighting positioning and attenuation
-6. **Component Transfer** - Extended feComponentTransfer channel functions (table, discrete, linear, gamma)
+1. **Remaining filter primitive edge cases** - feMorphology advanced modes, feTurbulence stitchTiles refinements
+2. **Performance benchmarking suite** - Comprehensive render benchmarks, cache profiling, memory analysis
+3. **Code modularization** - Remaining large files (`animated_svg_painter_shapes.dart`, `animated_svg_picture.dart`)
+4. **Golden test coverage expansion** - Additional regression fixtures for edge cases
 
 See [CURRENT_STATUS.md](CURRENT_STATUS.md) for details and [docs/BLINK_PARITY_AUDIT.md](docs/BLINK_PARITY_AUDIT.md) for the gap matrix.
 
@@ -257,7 +258,7 @@ See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for development guidelines, testi
 |---|---|
 | [CURRENT_STATUS.md](CURRENT_STATUS.md) | Single source of truth for project state |
 | [ROADMAP.md](ROADMAP.md) | Living roadmap with priorities and milestones |
-| [NEXT_STEPS.md](NEXT_STEPS.md) | 6 P0 priorities and execution order |
+| [NEXT_STEPS.md](NEXT_STEPS.md) | P0/P1/P2 priorities and execution order |
 | [TODO.md](TODO.md) | Active work queue (P0-P4 items) |
 | [ANIMATION.md](ANIMATION.md) | SMIL/CSS animation usage guide with examples |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Dual pipeline design rationale |

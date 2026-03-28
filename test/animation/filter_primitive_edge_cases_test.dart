@@ -216,6 +216,235 @@ void main() {
         // Result should reflect max operation with transparent black edges
         expect(result.length, pixels.length);
       });
+
+      test('MorphologyProcessor erode with wrap edge mode', () {
+        // 3x3 image with white pixels on opposite corners
+        final pixels = Uint8List.fromList([
+          255, 255, 255, 255, // (0,0) white
+          0, 0, 0, 255, // (1,0) black
+          0, 0, 0, 255, // (2,0) black
+          0, 0, 0, 255, // (0,1) black
+          128, 128, 128, 255, // (1,1) gray
+          0, 0, 0, 255, // (2,1) black
+          0, 0, 0, 255, // (0,2) black
+          0, 0, 0, 255, // (1,2) black
+          255, 255, 255, 255, // (2,2) white
+        ]);
+
+        final result = MorphologyProcessor.applyMorphology(
+          pixels: pixels,
+          width: 3,
+          height: 3,
+          radiusX: 1,
+          radiusY: 1,
+          operatorType: SvgMorphologyOperator.erode,
+          edgeMode: SvgConvolveEdgeMode.wrap,
+        );
+
+        // With wrap, the (0,0) pixel's neighborhood wraps around to include (2,2)
+        // Erode takes min, so result should include black pixels
+        expect(result.length, pixels.length);
+        // Center pixel (1,1) should be 0 (min of neighborhood)
+        expect(result[16], 0); // R channel at center
+      });
+
+      test('MorphologyProcessor erode with none edge mode', () {
+        // 3x3 all-white image
+        final pixels = Uint8List(3 * 3 * 4);
+        for (int i = 0; i < pixels.length; i += 4) {
+          pixels[i] = 255; // R
+          pixels[i + 1] = 255; // G
+          pixels[i + 2] = 255; // B
+          pixels[i + 3] = 255; // A
+        }
+
+        final result = MorphologyProcessor.applyMorphology(
+          pixels: pixels,
+          width: 3,
+          height: 3,
+          radiusX: 1,
+          radiusY: 1,
+          operatorType: SvgMorphologyOperator.erode,
+          edgeMode: SvgConvolveEdgeMode.none,
+        );
+
+        // Edge pixels should erode to 0 because out-of-bounds returns (0,0,0,0)
+        // Corner (0,0) has neighborhood extending outside, erode takes min (0)
+        expect(result[0], 0); // R at (0,0)
+        expect(result[1], 0); // G at (0,0)
+        expect(result[2], 0); // B at (0,0)
+        expect(result[3], 0); // A at (0,0) - min of alpha
+
+        // Center pixel (1,1) should stay white as all neighbors are in-bounds
+        expect(result[16], 255); // R at center
+        expect(result[17], 255); // G at center
+        expect(result[18], 255); // B at center
+        expect(result[19], 255); // A at center
+      });
+
+      test('MorphologyProcessor dilate with duplicate edge mode', () {
+        // 3x3 image with white center
+        final pixels = Uint8List.fromList([
+          0, 0, 0, 255,
+          0, 0, 0, 255,
+          0, 0, 0, 255,
+          0, 0, 0, 255,
+          255, 255, 255, 255, // center is white
+          0, 0, 0, 255,
+          0, 0, 0, 255,
+          0, 0, 0, 255,
+          0, 0, 0, 255,
+        ]);
+
+        final result = MorphologyProcessor.applyMorphology(
+          pixels: pixels,
+          width: 3,
+          height: 3,
+          radiusX: 1,
+          radiusY: 1,
+          operatorType: SvgMorphologyOperator.dilate,
+          edgeMode: SvgConvolveEdgeMode.duplicate,
+        );
+
+        // All 4-connected neighbors of center should become white (dilate takes max)
+        expect(result[4], 255); // (1,0) R
+        expect(result[12], 255); // (0,1) R
+        expect(result[16], 255); // (1,1) R - center stays white
+        expect(result[20], 255); // (2,1) R
+        expect(result[28], 255); // (1,2) R
+      });
+
+      test('MorphologyProcessor single axis zero radius (radiusX=0)', () {
+        // 3x3 image with horizontal white stripe
+        final pixels = Uint8List.fromList([
+          0, 0, 0, 255,
+          0, 0, 0, 255,
+          0, 0, 0, 255,
+          255, 255, 255, 255, // middle row white
+          255, 255, 255, 255,
+          255, 255, 255, 255,
+          0, 0, 0, 255,
+          0, 0, 0, 255,
+          0, 0, 0, 255,
+        ]);
+
+        // radiusX=0, radiusY=1 - should only erode/dilate vertically
+        final result = MorphologyProcessor.applyMorphology(
+          pixels: pixels,
+          width: 3,
+          height: 3,
+          radiusX: 0,
+          radiusY: 1,
+          operatorType: SvgMorphologyOperator.dilate,
+          edgeMode: SvgConvolveEdgeMode.duplicate,
+        );
+
+        // Middle row expands vertically but NOT horizontally
+        // Top row should now be white (dilated from middle row)
+        expect(result[0], 255); // (0,0) R
+        // Bottom row should also be white
+        expect(result[24], 255); // (0,2) R
+      });
+
+      test('MorphologyProcessor single axis zero radius (radiusY=0)', () {
+        // 3x3 image with vertical white stripe
+        final pixels = Uint8List.fromList([
+          0, 0, 0, 255,
+          255, 255, 255, 255, // middle column white
+          0, 0, 0, 255,
+          0, 0, 0, 255,
+          255, 255, 255, 255,
+          0, 0, 0, 255,
+          0, 0, 0, 255,
+          255, 255, 255, 255,
+          0, 0, 0, 255,
+        ]);
+
+        // radiusX=1, radiusY=0 - should only erode/dilate horizontally
+        final result = MorphologyProcessor.applyMorphology(
+          pixels: pixels,
+          width: 3,
+          height: 3,
+          radiusX: 1,
+          radiusY: 0,
+          operatorType: SvgMorphologyOperator.dilate,
+          edgeMode: SvgConvolveEdgeMode.duplicate,
+        );
+
+        // Middle column expands horizontally but NOT vertically
+        // Left column top row should now be white (dilated from middle column)
+        expect(result[0], 255); // (0,0) R
+        // Right column top row should also be white
+        expect(result[8], 255); // (2,0) R
+      });
+
+      test('MorphologyProcessor fractional radius rounds correctly', () {
+        // 5x5 image with white center
+        final pixels = Uint8List(5 * 5 * 4);
+        for (int i = 0; i < pixels.length; i += 4) {
+          pixels[i] = 0;
+          pixels[i + 1] = 0;
+          pixels[i + 2] = 0;
+          pixels[i + 3] = 255;
+        }
+        // Set center (2,2) to white
+        final centerIndex = (2 * 5 + 2) * 4;
+        pixels[centerIndex] = 255;
+        pixels[centerIndex + 1] = 255;
+        pixels[centerIndex + 2] = 255;
+
+        // Fractional radius 1.4 should round to 1
+        final result = MorphologyProcessor.applyMorphology(
+          pixels: pixels,
+          width: 5,
+          height: 5,
+          radiusX: 1.4,
+          radiusY: 1.4,
+          operatorType: SvgMorphologyOperator.dilate,
+          edgeMode: SvgConvolveEdgeMode.duplicate,
+        );
+
+        // Direct neighbors should be white (radius rounds to 1)
+        final upIndex = (1 * 5 + 2) * 4;
+        final downIndex = (3 * 5 + 2) * 4;
+        expect(result[upIndex], 255);
+        expect(result[downIndex], 255);
+
+        // Pixels at distance 2 should still be black
+        final farIndex = (0 * 5 + 2) * 4;
+        expect(result[farIndex], 0);
+      });
+
+      test('MorphologyProcessor fractional radius 1.6 rounds to 2', () {
+        // 5x5 image with white center
+        final pixels = Uint8List(5 * 5 * 4);
+        for (int i = 0; i < pixels.length; i += 4) {
+          pixels[i] = 0;
+          pixels[i + 1] = 0;
+          pixels[i + 2] = 0;
+          pixels[i + 3] = 255;
+        }
+        // Set center (2,2) to white
+        final centerIndex = (2 * 5 + 2) * 4;
+        pixels[centerIndex] = 255;
+        pixels[centerIndex + 1] = 255;
+        pixels[centerIndex + 2] = 255;
+
+        // Fractional radius 1.6 should round to 2
+        final result = MorphologyProcessor.applyMorphology(
+          pixels: pixels,
+          width: 5,
+          height: 5,
+          radiusX: 1.6,
+          radiusY: 1.6,
+          operatorType: SvgMorphologyOperator.dilate,
+          edgeMode: SvgConvolveEdgeMode.duplicate,
+        );
+
+        // Pixels at distance 2 should now be white (radius rounds to 2)
+        final farIndex = (0 * 5 + 2) * 4;
+        expect(result[farIndex], 255);
+      });
     });
 
     group('feConvolveMatrix with kernelUnitLength', () {

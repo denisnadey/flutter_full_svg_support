@@ -144,10 +144,15 @@ extension SvgFiltersPipelineCompositingExtension on SvgFilters {
     final merged = <SvgFilterPaintPass>[];
 
     // Empty nodeInputs: use previous output as fallback per SVG spec.
-    // This handles the case where feMerge has no children.
+    // This handles the case where feMerge has no children gracefully.
+    // Per SVG spec, an empty feMerge should pass through the previous result.
     if (merge.nodeInputs.isEmpty) {
-      merged.addAll(previous);
-      return merged.isEmpty ? previous : merged;
+      // Return previous output if available, otherwise SourceGraphic.
+      if (previous.isNotEmpty) {
+        return <SvgFilterPaintPass>[...previous];
+      }
+      // Fallback to SourceGraphic for empty merge with no previous.
+      return <SvgFilterPaintPass>[...sourceGraphic];
     }
 
     // Track if any node contributed passes for proper empty handling.
@@ -159,6 +164,7 @@ extension SvgFiltersPipelineCompositingExtension on SvgFilters {
     // - Simple cases: 2-3 nodes with basic references
     // - Complex cases: Many nodes referencing different intermediate results
     // - Chained merges: One merge referencing another merge's named result
+    // - Deep chains (A→B→C→D): resolved via named result cache
     for (var nodeIndex = 0; nodeIndex < merge.nodeInputs.length; nodeIndex++) {
       final nodeInput = merge.nodeInputs[nodeIndex];
 
@@ -185,24 +191,31 @@ extension SvgFiltersPipelineCompositingExtension on SvgFilters {
         continue;
       }
 
+      // Resolve with fallback option for unresolved inputs.
+      // Per SVG spec, feMergeNode with unresolvable `in` attribute should
+      // produce transparent black (empty). However, if `in` is omitted (null/empty),
+      // it falls back to the previous primitive's result or SourceGraphic.
+      // This is different from explicit invalid references which produce empty.
       final nodePasses = _resolveInputPasses(
         requestedInput: effectiveInput,
         previous: previous,
         namedResults: namedResults,
         sourceGraphic: sourceGraphic,
         sourceAlpha: sourceAlpha,
+        // Only use fallback when `in` is omitted (effectiveInput is null)
+        // Explicit invalid references produce transparent black per spec
+        fallbackToPreviousOnUnknown: effectiveInput == null,
       );
 
       if (nodePasses.isNotEmpty) {
         hasContributions = true;
         merged.addAll(nodePasses);
       }
-      // Note: When nodePasses is empty (forward ref, invalid ref),
-      // we intentionally skip adding anything - this is correct per SVG spec
-      // where invalid/forward refs produce transparent black (empty layer).
+      // Note: When nodePasses is empty after fallback (e.g., in="none"),
+      // we intentionally skip adding anything.
     }
 
-    // If all nodes resolved to empty (e.g., all forward references, all in="none"),
+    // If all nodes resolved to empty (e.g., all in="none"),
     // return identity to prevent black output per baseline behavior.
     if (!hasContributions) {
       return const <SvgFilterPaintPass>[SvgFilterPaintPass.identity];
