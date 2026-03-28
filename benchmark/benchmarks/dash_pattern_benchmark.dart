@@ -127,22 +127,26 @@ List<BenchmarkResult> runDashPatternBenchmarks() {
 
   // Stress test with very long paths and dash patterns
   final longPathBuffer = StringBuffer();
-  longPathBuffer.writeln('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 500">');
+  longPathBuffer.writeln(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 500">',
+  );
   // Create a very long path
   longPathBuffer.write('  <path d="M 0 250');
   for (var x = 10; x <= 1000; x += 10) {
     final y = 250 + (x % 100 < 50 ? -50 : 50);
     longPathBuffer.write(' L $x $y');
   }
-  longPathBuffer.writeln('" stroke="#000" fill="none" stroke-dasharray="5,3,2,3"/>');
-  
+  longPathBuffer.writeln(
+    '" stroke="#000" fill="none" stroke-dasharray="5,3,2,3"/>',
+  );
+
   // Add more complex paths
   for (var i = 0; i < 10; i++) {
     final y1 = 50 + i * 40;
     final y2 = 70 + i * 40;
     longPathBuffer.writeln(
       '  <path d="M 0 $y1 Q 250 $y2 500 $y1 T 1000 $y1" '
-      'stroke="#${(i * 25).toRadixString(16).padLeft(2, '0')}${((10-i) * 25).toRadixString(16).padLeft(2, '0')}ff" '
+      'stroke="#${(i * 25).toRadixString(16).padLeft(2, '0')}${((10 - i) * 25).toRadixString(16).padLeft(2, '0')}ff" '
       'fill="none" stroke-dasharray="${5 + i},${3 + i}"/>',
     );
   }
@@ -185,7 +189,7 @@ List<BenchmarkResult> runDashPatternBenchmarks() {
   );
   stopwatch.stop();
   print('  ${results.last}');
-  
+
   // Verify it completed in reasonable time (< 5 seconds for 10 iterations)
   if (stopwatch.elapsedMilliseconds > 5000) {
     print('  WARNING: Dash pattern processing may have performance issues!');

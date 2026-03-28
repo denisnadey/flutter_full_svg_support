@@ -17,7 +17,8 @@
 
     <g transform="translate(510, 90)">
         <rect width="200" height="50" fill="#EEEEEE" stroke="#CCCCCC" />
-        <text x="10" y="35" font-size="24" fill="#333333" text-decoration="line-through">Strikethrough</text>
+        <text x="10" y="35" font-size="24" fill="#333333" text-decoration="line-through">
+            Strikethrough</text>
     </g>
 
     <!-- Row 2: Different sizes -->
@@ -28,7 +29,8 @@
         <text x="10" y="30" font-size="14" fill="#333333" text-decoration="underline">Small (14px)</text>
         <text x="180" y="30" font-size="20" fill="#333333" text-decoration="underline">Medium (20px)</text>
         <text x="400" y="40" font-size="28" fill="#333333" text-decoration="underline">Large (28px)</text>
-        <text x="10" y="65" font-size="18" fill="#333333" text-decoration="line-through">Line-through 18px</text>
+        <text x="10" y="65" font-size="18" fill="#333333" text-decoration="line-through">Line-through
+            18px</text>
         <text x="280" y="65" font-size="18" fill="#333333" text-decoration="overline">Overline 18px</text>
     </g>
 
@@ -37,12 +39,14 @@
 
     <g transform="translate(50, 330)">
         <rect width="250" height="50" fill="#EEEEEE" stroke="#CCCCCC" />
-        <text x="10" y="35" font-size="22" fill="#333333" text-decoration="underline overline">Under + Over</text>
+        <text x="10" y="35" font-size="22" fill="#333333" text-decoration="underline overline">Under
+            + Over</text>
     </g>
 
     <g transform="translate(320, 330)">
         <rect width="350" height="50" fill="#EEEEEE" stroke="#CCCCCC" />
-        <text x="10" y="35" font-size="22" fill="#333333" text-decoration="underline line-through">Under + Through</text>
+        <text x="10" y="35" font-size="22" fill="#333333" text-decoration="underline line-through">Under
+            + Through</text>
     </g>
 
     <!-- Row 4: Colored decorations -->
@@ -60,7 +64,8 @@
 
     <g transform="translate(450, 430)">
         <rect width="200" height="50" fill="#EEEEEE" stroke="#CCCCCC" />
-        <text x="10" y="35" font-size="22" fill="#00CC00" text-decoration="line-through">Green Strike</text>
+        <text x="10" y="35" font-size="22" fill="#00CC00" text-decoration="line-through">Green
+            Strike</text>
     </g>
 
     <!-- Row 5: Bold/Italic with decorations -->
@@ -68,16 +73,19 @@
 
     <g transform="translate(50, 530)">
         <rect width="200" height="50" fill="#EEEEEE" stroke="#CCCCCC" />
-        <text x="10" y="35" font-size="22" font-weight="bold" fill="#333333" text-decoration="underline">Bold Under</text>
+        <text x="10" y="35" font-size="22" font-weight="bold" fill="#333333"
+            text-decoration="underline">Bold Under</text>
     </g>
 
     <g transform="translate(270, 530)">
         <rect width="200" height="50" fill="#EEEEEE" stroke="#CCCCCC" />
-        <text x="10" y="35" font-size="22" font-style="italic" fill="#333333" text-decoration="underline">Italic Under</text>
+        <text x="10" y="35" font-size="22" font-style="italic" fill="#333333"
+            text-decoration="underline">Italic Under</text>
     </g>
 
     <g transform="translate(490, 530)">
         <rect width="260" height="50" fill="#EEEEEE" stroke="#CCCCCC" />
-        <text x="10" y="35" font-size="20" font-weight="bold" font-style="italic" fill="#FF6600" text-decoration="underline">Bold Italic</text>
+        <text x="10" y="35" font-size="20" font-weight="bold" font-style="italic" fill="#FF6600"
+            text-decoration="underline">Bold Italic</text>
     </g>
 </svg>

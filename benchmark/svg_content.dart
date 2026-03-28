@@ -202,25 +202,32 @@ class SvgTestContent {
   /// Large SVG with many elements (stress test).
   static String get largeScale {
     final buffer = StringBuffer();
-    buffer.writeln('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">');
-    
+    buffer.writeln(
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">',
+    );
+
     // Generate 100 rectangles
     for (var i = 0; i < 100; i++) {
       final x = (i % 10) * 100;
       final y = (i ~/ 10) * 100;
-      final color = '#${(i * 25 % 256).toRadixString(16).padLeft(2, '0')}'
+      final color =
+          '#${(i * 25 % 256).toRadixString(16).padLeft(2, '0')}'
           '${((i * 37) % 256).toRadixString(16).padLeft(2, '0')}'
           '${((i * 53) % 256).toRadixString(16).padLeft(2, '0')}';
-      buffer.writeln('  <rect x="$x" y="$y" width="90" height="90" fill="$color" rx="5"/>');
+      buffer.writeln(
+        '  <rect x="$x" y="$y" width="90" height="90" fill="$color" rx="5"/>',
+      );
     }
-    
+
     // Generate 50 circles
     for (var i = 0; i < 50; i++) {
       final cx = (i % 10) * 100 + 50;
       final cy = (i ~/ 10) * 200 + 50;
-      buffer.writeln('  <circle cx="$cx" cy="$cy" r="30" fill="none" stroke="#000" stroke-width="2"/>');
+      buffer.writeln(
+        '  <circle cx="$cx" cy="$cy" r="30" fill="none" stroke="#000" stroke-width="2"/>',
+      );
     }
-    
+
     buffer.writeln('</svg>');
     return buffer.toString();
   }

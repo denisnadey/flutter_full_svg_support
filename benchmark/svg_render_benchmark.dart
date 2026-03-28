@@ -41,7 +41,9 @@ class BenchmarkResult {
 
   @override
   String toString() {
-    final memoryInfo = memoryDeltaKb != null ? ' | memory: ${memoryDeltaKb}KB' : '';
+    final memoryInfo = memoryDeltaKb != null
+        ? ' | memory: ${memoryDeltaKb}KB'
+        : '';
     return 'Benchmark: $name - min: ${minMs.toStringAsFixed(3)}ms, '
         'avg: ${avgMs.toStringAsFixed(3)}ms, max: ${maxMs.toStringAsFixed(3)}ms '
         '(${iterations} iterations)$memoryInfo';
@@ -183,9 +185,13 @@ void main() {
   // JSON output for CI
   if (jsonOutput) {
     print('');
-    print('───────────────────────────────────────────────────────────────────');
+    print(
+      '───────────────────────────────────────────────────────────────────',
+    );
     print('JSON Output:');
-    print('───────────────────────────────────────────────────────────────────');
+    print(
+      '───────────────────────────────────────────────────────────────────',
+    );
     print('[${results.map((r) => r.toJson()).join(',')}]');
   }
 

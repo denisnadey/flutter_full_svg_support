@@ -22,7 +22,9 @@ List<BenchmarkResult> runParseBenchmarks() {
   print('  ${results.last}');
 
   // Filter chain parsing
-  results.add(_benchmarkParse('parse_filter_chain', SvgTestContent.filterChain));
+  results.add(
+    _benchmarkParse('parse_filter_chain', SvgTestContent.filterChain),
+  );
   print('  ${results.last}');
 
   // Animation SVG parsing
@@ -34,7 +36,9 @@ List<BenchmarkResult> runParseBenchmarks() {
   print('  ${results.last}');
 
   // Dash patterns parsing
-  results.add(_benchmarkParse('parse_dash_patterns', SvgTestContent.dashPatterns));
+  results.add(
+    _benchmarkParse('parse_dash_patterns', SvgTestContent.dashPatterns),
+  );
   print('  ${results.last}');
 
   // Nested groups parsing

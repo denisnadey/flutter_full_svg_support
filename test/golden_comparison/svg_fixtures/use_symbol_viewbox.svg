@@ -3,12 +3,14 @@
     <defs>
         <!-- Simple symbol without viewBox -->
         <symbol id="starSimple">
-            <polygon points="25,0 31,18 50,18 35,29 41,47 25,36 9,47 15,29 0,18 19,18" fill="#FF6600" />
+            <polygon points="25,0 31,18 50,18 35,29 41,47 25,36 9,47 15,29 0,18 19,18"
+                fill="#FF6600" />
         </symbol>
 
         <!-- Symbol with viewBox -->
         <symbol id="starViewBox" viewBox="0 0 50 50">
-            <polygon points="25,2 31,18 50,18 35,29 41,47 25,36 9,47 15,29 0,18 19,18" fill="#0066FF" />
+            <polygon points="25,2 31,18 50,18 35,29 41,47 25,36 9,47 15,29 0,18 19,18"
+                fill="#0066FF" />
         </symbol>
 
         <!-- Symbol with viewBox and preserveAspectRatio -->
@@ -38,7 +40,8 @@
         </symbol>
     </defs>
 
-    <text x="50" y="30" font-size="18" fill="#333333">Use &amp; Symbol: viewBox &amp; preserveAspectRatio</text>
+    <text x="50" y="30" font-size="18" fill="#333333">Use &amp; Symbol: viewBox &amp;
+        preserveAspectRatio</text>
 
     <!-- Row 1: Basic use of symbols -->
     <text x="50" y="70" font-size="14" fill="#666666">Basic Symbol Usage</text>
@@ -132,7 +135,8 @@
         <text x="0" y="-5" font-size="11" fill="#999999">Transformed Use</text>
         <rect width="200" height="150" fill="#EEEEEE" stroke="#CCCCCC" />
         <use href="#starViewBox" x="10" y="10" width="50" height="50" />
-        <use href="#starViewBox" x="70" y="30" width="60" height="60" transform="rotate(30, 100, 60)" />
+        <use href="#starViewBox" x="70" y="30" width="60" height="60"
+            transform="rotate(30, 100, 60)" />
         <use href="#starViewBox" x="140" y="80" width="40" height="40" transform="scale(0.8)" />
     </g>
 

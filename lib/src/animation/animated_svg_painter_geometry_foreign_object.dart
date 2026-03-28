@@ -1,7 +1,8 @@
 part of 'animated_svg_painter.dart';
 
 /// Extension for foreignObject geometry and CSS handling.
-extension AnimatedSvgPainterGeometryForeignObjectExtension on AnimatedSvgPainter {
+extension AnimatedSvgPainterGeometryForeignObjectExtension
+    on AnimatedSvgPainter {
   /// Builds a path for a nested SVG element within foreignObject context.
   /// The SVG establishes its own coordinate system which may differ from
   /// the foreignObject's viewport.

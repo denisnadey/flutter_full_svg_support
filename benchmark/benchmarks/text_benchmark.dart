@@ -144,11 +144,15 @@ List<BenchmarkResult> runTextBenchmarks() {
 
   // Parse large text content
   final largeTextBuffer = StringBuffer();
-  largeTextBuffer.writeln('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1200">');
+  largeTextBuffer.writeln(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1200">',
+  );
   for (var i = 0; i < 50; i++) {
     final y = 20 + i * 22;
-    largeTextBuffer.writeln('  <text x="10" y="$y" font-size="14" fill="#333">'
-        'Line $i: Lorem ipsum dolor sit amet, consectetur adipiscing elit.</text>');
+    largeTextBuffer.writeln(
+      '  <text x="10" y="$y" font-size="14" fill="#333">'
+      'Line $i: Lorem ipsum dolor sit amet, consectetur adipiscing elit.</text>',
+    );
   }
   largeTextBuffer.writeln('</svg>');
   final largeTextSvg = largeTextBuffer.toString();

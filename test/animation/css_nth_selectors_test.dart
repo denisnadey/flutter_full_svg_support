@@ -248,7 +248,9 @@ void main() {
 
   group('CSS Selector Parser - nth pseudo-classes', () {
     test('parses :nth-child(2n+1)', () {
-      final rules = CssParser.parseSelectorRules('rect:nth-child(2n+1) { fill: red; }');
+      final rules = CssParser.parseSelectorRules(
+        'rect:nth-child(2n+1) { fill: red; }',
+      );
       expect(rules, hasLength(1));
       final sel = rules.first.parsedSelector!.parts.first.selector;
       expect(sel.tagName, equals('rect'));
@@ -259,7 +261,9 @@ void main() {
     });
 
     test('parses :nth-last-child(3)', () {
-      final rules = CssParser.parseSelectorRules(':nth-last-child(3) { fill: red; }');
+      final rules = CssParser.parseSelectorRules(
+        ':nth-last-child(3) { fill: red; }',
+      );
       expect(rules, hasLength(1));
       final sel = rules.first.parsedSelector!.parts.first.selector;
       expect(sel.nthPseudoClasses, hasLength(1));
@@ -269,7 +273,9 @@ void main() {
     });
 
     test('parses :nth-of-type(odd)', () {
-      final rules = CssParser.parseSelectorRules('circle:nth-of-type(odd) { fill: red; }');
+      final rules = CssParser.parseSelectorRules(
+        'circle:nth-of-type(odd) { fill: red; }',
+      );
       expect(rules, hasLength(1));
       final sel = rules.first.parsedSelector!.parts.first.selector;
       expect(sel.nthPseudoClasses, hasLength(1));
@@ -279,7 +285,9 @@ void main() {
     });
 
     test('parses :nth-last-of-type(even)', () {
-      final rules = CssParser.parseSelectorRules('rect:nth-last-of-type(even) { fill: red; }');
+      final rules = CssParser.parseSelectorRules(
+        'rect:nth-last-of-type(even) { fill: red; }',
+      );
       expect(rules, hasLength(1));
       final sel = rules.first.parsedSelector!.parts.first.selector;
       expect(sel.nthPseudoClasses, hasLength(1));

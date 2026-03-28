@@ -3,11 +3,13 @@
     <defs>
         <!-- Star path for clip-rule testing -->
         <clipPath id="starNonzero" clip-rule="nonzero">
-            <path d="M100,10 L130,90 L200,90 L145,130 L170,200 L100,160 L30,200 L55,130 L0,90 L70,90 Z" />
+            <path
+                d="M100,10 L130,90 L200,90 L145,130 L170,200 L100,160 L30,200 L55,130 L0,90 L70,90 Z" />
         </clipPath>
 
         <clipPath id="starEvenodd" clip-rule="evenodd">
-            <path d="M100,10 L130,90 L200,90 L145,130 L170,200 L100,160 L30,200 L55,130 L0,90 L70,90 Z" />
+            <path
+                d="M100,10 L130,90 L200,90 L145,130 L170,200 L100,160 L30,200 L55,130 L0,90 L70,90 Z" />
         </clipPath>
 
         <!-- Concentric circles for clip-rule -->
