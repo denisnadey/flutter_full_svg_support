@@ -8,145 +8,152 @@ void main() {
   group('SMIL Timing Precision', () {
     // ========== Fractional repeatCount Tests ==========
     group('Fractional repeatCount precision', () {
-      test('repeatCount="2.5" with dur="1s" produces exactly 2.5s active duration', () {
-        final node = SvgNode(tagName: 'rect', attributes: {});
-        final anim = SmilAnimation(
-          id: 'anim1',
-          type: SmilAnimationType.animate,
-          targetNode: node,
-          attributeName: 'x',
-          attributeType: SvgAttributeType.number,
-          from: 0.0,
-          to: 100.0,
-          dur: const Duration(seconds: 1),
-          repeatCount: 2.5,
-          begin: Duration.zero,
-          beginConditions: [OffsetCondition(Duration.zero)],
-          documentOrder: 0,
-        );
+      test(
+        'repeatCount="2.5" with dur="1s" produces exactly 2.5s active duration',
+        () {
+          final node = SvgNode(tagName: 'rect', attributes: {});
+          final anim = SmilAnimation(
+            id: 'anim1',
+            type: SmilAnimationType.animate,
+            targetNode: node,
+            attributeName: 'x',
+            attributeType: SvgAttributeType.number,
+            from: 0.0,
+            to: 100.0,
+            dur: const Duration(seconds: 1),
+            repeatCount: 2.5,
+            begin: Duration.zero,
+            beginConditions: [OffsetCondition(Duration.zero)],
+            documentOrder: 0,
+          );
 
-        // Active duration should be exactly 2.5 seconds
-        final activeDuration = anim.getEffectiveEndTime() - anim.getEffectiveBeginTime();
-        expect(activeDuration, const Duration(milliseconds: 2500));
-      });
+          // Active duration should be exactly 2.5 seconds
+          final activeDuration =
+              anim.getEffectiveEndTime() - anim.getEffectiveBeginTime();
+          expect(activeDuration, const Duration(milliseconds: 2500));
+        },
+      );
 
-      test('fractional repeatCount boundary values (0.0, 0.5, 1.0, 1.5, 2.0, 2.5)', () {
-        final node = SvgNode(tagName: 'rect', attributes: {});
-        node.setAttribute('x', 0.0, type: SvgAttributeType.number);
+      test(
+        'fractional repeatCount boundary values (0.0, 0.5, 1.0, 1.5, 2.0, 2.5)',
+        () {
+          final node = SvgNode(tagName: 'rect', attributes: {});
+          node.setAttribute('x', 0.0, type: SvgAttributeType.number);
 
-        final anim = SmilAnimation(
-          id: 'anim1',
-          type: SmilAnimationType.animate,
-          targetNode: node,
-          attributeName: 'x',
-          attributeType: SvgAttributeType.number,
-          from: 0.0,
-          to: 100.0,
-          dur: const Duration(seconds: 1),
-          repeatCount: 2.5,
-          fillMode: SmilFillMode.freeze,
-          begin: Duration.zero,
-          beginConditions: [OffsetCondition(Duration.zero)],
-          documentOrder: 0,
-        );
+          final anim = SmilAnimation(
+            id: 'anim1',
+            type: SmilAnimationType.animate,
+            targetNode: node,
+            attributeName: 'x',
+            attributeType: SvgAttributeType.number,
+            from: 0.0,
+            to: 100.0,
+            dur: const Duration(seconds: 1),
+            repeatCount: 2.5,
+            fillMode: SmilFillMode.freeze,
+            begin: Duration.zero,
+            beginConditions: [OffsetCondition(Duration.zero)],
+            documentOrder: 0,
+          );
 
-        final rootNode = SvgNode(tagName: 'svg', attributes: {});
-        final timeline = SvgTimeline(
-          animations: [anim],
-          rootNode: rootNode,
-        );
+          final rootNode = SvgNode(tagName: 'svg', attributes: {});
+          final timeline = SvgTimeline(animations: [anim], rootNode: rootNode);
 
-        // t=0.0: start of iteration 0, progress = 0.0
-        timeline.seek(Duration.zero);
-        expect(anim.isActive, isTrue);
-        expect(anim.currentIteration, 0);
+          // t=0.0: start of iteration 0, progress = 0.0
+          timeline.seek(Duration.zero);
+          expect(anim.isActive, isTrue);
+          expect(anim.currentIteration, 0);
 
-        // t=0.5: middle of iteration 0, progress = 0.5
-        timeline.seek(const Duration(milliseconds: 500));
-        expect(anim.isActive, isTrue);
-        expect(anim.currentIteration, 0);
+          // t=0.5: middle of iteration 0, progress = 0.5
+          timeline.seek(const Duration(milliseconds: 500));
+          expect(anim.isActive, isTrue);
+          expect(anim.currentIteration, 0);
 
-        // t=1.0: start of iteration 1, progress = 0.0
-        timeline.seek(const Duration(seconds: 1));
-        expect(anim.isActive, isTrue);
-        expect(anim.currentIteration, 1);
+          // t=1.0: start of iteration 1, progress = 0.0
+          timeline.seek(const Duration(seconds: 1));
+          expect(anim.isActive, isTrue);
+          expect(anim.currentIteration, 1);
 
-        // t=1.5: middle of iteration 1, progress = 0.5
-        timeline.seek(const Duration(milliseconds: 1500));
-        expect(anim.isActive, isTrue);
-        expect(anim.currentIteration, 1);
+          // t=1.5: middle of iteration 1, progress = 0.5
+          timeline.seek(const Duration(milliseconds: 1500));
+          expect(anim.isActive, isTrue);
+          expect(anim.currentIteration, 1);
 
-        // t=2.0: start of iteration 2, progress = 0.0
-        timeline.seek(const Duration(seconds: 2));
-        expect(anim.isActive, isTrue);
-        expect(anim.currentIteration, 2);
+          // t=2.0: start of iteration 2, progress = 0.0
+          timeline.seek(const Duration(seconds: 2));
+          expect(anim.isActive, isTrue);
+          expect(anim.currentIteration, 2);
 
-        // t=2.5: exactly at end (progress = 0.5 within iteration 2)
-        timeline.seek(const Duration(milliseconds: 2500));
-        expect(anim.isActive, isFalse); // Just past active period
-      });
+          // t=2.5: exactly at end (progress = 0.5 within iteration 2)
+          timeline.seek(const Duration(milliseconds: 2500));
+          expect(anim.isActive, isFalse); // Just past active period
+        },
+      );
 
-      test('interpolation fraction at end of fractional repeatCount is exact', () {
-        final node = SvgNode(tagName: 'rect', attributes: {});
-        node.setAttribute('x', 0.0, type: SvgAttributeType.number);
+      test(
+        'interpolation fraction at end of fractional repeatCount is exact',
+        () {
+          final node = SvgNode(tagName: 'rect', attributes: {});
+          node.setAttribute('x', 0.0, type: SvgAttributeType.number);
 
-        final anim = SmilAnimation(
-          id: 'anim1',
-          type: SmilAnimationType.animate,
-          targetNode: node,
-          attributeName: 'x',
-          attributeType: SvgAttributeType.number,
-          from: 0.0,
-          to: 100.0,
-          dur: const Duration(seconds: 1),
-          repeatCount: 2.5,
-          fillMode: SmilFillMode.freeze,
-          begin: Duration.zero,
-          beginConditions: [OffsetCondition(Duration.zero)],
-          documentOrder: 0,
-        );
+          final anim = SmilAnimation(
+            id: 'anim1',
+            type: SmilAnimationType.animate,
+            targetNode: node,
+            attributeName: 'x',
+            attributeType: SvgAttributeType.number,
+            from: 0.0,
+            to: 100.0,
+            dur: const Duration(seconds: 1),
+            repeatCount: 2.5,
+            fillMode: SmilFillMode.freeze,
+            begin: Duration.zero,
+            beginConditions: [OffsetCondition(Duration.zero)],
+            documentOrder: 0,
+          );
 
-        // At t=2.5s (end), the value should be exactly 50.0 (0.5 * 100)
-        // This tests that fractional progress is computed correctly
-        final value = anim.computeValue(0.5, completedRepeats: 2);
-        expect(value, 50.0);
-      });
+          // At t=2.5s (end), the value should be exactly 50.0 (0.5 * 100)
+          // This tests that fractional progress is computed correctly
+          final value = anim.computeValue(0.5, completedRepeats: 2);
+          expect(value, 50.0);
+        },
+      );
 
-      test('indefinite repeatCount does not accumulate drift over many iterations', () {
-        final node = SvgNode(tagName: 'rect', attributes: {});
-        node.setAttribute('x', 0.0, type: SvgAttributeType.number);
+      test(
+        'indefinite repeatCount does not accumulate drift over many iterations',
+        () {
+          final node = SvgNode(tagName: 'rect', attributes: {});
+          node.setAttribute('x', 0.0, type: SvgAttributeType.number);
 
-        final anim = SmilAnimation(
-          id: 'anim1',
-          type: SmilAnimationType.animate,
-          targetNode: node,
-          attributeName: 'x',
-          attributeType: SvgAttributeType.number,
-          from: 0.0,
-          to: 100.0,
-          dur: const Duration(milliseconds: 100),
-          repeatCount: 10000.0, // Use large finite value instead of infinity
-          begin: Duration.zero,
-          beginConditions: [OffsetCondition(Duration.zero)],
-          documentOrder: 0,
-        );
+          final anim = SmilAnimation(
+            id: 'anim1',
+            type: SmilAnimationType.animate,
+            targetNode: node,
+            attributeName: 'x',
+            attributeType: SvgAttributeType.number,
+            from: 0.0,
+            to: 100.0,
+            dur: const Duration(milliseconds: 100),
+            repeatCount: 10000.0, // Use large finite value instead of infinity
+            begin: Duration.zero,
+            beginConditions: [OffsetCondition(Duration.zero)],
+            documentOrder: 0,
+          );
 
-        final rootNode = SvgNode(tagName: 'svg', attributes: {});
-        final timeline = SvgTimeline(
-          animations: [anim],
-          rootNode: rootNode,
-        );
+          final rootNode = SvgNode(tagName: 'svg', attributes: {});
+          final timeline = SvgTimeline(animations: [anim], rootNode: rootNode);
 
-        // After 1000 iterations (100 seconds with 100ms dur), check for drift
-        final time1000 = const Duration(seconds: 100);
-        timeline.seek(time1000);
-        expect(anim.isActive, isTrue);
-        expect(anim.currentIteration, 1000);
+          // After 1000 iterations (100 seconds with 100ms dur), check for drift
+          final time1000 = const Duration(seconds: 100);
+          timeline.seek(time1000);
+          expect(anim.isActive, isTrue);
+          expect(anim.currentIteration, 1000);
 
-        // At exactly t=100s, we should be at start of iteration 1000
-        // localTime should be 0 (or very close to 0)
-        expect(anim.localTime.inMicroseconds, 0);
-      });
+          // At exactly t=100s, we should be at start of iteration 1000
+          // localTime should be 0 (or very close to 0)
+          expect(anim.localTime.inMicroseconds, 0);
+        },
+      );
     });
 
     // ========== Very Small Durations Tests ==========
@@ -171,10 +178,7 @@ void main() {
         );
 
         final rootNode = SvgNode(tagName: 'svg', attributes: {});
-        final timeline = SvgTimeline(
-          animations: [anim],
-          rootNode: rootNode,
-        );
+        final timeline = SvgTimeline(animations: [anim], rootNode: rootNode);
 
         // Should handle 1ms duration correctly
         timeline.seek(const Duration(microseconds: 500));
@@ -207,10 +211,7 @@ void main() {
         );
 
         final rootNode = SvgNode(tagName: 'svg', attributes: {});
-        final timeline = SvgTimeline(
-          animations: [anim],
-          rootNode: rootNode,
-        );
+        final timeline = SvgTimeline(animations: [anim], rootNode: rootNode);
 
         // Should handle 100us duration correctly
         timeline.seek(const Duration(microseconds: 50));
@@ -239,7 +240,8 @@ void main() {
         );
 
         // Zero duration should produce zero active duration
-        final activeDuration = anim.getEffectiveEndTime() - anim.getEffectiveBeginTime();
+        final activeDuration =
+            anim.getEffectiveEndTime() - anim.getEffectiveBeginTime();
         expect(activeDuration, Duration.zero);
       });
 
@@ -264,7 +266,8 @@ void main() {
 
         // Should compute active duration without overflow
         // 100us * 1000000 = 100 seconds
-        final activeDuration = anim.getEffectiveEndTime() - anim.getEffectiveBeginTime();
+        final activeDuration =
+            anim.getEffectiveEndTime() - anim.getEffectiveBeginTime();
         expect(activeDuration, const Duration(seconds: 100));
       });
     });
@@ -273,7 +276,7 @@ void main() {
     group('end + repeatDur interaction', () {
       test('repeatDur="5s" and end="3s" - end wins (3s)', () {
         final node = SvgNode(tagName: 'rect', attributes: {});
-        
+
         final anim = SmilAnimation(
           id: 'anim1',
           type: SmilAnimationType.animate,
@@ -295,13 +298,14 @@ void main() {
         // repeatCount*dur = 10s, repeatDur = 5s -> repeat duration = 5s
         // end - begin = 3s
         // activeDur = min(5, 3) = 3s
-        final activeDuration = anim.getEffectiveEndTime() - anim.getEffectiveBeginTime();
+        final activeDuration =
+            anim.getEffectiveEndTime() - anim.getEffectiveBeginTime();
         expect(activeDuration, const Duration(seconds: 3));
       });
 
       test('repeatDur="3s" and end="5s" - repeatDur wins (3s)', () {
         final node = SvgNode(tagName: 'rect', attributes: {});
-        
+
         final anim = SmilAnimation(
           id: 'anim1',
           type: SmilAnimationType.animate,
@@ -322,13 +326,14 @@ void main() {
         // repeatCount*dur = 10s, repeatDur = 3s -> repeat duration = 3s
         // end - begin = 5s
         // activeDur = min(3, 5) = 3s
-        final activeDuration = anim.getEffectiveEndTime() - anim.getEffectiveBeginTime();
+        final activeDuration =
+            anim.getEffectiveEndTime() - anim.getEffectiveBeginTime();
         expect(activeDuration, const Duration(seconds: 3));
       });
 
       test('repeatDur="indefinite" and end="5s" - end determines (5s)', () {
         final node = SvgNode(tagName: 'rect', attributes: {});
-        
+
         final anim = SmilAnimation(
           id: 'anim1',
           type: SmilAnimationType.animate,
@@ -346,13 +351,14 @@ void main() {
         );
 
         // With indefinite repeatCount and end=5s, activeDur = 5s
-        final activeDuration = anim.getEffectiveEndTime() - anim.getEffectiveBeginTime();
+        final activeDuration =
+            anim.getEffectiveEndTime() - anim.getEffectiveBeginTime();
         expect(activeDuration, const Duration(seconds: 5));
       });
 
       test('end before begin produces zero active duration', () {
         final node = SvgNode(tagName: 'rect', attributes: {});
-        
+
         final anim = SmilAnimation(
           id: 'anim1',
           type: SmilAnimationType.animate,
@@ -369,7 +375,8 @@ void main() {
         );
 
         // max(end - begin, 0) = max(3-5, 0) = max(-2, 0) = 0
-        final activeDuration = anim.getEffectiveEndTime() - anim.getEffectiveBeginTime();
+        final activeDuration =
+            anim.getEffectiveEndTime() - anim.getEffectiveBeginTime();
         expect(activeDuration, Duration.zero);
       });
 
@@ -395,10 +402,7 @@ void main() {
         );
 
         final rootNode = SvgNode(tagName: 'svg', attributes: {});
-        final timeline = SvgTimeline(
-          animations: [anim],
-          rootNode: rootNode,
-        );
+        final timeline = SvgTimeline(animations: [anim], rootNode: rootNode);
 
         // At 3s (end), should be at 50% of iteration 1 (t=3s, dur=2s -> iteration 1, 50% through)
         timeline.seek(const Duration(seconds: 3));
@@ -411,7 +415,7 @@ void main() {
     group('min/max timing constraints', () {
       test('min="2s" extends 1s active duration to 2s', () {
         final node = SvgNode(tagName: 'rect', attributes: {});
-        
+
         final anim = SmilAnimation(
           id: 'anim1',
           type: SmilAnimationType.animate,
@@ -429,13 +433,14 @@ void main() {
         );
 
         // Computed active duration is 1s, but min extends it to 2s
-        final activeDuration = anim.getEffectiveEndTime() - anim.getEffectiveBeginTime();
+        final activeDuration =
+            anim.getEffectiveEndTime() - anim.getEffectiveBeginTime();
         expect(activeDuration, const Duration(seconds: 2));
       });
 
       test('max="3s" truncates 5s active duration to 3s', () {
         final node = SvgNode(tagName: 'rect', attributes: {});
-        
+
         final anim = SmilAnimation(
           id: 'anim1',
           type: SmilAnimationType.animate,
@@ -453,13 +458,14 @@ void main() {
         );
 
         // Computed active duration is 5s, but max truncates to 3s
-        final activeDuration = anim.getEffectiveEndTime() - anim.getEffectiveBeginTime();
+        final activeDuration =
+            anim.getEffectiveEndTime() - anim.getEffectiveBeginTime();
         expect(activeDuration, const Duration(seconds: 3));
       });
 
       test('when min > max, min takes precedence', () {
         final node = SvgNode(tagName: 'rect', attributes: {});
-        
+
         final anim = SmilAnimation(
           id: 'anim1',
           type: SmilAnimationType.animate,
@@ -479,7 +485,8 @@ void main() {
 
         // Per SMIL spec: min takes precedence over max
         // Result should be 5s (min wins)
-        final activeDuration = anim.getEffectiveEndTime() - anim.getEffectiveBeginTime();
+        final activeDuration =
+            anim.getEffectiveEndTime() - anim.getEffectiveBeginTime();
         expect(activeDuration, const Duration(seconds: 5));
       });
 
@@ -505,10 +512,7 @@ void main() {
         );
 
         final rootNode = SvgNode(tagName: 'svg', attributes: {});
-        final timeline = SvgTimeline(
-          animations: [anim],
-          rootNode: rootNode,
-        );
+        final timeline = SvgTimeline(animations: [anim], rootNode: rootNode);
 
         // At t=1s, animation completes but we're still in active period due to min
         timeline.seek(const Duration(seconds: 1));
@@ -546,26 +550,29 @@ void main() {
         );
 
         final rootNode = SvgNode(tagName: 'svg', attributes: {});
-        final timeline = SvgTimeline(
-          animations: [anim],
-          rootNode: rootNode,
-        );
+        final timeline = SvgTimeline(animations: [anim], rootNode: rootNode);
 
         // Simulate many iterations - test at iteration boundaries
         final testIterations = [100, 500, 1000, 5000, 10000];
         for (final i in testIterations) {
-          final time = Duration(milliseconds: i * 100); // Exactly at iteration boundaries
+          final time = Duration(
+            milliseconds: i * 100,
+          ); // Exactly at iteration boundaries
           timeline.seek(time);
-          
+
           // At exact iteration boundaries, localTime should be 0
-          expect(anim.localTime.inMicroseconds, 0,
-            reason: 'At iteration $i, localTime should be 0');
-          expect(anim.currentIteration, i,
-            reason: 'Should be at iteration $i');
+          expect(
+            anim.localTime.inMicroseconds,
+            0,
+            reason: 'At iteration $i, localTime should be 0',
+          );
+          expect(anim.currentIteration, i, reason: 'Should be at iteration $i');
         }
 
         // Check a specific iteration's midpoint
-        timeline.seek(const Duration(milliseconds: 1000050)); // 10000.5 iterations
+        timeline.seek(
+          const Duration(milliseconds: 1000050),
+        ); // 10000.5 iterations
         expect(anim.currentIteration, 10000);
         expect(anim.localTime.inMicroseconds, 50000); // 50ms into iteration
       });
@@ -590,21 +597,20 @@ void main() {
         );
 
         final rootNode = SvgNode(tagName: 'svg', attributes: {});
-        final timeline = SvgTimeline(
-          animations: [anim],
-          rootNode: rootNode,
-        );
+        final timeline = SvgTimeline(animations: [anim], rootNode: rootNode);
 
         // Use tick() with small deltas to simulate real-time playback
         // This tests for drift accumulation
         const tickDelta = Duration(microseconds: 16667); // ~60fps
-        for (int i = 0; i < 60 * 10; i++) { // 10 seconds of playback
+        for (int i = 0; i < 60 * 10; i++) {
+          // 10 seconds of playback
           timeline.tick(tickDelta);
         }
 
         // After ~10 seconds, we should be at ~iteration 100
         // Check that iteration count is close to expected
-        final expectedIterations = timeline.currentTime.inMicroseconds ~/ 100000;
+        final expectedIterations =
+            timeline.currentTime.inMicroseconds ~/ 100000;
         expect(anim.currentIteration, closeTo(expectedIterations, 1));
       });
     });

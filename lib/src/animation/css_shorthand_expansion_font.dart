@@ -112,7 +112,9 @@ Map<String, String> _expandFont(String value) {
 
     // Check for font-size (required value)
     // If we find it, stop parsing optional properties
-    final sizeLineHeightMatch = RegExp(r'^([^\s/]+)/([^\s]+)$').firstMatch(token);
+    final sizeLineHeightMatch = RegExp(
+      r'^([^\s/]+)/([^\s]+)$',
+    ).firstMatch(token);
     if (sizeLineHeightMatch != null) {
       result['font-size'] = sizeLineHeightMatch.group(1)!;
       result['line-height'] = sizeLineHeightMatch.group(2)!;

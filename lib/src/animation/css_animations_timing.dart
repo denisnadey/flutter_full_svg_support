@@ -315,8 +315,7 @@ List<CssAnimation> _parseMultipleAnimationsFromStyle(String styleText) {
   final durationStr = expandedProperties['animation-duration'] ?? '0s';
   final timingStr = expandedProperties['animation-timing-function'] ?? 'ease';
   final delayStr = expandedProperties['animation-delay'] ?? '0s';
-  final iterationStr =
-      expandedProperties['animation-iteration-count'] ?? '1';
+  final iterationStr = expandedProperties['animation-iteration-count'] ?? '1';
   final directionStr = expandedProperties['animation-direction'] ?? 'normal';
   final fillModeStr = expandedProperties['animation-fill-mode'] ?? 'none';
   final playStateStr = expandedProperties['animation-play-state'] ?? 'running';

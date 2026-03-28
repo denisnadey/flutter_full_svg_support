@@ -351,7 +351,7 @@ class SmilAnimation {
   /// 1. Compute repeat duration from repeatCount and repeatDur
   /// 2. Consider end attribute if specified
   /// 3. Apply min/max constraints
-  /// 
+  ///
   /// Formula: activeDur = max(min, min(computedActiveDur, max))
   /// When min > max, min takes precedence (per SMIL spec)
   Duration _computeActiveDuration() {
@@ -394,7 +394,7 @@ class SmilAnimation {
       final effectiveBegin = getEffectiveBeginTime();
       final endOffset = end! - effectiveBegin;
       final endBasedDuration = endOffset.isNegative ? Duration.zero : endOffset;
-      
+
       // Take minimum of repeat duration and end-based duration
       if (endBasedDuration < computedActiveDur) {
         computedActiveDur = endBasedDuration;
@@ -602,7 +602,10 @@ class SmilAnimation {
           : elapsedMicros ~/ durMicros;
       _localTime = dur; // At end of iteration
       final finalT = _resolveDirectedProgress(1.0, _currentIteration - 1);
-      _lastValue = computeValue(finalT, completedRepeats: _currentIteration - 1);
+      _lastValue = computeValue(
+        finalT,
+        completedRepeats: _currentIteration - 1,
+      );
       if (_lastValue != null) {
         _applyValue(_lastValue!);
       }
@@ -616,7 +619,7 @@ class SmilAnimation {
     // Progress within iteration (0.0 - 1.0)
     // Use high-precision calculation with proper boundary handling
     double baseT = iterationMicros / durMicros;
-    
+
     // Handle boundary precision: if very close to 1.0, snap to exact 1.0
     // This prevents floating-point drift like 0.999999... or 1.000001...
     const epsilon = 1e-10;
@@ -625,7 +628,7 @@ class SmilAnimation {
     } else if (baseT < epsilon) {
       baseT = 0.0;
     }
-    
+
     final t = _resolveDirectedProgress(baseT, _currentIteration);
 
     // Compute value with completed repetitions
@@ -643,7 +646,7 @@ class SmilAnimation {
     if (dur.inMicroseconds <= 0) {
       return Duration.zero;
     }
-    
+
     final repeatCountDuration = repeatCount.isInfinite
         ? null
         : _multiplyDuration(dur, repeatCount);

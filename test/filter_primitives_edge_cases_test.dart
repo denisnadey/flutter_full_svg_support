@@ -51,8 +51,11 @@ void main() {
       // Corner pixels should be computed using transparent out-of-bounds
       // The result should be non-zero since some in-bounds neighbors exist
       // but the alpha should still be affected by transparent samples
-      expect(result[3], lessThanOrEqualTo(255),
-          reason: 'Alpha should be reduced by transparent edge samples');
+      expect(
+        result[3],
+        lessThanOrEqualTo(255),
+        reason: 'Alpha should be reduced by transparent edge samples',
+      );
     });
 
     test('edgeMode="duplicate" clamps to edge pixels', () {
@@ -182,8 +185,11 @@ void main() {
 
       // With scale=0, output should match input (displacement * 0 = no change)
       for (int i = 0; i < result.length; i++) {
-        expect(result[i], inputPixels[i],
-            reason: 'Zero scale should not change pixels');
+        expect(
+          result[i],
+          inputPixels[i],
+          reason: 'Zero scale should not change pixels',
+        );
       }
     });
 
@@ -262,8 +268,11 @@ void main() {
           break;
         }
       }
-      expect(hasDifference, isTrue,
-          reason: 'Different channel selectors should produce different results');
+      expect(
+        hasDifference,
+        isTrue,
+        reason: 'Different channel selectors should produce different results',
+      );
     });
 
     test('edge mode none returns transparent for out-of-bounds', () {
@@ -295,8 +304,12 @@ void main() {
           break;
         }
       }
-      expect(hasTransparent, isTrue,
-          reason: 'Out-of-bounds should produce transparent pixels with none mode');
+      expect(
+        hasTransparent,
+        isTrue,
+        reason:
+            'Out-of-bounds should produce transparent pixels with none mode',
+      );
     });
   });
 
@@ -309,7 +322,11 @@ void main() {
       );
 
       expect(filter.isPassthrough, isTrue);
-      expect(filter.apply(), isNull, reason: 'Zero blur should return null filter');
+      expect(
+        filter.apply(),
+        isNull,
+        reason: 'Zero blur should return null filter',
+      );
     });
 
     test('stdDeviation=1 produces valid filter', () {
@@ -430,7 +447,11 @@ void main() {
           break;
         }
       }
-      expect(hasNonZero, isTrue, reason: 'Turbulence should produce non-zero values');
+      expect(
+        hasNonZero,
+        isTrue,
+        reason: 'Turbulence should produce non-zero values',
+      );
     });
 
     test('stitch mode produces seamless tiling', () {
@@ -494,8 +515,11 @@ void main() {
           break;
         }
       }
-      expect(hasDifference, isTrue,
-          reason: 'turbulence and fractalNoise should produce different results');
+      expect(
+        hasDifference,
+        isTrue,
+        reason: 'turbulence and fractalNoise should produce different results',
+      );
     });
 
     test('different seeds produce different noise', () {
@@ -538,8 +562,11 @@ void main() {
           break;
         }
       }
-      expect(hasDifference, isTrue,
-          reason: 'Different seeds should produce different noise');
+      expect(
+        hasDifference,
+        isTrue,
+        reason: 'Different seeds should produce different noise',
+      );
     });
 
     test('TurbulenceNoiseGenerator produces deterministic output', () {
@@ -549,8 +576,11 @@ void main() {
       final value1 = gen1.noise2D(10.5, 20.3);
       final value2 = gen2.noise2D(10.5, 20.3);
 
-      expect(value1, value2,
-          reason: 'Same seed should produce same noise value');
+      expect(
+        value1,
+        value2,
+        reason: 'Same seed should produce same noise value',
+      );
     });
   });
 
@@ -615,10 +645,14 @@ void main() {
       expect(FeImageLoader.isSupportedImageFormat('image.gif'), isTrue);
       expect(FeImageLoader.isSupportedImageFormat('image.webp'), isTrue);
       expect(FeImageLoader.isSupportedImageFormat('image.svg'), isTrue);
-      expect(FeImageLoader.isSupportedImageFormat('data:image/png;base64,abc'),
-          isTrue);
-      expect(FeImageLoader.isSupportedImageFormat('https://example.com/img'),
-          isTrue);
+      expect(
+        FeImageLoader.isSupportedImageFormat('data:image/png;base64,abc'),
+        isTrue,
+      );
+      expect(
+        FeImageLoader.isSupportedImageFormat('https://example.com/img'),
+        isTrue,
+      );
     });
 
     test('FeImageLoader detects SVG images', () {
@@ -650,23 +684,39 @@ void main() {
     test('SvgConvolveEdgeMode has all required values', () {
       expect(SvgConvolveEdgeMode.values.length, 3);
       expect(SvgConvolveEdgeMode.values, contains(SvgConvolveEdgeMode.none));
-      expect(SvgConvolveEdgeMode.values, contains(SvgConvolveEdgeMode.duplicate));
+      expect(
+        SvgConvolveEdgeMode.values,
+        contains(SvgConvolveEdgeMode.duplicate),
+      );
       expect(SvgConvolveEdgeMode.values, contains(SvgConvolveEdgeMode.wrap));
     });
 
     test('SvgDisplacementEdgeMode has all required values', () {
       expect(SvgDisplacementEdgeMode.values.length, 3);
-      expect(SvgDisplacementEdgeMode.values, contains(SvgDisplacementEdgeMode.none));
-      expect(SvgDisplacementEdgeMode.values, contains(SvgDisplacementEdgeMode.clamp));
-      expect(SvgDisplacementEdgeMode.values, contains(SvgDisplacementEdgeMode.wrap));
+      expect(
+        SvgDisplacementEdgeMode.values,
+        contains(SvgDisplacementEdgeMode.none),
+      );
+      expect(
+        SvgDisplacementEdgeMode.values,
+        contains(SvgDisplacementEdgeMode.clamp),
+      );
+      expect(
+        SvgDisplacementEdgeMode.values,
+        contains(SvgDisplacementEdgeMode.wrap),
+      );
     });
 
     test('SvgTurbulenceStitchTiles has all required values', () {
       expect(SvgTurbulenceStitchTiles.values.length, 2);
-      expect(SvgTurbulenceStitchTiles.values,
-          contains(SvgTurbulenceStitchTiles.noStitch));
-      expect(SvgTurbulenceStitchTiles.values,
-          contains(SvgTurbulenceStitchTiles.stitch));
+      expect(
+        SvgTurbulenceStitchTiles.values,
+        contains(SvgTurbulenceStitchTiles.noStitch),
+      );
+      expect(
+        SvgTurbulenceStitchTiles.values,
+        contains(SvgTurbulenceStitchTiles.stitch),
+      );
     });
 
     test('SvgChannelSelector has all required values', () {

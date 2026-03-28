@@ -95,22 +95,25 @@ void main() {
       // parent's font-size, not the element's own font-size
       final result = CssCalcEvaluator.evaluate(
         '2em',
-        fontSize: 24.0, // Element's current font-size (irrelevant for font-size)
+        fontSize:
+            24.0, // Element's current font-size (irrelevant for font-size)
         parentFontSize: 16.0, // Parent's font-size (should be used)
       );
       expect(result, equals(32.0)); // 16 * 2 = 32
     });
 
-    test('em uses fontSize when parentFontSize is null (non-font-size context)',
-        () {
-      // For properties other than font-size, em is relative to element's
-      // own computed font-size
-      final result = CssCalcEvaluator.evaluate(
-        '2em',
-        fontSize: 24.0, // Element's font-size (should be used)
-      );
-      expect(result, equals(48.0)); // 24 * 2 = 48
-    });
+    test(
+      'em uses fontSize when parentFontSize is null (non-font-size context)',
+      () {
+        // For properties other than font-size, em is relative to element's
+        // own computed font-size
+        final result = CssCalcEvaluator.evaluate(
+          '2em',
+          fontSize: 24.0, // Element's font-size (should be used)
+        );
+        expect(result, equals(48.0)); // 24 * 2 = 48
+      },
+    );
   });
 
   group('rem unit resolution', () {
@@ -286,10 +289,7 @@ void main() {
     test('calc with multiplication and different units', () {
       // calc(2em * 3)
       // 2em = 32px, 32 * 3 = 96px
-      final result = CssCalcEvaluator.evaluate(
-        'calc(2em * 3)',
-        fontSize: 16.0,
-      );
+      final result = CssCalcEvaluator.evaluate('calc(2em * 3)', fontSize: 16.0);
       expect(result, equals(96.0));
     });
 

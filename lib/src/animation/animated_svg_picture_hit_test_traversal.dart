@@ -58,7 +58,7 @@ extension _AnimatedSvgPictureStateHitTestTraversalExtension
   }
 
   /// Hit tests with anchor tracking - returns both element ID and anchor info.
-  /// 
+  ///
   /// Visibility handling per CSS/SVG spec:
   /// - display:none - NOT hit-testable, element doesn't exist for layout
   /// - visibility:hidden/collapse - NOT hit-testable (but children can override)

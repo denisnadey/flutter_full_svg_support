@@ -34,7 +34,7 @@ extension AnimatedSvgPainterUseForeignObjectExtension on AnimatedSvgPainter {
   }
 
   /// Applies nested SVG viewport transform within foreignObject.
-  /// 
+  ///
   /// This method establishes an independent viewport for nested SVG elements:
   /// - The nested SVG's viewBox is resolved relative to the foreignObject's
   ///   width/height (or the nested SVG's explicit dimensions)
@@ -58,28 +58,28 @@ extension AnimatedSvgPainterUseForeignObjectExtension on AnimatedSvgPainter {
     if (foWidth <= 0 || foHeight <= 0) {
       return;
     }
-    
+
     // Handle nested SVG position (x, y)
     final svgX = _getNumber(svgNode, 'x') ?? 0.0;
     final svgY = _getNumber(svgNode, 'y') ?? 0.0;
-    
+
     // Resolve nested SVG dimensions - support percentages relative to foreignObject
-    final svgWidth = _resolveForeignObjectNestedDimension(
-      svgNode, 'width', foWidth,
-    ) ?? foWidth;
-    final svgHeight = _resolveForeignObjectNestedDimension(
-      svgNode, 'height', foHeight,
-    ) ?? foHeight;
-    
+    final svgWidth =
+        _resolveForeignObjectNestedDimension(svgNode, 'width', foWidth) ??
+        foWidth;
+    final svgHeight =
+        _resolveForeignObjectNestedDimension(svgNode, 'height', foHeight) ??
+        foHeight;
+
     if (svgWidth <= 0 || svgHeight <= 0) {
       return;
     }
-    
+
     // Apply position offset
     if (svgX != 0 || svgY != 0) {
       canvas.translate(svgX, svgY);
     }
-    
+
     final viewBoxAttr = svgNode.getAttributeValue('viewBox')?.toString();
     if (viewBoxAttr != null && viewBoxAttr.trim().isNotEmpty) {
       final viewBox = _parseForeignObjectViewBox(viewBoxAttr);
@@ -92,19 +92,19 @@ extension AnimatedSvgPainterUseForeignObjectExtension on AnimatedSvgPainter {
               .getAttributeValue('preserveAspectRatio')
               ?.toString(),
         );
-        
+
         // Compute the viewBox-to-viewport transform
         final scaleX = layout.destinationRect.width / viewBox.width;
         final scaleY = layout.destinationRect.height / viewBox.height;
         final translateX = layout.destinationRect.left - viewBox.left * scaleX;
         final translateY = layout.destinationRect.top - viewBox.top * scaleY;
-        
+
         // Apply the transform - this resets the coordinate system to viewBox coords
         final transform = Matrix4.identity()
           ..translateByDouble(translateX, translateY, 0, 1)
           ..scaleByDouble(scaleX, scaleY, 1, 1);
         canvas.transform(transform.storage);
-        
+
         // Handle overflow clipping for nested SVG
         final overflow = svgNode
             .getAttributeValue('overflow')
@@ -148,10 +148,10 @@ extension AnimatedSvgPainterUseForeignObjectExtension on AnimatedSvgPainter {
   ) {
     final value = node.getAttributeValue(attributeName);
     if (value == null) return null;
-    
+
     final str = value.toString().trim();
     if (str.isEmpty) return null;
-    
+
     // Handle percentage values
     if (str.endsWith('%')) {
       final percentStr = str.substring(0, str.length - 1);
@@ -159,7 +159,7 @@ extension AnimatedSvgPainterUseForeignObjectExtension on AnimatedSvgPainter {
       if (percent == null) return null;
       return (percent / 100.0) * referenceValue;
     }
-    
+
     // Handle absolute values with units
     final cleaned = str.replaceAll(RegExp(r'[a-zA-Z]+$'), '');
     return double.tryParse(cleaned);

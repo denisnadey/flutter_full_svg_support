@@ -131,7 +131,11 @@ class TurbulenceNoiseGenerator {
   /// [width] and [height] are the tile dimensions in pixels.
   /// [baseFreqX] and [baseFreqY] are the base frequencies.
   void setupStitching(
-      double width, double height, double baseFreqX, double baseFreqY) {
+    double width,
+    double height,
+    double baseFreqX,
+    double baseFreqY,
+  ) {
     // Calculate the wrap period for each axis
     // Per SVG spec: wrapX = floor(width * baseFrequencyX)
     _wrapX = math.max(1, (width * baseFreqX).floor());
@@ -209,8 +213,12 @@ class TurbulenceNoiseGenerator {
     var maxAmplitude = 0.0;
 
     for (var i = 0; i < numOctaves; i++) {
-      final noiseValue =
-          noise2D(x * freqX, y * freqY, stitch: stitch, octave: i);
+      final noiseValue = noise2D(
+        x * freqX,
+        y * freqY,
+        stitch: stitch,
+        octave: i,
+      );
 
       if (isFractalNoise) {
         // fractalNoise: signed noise [-1, 1]

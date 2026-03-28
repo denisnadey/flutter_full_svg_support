@@ -59,7 +59,7 @@ extension SmilAnimationRuntimeExtension on SmilAnimation {
     // Using high-precision math to avoid floating-point drift
     if (repeatCount.isFinite && repeatCount > 0) {
       final expectedMicros = (durMicros * repeatCount).round();
-      
+
       // Check if we're at exactly the end of the repeat cycle
       // Use epsilon comparison to handle floating-point precision
       const epsilonMicros = 1; // 1 microsecond tolerance
@@ -70,7 +70,10 @@ extension SmilAnimationRuntimeExtension on SmilAnimation {
           // Fractional repeatCount: end at fractional point
           final completedWholeIterations = repeatCount.truncate();
           return _AnimationProgress(
-            t: _resolveDirectedProgress(fractionalPart, completedWholeIterations),
+            t: _resolveDirectedProgress(
+              fractionalPart,
+              completedWholeIterations,
+            ),
             completedRepeats: completedWholeIterations,
           );
         } else {

@@ -101,9 +101,22 @@ class DisplacementMapProcessor {
 
         // Get source pixel using bilinear interpolation or nearest-neighbor
         final srcPixel = useBilinear
-            ? _getPixelBilinear(inputPixels, width, height, srcX, srcY, edgeMode)
+            ? _getPixelBilinear(
+                inputPixels,
+                width,
+                height,
+                srcX,
+                srcY,
+                edgeMode,
+              )
             : _getPixelWithEdgeMode(
-                inputPixels, width, height, srcX.round(), srcY.round(), edgeMode);
+                inputPixels,
+                width,
+                height,
+                srcX.round(),
+                srcY.round(),
+                edgeMode,
+              );
 
         // Write result pixel
         final dstIndex = (y * width + x) * 4;
@@ -147,30 +160,34 @@ class DisplacementMapProcessor {
     final ifx = 1.0 - fx;
     final ify = 1.0 - fy;
 
-    final r = (p00[0] * ifx * ify +
-            p10[0] * fx * ify +
-            p01[0] * ifx * fy +
-            p11[0] * fx * fy)
-        .round()
-        .clamp(0, 255);
-    final g = (p00[1] * ifx * ify +
-            p10[1] * fx * ify +
-            p01[1] * ifx * fy +
-            p11[1] * fx * fy)
-        .round()
-        .clamp(0, 255);
-    final b = (p00[2] * ifx * ify +
-            p10[2] * fx * ify +
-            p01[2] * ifx * fy +
-            p11[2] * fx * fy)
-        .round()
-        .clamp(0, 255);
-    final a = (p00[3] * ifx * ify +
-            p10[3] * fx * ify +
-            p01[3] * ifx * fy +
-            p11[3] * fx * fy)
-        .round()
-        .clamp(0, 255);
+    final r =
+        (p00[0] * ifx * ify +
+                p10[0] * fx * ify +
+                p01[0] * ifx * fy +
+                p11[0] * fx * fy)
+            .round()
+            .clamp(0, 255);
+    final g =
+        (p00[1] * ifx * ify +
+                p10[1] * fx * ify +
+                p01[1] * ifx * fy +
+                p11[1] * fx * fy)
+            .round()
+            .clamp(0, 255);
+    final b =
+        (p00[2] * ifx * ify +
+                p10[2] * fx * ify +
+                p01[2] * ifx * fy +
+                p11[2] * fx * fy)
+            .round()
+            .clamp(0, 255);
+    final a =
+        (p00[3] * ifx * ify +
+                p10[3] * fx * ify +
+                p01[3] * ifx * fy +
+                p11[3] * fx * fy)
+            .round()
+            .clamp(0, 255);
 
     return <int>[r, g, b, a];
   }

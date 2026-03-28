@@ -23,22 +23,25 @@ void main() {
         expect(result['font-family'], equals('Arial, sans-serif'));
       });
 
-      test('expands font shorthand with missing optional values - resets to initial', () {
-        final result = CssShorthandExpander.expandProperty(
-          'font',
-          'bold 14px monospace',
-        );
+      test(
+        'expands font shorthand with missing optional values - resets to initial',
+        () {
+          final result = CssShorthandExpander.expandProperty(
+            'font',
+            'bold 14px monospace',
+          );
 
-        // Specified values
-        expect(result['font-weight'], equals('bold'));
-        expect(result['font-size'], equals('14px'));
-        expect(result['font-family'], equals('monospace'));
+          // Specified values
+          expect(result['font-weight'], equals('bold'));
+          expect(result['font-size'], equals('14px'));
+          expect(result['font-family'], equals('monospace'));
 
-        // Missing values reset to initial
-        expect(result['font-style'], equals('normal'));
-        expect(result['font-variant'], equals('normal'));
-        expect(result['line-height'], equals('normal'));
-      });
+          // Missing values reset to initial
+          expect(result['font-style'], equals('normal'));
+          expect(result['font-variant'], equals('normal'));
+          expect(result['line-height'], equals('normal'));
+        },
+      );
 
       test('recognizes system font keywords', () {
         const systemFonts = [
@@ -51,11 +54,20 @@ void main() {
         ];
 
         for (final systemFont in systemFonts) {
-          final result = CssShorthandExpander.expandProperty('font', systemFont);
-          expect(result['font'], equals(systemFont),
-              reason: 'System font "$systemFont" should be recognized');
-          expect(result['_font-system'], equals(systemFont),
-              reason: 'System font marker should be set');
+          final result = CssShorthandExpander.expandProperty(
+            'font',
+            systemFont,
+          );
+          expect(
+            result['font'],
+            equals(systemFont),
+            reason: 'System font "$systemFont" should be recognized',
+          );
+          expect(
+            result['_font-system'],
+            equals(systemFont),
+            reason: 'System font marker should be set',
+          );
         }
       });
 
@@ -117,7 +129,10 @@ void main() {
       });
 
       test('expands two values (vertical | horizontal)', () {
-        final result = CssShorthandExpander.expandProperty('margin', '10px 20px');
+        final result = CssShorthandExpander.expandProperty(
+          'margin',
+          '10px 20px',
+        );
 
         expect(result['margin-top'], equals('10px'));
         expect(result['margin-right'], equals('20px'));
@@ -126,7 +141,10 @@ void main() {
       });
 
       test('expands three values (top | horizontal | bottom)', () {
-        final result = CssShorthandExpander.expandProperty('margin', '10px 20px 30px');
+        final result = CssShorthandExpander.expandProperty(
+          'margin',
+          '10px 20px 30px',
+        );
 
         expect(result['margin-top'], equals('10px'));
         expect(result['margin-right'], equals('20px'));
@@ -135,7 +153,10 @@ void main() {
       });
 
       test('expands four values (top | right | bottom | left)', () {
-        final result = CssShorthandExpander.expandProperty('margin', '10px 20px 30px 40px');
+        final result = CssShorthandExpander.expandProperty(
+          'margin',
+          '10px 20px 30px 40px',
+        );
 
         expect(result['margin-top'], equals('10px'));
         expect(result['margin-right'], equals('20px'));
@@ -168,7 +189,10 @@ void main() {
       });
 
       test('padding shorthand works identically', () {
-        final result = CssShorthandExpander.expandProperty('padding', '5px 10px 15px');
+        final result = CssShorthandExpander.expandProperty(
+          'padding',
+          '5px 10px 15px',
+        );
 
         expect(result['padding-top'], equals('5px'));
         expect(result['padding-right'], equals('10px'));
@@ -230,7 +254,10 @@ void main() {
         ]);
 
         expect(result['animation-name'], equals('slide, fade'));
-        expect(result['animation-duration'], equals('3s')); // Overridden for all
+        expect(
+          result['animation-duration'],
+          equals('3s'),
+        ); // Overridden for all
       });
 
       test('handles cubic-bezier timing function', () {
@@ -240,8 +267,10 @@ void main() {
         );
 
         expect(result['animation-name'], equals('bounce'));
-        expect(result['animation-timing-function'],
-            equals('cubic-bezier(0.68, -0.55, 0.265, 1.55)'));
+        expect(
+          result['animation-timing-function'],
+          equals('cubic-bezier(0.68, -0.55, 0.265, 1.55)'),
+        );
       });
 
       test('handles infinite iteration count', () {
@@ -408,7 +437,10 @@ void main() {
         expect(result['margin-top'], equals('25px')); // Last override
         expect(result['margin-right'], equals('20px')); // From second margin
         expect(result['margin-bottom'], equals('15px')); // From second margin
-        expect(result['margin-left'], equals('20px')); // From second margin (overrides 5px)
+        expect(
+          result['margin-left'],
+          equals('20px'),
+        ); // From second margin (overrides 5px)
       });
     });
 
@@ -440,10 +472,7 @@ void main() {
 
     group('Background shorthand', () {
       test('simple color background', () {
-        final result = CssShorthandExpander.expandProperty(
-          'background',
-          'red',
-        );
+        final result = CssShorthandExpander.expandProperty('background', 'red');
 
         expect(result['background-color'], equals('red'));
       });

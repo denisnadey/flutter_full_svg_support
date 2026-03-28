@@ -140,7 +140,7 @@ extension AnimatedSvgPainterShapesImageExtension on AnimatedSvgPainter {
 
     // Resolve width/height with percentage support
     final viewportSize = _getImageViewportSize(node);
-    
+
     final image = imagesByHref[href];
     // If image failed to load, render a transparent fallback rect
     // This provides graceful degradation without throwing exceptions
@@ -245,7 +245,8 @@ extension AnimatedSvgPainterShapesImageExtension on AnimatedSvgPainter {
     // This ensures that filters and other effects still have a target region
     final rect = ui.Rect.fromLTWH(x, y, width, height);
     final paint = ui.Paint()
-      ..color = const ui.Color(0x00000000) // Fully transparent
+      ..color =
+          const ui.Color(0x00000000) // Fully transparent
       ..style = ui.PaintingStyle.fill;
 
     canvas.drawRect(rect, paint);

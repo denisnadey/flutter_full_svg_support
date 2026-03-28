@@ -48,9 +48,9 @@ class SvgGaussianBlurFilter extends SvgFilter {
   /// Gets the clamped stdDeviation values.
   /// Caps at _maxGaussianBlurStdDeviation for the standard blur filter.
   (double, double) get clampedStdDeviation => (
-        stdDeviationX.clamp(0.0, _maxGaussianBlurStdDeviation),
-        stdDeviationY.clamp(0.0, _maxGaussianBlurStdDeviation),
-      );
+    stdDeviationX.clamp(0.0, _maxGaussianBlurStdDeviation),
+    stdDeviationY.clamp(0.0, _maxGaussianBlurStdDeviation),
+  );
 
   @override
   ui.ImageFilter? apply() {
@@ -163,13 +163,25 @@ class GaussianBlurProcessor {
     // Horizontal pass
     if (stdDeviationX > 0) {
       final kernel = _createGaussianKernel(stdDeviationX);
-      result = _applyHorizontalConvolution(result, width, height, kernel, edgeMode);
+      result = _applyHorizontalConvolution(
+        result,
+        width,
+        height,
+        kernel,
+        edgeMode,
+      );
     }
 
     // Vertical pass
     if (stdDeviationY > 0) {
       final kernel = _createGaussianKernel(stdDeviationY);
-      result = _applyVerticalConvolution(result, width, height, kernel, edgeMode);
+      result = _applyVerticalConvolution(
+        result,
+        width,
+        height,
+        kernel,
+        edgeMode,
+      );
     }
 
     return result;
@@ -197,10 +209,22 @@ class GaussianBlurProcessor {
     // Apply 3 passes of box blur
     for (var pass = 0; pass < 3; pass++) {
       if (radiusX > 0) {
-        result = _applyHorizontalBoxBlur(result, width, height, radiusX, edgeMode);
+        result = _applyHorizontalBoxBlur(
+          result,
+          width,
+          height,
+          radiusX,
+          edgeMode,
+        );
       }
       if (radiusY > 0) {
-        result = _applyVerticalBoxBlur(result, width, height, radiusY, edgeMode);
+        result = _applyVerticalBoxBlur(
+          result,
+          width,
+          height,
+          radiusY,
+          edgeMode,
+        );
       }
     }
 
@@ -392,7 +416,11 @@ class GaussianBlurProcessor {
 
   /// Gets coordinate with edge mode handling.
   /// Returns -1 for 'none' mode when out of bounds.
-  static int _getCoordWithEdgeMode(int coord, int size, SvgConvolveEdgeMode edgeMode) {
+  static int _getCoordWithEdgeMode(
+    int coord,
+    int size,
+    SvgConvolveEdgeMode edgeMode,
+  ) {
     if (coord >= 0 && coord < size) return coord;
 
     switch (edgeMode) {
