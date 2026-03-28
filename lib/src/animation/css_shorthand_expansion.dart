@@ -68,6 +68,8 @@ class CssShorthandExpander {
         return _expandBorderRadius(normalizedValue);
       case 'background':
         return _expandBackground(normalizedValue);
+      case 'offset':
+        return _expandOffset(normalizedValue);
       default:
         return {normalizedProperty: normalizedValue};
     }
@@ -88,7 +90,27 @@ class CssShorthandExpander {
       'border-color',
       'border-radius',
       'background',
+      'offset',
     };
     return shorthands.contains(property.toLowerCase().trim());
+  }
+
+  /// Checks if a property is a CSS motion path property.
+  /// This includes both the standard offset-* properties and legacy motion-* properties.
+  static bool isMotionProperty(String property) {
+    const motionProperties = {
+      // Standard offset properties
+      'offset',
+      'offset-path',
+      'offset-distance',
+      'offset-rotate',
+      'offset-position',
+      'offset-anchor',
+      // Legacy motion properties
+      'motion-path',
+      'motion-offset',
+      'motion-rotation',
+    };
+    return motionProperties.contains(property.toLowerCase().trim());
   }
 }

@@ -1,5 +1,9 @@
 library;
 
+import 'dart:math' as math;
+
+import 'package:meta/meta.dart';
+
 import 'svg_font_registry.dart';
 export 'svg_font_registry.dart';
 

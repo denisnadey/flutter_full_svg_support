@@ -295,5 +295,5 @@ String? _inferTransformType(Object? value) {
     return 'skewY';
   }
 
-  return 'translate'; // По умолчанию
+  return 'matrix'; // По умолчанию для нераспознанных трансформаций
 }

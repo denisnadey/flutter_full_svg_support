@@ -1,5 +1,18 @@
 part of 'animated_svg_picture.dart';
 
+/// Allowed image MIME types for data URI validation.
+/// Only these MIME types are processed; others are rejected for security.
+const Set<String> _allowedImageMimeTypes = {
+  'image/png',
+  'image/jpeg',
+  'image/jpg',
+  'image/gif',
+  'image/webp',
+  'image/svg+xml',
+  'image/bmp',
+  'image/x-icon',
+};
+
 extension _AnimatedSvgPictureStateImagesExtension on _AnimatedSvgPictureState {
   void _scheduleImagePreload() {
     final hrefs = <String>{};
@@ -46,8 +59,40 @@ extension _AnimatedSvgPictureStateImagesExtension on _AnimatedSvgPictureState {
     return href.isEmpty ? null : href;
   }
 
+  /// Checks if an href refers to an SVG file.
+  /// Returns true for .svg file extension or image/svg+xml MIME type in data URIs.
+  bool _isSvgImageHref(String href) {
+    // Check file extension
+    final lowerHref = href.toLowerCase();
+    if (lowerHref.endsWith('.svg')) {
+      return true;
+    }
+
+    // Check data URI MIME type
+    if (href.startsWith('data:')) {
+      final commaIndex = href.indexOf(',');
+      if (commaIndex > 5) {
+        final metadata = href.substring(5, commaIndex).toLowerCase();
+        return metadata.startsWith('image/svg+xml');
+      }
+    }
+
+    return false;
+  }
+
   Future<void> _resolveImageByHref(String href, int generation) async {
     try {
+      // Detect SVG-as-image references before attempting to decode
+      if (_isSvgImageHref(href)) {
+        _trace(
+          category: 'image',
+          level: SvgTraceLevel.warning,
+          message: 'Recursive SVG rendering is not yet supported',
+          data: <String, Object?>{'href': href},
+        );
+        return;
+      }
+
       final bytes = await _loadImageBytes(href);
       if (bytes == null || bytes.isEmpty) {
         _trace(
@@ -158,6 +203,23 @@ extension _AnimatedSvgPictureStateImagesExtension on _AnimatedSvgPictureState {
     final metadata = href.substring(5, commaIndex).toLowerCase();
     final payload = href.substring(commaIndex + 1);
 
+    // Validate MIME type - only allow image types for security
+    final mimeType = _extractMimeType(metadata);
+    if (mimeType != null && !_allowedImageMimeTypes.contains(mimeType)) {
+      _trace(
+        category: 'image',
+        level: SvgTraceLevel.warning,
+        message: 'Rejected non-image MIME type in data URI',
+        data: <String, Object?>{'mimeType': mimeType},
+      );
+      return null;
+    }
+
+    // Empty payload check
+    if (payload.isEmpty) {
+      return null;
+    }
+
     try {
       if (metadata.contains(';base64')) {
         return Uint8List.fromList(base64.decode(payload));
@@ -167,6 +229,24 @@ extension _AnimatedSvgPictureStateImagesExtension on _AnimatedSvgPictureState {
     } catch (_) {
       return null;
     }
+  }
+
+  /// Extracts the MIME type from data URI metadata.
+  /// Returns null if no valid MIME type found.
+  String? _extractMimeType(String metadata) {
+    // Metadata format: "mime/type" or "mime/type;base64" or "mime/type;charset=utf-8"
+    // Strip any parameters (;base64, ;charset=, etc.)
+    final semicolonIndex = metadata.indexOf(';');
+    final mimeType = semicolonIndex > 0
+        ? metadata.substring(0, semicolonIndex).trim()
+        : metadata.trim();
+
+    // Validate it looks like a MIME type (contains /)
+    if (mimeType.isEmpty || !mimeType.contains('/')) {
+      return null;
+    }
+
+    return mimeType;
   }
 
   void _disposeResolvedImages() {

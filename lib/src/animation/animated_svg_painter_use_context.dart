@@ -1,0 +1,414 @@
+part of 'animated_svg_painter.dart';
+
+/// Context for tracking inherited CSS properties across <use> element boundaries.
+///
+/// Per SVG spec, presentation attributes and inherited CSS properties on a
+/// <use> element should be visible to the referenced content. This context
+/// captures those inherited values and makes them available during rendering
+/// of the referenced subtree.
+///
+/// Cascade priority (highest to lowest):
+/// 1. Inline style on referenced element (with !important taking absolute priority)
+/// 2. CSS rules from <style> blocks (by specificity, then source order)
+/// 3. Presentation attributes on referenced element
+/// 4. Inherited from <use> element's style attribute (for inheritable props only)
+/// 5. Inherited from <use> element's presentation attributes (for inheritable props)
+/// 6. Inherited from use's ancestors (DOM tree)
+/// 7. Inherited from parent use context (nested use chains)
+///
+/// IMPORTANT: Only inheritable CSS properties should flow through <use> boundaries.
+/// Non-inherited properties (opacity, transform, display, clip-path, mask, filter)
+/// should NOT cascade to referenced content.
+///
+/// ID Namespace Scoping:
+/// When multiple <use> elements reference the same content, internal IDs (for
+/// filters, gradients, clip-paths) are scoped per-use instance to avoid conflicts.
+/// Each use context tracks its unique instance ID for proper ID resolution.
+///
+/// Shadow Boundary Behavior:
+/// Per SVG 2 spec, <use> creates a shadow-like scope:
+/// - CSS selectors with combinators (>, ~, +, space) stop at shadow boundary
+/// - Inherited CSS properties flow through the boundary
+/// - Original definition context CSS rules still apply to referenced elements
+class _UseInheritanceContext {
+  _UseInheritanceContext({
+    required this.useNode,
+    this.parentContext,
+    this.cssRules,
+    this.shadowRootId,
+  }) : instanceId = _generateInstanceId();
+
+  /// Global counter for generating unique instance IDs.
+  static int _instanceCounter = 0;
+
+  /// Generates a unique instance ID for ID namespace scoping.
+  static String _generateInstanceId() {
+    _instanceCounter++;
+    return '__use_${_instanceCounter}__';
+  }
+
+  /// Resets the instance counter (useful for testing).
+  // ignore: unused_element
+  static void resetInstanceCounter() {
+    _instanceCounter = 0;
+  }
+
+  /// The <use> element providing inherited properties.
+  final SvgNode useNode;
+
+  /// Parent inheritance context for nested <use> chains.
+  final _UseInheritanceContext? parentContext;
+
+  /// CSS rules from the document's <style> blocks.
+  /// Used to resolve CSS class/id rules on referenced elements.
+  final List<CssSelectorRule>? cssRules;
+
+  /// ID of the referenced element (shadow root).
+  /// Used for tracking shadow DOM boundaries in selector matching.
+  final String? shadowRootId;
+
+  /// Unique instance ID for this use context.
+  /// Used for ID namespace scoping when multiple uses reference same content.
+  final String instanceId;
+
+  /// Gets the depth of nested use contexts.
+  int get depth => parentContext == null ? 1 : 1 + parentContext!.depth;
+
+  /// Accumulated x/y transform stack for nested uses.
+  Matrix4 get accumulatedTransform {
+    final matrix = Matrix4.identity();
+    if (parentContext != null) {
+      matrix.multiply(parentContext!.accumulatedTransform);
+    }
+    final x = useNode.getAttributeValue('x');
+    final y = useNode.getAttributeValue('y');
+    final xVal = x is num ? x.toDouble() : double.tryParse(x?.toString() ?? '');
+    final yVal = y is num ? y.toDouble() : double.tryParse(y?.toString() ?? '');
+    if (xVal != null || yVal != null) {
+      matrix.translateByDouble(xVal ?? 0.0, yVal ?? 0.0, 0.0, 1.0);
+    }
+    return matrix;
+  }
+
+  /// Composes transforms from nested use chain with a new viewBox transform.
+  Matrix4 composeNestedTransform({
+    required Matrix4 viewBoxMatrix,
+    double useX = 0.0,
+    double useY = 0.0,
+    Matrix4? useTransform,
+  }) {
+    final combined = Matrix4.identity();
+    if (parentContext != null) {
+      combined.multiply(parentContext!.accumulatedTransform);
+    }
+    if (useTransform != null) {
+      combined.multiply(useTransform);
+    }
+    if (useX != 0.0 || useY != 0.0) {
+      combined.translateByDouble(useX, useY, 0.0, 1.0);
+    }
+    combined.multiply(viewBoxMatrix);
+    return combined;
+  }
+
+  /// Gets the inherited value for a property, checking the use chain.
+  Object? getInheritedValue(String property) {
+    final normalizedProp = property.trim().toLowerCase();
+    if (!normalizedProp.startsWith('--') &&
+        !_cssInheritablePropertiesForUse.contains(normalizedProp)) {
+      return null;
+    }
+    final styleValue = _extractStyleValueFromNode(useNode, normalizedProp);
+    if (styleValue != null) {
+      return styleValue;
+    }
+    final attrValue = useNode.getAttributeValue(property);
+    if (attrValue != null) {
+      return attrValue;
+    }
+    SvgNode? ancestor = useNode.parent;
+    while (ancestor != null) {
+      final ancestorStyleValue = _extractStyleValueFromNode(
+        ancestor,
+        normalizedProp,
+      );
+      if (ancestorStyleValue != null) {
+        return ancestorStyleValue;
+      }
+      final ancestorAttrValue = ancestor.getAttributeValue(property);
+      if (ancestorAttrValue != null) {
+        return ancestorAttrValue;
+      }
+      ancestor = ancestor.parent;
+    }
+    return parentContext?.getInheritedValue(property);
+  }
+
+  /// Resolves a CSS property from document style rules for a given node.
+  String? resolveCssRuleValue(SvgNode node, String property) {
+    if (cssRules == null || cssRules!.isEmpty) {
+      return null;
+    }
+    final normalizedProperty = property.trim().toLowerCase();
+    final resolver = CssCascadeResolver(cssRules: cssRules!);
+    return resolver.resolveOwnProperty(node, normalizedProperty);
+  }
+
+  /// Resolves a CSS property with full cascade, including use context.
+  String? resolvePropertyWithCascade(SvgNode node, String property) {
+    final normalizedProperty = property.trim().toLowerCase();
+    final inlineValue = _extractStyleValueFromNode(node, normalizedProperty);
+    if (inlineValue != null) {
+      if (inlineValue.contains('!important')) {
+        return inlineValue
+            .replaceFirst(
+              RegExp(r'\s*!important\s*$', caseSensitive: false),
+              '',
+            )
+            .trim();
+      }
+    }
+    String? cssRuleValue;
+    if (cssRules != null && cssRules!.isNotEmpty) {
+      final resolver = CssCascadeResolver(cssRules: cssRules!);
+      cssRuleValue = resolver.resolveOwnProperty(node, normalizedProperty);
+    }
+    final attrValue = node.getAttributeValue(normalizedProperty)?.toString();
+    if (inlineValue != null) {
+      return inlineValue;
+    }
+    if (cssRuleValue != null) {
+      return cssRuleValue;
+    }
+    if (attrValue != null) {
+      return attrValue;
+    }
+    final inheritedValue = getInheritedValue(normalizedProperty);
+    return inheritedValue?.toString();
+  }
+
+  /// Resolves a CSS property for use shadow boundary with full cascade.
+  /// This handles the special case where CSS rules from the original
+  /// definition context still apply to the referenced element.
+  ///
+  /// Per SVG 2 spec and CSS cascade:
+  /// 1. Inline styles on referenced elements (with !important taking absolute priority)
+  /// 2. CSS rules from <style> apply normally (respecting shadow boundary for combinators)
+  /// 3. Presentation attributes on referenced elements
+  /// 4. Use element's style attribute (for inheritable properties only)
+  /// 5. Use element's presentation attributes (for inheritable properties only)
+  /// 6. Inherited from use's ancestors
+  String? resolvePropertyWithShadowCascade(SvgNode node, String property) {
+    final normalizedProperty = property.trim().toLowerCase();
+    final inlineValue = _extractStyleValueFromNode(node, normalizedProperty);
+    if (inlineValue != null) {
+      final hasImportant = inlineValue.contains('!important');
+      final cleanValue = inlineValue
+          .replaceFirst(RegExp(r'\s*!important\s*$', caseSensitive: false), '')
+          .trim();
+      if (hasImportant && cleanValue.isNotEmpty) {
+        return cleanValue;
+      }
+    }
+    String? cssRuleValue;
+    if (cssRules != null && cssRules!.isNotEmpty) {
+      final resolver = CssCascadeResolver(cssRules: cssRules!);
+      cssRuleValue = resolver.resolveOwnProperty(node, normalizedProperty);
+    }
+    if (cssRuleValue != null) {
+      if (inlineValue != null) {
+        final cleanInlineValue = inlineValue
+            .replaceFirst(
+              RegExp(r'\s*!important\s*$', caseSensitive: false),
+              '',
+            )
+            .trim();
+        if (cleanInlineValue.isNotEmpty) {
+          return cleanInlineValue;
+        }
+      }
+      return cssRuleValue;
+    }
+    if (inlineValue != null) {
+      final cleanInlineValue = inlineValue
+          .replaceFirst(RegExp(r'\s*!important\s*$', caseSensitive: false), '')
+          .trim();
+      if (cleanInlineValue.isNotEmpty) {
+        return cleanInlineValue;
+      }
+    }
+    final attrValue = node.getAttributeValue(normalizedProperty)?.toString();
+    if (attrValue != null && attrValue.trim().isNotEmpty) {
+      return attrValue;
+    }
+    if (_cssInheritablePropertiesForUse.contains(normalizedProperty) ||
+        normalizedProperty.startsWith('--')) {
+      final useStyleValue = _extractStyleValueFromNode(
+        useNode,
+        normalizedProperty,
+      );
+      if (useStyleValue != null) {
+        return useStyleValue
+            .replaceFirst(
+              RegExp(r'\s*!important\s*$', caseSensitive: false),
+              '',
+            )
+            .trim();
+      }
+      final useAttrValue = useNode.getAttributeValue(normalizedProperty);
+      if (useAttrValue != null) {
+        return useAttrValue.toString();
+      }
+    }
+    final inheritedValue = getInheritedValue(normalizedProperty);
+    return inheritedValue?.toString();
+  }
+
+  /// Gets the outermost use node ID for event retargeting.
+  String? get retargetedEventId {
+    final root = rootContext;
+    return root.useNode.id;
+  }
+
+  /// Gets all use element IDs in the chain from outermost to current.
+  List<String?> get useChainIds {
+    final ids = <String?>[];
+    _UseInheritanceContext? current = this;
+    while (current != null) {
+      ids.insert(0, current.useNode.id);
+      current = current.parentContext;
+    }
+    return ids;
+  }
+
+  /// Gets a CSS custom property value from the use chain.
+  String? getCustomProperty(String name) {
+    final normalizedName = name.trim();
+    if (!normalizedName.startsWith('--')) {
+      return null;
+    }
+    final styleValue = _extractStyleValueFromNode(useNode, normalizedName);
+    if (styleValue != null) {
+      return styleValue;
+    }
+    SvgNode? ancestor = useNode.parent;
+    while (ancestor != null) {
+      final ancestorValue = _extractStyleValueFromNode(
+        ancestor,
+        normalizedName,
+      );
+      if (ancestorValue != null) {
+        return ancestorValue;
+      }
+      if (ancestor.cssCustomProperties.has(normalizedName)) {
+        return ancestor.cssCustomProperties.get(normalizedName);
+      }
+      ancestor = ancestor.parent;
+    }
+    return parentContext?.getCustomProperty(normalizedName);
+  }
+
+  /// Checks if this use context or any parent context already references
+  /// the given ID, which would indicate a circular reference.
+  bool hasCircularReference(String targetId) {
+    if (shadowRootId == targetId) {
+      return true;
+    }
+    return parentContext?.hasCircularReference(targetId) ?? false;
+  }
+
+  /// Gets the full use context chain from root to current as a list.
+  List<_UseInheritanceContext> get contextChain {
+    final chain = <_UseInheritanceContext>[];
+    _UseInheritanceContext? current = this;
+    while (current != null) {
+      chain.insert(0, current);
+      current = current.parentContext;
+    }
+    return chain;
+  }
+
+  /// Gets a scoped ID that is unique to this use instance.
+  String getScopedId(String originalId) {
+    return '${instanceId}$originalId';
+  }
+
+  /// Gets the root use context (the outermost use in nested chains).
+  _UseInheritanceContext get rootContext {
+    return parentContext?.rootContext ?? this;
+  }
+
+  /// Checks if this context is nested (has a parent context).
+  bool get isNested => parentContext != null;
+
+  /// Gets the accumulated viewBox transforms for nested symbol references.
+  Matrix4 get accumulatedViewBoxTransform {
+    final matrix = Matrix4.identity();
+    if (parentContext != null) {
+      matrix.multiply(parentContext!.accumulatedViewBoxTransform);
+    }
+    return matrix;
+  }
+
+  /// Applies viewBox transform to accumulated transform for symbol references.
+  Matrix4 applyViewBoxTransform(Matrix4 viewBoxMatrix) {
+    final combined = Matrix4.copy(accumulatedTransform);
+    combined.multiply(viewBoxMatrix);
+    return combined;
+  }
+
+  /// Gets the total nesting level considering both use and symbol nesting.
+  int get totalNestingLevel {
+    int level = 1;
+    _UseInheritanceContext? current = parentContext;
+    while (current != null) {
+      level++;
+      current = current.parentContext;
+    }
+    return level;
+  }
+
+  /// Gets the transform to apply for animation coordinate inheritance.
+  Matrix4? getUseTransform() {
+    final x = useNode.getAttributeValue('x');
+    final y = useNode.getAttributeValue('y');
+    final transformStr = useNode.getAttributeValue('transform')?.toString();
+    final xVal = x is num ? x.toDouble() : double.tryParse(x?.toString() ?? '');
+    final yVal = y is num ? y.toDouble() : double.tryParse(y?.toString() ?? '');
+    if (xVal == null && yVal == null && transformStr == null) {
+      return null;
+    }
+    final matrix = Matrix4.identity();
+    if (xVal != null || yVal != null) {
+      matrix.translateByDouble(xVal ?? 0.0, yVal ?? 0.0, 0.0, 1.0);
+    }
+    return matrix;
+  }
+
+  /// Extracts a property value from an inline style attribute.
+  static String? _extractStyleValueFromNode(SvgNode node, String property) {
+    final style = node.getAttributeValue('style')?.toString();
+    if (style == null || style.trim().isEmpty) {
+      return null;
+    }
+    for (final declaration in style.split(';')) {
+      final parts = declaration.split(':');
+      if (parts.length < 2) {
+        continue;
+      }
+      final key = parts.first.trim().toLowerCase();
+      if (key != property) {
+        continue;
+      }
+      var value = parts.sublist(1).join(':').trim();
+      value = value
+          .replaceFirst(RegExp(r'\s*!important\s*$', caseSensitive: false), '')
+          .trim();
+      if (value.isEmpty) {
+        continue;
+      }
+      return value;
+    }
+    return null;
+  }
+}

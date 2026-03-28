@@ -59,7 +59,19 @@ Map<String, String> _expandAnimation(String value) {
 }
 
 Map<String, String> _expandSingleAnimation(String value) {
-  return _parseSingleAnimationToComponents(value);
+  final parsed = _parseSingleAnimationToComponents(value);
+  
+  // Return all animation properties with defaults for unspecified ones
+  return {
+    'animation-name': parsed['animation-name'] ?? 'none',
+    'animation-duration': parsed['animation-duration'] ?? '0s',
+    'animation-timing-function': parsed['animation-timing-function'] ?? 'ease',
+    'animation-delay': parsed['animation-delay'] ?? '0s',
+    'animation-iteration-count': parsed['animation-iteration-count'] ?? '1',
+    'animation-direction': parsed['animation-direction'] ?? 'normal',
+    'animation-fill-mode': parsed['animation-fill-mode'] ?? 'none',
+    'animation-play-state': parsed['animation-play-state'] ?? 'running',
+  };
 }
 
 Map<String, String> _parseSingleAnimationToComponents(String value) {

@@ -639,3 +639,33 @@ class TransformDecomposition {
     );
   }
 }
+
+/// Returns an identity 2D matrix as a list of 6 values [a, b, c, d, e, f].
+/// The identity matrix: [1, 0, 0, 1, 0, 0]
+List<double> getIdentityMatrix2D() => [1.0, 0.0, 0.0, 1.0, 0.0, 0.0];
+
+/// Checks if a 2D matrix is singular (non-invertible).
+/// A matrix is singular when its determinant is zero or very close to zero.
+/// Matrix format: [a, b, c, d, e, f] where the 2x2 portion is:
+/// | a  c |
+/// | b  d |
+/// Determinant = a*d - b*c
+bool isMatrix2DSingular(List<double> matrix) {
+  // Need at least 4 values for the 2x2 portion
+  if (matrix.length < 4) {
+    return true;
+  }
+
+  final a = matrix[0];
+  final b = matrix[1];
+  final c = matrix[2];
+  final d = matrix[3];
+
+  // Calculate determinant
+  final det = a * d - b * c;
+
+  // Check if determinant is zero or very close to zero
+  // Use a small epsilon for floating point comparison
+  const epsilon = 1e-10;
+  return det.abs() < epsilon;
+}

@@ -1,6 +1,8 @@
 /// CSS custom properties (variables) and calc() expression support.
 library;
 
+import 'dart:ui' show Size;
+
 import 'svg_dom.dart';
 
 /// Callback type for looking up custom properties from use context.
@@ -265,17 +267,20 @@ class CssCalcEvaluator {
   /// [fontSize] - Current font size for em/rem units
   /// [containerSize] - Container size for percentage calculations (optional)
   /// [parentFontSize] - Parent element's font size for em inheritance
+  /// [viewportSize] - Viewport size for vw/vh/vmin/vmax units
   static double? evaluate(
     String value, {
     double fontSize = _defaultFontSize,
     double? containerSize,
     double? parentFontSize,
+    Size? viewportSize,
   }) {
     return _evaluateWithDepth(
       value,
       fontSize: fontSize,
       containerSize: containerSize,
       parentFontSize: parentFontSize,
+      viewportSize: viewportSize,
       depth: 0,
     );
   }
@@ -286,6 +291,7 @@ class CssCalcEvaluator {
     required double fontSize,
     double? containerSize,
     double? parentFontSize,
+    Size? viewportSize,
     required int depth,
   }) {
     if (depth > _maxNestingDepth) {
@@ -306,6 +312,7 @@ class CssCalcEvaluator {
         fontSize: fontSize,
         containerSize: containerSize,
         parentFontSize: parentFontSize,
+        viewportSize: viewportSize,
         depth: depth,
       );
     }
@@ -316,6 +323,7 @@ class CssCalcEvaluator {
         fontSize: fontSize,
         containerSize: containerSize,
         parentFontSize: parentFontSize,
+        viewportSize: viewportSize,
         depth: depth,
       );
     }
@@ -326,6 +334,7 @@ class CssCalcEvaluator {
         fontSize: fontSize,
         containerSize: containerSize,
         parentFontSize: parentFontSize,
+        viewportSize: viewportSize,
         depth: depth,
       );
     }
@@ -338,6 +347,7 @@ class CssCalcEvaluator {
         fontSize: fontSize,
         containerSize: containerSize,
         parentFontSize: parentFontSize,
+        viewportSize: viewportSize,
       );
     }
 
@@ -353,6 +363,7 @@ class CssCalcEvaluator {
       fontSize: fontSize,
       containerSize: containerSize,
       parentFontSize: parentFontSize,
+      viewportSize: viewportSize,
       depth: depth,
     );
   }
@@ -364,6 +375,7 @@ class CssCalcEvaluator {
     required double fontSize,
     double? containerSize,
     double? parentFontSize,
+    Size? viewportSize,
     required int depth,
   }) {
     final content = _extractFunctionContent(expr, 'clamp');
@@ -377,6 +389,7 @@ class CssCalcEvaluator {
       fontSize: fontSize,
       containerSize: containerSize,
       parentFontSize: parentFontSize,
+      viewportSize: viewportSize,
       depth: depth + 1,
     );
     final val = _evaluateWithDepth(
@@ -384,6 +397,7 @@ class CssCalcEvaluator {
       fontSize: fontSize,
       containerSize: containerSize,
       parentFontSize: parentFontSize,
+      viewportSize: viewportSize,
       depth: depth + 1,
     );
     final maxVal = _evaluateWithDepth(
@@ -391,6 +405,7 @@ class CssCalcEvaluator {
       fontSize: fontSize,
       containerSize: containerSize,
       parentFontSize: parentFontSize,
+      viewportSize: viewportSize,
       depth: depth + 1,
     );
 
@@ -406,6 +421,7 @@ class CssCalcEvaluator {
     required double fontSize,
     double? containerSize,
     double? parentFontSize,
+    Size? viewportSize,
     required int depth,
   }) {
     final content = _extractFunctionContent(expr, 'min');
@@ -421,6 +437,7 @@ class CssCalcEvaluator {
         fontSize: fontSize,
         containerSize: containerSize,
         parentFontSize: parentFontSize,
+        viewportSize: viewportSize,
         depth: depth + 1,
       );
       if (val == null) return null;
@@ -438,6 +455,7 @@ class CssCalcEvaluator {
     required double fontSize,
     double? containerSize,
     double? parentFontSize,
+    Size? viewportSize,
     required int depth,
   }) {
     final content = _extractFunctionContent(expr, 'max');
@@ -453,6 +471,7 @@ class CssCalcEvaluator {
         fontSize: fontSize,
         containerSize: containerSize,
         parentFontSize: parentFontSize,
+        viewportSize: viewportSize,
         depth: depth + 1,
       );
       if (val == null) return null;
@@ -549,6 +568,7 @@ class CssCalcEvaluator {
     required double fontSize,
     double? containerSize,
     double? parentFontSize,
+    Size? viewportSize,
     required int depth,
   }) {
     // First, handle nested calc() expressions and math functions
@@ -557,6 +577,7 @@ class CssCalcEvaluator {
       fontSize: fontSize,
       containerSize: containerSize,
       parentFontSize: parentFontSize,
+      viewportSize: viewportSize,
       depth: depth,
     );
 
@@ -570,6 +591,7 @@ class CssCalcEvaluator {
       fontSize: fontSize,
       containerSize: containerSize,
       parentFontSize: parentFontSize,
+      viewportSize: viewportSize,
     );
   }
 
@@ -579,6 +601,7 @@ class CssCalcEvaluator {
     required double fontSize,
     double? containerSize,
     double? parentFontSize,
+    Size? viewportSize,
     required int depth,
   }) {
     var result = expr;
@@ -616,6 +639,7 @@ class CssCalcEvaluator {
           fontSize: fontSize,
           containerSize: containerSize,
           parentFontSize: parentFontSize,
+          viewportSize: viewportSize,
           depth: depth + 1,
         );
       } else {
@@ -625,6 +649,7 @@ class CssCalcEvaluator {
           fontSize: fontSize,
           containerSize: containerSize,
           parentFontSize: parentFontSize,
+          viewportSize: viewportSize,
           depth: depth + 1,
         );
       }
@@ -647,6 +672,7 @@ class CssCalcEvaluator {
     required double fontSize,
     double? containerSize,
     double? parentFontSize,
+    Size? viewportSize,
   }) {
     // Tokenize the expression
     final tokens = _tokenize(expr);
@@ -675,6 +701,7 @@ class CssCalcEvaluator {
               fontSize: fontSize,
               containerSize: containerSize,
               parentFontSize: parentFontSize,
+              viewportSize: viewportSize,
             );
             if (nextValue == null) return null;
             values.add(nextValue);
@@ -689,6 +716,7 @@ class CssCalcEvaluator {
           fontSize: fontSize,
           containerSize: containerSize,
           parentFontSize: parentFontSize,
+          viewportSize: viewportSize,
         );
         if (value == null) {
           return null;
@@ -813,11 +841,13 @@ class CssCalcEvaluator {
   ///
   /// [parentFontSize] is used for em units in the context where an element's
   /// font-size is being computed (em is relative to parent, not current).
+  /// [viewportSize] is used for vw/vh/vmin/vmax viewport units.
   static double? _parseNumericValue(
     String value, {
     required double fontSize,
     double? containerSize,
     double? parentFontSize,
+    Size? viewportSize,
   }) {
     final trimmed = value.trim();
     if (trimmed.isEmpty) {
@@ -862,7 +892,11 @@ class CssCalcEvaluator {
         if (containerSize != null) {
           return num / 100.0 * containerSize;
         }
-        // Without container size, return the percentage as-is
+        // Fall back to viewport width if available
+        if (viewportSize != null) {
+          return num / 100.0 * viewportSize.width;
+        }
+        // Without container size or viewport, return the percentage as-is
         return num;
       case 'pt':
       case 'pc':
@@ -876,10 +910,36 @@ class CssCalcEvaluator {
         }
         return num;
       case 'vw':
+        // vw = 1% of viewport width
+        if (viewportSize != null) {
+          return num * viewportSize.width / 100.0;
+        }
+        return num;
       case 'vh':
+        // vh = 1% of viewport height
+        if (viewportSize != null) {
+          return num * viewportSize.height / 100.0;
+        }
+        return num;
       case 'vmin':
+        // vmin = 1% of smaller viewport dimension
+        if (viewportSize != null) {
+          final minDim =
+              viewportSize.width < viewportSize.height
+                  ? viewportSize.width
+                  : viewportSize.height;
+          return num * minDim / 100.0;
+        }
+        return num;
       case 'vmax':
-        // Viewport units - return as-is since we don't have viewport info
+        // vmax = 1% of larger viewport dimension
+        if (viewportSize != null) {
+          final maxDim =
+              viewportSize.width > viewportSize.height
+                  ? viewportSize.width
+                  : viewportSize.height;
+          return num * maxDim / 100.0;
+        }
         return num;
       case 'ch':
         // ch is the width of the '0' character, approximately 0.5em
@@ -904,6 +964,7 @@ class CssValueResolver {
     double fontSize = _defaultFontSize,
     double? containerSize,
     double? parentFontSize,
+    Size? viewportSize,
   }) {
     // First resolve any var() references
     var resolved = CssVariableResolver.resolveValue(
@@ -920,12 +981,14 @@ class CssValueResolver {
   ///
   /// [parentFontSize] is used when computing font-size values where em
   /// should be relative to the parent element's font-size.
+  /// [viewportSize] is used for vw/vh/vmin/vmax viewport units.
   static double? resolveToNumber(
     String value,
     SvgNode node, {
     double fontSize = _defaultFontSize,
     double? containerSize,
     double? parentFontSize,
+    Size? viewportSize,
   }) {
     // First resolve var() references
     final resolved = resolve(
@@ -934,6 +997,7 @@ class CssValueResolver {
       fontSize: fontSize,
       containerSize: containerSize,
       parentFontSize: parentFontSize,
+      viewportSize: viewportSize,
     );
 
     // Then evaluate calc() or parse as number
@@ -942,6 +1006,7 @@ class CssValueResolver {
       fontSize: fontSize,
       containerSize: containerSize,
       parentFontSize: parentFontSize,
+      viewportSize: viewportSize,
     );
   }
 }
