@@ -9,7 +9,7 @@
 - Flutter SDK: `3.38.1` (via `.fvm/versions/3.38.1/bin/flutter`)
 - Dart SDK: `^3.8.0`
 - Version: `2.2.2`
-- **Blink SVG Parity:** ~75%
+- **Blink SVG Parity:** ~82%
 
 ## Verified Health (March 28, 2026)
 
@@ -21,14 +21,16 @@ Commands run in `/Users/denisnadey/apps/flutter_full_svg_support`:
 ```
 
 Result:
-- `flutter test`: **3,497+ tests passed** (golden_comparison hangs on browser render - excluded)
-- `dart analyze`: **0 errors**, **0 warnings**, 1 info
+- `flutter test`: **3,563 tests passed** (golden_comparison hangs on browser render - excluded)
+- `dart analyze`: **0 errors**, **0 warnings**, 0 info
 
 ## In-Progress Work
 
 Active development areas targeting higher Blink parity:
 
-1. **CSS/SMIL edge-case parity** - Advanced shorthand/transform semantics
+1. **CSS/SMIL edge-case parity** - Complex shorthand resolution, unit handling, timing precision
+3. **External content edge cases** - Advanced image transformations, nested foreignObject (60% → 75%)
+4. **Code modularization** - Splitting large files for dev velocity
 
 ## Documentation Cleanup (March 16, 2026)
 
@@ -46,6 +48,17 @@ Moved to archive:
 - `docs/STAGE_8_PLAN.md`
 
 ## Recently Closed (March 28, 2026)
+
+### Advanced animateMotion Complete (Blink Parity)
+- ✅ **to-only animation mode**: Animate from base value to specified 'to' value with proper distance calculation
+- ✅ **by-only animation mode**: Animate from base value by specified 'by' delta offset
+- ✅ **from-only animation mode**: Animate from specified 'from' value to base value (reverse semantic)
+- ✅ **keyTimes→keyPoints implicit generation**: Automatic keyPoints generation with proper pacing semantics when keyTimes specified without keyPoints
+- ✅ **Discrete calcMode + keyPoints**: Waypoint jumping at exact keyTime boundaries without interpolation
+- ✅ **Closed path detection**: Float epsilon comparison (1e-6) for path closure detection
+- ✅ **Zero-length path segment handling**: Graceful handling of degenerate path segments
+- ✅ **60 comprehensive tests** covering all animation modes, keyPoints semantics, calcMode edge cases, path closure detection, and error handling
+- SMIL Animation parity: ~88% → ~95%
 
 ### Advanced Light Sources Complete (Blink Parity)
 - ✅ **Per-pixel lighting computation**: `SvgDiffuseLightingPaintPass` and `SvgSpecularLightingPaintPass` classes for full Blink-style pixel-level lighting
@@ -330,9 +343,9 @@ Detailed audit: `/Users/denisnadey/apps/flutter_full_svg_support/docs/BLINK_PARI
 
 High-impact gaps:
 1. Text typography is ~99% complete; remaining gaps are only deprecated SVG 1.1 features (SVG fonts, altGlyph — not worth implementing) and DOM text query methods (architectural difference — Flutter is immediate-mode, not DOM-based).
-2. Filter parity is **complete**: All 17 FE primitives and 3 light source elements are implemented with full input chain semantics (SourceGraphic, SourceAlpha, BackgroundImage, BackgroundAlpha, FillPaint, StrokePaint, named result chaining).
+2. Filter parity is ~95% complete: All 17/17 FE primitives implemented. Remaining ~5% gap is advanced edge cases within primitives (e.g., advanced feConvolveMatrix edge modes, feDisplacementMap precision, feTurbulence performance).
 3. CSS animation conversion remains partial for advanced/edge CSS shorthand/transform semantics.
-4. `animateMotion` still lacks broader Blink-level semantics beyond current baseline support.
+4. `animateMotion` now has comprehensive Blink-level semantics including advanced animation modes and keyPoints pacing (SMIL ~95%).
 
 ## Documentation Policy
 

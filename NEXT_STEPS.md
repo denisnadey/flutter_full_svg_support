@@ -1,8 +1,8 @@
 # Next Steps
 
-**Last Updated:** March 27, 2026
+**Last Updated:** March 28, 2026
 
-**Current Status:** ~75% Blink SVG parity | 3,413+ tests passing | 0 analyzer warnings
+**Current Status:** ~82% Blink SVG parity | ~95% Filter parity | ~95% SMIL parity | 3,563 tests passing | 0 analyzer warnings
 
 Authoritative status is maintained in:
 - `/Users/denisnadey/apps/flutter_full_svg_support/CURRENT_STATUS.md`
@@ -13,28 +13,30 @@ Closed issues / do-not-reopen registry:
 Detailed Blink gap matrix:
 - `/Users/denisnadey/apps/flutter_full_svg_support/docs/BLINK_PARITY_AUDIT.md`
 
-## Active Feature Items (6 P0 Priorities)
+## Active Feature Items (P0 Priorities)
 
-1. **Advanced Filter Graph** - Non-source/background input chain semantics, 8 remaining FE primitives, advanced feDropShadow/feMerge composition
-2. **Advanced Clipping** - Complex clip-path compositions, clipPathUnits, nested clip-paths
-3. **Advanced Masking** - Luminance masks, alpha channel handling, maskUnits/maskContentUnits
-4. **use/symbol Inheritance** - Style and attribute inheritance edge cases in nested use/symbol references
-5. **Light Sources** - Advanced feSpecularLighting/feDiffuseLighting light source positioning and attenuation
-6. **Component Transfer** - Extended feComponentTransfer channel functions (table, discrete, linear, gamma)
+1. **CSS/SMIL edge-case parity** - Complex shorthand resolution, unit handling, timing precision
+2. **External content edge cases** - Advanced image transformations, nested foreignObject (60% → 75%)
+3. **Code modularization** - Splitting large files for dev velocity
 
 ## Immediate (Execution Order)
 
-1. Expand advanced filter graph semantics (`feDropShadow`, `feMerge`/`feMergeNode`, non-source/background input parity).
-2. Expand advanced clipping/masking parity (complex compositions, luminance masks, alpha channels).
-3. Expand advanced hit-testing semantics (`clipPath`/`mask`/`use` and text geometry edge cases).
-4. Improve advanced `<use>`/`<symbol>` inheritance semantics.
-5. Add targeted regression fixtures for CSS/SMIL edge cases (timing/transform shorthand corner cases).
-6. Continue modular refactor of remaining large files (for AI/dev velocity) with API-stability and full regression checks after each split.
-   Current priority targets: `svg_filters_primitives.dart`, `animated_svg_painter_shapes.dart`, `animated_svg_picture.dart`.
+1. Improve CSS/SMIL edge-case parity (timing precision, shorthand resolution).
+2. Expand external content parity (advanced image transforms, nested foreignObject).
+3. Continue modular refactor of remaining large files for dev velocity with API-stability and full regression checks.
+   Priority targets: `svg_filters_primitives.dart`, `animated_svg_painter_shapes.dart`, `animated_svg_picture.dart`, `animated_svg_picture_utils.dart`.
+4. Add targeted regression fixtures for CSS/SMIL edge cases (timing/transform shorthand corner cases).
 
 ## Completed P0 Items (Closed)
 
-- ~~**Advanced Typography**~~ - Text & Typography reached ~99% Blink parity: hanging punctuation, deep baseline alignment, complex ligature shaping all implemented and tested.
+- ~~**Advanced Typography**~~ - Text & Typography reached ~99% Blink parity.
+- ~~**Advanced Filter Graph**~~ - All 17/17 FE primitives implemented with full input chain semantics (~95% filter parity).
+- ~~**Advanced Clipping**~~ - clipPathUnits, nested clip-paths, clip-rule, complex compositions, hit-testing.
+- ~~**Advanced Masking**~~ - maskUnits, maskContentUnits, luminance/alpha modes, layer compositing, hit-testing.
+- ~~**use/symbol Inheritance**~~ - CSS cascade through shadow boundary, style inheritance, nested transforms, hit-testing.
+- ~~**Light Sources**~~ - feDistantLight, fePointLight, feSpotLight with per-pixel lighting math.
+- ~~**Component Transfer**~~ - All 5 function types (identity, table, discrete, linear, gamma).
+- ~~**Advanced animateMotion**~~ - SMIL 88% → 95% (to-only/by-only/from-only modes, keyTimes→keyPoints implicit generation, discrete calcMode + keyPoints, closed path detection, zero-length segment handling, 60 tests).
 
 ## Validation After Each Step
 

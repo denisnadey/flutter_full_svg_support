@@ -42,6 +42,12 @@ SmilAnimation? _parseAnimateMotion(
     }
 
     // If still no path, check for from/to/by coordinates
+    // Handle all SMIL animation modes per SVG spec and Blink behavior:
+    // - ToAnimation: only 'to' specified (from is current/underlying value)
+    // - ByAnimation: only 'by' specified (additive from current position)
+    // - FromToAnimation: both 'from' and 'to' specified
+    // - FromByAnimation: both 'from' and 'by' specified
+    // - FromOnly: only 'from' specified (stays at from position)
     if (pathData == null || pathData.trim().isEmpty) {
       fromCoordinate = animNode.getAttributeValue('from')?.toString();
       toCoordinate = animNode.getAttributeValue('to')?.toString();
@@ -57,25 +63,30 @@ SmilAnimation? _parseAnimateMotion(
           ? MotionPath.parseCoordinatePair(byCoordinate)
           : null;
 
-      // Construct path from from/to/by
-      if (fromOffset != null || toOffset != null || byOffset != null) {
-        final startPoint = fromOffset ?? Offset.zero;
-        Offset endPoint;
-
-        if (toOffset != null) {
-          endPoint = toOffset;
-        } else if (byOffset != null) {
-          endPoint = Offset(
-            startPoint.dx + byOffset.dx,
-            startPoint.dy + byOffset.dy,
-          );
-        } else {
-          // Only from specified, use from as start and stay there
-          endPoint = startPoint;
-        }
-
-        pathData =
-            'M${startPoint.dx},${startPoint.dy} L${endPoint.dx},${endPoint.dy}';
+      // Determine animation mode per SMIL spec
+      if (toOffset != null && fromOffset == null && byOffset == null) {
+        // ToAnimation: only 'to' specified
+        // Per Blink: from value is underlying value (0,0 for motion)
+        pathData = 'M0.0,0.0 L${toOffset.dx},${toOffset.dy}';
+      } else if (byOffset != null && fromOffset == null && toOffset == null) {
+        // ByAnimation: only 'by' specified  
+        // Per Blink: additive from 0,0 - moves BY the amount
+        pathData = 'M0.0,0.0 L${byOffset.dx},${byOffset.dy}';
+      } else if (fromOffset != null && toOffset != null) {
+        // FromToAnimation: both from and to specified
+        pathData = 'M${fromOffset.dx},${fromOffset.dy} L${toOffset.dx},${toOffset.dy}';
+      } else if (fromOffset != null && byOffset != null) {
+        // FromByAnimation: from and by specified
+        final endPoint = Offset(
+          fromOffset.dx + byOffset.dx,
+          fromOffset.dy + byOffset.dy,
+        );
+        pathData = 'M${fromOffset.dx},${fromOffset.dy} L${endPoint.dx},${endPoint.dy}';
+      } else if (fromOffset != null) {
+        // FromOnly: only from specified - use element's current position as implicit 'to'
+        // For now, create a zero-length motion at the from point
+        // The underlying value should be used at runtime
+        pathData = 'M${fromOffset.dx},${fromOffset.dy} L${fromOffset.dx},${fromOffset.dy}';
       }
     }
 
@@ -172,6 +183,26 @@ SmilAnimation? _parseAnimateMotion(
     if (calcMode == SmilCalcMode.paced) {
       keyPoints = null;
       keyTimes = null;
+    }
+
+    // Per SVG spec: when keyTimes is specified but keyPoints is not,
+    // generate UNIFORM keyPoints so that keyTimes controls pacing.
+    // This allows keyTimes to control *when* we reach uniformly-spaced
+    // positions along the path (keyPoints controls *space*).
+    if (keyTimes != null &&
+        keyTimes.isNotEmpty &&
+        keyPoints == null &&
+        calcMode != SmilCalcMode.paced) {
+      final n = keyTimes.length;
+      if (n == 1) {
+        keyPoints = [0.0];
+      } else {
+        // Generate uniform keyPoints: 0, 1/(n-1), 2/(n-1), ..., 1
+        keyPoints = List<double>.generate(
+          n,
+          (i) => i / (n - 1),
+        );
+      }
     }
 
     // Создаём SmilAnimation для animateMotion

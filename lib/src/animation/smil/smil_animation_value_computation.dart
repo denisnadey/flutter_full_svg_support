@@ -115,6 +115,21 @@ extension SmilAnimationValueComputationExtension on SmilAnimation {
       // values содержит keyPoints если они есть
       final keyPoints = values?.map((v) => v as double).toList();
 
+      // Handle discrete calcMode with keyPoints - waypoint jumping
+      if (calcMode == SmilCalcMode.discrete &&
+          keyPoints != null &&
+          keyPoints.isNotEmpty &&
+          keyTimes != null) {
+        // For discrete mode, jump to keyPoint values without interpolation
+        return _computeDiscreteMotionValue(
+          t,
+          motionPath,
+          keyPoints,
+          keyTimes!,
+          completedRepeats,
+        );
+      }
+
       // Apply easing from keySplines if using spline calcMode
       double easedT = t;
       if (calcMode == SmilCalcMode.spline &&
@@ -170,6 +185,63 @@ extension SmilAnimationValueComputationExtension on SmilAnimation {
     } catch (e) {
       return null;
     }
+  }
+
+  /// Compute discrete motion value with keyPoints - jump to waypoints
+  /// Per SMIL spec: discrete mode jumps between keyPoint values without interpolation
+  Object? _computeDiscreteMotionValue(
+    double t,
+    MotionPath motionPath,
+    List<double> keyPoints,
+    List<double> keyTimes,
+    int completedRepeats,
+  ) {
+    // Find which keyPoint we're at based on t and keyTimes
+    int index = 0;
+    for (int i = 0; i < keyTimes.length - 1; i++) {
+      if (t >= keyTimes[i] && t < keyTimes[i + 1]) {
+        index = i;
+        break;
+      }
+    }
+    // At t=1.0, use last keyPoint
+    if (t >= 1.0) {
+      index = keyPoints.length - 1;
+    }
+
+    // Get the exact keyPoint position (no interpolation for discrete)
+    final keyPoint = keyPoints[index];
+    final point = motionPath.getPointAtTime(keyPoint);
+
+    // Calculate position with accumulate="sum" support
+    double posX = point.position.dx;
+    double posY = point.position.dy;
+
+    if (accumulate && completedRepeats > 0) {
+      final endPos = motionPath.getEndPosition();
+      posX += endPos.dx * completedRepeats;
+      posY += endPos.dy * completedRepeats;
+    }
+
+    // Формируем transform строку
+    final rotateMode = to as String?;
+    final translatePart = 'translate($posX, $posY)';
+
+    if (rotateMode == null || rotateMode.isEmpty) {
+      return translatePart;
+    }
+
+    if (rotateMode == 'auto') {
+      final angleDegrees = MotionPath.radiansToDegrees(point.angle);
+      return '$translatePart rotate($angleDegrees)';
+    }
+
+    if (rotateMode == 'auto-reverse') {
+      final angleDegrees = MotionPath.radiansToDegrees(point.angle) + 180;
+      return '$translatePart rotate($angleDegrees)';
+    }
+
+    return '$translatePart rotate($rotateMode)';
   }
 
   /// Apply keySplines easing to motion with keyPoints/keyTimes

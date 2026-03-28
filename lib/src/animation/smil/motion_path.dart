@@ -23,6 +23,7 @@ class MotionPath {
   MotionPath(String pathData) {
     _parsePath(pathData);
     _computeSegmentLengths();
+    _detectClosedPath();
   }
 
   /// Factory constructor for creating path from two coordinate points
@@ -59,6 +60,19 @@ class MotionPath {
 
   /// Parsed commands for boundary tangent calculations
   late List<PathCommand> _commands;
+
+  /// Whether this is a closed path (ends at or very near start point)
+  bool _isClosed = false;
+
+  /// Start position of the path
+  Offset? _startPosition;
+
+  /// End position of the path
+  Offset? _endPosition;
+
+  /// Tolerance for float comparison when detecting closed paths
+  /// Per Blink: use epsilon comparison for floating point equality
+  static const double _closedPathTolerance = 0.001;
 
   /// Распарсить SVG path data
   void _parsePath(String pathData) {
@@ -278,12 +292,73 @@ class MotionPath {
     }
   }
 
+  /// Detect if this is a closed path by checking if end point matches start
+  /// Uses epsilon comparison for floating point equality per Blink behavior
+  void _detectClosedPath() {
+    if (_commands.isEmpty) {
+      _isClosed = false;
+      return;
+    }
+
+    // Find start position (first MoveTo command)
+    double startX = 0, startY = 0;
+    double currentX = 0, currentY = 0;
+
+    for (final command in _commands) {
+      if (command is MoveToCommand) {
+        if (_startPosition == null) {
+          startX = command.isRelative ? currentX + command.x : command.x;
+          startY = command.isRelative ? currentY + command.y : command.y;
+          _startPosition = Offset(startX, startY);
+        }
+        currentX = command.isRelative ? currentX + command.x : command.x;
+        currentY = command.isRelative ? currentY + command.y : command.y;
+      } else if (command is ClosePathCommand) {
+        currentX = startX;
+        currentY = startY;
+        _isClosed = true;
+      } else {
+        final endPoint = _getCommandEndPoint(
+          command,
+          currentX,
+          currentY,
+          startX,
+          startY,
+        );
+        currentX = endPoint.dx;
+        currentY = endPoint.dy;
+      }
+    }
+
+    _endPosition = Offset(currentX, currentY);
+
+    // Check if end position is very close to start position (epsilon comparison)
+    if (!_isClosed && _startPosition != null) {
+      final distance = (_endPosition! - _startPosition!).distance;
+      _isClosed = distance < _closedPathTolerance;
+    }
+  }
+
+  /// Whether this path is closed (either explicitly or by coincident endpoints)
+  bool get isClosed => _isClosed;
+
+  /// Check if two points are coincident within tolerance
+  static bool arePointsCoincident(Offset a, Offset b,
+      {double tolerance = _closedPathTolerance}) {
+    return (a - b).distance < tolerance;
+  }
+
   /// Получить точку на пути в момент времени t ∈ [0, 1]
   ///
   /// Параметр [t] представляет прогресс вдоль пути (0 = начало, 1 = конец)
   /// [useAverageTangent] - whether to average tangents at segment boundaries
   MotionPathPoint getPointAtTime(double t, {bool useAverageTangent = true}) {
-    if (_totalLength == 0) {
+    // Handle zero-length path - return start position if available
+    if (_totalLength == 0 || _totalLength < _closedPathTolerance) {
+      // For zero-length paths, return the start position with zero angle
+      if (_startPosition != null) {
+        return MotionPathPoint(position: _startPosition!, angle: 0);
+      }
       return const MotionPathPoint(position: Offset.zero, angle: 0);
     }
 
@@ -298,6 +373,9 @@ class MotionPath {
     final metrics = pathMetrics.toList();
 
     if (metrics.isEmpty) {
+      if (_startPosition != null) {
+        return MotionPathPoint(position: _startPosition!, angle: 0);
+      }
       return const MotionPathPoint(position: Offset.zero, angle: 0);
     }
 

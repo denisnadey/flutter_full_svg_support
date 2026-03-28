@@ -68,13 +68,15 @@ void main() {
         expect(point.position, isNot(equals(Offset.zero)));
       });
 
-      test('single point path returns zero for navigation', () {
-        // A single MoveTo creates no traversable path
+      test('single point path returns that point position', () {
+        // A single MoveTo creates no traversable path but should return the position
         final path = MotionPath('M50,75');
-        // With only a moveto, there's no length, so position stays at origin
+        // With only a moveto, there's no length
         expect(path.totalLength, equals(0));
+        // But the point should be at the moveTo position, not origin
         final point = path.getPointAtTime(0.5);
-        expect(point.position, equals(Offset.zero));
+        expect(point.position.dx, closeTo(50, 1));
+        expect(point.position.dy, closeTo(75, 1));
       });
 
       test('empty path returns zero', () {
@@ -712,6 +714,398 @@ void main() {
         final corner = path.getPointAtTime(0.25);
         expect(corner.position.dx, closeTo(100, 1));
         expect(corner.position.dy, closeTo(0, 1));
+      });
+    });
+
+    group('To-animation mode (only to attribute)', () {
+      test('animateMotion with only to attribute starts at origin', () {
+        final svgString = '''
+<svg viewBox="0 0 200 200">
+  <rect>
+    <animateMotion to="100,50" dur="1s"/>
+  </rect>
+</svg>
+''';
+
+        final document = SvgParser.parse(svgString);
+        final animations = SmilParser.parseAnimations(document);
+
+        expect(animations.length, equals(1));
+        expect(animations[0].type, equals(SmilAnimationType.animateMotion));
+
+        // At t=0, should be at origin (0,0)
+        final valueAt0 = animations[0].computeValue(0.0) as String?;
+        expect(valueAt0, contains('translate(0.0, 0.0)'));
+
+        // At t=1, should be at (100,50)
+        final valueAt1 = animations[0].computeValue(1.0) as String?;
+        expect(valueAt1, contains('100'));
+        expect(valueAt1, contains('50'));
+      });
+
+      test('to-only animation interpolates correctly', () {
+        final svgString = '''
+<svg viewBox="0 0 200 200">
+  <rect>
+    <animateMotion to="200,100" dur="1s"/>
+  </rect>
+</svg>
+''';
+
+        final document = SvgParser.parse(svgString);
+        final animations = SmilParser.parseAnimations(document);
+
+        // At t=0.5, should be halfway (100,50)
+        final valueAt05 = animations[0].computeValue(0.5) as String?;
+        expect(valueAt05, contains('100'));
+        expect(valueAt05, contains('50'));
+      });
+    });
+
+    group('By-animation mode (only by attribute)', () {
+      test('animateMotion with only by attribute moves from origin', () {
+        final svgString = '''
+<svg viewBox="0 0 200 200">
+  <rect>
+    <animateMotion by="100,75" dur="1s"/>
+  </rect>
+</svg>
+''';
+
+        final document = SvgParser.parse(svgString);
+        final animations = SmilParser.parseAnimations(document);
+
+        expect(animations.length, equals(1));
+
+        // At t=0, should be at origin
+        final valueAt0 = animations[0].computeValue(0.0) as String?;
+        expect(valueAt0, contains('0.0, 0.0'));
+
+        // At t=1, should have moved BY (100,75) from origin
+        final valueAt1 = animations[0].computeValue(1.0) as String?;
+        expect(valueAt1, contains('100'));
+        expect(valueAt1, contains('75'));
+      });
+
+      test('by-animation is implicitly additive', () {
+        // Per SVG spec: by-animation is additive
+        final svgString = '''
+<svg viewBox="0 0 200 200">
+  <rect>
+    <animateMotion by="50,50" dur="1s"/>
+  </rect>
+</svg>
+''';
+
+        final document = SvgParser.parse(svgString);
+        final animations = SmilParser.parseAnimations(document);
+
+        final valueAt1 = animations[0].computeValue(1.0) as String?;
+        expect(valueAt1, contains('50'));
+      });
+    });
+
+    group('keyTimes without keyPoints', () {
+      test('generates uniform keyPoints from keyTimes', () {
+        final svgString = '''
+<svg viewBox="0 0 200 200">
+  <rect>
+    <animateMotion 
+      path="M0,0 L100,0" 
+      dur="1s" 
+      keyTimes="0;0.5;1"/>
+  </rect>
+</svg>
+''';
+
+        final document = SvgParser.parse(svgString);
+        final animations = SmilParser.parseAnimations(document);
+
+        expect(animations.length, equals(1));
+        // keyPoints should be generated as uniform: [0, 0.5, 1]
+        expect(animations[0].values, isNotNull);
+        expect(animations[0].values!.length, equals(3));
+        // With uniform keyTimes, position at t=0.5 should be at 50% of path
+        final valueAt05 = animations[0].computeValue(0.5) as String?;
+        expect(valueAt05, contains('50'));
+      });
+
+      test('keyTimes controls pacing with non-uniform timing', () {
+        // keyTimes="0;0.9;1" means spend 90% of time in first half of path
+        // With uniform keyPoints [0, 0.5, 1]:
+        // - keyTimes [0, 0.9, 1] maps to keyPoints [0, 0.5, 1]
+        // - At t=0.5, we're in first segment (0→0.9), local progress = 0.5/0.9 ≈ 0.556
+        // - Position = lerp(0, 0.5, 0.556) ≈ 0.278 along path
+        // - For path M0,0 L100,0: x ≈ 27.8, NOT 50
+        final svgString = '''
+<svg viewBox="0 0 200 200">
+  <rect>
+    <animateMotion 
+      path="M0,0 L100,0" 
+      dur="1s" 
+      keyTimes="0;0.9;1"/>
+  </rect>
+</svg>
+''';
+
+        final document = SvgParser.parse(svgString);
+        final animations = SmilParser.parseAnimations(document);
+
+        expect(animations.length, equals(1));
+        
+        // At t=0.5, should NOT be at 50% of path due to non-uniform keyTimes
+        // With keyTimes="0;0.9;1" and uniform keyPoints [0, 0.5, 1]:
+        // t=0.5 is in segment [0, 0.9], local t = 0.5/0.9 ≈ 0.556
+        // position = lerp(0, 0.5, 0.556) ≈ 0.278, so x ≈ 27.8
+        final valueAt05 = animations[0].computeValue(0.5) as String?;
+        expect(valueAt05, isNotNull);
+        
+        // Extract x value from translate string
+        final translateMatch = RegExp(r'translate\(([\d.]+),').firstMatch(valueAt05!);
+        expect(translateMatch, isNotNull);
+        final xValue = double.parse(translateMatch!.group(1)!);
+        
+        // x should be around 27.8, NOT 50 (which would indicate no pacing effect)
+        expect(xValue, lessThan(35), reason: 'At t=0.5 with keyTimes="0;0.9;1", '
+            'position should be well below 50% of path (~27.8)');
+        expect(xValue, greaterThan(20), reason: 'Position should be around 27.8');
+      });
+
+      test('at keyTime boundary, position matches keyPoint', () {
+        // At t=0.9 (second keyTime), should be exactly at keyPoint[1]=0.5 (x=50)
+        final svgString = '''
+<svg viewBox="0 0 200 200">
+  <rect>
+    <animateMotion 
+      path="M0,0 L100,0" 
+      dur="1s" 
+      keyTimes="0;0.9;1"/>
+  </rect>
+</svg>
+''';
+
+        final document = SvgParser.parse(svgString);
+        final animations = SmilParser.parseAnimations(document);
+
+        // At t=0.9, should be at keyPoint[1] = 0.5 of path = x=50
+        final valueAt09 = animations[0].computeValue(0.9) as String?;
+        expect(valueAt09, isNotNull);
+        expect(valueAt09, contains('translate'));
+        
+        // Extract and verify x value
+        final translateMatch = RegExp(r'translate\(([\d.]+),').firstMatch(valueAt09!);
+        expect(translateMatch, isNotNull);
+        final xValue = double.parse(translateMatch!.group(1)!);
+        expect(xValue, closeTo(50, 1));
+      });
+    });
+
+    group('Discrete calcMode with keyPoints', () {
+      test('discrete mode jumps between keyPoints', () {
+        final svgString = '''
+<svg viewBox="0 0 200 200">
+  <rect>
+    <animateMotion 
+      path="M0,0 L100,0" 
+      dur="1s" 
+      calcMode="discrete"
+      keyPoints="0;0.5;1"
+      keyTimes="0;0.5;1"/>
+  </rect>
+</svg>
+''';
+
+        final document = SvgParser.parse(svgString);
+        final animations = SmilParser.parseAnimations(document);
+
+        expect(animations.length, equals(1));
+        expect(animations[0].calcMode, equals(SmilCalcMode.discrete));
+
+        // At t=0.25 (within first segment), should be at keyPoint[0] = 0 (position 0)
+        final valueAt025 = animations[0].computeValue(0.25) as String?;
+        expect(valueAt025, contains('0.0, 0.0'));
+
+        // At t=0.6 (within second segment), should be at keyPoint[1] = 0.5 (position 50)
+        final valueAt06 = animations[0].computeValue(0.6) as String?;
+        expect(valueAt06, contains('50'));
+      });
+
+      test('discrete mode with 4 keyPoints', () {
+        final svgString = '''
+<svg viewBox="0 0 200 200">
+  <rect>
+    <animateMotion 
+      path="M0,0 L100,0" 
+      dur="1s" 
+      calcMode="discrete"
+      keyPoints="0;0.25;0.75;1"
+      keyTimes="0;0.33;0.66;1"/>
+  </rect>
+</svg>
+''';
+
+        final document = SvgParser.parse(svgString);
+        final animations = SmilParser.parseAnimations(document);
+
+        expect(animations.length, equals(1));
+
+        // At t=0.2, should be at keyPoint[0] = 0 (x=0)
+        final valueAt02 = animations[0].computeValue(0.2) as String?;
+        expect(valueAt02, contains('0.0, 0.0'));
+
+        // At t=0.5, should be at keyPoint[1] = 0.25 (x=25)
+        final valueAt05 = animations[0].computeValue(0.5) as String?;
+        expect(valueAt05, contains('25'));
+      });
+    });
+
+    group('Zero-length path handling', () {
+      test('zero-length path returns start position', () {
+        // Path with same start and end point
+        final path = MotionPath('M50,75 L50,75');
+        
+        // Should return the position at the start point
+        final point = path.getPointAtTime(0.5);
+        expect(point.position.dx, closeTo(50, 1));
+        expect(point.position.dy, closeTo(75, 1));
+      });
+
+      test('animateMotion with from-only creates stationary animation', () {
+        final svgString = '''
+<svg viewBox="0 0 200 200">
+  <rect>
+    <animateMotion from="50,50" dur="1s"/>
+  </rect>
+</svg>
+''';
+
+        final document = SvgParser.parse(svgString);
+        final animations = SmilParser.parseAnimations(document);
+
+        expect(animations.length, equals(1));
+
+        // Should stay at the from position
+        final valueAt0 = animations[0].computeValue(0.0) as String?;
+        final valueAt1 = animations[0].computeValue(1.0) as String?;
+        
+        // Both should be at or near (50,50)
+        expect(valueAt0, contains('50'));
+        expect(valueAt1, contains('50'));
+      });
+
+      test('path with coincident points detects as closed', () {
+        // Path that ends very close to where it started
+        final path = MotionPath('M0,0 L100,0 L100,100 L0,100 L0.0001,0.0001');
+        expect(path.isClosed, isTrue);
+      });
+
+      test('explicitly closed path detected', () {
+        final path = MotionPath('M0,0 L100,0 L100,100 Z');
+        expect(path.isClosed, isTrue);
+      });
+    });
+
+    group('Paced calcMode with coordinate pairs', () {
+      test('paced mode with values coordinates', () {
+        final svgString = '''
+<svg viewBox="0 0 200 200">
+  <rect>
+    <animateMotion 
+      values="0,0;100,0;100,100" 
+      dur="1s" 
+      calcMode="paced"/>
+  </rect>
+</svg>
+''';
+
+        final document = SvgParser.parse(svgString);
+        final animations = SmilParser.parseAnimations(document);
+
+        expect(animations.length, equals(1));
+        expect(animations[0].calcMode, equals(SmilCalcMode.paced));
+
+        // At t=0.5, should be ~50% along the total path
+        // Path is: 0,0 -> 100,0 (length 100) -> 100,100 (length 100)
+        // Total length = 200, so at t=0.5 should be at (100,0)
+        final valueAt05 = animations[0].computeValue(0.5) as String?;
+        expect(valueAt05, isNotNull);
+        expect(valueAt05, contains('translate'));
+      });
+
+      test('paced mode ignores user-provided keyTimes', () {
+        final svgString = '''
+<svg viewBox="0 0 200 200">
+  <rect>
+    <animateMotion 
+      values="0,0;100,0;100,100" 
+      dur="1s" 
+      calcMode="paced"
+      keyTimes="0;0.1;1"/>
+  </rect>
+</svg>
+''';
+
+        final document = SvgParser.parse(svgString);
+        final animations = SmilParser.parseAnimations(document);
+
+        // Paced mode should ignore keyTimes
+        expect(animations[0].keyTimes, isNull);
+      });
+    });
+
+    group('Spline easing per segment', () {
+      test('multi-segment spline with different easing per segment', () {
+        final svgString = '''
+<svg viewBox="0 0 200 200">
+  <rect>
+    <animateMotion 
+      path="M0,0 L50,0 L100,0" 
+      dur="1s" 
+      calcMode="spline"
+      keyPoints="0;0.5;1"
+      keyTimes="0;0.5;1"
+      keySplines="0.42 0 0.58 1; 0.25 0.1 0.25 1"/>
+  </rect>
+</svg>
+''';
+
+        final document = SvgParser.parse(svgString);
+        final animations = SmilParser.parseAnimations(document);
+
+        expect(animations.length, equals(1));
+        expect(animations[0].keySplines!.length, equals(2));
+
+        // Values at different points should reflect the spline easing
+        final value1 = animations[0].computeValue(0.25) as String?;
+        final value2 = animations[0].computeValue(0.75) as String?;
+        expect(value1, isNotNull);
+        expect(value2, isNotNull);
+      });
+    });
+
+    group('Closed path handling', () {
+      test('closed rectangular path works correctly', () {
+        final path = MotionPath('M0,0 L100,0 L100,100 L0,100 Z');
+        expect(path.totalLength, closeTo(400, 1));
+        expect(path.isClosed, isTrue);
+
+        final start = path.getPointAtTime(0.0);
+        final end = path.getPointAtTime(1.0);
+        
+        // Start and end should be at (0,0)
+        expect(start.position.dx, closeTo(0, 1));
+        expect(start.position.dy, closeTo(0, 1));
+        expect(end.position.dx, closeTo(0, 1));
+        expect(end.position.dy, closeTo(0, 1));
+      });
+
+      test('arePointsCoincident utility', () {
+        const p1 = Offset(100, 100);
+        const p2 = Offset(100.0001, 100.0001);
+        const p3 = Offset(101, 100);
+
+        expect(MotionPath.arePointsCoincident(p1, p2), isTrue);
+        expect(MotionPath.arePointsCoincident(p1, p3), isFalse);
       });
     });
   });

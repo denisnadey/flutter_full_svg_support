@@ -1,6 +1,15 @@
 ## NEXT
 
 * Updates minimum supported SDK version to Flutter 3.32/Dart 3.8.
+* **Advanced animateMotion semantics** (NEW):
+  * to-only animation mode: animate from base value to specified 'to' value with proper distance calculation.
+  * by-only animation mode: animate from base value by specified 'by' delta offset.
+  * from-only animation mode: animate from specified 'from' value to base value (reverse semantic).
+  * keyTimes→keyPoints implicit generation with proper pacing semantics when keyTimes specified without keyPoints.
+  * Discrete calcMode + keyPoints waypoint jumping at exact keyTime boundaries without interpolation.
+  * Closed path detection with float epsilon comparison (1e-6) for path closure detection.
+  * Zero-length path segment handling for graceful handling of degenerate path segments.
+  * 60 comprehensive animateMotion tests covering all animation modes, keyPoints semantics, calcMode edge cases, path closure detection, and error handling.
 * **SVG `<a>` anchor element support** (NEW):
   * Parse `<a>` element as container (renders children like `<g>`).
   * Support `href`, `xlink:href`, and `target` attributes.

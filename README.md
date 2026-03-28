@@ -8,7 +8,7 @@
 
 The most comprehensive SVG rendering library for Flutter. Two pipelines: a battle-tested **static renderer** (`SvgPicture`) for production, and a full-featured **animated renderer** (`AnimatedSvgPicture`) with DOM preservation, SMIL animations, CSS interop, SVG filters, interactive hit-testing, and accessibility.
 
-**~75% Blink SVG parity** | **3,413+ tests** | **0 analyzer warnings** | **123+ source modules**
+**~82% Blink SVG parity** | **3,563+ tests** | **0 analyzer warnings** | **123+ source modules**
 
 ## Parity Snapshot
 
@@ -16,7 +16,7 @@ The most comprehensive SVG rendering library for Flutter. Two pipelines: a battl
 |---|---|---|
 | Geometry Rendering | ~95% | All 8 shapes + markers + patterns + gradients |
 | Text & Typography | **~99%** | Full positioning, textPath, writing-mode, decorations, bidi, emphasis, shadow, font-variant, paint-order stroke, hanging punctuation, deep baseline alignment, ligature shaping, per-character hit-testing |
-| SMIL Animation | ~88% | 5 elements, full timing/interpolation, paced/spline/event-based |
+| SMIL Animation | ~95% | 5 elements, full timing/interpolation, paced/spline/event-based, advanced animateMotion |
 | CSS Animation Interop | ~85% | Selectors, cascade, variables, calc(), 3D transforms, @media |
 | Interaction & Events | ~80% | Hit-testing (12 element types), pointer-events, `<a>`, `<view>` |
 | Accessibility | ~80% | title/desc, ARIA attributes, Flutter Semantics integration |

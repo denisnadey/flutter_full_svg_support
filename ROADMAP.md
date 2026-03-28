@@ -1,8 +1,8 @@
 # Flutter SVG Roadmap (Living)
 
-**Last Updated:** March 27, 2026
+**Last Updated:** March 28, 2026
 
-**Current Status:** ~75% Blink SVG parity | 3,413+ tests passing | 0 analyzer warnings
+**Current Status:** ~80% Blink SVG parity | ~95% Filter parity | 3,538 tests passing | 0 analyzer warnings
 
 This roadmap reflects the current state. Legacy stage-by-stage plans are historical context only.
 
@@ -23,7 +23,7 @@ Authoritative references:
    - `animated_svg_painter_gradients`, `animated_svg_painter_clip_mask`, `smil/interpolators`
 4. Full SMIL animation engine (animate, animateTransform, animateMotion, set).
 5. CSS animation/keyframes support with cubic-bezier to SMIL conversion.
-6. 17/25 filter primitives implemented.
+6. All 17/17 filter primitives implemented (~95% filter parity).
 7. All 8 geometry shapes with hit-testing.
 8. Gradient/pattern/marker paint servers.
 9. Clip-path and mask baseline support.
@@ -32,17 +32,21 @@ Authoritative references:
 12. CSS pseudo-classes, combinators, attribute selectors.
 13. ARIA accessibility integration.
 14. Performance caching (gradients, patterns, text, hit-test).
+15. **Advanced Filter Graph** - All 17 FE primitives with full input chain semantics, named result chaining, feDropShadow/feMerge composition.
+16. **Advanced Clipping** - clipPathUnits (objectBoundingBox, userSpaceOnUse), nested clip-paths, clip-rule (nonzero, evenodd), complex compositions, hit-testing.
+17. **Advanced Masking** - maskUnits, maskContentUnits, luminance/alpha modes, layer compositing, hit-testing.
+18. **use/symbol Inheritance** - CSS cascade through shadow boundary, style inheritance, nested transforms, hit-testing.
+19. **Light Sources** - feDistantLight, fePointLight, feSpotLight with per-pixel lighting math (Lambertian/Blinn-Phong).
+20. **Component Transfer** - All 5 function types (identity, table, discrete, linear, gamma).
 
 ## Current Priorities
 
 ### P0 - Parity Foundations (In Progress)
 
-1. **Advanced Filter Graph** - Non-source/background input chain semantics, 8 remaining FE primitives.
-2. **Advanced Clipping** - Complex clip-path compositions, clipPathUnits, nested clip-paths.
-3. **Advanced Masking** - Luminance masks, alpha channel handling, maskUnits/maskContentUnits.
-4. **use/symbol Inheritance** - Style and attribute inheritance edge cases.
-5. **Light Sources** - Advanced feSpecularLighting/feDiffuseLighting positioning.
-6. **Component Transfer** - Extended feComponentTransfer channel functions.
+1. **Advanced animateMotion semantics** - SMIL 88% → 92% (complex path timing, keyPoints precision, rotate attribute edge cases).
+2. **CSS/SMIL edge-case parity** - Complex shorthand resolution, unit handling, timing precision.
+3. **External content edge cases** - Advanced image transformations, nested foreignObject (60% → 75%).
+4. **Code modularization** - Splitting large files for dev velocity.
 
 ### P1 - Core Feature Expansion
 
@@ -79,4 +83,4 @@ Validation commands:
 
 ## Latest Baseline
 
-- March 27, 2026: `flutter test` passed (+3,413), `dart analyze` returned 0 errors / 0 warnings / 1 info.
+- March 28, 2026: `flutter test` passed (3,538), `dart analyze` returned 0 errors / 0 warnings / 0 info.

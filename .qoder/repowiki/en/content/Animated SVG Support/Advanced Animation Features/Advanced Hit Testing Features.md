@@ -23,12 +23,16 @@
 - [hit_test_precision_test.dart](file://test/animation/hit_test_precision_test.dart)
 - [animated_svg_painter_clip_mask_advanced.dart](file://lib/src/animation/animated_svg_painter_clip_mask_advanced.dart)
 - [animated_svg_painter_clip_mask.dart](file://lib/src/animation/animated_svg_painter_clip_mask.dart)
+- [animated_svg_painter_clip_mask_composition.dart](file://lib/src/animation/animated_svg_painter_clip_mask_composition.dart)
+- [advanced_mask_semantics_test.dart](file://test/animation/advanced_mask_semantics_test.dart)
 </cite>
 
 ## Update Summary
 **Changes Made**
-- Enhanced clipPath precision with advanced coordinate transformation handling for objectBoundingBox units
-- Improved mask hit testing with luminance alpha support and nested mask recursion prevention
+- Enhanced mask hit testing system with comprehensive luminance-based precision using ITU-R BT.709 coefficients
+- Improved circular reference protection in mask composition with advanced recursion depth tracking
+- Added new _kHitTestLuminanceR/G/B constants and _computeColorLuminanceForHitTest method for accurate luminance computation
+- Enhanced mask composition with proper opacity blending and edge feathering support
 - Strengthened use element event delegation with comprehensive pointer-events inheritance
 - Enhanced pointer events system with robust mode resolution and semantic interpretation
 - Advanced precision testing capabilities for complex geometric scenarios with tolerance-based algorithms
@@ -258,7 +262,7 @@ The enhanced clipPath system supports:
 
 ### Advanced Mask Hit Testing System
 
-The mask hit testing system provides comprehensive alpha channel and luminance-based precision:
+The mask hit testing system provides comprehensive alpha channel and luminance-based precision with ITU-R BT.709 coefficients:
 
 ```mermaid
 flowchart TD
@@ -275,7 +279,11 @@ ComputeUSOClsip --> BuildMaskPath
 BuildMaskPath --> CheckVisiblePaint["Check Visible Paint Contribution"]
 CheckVisiblePaint --> HasFillStroke{"Has Fill/Stroke?"}
 HasFillStroke --> |No| AllowHit
-HasFillStroke --> |Yes| PathContains["Path Contains Point"]
+HasFillStroke --> |Yes| CheckLuminanceMode{"Luminance Mode?"}
+CheckLuminanceMode --> |Yes| ComputeLuminance["Compute Color Luminance<br/>(ITU-R BT.709)"]
+CheckLuminanceMode --> |No| PathContains["Path Contains Point"]
+ComputeLuminance --> LuminanceThreshold["Apply Luminance Threshold"]
+LuminanceThreshold --> PathContains
 PathContains --> HitResult["Hit Detected"]
 AllowHit --> HitResult
 ```
@@ -285,11 +293,12 @@ AllowHit --> HitResult
 - [animated_svg_painter_clip_mask_advanced.dart:17-66](file://lib/src/animation/animated_svg_painter_clip_mask_advanced.dart#L17-L66)
 
 The advanced mask system includes:
-- **Luminance alpha support** with ITU-R BT.709 coefficients
+- **Luminance alpha support** with ITU-R BT.709 coefficients (R: 0.2126, G: 0.7152, B: 0.0722)
 - **Nested mask recursion prevention** with depth tracking
 - **ObjectBoundingBox units** with proper viewport computation
 - **UserSpaceOnUse units** with percentage handling
 - **Visible paint contribution analysis** excluding transparent elements
+- **New luminance computation methods** with comprehensive color parsing
 
 **Section sources**
 - [animated_svg_picture_hit_test_visibility.dart:198-395](file://lib/src/animation/animated_svg_picture_hit_test_visibility.dart#L198-L395)
@@ -847,6 +856,8 @@ The advanced hit testing system implements several optimization strategies:
 - Test text character positioning with dx/rotate attributes
 - Ensure circular reference prevention in nested clipPath/mask scenarios
 
+**Updated** Enhanced troubleshooting guidance for new luminance-based mask hit testing features, including proper ITU-R BT.709 coefficient handling and circular reference protection in mask composition.
+
 **Section sources**
 - [hit_test_advanced_features_test.dart:1-604](file://test/animation/hit_test_advanced_features_test.dart#L1-L604)
 - [hit_test_precision_test.dart:1-1006](file://test/animation/hit_test_precision_test.dart#L1-L1006)
@@ -869,7 +880,9 @@ Key achievements include:
 - **Enhanced clipPath precision** with objectBoundingBox coordinate transformation
 - **Advanced mask hit testing** with luminance alpha support and recursion prevention
 - **Strengthened use element delegation** with comprehensive pointer-events inheritance
+- **New luminance computation system** with ITU-R BT.709 coefficients for accurate color-based masking
+- **Enhanced mask composition** with proper opacity blending and edge feathering support
 
 The implementation serves as a foundation for building highly interactive SVG experiences while maintaining compatibility with existing Flutter and SVG ecosystems.
 
-**Updated** Enhanced with comprehensive pointer events semantics, stroke/fill tolerance-based hit testing, glyph-precision text hit testing, advanced use element event delegation, comprehensive precision testing capabilities, advanced clipPath precision with coordinate transformation, advanced mask hit testing with luminance support, and strengthened event delegation with pointer-events inheritance for complex geometric scenarios.
+**Updated** Enhanced with comprehensive pointer events semantics, stroke/fill tolerance-based hit testing, glyph-precision text hit testing, advanced use element event delegation, comprehensive precision testing capabilities, advanced clipPath precision with coordinate transformation, advanced mask hit testing with luminance support using ITU-R BT.709 coefficients, strengthened event delegation with pointer-events inheritance for complex geometric scenarios, and improved circular reference protection in mask composition with advanced recursion depth tracking.
