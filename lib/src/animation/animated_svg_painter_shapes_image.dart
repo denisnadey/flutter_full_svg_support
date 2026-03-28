@@ -135,17 +135,26 @@ extension AnimatedSvgPainterShapesImageExtension on AnimatedSvgPainter {
       return;
     }
 
-    final image = imagesByHref[href];
-    // Edge case: image not yet loaded - silently skip
-    if (image == null) {
-      return;
-    }
-
     final x = _getNumber(node, 'x') ?? 0.0;
     final y = _getNumber(node, 'y') ?? 0.0;
 
     // Resolve width/height with percentage support
     final viewportSize = _getImageViewportSize(node);
+    
+    final image = imagesByHref[href];
+    // If image failed to load, render a transparent fallback rect
+    // This provides graceful degradation without throwing exceptions
+    if (image == null) {
+      _renderImageFallback(
+        canvas,
+        node,
+        x: x,
+        y: y,
+        viewportSize: viewportSize,
+      );
+      return;
+    }
+
     final width =
         _resolveImageLength(node, 'width', viewportSize.width) ??
         image.width.toDouble();
@@ -211,6 +220,35 @@ extension AnimatedSvgPainterShapesImageExtension on AnimatedSvgPainter {
     }
 
     canvas.drawImageRect(image, srcRect, layout.destinationRect, paint);
+  }
+
+  /// Renders a transparent fallback rect when an image fails to load.
+  /// This provides graceful degradation: the element occupies its specified
+  /// space but displays nothing visible, preventing layout issues.
+  void _renderImageFallback(
+    ui.Canvas canvas,
+    SvgNode node, {
+    required double x,
+    required double y,
+    required ui.Size viewportSize,
+  }) {
+    // Get explicit dimensions from the element
+    final width = _resolveImageLength(node, 'width', viewportSize.width);
+    final height = _resolveImageLength(node, 'height', viewportSize.height);
+
+    // If no dimensions specified, we can't render a fallback
+    if (width == null || height == null || width <= 0 || height <= 0) {
+      return;
+    }
+
+    // Draw a transparent rect to preserve the image's space in the layout
+    // This ensures that filters and other effects still have a target region
+    final rect = ui.Rect.fromLTWH(x, y, width, height);
+    final paint = ui.Paint()
+      ..color = const ui.Color(0x00000000) // Fully transparent
+      ..style = ui.PaintingStyle.fill;
+
+    canvas.drawRect(rect, paint);
   }
 
   /// Paints a nested SVG image with proper transform stacking.

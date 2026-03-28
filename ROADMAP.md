@@ -2,7 +2,7 @@
 
 **Last Updated:** March 28, 2026
 
-**Current Status:** ~80% Blink SVG parity | ~95% Filter parity | 3,538 tests passing | 0 analyzer warnings
+**Current Status:** ~89-90% Blink SVG parity | ~97% Filter parity | 4,145 tests passing | 0 analyzer warnings
 
 This roadmap reflects the current state. Legacy stage-by-stage plans are historical context only.
 
@@ -38,26 +38,29 @@ Authoritative references:
 18. **use/symbol Inheritance** - CSS cascade through shadow boundary, style inheritance, nested transforms, hit-testing.
 19. **Light Sources** - feDistantLight, fePointLight, feSpotLight with per-pixel lighting math (Lambertian/Blinn-Phong).
 20. **Component Transfer** - All 5 function types (identity, table, discrete, linear, gamma).
+21. **Edge Case Sprint (March 2026)** - CSS shorthand resolution (font CSS2.1, margin/padding, animation coexistence, border overrides), CSS unit handling precision (em/rem/ch/ex/calc), SMIL timing precision (repeatCount drift, repeatDur, min/max), advanced image transformations, filter primitive edge cases (feDisplacementMap bilinear, feTurbulence stitchTiles, feGaussianBlur extreme, feImage external URL), hit-testing refinements (~206 new tests, parity ~82% → ~89-90%).
 
 ## Current Priorities
 
-### P0 - Parity Foundations (In Progress)
+### P0 - Reaching 95%+ Parity (In Progress)
 
-1. **Advanced animateMotion semantics** - SMIL 88% → 92% (complex path timing, keyPoints precision, rotate attribute edge cases).
-2. **CSS/SMIL edge-case parity** - Complex shorthand resolution, unit handling, timing precision.
-3. **External content edge cases** - Advanced image transformations, nested foreignObject (60% → 75%).
-4. **Code modularization** - Splitting large files for dev velocity.
+1. **Remaining CSS selectors** - `:nth-child`, `:nth-of-type`, `:nth-last-child`, complex selector combinations.
+2. **Performance optimization** - Render benchmarking, cache tuning, memory profiling.
+3. **Golden test coverage** - Expand regression fixtures for edge cases.
+4. **Code modularization** - Remaining large files (`animated_svg_painter_shapes.dart`, `animated_svg_picture.dart`).
 
 ### P1 - Core Feature Expansion
 
 1. ~~Advanced text typography/positioning parity.~~ (Complete - ~99% parity)
 2. ~~`foreignObject` and `image` semantics beyond baseline.~~ (Complete)
 3. ~~`animateMotion` parity beyond current baseline behavior.~~ (Complete)
+4. ~~CSS/SMIL edge-case parity.~~ (Complete - full shorthand/unit/timing coverage)
 
 ### P2 - CSS/Timing Fidelity
 
-1. CSS transform/timing edge-case parity (complex shorthand and units).
-2. Expand regression fixture coverage for CSS->SMIL conversion.
+1. ~~CSS transform/timing edge-case parity (complex shorthand and units).~~ (Complete)
+2. ~~Expand regression fixture coverage for CSS->SMIL conversion.~~ (Complete)
+3. Implement advanced pseudo-classes (`:nth-child`, `:nth-of-type`).
 
 ### P3 - Quality and Stability
 
@@ -83,4 +86,5 @@ Validation commands:
 
 ## Latest Baseline
 
-- March 28, 2026: `flutter test` passed (3,538), `dart analyze` returned 0 errors / 0 warnings / 0 info.
+- March 28, 2026: `flutter test` passed (4,145), `dart analyze` returned 0 errors / 0 warnings / 0 info.
+- Edge Case Sprint complete: ~206 new tests, parity increased from ~82% to ~89-90%.

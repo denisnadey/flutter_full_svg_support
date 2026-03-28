@@ -51,6 +51,28 @@ extension _AnimatedSvgPictureStateCoreUtilsExtension
     return visibility == 'hidden' || visibility == 'collapse';
   }
 
+  /// Checks if opacity causes non-visibility.
+  /// Per CSS spec, opacity:0 elements are STILL hit-testable.
+  /// This method returns true only when opacity should prevent hit-testing
+  /// which is NEVER - opacity doesn't affect pointer events.
+  bool _isZeroOpacity(SvgNode node) {
+    final opacity = _getInheritedNumber(node, 'opacity');
+    // opacity:0 is still hit-testable per CSS spec
+    // This is only used for informational purposes
+    return opacity != null && opacity <= 0;
+  }
+
+  /// Checks if element is excluded from hit-testing due to visibility/display.
+  /// Note: opacity:0 does NOT exclude from hit-testing per CSS spec.
+  bool _isHitTestExcluded(SvgNode node) {
+    // display:none excludes from hit-testing
+    if (_isDisplayNone(node)) return true;
+    // visibility:hidden/collapse excludes from hit-testing
+    if (_isVisibilityHidden(node)) return true;
+    // opacity:0 does NOT exclude - element is still hit-testable
+    return false;
+  }
+
   bool _isDisplayNone(SvgNode node) {
     final styleValue = _extractStyleValue(node, 'display');
     final rawValue = styleValue ?? node.getAttributeValue('display');

@@ -1,9 +1,18 @@
 part of 'svg_filters.dart';
 
+/// Maximum reasonable stdDeviation for Gaussian blur.
+/// Beyond this, we use iterative box blur approximation per Blink behavior.
+const double _maxGaussianBlurStdDeviation = 50.0;
+
+/// Maximum kernel radius to prevent excessive memory allocation.
+/// A kernel radius of 256 pixels is already very large.
+const int _maxBlurKernelRadius = 256;
+
 /// Gaussian Blur фильтр
 ///
 /// Использует ImageFilter.blur для размытия.
 /// Supports edgeMode per SVG Filter 1.1 spec.
+/// For extreme stdDeviation values (>50), uses iterative box blur approximation.
 class SvgGaussianBlurFilter extends SvgFilter {
   /// Стандартное отклонение по X (размытие по горизонтали)
   final double stdDeviationX;
@@ -27,16 +36,41 @@ class SvgGaussianBlurFilter extends SvgFilter {
     super.resultName,
   }) : super(type: SvgFilterType.gaussianBlur);
 
+  /// Whether stdDeviation=0 (passthrough, no blur).
+  bool get isPassthrough => stdDeviationX <= 0.0 && stdDeviationY <= 0.0;
+
+  /// Whether this blur requires the iterative box blur approximation.
+  /// Used for large stdDeviation values to prevent performance issues.
+  bool get requiresBoxBlurApproximation =>
+      stdDeviationX > _maxGaussianBlurStdDeviation ||
+      stdDeviationY > _maxGaussianBlurStdDeviation;
+
+  /// Gets the clamped stdDeviation values.
+  /// Caps at _maxGaussianBlurStdDeviation for the standard blur filter.
+  (double, double) get clampedStdDeviation => (
+        stdDeviationX.clamp(0.0, _maxGaussianBlurStdDeviation),
+        stdDeviationY.clamp(0.0, _maxGaussianBlurStdDeviation),
+      );
+
   @override
   ui.ImageFilter? apply() {
+    // stdDeviation=0 means passthrough (no blur)
+    if (isPassthrough) {
+      return null;
+    }
+
+    // For very large blur values, cap at maximum to prevent performance issues.
+    // The GaussianBlurProcessor handles the actual large blur via box blur approx.
+    final (sigmaX, sigmaY) = clampedStdDeviation;
+
     // Flutter ImageFilter.blur использует sigma (стандартное отклонение)
     // В SVG stdDeviation = sigma
     // Note: Flutter's blur doesn't directly support edgeMode - we handle this
     // via the tile mode in the shader when applicable.
     final tileMode = _edgeModeToTileMode(edgeMode);
     return ui.ImageFilter.blur(
-      sigmaX: stdDeviationX,
-      sigmaY: stdDeviationY,
+      sigmaX: sigmaX,
+      sigmaY: sigmaY,
       tileMode: tileMode,
     );
   }
@@ -50,6 +84,326 @@ class SvgGaussianBlurFilter extends SvgFilter {
         return ui.TileMode.repeated;
       case SvgConvolveEdgeMode.none:
         return ui.TileMode.decal;
+    }
+  }
+}
+
+/// Utility class for performing Gaussian blur with proper edge handling.
+///
+/// Handles extreme stdDeviation values (>50) using iterative box blur
+/// approximation (3-pass box blur ≈ Gaussian per Blink behavior).
+class GaussianBlurProcessor {
+  const GaussianBlurProcessor._();
+
+  /// Applies Gaussian blur to RGBA pixel data.
+  ///
+  /// For large stdDeviation values, uses 3-pass box blur approximation
+  /// which is faster and matches Blink behavior.
+  ///
+  /// [pixels] - Source RGBA pixel data (4 bytes per pixel).
+  /// [width] - Image width in pixels.
+  /// [height] - Image height in pixels.
+  /// [stdDeviationX] - Blur standard deviation in X.
+  /// [stdDeviationY] - Blur standard deviation in Y.
+  /// [edgeMode] - How to handle pixels outside image bounds.
+  ///
+  /// Returns new RGBA pixel data with blur applied.
+  static Uint8List applyBlur({
+    required Uint8List pixels,
+    required int width,
+    required int height,
+    required double stdDeviationX,
+    required double stdDeviationY,
+    required SvgConvolveEdgeMode edgeMode,
+  }) {
+    if (width <= 0 || height <= 0) {
+      return pixels;
+    }
+
+    // stdDeviation=0 means passthrough
+    if (stdDeviationX <= 0.0 && stdDeviationY <= 0.0) {
+      return pixels;
+    }
+
+    // Use box blur approximation for large values
+    if (stdDeviationX > _maxGaussianBlurStdDeviation ||
+        stdDeviationY > _maxGaussianBlurStdDeviation) {
+      return _applyBoxBlurApproximation(
+        pixels: pixels,
+        width: width,
+        height: height,
+        stdDeviationX: stdDeviationX,
+        stdDeviationY: stdDeviationY,
+        edgeMode: edgeMode,
+      );
+    }
+
+    // Standard Gaussian blur for reasonable values
+    return _applyGaussianBlur(
+      pixels: pixels,
+      width: width,
+      height: height,
+      stdDeviationX: stdDeviationX,
+      stdDeviationY: stdDeviationY,
+      edgeMode: edgeMode,
+    );
+  }
+
+  /// Applies standard Gaussian blur using separable convolution.
+  static Uint8List _applyGaussianBlur({
+    required Uint8List pixels,
+    required int width,
+    required int height,
+    required double stdDeviationX,
+    required double stdDeviationY,
+    required SvgConvolveEdgeMode edgeMode,
+  }) {
+    var result = Uint8List.fromList(pixels);
+
+    // Horizontal pass
+    if (stdDeviationX > 0) {
+      final kernel = _createGaussianKernel(stdDeviationX);
+      result = _applyHorizontalConvolution(result, width, height, kernel, edgeMode);
+    }
+
+    // Vertical pass
+    if (stdDeviationY > 0) {
+      final kernel = _createGaussianKernel(stdDeviationY);
+      result = _applyVerticalConvolution(result, width, height, kernel, edgeMode);
+    }
+
+    return result;
+  }
+
+  /// Applies 3-pass box blur approximation for large blur values.
+  ///
+  /// Per Blink behavior, 3 consecutive box blurs approximate a Gaussian.
+  /// Box blur radius = sqrt((12 * sigma^2 / n) + 1) / 2 where n=3 passes.
+  static Uint8List _applyBoxBlurApproximation({
+    required Uint8List pixels,
+    required int width,
+    required int height,
+    required double stdDeviationX,
+    required double stdDeviationY,
+    required SvgConvolveEdgeMode edgeMode,
+  }) {
+    // Calculate box blur radius for 3-pass approximation
+    // wIdeal = sqrt((12*sigma²/n)+1) where n=3
+    final radiusX = _calculateBoxBlurRadius(stdDeviationX);
+    final radiusY = _calculateBoxBlurRadius(stdDeviationY);
+
+    var result = Uint8List.fromList(pixels);
+
+    // Apply 3 passes of box blur
+    for (var pass = 0; pass < 3; pass++) {
+      if (radiusX > 0) {
+        result = _applyHorizontalBoxBlur(result, width, height, radiusX, edgeMode);
+      }
+      if (radiusY > 0) {
+        result = _applyVerticalBoxBlur(result, width, height, radiusY, edgeMode);
+      }
+    }
+
+    return result;
+  }
+
+  /// Calculates box blur radius for Gaussian approximation.
+  static int _calculateBoxBlurRadius(double stdDeviation) {
+    if (stdDeviation <= 0) return 0;
+    // For 3-pass box blur: wIdeal = sqrt((12*sigma²/3)+1)
+    final wIdeal = math.sqrt((12 * stdDeviation * stdDeviation / 3) + 1);
+    return math.min((wIdeal ~/ 2), _maxBlurKernelRadius);
+  }
+
+  /// Creates a 1D Gaussian kernel.
+  static List<double> _createGaussianKernel(double sigma) {
+    final radius = math.min((sigma * 3).ceil(), _maxBlurKernelRadius);
+    final size = radius * 2 + 1;
+    final kernel = List<double>.filled(size, 0.0);
+
+    final twoSigmaSquare = 2 * sigma * sigma;
+    var sum = 0.0;
+
+    for (var i = -radius; i <= radius; i++) {
+      final value = math.exp(-(i * i) / twoSigmaSquare);
+      kernel[i + radius] = value;
+      sum += value;
+    }
+
+    // Normalize
+    for (var i = 0; i < size; i++) {
+      kernel[i] /= sum;
+    }
+
+    return kernel;
+  }
+
+  /// Applies horizontal convolution with the given kernel.
+  static Uint8List _applyHorizontalConvolution(
+    Uint8List pixels,
+    int width,
+    int height,
+    List<double> kernel,
+    SvgConvolveEdgeMode edgeMode,
+  ) {
+    final result = Uint8List(pixels.length);
+    final radius = kernel.length ~/ 2;
+
+    for (var y = 0; y < height; y++) {
+      for (var x = 0; x < width; x++) {
+        var r = 0.0, g = 0.0, b = 0.0, a = 0.0;
+
+        for (var k = -radius; k <= radius; k++) {
+          final srcX = _getCoordWithEdgeMode(x + k, width, edgeMode);
+          if (srcX < 0) continue; // Skip for 'none' mode
+
+          final srcIndex = (y * width + srcX) * 4;
+          final weight = kernel[k + radius];
+          r += pixels[srcIndex] * weight;
+          g += pixels[srcIndex + 1] * weight;
+          b += pixels[srcIndex + 2] * weight;
+          a += pixels[srcIndex + 3] * weight;
+        }
+
+        final dstIndex = (y * width + x) * 4;
+        result[dstIndex] = r.round().clamp(0, 255);
+        result[dstIndex + 1] = g.round().clamp(0, 255);
+        result[dstIndex + 2] = b.round().clamp(0, 255);
+        result[dstIndex + 3] = a.round().clamp(0, 255);
+      }
+    }
+
+    return result;
+  }
+
+  /// Applies vertical convolution with the given kernel.
+  static Uint8List _applyVerticalConvolution(
+    Uint8List pixels,
+    int width,
+    int height,
+    List<double> kernel,
+    SvgConvolveEdgeMode edgeMode,
+  ) {
+    final result = Uint8List(pixels.length);
+    final radius = kernel.length ~/ 2;
+
+    for (var y = 0; y < height; y++) {
+      for (var x = 0; x < width; x++) {
+        var r = 0.0, g = 0.0, b = 0.0, a = 0.0;
+
+        for (var k = -radius; k <= radius; k++) {
+          final srcY = _getCoordWithEdgeMode(y + k, height, edgeMode);
+          if (srcY < 0) continue; // Skip for 'none' mode
+
+          final srcIndex = (srcY * width + x) * 4;
+          final weight = kernel[k + radius];
+          r += pixels[srcIndex] * weight;
+          g += pixels[srcIndex + 1] * weight;
+          b += pixels[srcIndex + 2] * weight;
+          a += pixels[srcIndex + 3] * weight;
+        }
+
+        final dstIndex = (y * width + x) * 4;
+        result[dstIndex] = r.round().clamp(0, 255);
+        result[dstIndex + 1] = g.round().clamp(0, 255);
+        result[dstIndex + 2] = b.round().clamp(0, 255);
+        result[dstIndex + 3] = a.round().clamp(0, 255);
+      }
+    }
+
+    return result;
+  }
+
+  /// Applies horizontal box blur.
+  static Uint8List _applyHorizontalBoxBlur(
+    Uint8List pixels,
+    int width,
+    int height,
+    int radius,
+    SvgConvolveEdgeMode edgeMode,
+  ) {
+    final result = Uint8List(pixels.length);
+    final kernelSize = radius * 2 + 1;
+    final invKernelSize = 1.0 / kernelSize;
+
+    for (var y = 0; y < height; y++) {
+      for (var x = 0; x < width; x++) {
+        var r = 0, g = 0, b = 0, a = 0;
+
+        for (var k = -radius; k <= radius; k++) {
+          final srcX = _getCoordWithEdgeMode(x + k, width, edgeMode);
+          if (srcX < 0) continue;
+
+          final srcIndex = (y * width + srcX) * 4;
+          r += pixels[srcIndex];
+          g += pixels[srcIndex + 1];
+          b += pixels[srcIndex + 2];
+          a += pixels[srcIndex + 3];
+        }
+
+        final dstIndex = (y * width + x) * 4;
+        result[dstIndex] = (r * invKernelSize).round().clamp(0, 255);
+        result[dstIndex + 1] = (g * invKernelSize).round().clamp(0, 255);
+        result[dstIndex + 2] = (b * invKernelSize).round().clamp(0, 255);
+        result[dstIndex + 3] = (a * invKernelSize).round().clamp(0, 255);
+      }
+    }
+
+    return result;
+  }
+
+  /// Applies vertical box blur.
+  static Uint8List _applyVerticalBoxBlur(
+    Uint8List pixels,
+    int width,
+    int height,
+    int radius,
+    SvgConvolveEdgeMode edgeMode,
+  ) {
+    final result = Uint8List(pixels.length);
+    final kernelSize = radius * 2 + 1;
+    final invKernelSize = 1.0 / kernelSize;
+
+    for (var y = 0; y < height; y++) {
+      for (var x = 0; x < width; x++) {
+        var r = 0, g = 0, b = 0, a = 0;
+
+        for (var k = -radius; k <= radius; k++) {
+          final srcY = _getCoordWithEdgeMode(y + k, height, edgeMode);
+          if (srcY < 0) continue;
+
+          final srcIndex = (srcY * width + x) * 4;
+          r += pixels[srcIndex];
+          g += pixels[srcIndex + 1];
+          b += pixels[srcIndex + 2];
+          a += pixels[srcIndex + 3];
+        }
+
+        final dstIndex = (y * width + x) * 4;
+        result[dstIndex] = (r * invKernelSize).round().clamp(0, 255);
+        result[dstIndex + 1] = (g * invKernelSize).round().clamp(0, 255);
+        result[dstIndex + 2] = (b * invKernelSize).round().clamp(0, 255);
+        result[dstIndex + 3] = (a * invKernelSize).round().clamp(0, 255);
+      }
+    }
+
+    return result;
+  }
+
+  /// Gets coordinate with edge mode handling.
+  /// Returns -1 for 'none' mode when out of bounds.
+  static int _getCoordWithEdgeMode(int coord, int size, SvgConvolveEdgeMode edgeMode) {
+    if (coord >= 0 && coord < size) return coord;
+
+    switch (edgeMode) {
+      case SvgConvolveEdgeMode.duplicate:
+        return coord.clamp(0, size - 1);
+      case SvgConvolveEdgeMode.wrap:
+        var wrapped = coord % size;
+        if (wrapped < 0) wrapped += size;
+        return wrapped;
+      case SvgConvolveEdgeMode.none:
+        return -1; // Signal to skip this sample
     }
   }
 }

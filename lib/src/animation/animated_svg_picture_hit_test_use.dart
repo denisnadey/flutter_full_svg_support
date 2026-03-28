@@ -271,6 +271,7 @@ extension _AnimatedSvgPictureStateHitTestUseExtension
   }
 
   /// Hit tests a node with <use> context for pointer-events inheritance.
+  /// Properly handles nested use elements and text content within use shadows.
   String? _hitTestNodeWithUseContext(
     SvgNode node,
     Offset documentPoint,
@@ -282,9 +283,13 @@ extension _AnimatedSvgPictureStateHitTestUseExtension
     if (_isDefinitionOnlyTag(node.tagName)) {
       return null;
     }
+    // Per CSS spec: display:none elements are NOT hit-testable
     if (_isDisplayNone(node)) {
       return null;
     }
+    // Per CSS spec: visibility:hidden elements are NOT hit-testable
+    // But we check this at the pointer-events level for proper inheritance
+    // Note: opacity:0 elements ARE still hit-testable per CSS spec
 
     // Check requiredExtensions for foreignObject
     if (node.tagName == 'foreignObject') {

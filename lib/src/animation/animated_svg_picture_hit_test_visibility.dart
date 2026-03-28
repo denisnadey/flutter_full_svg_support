@@ -12,8 +12,20 @@ const double _kHitTestLuminanceB = 0.0722;
 /// Points under mask content with luminance below this are not hittable.
 const double _kMinLuminanceForHit = 0.05;
 
+/// Minimum alpha threshold for hit detection in alpha masks.
+/// Points under mask content with alpha below this are not hittable.
+const double _kMinAlphaForHit = 0.01;
+
 extension _AnimatedSvgPictureStateHitTestVisibilityExtension
     on _AnimatedSvgPictureState {
+  /// Checks if a point is visible for hit-testing at the given node.
+  /// This handles clip-path, mask, and foreignObject viewport clipping.
+  /// Transform is applied to get local coordinates.
+  ///
+  /// For pointer-events interaction:
+  /// - clip-path constrains the hit-test region
+  /// - mask constrains based on alpha/luminance
+  /// - These are checked BEFORE pointer-events logic
   bool _isPointVisibleForNode(
     SvgNode node,
     Offset documentPoint,

@@ -4,6 +4,14 @@
 **Referenced Files in This Document**
 - [dart_test.yaml](file://dart_test.yaml)
 - [pubspec.yaml](file://pubspec.yaml)
+- [css_calc_edge_cases_test.dart](file://test/animation/css_calc_edge_cases_test.dart)
+- [foreign_object_nesting_test.dart](file://test/animation/foreign_object_nesting_test.dart)
+- [hit_test_deep_nesting_test.dart](file://test/animation/hit_test_deep_nesting_test.dart)
+- [image_transform_edge_cases_test.dart](file://test/animation/image_transform_edge_cases_test.dart)
+- [smil_timing_precision_test.dart](file://test/animation/smil_timing_precision_test.dart)
+- [css_variables_calc_test.dart](file://test/animation/css_variables_calc_test.dart)
+- [foreignobject_css_inheritance_test.dart](file://test/animation/foreignobject_css_inheritance_test.dart)
+- [image_foreignobject_edge_cases_test.dart](file://test/animation/image_foreignobject_edge_cases_test.dart)
 - [font_registration_lifecycle_test.dart](file://test/animation/font_registration_lifecycle_test.dart)
 - [text_font_face_test.dart](file://test/animation/text_font_face_test.dart)
 - [svg_font_registry.dart](file://lib/src/animation/svg_font_registry.dart)
@@ -28,11 +36,13 @@
 
 ## Update Summary
 **Changes Made**
-- Added comprehensive font registration lifecycle testing documentation
-- Enhanced visual regression testing capabilities section
-- Expanded font-related test scenarios and error handling verification
-- Added detailed documentation for embedded font scenarios
-- Updated testing infrastructure to cover font parsing, registration, and lifecycle management
+- Added comprehensive CSS calc edge cases testing covering nested expressions, min/max/clamp functions, and unit conversions
+- Expanded foreignObject nesting and coordinate system testing with deep nesting scenarios
+- Enhanced hit testing capabilities with deep nesting regression tests for use/clip/mask compositions
+- Added image transformation edge cases including preserveAspectRatio variants and overflow handling
+- Implemented SMIL timing precision tests for animation synchronization and dependency resolution
+- Integrated CSS variables and calc() evaluation testing with SVG integration scenarios
+- Enhanced visual regression testing with comprehensive edge case coverage
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -40,27 +50,36 @@
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
 5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Font Registration Lifecycle Testing](#font-registration-lifecycle-testing)
-7. [Enhanced Visual Regression Testing](#enhanced-visual-regression-testing)
-8. [Embedded Font Scenarios](#embedded-font-scenarios)
-9. [Dependency Analysis](#dependency-analysis)
-10. [Performance Considerations](#performance-considerations)
-11. [Troubleshooting Guide](#troubleshooting-guide)
-12. [Conclusion](#conclusion)
+6. [CSS Calc Edge Cases Testing](#css-calc-edge-cases-testing)
+7. [ForeignObject Nesting and Coordinate Systems](#foreignobject-nesting-and-coordinate-systems)
+8. [Deep Hit Testing and Event System](#deep-hit-testing-and-event-system)
+9. [Image Transform Edge Cases](#image-transform-edge-cases)
+10. [SMIL Timing Precision Testing](#smil-timing-precision-testing)
+11. [CSS Variables and Calc Integration](#css-variables-and-calc-integration)
+12. [Enhanced Visual Regression Testing](#enhanced-visual-regression-testing)
+13. [Font Registration Lifecycle Testing](#font-registration-lifecycle-testing)
+14. [Embedded Font Scenarios](#embedded-font-scenarios)
+15. [Dependency Analysis](#dependency-analysis)
+16. [Performance Considerations](#performance-considerations)
+17. [Troubleshooting Guide](#troubleshooting-guide)
+18. [Conclusion](#conclusion)
 
 ## Introduction
-This document provides a comprehensive overview of the testing suite updates for the Flutter SVG project, with a focus on the expanded font registration lifecycle testing infrastructure, enhanced visual regression testing capabilities, and improved test coverage for embedded font scenarios. The testing suite now includes comprehensive font-related test scenarios, detailed error handling verification, and advanced visual analysis techniques for ensuring font rendering consistency across different platforms and configurations.
+This document provides a comprehensive overview of the expanded testing suite for the Flutter SVG project, reflecting the recent addition of five new comprehensive test files totaling over 4,500 lines of test coverage. The testing suite now includes extensive coverage for CSS calc edge cases, foreignObject nesting scenarios, deep hit testing for complex compositions, image transformation edge cases, and SMIL timing precision testing. These additions significantly enhance the reliability and robustness of SVG rendering across various edge cases and complex scenarios.
 
 ## Project Structure
-The testing suite is organized into focused groups with expanded font testing capabilities:
+The testing suite has been expanded with focused groups covering the newly added test categories:
 - Core widget and rendering tests
 - Animation and visual transformation tests
+- CSS calc edge cases and mathematical function testing
+- ForeignObject nesting and coordinate system tests
+- Deep hit testing for complex compositions
+- Image transformation edge case tests
+- SMIL timing precision and animation synchronization tests
+- CSS variables and calc() integration tests
 - Font registration lifecycle tests
-- Embedded font parsing and validation tests
-- Caching and loader behavior tests
-- Playground analyzer and model tests
-- Theme propagation and layout tests
-- Typography feature tests (kerning, synthesis, variants)
+- Typography feature tests
+- Visual regression testing with enhanced edge case coverage
 
 ```mermaid
 graph TB
@@ -75,6 +94,24 @@ VS["visual_scale_test.dart"]
 VT["visual_translation_test.dart"]
 VM["visual_morph_test.dart"]
 VU["visual_test_utils.dart"]
+end
+subgraph "CSS Calc Tests"
+CCE["css_calc_edge_cases_test.dart"]
+CVC["css_variables_calc_test.dart"]
+end
+subgraph "ForeignObject Tests"
+FON["foreign_object_nesting_test.dart"]
+FOCI["foreignobject_css_inheritance_test.dart"]
+IFOE["image_foreignobject_edge_cases_test.dart"]
+end
+subgraph "Hit Testing Tests"
+HTDN["hit_test_deep_nesting_test.dart"]
+end
+subgraph "Image Transform Tests"
+ITE["image_transform_edge_cases_test.dart"]
+end
+subgraph "SMIL Timing Tests"
+STP["smil_timing_precision_test.dart"]
 end
 subgraph "Font Lifecycle Tests"
 FRL["font_registration_lifecycle_test.dart"]
@@ -99,12 +136,24 @@ VM --> VU
 FRL --> TF
 FRL --> VU
 TF --> FRL
+CCE --> VU
+FON --> VU
+HTDN --> VU
+ITE --> VU
+STP --> VU
+CVC --> VU
 LT --> CT
 ```
 
 **Diagram sources**
 - [widget_svg_test.dart:1-1157](file://test/widget_svg_test.dart#L1-L1157)
 - [visual_test_utils.dart:1-231](file://test/animation/visual_test_utils.dart#L1-L231)
+- [css_calc_edge_cases_test.dart:1-658](file://test/animation/css_calc_edge_cases_test.dart#L1-L658)
+- [foreign_object_nesting_test.dart:1-869](file://test/animation/foreign_object_nesting_test.dart#L1-L869)
+- [hit_test_deep_nesting_test.dart:1-1266](file://test/animation/hit_test_deep_nesting_test.dart#L1-L1266)
+- [image_transform_edge_cases_test.dart:1-877](file://test/animation/image_transform_edge_cases_test.dart#L1-L877)
+- [smil_timing_precision_test.dart:1-849](file://test/animation/smil_timing_precision_test.dart#L1-L849)
+- [css_variables_calc_test.dart:1-402](file://test/animation/css_variables_calc_test.dart#L1-L402)
 - [font_registration_lifecycle_test.dart:1-345](file://test/animation/font_registration_lifecycle_test.dart#L1-L345)
 - [text_font_face_test.dart:1-509](file://test/animation/text_font_face_test.dart#L1-L509)
 - [font_kerning_test.dart:1-53](file://test/animation/font_kerning_test.dart#L1-L53)
@@ -114,6 +163,12 @@ LT --> CT
 **Section sources**
 - [widget_svg_test.dart:1-1157](file://test/widget_svg_test.dart#L1-L1157)
 - [visual_test_utils.dart:1-231](file://test/animation/visual_test_utils.dart#L1-L231)
+- [css_calc_edge_cases_test.dart:1-658](file://test/animation/css_calc_edge_cases_test.dart#L1-L658)
+- [foreign_object_nesting_test.dart:1-869](file://test/animation/foreign_object_nesting_test.dart#L1-L869)
+- [hit_test_deep_nesting_test.dart:1-1266](file://test/animation/hit_test_deep_nesting_test.dart#L1-L1266)
+- [image_transform_edge_cases_test.dart:1-877](file://test/animation/image_transform_edge_cases_test.dart#L1-L877)
+- [smil_timing_precision_test.dart:1-849](file://test/animation/smil_timing_precision_test.dart#L1-L849)
+- [css_variables_calc_test.dart:1-402](file://test/animation/css_variables_calc_test.dart#L1-L402)
 - [font_registration_lifecycle_test.dart:1-345](file://test/animation/font_registration_lifecycle_test.dart#L1-L345)
 - [text_font_face_test.dart:1-509](file://test/animation/text_font_face_test.dart#L1-L509)
 - [font_kerning_test.dart:1-53](file://test/animation/font_kerning_test.dart#L1-L53)
@@ -121,18 +176,30 @@ LT --> CT
 - [font_variant_test.dart:1-196](file://test/animation/font_variant_test.dart#L1-L196)
 
 ## Core Components
-- Visual test utilities: Provide pixel capture, analysis, hashing, and difference computation for visual regression testing.
-- Widget rendering tests: Validate SvgPicture across string, memory, asset, and network sources, including strategies and color mapping.
-- Font registration lifecycle tests: Comprehensive testing of @font-face parsing, registration, and lifecycle management.
-- Embedded font parsing tests: Validate CSS font-face rule extraction, parsing, and validation.
-- Loader and cache tests: Verify caching behavior, loader key derivation, and resource lifecycle.
-- Playground analyzer tests: Validate parsing, rendering feasibility, and reporting of unsupported constructs and broken references.
-- Theme propagation tests: Confirm DefaultSvgTheme precedence and fallback behavior for currentColor, fontSize, and xHeight.
-- Typography feature tests: Comprehensive testing of font-kerning, font-synthesis, and font-variant CSS properties.
+The testing suite now encompasses comprehensive coverage across multiple domains:
+- Visual test utilities: Enhanced pixel capture, analysis, hashing, and difference computation for visual regression testing
+- Widget rendering tests: Validate SvgPicture across string, memory, asset, and network sources, including strategies and color mapping
+- CSS calc edge cases testing: Comprehensive mathematical function evaluation including nested expressions, min/max/clamp functions, and unit conversions
+- ForeignObject nesting tests: Validate complex nesting scenarios, coordinate systems, overflow handling, and transform propagation
+- Deep hit testing: Regression tests for complex use/clip/mask compositions with multiple nesting levels
+- Image transform edge cases: PreserveAspectRatio variants, overflow handling, and dimension validation
+- SMIL timing precision: Animation synchronization, dependency resolution, and circular dependency detection
+- CSS variables and calc integration: Combined variable and calculation resolution with SVG integration
+- Font registration lifecycle tests: Comprehensive testing of @font-face parsing, registration, and lifecycle management
+- Typography feature tests: CSS font properties validation across various scenarios
+- Loader and cache behavior tests: Verify caching behavior, loader key derivation, and resource lifecycle
+- Playground analyzer tests: Validate parsing, rendering feasibility, and reporting of unsupported constructs and broken references
+- Theme propagation tests: Confirm DefaultSvgTheme precedence and fallback behavior for currentColor, fontSize, and xHeight
 
 **Section sources**
 - [visual_test_utils.dart:1-231](file://test/animation/visual_test_utils.dart#L1-L231)
 - [widget_svg_test.dart:1-1157](file://test/widget_svg_test.dart#L1-L1157)
+- [css_calc_edge_cases_test.dart:1-658](file://test/animation/css_calc_edge_cases_test.dart#L1-L658)
+- [foreign_object_nesting_test.dart:1-869](file://test/animation/foreign_object_nesting_test.dart#L1-L869)
+- [hit_test_deep_nesting_test.dart:1-1266](file://test/animation/hit_test_deep_nesting_test.dart#L1-L1266)
+- [image_transform_edge_cases_test.dart:1-877](file://test/animation/image_transform_edge_cases_test.dart#L1-L877)
+- [smil_timing_precision_test.dart:1-849](file://test/animation/smil_timing_precision_test.dart#L1-L849)
+- [css_variables_calc_test.dart:1-402](file://test/animation/css_variables_calc_test.dart#L1-L402)
 - [font_registration_lifecycle_test.dart:1-345](file://test/animation/font_registration_lifecycle_test.dart#L1-L345)
 - [text_font_face_test.dart:1-509](file://test/animation/text_font_face_test.dart#L1-L509)
 - [font_kerning_test.dart:1-53](file://test/animation/font_kerning_test.dart#L1-L53)
@@ -140,7 +207,7 @@ LT --> CT
 - [font_variant_test.dart:1-196](file://test/animation/font_variant_test.dart#L1-L196)
 
 ## Architecture Overview
-The testing suite leverages Flutter's widget testing framework with specialized utilities for visual comparisons, animation verification, and comprehensive font lifecycle testing. Core patterns include:
+The expanded testing suite leverages Flutter's widget testing framework with specialized utilities for visual comparisons, animation verification, mathematical function evaluation, and comprehensive edge case testing. Core patterns include:
 - Golden file comparisons for rasterized widget outputs
 - Pixel-level analysis for animation correctness
 - Custom comparators with tolerance thresholds
@@ -148,42 +215,61 @@ The testing suite leverages Flutter's widget testing framework with specialized 
 - Comprehensive font registration lifecycle validation
 - Embedded font parsing and validation testing
 - Typography feature compliance verification
+- Mathematical function evaluation with edge case handling
+- Complex coordinate system validation
+- Deep composition hit testing
+- Animation timing precision verification
+- CSS variables and calc() integration testing
 
 ```mermaid
 sequenceDiagram
 participant T as "WidgetTester"
 participant U as "VisualTestUtils"
-participant FR as "SvgFontRegistry"
-participant RB as "RepaintBoundary"
-participant IMG as "ui.Image"
-T->>FR : "registerFonts(fontFaceRules)"
-FR-->>T : "Future<void> completion"
-T->>RB : "captureWidgetPixels()"
-U->>RB : "toImage(pixelRatio=1.0)"
-RB-->>U : "ui.Image"
-U->>IMG : "toByteData(RGBA)"
-IMG-->>U : "Uint8List"
-U-->>T : "pixels"
+participant CE as "CssCalcEvaluator"
+participant FO as "ForeignObjectRenderer"
+participant HT as "HitTester"
+participant IT as "ImageTransformer"
+participant ST as "SmilTimeline"
+T->>CE : "evaluate(cssExpression)"
+CE-->>T : "double result"
+T->>FO : "renderNestedForeignObjects()"
+FO-->>T : "rendered content"
+T->>HT : "testDeepNesting()"
+HT-->>T : "hit test results"
+T->>IT : "applyTransformEdgeCases()"
+IT-->>T : "transformed images"
+T->>ST : "verifyTimingPrecision()"
+ST-->>T : "timing validation"
+T->>U : "captureWidgetPixels()"
+U-->>T : "pixel analysis"
 ```
 
 **Diagram sources**
 - [visual_test_utils.dart:11-37](file://test/animation/visual_test_utils.dart#L11-L37)
-- [svg_font_registry.dart:106-134](file://lib/src/animation/svg_font_registry.dart#L106-L134)
+- [css_calc_edge_cases_test.dart:8-47](file://test/animation/css_calc_edge_cases_test.dart#L8-L47)
+- [foreign_object_nesting_test.dart:10-55](file://test/animation/foreign_object_nesting_test.dart#L10-L55)
+- [hit_test_deep_nesting_test.dart:17-83](file://test/animation/hit_test_deep_nesting_test.dart#L17-L83)
+- [image_transform_edge_cases_test.dart:19-41](file://test/animation/image_transform_edge_cases_test.dart#L19-L41)
+- [smil_timing_precision_test.dart:7-97](file://test/animation/smil_timing_precision_test.dart#L7-L97)
 
 **Section sources**
 - [visual_test_utils.dart:1-231](file://test/animation/visual_test_utils.dart#L1-L231)
-- [widget_svg_test.dart:12-84](file://test/widget_svg_test.dart#L12-L84)
-- [svg_font_registry.dart:106-134](file://lib/src/animation/svg_font_registry.dart#L106-L134)
+- [css_calc_edge_cases_test.dart:1-658](file://test/animation/css_calc_edge_cases_test.dart#L1-L658)
+- [foreign_object_nesting_test.dart:1-869](file://test/animation/foreign_object_nesting_test.dart#L1-L869)
+- [hit_test_deep_nesting_test.dart:1-1266](file://test/animation/hit_test_deep_nesting_test.dart#L1-L1266)
+- [image_transform_edge_cases_test.dart:1-877](file://test/animation/image_transform_edge_cases_test.dart#L1-L877)
+- [smil_timing_precision_test.dart:1-849](file://test/animation/smil_timing_precision_test.dart#L1-L849)
 
 ## Detailed Component Analysis
 
 ### Visual Test Utilities
-The visual utilities module centralizes pixel capture, analysis, and comparison:
+The visual utilities module centralizes pixel capture, analysis, and comparison with enhanced capabilities for the expanded test suite:
 - Pixel capture without pumpAndSettle to avoid blocking infinite animations
 - Red pixel detection with configurable tolerance
 - Hash computation and per-channel difference calculation
 - Statistical analysis: bounding box, centroid, estimated rotation angle
 - Comparative analysis between frames for transformations
+- Enhanced support for complex rendering scenarios
 
 ```mermaid
 classDiagram
@@ -219,12 +305,13 @@ VisualTestUtils --> PixelAnalysis : "produces"
 - [visual_test_utils.dart:1-231](file://test/animation/visual_test_utils.dart#L1-L231)
 
 ### Widget Rendering Tests
-These tests validate SvgPicture across multiple loading strategies and rendering modes:
+These tests validate SvgPicture across multiple loading strategies and rendering modes with enhanced edge case coverage:
 - String, memory, asset, and network sources
 - Rendering strategies and color mappers
 - Semantics labeling and exclusion
 - Directionality and alignment handling
 - Error handling for network failures
+- Enhanced validation for complex SVG structures
 
 ```mermaid
 sequenceDiagram
@@ -247,11 +334,12 @@ GS-->>T : "pass/fail"
 - [widget_svg_test.dart:1-1157](file://test/widget_svg_test.dart#L1-L1157)
 
 ### Animation and Transformation Tests
-Animation tests use visual utilities to verify transformations:
+Animation tests use visual utilities to verify transformations with enhanced complexity:
 - Rotation animation: captures pixels, computes bounding box and centroid, validates rendering
 - Scale animation: similar validation with expected scaling behavior
 - Translation animation: verifies movement within canvas bounds
 - Path morphing: validates path interpolation pipeline through a CustomPaint widget
+- Enhanced validation for complex transformation matrices
 
 ```mermaid
 flowchart TD
@@ -279,11 +367,12 @@ Fail --> End
 - [visual_morph_test.dart:1-70](file://test/animation/visual_morph_test.dart#L1-L70)
 
 ### Loader and Cache Behavior
-Loader tests validate caching and resource handling:
+Loader tests validate caching and resource handling with enhanced edge case testing:
 - Cache key derivation with theme and color mapper variations
 - Cache hit/miss behavior under various conditions
 - Asset loader package resolution and buffer slicing
 - Network loader client lifecycle management
+- Enhanced validation for complex resource scenarios
 
 ```mermaid
 sequenceDiagram
@@ -306,11 +395,12 @@ C-->>L : "cached ByteData"
 - [cache_test.dart:1-133](file://test/cache_test.dart#L1-L133)
 
 ### Playground Analyzer and Models
-Playground tests validate parsing and reporting:
+Playground tests validate parsing and reporting with enhanced validation:
 - Basic SVG parsing and rendering feasibility
 - Unsupported tag and filter primitive detection
 - Broken reference reporting
 - JSON serialization/deserialization for reports and log entries
+- Enhanced validation for complex SVG structures
 
 ```mermaid
 classDiagram
@@ -348,26 +438,325 @@ PlaygroundAnalyzer --> PlaygroundReport : "produces"
 - [playground_models_test.dart:1-63](file://test/playground/playground_models_test.dart#L1-L63)
 
 ### Theme Propagation and Layout
-Theme tests verify DefaultSvgTheme precedence and defaults:
+Theme tests verify DefaultSvgTheme precedence and defaults with enhanced validation:
 - Precedence of widget-level theme over DefaultSvgTheme
 - Default font size and xHeight calculations
 - CurrentColor and fontSize fallback behavior
+- Enhanced validation for complex theme inheritance scenarios
 
 **Section sources**
 - [default_theme_test.dart:1-163](file://test/default_theme_test.dart#L1-L163)
 
 ### Typography Feature Tests
-Typography tests validate CSS font properties and their rendering:
+Typography tests validate CSS font properties and their rendering with comprehensive edge case coverage:
 - Font kerning property testing (auto, normal, none)
 - Font synthesis property testing (none, weight, style, weight style)
 - Font variant property testing (normal, small-caps, all-small-caps, petite-caps, titling-caps, oldstyle-nums, lining-nums, tabular-nums)
 - Inheritance and combination of typography features
 - Style attribute and group inheritance testing
+- Enhanced validation for complex typography scenarios
 
 **Section sources**
 - [font_kerning_test.dart:1-53](file://test/animation/font_kerning_test.dart#L1-L53)
 - [font_synthesis_test.dart:1-53](file://test/animation/font_synthesis_test.dart#L1-L53)
 - [font_variant_test.dart:1-196](file://test/animation/font_variant_test.dart#L1-L196)
+
+## CSS Calc Edge Cases Testing
+
+### Comprehensive Mathematical Function Testing
+The CSS calc edge cases testing suite provides extensive coverage for mathematical function evaluation with edge case handling:
+
+- **Nested calc() expressions**: Validates evaluation of deeply nested calc() expressions with up to 5 levels of nesting
+- **CSS min() function**: Comprehensive testing of min() function with 2-4 values, percentage mixing, and calc() integration
+- **CSS max() function**: Testing of max() function with multiple values, percentage calculations, and nested expressions
+- **CSS clamp() function**: Validates clamp() function with min, value, and max parameters, including percentage scenarios
+- **Mixed unit arithmetic**: Tests arithmetic operations with px, em, rem, %, pt, cm, mm, in, vw, ex, and ch units
+- **Operator precedence**: Validates proper mathematical precedence for multiplication/division vs addition/subtraction
+- **Percentage calculations**: Tests percentage calculations with containerSize parameter
+- **Invalid expression handling**: Graceful fallback for empty expressions, unmatched parentheses, and invalid characters
+- **Whitespace handling**: Validates handling of extra whitespace, newlines, and tabs
+- **Negative numbers**: Tests negative results, negative multipliers, and negative unit values
+- **Scientific notation**: Validates support for scientific notation in calculations
+- **Complex combinations**: Tests combinations of min/max/clamp inside calc() and vice versa
+- **Transform rendering**: Validates calc() expressions in transform values render correctly
+- **Unit edge cases**: Tests various CSS units including pt, cm, mm, in, vw, ex, and ch
+- **Case insensitivity**: Validates case-insensitive function names and unit specifications
+- **Decimal precision**: Tests floating-point precision handling and rounding
+
+```mermaid
+flowchart TD
+CalcTest["CSS Calc Edge Cases Test"] --> Nested["Nested Expressions"]
+CalcTest --> MathFunc["Mathematical Functions"]
+CalcTest --> Units["Unit Conversions"]
+CalcTest --> Invalid["Invalid Expressions"]
+CalcTest --> Whitespace["Whitespace Handling"]
+CalcTest --> Negative["Negative Numbers"]
+CalcTest --> Scientific["Scientific Notation"]
+CalcTest --> Complex["Complex Combinations"]
+CalcTest --> Transform["Transform Rendering"]
+Nested --> DeepNest["Deep Nesting (5 levels)"]
+MathFunc --> MinFunc["min() Function"]
+MathFunc --> MaxFunc["max() Function"]
+MathFunc --> ClampFunc["clamp() Function"]
+Units --> MixedUnits["Mixed Units"]
+Units --> PercentCalc["Percentage Calculations"]
+Invalid --> EmptyExpr["Empty Expressions"]
+Invalid --> ParenError["Unmatched Parentheses"]
+Whitespace --> ExtraWS["Extra Whitespace"]
+Negative --> NegResults["Negative Results"]
+Scientific --> SciNotation["Scientific Notation"]
+Complex --> MinMaxClamp["min/max/clamp Combinations"]
+Transform --> TransRender["Transform Rendering"]
+```
+
+**Diagram sources**
+- [css_calc_edge_cases_test.dart:6-416](file://test/animation/css_calc_edge_cases_test.dart#L6-L416)
+
+**Section sources**
+- [css_calc_edge_cases_test.dart:1-658](file://test/animation/css_calc_edge_cases_test.dart#L1-L658)
+
+## ForeignObject Nesting and Coordinate Systems
+
+### Deep Nesting and Coordinate System Validation
+The foreignObject testing suite provides comprehensive validation for complex nesting scenarios and coordinate system handling:
+
+- **Basic positioning**: Validates x/y/width/height positioning of foreignObject elements
+- **Negative positioning**: Tests negative x/y coordinates and their rendering behavior
+- **Overflow handling**: Comprehensive testing of overflow="hidden" vs "visible" behavior
+- **Nested SVG viewBox transforms**: Validates viewBox transformations within foreignObject contexts
+- **PreserveAspectRatio**: Tests preserveAspectRatio="xMidYMid meet" within foreignObject scenarios
+- **Deep nesting scenarios**: Validates two and three-level foreignObject nesting (FO→SVG→FO)
+- **Zero-width/height handling**: Tests rendering behavior for zero and negative dimensions
+- **Transform propagation**: Validates transform inheritance through foreignObject boundaries
+- **Parser validation**: Tests SVG parser behavior with foreignObject attributes
+- **Edge case handling**: Validates behavior for empty content, missing dimensions, and non-SVG content
+- **Coordinate system composition**: Validates complex coordinate transformations across nesting levels
+- **CSS inheritance**: Tests CSS property inheritance through foreignObject boundaries
+- **Overflow clipping**: Validates clipping behavior with various overflow settings
+
+```mermaid
+sequenceDiagram
+participant Root as "Root SVG"
+participant FO1 as "Outer ForeignObject"
+participant SVG1 as "Inner SVG"
+participant FO2 as "Nested ForeignObject"
+participant SVG2 as "Deepest SVG"
+Root->>FO1 : "Apply x,y,width,height"
+FO1->>SVG1 : "Create nested SVG"
+SVG1->>FO2 : "Apply nested foreignObject"
+FO2->>SVG2 : "Create deepest SVG"
+SVG2-->>Root : "Render with coordinate transforms"
+```
+
+**Diagram sources**
+- [foreign_object_nesting_test.dart:273-363](file://test/animation/foreign_object_nesting_test.dart#L273-L363)
+
+**Section sources**
+- [foreign_object_nesting_test.dart:1-869](file://test/animation/foreign_object_nesting_test.dart#L1-L869)
+- [foreignobject_css_inheritance_test.dart:1-457](file://test/animation/foreignobject_css_inheritance_test.dart#L1-L457)
+- [image_foreignobject_edge_cases_test.dart:1-663](file://test/animation/image_foreignobject_edge_cases_test.dart#L1-L663)
+
+## Deep Hit Testing and Event System
+
+### Complex Composition Hit Testing
+The deep hit testing suite provides comprehensive regression testing for complex use/clip/mask compositions:
+
+- **3-level nesting**: Validates use→group→clipPath→shape (3 levels) composition hit testing
+- **4-level nesting**: Tests use→group→mask→clipPath→shape (4 levels) composition hit testing
+- **Transform composition**: Validates cumulative transform effects on hit regions
+- **Pointer-events modes**: Tests pointer-events="none" and other pointer-events modes through deep nesting
+- **Animation integration**: Validates hit testing with animated transforms and changing hit regions
+- **Coordinate system validation**: Ensures proper hit testing across complex transform hierarchies
+- **Composition validation**: Tests hit testing through multiple composition layers (clipPath, mask, use)
+- **Offset handling**: Validates hit testing with x/y offsets in use elements
+- **Complex transform chains**: Tests hit testing with rotate, translate, and scale transforms at each level
+- **Conditional animation triggers**: Validates animation triggering through hit testing in complex compositions
+
+```mermaid
+flowchart TD
+HitTest["Deep Hit Testing"] --> Level3["3-Level Nesting"]
+HitTest --> Level4["4-Level Nesting"]
+HitTest --> Transforms["Transform Composition"]
+HitTest --> PointerEvents["Pointer Events Modes"]
+Level3 --> UseGroup["use→group→clipPath"]
+UseGroup --> ShapeHit["Shape Hit Testing"]
+UseGroup --> ClipHit["Clip Region Hit Testing"]
+Level4 --> UseMask["use→group→mask→clipPath"]
+UseMask --> MaskHit["Mask Region Hit Testing"]
+UseMask --> ComplexHit["Complex Composition Hit Testing"]
+Transforms --> Cumulative["Cumulative Transforms"]
+Transforms --> Offset["Offset Validation"]
+Transforms --> Chain["Transform Chains"]
+PointerEvents --> NoneMode["pointer-events:none"]
+PointerEvents --> StrokeMode["pointer-events:stroke"]
+PointerEvents --> FillMode["pointer-events:fill"]
+```
+
+**Diagram sources**
+- [hit_test_deep_nesting_test.dart:17-431](file://test/animation/hit_test_deep_nesting_test.dart#L17-L431)
+
+**Section sources**
+- [hit_test_deep_nesting_test.dart:1-1266](file://test/animation/hit_test_deep_nesting_test.dart#L1-L1266)
+
+## Image Transform Edge Cases
+
+### Comprehensive Image Transformation Testing
+The image transform edge cases testing suite provides extensive coverage for image rendering scenarios:
+
+- **All 9 preserveAspectRatio combinations**: Tests xMinYMin, xMidYMin, xMaxYMin, xMinYMid, xMidYMid, xMaxYMid, xMinYMax, xMidYMax, xMaxYMax with both meet and slice modes
+- **Negative dimension handling**: Validates behavior with negative width/height values
+- **Zero dimension handling**: Tests rendering with zero width/height values
+- **Overflow handling**: Validates overflow="visible" vs "hidden" behavior in slice mode
+- **preserveAspectRatio="none"**: Tests stretching behavior with both wide and tall images
+- **Missing/invalid references**: Validates graceful handling of missing href attributes and invalid data URIs
+- **Unit conversion testing**: Tests various CSS units in image rendering contexts
+- **Transform integration**: Validates transform properties with image elements
+- **CSS inheritance**: Tests CSS property inheritance with image elements
+- **Performance validation**: Ensures efficient rendering of complex image transformations
+
+```mermaid
+classDiagram
+class ImageTransformTest {
++testAllPreserveAspectRatio()
++testNegativeDimensions()
++testZeroDimensions()
++testOverflowHandling()
++testMissingReferences()
+}
+class PreserveAspectRatio {
++meetMode()
++sliceMode()
++xMinYMin()
++xMidYMid()
++xMaxYMax()
+}
+class OverflowHandling {
++visibleOverflow()
++hiddenOverflow()
++defaultBehavior()
+}
+class DimensionValidation {
++negativeDimensions()
++zeroDimensions()
++invalidDimensions()
+}
+ImageTransformTest --> PreserveAspectRatio
+ImageTransformTest --> OverflowHandling
+ImageTransformTest --> DimensionValidation
+```
+
+**Diagram sources**
+- [image_transform_edge_cases_test.dart:19-627](file://test/animation/image_transform_edge_cases_test.dart#L19-L627)
+
+**Section sources**
+- [image_transform_edge_cases_test.dart:1-877](file://test/animation/image_transform_edge_cases_test.dart#L1-L877)
+
+## SMIL Timing Precision Testing
+
+### Animation Synchronization and Dependency Resolution
+The SMIL timing precision testing suite provides comprehensive validation for animation timing and synchronization:
+
+- **Chain of syncbase dependencies**: Validates A begins at 0, B begins at A.end, C begins at B.end with precise timing
+- **Simultaneous resolution**: Tests multiple animations with same resolved begin time and document order tiebreaking
+- **Circular dependency detection**: Validates graceful handling of direct and indirect circular dependencies
+- **Forward references**: Tests B.begin referencing C.end where C is defined after B
+- **Complex offset chains**: Validates begin="a.end+200ms; b.begin-100ms" with proper earliest condition selection
+- **Indefinite begin resolution**: Tests resolution of animations with indefinite and syncbase conditions
+- **Missing syncbase references**: Validates fallback behavior for non-existent animation references
+- **Multi-pass resolution**: Tests deep dependency chains requiring multiple resolution passes
+- **Animation lifecycle**: Validates proper animation lifecycle management and cleanup
+- **Timing precision**: Ensures millisecond-level timing precision in animation sequences
+
+```mermaid
+sequenceDiagram
+participant Timeline as "SvgTimeline"
+participant AnimA as "Animation A"
+participant AnimB as "Animation B"
+participant AnimC as "Animation C"
+Timeline->>AnimA : "Initialize with begin=0s"
+AnimA-->>Timeline : "Duration 1s"
+Timeline->>AnimB : "Initialize with begin=A.end"
+AnimB-->>Timeline : "Should start at 1s"
+Timeline->>AnimC : "Initialize with begin=B.end"
+AnimC-->>Timeline : "Should start at 2s"
+Timeline->>Timeline : "Verify timing precision"
+```
+
+**Diagram sources**
+- [smil_timing_precision_test.dart:6-97](file://test/animation/smil_timing_precision_test.dart#L6-L97)
+
+**Section sources**
+- [smil_timing_precision_test.dart:1-849](file://test/animation/smil_timing_precision_test.dart#L1-L849)
+
+## CSS Variables and Calc Integration
+
+### Combined Variable and Calculation Resolution
+The CSS variables and calc integration testing suite validates the interaction between CSS custom properties and mathematical calculations:
+
+- **CSS custom property parsing**: Tests parsing of custom property declarations from style strings
+- **Variable storage and retrieval**: Validates CssCustomProperties store and retrieve values with has() method
+- **SVG node integration**: Tests SvgNode custom property storage and retrieval
+- **Variable resolution**: Validates var() reference resolution with inheritance through element trees
+- **Fallback handling**: Tests var() resolution with fallback values when variables are missing
+- **Nested variable references**: Validates nested var() references and circular dependency handling
+- **Inheritance behavior**: Tests variable inheritance through parent-child element relationships
+- **Override precedence**: Validates child variable overriding parent variable behavior
+- **Complex value resolution**: Tests var() resolution within complex CSS values like transform functions
+- **Combined var() and calc()**: Validates resolution of var() inside calc() expressions
+- **Utility function testing**: Tests containsVarReference, containsCalcExpression, and isCustomProperty functions
+- **SVG integration**: Validates CSS variables and calc() usage within SVG documents
+- **Edge case handling**: Tests empty fallbacks, deeply nested fallbacks, and invalid expressions
+
+```mermaid
+flowchart TD
+CSSIntegration["CSS Variables & Calc Integration"] --> VarParsing["Variable Parsing"]
+CSSIntegration --> VarStorage["Variable Storage"]
+CSSIntegration --> VarResolution["Variable Resolution"]
+CSSIntegration --> CalcEvaluation["Calc Evaluation"]
+CSSIntegration --> Combined["Combined Resolution"]
+VarParsing --> ParseStyle["Parse Style Strings"]
+VarStorage --> StoreRetrieve["Store/Retrieve Values"]
+VarResolution --> Inheritance["Inheritance Testing"]
+VarResolution --> Fallback["Fallback Handling"]
+CalcEvaluation --> SimpleOps["Simple Operations"]
+CalcEvaluation --> UnitConversions["Unit Conversions"]
+CalcEvaluation --> NestedCalc["Nested Calculations"]
+Combined --> VarInCalc["var() in calc()"]
+Combined --> CalcInVar["calc() in var()"]
+```
+
+**Diagram sources**
+- [css_variables_calc_test.dart:7-277](file://test/animation/css_variables_calc_test.dart#L7-L277)
+
+**Section sources**
+- [css_variables_calc_test.dart:1-402](file://test/animation/css_variables_calc_test.dart#L1-L402)
+
+## Enhanced Visual Regression Testing
+
+### Advanced Visual Analysis Capabilities
+The visual testing framework has been enhanced with comprehensive analysis capabilities covering the expanded test suite:
+
+- **Pixel-level geometry analysis**: Detailed geometric analysis including centroid, bounding box, and rotation angle estimation
+- **Multi-frame comparison**: Ability to compare animation frames and detect geometric changes
+- **Statistical analysis**: Comprehensive statistical analysis of rendered content including pixel distribution and shape metrics
+- **Platform-independent verification**: Geometry-based analysis that works consistently across different platforms
+- **Debugging support**: Detailed reporting and logging for failed tests
+- **Edge case visualization**: Enhanced visualization of complex rendering scenarios
+- **Performance optimization**: Efficient testing strategies for complex animations and transformations
+
+### Visual Testing Best Practices
+The enhanced visual testing guidelines provide comprehensive guidance for the expanded test suite:
+
+- **Golden file limitations**: Understanding when golden tests fail and when pixel analysis is preferred
+- **Animation testing patterns**: Deterministic animation testing using autoPlay false with initialTime
+- **Headless rendering considerations**: Handling platform differences in headless environments
+- **Debugging failed tests**: Systematic approaches to diagnosing visual test failures
+- **Performance optimization**: Efficient testing strategies for complex animations and transformations
+- **Edge case handling**: Proper validation of complex rendering scenarios
+- **Integration testing**: Coordinated testing across multiple rendering domains
+
+**Section sources**
+- [VISUAL_TESTING_GUIDELINES.md:1-329](file://VISUAL_TESTING_GUIDELINES.md#L1-L329)
 
 ## Font Registration Lifecycle Testing
 
@@ -422,29 +811,6 @@ Embedded font testing covers comprehensive scenarios for font data handling:
 **Section sources**
 - [font_registration_lifecycle_test.dart:1-345](file://test/animation/font_registration_lifecycle_test.dart#L1-L345)
 
-## Enhanced Visual Regression Testing
-
-### Advanced Visual Analysis Capabilities
-The visual testing framework has been enhanced with comprehensive analysis capabilities:
-
-- **Pixel-level geometry analysis**: Detailed geometric analysis including centroid, bounding box, and rotation angle estimation
-- **Multi-frame comparison**: Ability to compare animation frames and detect geometric changes
-- **Statistical analysis**: Comprehensive statistical analysis of rendered content including pixel distribution and shape metrics
-- **Platform-independent verification**: Geometry-based analysis that works consistently across different platforms
-- **Debugging support**: Detailed reporting and logging for failed tests
-
-### Visual Testing Best Practices
-The enhanced visual testing guidelines provide comprehensive guidance:
-
-- **Golden file limitations**: Understanding when golden tests fail and when pixel analysis is preferred
-- **Animation testing patterns**: Deterministic animation testing using autoPlay false with initialTime
-- **Headless rendering considerations**: Handling platform differences in headless environments
-- **Debugging failed tests**: Systematic approaches to diagnosing visual test failures
-- **Performance optimization**: Efficient testing strategies for complex animations
-
-**Section sources**
-- [VISUAL_TESTING_GUIDELINES.md:1-329](file://VISUAL_TESTING_GUIDELINES.md#L1-L329)
-
 ## Embedded Font Scenarios
 
 ### Comprehensive Font Data Handling
@@ -470,13 +836,19 @@ Comprehensive error handling testing ensures robust font processing:
 - [text_font_face_test.dart:457-507](file://test/animation/text_font_face_test.dart#L457-L507)
 
 ## Dependency Analysis
-The testing suite exhibits clear separation of concerns with expanded font testing dependencies:
+The expanded testing suite exhibits clear separation of concerns with comprehensive coverage across multiple domains:
 - Animation tests depend on visual utilities for pixel-level validation
+- CSS calc tests depend on mathematical evaluation utilities and edge case handling
+- ForeignObject tests depend on coordinate system and transform utilities
+- Hit testing depends on complex composition analysis and event system validation
+- Image transform tests depend on preserveAspectRatio and overflow handling utilities
+- SMIL timing tests depend on animation timeline and dependency resolution
 - Font lifecycle tests depend on font registry and parsing utilities
 - Typography tests validate CSS property compliance
 - Loader tests depend on cache internals for behavior verification
 - Playground tests depend on analyzer models for structured reporting
 - Widget tests integrate with golden file comparators for rasterized output validation
+- CSS variables tests depend on custom property resolution and SVG integration
 
 ```mermaid
 graph LR
@@ -484,6 +856,11 @@ VU["visual_test_utils.dart"] --> VR["visual_rotation_test.dart"]
 VU --> VS["visual_scale_test.dart"]
 VU --> VT["visual_translation_test.dart"]
 VU --> VM["visual_morph_test.dart"]
+VU --> CCE["css_calc_edge_cases_test.dart"]
+VU --> FON["foreign_object_nesting_test.dart"]
+VU --> HTDN["hit_test_deep_nesting_test.dart"]
+VU --> ITE["image_transform_edge_cases_test.dart"]
+VU --> STP["smil_timing_precision_test.dart"]
 FRL["font_registration_lifecycle_test.dart"] --> TF["text_font_face_test.dart"]
 FRL --> VU
 TF --> FRL
@@ -497,10 +874,17 @@ WS --> LT
 FK["font_kerning_test.dart"] --> WS
 FS["font_synthesis_test.dart"] --> WS
 FV["font_variant_test.dart"] --> WS
+CVC["css_variables_calc_test.dart"] --> VU
+CVC --> FR
 ```
 
 **Diagram sources**
 - [visual_test_utils.dart:1-231](file://test/animation/visual_test_utils.dart#L1-L231)
+- [css_calc_edge_cases_test.dart:1-658](file://test/animation/css_calc_edge_cases_test.dart#L1-L658)
+- [foreign_object_nesting_test.dart:1-869](file://test/animation/foreign_object_nesting_test.dart#L1-L869)
+- [hit_test_deep_nesting_test.dart:1-1266](file://test/animation/hit_test_deep_nesting_test.dart#L1-L1266)
+- [image_transform_edge_cases_test.dart:1-877](file://test/animation/image_transform_edge_cases_test.dart#L1-L877)
+- [smil_timing_precision_test.dart:1-849](file://test/animation/smil_timing_precision_test.dart#L1-L849)
 - [font_registration_lifecycle_test.dart:1-345](file://test/animation/font_registration_lifecycle_test.dart#L1-L345)
 - [text_font_face_test.dart:1-509](file://test/animation/text_font_face_test.dart#L1-L509)
 - [svg_font_registry.dart:1-402](file://lib/src/animation/svg_font_registry.dart#L1-L402)
@@ -508,6 +892,11 @@ FV["font_variant_test.dart"] --> WS
 
 **Section sources**
 - [visual_test_utils.dart:1-231](file://test/animation/visual_test_utils.dart#L1-L231)
+- [css_calc_edge_cases_test.dart:1-658](file://test/animation/css_calc_edge_cases_test.dart#L1-L658)
+- [foreign_object_nesting_test.dart:1-869](file://test/animation/foreign_object_nesting_test.dart#L1-L869)
+- [hit_test_deep_nesting_test.dart:1-1266](file://test/animation/hit_test_deep_nesting_test.dart#L1-L1266)
+- [image_transform_edge_cases_test.dart:1-877](file://test/animation/image_transform_edge_cases_test.dart#L1-L877)
+- [smil_timing_precision_test.dart:1-849](file://test/animation/smil_timing_precision_test.dart#L1-L849)
 - [font_registration_lifecycle_test.dart:1-345](file://test/animation/font_registration_lifecycle_test.dart#L1-L345)
 - [text_font_face_test.dart:1-509](file://test/animation/text_font_face_test.dart#L1-L509)
 - [svg_font_registry.dart:1-402](file://lib/src/animation/svg_font_registry.dart#L1-L402)
@@ -521,9 +910,15 @@ FV["font_variant_test.dart"] --> WS
 - Font registration uses async processing to avoid blocking widget initialization
 - Font parsing utilizes efficient regex-based extraction for CSS font-face rules
 - Typography tests use lightweight validation without full rendering
+- CSS calc evaluation includes early termination for invalid expressions
+- ForeignObject rendering optimizes coordinate system calculations
+- Hit testing uses efficient spatial indexing for complex compositions
+- Image transform tests minimize unnecessary re-renders
+- SMIL timing resolution includes cycle detection to prevent infinite loops
+- CSS variables resolution includes iteration limits to prevent circular dependencies
 
 ## Troubleshooting Guide
-Common issues and resolutions:
+Common issues and resolutions across the expanded test suite:
 - Golden file mismatches below tolerance threshold: The custom comparator logs warnings and continues, allowing minor differences to pass
 - Infinite animation stalls during pixel capture: Use the visual utilities method designed for non-blocking capture
 - Cache misses despite identical inputs: Verify cache keys include theme and color mapper parameters
@@ -532,12 +927,25 @@ Common issues and resolutions:
 - Font registration failures: Check base64 encoding, format support, and font data validity
 - CSS parsing errors: Validate CSS syntax and ensure proper @font-face rule formatting
 - Typography property rendering: Verify CSS property compatibility and inheritance behavior
+- CSS calc evaluation failures: Check for invalid expressions, unmatched parentheses, and unsupported units
+- ForeignObject rendering issues: Verify coordinate system calculations and overflow handling
+- Hit testing failures: Check transform composition and pointer-events mode inheritance
+- Image transform problems: Validate preserveAspectRatio settings and dimension handling
+- SMIL timing resolution errors: Check for circular dependencies and missing animation references
+- CSS variables resolution failures: Verify variable existence and fallback handling
+- Visual test debugging: Use detailed pixel analysis and geometric validation reports
 
 **Section sources**
 - [widget_svg_test.dart:12-36](file://test/widget_svg_test.dart#L12-L36)
 - [visual_test_utils.dart:11-37](file://test/animation/visual_test_utils.dart#L11-L37)
+- [css_calc_edge_cases_test.dart:271-324](file://test/animation/css_calc_edge_cases_test.dart#L271-L324)
+- [foreign_object_nesting_test.dart:366-477](file://test/animation/foreign_object_nesting_test.dart#L366-L477)
+- [hit_test_deep_nesting_test.dart:219-386](file://test/animation/hit_test_deep_nesting_test.dart#L219-L386)
+- [image_transform_edge_cases_test.dart:403-467](file://test/animation/image_transform_edge_cases_test.dart#L403-L467)
+- [smil_timing_precision_test.dart:219-386](file://test/animation/smil_timing_precision_test.dart#L219-L386)
+- [css_variables_calc_test.dart:344-400](file://test/animation/css_variables_calc_test.dart#L344-L400)
 - [font_registration_lifecycle_test.dart:241-279](file://test/animation/font_registration_lifecycle_test.dart#L241-L279)
 - [text_font_face_test.dart:457-507](file://test/animation/text_font_face_test.dart#L457-L507)
 
 ## Conclusion
-The testing suite demonstrates a robust approach to validating SVG rendering across multiple sources, themes, animations, and font scenarios. The expanded font registration lifecycle testing provides comprehensive coverage of font parsing, registration, and error handling. Enhanced visual regression testing capabilities ensure reliable animation verification through pixel-level analysis and geometric validation. Typography feature testing validates CSS font property compliance across various scenarios. The integration of font-related tests with the existing testing infrastructure ensures comprehensive quality assurance for the Flutter SVG project.
+The testing suite demonstrates a comprehensive approach to validating SVG rendering across multiple sources, themes, animations, font scenarios, mathematical functions, coordinate systems, hit testing, image transformations, and animation timing. The expansion with five new comprehensive test files totaling over 4,500 lines significantly enhances the reliability and robustness of the Flutter SVG project. The enhanced CSS calc edge cases testing provides extensive mathematical function coverage, foreignObject nesting tests validate complex coordinate system scenarios, deep hit testing ensures proper event handling through complex compositions, image transform edge cases cover preserveAspectRatio and overflow scenarios, and SMIL timing precision testing validates animation synchronization. The integration of CSS variables and calc() evaluation testing with SVG integration ensures proper handling of modern CSS features. The expanded visual regression testing capabilities with comprehensive edge case coverage ensure reliable rendering validation. Typography feature testing validates CSS font property compliance across various scenarios. The integration of all test components with the existing testing infrastructure ensures comprehensive quality assurance for the Flutter SVG project, providing confidence in handling complex real-world SVG rendering scenarios.

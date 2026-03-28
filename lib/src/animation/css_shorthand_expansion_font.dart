@@ -9,60 +9,120 @@ part of 'css_animations.dart';
 // FONT SHORTHAND
 // ============================================================
 
+/// CSS2.1 initial values for font longhand properties.
+const _fontInitialValues = <String, String>{
+  'font-style': 'normal',
+  'font-variant': 'normal',
+  'font-weight': 'normal',
+  'font-size': 'medium',
+  'line-height': 'normal',
+  'font-family': 'inherit',
+};
+
+/// System font keywords per CSS2.1.
+/// These map to system UI fonts and cannot be decomposed.
+const _systemFontKeywords = <String>{
+  'caption',
+  'icon',
+  'menu',
+  'message-box',
+  'small-caption',
+  'status-bar',
+  // CSS-wide keywords
+  'inherit',
+  'initial',
+  'unset',
+  'revert',
+  'revert-layer',
+};
+
 /// Expands font shorthand into its longhand properties.
 ///
-/// Format: font: [font-style] [font-variant] [font-weight] font-size[/line-height] font-family
-/// Example: font: italic small-caps bold 16px/1.5 Arial, sans-serif
+/// Format: font: [font-style] [font-variant] [font-weight] [font-stretch]
+///              font-size[/line-height] font-family
+///
+/// Per CSS2.1:
+/// - font-size and font-family are REQUIRED (except for system fonts)
+/// - Missing optional values reset to their initial values
+/// - System fonts (caption, icon, menu, etc.) are kept as single value
+/// - Optional values (style, variant, weight, stretch) can appear in any order
+///
+/// Examples:
+/// - `font: italic small-caps bold 16px/1.5 Arial, sans-serif`
+/// - `font: bold 14px monospace` (italic and small-caps reset to normal)
+/// - `font: caption` (system font keyword)
 Map<String, String> _expandFont(String value) {
-  final result = <String, String>{};
+  final trimmedValue = value.trim();
 
-  // Handle system fonts and special keywords
-  if (_isSystemFont(value)) {
-    result['font'] = value;
-    return result;
+  // Handle system fonts and CSS-wide keywords
+  if (_isSystemFont(trimmedValue)) {
+    // System fonts are kept as-is, but we also set longhand properties
+    // to allow proper cascade behavior
+    return {
+      'font': trimmedValue,
+      // Mark that this is a system font (for rendering layer)
+      '_font-system': trimmedValue,
+    };
   }
 
   // Tokenize preserving quoted strings and commas for font-family
-  final tokens = _tokenizeFontShorthand(value);
+  final tokens = _tokenizeFontShorthand(trimmedValue);
   if (tokens.isEmpty) {
-    return {'font': value};
+    return {'font': trimmedValue};
   }
+
+  // Start with initial values - per CSS spec, font shorthand resets
+  // all omitted properties to their initial values
+  final result = Map<String, String>.from(_fontInitialValues);
 
   int tokenIndex = 0;
   bool foundFontSize = false;
 
-  // Parse optional font-style
-  if (tokenIndex < tokens.length && _isFontStyle(tokens[tokenIndex])) {
-    result['font-style'] = tokens[tokenIndex];
-    tokenIndex++;
-  }
+  // Parse optional properties (style, variant, weight, stretch) in any order
+  // Per CSS spec, these can appear in any order before font-size
+  while (tokenIndex < tokens.length && !foundFontSize) {
+    final token = tokens[tokenIndex];
 
-  // Parse optional font-variant
-  if (tokenIndex < tokens.length && _isFontVariant(tokens[tokenIndex])) {
-    result['font-variant'] = tokens[tokenIndex];
-    tokenIndex++;
-  }
+    // Check optional properties first before checking font-size
+    // This is important because numeric values like 500 are valid as both
+    // font-weight (100-900) and font-size (without unit)
+    if (_isFontStyle(token) && result['font-style'] == 'normal') {
+      result['font-style'] = token;
+      tokenIndex++;
+      continue;
+    }
 
-  // Parse optional font-weight
-  if (tokenIndex < tokens.length && _isFontWeight(tokens[tokenIndex])) {
-    result['font-weight'] = tokens[tokenIndex];
-    tokenIndex++;
-  }
+    if (_isFontVariant(token) && result['font-variant'] == 'normal') {
+      result['font-variant'] = token;
+      tokenIndex++;
+      continue;
+    }
 
-  // Parse required font-size (possibly with line-height)
-  if (tokenIndex < tokens.length) {
-    final sizeToken = tokens[tokenIndex];
-    final sizeLineHeightMatch = RegExp(
-      r'^([^\s/]+)/([^\s]+)$',
-    ).firstMatch(sizeToken);
+    if (_isFontWeight(token) && result['font-weight'] == 'normal') {
+      result['font-weight'] = token;
+      tokenIndex++;
+      continue;
+    }
 
+    if (_isFontStretch(token) && !result.containsKey('font-stretch')) {
+      result['font-stretch'] = token;
+      tokenIndex++;
+      continue;
+    }
+
+    // Check for font-size (required value)
+    // If we find it, stop parsing optional properties
+    final sizeLineHeightMatch = RegExp(r'^([^\s/]+)/([^\s]+)$').firstMatch(token);
     if (sizeLineHeightMatch != null) {
       result['font-size'] = sizeLineHeightMatch.group(1)!;
       result['line-height'] = sizeLineHeightMatch.group(2)!;
       foundFontSize = true;
       tokenIndex++;
-    } else if (_isFontSize(sizeToken)) {
-      result['font-size'] = sizeToken;
+      break;
+    }
+
+    if (_isFontSize(token)) {
+      result['font-size'] = token;
       foundFontSize = true;
       tokenIndex++;
 
@@ -74,36 +134,31 @@ Map<String, String> _expandFont(String value) {
           tokenIndex++;
         }
       }
+      break;
     }
+
+    // If we can't match the token as an optional property or font-size,
+    // it might be the start of font-family or an unrecognized value
+    break;
   }
 
-  // Remaining tokens are font-family
+  // Remaining tokens are font-family (required per CSS2.1)
   if (tokenIndex < tokens.length) {
     final familyTokens = tokens.sublist(tokenIndex);
     result['font-family'] = familyTokens.join(' ');
   }
 
   // If we didn't find a font-size, this might not be a valid shorthand
-  if (!foundFontSize && result.isEmpty) {
-    return {'font': value};
+  // Return original value to avoid breaking things
+  if (!foundFontSize) {
+    return {'font': trimmedValue};
   }
 
   return result;
 }
 
 bool _isSystemFont(String value) {
-  const systemFonts = {
-    'caption',
-    'icon',
-    'menu',
-    'message-box',
-    'small-caption',
-    'status-bar',
-    'inherit',
-    'initial',
-    'unset',
-  };
-  return systemFonts.contains(value.toLowerCase());
+  return _systemFontKeywords.contains(value.toLowerCase());
 }
 
 bool _isFontStyle(String value) {
@@ -126,6 +181,22 @@ bool _isFontWeight(String value) {
   // Numeric weights: 100-900
   final numeric = int.tryParse(value);
   return numeric != null && numeric >= 100 && numeric <= 900;
+}
+
+/// Checks if a value is a valid font-stretch keyword.
+bool _isFontStretch(String value) {
+  const stretchKeywords = {
+    'ultra-condensed',
+    'extra-condensed',
+    'condensed',
+    'semi-condensed',
+    'normal',
+    'semi-expanded',
+    'expanded',
+    'extra-expanded',
+    'ultra-expanded',
+  };
+  return stretchKeywords.contains(value.toLowerCase());
 }
 
 bool _isFontSize(String value) {

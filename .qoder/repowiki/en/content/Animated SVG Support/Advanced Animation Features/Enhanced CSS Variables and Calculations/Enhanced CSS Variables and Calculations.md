@@ -8,6 +8,7 @@
 - [css_property_rendering_test.dart](file://test/animation/css_property_rendering_test.dart)
 - [css_cascade_specificity_test.dart](file://test/animation/css_cascade_specificity_test.dart)
 - [css_variables_calc_test.dart](file://test/animation/css_variables_calc_test.dart)
+- [css_calc_edge_cases_test.dart](file://test/animation/css_calc_edge_cases_test.dart)
 - [svg_dom.dart](file://lib/src/animation/svg_dom.dart)
 - [animated_svg_painter_use.dart](file://lib/src/animation/animated_svg_painter_use.dart)
 - [animated_svg_painter_tree.dart](file://lib/src/animation/animated_svg_painter_tree.dart)
@@ -25,14 +26,12 @@
 
 ## Update Summary
 **Changes Made**
-- Enhanced CSS cascade processing with improved selector specificity handling and shadow DOM boundary management
-- Added comprehensive support for structural pseudo-classes: nth-child, nth-last-child, nth-of-type, nth-last-of-type, first-of-type, last-of-type, only-of-type
-- Implemented advanced CSS selector parsing with enhanced structural pseudo-class matching algorithms
-- Expanded CSS calc() evaluator with improved CSS math function support and variable resolution
-- Enhanced SMIL animation support with improved motion path parsing and timeline synchronization
-- Comprehensive filter primitive enhancements with advanced pipeline processing and circular reference detection
-- Added advanced use context inheritance for CSS properties across <use> boundaries
-- Enhanced CSS property rendering validation and advanced CSS parsing capabilities
+- Enhanced CSS calculation system with recursion safety (20-level maximum nesting depth)
+- Comprehensive expression validation with improved error handling for malformed expressions and unmatched parentheses
+- Enhanced CSS calc() evaluator with improved CSS math function support and variable resolution
+- Added robust depth tracking and safety mechanisms to prevent infinite recursion
+- Improved error recovery for invalid expressions while maintaining graceful fallback behavior
+- Enhanced validation for CSS math function arguments and parentheses matching
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -46,15 +45,16 @@
 9. [Modern CSS Unit Support](#modern-css-unit-support)
 10. [SMIL Animation Enhancements](#smil-animation-enhancements)
 11. [Filter Primitive Pipeline Improvements](#filter-primitive-pipeline-improvements)
-12. [Dependency Analysis](#dependency-analysis)
-13. [Performance Considerations](#performance-considerations)
-14. [Troubleshooting Guide](#troubleshooting-guide)
-15. [Conclusion](#conclusion)
+12. [Enhanced Recursion Safety and Error Handling](#enhanced-recursion-safety-and-error-handling)
+13. [Dependency Analysis](#dependency-analysis)
+14. [Performance Considerations](#performance-considerations)
+15. [Troubleshooting Guide](#troubleshooting-guide)
+16. [Conclusion](#conclusion)
 
 ## Introduction
-This document provides comprehensive technical documentation for the Enhanced CSS Variables and Calculations system in the Flutter SVG support library. The implementation covers CSS custom properties (variables), calc() mathematical expressions, CSS math functions (min, max, clamp), structural pseudo-classes, and their integration with the SVG rendering pipeline. It includes detailed analysis of the parsing, resolution, and evaluation mechanisms, along with enhanced SMIL animation support, comprehensive filter primitive processing, and performance characteristics.
+This document provides comprehensive technical documentation for the Enhanced CSS Variables and Calculations system in the Flutter SVG support library. The implementation covers CSS custom properties (variables), calc() mathematical expressions, CSS math functions (min, max, clamp), structural pseudo-classes, and their integration with the SVG rendering pipeline. It includes detailed analysis of the parsing, resolution, and evaluation mechanisms, along with enhanced SMIL animation support, comprehensive filter primitive processing, recursion safety measures, and robust error handling for malformed expressions.
 
-The enhanced system now provides robust CSS cascade resolution with new CSS variables cascade resolver integration, comprehensive structural pseudo-class support, advanced variable inheritance, comprehensive mathematical computation with modern CSS unit support, and seamless integration with SMIL animations and filter processing while maintaining compatibility with the existing SVG rendering pipeline.
+The enhanced system now provides robust CSS cascade resolution with new CSS variables cascade resolver integration, comprehensive structural pseudo-class support, advanced variable inheritance, comprehensive mathematical computation with modern CSS unit support, enhanced recursion safety with 20-level maximum nesting depth, comprehensive expression validation, improved error handling for malformed expressions and unmatched parentheses, and seamless integration with SMIL animations and filter processing while maintaining compatibility with the existing SVG rendering pipeline.
 
 ## Project Structure
 The enhanced CSS capabilities are implemented primarily in the animation module with extensive integration to the SVG DOM, rendering pipeline, SMIL animations, and filter system:
@@ -92,6 +92,7 @@ T3["css_cascade_specificity_test.dart"]
 T4["advanced_use_inheritance_test.dart"]
 T5["use_css_cascade_test.dart"]
 T6["css_selectors_combinators_test.dart"]
+T7["css_calc_edge_cases_test.dart"]
 end
 CV --> CC
 CC --> CS
@@ -109,6 +110,7 @@ T3 --> CC
 T4 --> CC
 T5 --> CC
 T6 --> CS
+T7 --> CV
 ```
 
 **Diagram sources**
@@ -133,7 +135,7 @@ T6 --> CS
 - [svg_dom.dart](file://lib/src/animation/svg_dom.dart)
 
 ## Core Components
-The enhanced CSS system consists of five primary components working in concert with expanded functionality:
+The enhanced CSS system consists of five primary components working in concert with expanded functionality and enhanced safety measures:
 
 ### Enhanced CSS Custom Properties System
 The custom properties system provides variable substitution with inheritance, fallback support, and use context propagation:
@@ -179,8 +181,8 @@ CssCascadeVariablesResolver --> CssCascadeResolver : "uses"
 - [css_variables_calc.dart](file://lib/src/animation/css_variables_calc.dart)
 - [css_cascade.dart](file://lib/src/animation/css_cascade.dart)
 
-### Advanced CSS Calc() Mathematical Evaluator
-The calculator supports complex mathematical expressions with CSS functions and enhanced unit handling:
+### Advanced CSS Calc() Mathematical Evaluator with Recursion Safety
+The calculator supports complex mathematical expressions with CSS functions, enhanced unit handling, and comprehensive recursion protection:
 
 ```mermaid
 flowchart TD
@@ -188,10 +190,12 @@ Start(["Input Value"]) --> CheckMath{"Contains CSS math functions?"}
 CheckMath --> |min()/max()/clamp()| ParseMath["Parse CSS Math Function"]
 CheckMath --> |calc()| ParseCalc["Parse calc() Expression"]
 CheckMath --> |None| CheckVar{"Contains var()?"}
-ParseMath --> EvaluateMath["Evaluate Math Function"]
+ParseMath --> DepthCheck["Check Depth Limit (≤20)"]
+DepthCheck --> EvaluateMath["Evaluate Math Function"]
 EvaluateMath --> Units["Convert Units to Pixels"]
 ParseCalc --> Tokenize["Tokenize Expression"]
-Tokenize --> Evaluate["Evaluate with Precedence"]
+Tokenize --> DepthCheck2["Check Depth Limit (≤20)"]
+DepthCheck2 --> Evaluate["Evaluate with Precedence"]
 Evaluate --> Units
 CheckVar --> |Yes| ResolveVar["Resolve CSS Variables"]
 CheckVar --> |No| ParseSimple["Parse Simple Numeric Value"]
@@ -240,7 +244,7 @@ CssNthPseudoClass --> CssNthType : "uses"
 - [css_selectors.dart](file://lib/src/animation/css_selectors.dart)
 
 ## Architecture Overview
-The enhanced CSS processing pipeline integrates seamlessly with the SVG rendering system, SMIL animations, and filter primitives:
+The enhanced CSS processing pipeline integrates seamlessly with the SVG rendering system, SMIL animations, and filter primitives with comprehensive recursion safety and error handling:
 
 ```mermaid
 sequenceDiagram
@@ -250,6 +254,7 @@ participant Resolver as "CssVariableResolver"
 participant Cascade as "CssCascadeResolver"
 participant NthMatcher as "NthPseudoClass Matcher"
 participant Evaluator as "CssCalcEvaluator"
+participant Validator as "Expression Validator"
 participant Renderer as "SVG Renderer"
 Parser->>DOM : Parse SVG with CSS
 DOM->>DOM : Store custom properties
@@ -260,9 +265,13 @@ Cascade->>DOM : Walk up element tree
 Cascade->>NthMatcher : Match structural pseudo-classes
 NthMatcher->>DOM : Count siblings and types
 Resolver->>Evaluator : resolveToNumber()
-Evaluator->>Evaluator : Evaluate CSS math functions
+Evaluator->>Validator : Validate expression
+Validator->>Evaluator : Check depth limit (≤20)
+Validator->>Evaluator : Check parentheses matching
+Validator->>Evaluator : Validate CSS function args
+Evaluator->>Evaluator : Evaluate with recursion safety
 Evaluator->>Evaluator : Convert units to pixels
-Evaluator-->>Resolver : Numeric result
+Evaluator-->>Resolver : Numeric result or null
 Resolver-->>Cascade : Final resolved value
 Cascade-->>DOM : Cascade resolution
 DOM-->>Renderer : Render with resolved values
@@ -274,7 +283,7 @@ DOM-->>Renderer : Render with resolved values
 - [css_selectors.dart](file://lib/src/animation/css_selectors.dart)
 - [svg_dom.dart](file://lib/src/animation/svg_dom.dart)
 
-The architecture ensures proper CSS cascade resolution, variable inheritance, mathematical computation, structural pseudo-class matching, and seamless integration with SMIL animations and filter processing while maintaining compatibility with the existing SVG rendering pipeline.
+The architecture ensures proper CSS cascade resolution, variable inheritance, mathematical computation with recursion safety, structural pseudo-class matching, comprehensive expression validation, graceful error recovery, and seamless integration with SMIL animations and filter processing while maintaining compatibility with the existing SVG rendering pipeline.
 
 **Section sources**
 - [css_variables_calc.dart](file://lib/src/animation/css_variables_calc.dart)
@@ -306,25 +315,29 @@ The resolver follows an improved precedence order with better use context propag
 - [animated_svg_painter_use.dart](file://lib/src/animation/animated_svg_painter_use.dart)
 - [animated_svg_painter_tree.dart](file://lib/src/animation/animated_svg_painter_tree.dart)
 
-### Advanced CSS Calc() Mathematical Evaluator
-The calculator now supports comprehensive CSS mathematical functions with enhanced error handling:
+### Advanced CSS Calc() Mathematical Evaluator with Recursion Safety
+The calculator now supports comprehensive CSS mathematical functions with enhanced error handling and recursion protection:
 
 #### Enhanced Supported Operations
 - **Basic Arithmetic**: Addition, subtraction, multiplication, division
 - **CSS Math Functions**: `min()`, `max()`, `clamp()` with multiple arguments
 - **Unit Conversions**: Enhanced px, em, rem, pt, pc, in, cm, mm, %, ex, ch, vw, vh, vmin, vmax
-- **Nested Expressions**: Deep recursive evaluation of complex formulas
+- **Nested Expressions**: Deep recursive evaluation of complex formulas with 20-level maximum nesting depth
 - **CSS Function Composition**: Nested CSS functions within calc()
 
-#### Improved Precision and Edge Cases
+#### Enhanced Recursion Safety and Error Handling
+- **Depth Tracking**: Comprehensive depth monitoring with 20-level maximum nesting depth
 - **Operator Precedence**: Correct mathematical order of operations with CSS function precedence
 - **Division by Zero**: Graceful handling returning zero with enhanced error reporting
 - **Percentage Calculations**: Container-relative percentage computations with fallbacks
 - **Unit Compatibility**: Intelligent conversion between different unit types with precision handling
+- **Expression Validation**: Comprehensive validation for malformed expressions and unmatched parentheses
+- **Graceful Fallback**: Returns null for invalid expressions instead of crashing
 
 **Section sources**
 - [css_variables_calc.dart](file://lib/src/animation/css_variables_calc.dart)
 - [css_property_rendering_test.dart](file://test/animation/css_property_rendering_test.dart)
+- [css_calc_edge_cases_test.dart](file://test/animation/css_calc_edge_cases_test.dart)
 
 ### Enhanced CSS Cascade Integration
 The system integrates with an improved CSS cascade mechanism featuring better specificity calculation and shadow DOM handling:
@@ -410,7 +423,7 @@ The system now includes a dedicated cascade resolver for CSS custom properties:
 - [css_variables_calc.dart](file://lib/src/animation/css_variables_calc.dart)
 
 ## Advanced CSS Variables and Calculations
-The CSS variables and calculations system has been comprehensively enhanced with CSS math function support, new cascade resolver integration, and improved error handling:
+The CSS variables and calculations system has been comprehensively enhanced with CSS math function support, new cascade resolver integration, improved error handling, and enhanced recursion safety:
 
 ### CSS Math Function Support
 The system now fully supports CSS mathematical functions within variable resolution:
@@ -661,6 +674,76 @@ The input system now provides comprehensive filter input handling:
 **Section sources**
 - [svg_filters_registry_inputs.dart](file://lib/src/animation/svg_filters_registry_inputs.dart)
 
+## Enhanced Recursion Safety and Error Handling
+The enhanced CSS calculation system now includes comprehensive recursion safety measures and improved error handling:
+
+### Recursion Safety Measures
+The system implements robust recursion prevention with a 20-level maximum nesting depth:
+
+#### Depth Tracking Implementation
+- **Maximum Nesting Depth**: 20 levels enforced across all CSS functions (calc, min, max, clamp)
+- **Recursive Evaluation**: All nested function calls pass through depth tracking
+- **Safety Threshold**: Exceeding depth limit returns null instead of causing stack overflow
+- **Progressive Evaluation**: Each recursive level increments the depth counter
+
+#### Enhanced Error Recovery
+The system provides comprehensive error handling for malformed expressions:
+
+```mermaid
+flowchart TD
+Start(["CSS Expression"]) --> Validate["Validate Expression"]
+Validate --> CheckDepth{"Check Depth ≤ 20?"}
+CheckDepth --> |Exceeded| ReturnNull["Return null"]
+CheckDepth --> |Within Limit| CheckParen{"Check Parentheses"}
+CheckParen --> |Mismatched| ReturnNull
+CheckParen --> |Matched| CheckArgs{"Check Function Args"}
+CheckArgs --> |Invalid| ReturnNull
+CheckArgs --> |Valid| Evaluate["Evaluate Expression"]
+Evaluate --> Result(["Numeric Result or null"])
+```
+
+**Diagram sources**
+- [css_variables_calc.dart](file://lib/src/animation/css_variables_calc.dart)
+
+#### Comprehensive Expression Validation
+The system validates expressions at multiple levels:
+
+- **Syntax Validation**: Checks for proper parentheses matching
+- **Argument Validation**: Validates CSS function arguments (min requires 2+, max requires 1+, clamp requires 3)
+- **Operator Validation**: Ensures proper operator placement and usage
+- **Unit Validation**: Verifies unit compatibility and conversion
+- **Depth Validation**: Monitors recursion depth across all function types
+
+#### Graceful Error Handling
+The system implements graceful fallback behavior:
+
+- **Malformed Expressions**: Return null instead of throwing exceptions
+- **Unmatched Parentheses**: Detect and handle unmatched parentheses
+- **Invalid Arguments**: Validate function arguments and return null for invalid counts
+- **Division by Zero**: Handle with zero result and continue evaluation
+- **Empty Expressions**: Gracefully handle empty or whitespace-only expressions
+
+**Section sources**
+- [css_variables_calc.dart](file://lib/src/animation/css_variables_calc.dart)
+- [css_calc_edge_cases_test.dart](file://test/animation/css_calc_edge_cases_test.dart)
+
+### Enhanced Variable Resolution Safety
+The variable resolution system includes additional safety measures:
+
+#### Iteration Limits
+- **Maximum Iterations**: 10 iterations to prevent infinite variable resolution loops
+- **Circular Reference Detection**: Prevents circular variable references
+- **Fallback Chain Validation**: Validates nested fallback chains
+
+#### Enhanced Error Recovery
+- **Missing Variables**: Return empty string for undefined variables with no fallback
+- **Invalid Fallbacks**: Gracefully handle malformed fallback expressions
+- **Use Context Errors**: Handle missing use context properties safely
+
+**Section sources**
+- [css_variables_calc.dart](file://lib/src/animation/css_variables_calc.dart)
+- [css_variables_calc_test.dart](file://test/animation/css_variables_calc_test.dart)
+
 ## Dependency Analysis
 The enhanced CSS system maintains carefully managed dependencies with improved modularity and performance:
 
@@ -691,6 +774,7 @@ S["css_property_rendering_test.dart"] --> F
 T["advanced_use_inheritance_test.dart"] --> C
 U["use_css_cascade_test.dart"] --> C
 V["css_selectors_combinators_test.dart"] --> F
+W["css_calc_edge_cases_test.dart"] --> B
 end
 ```
 
@@ -708,7 +792,7 @@ end
 - [svg_filters_registry_pipeline.dart](file://lib/src/animation/svg_filters_registry_pipeline.dart)
 - [svg_filters_registry_inputs.dart](file://lib/src/animation/svg_filters_registry_inputs.dart)
 
-The enhanced dependency graph shows improved separation of concerns with better modularization, enhanced SMIL and filter system integration, CSS variables cascade resolver integration, and minimal circular dependencies for optimal maintainability and testability.
+The enhanced dependency graph shows improved separation of concerns with better modularization, enhanced SMIL and filter system integration, CSS variables cascade resolver integration, comprehensive recursion safety measures, and minimal circular dependencies for optimal maintainability and testability.
 
 **Section sources**
 - [css_variables_calc.dart](file://lib/src/animation/css_variables_calc.dart)
@@ -725,10 +809,11 @@ The enhanced implementation includes several advanced performance optimizations:
 - **Circular Reference Protection**: Prevention of memory leaks in complex filter chains
 
 ### Computational Efficiency
-- **Enhanced Caching Strategies**: CSS rule matching, specificity calculations, variable resolution, and structural pseudo-class matching cached
+- **Enhanced Caching Strategies**: CSS rule matching, specificity calculations, variable resolution, structural pseudo-class matching, and expression validation cached
 - **Early Termination**: Variable resolution stops at first match with use context handling
 - **Optimized Parsing**: Regex-based parsing with minimal backtracking and CSS function recognition
 - **Pipeline Optimization**: Filter primitive output caching and result sharing
+- **Recursion Safety**: Depth tracking prevents stack overflow and excessive computation
 
 ### Rendering Integration
 - **Incremental Updates**: Only affected nodes re-evaluate CSS with use context awareness
@@ -736,6 +821,7 @@ The enhanced implementation includes several advanced performance optimizations:
 - **Resource Pooling**: Reusable buffers and temporary objects with enhanced lifecycle management
 - **SMIL Timeline Optimization**: Efficient dependency graph building and event propagation
 - **Structural Pseudo-Class Caching**: Matching results cached based on element position and type
+- **Expression Validation Caching**: Validation results cached to avoid repeated checks
 
 ## Troubleshooting Guide
 
@@ -753,13 +839,21 @@ The enhanced implementation includes several advanced performance optimizations:
 - **Issue**: Structural pseudo-classes not matching expected elements
 - **Solution**: Verify element hierarchy and ensure proper tag name matching for type-based pseudo-classes
 
-#### Advanced CSS Function Errors
+#### Enhanced CSS Function Errors
 - **Issue**: Unexpected results with CSS math functions in variables
 - **Solution**: Ensure CSS functions are properly formatted and supported, verify unit compatibility and container size parameters
 
 #### Modern Unit Conversion Issues
 - **Issue**: Incorrect ex, ch, or lh unit calculations
 - **Solution**: Verify font size context is properly passed (fontSize vs parentFontSize), check that fallback font sizes are available
+
+#### Enhanced Recursion Safety Issues
+- **Issue**: Deeply nested expressions causing evaluation failures
+- **Solution**: Ensure expressions don't exceed 20 levels of nesting depth, validate parentheses matching, check CSS function argument counts
+
+#### Expression Validation Problems
+- **Issue**: Valid expressions returning null unexpectedly
+- **Solution**: Verify parentheses are properly matched, check function arguments meet requirements (min: ≥2, max: ≥1, clamp: exactly 3), ensure no malformed characters
 
 #### SMIL Animation Synchronization Issues
 - **Issue**: Motion animations not synchronizing with timeline events
@@ -770,7 +864,7 @@ The enhanced implementation includes several advanced performance optimizations:
 - **Solution**: Simplify filter primitive combinations, reduce named result reuse complexity, and optimize filter input graph structure
 
 #### Enhanced Testing and Validation
-The comprehensive test suite covers edge cases, integration scenarios, structural pseudo-class matching, and enhanced functionality:
+The comprehensive test suite covers edge cases, integration scenarios, structural pseudo-class matching, enhanced functionality, recursion safety, and error handling:
 
 **Section sources**
 - [css_variables_calc_test.dart](file://test/animation/css_variables_calc_test.dart)
@@ -779,6 +873,7 @@ The comprehensive test suite covers edge cases, integration scenarios, structura
 - [advanced_use_inheritance_test.dart](file://test/animation/advanced_use_inheritance_test.dart)
 - [use_css_cascade_test.dart](file://test/animation/use_css_cascade_test.dart)
 - [css_selectors_combinators_test.dart](file://test/animation/css_selectors_combinators_test.dart)
+- [css_calc_edge_cases_test.dart](file://test/animation/css_calc_edge_cases_test.dart)
 
 ## Conclusion
-The Enhanced CSS Variables and Calculations system provides a robust, standards-compliant implementation that seamlessly integrates with Flutter's SVG rendering pipeline. The system successfully combines CSS custom properties, mathematical expressions, CSS math functions, structural pseudo-classes, and the cascade mechanism while maintaining excellent performance and memory efficiency. The comprehensive testing coverage, enhanced SMIL animation support, advanced filter primitive processing, improved use context inheritance, modern CSS unit support, and new CSS variables cascade resolver integration ensure reliability across diverse SVG use cases and complex styling scenarios. The system's architecture supports future enhancements while maintaining backward compatibility and optimal performance characteristics.
+The Enhanced CSS Variables and Calculations system provides a robust, standards-compliant implementation that seamlessly integrates with Flutter's SVG rendering pipeline. The system successfully combines CSS custom properties, mathematical expressions, CSS math functions, structural pseudo-classes, and the cascade mechanism while maintaining excellent performance and memory efficiency. The comprehensive testing coverage, enhanced SMIL animation support, advanced filter primitive processing, improved use context inheritance, modern CSS unit support, new CSS variables cascade resolver integration, comprehensive recursion safety with 20-level maximum nesting depth, and enhanced error handling for malformed expressions and unmatched parentheses ensure reliability across diverse SVG use cases and complex styling scenarios. The system's architecture supports future enhancements while maintaining backward compatibility and optimal performance characteristics with robust safety measures built into the core calculation engine.

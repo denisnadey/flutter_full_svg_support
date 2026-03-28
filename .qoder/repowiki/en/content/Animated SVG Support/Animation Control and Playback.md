@@ -27,13 +27,22 @@
 - [lib/src/animation/css_to_smil_converter_transforms_values.dart](file://lib/src/animation/css_to_smil_converter_transforms_values.dart)
 - [lib/src/animation/transform_3d.dart](file://lib/src/animation/transform_3d.dart)
 - [lib/src/animation/animated_svg_painter_matrix.dart](file://lib/src/animation/animated_svg_painter_matrix.dart)
+- [lib/src/animation/css_shorthand_expansion.dart](file://lib/src/animation/css_shorthand_expansion.dart)
+- [lib/src/animation/css_variables_calc.dart](file://lib/src/animation/css_variables_calc.dart)
 - [test/animation/controller_test.dart](file://test/animation/controller_test.dart)
 - [test/animation/font_registration_lifecycle_test.dart](file://test/animation/font_registration_lifecycle_test.dart)
 - [test/animation/css_animation_edge_cases_test.dart](file://test/animation/css_animation_edge_cases_test.dart)
 - [test/animation/css_3d_transforms_test.dart](file://test/animation/css_3d_transforms_test.dart)
-- [test/animation/stroke_dash_stop_color_test.dart](file://test/animation/stroke_dash_stop_color_test.dart)
+- [test/animation/css_3d_transform_smil_test.dart](file://test/animation/css_3d_transform_smil_test.dart)
 - [test/animation/css_transform_decomposition_test.dart](file://test/animation/css_transform_decomposition_test.dart)
-- [test/animation/text_font_face_test.dart](file://test/animation/text_font_face_test.dart)
+- [test/animation/css_shorthand_expansion_test.dart](file://test/animation/css_shorthand_expansion_test.dart)
+- [test/animation/css_shorthand_timing_test.dart](file://test/animation/css_shorthand_timing_test.dart)
+- [test/animation/css_variables_calc_test.dart](file://test/animation/css_variables_calc_test.dart)
+- [test/animation/css_variables_calc_viewport_test.dart](file://test/animation/css_variables_calc_viewport_test.dart)
+- [test/animation/css_calc_edge_cases_test.dart](file://test/animation/css_calc_edge_cases_test.dart)
+- [test/animation/css_property_rendering_test.dart](file://test/animation/css_property_rendering_test.dart)
+- [test/css_shorthand_edge_cases_test.dart](file://test/css_shorthand_edge_cases_test.dart)
+- [test/css_unit_precision_test.dart](file://test/css_unit_precision_test.dart)
 - [example/lib/pages/controller_demo_page.dart](file://example/lib/pages/controller_demo_page.dart)
 - [example/lib/pages/custom_svg_viewer_page.dart](file://example/lib/pages/custom_svg_viewer_page.dart)
 - [example/lib/widgets/smil_event_timing_widget.dart](file://example/lib/widgets/smil_event_timing_widget.dart)
@@ -41,12 +50,12 @@
 
 ## Update Summary
 **Changes Made**
-- Enhanced font registration lifecycle integration with AnimatedSvgPicture widget
-- Added comprehensive testing scenarios for font registration lifecycle
-- Implemented generation guard patterns for async font loading safety
-- Added detailed documentation for font registration process and lifecycle management
-- Enhanced error handling with graceful fallback mechanisms
-- Integrated embedded @font-face font support with Flutter's FontLoader
+- Enhanced CSS animation conversion system with improved transform decomposition and compound transform preservation
+- Added comprehensive CSS shorthand expansion infrastructure with cascade and specificity handling
+- Implemented advanced CSS variables and calc() expression support with nested fallback resolution
+- Strengthened 3D transform handling with sophisticated decomposition algorithms
+- Expanded testing infrastructure covering CSS animations, 3D transforms, and complex animation scenarios
+- Enhanced transform normalization with better unit handling and edge case management
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -55,17 +64,19 @@
 4. [Architecture Overview](#architecture-overview)
 5. [Detailed Component Analysis](#detailed-component-analysis)
 6. [Enhanced CSS Animation System](#enhanced-css-animation-system)
-7. [3D Transform Support](#3d-transform-support)
-8. [Enhanced Controller Lifecycle](#enhanced-controller-lifecycle)
-9. [Font Registration Lifecycle](#font-registration-lifecycle)
-10. [Dual-Mode Animation Control](#dual-mode-animation-control)
-11. [Event-Driven Animation Management](#event-driven-animation-management)
-12. [External Controller Integration](#external-controller-integration)
-13. [Dependency Analysis](#dependency-analysis)
-14. [Performance Considerations](#performance-considerations)
-15. [Troubleshooting Guide](#troubleshooting-guide)
-16. [Conclusion](#conclusion)
-17. [Appendices](#appendices)
+7. [Advanced CSS Shorthand Expansion](#advanced-css-shorthand-expansion)
+8. [Sophisticated CSS Variables and Calculations](#sophisticated-css-variables-and-calculations)
+9. [Enhanced 3D Transform Support](#enhanced-3d-transform-support)
+10. [Enhanced Controller Lifecycle](#enhanced-controller-lifecycle)
+11. [Font Registration Lifecycle](#font-registration-lifecycle)
+12. [Dual-Mode Animation Control](#dual-mode-animation-control)
+13. [Event-Driven Animation Management](#event-driven-animation-management)
+14. [External Controller Integration](#external-controller-integration)
+15. [Dependency Analysis](#dependency-analysis)
+16. [Performance Considerations](#performance-considerations)
+17. [Troubleshooting Guide](#troubleshooting-guide)
+18. [Conclusion](#conclusion)
+19. [Appendices](#appendices)
 
 ## Introduction
 This document explains the animation control and playback mechanisms for animated SVGs in the project. It focuses on the AnimatedSvgController API, programmatic animation control, playback rate adjustment, and timeline manipulation. The system now includes enhanced CSS animation support with improved edge case handling, including multiple animations per element, animation-play-state control, negative animation delays, and comprehensive 3D transform support with automatic 2D/3D fallback. It also covers controller methods for play, pause, stop, reset, and seek operations, along with examples of manual animation control, animation synchronization, state management, lifecycle handling, and performance considerations. Guidance is provided for integrating animations with user interactions and application state.
@@ -89,32 +100,36 @@ G["CssParser<br/>Multiple Animations"]
 H["CssAnimation Models<br/>Play State & Delays"]
 I["Transform Normalization<br/>Full String Formats"]
 J["Compound Transform Handling<br/>REPLACE Semantics"]
+K["CssShorthandExpander<br/>Cascade & Specificity"]
+L["CssVariablesCalc<br/>Nested Fallback Resolution"]
 end
 subgraph "Enhanced Controller Lifecycle"
-K["AnimatedSvgPicture<br/>Widget"]
-L["AnimatedSvgController<br/>ChangeNotifier"]
-M["Event Detection<br/>hasEventBasedAnimations()"]
-N["Repeat Mode Startup<br/>_controller!.repeat()"]
-O["Additive Replace Mode<br/>CSS Semantics"]
+M["AnimatedSvgPicture<br/>Widget"]
+N["AnimatedSvgController<br/>ChangeNotifier"]
+O["Event Detection<br/>hasEventBasedAnimations()"]
+P["Repeat Mode Startup<br/>_controller!.repeat()"]
+Q["Additive Replace Mode<br/>CSS Semantics"]
 end
 subgraph "Font Registration Lifecycle"
-P["SvgParser<br/>Extract @font-face"]
-Q["SvgFontRegistry<br/>Font Loader"]
-R["SvgDocument<br/>registerEmbeddedFonts()"]
-S["Async Generation Guards<br/>Graceful Error Handling"]
+R["SvgParser<br/>Extract @font-face"]
+S["SvgFontRegistry<br/>Font Loader"]
+T["SvgDocument<br/>registerEmbeddedFonts()"]
+U["Async Generation Guards<br/>Graceful Error Handling"]
 end
 G --> C
 H --> C
 I --> C
 J --> C
-K --> D
-L -.-> C
-L -.-> K
-M --> N
-O --> D
-P --> Q
-Q --> R
+K --> G
+L --> G
+M --> D
+N -.-> C
+N -.-> M
+O --> P
+Q --> D
 R --> S
+S --> T
+T --> U
 ```
 
 **Diagram sources**
@@ -147,6 +162,8 @@ R --> S
 - **Updated** SvgFontRegistry: Manages embedded @font-face fonts with Flutter's FontLoader, including parsing CSS font rules, decoding base64 font data, and error tracking.
 - **Updated** SvgDocument: Integrates font registry functionality with async font registration and error reporting capabilities.
 - **Updated** Font Registration Lifecycle: Implements async font loading with generation guards, graceful error handling, and widget disposal safety.
+- **Updated** CssShorthandExpander: Comprehensive CSS shorthand expansion system with cascade and specificity handling for proper property inheritance.
+- **Updated** CssVariablesCalc: Advanced CSS variables and calc() expression support with nested fallback resolution and unit conversion.
 
 Key capabilities:
 - Programmatic control via AnimatedSvgController
@@ -168,6 +185,9 @@ Key capabilities:
 - **Enhanced**: Embedded @font-face font support through Flutter FontLoader
 - **Enhanced**: Font registry management with state cleanup and error tracking
 - **Enhanced**: Text rendering integration with registered font resolution
+- **Enhanced**: Comprehensive CSS shorthand expansion with cascade handling
+- **Enhanced**: Advanced CSS variables and calc() expression processing
+- **Enhanced**: Nested fallback resolution for complex variable chains
 
 **Section sources**
 - [lib/src/animation/animated_svg_controller.dart:25-160](file://lib/src/animation/animated_svg_controller.dart#L25-L160)
@@ -179,6 +199,8 @@ Key capabilities:
 - [lib/src/animation/transform_3d.dart:333-373](file://lib/src/animation/transform_3d.dart#L333-L373)
 - [lib/src/animation/svg_font_registry.dart:77-251](file://lib/src/animation/svg_font_registry.dart#L77-L251)
 - [lib/src/animation/svg_dom.dart:586-604](file://lib/src/animation/svg_dom.dart#L586-L604)
+- [lib/src/animation/css_shorthand_expansion.dart:1-158](file://lib/src/animation/css_shorthand_expansion.dart#L1-158)
+- [lib/src/animation/css_variables_calc.dart:1-200](file://lib/src/animation/css_variables_calc.dart#L1-200)
 
 ## Architecture Overview
 The enhanced animated pipeline separates concerns across parsing, CSS-to-SMIL conversion, timeline management, and rendering with comprehensive 3D transform support and improved controller lifecycle management. **Updated** The system now includes a complete font registration lifecycle that mirrors the image preload pattern with async font loading, generation guards, and graceful error handling.
@@ -192,6 +214,8 @@ participant Lifecycle as "Lifecycle Manager"
 participant Parser as "SvgParser"
 participant FontRegistry as "SvgFontRegistry"
 participant CssParser as "CssParser"
+participant ShorthandExpander as "CssShorthandExpander"
+participant VariablesCalc as "CssVariablesCalc"
 participant Converter as "CssToSmilConverter"
 participant Timeline as "SvgTimeline"
 participant Animation as "SmilAnimation"
@@ -205,6 +229,10 @@ Lifecycle->>Parser : "_scheduleFontRegistration()"
 Parser->>FontRegistry : "registerFonts(cssFontFaceRules)"
 FontRegistry-->>Parser : "Future<bool> success/failure"
 Parser-->>Lifecycle : "async font registration result"
+CssParser->>ShorthandExpander : "expandAllOrdered()"
+ShorthandExpander-->>CssParser : "cascade-expanded properties"
+CssParser->>VariablesCalc : "resolve var() and calc()"
+VariablesCalc-->>CssParser : "processed values"
 CssParser->>Converter : "parseMultipleAnimations()"
 Converter->>Timeline : "create SMIL animations with REPLACE semantics"
 Timeline->>Animation : "updateForTime(time) with additive replace"
@@ -220,6 +248,8 @@ Painter-->>User : "rendered frame"
 - [lib/src/animation/svg_parser_css.dart:38-58](file://lib/src/animation/svg_parser_css.dart#L38-L58)
 - [lib/src/animation/svg_font_registry.dart:106-134](file://lib/src/animation/svg_font_registry.dart#L106-L134)
 - [lib/src/animation/css_animations_parser.dart:28-43](file://lib/src/animation/css_animations_parser.dart#L28-L43)
+- [lib/src/animation/css_shorthand_expansion.dart:51-65](file://lib/src/animation/css_shorthand_expansion.dart#L51-L65)
+- [lib/src/animation/css_variables_calc.dart:103-119](file://lib/src/animation/css_variables_calc.dart#L103-119)
 - [lib/src/animation/css_to_smil_converter_core.dart:27-147](file://lib/src/animation/css_to_smil_converter_core.dart#L27-L147)
 - [lib/src/animation/smil/smil_timeline.dart:82-98](file://lib/src/animation/smil/smil_timeline.dart#L82-L98)
 - [lib/src/animation/smil/smil_animation_runtime.dart:3-25](file://lib/src/animation/smil/smil_animation_runtime.dart#L3-L25)
@@ -460,7 +490,83 @@ Normalization features:
 - [lib/src/animation/css_to_smil_converter_transforms_values.dart:213-273](file://lib/src/animation/css_to_smil_converter_transforms_values.dart#L213-L273)
 - [lib/src/animation/css_to_smil_converter_transforms_values.dart:328-389](file://lib/src/animation/css_to_smil_converter_transforms_values.dart#L328-L389)
 
-## 3D Transform Support
+## Advanced CSS Shorthand Expansion
+
+### Comprehensive Shorthand Property Support
+The enhanced CSS shorthand expansion system provides comprehensive support for all major CSS shorthand properties with proper cascade and specificity handling:
+
+- **Font shorthand**: `font: bold 16px Arial` expands to individual font properties with proper inheritance
+- **Animation shorthand**: `animation: spin 1s ease-in 0.5s infinite alternate both paused` expands to all animation components
+- **Box model shorthands**: `margin: 10px 20px` expands to individual margin sides
+- **Border shorthands**: `border: 1px solid black` expands to width, style, and color
+- **Background shorthand**: Complex background properties with gradients and images
+
+Cascade and specificity handling:
+- **Order preservation**: Declarations maintain their original order for proper cascade evaluation
+- **Override rules**: Later declarations override earlier ones at the same specificity level
+- **Longhand precedence**: Individual longhand properties override expanded shorthand values
+- **Motion properties**: Special handling for CSS motion path properties
+
+**Section sources**
+- [lib/src/animation/css_shorthand_expansion.dart:139-157](file://lib/src/animation/css_shorthand_expansion.dart#L139-L157)
+- [test/animation/css_shorthand_expansion_test.dart:83-110](file://test/animation/css_shorthand_expansion_test.dart#L83-L110)
+- [test/animation/css_shorthand_timing_test.dart:379-390](file://test/animation/css_shorthand_timing_test.dart#L379-L390)
+- [test/css_shorthand_edge_cases_test.dart:146-413](file://test/css_shorthand_edge_cases_test.dart#L146-413)
+
+### Motion Property Detection
+The system includes specialized detection for CSS motion path properties that extend beyond standard offset-* properties:
+
+- **Standard offset properties**: `offset`, `offset-path`, `offset-distance`, `offset-rotate`, `offset-position`, `offset-anchor`
+- **Legacy motion properties**: `motion-path`, `motion-offset`, `motion-rotation`
+- **Motion property identification**: Used for special handling in animation processing
+
+**Section sources**
+- [lib/src/animation/css_shorthand_expansion.dart:139-157](file://lib/src/animation/css_shorthand_expansion.dart#L139-L157)
+
+## Sophisticated CSS Variables and Calculations
+
+### Advanced Variable Resolution System
+The enhanced CSS variables and calc() system provides comprehensive support for complex variable chains and mathematical expressions:
+
+- **Nested fallback resolution**: `var(--a, var(--b, default))` supports unlimited nesting levels
+- **Variable inheritance**: Variables flow through `<use>` boundaries with proper context resolution
+- **Mathematical expressions**: Full calc() support with min(), max(), clamp(), and unit conversions
+- **Unit conversion**: Automatic conversion between different CSS units (px, em, rem, %, vw, vh)
+- **Viewport awareness**: calc() expressions properly handle viewport-relative units
+
+Variable resolution features:
+- **Tree walking**: Variables resolve by walking up the DOM tree to find definitions
+- **Fallback chains**: Complex fallback hierarchies with nested var() references
+- **Iteration limits**: Prevent infinite recursion with configurable maximum iterations
+- **Error handling**: Graceful fallback for undefined variables and invalid expressions
+
+**Section sources**
+- [lib/src/animation/css_variables_calc.dart:94-144](file://lib/src/animation/css_variables_calc.dart#L94-L144)
+- [lib/src/animation/css_variables_calc.dart:988-1035](file://lib/src/animation/css_variables_calc.dart#L988-L1035)
+- [test/animation/css_variables_calc_test.dart:220-401](file://test/animation/css_variables_calc_test.dart#L220-L401)
+- [test/animation/css_variables_calc_viewport_test.dart:228-355](file://test/animation/css_variables_calc_viewport_test.dart#L228-L355)
+
+### Calc() Expression Evaluation
+The calc() expression evaluator supports complex mathematical operations with proper CSS unit handling:
+
+- **Operator precedence**: Correct mathematical order of operations
+- **Mixed unit arithmetic**: Operations between different CSS units with automatic conversion
+- **Mathematical functions**: Support for min(), max(), clamp() within calc() expressions
+- **Scientific notation**: Handles exponential numbers in calculations
+- **Percentage arithmetic**: Proper handling of percentage calculations with container sizes
+
+Edge case handling:
+- **Division by zero**: Graceful fallback to zero or null values
+- **Invalid expressions**: Robust error handling without crashes
+- **Deep nesting**: Limits on expression depth prevent stack overflow
+- **Whitespace tolerance**: Flexible parsing with various whitespace formats
+
+**Section sources**
+- [test/animation/css_calc_edge_cases_test.dart:216-415](file://test/animation/css_calc_edge_cases_test.dart#L216-L415)
+- [test/animation/css_property_rendering_test.dart:88-131](file://test/animation/css_property_rendering_test.dart#L88-L131)
+- [test/css_unit_precision_test.dart:302-346](file://test/css_unit_precision_test.dart#L302-L346)
+
+## Enhanced 3D Transform Support
 
 ### Comprehensive 3D Transform Implementation
 The system now provides full 3D transform support with automatic 2D/3D fallback:
@@ -516,6 +622,25 @@ Conversion process:
 **Section sources**
 - [lib/src/animation/css_to_smil_converter_core.dart:27-147](file://lib/src/animation/css_to_smil_converter_core.dart#L27-L147)
 - [lib/src/animation/css_to_smil_converter_transforms.dart:3-5](file://lib/src/animation/css_to_smil_converter_transforms.dart#L3-L5)
+
+### Advanced 3D Transform Decomposition
+The enhanced 3D transform decomposition system provides sophisticated handling of complex transform scenarios:
+
+- **Rotate3d decomposition**: Proper handling of arbitrary axis rotations with matrix representation
+- **Identity transform detection**: Recognition of zero and identity transforms
+- **Negative value handling**: Proper processing of negative scale and translation values
+- **Zero value edge cases**: Special handling for zero values in 3D transforms
+- **Combined transform processing**: Efficient combination of multiple transform operations
+
+Decomposition algorithms:
+- **Rotate3d to matrix conversion**: Complex rotation matrix calculation for arbitrary axes
+- **Scale3d extraction**: Proper extraction of 3D scaling components
+- **Translate3d normalization**: Accurate 3D translation value processing
+- **Matrix combination**: Efficient combination of multiple transform matrices
+
+**Section sources**
+- [test/animation/css_3d_transform_smil_test.dart:212-407](file://test/animation/css_3d_transform_smil_test.dart#L212-L407)
+- [test/animation/css_3d_transform_smil_test.dart:490-707](file://test/animation/css_3d_transform_smil_test.dart#L490-L707)
 
 ## Enhanced Controller Lifecycle
 
@@ -818,6 +943,17 @@ class CssParser {
 +parseMultipleAnimationsFromStyle()
 +parseFontFaceRules()
 }
+class CssShorthandExpander {
++expandAll()
++expandAllOrdered()
++expandProperty()
++isMotionProperty()
+}
+class CssVariablesCalc {
++resolveValue()
++resolveToNumber()
++parseAndSetCustomProperties()
+}
 class CssToSmilConverter {
 +convert(keyframes, animation, node)
 +transform normalization
@@ -837,6 +973,12 @@ class SvgDocument {
 +String[] fontRegistrationErrors
 +isFontRegistered(fontFamily)
 }
+class Transform3DContext {
++perspective
++transformStyle
++backfaceVisibility
++createPerspectiveMatrix()
+}
 class LifecycleManager {
 +_onControllerUpdate()
 +_startPlayback()
@@ -849,8 +991,11 @@ AnimatedSvgPicture --> AnimatedSvgController : "subscribes to"
 AnimatedSvgPicture --> SvgTimeline : "drives"
 SvgTimeline --> SmilAnimation : "updates"
 AnimatedSvgPicture --> CssParser : "parses CSS"
-CssParser --> CssToSmilConverter : "converts to SMIL"
+CssParser --> CssShorthandExpander : "expands shorthands"
+CssParser --> CssVariablesCalc : "processes vars/calc"
 CssParser --> SvgFontRegistry : "parses @font-face"
+CssShorthandExpander --> CssParser : "cascade handling"
+CssVariablesCalc --> CssParser : "value resolution"
 CssToSmilConverter --> SvgTimeline : "creates animations"
 SvgDocument --> SvgFontRegistry : "coordinates"
 SvgFontRegistry --> SvgDocument : "registers fonts"
@@ -858,6 +1003,7 @@ AnimatedSvgController --> SvgTimeline : "controls rate/direction"
 LifecycleManager --> AnimatedSvgController : "manages state"
 LifecycleManager --> SvgTimeline : "controls startup"
 LifecycleManager --> SvgDocument : "manages font registration"
+Transform3DContext --> SvgTimeline : "3D context management"
 ```
 
 **Diagram sources**
@@ -866,9 +1012,12 @@ LifecycleManager --> SvgDocument : "manages font registration"
 - [lib/src/animation/smil/smil_timeline.dart:20-262](file://lib/src/animation/smil/smil_timeline.dart#L20-L262)
 - [lib/src/animation/smil/smil_animation.dart:80-453](file://lib/src/animation/smil/smil_animation.dart#L80-L453)
 - [lib/src/animation/css_animations_parser.dart:28-43](file://lib/src/animation/css_animations_parser.dart#L28-L43)
+- [lib/src/animation/css_shorthand_expansion.dart:1-158](file://lib/src/animation/css_shorthand_expansion.dart#L1-158)
+- [lib/src/animation/css_variables_calc.dart:1-200](file://lib/src/animation/css_variables_calc.dart#L1-200)
 - [lib/src/animation/css_to_smil_converter_core.dart:27-147](file://lib/src/animation/css_to_smil_converter_core.dart#L27-L147)
 - [lib/src/animation/svg_font_registry.dart:77-251](file://lib/src/animation/svg_font_registry.dart#L77-L251)
 - [lib/src/animation/svg_dom.dart:443-614](file://lib/src/animation/svg_dom.dart#L443-L614)
+- [lib/src/animation/transform_3d.dart:329-369](file://lib/src/animation/transform_3d.dart#L329-L369)
 - [lib/src/animation/animated_svg_picture_lifecycle.dart:111-152](file://lib/src/animation/animated_svg_picture_lifecycle.dart#L111-L152)
 
 **Section sources**
@@ -895,6 +1044,9 @@ LifecycleManager --> SvgDocument : "manages font registration"
 - **Enhanced**: Generation guards prevent race conditions and memory leaks during widget disposal.
 - **Enhanced**: Graceful error handling ensures font registration failures don't impact rendering performance.
 - **Enhanced**: Font registry caching avoids redundant font loading for the same font families.
+- **Enhanced**: CSS shorthand expansion with cascade handling reduces property processing overhead.
+- **Enhanced**: Advanced CSS variables and calc() evaluation with caching mechanisms.
+- **Enhanced**: Transform normalization with optimized regex patterns and argument parsing.
 
 ## Troubleshooting Guide
 Common issues and remedies:
@@ -916,6 +1068,10 @@ Common issues and remedies:
 - **Enhanced**: Async font loading issues: Verify that font registration is completing successfully; check generation counter for race conditions.
 - **Enhanced**: Widget disposal during font registration: Ensure proper mount checking in async callbacks; verify generation validation.
 - **Enhanced**: Text rendering with custom fonts: Verify that registered fonts are being resolved correctly without unexpected fallback expansion.
+- **Enhanced**: CSS shorthand expansion issues: Verify cascade order and specificity handling for overridden properties.
+- **Enhanced**: CSS variables resolution problems: Check for circular references and iteration limits in variable chains.
+- **Enhanced**: Calc() expression evaluation errors: Verify unit compatibility and mathematical operator precedence.
+- **Enhanced**: 3D transform decomposition failures: Check for zero-length vectors and identity transform edge cases.
 
 **Section sources**
 - [lib/src/animation/animated_svg_controller.dart:83-91](file://lib/src/animation/animated_svg_controller.dart#L83-L91)
@@ -933,9 +1089,11 @@ The enhanced animated SVG system provides robust programmatic control via Animat
 
 **Updated** The system now includes comprehensive font registration lifecycle capabilities that mirror the existing image preload pattern with async font loading, generation guards, and graceful error handling. The embedded @font-face font support provides seamless integration with Flutter's FontLoader, allowing SVG documents to embed custom fonts directly within the SVG content. The font registry manages font parsing, decoding, and registration with robust error tracking and state management.
 
-The compound transform handling now preserves CSS semantics through additive replace mode, eliminating double-application issues and providing more predictable animation behavior. The enhanced transform normalization system properly handles complex transform strings with nested functions, calc() expressions, and various CSS units.
+**Updated** The enhanced CSS shorthand expansion system provides comprehensive cascade and specificity handling for all major CSS properties, ensuring proper inheritance and animation support. The advanced CSS variables and calc() system supports complex nested fallback chains with mathematical expression evaluation and unit conversion.
 
-Developers can integrate animations with user interactions, manage playback rates and directions, synchronize animations using event and syncbase mechanisms, leverage the enhanced CSS parsing capabilities for complex animation scenarios, and utilize the comprehensive font registration system for custom typography. The architecture cleanly separates parsing, CSS-to-SMIL conversion, timing, rendering, and font management, enabling maintainability, extensibility, and optimal performance across diverse animation and typography requirements.
+**Updated** The sophisticated 3D transform decomposition system handles complex transform scenarios with proper matrix mathematics and edge case management, providing accurate 3D animation support with automatic 2D projection for rendering compatibility.
+
+Developers can integrate animations with user interactions, manage playback rates and directions, synchronize animations using event and syncbase mechanisms, leverage the enhanced CSS parsing capabilities for complex animation scenarios, utilize the comprehensive font registration system for custom typography, and benefit from the advanced CSS shorthand expansion and variable resolution systems. The architecture cleanly separates parsing, CSS-to-SMIL conversion, timing, rendering, font management, and CSS processing, enabling maintainability, extensibility, and optimal performance across diverse animation and typography requirements.
 
 ## Appendices
 
@@ -963,6 +1121,14 @@ Developers can integrate animations with user interactions, manage playback rate
   - Play state: parseAnimationFromStyle() with animation-play-state support
   - Transitions: parseTransitionsFromStyle(), parseTransition()
   - Fonts: parseFontFaceRules() for @font-face extraction
+- **Enhanced** CssShorthandExpander
+  - Cascade handling: expandAll(), expandAllOrdered()
+  - Property expansion: expandProperty() with motion property detection
+  - Motion properties: isMotionProperty() for CSS motion path detection
+- **Enhanced** CssVariablesCalc
+  - Variable resolution: resolveValue(), resolveToNumber()
+  - Custom properties: parseAndSetCustomProperties()
+  - Cascade integration: CssVariablesCascadeResolver
 - **Enhanced** CssToSmilConverter
   - Convert: convert(CssKeyframes, CssAnimation, SvgNode)
   - Transform handling: _decomposeCompoundTransform(), _normalizeCssTransform()
@@ -989,6 +1155,8 @@ Developers can integrate animations with user interactions, manage playback rate
 - [lib/src/animation/smil/smil_timeline.dart:20-262](file://lib/src/animation/smil/smil_timeline.dart#L20-L262)
 - [lib/src/animation/smil/smil_animation.dart:80-453](file://lib/src/animation/smil/smil_animation.dart#L80-L453)
 - [lib/src/animation/css_animations_parser.dart:28-43](file://lib/src/animation/css_animations_parser.dart#L28-L43)
+- [lib/src/animation/css_shorthand_expansion.dart:1-158](file://lib/src/animation/css_shorthand_expansion.dart#L1-158)
+- [lib/src/animation/css_variables_calc.dart:1-200](file://lib/src/animation/css_variables_calc.dart#L1-200)
 - [lib/src/animation/css_to_smil_converter_core.dart:27-147](file://lib/src/animation/css_to_smil_converter_core.dart#L27-L147)
 - [lib/src/animation/svg_font_registry.dart:77-251](file://lib/src/animation/svg_font_registry.dart#L77-L251)
 - [lib/src/animation/svg_dom.dart:443-614](file://lib/src/animation/svg_dom.dart#L443-L614)

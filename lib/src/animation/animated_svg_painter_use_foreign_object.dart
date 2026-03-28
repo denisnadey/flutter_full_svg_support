@@ -34,6 +34,14 @@ extension AnimatedSvgPainterUseForeignObjectExtension on AnimatedSvgPainter {
   }
 
   /// Applies nested SVG viewport transform within foreignObject.
+  /// 
+  /// This method establishes an independent viewport for nested SVG elements:
+  /// - The nested SVG's viewBox is resolved relative to the foreignObject's
+  ///   width/height (or the nested SVG's explicit dimensions)
+  /// - Coordinate system transformations reset at the nested SVG boundary
+  /// - The nested SVG's overflow attribute is respected
+  /// - Percentage-based dimensions on nested SVG are resolved against
+  ///   the foreignObject viewport
   void _applyNestedSvgViewportInForeignObject(
     ui.Canvas canvas,
     SvgNode svgNode,
@@ -50,22 +58,33 @@ extension AnimatedSvgPainterUseForeignObjectExtension on AnimatedSvgPainter {
     if (foWidth <= 0 || foHeight <= 0) {
       return;
     }
+    
+    // Handle nested SVG position (x, y)
     final svgX = _getNumber(svgNode, 'x') ?? 0.0;
     final svgY = _getNumber(svgNode, 'y') ?? 0.0;
-    var svgWidth = _getNumber(svgNode, 'width');
-    var svgHeight = _getNumber(svgNode, 'height');
-    svgWidth ??= foWidth;
-    svgHeight ??= foHeight;
+    
+    // Resolve nested SVG dimensions - support percentages relative to foreignObject
+    final svgWidth = _resolveForeignObjectNestedDimension(
+      svgNode, 'width', foWidth,
+    ) ?? foWidth;
+    final svgHeight = _resolveForeignObjectNestedDimension(
+      svgNode, 'height', foHeight,
+    ) ?? foHeight;
+    
     if (svgWidth <= 0 || svgHeight <= 0) {
       return;
     }
+    
+    // Apply position offset
     if (svgX != 0 || svgY != 0) {
       canvas.translate(svgX, svgY);
     }
+    
     final viewBoxAttr = svgNode.getAttributeValue('viewBox')?.toString();
     if (viewBoxAttr != null && viewBoxAttr.trim().isNotEmpty) {
       final viewBox = _parseForeignObjectViewBox(viewBoxAttr);
       if (viewBox != null && viewBox.width > 0 && viewBox.height > 0) {
+        // Compute viewport layout according to preserveAspectRatio
         final layout = resolveSvgViewportLayout(
           viewport: ui.Rect.fromLTWH(0, 0, svgWidth, svgHeight),
           sourceSize: ui.Size(viewBox.width, viewBox.height),
@@ -73,18 +92,25 @@ extension AnimatedSvgPainterUseForeignObjectExtension on AnimatedSvgPainter {
               .getAttributeValue('preserveAspectRatio')
               ?.toString(),
         );
+        
+        // Compute the viewBox-to-viewport transform
         final scaleX = layout.destinationRect.width / viewBox.width;
         final scaleY = layout.destinationRect.height / viewBox.height;
         final translateX = layout.destinationRect.left - viewBox.left * scaleX;
         final translateY = layout.destinationRect.top - viewBox.top * scaleY;
+        
+        // Apply the transform - this resets the coordinate system to viewBox coords
         final transform = Matrix4.identity()
           ..translateByDouble(translateX, translateY, 0, 1)
           ..scaleByDouble(scaleX, scaleY, 1, 1);
         canvas.transform(transform.storage);
+        
+        // Handle overflow clipping for nested SVG
         final overflow = svgNode
             .getAttributeValue('overflow')
             ?.toString()
             .toLowerCase();
+        // Default overflow for SVG is 'hidden' unless explicitly set to 'visible'
         if (layout.clipToViewport || overflow != 'visible') {
           canvas.clipRect(
             ui.Rect.fromLTWH(
@@ -98,10 +124,12 @@ extension AnimatedSvgPainterUseForeignObjectExtension on AnimatedSvgPainter {
         }
       }
     } else {
+      // No viewBox - apply overflow clipping to SVG viewport
       final overflow = svgNode
           .getAttributeValue('overflow')
           ?.toString()
           .toLowerCase();
+      // Default overflow for SVG is 'hidden'
       if (overflow != 'visible') {
         canvas.clipRect(
           ui.Rect.fromLTWH(0, 0, svgWidth, svgHeight),
@@ -109,6 +137,32 @@ extension AnimatedSvgPainterUseForeignObjectExtension on AnimatedSvgPainter {
         );
       }
     }
+  }
+
+  /// Resolves a dimension value for nested SVG within foreignObject.
+  /// Supports percentage values relative to the foreignObject viewport.
+  double? _resolveForeignObjectNestedDimension(
+    SvgNode node,
+    String attributeName,
+    double referenceValue,
+  ) {
+    final value = node.getAttributeValue(attributeName);
+    if (value == null) return null;
+    
+    final str = value.toString().trim();
+    if (str.isEmpty) return null;
+    
+    // Handle percentage values
+    if (str.endsWith('%')) {
+      final percentStr = str.substring(0, str.length - 1);
+      final percent = double.tryParse(percentStr);
+      if (percent == null) return null;
+      return (percent / 100.0) * referenceValue;
+    }
+    
+    // Handle absolute values with units
+    final cleaned = str.replaceAll(RegExp(r'[a-zA-Z]+$'), '');
+    return double.tryParse(cleaned);
   }
 
   ui.Rect? _parseForeignObjectViewBox(String viewBoxStr) {

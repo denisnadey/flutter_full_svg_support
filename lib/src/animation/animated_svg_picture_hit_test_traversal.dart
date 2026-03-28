@@ -58,6 +58,11 @@ extension _AnimatedSvgPictureStateHitTestTraversalExtension
   }
 
   /// Hit tests with anchor tracking - returns both element ID and anchor info.
+  /// 
+  /// Visibility handling per CSS/SVG spec:
+  /// - display:none - NOT hit-testable, element doesn't exist for layout
+  /// - visibility:hidden/collapse - NOT hit-testable (but children can override)
+  /// - opacity:0 - IS still hit-testable (opacity doesn't affect pointer events)
   _HitTestResult _hitTestNodeWithAnchor(
     SvgNode node,
     Offset documentPoint,
@@ -69,9 +74,13 @@ extension _AnimatedSvgPictureStateHitTestTraversalExtension
     if (_isDefinitionOnlyTag(node.tagName)) {
       return const _HitTestResult();
     }
+    // display:none elements are never hit-testable
     if (_isDisplayNone(node)) {
       return const _HitTestResult();
     }
+    // Note: visibility:hidden is checked via pointer-events, allowing
+    // children to override with visibility:visible
+    // Note: opacity:0 elements ARE still hit-testable per CSS spec
 
     // Check requiredExtensions for foreignObject
     if (node.tagName == 'foreignObject') {

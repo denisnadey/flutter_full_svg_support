@@ -104,6 +104,8 @@ class SmilAnimation {
     this.end,
     this.repeatCount = 1.0,
     this.repeatDur,
+    this.min,
+    this.max,
     this.fillMode = SmilFillMode.remove,
     this.calcMode = SmilCalcMode.linear,
     this.playbackDirection = SmilPlaybackDirection.normal,
@@ -249,6 +251,16 @@ class SmilAnimation {
   /// Общая длительность повторений
   final Duration? repeatDur;
 
+  /// Minimum active duration constraint (per SMIL spec)
+  /// If specified, the active duration is extended to at least this value.
+  /// During the extended period, fill behavior applies.
+  final Duration? min;
+
+  /// Maximum active duration constraint (per SMIL spec)
+  /// If specified, the active duration is truncated to at most this value.
+  /// Per SMIL: when min > max, min takes precedence.
+  final Duration? max;
+
   /// Условия начала анимации (parsed from begin attribute)
   final List<TimingCondition> beginConditions;
 
@@ -317,49 +329,110 @@ class SmilAnimation {
   /// Per SVG/SMIL spec: when both repeatCount and repeatDur are specified,
   /// the active duration is min(repeatCount * dur, repeatDur).
   /// When one is indefinite, the other determines the duration.
+  /// When end attribute is specified, it also constrains the active duration.
   Duration getEffectiveEndTime() {
     final effectiveBegin = getEffectiveBeginTime();
-
-    if (end != null) {
-      return end!;
-    }
 
     // Calculate active duration per SMIL spec
     final activeDuration = _computeActiveDuration();
     return effectiveBegin + activeDuration;
   }
 
+  /// Compute the simple duration (duration of one iteration)
+  /// Per SMIL spec: if dur is 0 or unspecified, simple duration is 0
+  Duration get simpleDuration {
+    if (dur.inMicroseconds <= 0) {
+      return Duration.zero;
+    }
+    return dur;
+  }
+
   /// Compute the active duration according to SMIL spec rules:
-  /// - If both repeatCount and repeatDur are specified: min(repeatCount * dur, repeatDur)
-  /// - If only repeatCount is indefinite: use repeatDur
-  /// - If only repeatDur is indefinite: use repeatCount * dur
-  /// - If both are indefinite: indefinite
+  /// 1. Compute repeat duration from repeatCount and repeatDur
+  /// 2. Consider end attribute if specified
+  /// 3. Apply min/max constraints
+  /// 
+  /// Formula: activeDur = max(min, min(computedActiveDur, max))
+  /// When min > max, min takes precedence (per SMIL spec)
   Duration _computeActiveDuration() {
+    // Handle zero/instant duration
+    if (dur.inMicroseconds <= 0) {
+      // Per SMIL spec, zero duration means instant animation
+      return _applyMinMaxConstraints(Duration.zero);
+    }
+
+    // Step 1: Compute repeat duration
+    final Duration repeatDuration;
     final repeatCountDuration = repeatCount.isInfinite
         ? null
-        : dur * repeatCount;
+        : _multiplyDuration(dur, repeatCount);
 
     final repeatDurDuration = repeatDur;
 
     // Both specified - take minimum
     if (repeatCountDuration != null && repeatDurDuration != null) {
-      return repeatCountDuration < repeatDurDuration
+      repeatDuration = repeatCountDuration < repeatDurDuration
           ? repeatCountDuration
           : repeatDurDuration;
+    } else if (repeatDurDuration != null) {
+      // Only repeatDur specified (repeatCount is indefinite)
+      repeatDuration = repeatDurDuration;
+    } else if (repeatCountDuration != null) {
+      // Only repeatCount specified (repeatDur is null)
+      repeatDuration = repeatCountDuration;
+    } else {
+      // Both indefinite
+      repeatDuration = const Duration(days: 365 * 100); // "infinity"
     }
 
-    // Only repeatDur specified (repeatCount is indefinite)
-    if (repeatDurDuration != null) {
-      return repeatDurDuration;
+    // Step 2: Consider end attribute
+    // Per SMIL spec: activeDur = min(repeatDur, max(end - begin, 0))
+    // when both end and repeatDur are specified
+    Duration computedActiveDur = repeatDuration;
+
+    if (end != null) {
+      final effectiveBegin = getEffectiveBeginTime();
+      final endOffset = end! - effectiveBegin;
+      final endBasedDuration = endOffset.isNegative ? Duration.zero : endOffset;
+      
+      // Take minimum of repeat duration and end-based duration
+      if (endBasedDuration < computedActiveDur) {
+        computedActiveDur = endBasedDuration;
+      }
     }
 
-    // Only repeatCount specified (repeatDur is null)
-    if (repeatCountDuration != null) {
-      return repeatCountDuration;
+    // Step 3: Apply min/max constraints
+    return _applyMinMaxConstraints(computedActiveDur);
+  }
+
+  /// Apply min/max timing constraints per SMIL spec:
+  /// result = max(min, min(activeDur, max))
+  /// When min > max, min takes precedence.
+  Duration _applyMinMaxConstraints(Duration activeDur) {
+    Duration result = activeDur;
+
+    // Apply max constraint first
+    if (max != null && result > max!) {
+      result = max!;
     }
 
-    // Both indefinite
-    return const Duration(days: 365 * 100); // "infinity"
+    // Apply min constraint (takes precedence over max per SMIL spec)
+    if (min != null && result < min!) {
+      result = min!;
+    }
+
+    return result;
+  }
+
+  /// Multiply a Duration by a double with high precision
+  /// Uses microseconds to maintain precision for fractional repeatCount
+  static Duration _multiplyDuration(Duration dur, double multiplier) {
+    if (multiplier.isInfinite || multiplier.isNaN) {
+      return const Duration(days: 365 * 100); // "infinity"
+    }
+    // Use double math and round to avoid precision loss
+    final micros = dur.inMicroseconds * multiplier;
+    return Duration(microseconds: micros.round());
   }
 
   /// Вычислить значение анимации в момент времени t ∈ [0, 1] внутри итерации
@@ -430,6 +503,31 @@ class SmilAnimation {
 
     final effectiveBegin = getEffectiveBeginTime();
     final effectiveEnd = getEffectiveEndTime();
+    final durMicros = dur.inMicroseconds;
+
+    // Guard against zero/invalid duration
+    if (durMicros <= 0) {
+      // Per SMIL spec, zero duration means instant animation
+      // Just apply the final value if within active period
+      if (globalTime >= effectiveBegin && globalTime < effectiveEnd) {
+        _isActive = true;
+        _lastValue = computeValue(1.0, completedRepeats: 0);
+        if (_lastValue != null) {
+          _applyValue(_lastValue!);
+        }
+      } else {
+        _isActive = false;
+        if (fillMode == SmilFillMode.freeze || fillMode == SmilFillMode.both) {
+          _lastValue = computeValue(1.0, completedRepeats: 0);
+          if (_lastValue != null) {
+            _applyValue(_lastValue!);
+          }
+        } else {
+          _clearValue();
+        }
+      }
+      return;
+    }
 
     // Handle negative delay - start animation partway through
     // A negative begin means we need to compute as if time already passed
@@ -492,24 +590,76 @@ class SmilAnimation {
       timeSinceBegin = adjustedTime + effectiveBegin.abs();
     }
 
-    final durMicros = dur.inMicroseconds;
+    final elapsedMicros = timeSinceBegin.inMicroseconds;
 
-    if (durMicros > 0) {
-      _currentIteration = timeSinceBegin.inMicroseconds ~/ durMicros;
-      final iterationMicros = timeSinceBegin.inMicroseconds % durMicros;
-      _localTime = Duration(microseconds: iterationMicros);
-
-      // Progress within iteration (0.0 - 1.0)
-      final baseT = iterationMicros / durMicros;
-      final t = _resolveDirectedProgress(baseT, _currentIteration);
-
-      // Compute value with completed repetitions
-      _lastValue = computeValue(t, completedRepeats: _currentIteration);
-
-      // Apply value
+    // Check if we're in the min-extended period (past repeat duration but still active)
+    // This happens when min extends the active duration beyond the repeat iterations
+    final repeatDuration = _computeRepeatDuration();
+    if (timeSinceBegin >= repeatDuration) {
+      // We're in the min-extended period - apply fill behavior
+      _currentIteration = repeatCount.isFinite
+          ? repeatCount.toInt()
+          : elapsedMicros ~/ durMicros;
+      _localTime = dur; // At end of iteration
+      final finalT = _resolveDirectedProgress(1.0, _currentIteration - 1);
+      _lastValue = computeValue(finalT, completedRepeats: _currentIteration - 1);
       if (_lastValue != null) {
         _applyValue(_lastValue!);
       }
+      return;
+    }
+
+    _currentIteration = elapsedMicros ~/ durMicros;
+    final iterationMicros = elapsedMicros % durMicros;
+    _localTime = Duration(microseconds: iterationMicros);
+
+    // Progress within iteration (0.0 - 1.0)
+    // Use high-precision calculation with proper boundary handling
+    double baseT = iterationMicros / durMicros;
+    
+    // Handle boundary precision: if very close to 1.0, snap to exact 1.0
+    // This prevents floating-point drift like 0.999999... or 1.000001...
+    const epsilon = 1e-10;
+    if (baseT > 1.0 - epsilon) {
+      baseT = 1.0;
+    } else if (baseT < epsilon) {
+      baseT = 0.0;
+    }
+    
+    final t = _resolveDirectedProgress(baseT, _currentIteration);
+
+    // Compute value with completed repetitions
+    _lastValue = computeValue(t, completedRepeats: _currentIteration);
+
+    // Apply value
+    if (_lastValue != null) {
+      _applyValue(_lastValue!);
+    }
+  }
+
+  /// Compute the repeat duration (before min/max and end constraints)
+  /// This is used to determine if we're in the min-extended period
+  Duration _computeRepeatDuration() {
+    if (dur.inMicroseconds <= 0) {
+      return Duration.zero;
+    }
+    
+    final repeatCountDuration = repeatCount.isInfinite
+        ? null
+        : _multiplyDuration(dur, repeatCount);
+
+    final repeatDurDuration = repeatDur;
+
+    if (repeatCountDuration != null && repeatDurDuration != null) {
+      return repeatCountDuration < repeatDurDuration
+          ? repeatCountDuration
+          : repeatDurDuration;
+    } else if (repeatDurDuration != null) {
+      return repeatDurDuration;
+    } else if (repeatCountDuration != null) {
+      return repeatCountDuration;
+    } else {
+      return const Duration(days: 365 * 100);
     }
   }
 

@@ -55,6 +55,36 @@ extension SmilAnimationRuntimeExtension on SmilAnimation {
       );
     }
 
+    // For fractional repeatCount, calculate exact progress
+    // Using high-precision math to avoid floating-point drift
+    if (repeatCount.isFinite && repeatCount > 0) {
+      final expectedMicros = (durMicros * repeatCount).round();
+      
+      // Check if we're at exactly the end of the repeat cycle
+      // Use epsilon comparison to handle floating-point precision
+      const epsilonMicros = 1; // 1 microsecond tolerance
+      if ((elapsedMicros - expectedMicros).abs() <= epsilonMicros) {
+        // Exactly at end - use exact fractional part
+        final fractionalPart = repeatCount - repeatCount.truncate();
+        if (fractionalPart > 0) {
+          // Fractional repeatCount: end at fractional point
+          final completedWholeIterations = repeatCount.truncate();
+          return _AnimationProgress(
+            t: _resolveDirectedProgress(fractionalPart, completedWholeIterations),
+            completedRepeats: completedWholeIterations,
+          );
+        } else {
+          // Whole number repeatCount: end at t=1.0 of last iteration
+          final completedIterations = repeatCount.toInt();
+          return _AnimationProgress(
+            t: _resolveDirectedProgress(1.0, completedIterations - 1),
+            completedRepeats: completedIterations - 1,
+          );
+        }
+      }
+    }
+
+    // General case: compute iteration and progress
     final completedWholeIterations = elapsedMicros ~/ durMicros;
     final remainderMicros = elapsedMicros % durMicros;
 
@@ -62,10 +92,9 @@ extension SmilAnimationRuntimeExtension on SmilAnimation {
     late final int completedRepeats;
     late final double baseT;
 
-    if (remainderMicros == 0) {
-      iterationIndex = completedWholeIterations > 0
-          ? completedWholeIterations - 1
-          : 0;
+    if (remainderMicros == 0 && completedWholeIterations > 0) {
+      // Exactly at iteration boundary
+      iterationIndex = completedWholeIterations - 1;
       completedRepeats = iterationIndex;
       baseT = 1.0;
     } else {
@@ -74,8 +103,17 @@ extension SmilAnimationRuntimeExtension on SmilAnimation {
       baseT = remainderMicros / durMicros;
     }
 
+    // Apply epsilon correction for boundary values
+    double correctedT = baseT;
+    const epsilon = 1e-10;
+    if (correctedT > 1.0 - epsilon) {
+      correctedT = 1.0;
+    } else if (correctedT < epsilon) {
+      correctedT = 0.0;
+    }
+
     return _AnimationProgress(
-      t: _resolveDirectedProgress(baseT, iterationIndex),
+      t: _resolveDirectedProgress(correctedT, iterationIndex),
       completedRepeats: completedRepeats,
     );
   }

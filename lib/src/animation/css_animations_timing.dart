@@ -104,45 +104,47 @@ bool _isTimingFunction(String value) {
 }
 
 CssAnimation? _parseAnimationFromStyle(String styleText) {
-  // Парсим style атрибут (CSS свойства)
-  final properties = _parseProperties(styleText);
+  // Use ordered parsing to respect cascade order
+  final orderedDeclarations = _parsePropertiesOrdered(styleText);
+  final expandedProperties = CssShorthandExpander.expandAllOrdered(
+    orderedDeclarations,
+  );
 
-  // Проверяем наличие animation или animation-* свойств
-  String? animationValue = properties['animation'];
-  String? animationName = properties['animation-name'];
-  String? animationDuration = properties['animation-duration'];
-  String? animationTimingFunction = properties['animation-timing-function'];
-  String? animationDelay = properties['animation-delay'];
-  String? animationIterationCount = properties['animation-iteration-count'];
-  String? animationDirection = properties['animation-direction'];
-  String? animationFillMode = properties['animation-fill-mode'];
-  String? animationPlayState = properties['animation-play-state'];
+  // Get animation properties from expanded map
+  // This handles both:
+  // 1. animation shorthand that was expanded to longhands
+  // 2. Individual animation-* properties that may override shorthand values
+  String? animationName = expandedProperties['animation-name'];
+  String? animationDuration = expandedProperties['animation-duration'];
+  String? animationTimingFunction =
+      expandedProperties['animation-timing-function'];
+  String? animationDelay = expandedProperties['animation-delay'];
+  String? animationIterationCount =
+      expandedProperties['animation-iteration-count'];
+  String? animationDirection = expandedProperties['animation-direction'];
+  String? animationFillMode = expandedProperties['animation-fill-mode'];
+  String? animationPlayState = expandedProperties['animation-play-state'];
 
-  // Если есть shorthand animation, используем его
-  if (animationValue != null) {
-    return _parseAnimation(animationValue);
+  // If no animation name, nothing to do
+  if (animationName == null || animationName == 'none') {
+    return null;
   }
 
-  // Иначе собираем из отдельных свойств
-  if (animationName == null) {
-    return null; // Без имени анимации ничего не делаем
-  }
-
-  // Парсим duration
+  // Parse duration
   Duration duration = const Duration(seconds: 1);
-  if (animationDuration != null) {
+  if (animationDuration != null && animationDuration != '0s') {
     final parsed = _parseDurationString(animationDuration);
     if (parsed != null) duration = parsed;
   }
 
-  // Парсим delay (supports negative values)
+  // Parse delay (supports negative values)
   Duration delay = Duration.zero;
   if (animationDelay != null) {
     final parsed = _parseDurationString(animationDelay);
     if (parsed != null) delay = parsed;
   }
 
-  // Парсим iteration count
+  // Parse iteration count
   double iterationCount = 1.0;
   if (animationIterationCount != null) {
     if (animationIterationCount == 'infinite') {
@@ -286,18 +288,104 @@ List<String> _tokenizeAnimationShorthand(String input) {
   return tokens;
 }
 
-/// Parse multiple animations from style attribute or style string
+/// Parse multiple animations from style attribute or style string.
+///
+/// This handles both the animation shorthand and individual animation-*
+/// properties, respecting CSS cascade order (later declarations win).
 List<CssAnimation> _parseMultipleAnimationsFromStyle(String styleText) {
-  final properties = _parseProperties(styleText);
-  final animationValue = properties['animation'];
+  // Use ordered parsing to respect cascade order
+  final orderedDeclarations = _parsePropertiesOrdered(styleText);
+  final expandedProperties = CssShorthandExpander.expandAllOrdered(
+    orderedDeclarations,
+  );
 
-  if (animationValue != null) {
-    return _parseMultipleAnimations(animationValue);
+  // Get animation name(s) - determines how many animations we have
+  final animationName = expandedProperties['animation-name'];
+  if (animationName == null || animationName == 'none') {
+    return [];
   }
 
-  // Fall back to single animation from individual properties
-  final single = _parseAnimationFromStyle(styleText);
-  return single != null ? [single] : [];
+  // Split animation names by comma
+  final names = _splitAnimationValues(animationName);
+  if (names.isEmpty) {
+    return [];
+  }
+
+  // Get other animation properties
+  final durationStr = expandedProperties['animation-duration'] ?? '0s';
+  final timingStr = expandedProperties['animation-timing-function'] ?? 'ease';
+  final delayStr = expandedProperties['animation-delay'] ?? '0s';
+  final iterationStr =
+      expandedProperties['animation-iteration-count'] ?? '1';
+  final directionStr = expandedProperties['animation-direction'] ?? 'normal';
+  final fillModeStr = expandedProperties['animation-fill-mode'] ?? 'none';
+  final playStateStr = expandedProperties['animation-play-state'] ?? 'running';
+
+  // Split each property by comma to match animation count
+  final durations = _splitAnimationValues(durationStr);
+  final timings = _splitAnimationValues(timingStr);
+  final delays = _splitAnimationValues(delayStr);
+  final iterations = _splitAnimationValues(iterationStr);
+  final directions = _splitAnimationValues(directionStr);
+  final fillModes = _splitAnimationValues(fillModeStr);
+  final playStates = _splitAnimationValues(playStateStr);
+
+  final animations = <CssAnimation>[];
+
+  for (int i = 0; i < names.length; i++) {
+    final name = names[i].trim();
+    if (name.isEmpty || name == 'none') continue;
+
+    // Use modulo to cycle through values if fewer than animation count
+    final durationVal = durations.isNotEmpty
+        ? durations[i % durations.length].trim()
+        : '0s';
+    final timingVal = timings.isNotEmpty
+        ? timings[i % timings.length].trim()
+        : 'ease';
+    final delayVal = delays.isNotEmpty
+        ? delays[i % delays.length].trim()
+        : '0s';
+    final iterationVal = iterations.isNotEmpty
+        ? iterations[i % iterations.length].trim()
+        : '1';
+    final directionVal = directions.isNotEmpty
+        ? directions[i % directions.length].trim()
+        : 'normal';
+    final fillModeVal = fillModes.isNotEmpty
+        ? fillModes[i % fillModes.length].trim()
+        : 'none';
+    final playStateVal = playStates.isNotEmpty
+        ? playStates[i % playStates.length].trim()
+        : 'running';
+
+    // Parse duration
+    final duration =
+        _parseDurationString(durationVal) ?? const Duration(seconds: 1);
+    final delay = _parseDurationString(delayVal) ?? Duration.zero;
+
+    double iterationCount = 1.0;
+    if (iterationVal == 'infinite') {
+      iterationCount = double.infinity;
+    } else {
+      iterationCount = double.tryParse(iterationVal) ?? 1.0;
+    }
+
+    animations.add(
+      CssAnimation(
+        name: name,
+        duration: duration,
+        timingFunction: timingVal,
+        delay: delay,
+        iterationCount: iterationCount,
+        direction: directionVal,
+        fillMode: fillModeVal,
+        playState: playStateVal,
+      ),
+    );
+  }
+
+  return animations;
 }
 
 /// Parse CSS transition property

@@ -1,5 +1,18 @@
 part of 'animated_svg_picture.dart';
 
+/// Extension providing pointer-events resolution and hit-test filtering.
+///
+/// SVG pointer-events values (per SVG 2 spec):
+/// - `auto` / `visiblePainted` (default): hit-test visible painted area
+/// - `visible`: hit-test visible area even if fill/stroke is none
+/// - `painted`: hit-test painted area regardless of visibility
+/// - `fill`: only fill region is hit-testable (ignores visibility)
+/// - `stroke`: only stroke region is hit-testable (ignores visibility)
+/// - `all`: entire bounding box regardless of visibility/paint
+/// - `none`: element is never hit-testable
+/// - `visibleFill`: hit-test fill area only if visible
+/// - `visibleStroke`: hit-test stroke area only if visible
+/// - `bounding-box`: hit-test entire bounding box (CSS UI Level 4)
 extension _AnimatedSvgPictureStatePointerEventsExtension
     on _AnimatedSvgPictureState {
   /// Resolves the effective pointer-events mode for a node.

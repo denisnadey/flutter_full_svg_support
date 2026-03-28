@@ -196,13 +196,44 @@ Map<String, String> _parseProperties(String propertiesStr) {
   return properties;
 }
 
+/// Parses CSS properties and returns them as ordered list of (name, value) pairs.
+///
+/// This preserves declaration order which is important for proper cascade
+/// resolution when shorthands and longhands interact.
+List<(String, String)> _parsePropertiesOrdered(String propertiesStr) {
+  final declarations = <(String, String)>[];
+
+  final lines = propertiesStr.split(';');
+
+  for (final line in lines) {
+    final trimmed = line.trim();
+    if (trimmed.isEmpty) continue;
+
+    final colonIndex = trimmed.indexOf(':');
+    if (colonIndex == -1) continue;
+
+    final name = trimmed.substring(0, colonIndex).trim().toLowerCase();
+    final value = trimmed.substring(colonIndex + 1).trim();
+
+    if (name.isNotEmpty && value.isNotEmpty) {
+      declarations.add((name, value));
+    }
+  }
+
+  return declarations;
+}
+
 /// Parses CSS properties from string and expands shorthand properties.
 ///
 /// This is the preferred function for parsing CSS that may contain
 /// shorthand properties like font, margin, padding, animation, etc.
+///
+/// Per CSS cascade rules, when shorthand and longhand properties are declared
+/// at the same specificity level, the later declaration wins. This function
+/// preserves declaration order to ensure proper cascade behavior.
 Map<String, String> _parsePropertiesWithShorthandExpansion(
   String propertiesStr,
 ) {
-  final properties = _parseProperties(propertiesStr);
-  return CssShorthandExpander.expandAll(properties);
+  final orderedDeclarations = _parsePropertiesOrdered(propertiesStr);
+  return CssShorthandExpander.expandAllOrdered(orderedDeclarations);
 }

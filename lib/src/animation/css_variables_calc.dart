@@ -256,6 +256,7 @@ abstract class CssVariablesCascadeResolver {
 /// - CSS math functions: min(), max(), clamp()
 /// - Mixed units: calc(100% - 50px)
 /// - Deeply nested expressions (up to 20 levels)
+/// - Proper em/rem unit resolution with font-size cascading
 class CssCalcEvaluator {
   /// Maximum nesting depth for recursive evaluations.
   static const int _maxNestingDepth = 20;
@@ -264,15 +265,18 @@ class CssCalcEvaluator {
   /// Returns null if evaluation fails.
   ///
   /// [value] - The string potentially containing calc()
-  /// [fontSize] - Current font size for em/rem units
+  /// [fontSize] - Current font size for em units (in non-font-size contexts)
   /// [containerSize] - Container size for percentage calculations (optional)
-  /// [parentFontSize] - Parent element's font size for em inheritance
+  /// [parentFontSize] - Parent element's font size for em inheritance in
+  ///   font-size computation context
+  /// [rootFontSize] - Root SVG element's font-size for rem units (default 16px)
   /// [viewportSize] - Viewport size for vw/vh/vmin/vmax units
   static double? evaluate(
     String value, {
     double fontSize = _defaultFontSize,
     double? containerSize,
     double? parentFontSize,
+    double? rootFontSize,
     Size? viewportSize,
   }) {
     return _evaluateWithDepth(
@@ -280,6 +284,7 @@ class CssCalcEvaluator {
       fontSize: fontSize,
       containerSize: containerSize,
       parentFontSize: parentFontSize,
+      rootFontSize: rootFontSize ?? _defaultFontSize,
       viewportSize: viewportSize,
       depth: 0,
     );
@@ -291,6 +296,7 @@ class CssCalcEvaluator {
     required double fontSize,
     double? containerSize,
     double? parentFontSize,
+    required double rootFontSize,
     Size? viewportSize,
     required int depth,
   }) {
@@ -312,6 +318,7 @@ class CssCalcEvaluator {
         fontSize: fontSize,
         containerSize: containerSize,
         parentFontSize: parentFontSize,
+        rootFontSize: rootFontSize,
         viewportSize: viewportSize,
         depth: depth,
       );
@@ -323,6 +330,7 @@ class CssCalcEvaluator {
         fontSize: fontSize,
         containerSize: containerSize,
         parentFontSize: parentFontSize,
+        rootFontSize: rootFontSize,
         viewportSize: viewportSize,
         depth: depth,
       );
@@ -334,6 +342,7 @@ class CssCalcEvaluator {
         fontSize: fontSize,
         containerSize: containerSize,
         parentFontSize: parentFontSize,
+        rootFontSize: rootFontSize,
         viewportSize: viewportSize,
         depth: depth,
       );
@@ -347,6 +356,7 @@ class CssCalcEvaluator {
         fontSize: fontSize,
         containerSize: containerSize,
         parentFontSize: parentFontSize,
+        rootFontSize: rootFontSize,
         viewportSize: viewportSize,
       );
     }
@@ -363,6 +373,7 @@ class CssCalcEvaluator {
       fontSize: fontSize,
       containerSize: containerSize,
       parentFontSize: parentFontSize,
+      rootFontSize: rootFontSize,
       viewportSize: viewportSize,
       depth: depth,
     );
@@ -375,6 +386,7 @@ class CssCalcEvaluator {
     required double fontSize,
     double? containerSize,
     double? parentFontSize,
+    required double rootFontSize,
     Size? viewportSize,
     required int depth,
   }) {
@@ -389,6 +401,7 @@ class CssCalcEvaluator {
       fontSize: fontSize,
       containerSize: containerSize,
       parentFontSize: parentFontSize,
+      rootFontSize: rootFontSize,
       viewportSize: viewportSize,
       depth: depth + 1,
     );
@@ -397,6 +410,7 @@ class CssCalcEvaluator {
       fontSize: fontSize,
       containerSize: containerSize,
       parentFontSize: parentFontSize,
+      rootFontSize: rootFontSize,
       viewportSize: viewportSize,
       depth: depth + 1,
     );
@@ -405,6 +419,7 @@ class CssCalcEvaluator {
       fontSize: fontSize,
       containerSize: containerSize,
       parentFontSize: parentFontSize,
+      rootFontSize: rootFontSize,
       viewportSize: viewportSize,
       depth: depth + 1,
     );
@@ -421,6 +436,7 @@ class CssCalcEvaluator {
     required double fontSize,
     double? containerSize,
     double? parentFontSize,
+    required double rootFontSize,
     Size? viewportSize,
     required int depth,
   }) {
@@ -437,6 +453,7 @@ class CssCalcEvaluator {
         fontSize: fontSize,
         containerSize: containerSize,
         parentFontSize: parentFontSize,
+        rootFontSize: rootFontSize,
         viewportSize: viewportSize,
         depth: depth + 1,
       );
@@ -455,6 +472,7 @@ class CssCalcEvaluator {
     required double fontSize,
     double? containerSize,
     double? parentFontSize,
+    required double rootFontSize,
     Size? viewportSize,
     required int depth,
   }) {
@@ -471,6 +489,7 @@ class CssCalcEvaluator {
         fontSize: fontSize,
         containerSize: containerSize,
         parentFontSize: parentFontSize,
+        rootFontSize: rootFontSize,
         viewportSize: viewportSize,
         depth: depth + 1,
       );
@@ -568,6 +587,7 @@ class CssCalcEvaluator {
     required double fontSize,
     double? containerSize,
     double? parentFontSize,
+    required double rootFontSize,
     Size? viewportSize,
     required int depth,
   }) {
@@ -577,6 +597,7 @@ class CssCalcEvaluator {
       fontSize: fontSize,
       containerSize: containerSize,
       parentFontSize: parentFontSize,
+      rootFontSize: rootFontSize,
       viewportSize: viewportSize,
       depth: depth,
     );
@@ -591,6 +612,7 @@ class CssCalcEvaluator {
       fontSize: fontSize,
       containerSize: containerSize,
       parentFontSize: parentFontSize,
+      rootFontSize: rootFontSize,
       viewportSize: viewportSize,
     );
   }
@@ -601,6 +623,7 @@ class CssCalcEvaluator {
     required double fontSize,
     double? containerSize,
     double? parentFontSize,
+    required double rootFontSize,
     Size? viewportSize,
     required int depth,
   }) {
@@ -639,6 +662,7 @@ class CssCalcEvaluator {
           fontSize: fontSize,
           containerSize: containerSize,
           parentFontSize: parentFontSize,
+          rootFontSize: rootFontSize,
           viewportSize: viewportSize,
           depth: depth + 1,
         );
@@ -649,6 +673,7 @@ class CssCalcEvaluator {
           fontSize: fontSize,
           containerSize: containerSize,
           parentFontSize: parentFontSize,
+          rootFontSize: rootFontSize,
           viewportSize: viewportSize,
           depth: depth + 1,
         );
@@ -672,6 +697,7 @@ class CssCalcEvaluator {
     required double fontSize,
     double? containerSize,
     double? parentFontSize,
+    required double rootFontSize,
     Size? viewportSize,
   }) {
     // Tokenize the expression
@@ -701,6 +727,7 @@ class CssCalcEvaluator {
               fontSize: fontSize,
               containerSize: containerSize,
               parentFontSize: parentFontSize,
+              rootFontSize: rootFontSize,
               viewportSize: viewportSize,
             );
             if (nextValue == null) return null;
@@ -716,6 +743,7 @@ class CssCalcEvaluator {
           fontSize: fontSize,
           containerSize: containerSize,
           parentFontSize: parentFontSize,
+          rootFontSize: rootFontSize,
           viewportSize: viewportSize,
         );
         if (value == null) {
@@ -841,12 +869,14 @@ class CssCalcEvaluator {
   ///
   /// [parentFontSize] is used for em units in the context where an element's
   /// font-size is being computed (em is relative to parent, not current).
+  /// [rootFontSize] is used for rem units (always relative to root element).
   /// [viewportSize] is used for vw/vh/vmin/vmax viewport units.
   static double? _parseNumericValue(
     String value, {
     required double fontSize,
     double? containerSize,
     double? parentFontSize,
+    required double rootFontSize,
     Size? viewportSize,
   }) {
     final trimmed = value.trim();
@@ -884,7 +914,9 @@ class CssCalcEvaluator {
         // In other contexts, em is relative to current element's font-size.
         return num * (parentFontSize ?? fontSize);
       case 'rem':
-        return num * _defaultFontSize;
+        // rem is always relative to root element's font-size,
+        // regardless of nesting depth - does NOT compound.
+        return num * rootFontSize;
       case 'ex':
         // ex is approximately 0.5em (x-height of the font)
         return num * (parentFontSize ?? fontSize) * 0.5;
@@ -962,6 +994,7 @@ class CssValueResolver {
     double fontSize = _defaultFontSize,
     double? containerSize,
     double? parentFontSize,
+    double? rootFontSize,
     Size? viewportSize,
   }) {
     // First resolve any var() references
@@ -979,6 +1012,7 @@ class CssValueResolver {
   ///
   /// [parentFontSize] is used when computing font-size values where em
   /// should be relative to the parent element's font-size.
+  /// [rootFontSize] is used for rem units (always relative to root SVG element).
   /// [viewportSize] is used for vw/vh/vmin/vmax viewport units.
   static double? resolveToNumber(
     String value,
@@ -986,6 +1020,7 @@ class CssValueResolver {
     double fontSize = _defaultFontSize,
     double? containerSize,
     double? parentFontSize,
+    double? rootFontSize,
     Size? viewportSize,
   }) {
     // First resolve var() references
@@ -995,6 +1030,7 @@ class CssValueResolver {
       fontSize: fontSize,
       containerSize: containerSize,
       parentFontSize: parentFontSize,
+      rootFontSize: rootFontSize,
       viewportSize: viewportSize,
     );
 
@@ -1004,6 +1040,7 @@ class CssValueResolver {
       fontSize: fontSize,
       containerSize: containerSize,
       parentFontSize: parentFontSize,
+      rootFontSize: rootFontSize,
       viewportSize: viewportSize,
     );
   }

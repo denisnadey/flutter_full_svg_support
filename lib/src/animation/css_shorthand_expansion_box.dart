@@ -125,6 +125,44 @@ Map<String, String> _expandBorder(String value) {
   return result.isNotEmpty ? result : {'border': value};
 }
 
+/// Expands border-{side} shorthand into width, style, color for one side.
+///
+/// Format: border-top: width style color
+Map<String, String> _expandBorderSide(String side, String value) {
+  final tokens = value
+      .split(RegExp(r'\s+'))
+      .where((v) => v.isNotEmpty)
+      .toList();
+
+  String? width;
+  String? style;
+  String? color;
+
+  for (final token in tokens) {
+    if (_isBorderStyle(token)) {
+      style = token;
+    } else if (_isBorderWidth(token)) {
+      width = token;
+    } else {
+      // Assume it's a color
+      color = token;
+    }
+  }
+
+  final result = <String, String>{};
+  if (width != null) {
+    result['border-$side-width'] = width;
+  }
+  if (style != null) {
+    result['border-$side-style'] = style;
+  }
+  if (color != null) {
+    result['border-$side-color'] = color;
+  }
+
+  return result.isNotEmpty ? result : {'border-$side': value};
+}
+
 bool _isBorderStyle(String value) {
   const styles = {
     'none',

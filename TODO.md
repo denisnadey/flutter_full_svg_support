@@ -4,7 +4,7 @@
 **Status Source:** `/Users/denisnadey/apps/flutter_full_svg_support/CURRENT_STATUS.md`  
 **Closed Issues Registry:** `/Users/denisnadey/apps/flutter_full_svg_support/docs/RESOLVED_ISSUES.md`
 
-**Current Status:** ~82% Blink parity | ~99% Text parity | ~95% Filter parity | ~95% SMIL parity | 3,563 tests passing | 0 analyzer warnings
+**Current Status:** ~89-90% Blink parity | ~99% Text parity | ~97% Filter parity | ~97% SMIL parity | 4,145 tests passing | 0 analyzer warnings
 
 This file tracks actionable implementation tasks.
 For factual project status, use `CURRENT_STATUS.md` only.
@@ -12,12 +12,15 @@ For factual project status, use `CURRENT_STATUS.md` only.
 ## Current Sprint (P0 - Active)
 
 - [x] **Advanced animateMotion semantics** - SMIL 88% → 95% (to-only/by-only/from-only modes, keyTimes→keyPoints implicit generation, discrete calcMode + keyPoints, closed path detection, zero-length segment handling, 60 tests)
-- [ ] **CSS/SMIL edge-case parity** - Complex shorthand resolution, unit handling, timing precision
-- [ ] **External content edge cases** - Advanced image transformations, nested foreignObject (60% → 75%)
-- [ ] **Code modularization** - Splitting large files for dev velocity (`svg_filters_primitives.dart`, `animated_svg_painter_shapes.dart`, `animated_svg_picture.dart`)
+- [x] **CSS/SMIL edge-case parity** - Complex shorthand resolution (font CSS2.1, margin/padding, animation coexistence, border + side overrides), unit handling (em/rem/ch/ex/calc), timing precision (repeatCount drift, repeatDur, min/max constraints) - 121 new tests
+- [x] **External content edge cases** - Advanced image transformations (filter chains, preserveAspectRatio + transforms, nested SVG in foreignObject, error fallback) - 23 new tests
+- [x] **Filter primitive edge cases** - feDisplacementMap bilinear interpolation, feTurbulence stitchTiles, feGaussianBlur extreme values, feImage external URL - 32 new tests
+- [x] **Hit-testing refinements** - Enhanced pointer-events (all SVG values), visibility vs opacity, clip-path+mask+transform interaction, nested use with text - 30 new tests
+- [x] **Code modularization** - Split svg_filters_primitives.dart into 3 focused part files (displacement, image, turbulence)
 
 ## Completed Recently
 
+- [x] **Edge Case Sprint (March 2026)** - CSS shorthand resolution, unit handling precision, SMIL timing precision, advanced image transformations, filter primitive edge cases, hit-testing refinements, code modularization (~206 new tests, parity ~82% → ~89-90%)
 - [x] **Advanced Filter Graph** - All 17 FE primitives, input chain semantics, named result chaining, feDropShadow/feMerge composition
 - [x] **Advanced Clipping** - clipPathUnits (objectBoundingBox, userSpaceOnUse), nested clip-paths, clip-rule (nonzero, evenodd), complex compositions, hit-testing
 - [x] **Advanced Masking** - maskUnits, maskContentUnits, luminance/alpha modes, layer compositing, hit-testing
@@ -198,7 +201,7 @@ For factual project status, use `CURRENT_STATUS.md` only.
 - [x] Implement `feFlood`.
 - [x] Implement baseline `feMerge` / `feMergeNode` parsing.
 - [x] Extend `feMerge` / `feMergeNode` to advanced non-source input-graph composition semantics.
-- [x] All 17/17 FE primitives implemented (~95% filter parity). Remaining gaps are advanced edge cases within primitives.
+- [x] All 17/17 FE primitives implemented (~97% filter parity). Remaining gaps are rare advanced edge cases.
 
 ## P3 - CSS/Timing Parity
 

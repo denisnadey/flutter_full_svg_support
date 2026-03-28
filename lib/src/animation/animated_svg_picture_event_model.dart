@@ -79,6 +79,11 @@ extension _AnimatedSvgPictureStateEventModelExtension
   }
 
   /// Hit tests with event path tracking for proper W3C event model.
+  ///
+  /// Visibility handling per CSS/SVG spec:
+  /// - display:none - NOT hit-testable
+  /// - visibility:hidden - NOT hit-testable (checked via pointer-events)
+  /// - opacity:0 - IS still hit-testable (opacity doesn't affect pointer events)
   _EventHitTestResult _hitTestNodeWithEventPath(
     SvgNode node,
     Offset documentPoint,
@@ -92,9 +97,11 @@ extension _AnimatedSvgPictureStateEventModelExtension
     if (_isDefinitionOnlyTag(node.tagName)) {
       return const _EventHitTestResult();
     }
+    // display:none elements are never hit-testable
     if (_isDisplayNone(node)) {
       return const _EventHitTestResult();
     }
+    // Note: opacity:0 elements ARE still hit-testable per CSS spec
 
     if (node.tagName == 'foreignObject') {
       final requiredExtensions = node.getAttributeValue('requiredExtensions');

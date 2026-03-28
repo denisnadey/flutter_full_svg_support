@@ -3,6 +3,10 @@
 <cite>
 **Referenced Files in This Document**
 - [css_cascade.dart](file://lib/src/animation/css_cascade.dart)
+- [css_cascade_inheritance.dart](file://lib/src/animation/css_cascade_inheritance.dart)
+- [css_cascade_resolution.dart](file://lib/src/animation/css_cascade_resolution.dart)
+- [css_cascade_selector_matching.dart](file://lib/src/animation/css_cascade_selector_matching.dart)
+- [css_cascade_specificity.dart](file://lib/src/animation/css_cascade_specificity.dart)
 - [css_selectors.dart](file://lib/src/animation/css_selectors.dart)
 - [svg_dom.dart](file://lib/src/animation/svg_dom.dart)
 - [css_variables_calc.dart](file://lib/src/animation/css_variables_calc.dart)
@@ -10,19 +14,20 @@
 - [css_cascade_specificity_test.dart](file://test/animation/css_cascade_specificity_test.dart)
 - [css_property_rendering_test.dart](file://test/animation/css_property_rendering_test.dart)
 - [css_pseudo_classes_view_test.dart](file://test/animation/css_pseudo_classes_view_test.dart)
+- [use_css_cascade_test.dart](file://test/animation/use_css_cascade_test.dart)
 - [svg.dart](file://lib/svg.dart)
 - [svg_parser_css.dart](file://lib/src/animation/svg_parser_css.dart)
 </cite>
 
 ## Update Summary
 **Changes Made**
-- Enhanced CSS specificity calculation with complete 4-part tuple implementation (a, b, c, d)
-- Added comprehensive !important declaration support with proper precedence rules
-- Implemented advanced CSS variable resolution with cascade integration
-- Expanded selector parsing with shadow DOM boundary awareness
-- Added support for CSS math functions (min, max, clamp) in calc() expressions
-- Enhanced inheritance system with proper shadow DOM boundary handling
-- Improved performance optimizations with intelligent caching mechanisms
+- **Modularization Complete**: CSS cascade system has been successfully modularized from a monolithic css_cascade.dart into four specialized components
+- **Enhanced Inheritance System**: New dedicated inheritance handling with proper shadow DOM boundary awareness for `<use>` and `<symbol>` elements
+- **Improved Selector Matching**: Specialized selector matching with comprehensive shadow DOM boundary detection and combinator awareness
+- **Accurate Specificity Calculation**: Dedicated specificity calculator with support for complex selectors and compound selectors
+- **Optimized Resolution Engine**: Streamlined cascade resolution with better performance through component separation
+- **Nested Use Element Support**: Enhanced support for complex nested `<use>` element chains with circular reference detection
+- **Advanced CSS Variable Resolution**: Integrated CSS variable resolution through the cascade system
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -44,76 +49,102 @@ The CSS Cascade System in Flutter SVG Support provides a comprehensive implement
 
 The system implements a sophisticated cascade resolution engine that handles inline styles, CSS rules from `<style>` blocks, presentation attributes, and inheritance through SVG's `<use>` elements. It supports advanced CSS selectors including pseudo-classes, nth-child selectors, and complex combinators while maintaining optimal performance through intelligent caching mechanisms.
 
-**Updated** Enhanced with comprehensive CSS cascade and inheritance engine improvements including complete specificity calculation, advanced inheritance rules, !important declaration support, CSS variable resolution, and selector parsing with shadow DOM integration.
+**Updated** The system has been completely modularized into specialized components, enhancing maintainability and extensibility while providing better inheritance handling, selector matching with shadow DOM boundary awareness, and more accurate specificity calculations for complex CSS scenarios including nested use elements and proper inheritance through use chains.
 
 ## System Architecture
 
-The CSS Cascade System is built around several interconnected components that work together to provide robust CSS resolution for SVG documents:
+The CSS Cascade System is built around four interconnected specialized components that work together to provide robust CSS resolution for SVG documents:
 
 ```mermaid
 graph TB
-subgraph "CSS Cascade Layer"
+subgraph "CSS Cascade Core"
 A[CssCascadeResolver] --> B[CssSpecificityCalculator]
 A --> C[CssResolvedValue]
 A --> D[SvgPseudoClassState]
 end
 subgraph "Selector Processing"
-E[CssSelectorParser] --> F[CssSimpleSelector]
+E[_SelectorMatchingMixin] --> F[CssSimpleSelector]
 E --> G[CssComplexSelector]
 E --> H[CssCombinator]
+E --> I[Shadow Boundary Detection]
+end
+subgraph "Resolution Engine"
+J[_ResolutionMixin] --> K[Property Resolution]
+J --> L[Inheritance Logic]
+J --> M[!Important Handling]
+end
+subgraph "Inheritance System"
+N[UseCascadeContext] --> O[Shadow DOM Boundary]
+N --> P[Circular Reference Detection]
+N --> Q[Nested Use Chain Support]
 end
 subgraph "DOM Integration"
-I[SvgNode] --> J[SvgDocument]
-I --> K[CssCustomProperties]
-J --> L[SvgPseudoClassState]
+R[SvgNode] --> S[SvgDocument]
+R --> T[Cascade Variables Resolver]
+S --> U[SvgPseudoClassState]
 end
-subgraph "Variable System"
-M[CssVariableResolver] --> N[CssCalcEvaluator]
-M --> O[UseContextCustomPropertyLookup]
-end
-A --> E
-A --> I
-M --> I
-N --> I
 ```
 
 **Diagram sources**
-- [css_cascade.dart:288-303](file://lib/src/animation/css_cascade.dart#L288-L303)
-- [css_selectors.dart:57-665](file://lib/src/animation/css_selectors.dart#L57-L665)
-- [svg_dom.dart:124-297](file://lib/src/animation/svg_dom.dart#L124-L297)
+- [css_cascade.dart:227-259](file://lib/src/animation/css_cascade.dart#L227-L259)
+- [css_cascade_selector_matching.dart:18-95](file://lib/src/animation/css_cascade_selector_matching.dart#L18-L95)
+- [css_cascade_resolution.dart:6-107](file://lib/src/animation/css_cascade_resolution.dart#L6-L107)
+- [css_cascade_inheritance.dart:23-62](file://lib/src/animation/css_cascade_inheritance.dart#L23-L62)
 
 **Section sources**
-- [css_cascade.dart:1-1252](file://lib/src/animation/css_cascade.dart#L1-L1252)
-- [svg_dom.dart:1-574](file://lib/src/animation/svg_dom.dart#L1-L574)
+- [css_cascade.dart:1-267](file://lib/src/animation/css_cascade.dart#L1-L267)
+- [css_cascade_selector_matching.dart:1-487](file://lib/src/animation/css_cascade_selector_matching.dart#L1-L487)
+- [css_cascade_resolution.dart:1-140](file://lib/src/animation/css_cascade_resolution.dart#L1-L140)
+- [css_cascade_inheritance.dart:1-323](file://lib/src/animation/css_cascade_inheritance.dart#L1-L323)
 
 ## Core Components
 
 ### CssCascadeResolver
 
-The central component responsible for resolving CSS properties according to the cascade rules. It implements the complete CSS cascade algorithm including specificity calculation, !important handling, and inheritance resolution.
+The central component responsible for resolving CSS properties according to the cascade rules. It now serves as a coordinator for the four specialized mixins and provides the main interface for CSS property resolution.
 
 Key features include:
-- Priority-based resolution: Inline styles → CSS rules → Presentation attributes → Inherited values
-- Comprehensive selector matching with pseudo-class support
-- Shadow DOM boundary awareness for `<use>` and `<symbol>` elements
-- Rule caching for performance optimization
+- **Component Coordination**: Integrates `_SelectorMatchingMixin`, `_ResolutionMixin`, and inheritance logic
+- **Shadow Boundary Awareness**: Manages shadow DOM boundaries for `<use>` and `<symbol>` elements
+- **Rule Caching**: Maintains intelligent caching for performance optimization
+- **Pseudo-Class State Management**: Coordinates with dynamic pseudo-class states
 
-### CssSpecificityCalculator
+### _SelectorMatchingMixin
 
-Calculates CSS specificity values for selectors according to the CSS specification. Handles complex selectors including compound selectors, combinators, and pseudo-classes.
+Provides comprehensive selector matching functionality with shadow DOM boundary awareness:
 
-### SvgNode and SvgDocument
+- **Complex Selector Support**: Handles descendant, child, sibling, and general sibling combinators
+- **Shadow Boundary Detection**: Prevents selector matching from piercing through `<use>` and `<symbol>` boundaries
+- **Pseudo-Class Integration**: Supports hover, active, focus, and structural pseudo-classes
+- **Performance Optimization**: Implements intelligent caching with pseudo-class state awareness
 
-Provide the DOM structure for SVG elements with specialized methods for CSS property resolution and inheritance traversal.
+### _ResolutionMixin
+
+Manages the core cascade resolution algorithm with proper precedence handling:
+
+- **Priority-Based Resolution**: Inline styles → CSS rules → Presentation attributes → Inherited values
+- **!Important Declaration Support**: Proper precedence rules for important declarations
+- **Source Order Fallback**: Later declarations win when specificity equals
+- **Inheritance Logic**: Only applies to inheritable properties
+
+### UseCascadeContext
+
+Dedicated inheritance system for `<use>` element scenarios:
+
+- **Shadow DOM Boundary Handling**: Properly handles `<use>` and `<symbol>` as shadow DOM boundaries
+- **Nested Use Chain Support**: Manages complex nested `<use>` element chains with circular reference detection
+- **Inheritance Priority**: Implements correct cascade order for use-referenced elements
+- **!Important Override Logic**: Handles `!important` declarations from use elements
 
 **Section sources**
-- [css_cascade.dart:294-406](file://lib/src/animation/css_cascade.dart#L294-L406)
-- [css_cascade.dart:111-179](file://lib/src/animation/css_cascade.dart#L111-L179)
-- [svg_dom.dart:124-297](file://lib/src/animation/svg_dom.dart#L124-L297)
+- [css_cascade.dart:227-259](file://lib/src/animation/css_cascade.dart#L227-L259)
+- [css_cascade_selector_matching.dart:4-95](file://lib/src/animation/css_cascade_selector_matching.dart#L4-L95)
+- [css_cascade_resolution.dart:5-107](file://lib/src/animation/css_cascade_resolution.dart#L5-L107)
+- [css_cascade_inheritance.dart:23-62](file://lib/src/animation/css_cascade_inheritance.dart#L23-L62)
 
 ## CSS Cascade Engine
 
-The cascade engine implements the complete CSS cascade algorithm with the following priority order:
+The cascade engine implements the complete CSS cascade algorithm with enhanced shadow DOM awareness and improved performance through component specialization:
 
 ```mermaid
 flowchart TD
@@ -127,7 +158,13 @@ CSSImportant --> |No| Presentation[Presentation Attribute Check]
 Presentation --> PresentImportant{Presentation !important?}
 PresentImportant --> |Yes| ReturnPresent[Return Presentation Value]
 PresentImportant --> |No| Inheritance[Inheritance Check]
-Inheritance --> HasParent{Has Parent?}
+Inheritance --> ShadowBoundary{Shadow Boundary?}
+ShadowBoundary --> |Yes| UseInheritance[Use Element Inheritance]
+ShadowBoundary --> |No| NormalInheritance[Normal Inheritance]
+UseInheritance --> UseImportant{Use !important?}
+UseImportant --> |Yes| ReturnUse[Return Use Value]
+UseImportant --> |No| ParentInherit[Parent Chain Inherit]
+NormalInheritance --> HasParent{Has Parent?}
 HasParent --> |Yes| ParentResolve[Resolve from Parent]
 HasParent --> |No| NoValue[Return Null]
 ParentResolve --> InheritCheck{Property Inheritable?}
@@ -136,26 +173,30 @@ InheritCheck --> |No| NoValue
 ReturnInline --> End([Resolution Complete])
 ReturnCSS --> End
 ReturnPresent --> End
+ReturnUse --> End
 ReturnParent --> End
 NoValue --> End
 ```
 
 **Diagram sources**
-- [css_cascade.dart:305-406](file://lib/src/animation/css_cascade.dart#L305-L406)
+- [css_cascade_resolution.dart:13-107](file://lib/src/animation/css_cascade_resolution.dart#L13-L107)
+- [css_cascade_inheritance.dart:72-162](file://lib/src/animation/css_cascade_inheritance.dart#L72-L162)
 
 The engine handles several critical aspects:
-- **!important precedence**: Overrides normal cascade rules when present
-- **Specificity comparison**: Uses 4-part specificity tuples (a,b,c,d)
-- **Source order fallback**: Later declarations win when specificity equals
-- **Inheritance logic**: Only applies to inheritable properties
+- **Enhanced Shadow DOM Support**: Proper boundary handling for `<use>` and `<symbol>` elements
+- **Nested Use Chain Processing**: Circular reference detection and proper inheritance through use chains
+- **!Important Precedence**: Correct handling of `!important` declarations in complex scenarios
+- **Source Order Fallback**: Later declarations win when specificity equals
+- **Inheritance Logic**: Only applies to inheritable properties with proper shadow boundary awareness
 
 **Section sources**
-- [css_cascade.dart:305-406](file://lib/src/animation/css_cascade.dart#L305-L406)
-- [css_cascade.dart:92-108](file://lib/src/animation/css_cascade.dart#L92-L108)
+- [css_cascade_resolution.dart:13-107](file://lib/src/animation/css_cascade_resolution.dart#L13-L107)
+- [css_cascade_inheritance.dart:72-162](file://lib/src/animation/css_cascade_inheritance.dart#L72-L162)
+- [css_cascade_inheritance.dart:214-219](file://lib/src/animation/css_cascade_inheritance.dart#L214-L219)
 
 ## Selector Matching System
 
-The selector matching system supports a comprehensive range of CSS selectors with SVG-specific enhancements:
+The selector matching system has been enhanced with comprehensive shadow DOM boundary awareness and improved performance through component specialization:
 
 ### Supported Selectors
 
@@ -171,7 +212,7 @@ The selector matching system supports a comprehensive range of CSS selectors wit
 
 ### Complex Selector Support
 
-The system supports complex selectors with combinators:
+The system supports complex selectors with combinators and shadow DOM boundary awareness:
 
 ```mermaid
 graph LR
@@ -179,18 +220,22 @@ A[rect.highlight] --> B[Compound Selector]
 C[div > p] --> D[Child Combinator]
 E[ul li:nth-child(2n)] --> F[Nth-child Selector]
 G[a:not(.hidden)] --> H[Not Selector]
+I[div ~ p] --> J[General Sibling]
+K[div + p] --> L[Adjacent Sibling]
 ```
 
 **Diagram sources**
-- [css_selectors.dart:512-649](file://lib/src/animation/css_selectors.dart#L512-L649)
+- [css_cascade_selector_matching.dart:100-167](file://lib/src/animation/css_cascade_selector_matching.dart#L100-L167)
+- [css_cascade_selector_matching.dart:217-222](file://lib/src/animation/css_cascade_selector_matching.dart#L217-L222)
 
 **Section sources**
-- [css_selectors.dart:57-665](file://lib/src/animation/css_selectors.dart#L57-L665)
-- [css_cascade.dart:462-562](file://lib/src/animation/css_cascade.dart#L462-L562)
+- [css_cascade_selector_matching.dart:18-95](file://lib/src/animation/css_cascade_selector_matching.dart#L18-L95)
+- [css_cascade_selector_matching.dart:100-167](file://lib/src/animation/css_cascade_selector_matching.dart#L100-L167)
+- [css_cascade_selector_matching.dart:217-222](file://lib/src/animation/css_cascade_selector_matching.dart#L217-L222)
 
 ## Specificity Calculation
 
-CSS specificity follows the standard CSS specification with a 4-part tuple system:
+CSS specificity follows the standard CSS specification with enhanced support for complex selectors and compound selectors:
 
 | Part | Name | Description | Example |
 |------|------|-------------|---------|
@@ -210,20 +255,23 @@ G[Element Selector] --> H[0,0,0,1]
 I[Universal Selector] --> J[0,0,0,0]
 K[rect#myId.myClass] --> L[0,1,1,1]
 M[div span] --> N[0,0,0,2]
+O[div > span] --> P[0,0,0,2]
+Q[div + span] --> R[0,0,0,2]
+S[div ~ span] --> T[0,0,0,2]
 ```
 
 **Diagram sources**
-- [css_cascade.dart:14-67](file://lib/src/animation/css_cascade.dart#L14-L67)
+- [css_cascade_specificity.dart:18-62](file://lib/src/animation/css_cascade_specificity.dart#L18-L62)
 
 **Section sources**
-- [css_cascade.dart:14-67](file://lib/src/animation/css_cascade.dart#L14-L67)
+- [css_cascade_specificity.dart:18-62](file://lib/src/animation/css_cascade_specificity.dart#L18-L62)
 - [css_cascade_specificity_test.dart:47-112](file://test/animation/css_cascade_specificity_test.dart#L47-L112)
 
 ## Inheritance and Shadow DOM
 
-### Inheritance Rules
+### Enhanced Inheritance Rules
 
-The system implements comprehensive CSS inheritance for SVG elements, supporting both automatic and explicit inheritance:
+The system implements comprehensive CSS inheritance for SVG elements with specialized shadow DOM boundary handling:
 
 **Inheritable Properties** include:
 - Color properties: `color`, `fill`, `stroke`
@@ -232,16 +280,19 @@ The system implements comprehensive CSS inheritance for SVG elements, supporting
 - SVG-specific properties: `stroke-width`, `stroke-linecap`, `paint-order`
 - Visibility properties: `visibility`, `display`
 
-### Shadow DOM Boundary Handling
+### Advanced Shadow DOM Boundary Handling
 
-The system properly handles SVG's `<use>` and `<symbol>` elements as shadow DOM boundaries:
+The system properly handles SVG's `<use>` and `<symbol>` elements as shadow DOM boundaries with enhanced support for complex scenarios:
 
 ```mermaid
 sequenceDiagram
 participant U as Use Element
 participant R as Referenced Element
 participant P as Parent Chain
-U->>R : Resolve CSS Property
+participant C as UseCascadeContext
+U->>C : Create Child Context
+C->>C : Check Shadow Root ID
+C->>R : Resolve CSS Property
 R->>R : Check Inline Style
 R->>R : Check CSS Rules
 R->>R : Check Presentation Attributes
@@ -250,21 +301,24 @@ R->>U : Check Use Element Values
 U->>P : Check Parent Chain
 P->>P : Check Presentation Attributes
 end
-R-->>U : Return Resolved Value
+C->>C : Check Circular References
+C-->>U : Return Resolved Value
 ```
 
 **Diagram sources**
-- [css_cascade.dart:923-1029](file://lib/src/animation/css_cascade.dart#L923-L1029)
+- [css_cascade_inheritance.dart:50-62](file://lib/src/animation/css_cascade_inheritance.dart#L50-L62)
+- [css_cascade_inheritance.dart:214-219](file://lib/src/animation/css_cascade_inheritance.dart#L214-L219)
 
 **Section sources**
-- [css_cascade.dart:181-276](file://lib/src/animation/css_cascade.dart#L181-L276)
-- [css_cascade.dart:923-1029](file://lib/src/animation/css_cascade.dart#L923-L1029)
+- [css_cascade_inheritance.dart:17-22](file://lib/src/animation/css_cascade_inheritance.dart#L17-L22)
+- [css_cascade_inheritance.dart:72-162](file://lib/src/animation/css_cascade_inheritance.dart#L72-L162)
+- [css_cascade_inheritance.dart:214-219](file://lib/src/animation/css_cascade_inheritance.dart#L214-L219)
 
 ## CSS Variables and Calculations
 
 ### CSS Custom Properties
 
-The system supports CSS custom properties (variables) with comprehensive resolution:
+The system supports CSS custom properties (variables) with comprehensive resolution through the cascade system:
 
 ```mermaid
 flowchart TD
@@ -276,10 +330,11 @@ E --> F[Fallback Value]
 G[Variable Definition] --> H[Inline Style]
 H --> I[CSS Rules]
 I --> J[Use Element]
+J --> K[Use Chain Resolution]
 ```
 
 **Diagram sources**
-- [css_variables_calc.dart:209-238](file://lib/src/animation/css_variables_calc.dart#L209-L238)
+- [css_cascade_inheritance.dart:271-322](file://lib/src/animation/css_cascade_inheritance.dart#L271-L322)
 
 ### calc() Expression Evaluation
 
@@ -295,27 +350,30 @@ Advanced mathematical expressions are supported including:
 
 ## Performance Optimizations
 
-### Rule Caching
+### Component-Based Caching
 
-The system implements intelligent caching to avoid repeated selector matching:
+The system implements intelligent caching through specialized components:
 
-- **Cache Key**: Combines tag name, ID, class names, and pseudo-class state
-- **Cache Scope**: Per-node caching with pseudo-class state awareness
-- **Cache Invalidation**: Automatic clearing when pseudo-class state changes
+- **Rule Cache**: Per-node caching with pseudo-class state awareness
+- **Selector Cache**: Component-specific caching for performance optimization
+- **Shadow Boundary Cache**: Efficient boundary detection and caching
+- **Circular Reference Prevention**: Automatic detection and prevention of use chain loops
 
 ### Selector Parsing Optimization
 
-- **Early Exit**: Complex selectors are parsed once and reused
+- **Early Exit**: Complex selectors are parsed once and reused across components
 - **State Tracking**: Pseudo-class state is tracked centrally to avoid redundant checks
-- **Memory Management**: Weak references and proper cleanup to prevent memory leaks
+- **Memory Management**: Component-specific memory management for optimal performance
+- **Shadow Boundary Optimization**: Efficient boundary detection without repeated DOM traversal
 
 **Section sources**
-- [css_cascade.dart:294-303](file://lib/src/animation/css_cascade.dart#L294-L303)
-- [css_cascade.dart:413-449](file://lib/src/animation/css_cascade.dart#L413-L449)
+- [css_cascade_resolution.dart:24-41](file://lib/src/animation/css_cascade_resolution.dart#L24-L41)
+- [css_cascade_selector_matching.dart:21-54](file://lib/src/animation/css_cascade_selector_matching.dart#L21-L54)
+- [css_cascade_inheritance.dart:47-48](file://lib/src/animation/css_cascade_inheritance.dart#L47-L48)
 
 ## Testing Framework
 
-The system includes comprehensive testing covering all aspects of CSS cascade behavior:
+The system includes comprehensive testing covering all aspects of CSS cascade behavior with enhanced test coverage for the modularized components:
 
 ### Test Categories
 
@@ -324,6 +382,7 @@ The system includes comprehensive testing covering all aspects of CSS cascade be
 | Specificity Tests | ID vs Class, Element vs Class | Validates specificity calculation accuracy |
 | Inheritance Tests | Property inheritance, shadow DOM boundaries | Ensures correct inheritance behavior |
 | Selector Tests | Complex selectors, pseudo-classes | Verifies selector matching accuracy |
+| Use Element Tests | Nested use chains, circular references | Tests complex inheritance scenarios |
 | Edge Cases | Empty selectors, multiple IDs, whitespace | Tests robustness and error handling |
 
 ### Key Test Scenarios
@@ -333,17 +392,20 @@ The test suite validates critical cascade behaviors:
 - **Specificity Comparison**: Proper handling of equal specificity with source order
 - **Inheritance Logic**: Correct inheritance for inheritable properties
 - **Shadow DOM**: Proper boundary handling for `<use>` and `<symbol>` elements
-- **!Important Handling**: Correct precedence rules for !important declarations
+- **!Important Handling**: Correct precedence rules for `!important` declarations
+- **Nested Use Chains**: Proper handling of complex nested use element scenarios
+- **Circular Reference Detection**: Prevention of infinite loops in use chains
 
 **Section sources**
 - [css_cascade_specificity_test.dart:1-583](file://test/animation/css_cascade_specificity_test.dart#L1-L583)
+- [use_css_cascade_test.dart:1-1181](file://test/animation/use_css_cascade_test.dart#L1-L1181)
 - [css_property_rendering_test.dart:267-293](file://test/animation/css_property_rendering_test.dart#L267-L293)
 
 ## Integration Points
 
 ### Widget Integration
 
-The CSS cascade system integrates seamlessly with Flutter widgets:
+The CSS cascade system integrates seamlessly with Flutter widgets through the specialized component architecture:
 
 ```mermaid
 classDiagram
@@ -356,6 +418,12 @@ class CssCascadeResolver {
 +resolveProperty(node, property) String?
 +resolveOwnProperty(node, property) String?
 +cssRules CssSelectorRule[]
++withShadowBoundary(boundaryId) CssCascadeResolver
+}
+class UseCascadeContext {
++resolvePropertyForUseContent(node, property) String?
++createChildContext(useNode, shadowRootId) UseCascadeContext
++hasCircularReference(targetId) bool
 }
 class SvgNode {
 +tagName String
@@ -367,19 +435,22 @@ class SvgNode {
 }
 SvgPicture --> CssCascadeResolver : uses
 CssCascadeResolver --> SvgNode : resolves
+UseCascadeContext --> SvgNode : inherits from
 ```
 
 **Diagram sources**
 - [svg.dart:57-627](file://lib/svg.dart#L57-L627)
-- [css_cascade.dart:288-406](file://lib/src/animation/css_cascade.dart#L288-L406)
+- [css_cascade.dart:227-259](file://lib/src/animation/css_cascade.dart#L227-L259)
+- [css_cascade_inheritance.dart:23-62](file://lib/src/animation/css_cascade_inheritance.dart#L23-L62)
 
 ### Animation Integration
 
-The cascade system works in conjunction with the animation framework:
+The cascade system works in conjunction with the animation framework through component specialization:
 
 - **Property Interpolation**: CSS values are properly interpolated during animations
 - **Inheritance Preservation**: Animated properties maintain inheritance relationships
 - **Performance Optimization**: Animation-aware caching for frequently changing properties
+- **Shadow DOM Animation**: Proper handling of animations through use element boundaries
 
 **Section sources**
 - [svg.dart:57-627](file://lib/svg.dart#L57-L627)
@@ -387,17 +458,18 @@ The cascade system works in conjunction with the animation framework:
 
 ## Conclusion
 
-The CSS Cascade System provides a robust, standards-compliant implementation of CSS resolution for SVG documents within Flutter applications. Its comprehensive feature set includes support for advanced selectors, inheritance through shadow DOM boundaries, CSS variables, and mathematical calculations.
+The CSS Cascade System provides a robust, standards-compliant implementation of CSS resolution for SVG documents within Flutter applications. The recent modularization into specialized components significantly enhances maintainability, performance, and functionality.
 
 The system's architecture emphasizes performance through intelligent caching, efficient selector parsing, and optimized memory usage. The extensive test coverage ensures reliability across complex CSS scenarios while maintaining compatibility with the broader Flutter ecosystem.
 
 Key strengths of the implementation include:
 - **Standards Compliance**: Full adherence to CSS cascade specification
-- **SVG-Specific Features**: Proper handling of SVG elements and `<use>` boundaries  
-- **Performance Optimization**: Intelligent caching and efficient selector matching
-- **Extensibility**: Modular design supporting future CSS features
-- **Robust Testing**: Comprehensive test suite covering edge cases
+- **SVG-Specific Features**: Proper handling of SVG elements and `<use>` boundaries with enhanced shadow DOM awareness
+- **Performance Optimization**: Component-based architecture with intelligent caching and efficient selector matching
+- **Extensibility**: Modular design supporting future CSS features and complex inheritance scenarios
+- **Robust Testing**: Comprehensive test suite covering edge cases and complex use element scenarios
+- **Nested Use Chain Support**: Advanced handling of complex nested use element chains with circular reference detection
 
-This system enables developers to create sophisticated SVG-based user interfaces with full CSS styling capabilities while maintaining optimal performance and reliability.
+This system enables developers to create sophisticated SVG-based user interfaces with full CSS styling capabilities while maintaining optimal performance and reliability. The modular architecture ensures that the system can evolve and adapt to new CSS features while maintaining backward compatibility and performance standards.
 
-**Updated** The system now features comprehensive CSS cascade and inheritance engine enhancements including complete specificity calculation, advanced inheritance rules, !important declaration support, CSS variable resolution, and selector parsing with shadow DOM integration, providing a fully standards-compliant solution for SVG CSS processing.
+**Updated** The system now features a completely modularized CSS cascade and inheritance engine with dedicated components for inheritance handling, selector matching with shadow DOM boundary awareness, specificity calculations, and cascade resolution, providing a fully standards-compliant and highly optimized solution for SVG CSS processing.

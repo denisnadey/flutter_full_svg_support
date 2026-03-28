@@ -15,6 +15,7 @@
 - [smil_test.dart](file://test/animation/smil_test.dart)
 - [smil_timeline.dart](file://lib/src/animation/smil/smil_timeline.dart)
 - [smil_timeline_runtime.dart](file://lib/src/animation/smil/smil_timeline_runtime.dart)
+- [smil_timeline_syncbase.dart](file://lib/src/animation/smil/smil_timeline_syncbase.dart)
 - [timing_parser.dart](file://lib/src/animation/smil/timing_parser.dart)
 - [timing_condition.dart](file://lib/src/animation/smil/timing_condition.dart)
 - [smil_animation.dart](file://lib/src/animation/smil/smil_animation.dart)
@@ -27,12 +28,13 @@
 
 ## Update Summary
 **Changes Made**
-- Enhanced SMIL animation runtime with discrete calcMode support for improved animation value computation
-- Implemented per-segment spline easing for motion animations with enhanced keySplines handling
-- Added comprehensive accumulate='sum' handling for motion animations with position accumulation
-- Enhanced rotate modes support including auto, auto-reverse, and fixed angle rotations
-- Improved distance calculation system for paced calcMode with specialized calculators
-- Enhanced motion path computation with per-segment spline application and discrete motion handling
+- Enhanced SMIL animation runtime with circular dependency detection, multi-pass timing resolution, and graceful error recovery mechanisms
+- Added _kMaxResolutionPasses constant and _ResolvedTiming class for tiebreaking scenarios
+- Implemented sophisticated dependency graph construction with forward reference support
+- Enhanced syncbase timing resolution with document order tiebreaking
+- Added comprehensive circular dependency detection using DFS with path tracking
+- Implemented multi-pass resolution algorithm with configurable pass limits
+- Added graceful error recovery for unresolved animations with fallback to indefinite timing
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -45,26 +47,31 @@
 8. [Per-Segment Spline Easing](#per-segment-spline-easing)
 9. [Enhanced Motion Animation Features](#enhanced-motion-animation-features)
 10. [Advanced Distance Calculation System](#advanced-distance-calculation-system)
-11. [Detailed Component Analysis](#detailed-component-analysis)
-12. [DOM Event Dispatching](#dom-event-dispatching)
-13. [Dependency Analysis](#dependency-analysis)
-14. [Performance Considerations](#performance-considerations)
-15. [Troubleshooting Guide](#troubleshooting-guide)
-16. [Conclusion](#conclusion)
+11. [Enhanced Timing Resolution System](#enhanced-timing-resolution-system)
+12. [Circular Dependency Detection](#circular-dependency-detection)
+13. [Multi-Pass Resolution Algorithm](#multi-pass-resolution-algorithm)
+14. [Graceful Error Recovery](#graceful-error-recovery)
+15. [Detailed Component Analysis](#detailed-component-analysis)
+16. [DOM Event Dispatching](#dom-event-dispatching)
+17. [Dependency Analysis](#dependency-analysis)
+18. [Performance Considerations](#performance-considerations)
+19. [Troubleshooting Guide](#troubleshooting-guide)
+20. [Conclusion](#conclusion)
 
 ## Introduction
-This document describes the significantly enhanced SMIL (Synchronized Multimedia Integration Language) animation runtime implemented in the Blink engine core and integrated with the Flutter SVG package. The runtime provides precise timing control, flexible begin/end conditions, repeat semantics, and **comprehensive DOM event dispatching capabilities** including beginEvent, endEvent, and repeatEvent triggering for external listeners and event-driven animations. It supports multiple animation elements (<animate>, <set>, <animateMotion>, <animateTransform>, <animateColor>) and integrates with the broader SVG rendering pipeline. The enhanced runtime now features advanced animation value computation for complex interpolations, improved timeline synchronization, sophisticated event model handling, and **specialized support for discrete calcMode, per-segment spline easing, accumulate='sum' for motion animations, and enhanced rotate modes**.
+This document describes the significantly enhanced SMIL (Synchronized Multimedia Integration Language) animation runtime implemented in the Blink engine core and integrated with the Flutter SVG package. The runtime provides precise timing control, flexible begin/end conditions, repeat semantics, and **comprehensive DOM event dispatching capabilities** including beginEvent, endEvent, and repeatEvent triggering for external listeners and event-driven animations. It supports multiple animation elements (<animate>, <set>, <animateMotion>, <animateTransform>, <animateColor>) and integrates with the broader SVG rendering pipeline. The enhanced runtime now features advanced animation value computation for complex interpolations, improved timeline synchronization, sophisticated event model handling, **specialized support for discrete calcMode, per-segment spline easing, accumulate='sum' for motion animations, enhanced rotate modes**, and **robust circular dependency detection with multi-pass timing resolution and graceful error recovery mechanisms**.
 
 ## Project Structure
-The SMIL animation runtime spans several core modules with enhanced event handling and advanced interpolation capabilities:
+The SMIL animation runtime spans several core modules with enhanced event handling, advanced interpolation capabilities, and sophisticated timing resolution:
 - Timing primitives and containers: SMILTime, SMILTimeContainer
 - Animation element base and concrete implementations: SVGSMILElement, SVGAnimationElement, SVGAnimateElement, SVGSetElement
-- **Enhanced timing system**: Event-based conditions, DOM event dispatching, external listener support
+- **Enhanced timing system**: Event-based conditions, DOM event dispatching, external listener support, circular dependency detection
 - **Advanced property animation infrastructure**: SVGAnimatedType, SVGAnimatedTypeAnimator, specific animators (e.g., SVGAnimatedNumberAnimator)
 - **Complex interpolation system**: Path morphing, transform interpolation, color interpolation, and advanced easing functions
 - **Enhanced motion animation system**: Per-segment spline easing, discrete calcMode support, accumulate='sum' handling, and improved rotate modes
 - **Advanced distance calculation system**: Specialized calculators for different attribute types supporting paced calcMode
-- **Test coverage**: Dart-based tests for interpolators, SMIL animation logic, event-driven scenarios, and edge cases
+- **Enhanced timing resolution system**: Multi-pass syncbase resolution with circular dependency detection and document order tiebreaking
+- **Test coverage**: Dart-based tests for interpolators, SMIL animation logic, event-driven scenarios, circular dependency handling, and edge cases
 
 ```mermaid
 graph TB
@@ -72,43 +79,56 @@ subgraph "Timing Layer"
 A["SMILTime<br/>Time values and operators"]
 B["SMILTimeContainer<br/>Scheduler and frame loop"]
 E["TimingParser<br/>DOM event parsing"]
+F["SvgTimeline<br/>Enhanced timing resolution"]
+G["_kMaxResolutionPasses<br/>Pass limit constant"]
+H["_ResolvedTiming<br/>Tiebreaking class"]
 end
 subgraph "Animation Elements"
 C["SVGSMILElement<br/>Base SMIL timing model"]
 D["SVGAnimationElement<br/>Shared animation attributes"]
-F["SVGAnimateElement<br/>Concrete property animators"]
-G["SVGSetElement<br/>Immediate value setter"]
+F1["SVGAnimateElement<br/>Concrete property animators"]
+F2["SVGSetElement<br/>Immediate value setter"]
 end
 subgraph "Event System"
-H["SvgTimeline<br/>Event-based timing"]
-I["_dispatchAnimationDOMEvent<br/>DOM event dispatching"]
-J["EventCondition<br/>External listener support"]
+I["SvgTimeline<br/>Event-based timing"]
+J["_dispatchAnimationDOMEvent<br/>DOM event dispatching"]
+K["EventCondition<br/>External listener support"]
 end
 subgraph "Property Types"
-K["SVGAnimatedType<br/>Typed animated values"]
-L["SVGAnimatedTypeAnimator<br/>Base animator interface"]
-M["SVGAnimatedNumberAnimator<br/>Number interpolation"]
+L["SVGAnimatedType<br/>Typed animated values"]
+M["SVGAnimatedTypeAnimator<br/>Base animator interface"]
+N["SVGAnimatedNumberAnimator<br/>Number interpolation"]
 end
 subgraph "Advanced Interpolation"
-N["Interpolators<br/>Multi-type interpolation"]
-O["CubicBezier<br/>Easing functions"]
-P["Path Morphing<br/>SVG path interpolation"]
-Q["DistanceCalculator<br/>Paced calcMode support"]
-R["MotionPath<br/>Enhanced path computation"]
+O["Interpolators<br/>Multi-type interpolation"]
+P["CubicBezier<br/>Easing functions"]
+Q["Path Morphing<br/>SVG path interpolation"]
+R["DistanceCalculator<br/>Paced calcMode support"]
+S["MotionPath<br/>Enhanced path computation"]
+end
+subgraph "Enhanced Timing Resolution"
+T["Circular Dependency Detection<br/>DFS with path tracking"]
+U["Multi-Pass Resolution<br/>Configurable pass limits"]
+V["Graceful Error Recovery<br/>Fallback to indefinite timing"]
+W["Document Order Tiebreaking<br/>Priority resolution"]
 end
 A --> B
 B --> C
 C --> D
-D --> F
-F --> K
-K --> L
+D --> F1
+F1 --> L
 L --> M
-E --> H
-H --> I
+M --> N
+E --> I
 I --> J
-N --> O
-N --> P
-Q --> R
+J --> K
+O --> P
+O --> Q
+R --> S
+F --> T
+F --> U
+F --> V
+F --> W
 ```
 
 **Diagram sources**
@@ -128,6 +148,8 @@ Q --> R
 - [smil_animation_value_computation.dart:80-100](file://lib/src/animation/smil/smil_animation_value_computation.dart#L80-L100)
 - [motion_path.dart:19-22](file://lib/src/animation/smil/motion_path.dart#L19-L22)
 - [distance_calculator.dart:8-14](file://lib/src/animation/smil/distance_calculator.dart#L8-L14)
+- [smil_timeline_syncbase.dart:3](file://lib/src/animation/smil/smil_timeline_syncbase.dart#L3-L4)
+- [smil_timeline_syncbase.dart:6](file://lib/src/animation/smil/smil_timeline_syncbase.dart#L6-L25)
 
 **Section sources**
 - [SMILTime.cpp:34-66](file://blink-b87d44f-Source-core-svg/animation/SMILTime.cpp#L34-L66)
@@ -149,11 +171,12 @@ Q --> R
 - SVGAnimationElement: Shared logic for animation attributes (values, keyTimes, keyPoints, keySplines, calcMode, from/to/by), and animation mode determination.
 - SVGAnimateElement: Concrete element that selects and drives property animators for specific attribute types (numbers, colors, transforms, etc.).
 - SVGSetElement: Specialization that sets target values immediately without interpolation.
-- **Enhanced Timing System**: Event-based conditions, DOM event parsing, external listener registration, and event-driven animation activation.
+- **Enhanced Timing System**: Event-based conditions, DOM event parsing, external listener registration, and event-driven animation activation with circular dependency detection.
 - **Advanced Property Animators**: Typed animators (e.g., SVGAnimatedNumberAnimator) compute interpolated values and handle additive composition.
 - **Complex Interpolation System**: Multi-type interpolators for numbers, colors, transforms, paths, and lists with advanced easing functions and path morphing capabilities.
 - **Enhanced Motion Animation System**: Specialized motion path computation with per-segment spline easing, discrete calcMode support, and accumulate='sum' handling.
 - **Advanced Distance Calculation System**: Specialized calculators for different attribute types (numeric, color, length, path, transform) supporting paced calcMode.
+- **Enhanced Timing Resolution System**: Multi-pass syncbase resolution with circular dependency detection, document order tiebreaking, and graceful error recovery.
 
 **Section sources**
 - [SMILTime.h:34-55](file://blink-b87d44f-Source-core-svg/animation/SMILTime.h#L34-L55)
@@ -169,7 +192,7 @@ Q --> R
 - [timing_condition.dart:126-161](file://lib/src/animation/smil/timing_condition.dart#L126-L161)
 
 ## Architecture Overview
-The runtime follows a layered design with enhanced event-driven capabilities and advanced interpolation systems:
+The runtime follows a layered design with enhanced event-driven capabilities, advanced interpolation systems, and sophisticated timing resolution:
 - Timing layer: SMILTime and SMILTimeContainer manage absolute/relative time and scheduling.
 - Element layer: SVGSMILElement encapsulates SMIL timing semantics and interval resolution.
 - Property layer: SVGAnimationElement and SVGAnimateElement coordinate typed animated values and animators.
@@ -177,6 +200,7 @@ The runtime follows a layered design with enhanced event-driven capabilities and
 - **Interpolation layer**: Advanced interpolators handle complex value transformations including path morphing and transform interpolation.
 - **Motion animation layer**: Enhanced motion path computation with per-segment spline easing and discrete calcMode support.
 - **Distance calculation layer**: Specialized calculators for paced calcMode supporting different attribute types.
+- **Enhanced timing resolution layer**: Multi-pass syncbase resolution with circular dependency detection and graceful error recovery.
 - Application layer: Flutter integration consumes SMIL timing and applies computed values to render nodes.
 
 ```mermaid
@@ -186,6 +210,8 @@ participant Scheduler as "SMILTimeContainer"
 participant Element as "SVGSMILElement"
 participant Animator as "SVGAnimateElement"
 participant Timeline as "SvgTimeline"
+participant Resolver as "_resolveTimingConditionsImpl"
+participant CircularDetect as "detectCircularDependencies"
 participant DOM as "DOM Event System"
 participant Interpolator as "Interpolators"
 participant MotionPath as "MotionPath"
@@ -198,6 +224,11 @@ Element->>Element : resolve intervals and restart/fill
 Element->>Timeline : _dispatchAnimationDOMEvent(endEvent)
 Timeline->>DOM : dispatch beginEvent/endEvent
 DOM->>Timeline : triggerEvent listeners
+Timeline->>Element : activate dependent animations
+Resolver->>CircularDetect : detectCircularDependencies()
+CircularDetect->>Resolver : circularDependencies detected
+Resolver->>Resolver : multi-pass resolution with _kMaxResolutionPasses
+Resolver->>Timeline : setResolvedBeginTimes
 Timeline->>Element : activate dependent animations
 Element->>Interpolator : compute interpolated values
 Element->>MotionPath : enhanced motion computation
@@ -215,6 +246,8 @@ Scheduler->>Timer : startTimer(nextFireTime)
 - [SVGAnimateElement.cpp:96-137](file://blink-b87d44f-Source-core-svg/SVGAnimateElement.cpp#L96-L137)
 - [smil_timeline_runtime.dart:41-69](file://lib/src/animation/smil/smil_timeline_runtime.dart#L41-L69)
 - [smil_timeline.dart:128-158](file://lib/src/animation/smil/smil_timeline.dart#L128-L158)
+- [smil_timeline_syncbase.dart:206](file://lib/src/animation/smil/smil_timeline_syncbase.dart#L206-L253)
+- [smil_timeline_syncbase.dart:341](file://lib/src/animation/smil/smil_timeline_syncbase.dart#L341-L390)
 
 ## Enhanced Event System
 The enhanced SMIL animation runtime now includes comprehensive DOM event dispatching capabilities:
@@ -399,6 +432,194 @@ GenerateKeyTimes --> ApplyToAnimation["Apply keyTimes to animation"]
 **Section sources**
 - [distance_calculator.dart:10-236](file://lib/src/animation/smil/distance_calculator.dart#L10-L236)
 - [smil_animation.dart:141-186](file://lib/src/animation/smil/smil_animation.dart#L141-L186)
+
+## Enhanced Timing Resolution System
+The runtime now features a sophisticated timing resolution system with multi-pass resolution and circular dependency detection:
+
+### Multi-Pass Syncbase Resolution
+- **Iterative Resolution**: Animations are resolved through multiple passes until stable or maximum passes reached
+- **Progress Tracking**: Monitors resolution progress to prevent infinite loops
+- **Pass Limit Enforcement**: Configurable maximum passes via _kMaxResolutionPasses constant
+- **Stability Detection**: Continues resolution until no more animations can be resolved
+
+### Document Order Tiebreaking
+- **Priority Resolution**: Uses document order as tiebreaker for simultaneous begin times
+- **Sandwich Model Compliance**: Higher document order indices have higher priority per SMIL spec
+- **Deterministic Ordering**: Ensures consistent behavior across different execution contexts
+
+### Dependency Graph Construction
+- **Forward Reference Support**: Handles animations that reference later-defined animations
+- **Chain Dependency Resolution**: Supports multi-level dependency chains (A -> B -> C)
+- **Event-Based Animation Initialization**: Sets event-only animations to "indefinite" state
+- **Syncbase Condition Processing**: Extracts and processes syncbase timing conditions
+
+```mermaid
+flowchart TD
+Start(["Initialize SvgTimeline"]) --> BuildGraph["Build dependency graph"]
+BuildGraph --> DetectCircles["Detect circular dependencies"]
+DetectCircles --> MultiPass["Multi-pass resolution loop"]
+MultiPass --> CheckProgress{"Made progress?"}
+CheckProgress --> |"Yes"| ResolveNext["Resolve next animation"]
+CheckProgress --> |"No"| CheckPasses{"Pass count < _kMaxResolutionPasses?"}
+CheckPasses --> |"Yes"| MultiPass
+CheckPasses --> |"No"| HandleUnresolved["Handle unresolved animations"]
+ResolveNext --> CheckProgress
+HandleUnresolved --> SetInfinite["Set unresolved to infinite"]
+SetInfinite --> ApplyResolved["Apply resolved begin times"]
+ApplyResolved --> End(["Timeline ready"])
+```
+
+**Diagram sources**
+- [smil_timeline_syncbase.dart:206](file://lib/src/animation/smil/smil_timeline_syncbase.dart#L206-L253)
+- [smil_timeline_syncbase.dart:351](file://lib/src/animation/smil/smil_timeline_syncbase.dart#L351-L371)
+- [smil_timeline_syncbase.dart:373](file://lib/src/animation/smil/smil_timeline_syncbase.dart#L373-L390)
+
+**Section sources**
+- [smil_timeline_syncbase.dart:3](file://lib/src/animation/smil/smil_timeline_syncbase.dart#L3-L4)
+- [smil_timeline_syncbase.dart:6](file://lib/src/animation/smil/smil_timeline_syncbase.dart#L6-L25)
+- [smil_timeline_syncbase.dart:206](file://lib/src/animation/smil/smil_timeline_syncbase.dart#L206-L253)
+- [smil_timeline_syncbase.dart:351](file://lib/src/animation/smil/smil_timeline_syncbase.dart#L351-L371)
+- [smil_timeline_syncbase.dart:373](file://lib/src/animation/smil/smil_timeline_syncbase.dart#L373-L390)
+
+## Circular Dependency Detection
+The runtime implements sophisticated circular dependency detection using depth-first search (DFS) with path tracking:
+
+### DFS-Based Detection Algorithm
+- **Path Tracking**: Maintains stack of currently visiting nodes to detect cycles
+- **Visited Set**: Tracks nodes already processed to avoid redundant work
+- **Cycle Identification**: Marks nodes in detected cycles for graceful breaking
+- **Recursive Traversal**: Recursively explores all syncbase dependencies
+
+### Graceful Cycle Breaking
+- **Fallback Begin Times**: Uses simple begin times instead of resolved syncbase times for circular dependencies
+- **Partial Resolution**: Allows other animations to resolve while breaking problematic cycles
+- **Minimal Impact**: Prevents cascading failures while maintaining system stability
+- **Debug Information**: Logs detection and breaking of circular dependencies
+
+### Implementation Details
+- **Detection Phase**: Single DFS traversal to identify all circular dependency chains
+- **Resolution Phase**: Multi-pass algorithm continues despite detected cycles
+- **Tiebreaking Integration**: Circular dependency status participates in document order tiebreaking
+- **Performance Optimization**: Early termination when cycles are detected
+
+```mermaid
+flowchart TD
+Start(["detectCircularDependencies"]) --> Init["Initialize visited & inStack sets"]
+Init --> DFSLoop["For each animation: dfs(anim)"]
+DFSLoop --> CheckVisited{"visited.contains(anim)?"}
+CheckVisited --> |"Yes"| Return["Return (already processed)"]
+CheckVisited --> |"No"| CheckInStack{"inStack.contains(anim)?"}
+CheckInStack --> |"Yes"| MarkCircle["Add to circularDependencies"]
+CheckInStack --> |"No"| MarkVisited["Add to visited & inStack"]
+MarkVisited --> ExploreDeps["Explore syncbase dependencies"]
+ExploreDeps --> PopStack["Remove from inStack"]
+PopStack --> Return
+MarkCircle --> PopStack
+```
+
+**Diagram sources**
+- [smil_timeline_syncbase.dart:220](file://lib/src/animation/smil/smil_timeline_syncbase.dart#L220-L253)
+
+**Section sources**
+- [smil_timeline_syncbase.dart:220](file://lib/src/animation/smil/smil_timeline_syncbase.dart#L220-L253)
+- [smil_timeline_syncbase.dart:341](file://lib/src/animation/smil/smil_timeline_syncbase.dart#L341-L349)
+
+## Multi-Pass Resolution Algorithm
+The runtime implements a sophisticated multi-pass resolution algorithm designed to handle complex timing dependencies:
+
+### Pass Management
+- **Progress Monitoring**: Tracks whether any animations were successfully resolved in each pass
+- **Pass Limit Enforcement**: Prevents infinite loops with configurable _kMaxResolutionPasses (default: 10)
+- **Early Termination**: Stops when no more progress can be made or maximum passes reached
+- **Stable State Detection**: Continues until resolution reaches a stable state
+
+### Resolution Strategy
+- **Resolvability Check**: Determines if an animation's conditions can be resolved
+- **Event-Only Handling**: Treats animations with only event conditions as indefinitely delayed
+- **Offset Conditions**: Always resolvable offset conditions bypass dependency checks
+- **Syncbase Resolution**: Uses resolved begin times when available, fallback begin times otherwise
+
+### Tiebreaking Mechanism
+- **ResolvedTiming Class**: Encapsulates resolved times with document order metadata
+- **Comparison Logic**: Earlier times win, document order as tiebreaker
+- **Document Order Priority**: Lower document order numbers have higher priority
+- **Consistent Ordering**: Ensures deterministic behavior for simultaneous events
+
+```mermaid
+flowchart TD
+Start(["_resolveTimingConditionsImpl"]) --> DetectCircles["detectCircularDependencies()"]
+DetectCircles --> InitVars["Initialize fullyResolved & circularDependencies"]
+InitVars --> LoopPasses["while madeProgress && passCount < _kMaxResolutionPasses"]
+LoopPasses --> CheckAnim["for each animation"]
+CheckAnim --> CheckResolved{"fullyResolved.contains(anim)?"}
+CheckResolved --> |"Yes"| NextAnim["continue"]
+CheckResolved --> |"No"| CheckCanResolve{"canResolve(anim)?"}
+CheckCanResolve --> |"No"| NextAnim
+CheckCanResolve --> |"Yes"| ResolveTime["resolveBeginTime(anim)"]
+ResolveTime --> CheckTime{"resolvedTime != null?"}
+CheckTime --> |"No"| NextAnim
+CheckTime --> |"Yes"| SetResolved["timeline._resolvedBeginTimes[anim] = resolvedTime"]
+SetResolved --> AddFully["fullyResolved.add(anim)"]
+AddFully --> SetProgress["madeProgress = true"]
+SetProgress --> NextAnim
+NextAnim --> CheckLoop{"passCount < _kMaxResolutionPasses?"}
+CheckLoop --> |"Yes"| LoopPasses
+CheckLoop --> |"No"| HandleUnresolved["Handle unresolved animations"]
+HandleUnresolved --> SetInfinite["Set unresolved to _kTimelineInfinity"]
+SetInfinite --> ApplyResolved["Apply resolved times to animations"]
+ApplyResolved --> End(["Resolution complete"])
+```
+
+**Diagram sources**
+- [smil_timeline_syncbase.dart:351](file://lib/src/animation/smil/smil_timeline_syncbase.dart#L351-L371)
+- [smil_timeline_syncbase.dart:373](file://lib/src/animation/smil/smil_timeline_syncbase.dart#L373-L390)
+- [smil_timeline_syncbase.dart:293](file://lib/src/animation/smil/smil_timeline_syncbase.dart#L293-L339)
+
+**Section sources**
+- [smil_timeline_syncbase.dart:351](file://lib/src/animation/smil/smil_timeline_syncbase.dart#L351-L371)
+- [smil_timeline_syncbase.dart:373](file://lib/src/animation/smil/smil_timeline_syncbase.dart#L373-L390)
+- [smil_timeline_syncbase.dart:293](file://lib/src/animation/smil/smil_timeline_syncbase.dart#L293-L339)
+
+## Graceful Error Recovery
+The runtime implements comprehensive error recovery mechanisms to ensure system stability:
+
+### Unresolved Animation Handling
+- **Graceful Degradation**: Treats unresolved animations as indefinitely delayed
+- **Infinite Timing**: Sets unresolved begin times to _kTimelineInfinity constant
+- **Progress Continuation**: Allows other animations to continue resolving despite failures
+- **Debug Logging**: Provides informative debug messages about unresolved animations
+
+### Fallback Strategies
+- **Simple Begin Fallback**: Uses animation's simple begin time when syncbase resolution fails
+- **Circular Dependency Break**: Uses fallback begin times for animations in circular dependencies
+- **Event-Based Fallback**: Treats event-only animations as indefinitely delayed
+- **Partial Success**: Allows partial success when some animations cannot be resolved
+
+### System Stability Measures
+- **Pass Limit Protection**: Prevents infinite loops with configurable maximum passes
+- **Early Termination**: Stops resolution when no more progress can be made
+- **Memory Management**: Cleans up temporary data structures after resolution
+- **State Consistency**: Maintains consistent internal state throughout resolution process
+
+```mermaid
+flowchart TD
+Start(["Handle unresolved animations"]) --> CheckUnresolved{"unresolved.isNotEmpty?"}
+CheckUnresolved --> |"No"| ApplyResolved["Apply resolved times to animations"]
+CheckUnresolved --> |"Yes"| LogMessage["Log debug message about unresolved"]
+LogMessage --> SetInfinite["timeline._resolvedBeginTimes[anim] = _kTimelineInfinity"]
+SetInfinite --> AddFully["fullyResolved.add(anim)"]
+AddFully --> CheckMore{"More unresolved?"}
+CheckMore --> |"Yes"| SetInfinite
+CheckMore --> |"No"| ApplyResolved
+ApplyResolved --> End(["Resolution complete"])
+```
+
+**Diagram sources**
+- [smil_timeline_syncbase.dart:373](file://lib/src/animation/smil/smil_timeline_syncbase.dart#L373-L390)
+
+**Section sources**
+- [smil_timeline_syncbase.dart:373](file://lib/src/animation/smil/smil_timeline_syncbase.dart#L373-L390)
+- [smil_timeline_syncbase.dart:378](file://lib/src/animation/smil/smil_timeline_syncbase.dart#L378-L389)
 
 ## Detailed Component Analysis
 
@@ -685,7 +906,7 @@ ActivateRepeat --> Update
 - [timing_condition.dart:126-161](file://lib/src/animation/smil/timing_condition.dart#L126-L161)
 
 ## Dependency Analysis
-The following diagram shows key dependencies among core components with enhanced event handling and advanced interpolation:
+The following diagram shows key dependencies among core components with enhanced event handling, advanced interpolation, and sophisticated timing resolution:
 
 ```mermaid
 graph LR
@@ -709,6 +930,9 @@ DistanceCalculator --> ColorDistance["ColorDistanceCalculator"]
 DistanceCalculator --> LengthDistance["LengthDistanceCalculator"]
 DistanceCalculator --> PathDistance["PathDistanceCalculator"]
 DistanceCalculator --> TransformDistance["TransformDistanceCalculator"]
+SvgTimeline --> CircularDependencyDetector["_kMaxResolutionPasses<br/>_ResolvedTiming"]
+SvgTimeline --> MultiPassResolver["Multi-pass resolution algorithm"]
+SvgTimeline --> ErrorRecovery["Graceful error recovery"]
 ```
 
 **Diagram sources**
@@ -725,6 +949,8 @@ DistanceCalculator --> TransformDistance["TransformDistanceCalculator"]
 - [smil_animation_curves.dart:24-44](file://lib/src/animation/smil/smil_animation_curves.dart#L24-L44)
 - [motion_path.dart:19-22](file://lib/src/animation/smil/motion_path.dart#L19-L22)
 - [distance_calculator.dart:207-236](file://lib/src/animation/smil/distance_calculator.dart#L207-236)
+- [smil_timeline_syncbase.dart:3](file://lib/src/animation/smil/smil_timeline_syncbase.dart#L3-L4)
+- [smil_timeline_syncbase.dart:6](file://lib/src/animation/smil/smil_timeline_syncbase.dart#L6-L25)
 
 **Section sources**
 - [SMILTimeContainer.h:45-98](file://blink-b87d44f-Source-core-svg/animation/SMILTimeContainer.h#L45-L98)
@@ -748,6 +974,9 @@ DistanceCalculator --> TransformDistance["TransformDistanceCalculator"]
 - **Distance calculation optimization**: Specialized calculators avoid expensive geometric computations when possible.
 - **Motion path caching**: MotionPath instances can be cached for repeated use in motion animations.
 - **Per-segment spline optimization**: Local time calculations are performed efficiently for segment-based easing.
+- **Circular dependency detection**: DFS algorithm runs in O(V+E) time complexity for dependency graph traversal.
+- **Multi-pass resolution**: Configurable pass limits prevent excessive computational overhead while ensuring convergence.
+- **Graceful error recovery**: Fallback mechanisms ensure system stability without impacting performance of working animations.
 
 ## Troubleshooting Guide
 Common issues and diagnostics:
@@ -763,6 +992,9 @@ Common issues and diagnostics:
 - **Per-segment spline problems**: Ensure that keySplines array length equals values.length - 1 for proper segment-based easing.
 - **Accumulate='sum' behavior**: Remember that accumulate adds final values from completed repeats, not ongoing progress.
 - **Rotate mode issues**: Verify that rotate modes are properly formatted (auto, auto-reverse, or numeric degrees).
+- **Circular dependency issues**: Complex dependency chains may require multiple passes to resolve; check for circular references in syncbase conditions.
+- **Multi-pass resolution problems**: Animations with unresolved dependencies may require additional passes; verify _kMaxResolutionPasses configuration.
+- **Timing resolution failures**: Graceful error recovery treats unresolved animations as indefinitely delayed; check for missing referenced animations.
 
 **Section sources**
 - [SVGSMILElement.cpp:141-146](file://blink-b87d44f-Source-core-svg/animation/SVGSMILElement.cpp#L141-L146)
@@ -772,6 +1004,8 @@ Common issues and diagnostics:
 - [SMILTimeContainer.cpp:171-207](file://blink-b87d44f-Source-core-svg/animation/SMILTimeContainer.cpp#L171-L207)
 - [smil_timeline_runtime.dart:41-69](file://lib/src/animation/smil/smil_timeline_runtime.dart#L41-L69)
 - [timing_parser.dart:96-147](file://lib/src/animation/smil/timing_parser.dart#L96-L147)
+- [smil_timeline_syncbase.dart:341](file://lib/src/animation/smil/smil_timeline_syncbase.dart#L341-L349)
+- [smil_timeline_syncbase.dart:378](file://lib/src/animation/smil/smil_timeline_syncbase.dart#L378-L389)
 
 ## Conclusion
-The significantly enhanced SMIL animation runtime delivers robust timing semantics, flexible begin/end conditions, and **comprehensive DOM event dispatching capabilities** including beginEvent, endEvent, and repeatEvent triggering for external listeners and event-driven animations. Its modular design enables extensibility for new animation elements and property types while maintaining high performance through coalesced updates, priority sorting, and cached computations. The enhanced event system allows for sophisticated animation choreography and external listener integration, making it suitable for complex interactive SVG applications. The advanced interpolation system provides sophisticated value computation for complex animations including path morphing, transform interpolation, and multi-type easing functions. **The runtime now features specialized support for discrete calcMode with waypoint jumping, per-segment spline easing for motion animations, accumulate='sum' handling for motion animations, and enhanced rotate modes (auto, auto-reverse, fixed angle)**. Integration with Flutter's SVG package allows precise control over animated attributes and seamless rendering updates with full support for DOM event-driven animation workflows and sophisticated animation sandwich model priority resolution.
+The significantly enhanced SMIL animation runtime delivers robust timing semantics, flexible begin/end conditions, and **comprehensive DOM event dispatching capabilities** including beginEvent, endEvent, and repeatEvent triggering for external listeners and event-driven animations. Its modular design enables extensibility for new animation elements and property types while maintaining high performance through coalesced updates, priority sorting, and cached computations. The enhanced event system allows for sophisticated animation choreography and external listener integration, making it suitable for complex interactive SVG applications. The advanced interpolation system provides sophisticated value computation for complex animations including path morphing, transform interpolation, and multi-type easing functions. **The runtime now features specialized support for discrete calcMode with waypoint jumping, per-segment spline easing for motion animations, accumulate='sum' handling for motion animations, and enhanced rotate modes (auto, auto-reverse, fixed angle)**. **Most significantly, the runtime now includes robust circular dependency detection using DFS with path tracking, multi-pass timing resolution with configurable pass limits via _kMaxResolutionPasses constant, and graceful error recovery mechanisms that treat unresolved animations as indefinitely delayed**. Integration with Flutter's SVG package allows precise control over animated attributes and seamless rendering updates with full support for DOM event-driven animation workflows, sophisticated animation sandwich model priority resolution, and comprehensive timing resolution with document order tiebreaking for simultaneous events.

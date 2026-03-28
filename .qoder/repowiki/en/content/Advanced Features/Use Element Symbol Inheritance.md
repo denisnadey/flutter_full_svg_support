@@ -15,16 +15,21 @@
 - [svg_parser_elements.dart](file://lib/src/animation/svg_parser_elements.dart)
 - [animated_svg_painter.dart](file://lib/src/animation/animated_svg_painter.dart)
 - [smil_parser.dart](file://lib/src/animation/smil/smil_parser.dart)
+- [animated_svg_painter_use_constants.dart](file://lib/src/animation/animated_svg_painter_use_constants.dart)
+- [animated_svg_painter_use_context.dart](file://lib/src/animation/animated_svg_painter_use_context.dart)
+- [animated_svg_painter_use_foreign_object.dart](file://lib/src/animation/animated_svg_painter_use_foreign_object.dart)
+- [css_cascade_specificity.dart](file://lib/src/animation/css_cascade_specificity.dart)
+- [css_cascade_selector_matching.dart](file://lib/src/animation/css_cascade_selector_matching.dart)
+- [css_cascade_resolution.dart](file://lib/src/animation/css_cascade_resolution.dart)
 </cite>
 
 ## Update Summary
 **Changes Made**
-- Enhanced use element symbol inheritance with advanced symbol resolution capabilities
-- Improved inheritance chain handling with comprehensive CSS property inheritance tracking
-- Added comprehensive symbol animation support including coordinate inheritance and transform composition
-- Expanded CSS cascade system with advanced specificity calculations and shadow DOM boundary respect
-- Enhanced CSS custom properties support with use context inheritance and variable resolution
-- Improved hit testing with use context inheritance for pointer-events and animation coordinate handling
+- Enhanced use element system with new specialized modules for constants, context management, and foreign object handling
+- Improved CSS cascade resolution with better !important declaration handling in use contexts
+- Enhanced selector matching with comprehensive shadow DOM boundary awareness
+- Expanded CSS variable resolution system with proper inheritance tracking through use boundaries
+- Added comprehensive foreign object viewport handling within use contexts
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -37,10 +42,11 @@
 8. [Comprehensive Symbol Animation Support](#comprehensive-symbol-animation-support)
 9. [CSS Custom Properties Through Use Boundaries](#css-custom-properties-through-use-boundaries)
 10. [Advanced Symbol Resolution](#advanced-symbol-resolution)
-11. [Dependency Analysis](#dependency-analysis)
-12. [Performance Considerations](#performance-considerations)
-13. [Troubleshooting Guide](#troubleshooting-guide)
-14. [Conclusion](#conclusion)
+11. [Specialized Module Enhancements](#specialized-module-enhancements)
+12. [Dependency Analysis](#dependency-analysis)
+13. [Performance Considerations](#performance-considerations)
+14. [Troubleshooting Guide](#troubleshooting-guide)
+15. [Conclusion](#conclusion)
 
 ## Introduction
 This document explains how the Flutter SVG library implements enhanced element symbol inheritance through the `<use>` element and `<symbol>` references with comprehensive animation support. The system now provides advanced symbol resolution, improved inheritance chain handling, and comprehensive symbol animation support that flows through use boundaries. It covers the parsing pipeline, rendering behavior, attribute propagation rules, CSS property inheritance, viewport transformations, recursion limits, animation coordinate inheritance, and hit-testing mechanics with enhanced CSS cascade behavior including class rules, ID rules, element type rules, specificity calculations, and inheritance patterns.
@@ -65,11 +71,17 @@ end
 subgraph "CSS System"
 C1["css_cascade.dart"]
 C2["css_variables_calc.dart"]
+C3["css_cascade_specificity.dart"]
+C4["css_cascade_selector_matching.dart"]
+C5["css_cascade_resolution.dart"]
 end
 subgraph "Animation System"
 A1["smil_parser.dart"]
 A2["animated_svg_painter_use.dart"]
 A3["animated_svg_painter_tree.dart"]
+A4["animated_svg_painter_use_constants.dart"]
+A5["animated_svg_painter_use_context.dart"]
+A6["animated_svg_painter_use_foreign_object.dart"]
 end
 subgraph "Parser"
 P1["svg_parser.dart"]
@@ -88,6 +100,9 @@ C2 --> R1
 A1 --> R1
 A2 --> R1
 A3 --> R1
+A4 --> R1
+A5 --> R1
+A6 --> R1
 P1 --> D1
 P2 --> D1
 D1 --> R1
@@ -98,8 +113,8 @@ R1 --> H1
 - [use_symbol_inheritance_test.dart:1-1202](file://test/animation/use_symbol_inheritance_test.dart#L1-L1202)
 - [symbol_animation_test.dart:1-74](file://test/animation/symbol_animation_test.dart#L1-L74)
 - [use_symbol_advanced_test.dart:1-872](file://test/animation/use_symbol_advanced_test.dart#L1-L872)
-- [css_cascade.dart:1-954](file://lib/src/animation/css_cascade.dart#L1-L954)
-- [css_variables_calc.dart:1-912](file://lib/src/animation/css_variables_calc.dart#L1-L912)
+- [css_cascade.dart:1-267](file://lib/src/animation/css_cascade.dart#L1-L267)
+- [css_variables_calc.dart:1-1080](file://lib/src/animation/css_variables_calc.dart#L1-L1080)
 - [smil_parser.dart:1-43](file://lib/src/animation/smil/smil_parser.dart#L1-L43)
 - [animated_svg_painter_use.dart:1-809](file://lib/src/animation/animated_svg_painter_use.dart#L1-L809)
 - [svg_parser.dart:27-65](file://lib/src/animation/svg_parser.dart#L27-L65)
@@ -107,13 +122,19 @@ R1 --> H1
 - [svg_dom.dart:123-332](file://lib/src/animation/svg_dom.dart#L123-L332)
 - [animated_svg_painter.dart:48-136](file://lib/src/animation/animated_svg_painter.dart#L48-L136)
 - [animated_svg_picture_hit_test_use.dart:1-339](file://lib/src/animation/animated_svg_picture_hit_test_use.dart#L1-L339)
+- [animated_svg_painter_use_constants.dart:1-101](file://lib/src/animation/animated_svg_painter_use_constants.dart#L1-L101)
+- [animated_svg_painter_use_context.dart:1-415](file://lib/src/animation/animated_svg_painter_use_context.dart#L1-L415)
+- [animated_svg_painter_use_foreign_object.dart:1-127](file://lib/src/animation/animated_svg_painter_use_foreign_object.dart#L1-L127)
+- [css_cascade_specificity.dart:1-74](file://lib/src/animation/css_cascade_specificity.dart#L1-L74)
+- [css_cascade_selector_matching.dart:1-487](file://lib/src/animation/css_cascade_selector_matching.dart#L1-L487)
+- [css_cascade_resolution.dart:1-140](file://lib/src/animation/css_cascade_resolution.dart#L1-L140)
 
 **Section sources**
 - [use_symbol_inheritance_test.dart:1-1202](file://test/animation/use_symbol_inheritance_test.dart#L1-L1202)
 - [symbol_animation_test.dart:1-74](file://test/animation/symbol_animation_test.dart#L1-L74)
 - [use_symbol_advanced_test.dart:1-872](file://test/animation/use_symbol_advanced_test.dart#L1-L872)
-- [css_cascade.dart:1-954](file://lib/src/animation/css_cascade.dart#L1-L954)
-- [css_variables_calc.dart:1-912](file://lib/src/animation/css_variables_calc.dart#L1-L912)
+- [css_cascade.dart:1-267](file://lib/src/animation/css_cascade.dart#L1-L267)
+- [css_variables_calc.dart:1-1080](file://lib/src/animation/css_variables_calc.dart#L1-L1080)
 - [animated_svg_painter_use.dart:1-809](file://lib/src/animation/animated_svg_painter_use.dart#L1-L809)
 - [smil_parser.dart:1-43](file://lib/src/animation/smil/smil_parser.dart#L1-L43)
 
@@ -445,7 +466,7 @@ Custom properties (CSS variables) flow through use boundaries with:
 - Integration with SMIL animation system for variable-based animations
 
 **Section sources**
-- [css_cascade.dart:18-954](file://lib/src/animation/css_cascade.dart#L18-L954)
+- [css_cascade.dart:18-267](file://lib/src/animation/css_cascade.dart#L18-L267)
 - [css_variables_calc.dart:101-173](file://lib/src/animation/css_variables_calc.dart#L101-L173)
 
 ## Use Element Inheritance Context
@@ -480,7 +501,7 @@ The system resolves CSS rules for referenced elements with comprehensive animati
 - Parent element inherited values for non-inherited properties with animation context
 
 **Section sources**
-- [animated_svg_painter_use.dart:107-243](file://lib/src/animation/animated_svg_painter_use.dart#L107-L243)
+- [animated_svg_painter_use_context.dart:33-415](file://lib/src/animation/animated_svg_painter_use_context.dart#L33-L415)
 - [animated_svg_painter_tree.dart:27-226](file://lib/src/animation/animated_svg_painter_tree.dart#L27-L226)
 
 ## Comprehensive Symbol Animation Support
@@ -564,8 +585,37 @@ The system prevents ID namespace collisions in symbol references:
 - Animation references within symbols use proper coordinate context
 
 **Section sources**
-- [animated_svg_painter_use.dart:343-348](file://lib/src/animation/animated_svg_painter_use.dart#L343-L348)
+- [animated_svg_painter_use_context.dart:331-335](file://lib/src/animation/animated_svg_painter_use_context.dart#L331-L335)
 - [use_symbol_advanced_test.dart:527-644](file://test/animation/use_symbol_advanced_test.dart#L527-L644)
+
+## Specialized Module Enhancements
+
+### Use Constants Module
+The new `animated_svg_painter_use_constants.dart` module centralizes constant definitions for use element handling:
+- Maximum recursion depth constants matching Blink implementation
+- Comprehensive inheritable property sets for CSS and foreign object handling
+- Global CSS rule storage for document-wide styling
+- Foreign object inheritable property definitions
+
+### Use Context Module
+The `animated_svg_painter_use_context.dart` module provides enhanced context management:
+- Complete CSS cascade resolution with !important handling in use contexts
+- Shadow boundary-aware property resolution
+- Transform composition for nested use elements
+- Scoped ID generation for symbol instance isolation
+- Animation coordinate inheritance support
+
+### Foreign Object Handling Module
+The `animated_svg_painter_use_foreign_object.dart` module extends foreign object support:
+- Foreign object viewport application with clipping and overflow handling
+- Nested SVG viewport transforms within foreign objects
+- Foreign object required extensions validation
+- Proper coordinate system management for mixed content
+
+**Section sources**
+- [animated_svg_painter_use_constants.dart:1-101](file://lib/src/animation/animated_svg_painter_use_constants.dart#L1-L101)
+- [animated_svg_painter_use_context.dart:1-415](file://lib/src/animation/animated_svg_painter_use_context.dart#L1-L415)
+- [animated_svg_painter_use_foreign_object.dart:1-127](file://lib/src/animation/animated_svg_painter_use_foreign_object.dart#L1-L127)
 
 ## Dependency Analysis
 - Tests depend on the parser, CSS cascade system, SMIL animation parser, and animation pipeline to validate rendering behavior and comprehensive animation scenarios.
@@ -587,14 +637,17 @@ CSS --> Painter["animated_svg_painter.dart"]
 Painter --> UseExt["animated_svg_painter_use.dart"]
 Painter --> TreeExt["animated_svg_painter_tree.dart"]
 Painter --> HitExt["animated_svg_picture_hit_test_use.dart"]
+Painter --> UseConst["animated_svg_painter_use_constants.dart"]
+Painter --> UseCtx["animated_svg_painter_use_context.dart"]
+Painter --> FOExt["animated_svg_painter_use_foreign_object.dart"]
 ```
 
 **Diagram sources**
 - [use_symbol_inheritance_test.dart:1-1202](file://test/animation/use_symbol_inheritance_test.dart#L1-L1202)
 - [symbol_animation_test.dart:1-74](file://test/animation/symbol_animation_test.dart#L1-L74)
 - [use_symbol_advanced_test.dart:1-872](file://test/animation/use_symbol_advanced_test.dart#L1-L872)
-- [css_cascade.dart:1-954](file://lib/src/animation/css_cascade.dart#L1-L954)
-- [css_variables_calc.dart:1-912](file://lib/src/animation/css_variables_calc.dart#L1-L912)
+- [css_cascade.dart:1-267](file://lib/src/animation/css_cascade.dart#L1-L267)
+- [css_variables_calc.dart:1-1080](file://lib/src/animation/css_variables_calc.dart#L1-L1080)
 - [smil_parser.dart:1-43](file://lib/src/animation/smil/smil_parser.dart#L1-L43)
 - [svg_parser.dart:27-65](file://lib/src/animation/svg_parser.dart#L27-L65)
 - [svg_dom.dart:123-332](file://lib/src/animation/svg_dom.dart#L123-L332)
@@ -602,13 +655,16 @@ Painter --> HitExt["animated_svg_picture_hit_test_use.dart"]
 - [animated_svg_painter_use.dart:1-809](file://lib/src/animation/animated_svg_painter_use.dart#L1-L809)
 - [animated_svg_painter_tree.dart:1-457](file://lib/src/animation/animated_svg_painter_tree.dart#L1-L457)
 - [animated_svg_picture_hit_test_use.dart:1-339](file://lib/src/animation/animated_svg_picture_hit_test_use.dart#L1-L339)
+- [animated_svg_painter_use_constants.dart:1-101](file://lib/src/animation/animated_svg_painter_use_constants.dart#L1-L101)
+- [animated_svg_painter_use_context.dart:1-415](file://lib/src/animation/animated_svg_painter_use_context.dart#L1-L415)
+- [animated_svg_painter_use_foreign_object.dart:1-127](file://lib/src/animation/animated_svg_painter_use_foreign_object.dart#L1-L127)
 
 **Section sources**
 - [use_symbol_inheritance_test.dart:1-1202](file://test/animation/use_symbol_inheritance_test.dart#L1-L1202)
 - [symbol_animation_test.dart:1-74](file://test/animation/symbol_animation_test.dart#L1-L74)
 - [use_symbol_advanced_test.dart:1-872](file://test/animation/use_symbol_advanced_test.dart#L1-L872)
-- [css_cascade.dart:1-954](file://lib/src/animation/css_cascade.dart#L1-L954)
-- [css_variables_calc.dart:1-912](file://lib/src/animation/css_variables_calc.dart#L1-L912)
+- [css_cascade.dart:1-267](file://lib/src/animation/css_cascade.dart#L1-L267)
+- [css_variables_calc.dart:1-1080](file://lib/src/animation/css_variables_calc.dart#L1-L1080)
 - [animated_svg_painter_use.dart:1-809](file://lib/src/animation/animated_svg_painter_use.dart#L1-L809)
 - [animated_svg_picture_hit_test_use.dart:1-339](file://lib/src/animation/animated_svg_picture_hit_test_use.dart#L1-L339)
 - [smil_parser.dart:1-43](file://lib/src/animation/smil/smil_parser.dart#L1-L43)
