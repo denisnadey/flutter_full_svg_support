@@ -531,108 +531,100 @@ void main() {
     });
 
     group('overflow:visible with slice mode', () {
-      testWidgets(
-        'overflow:visible allows image overflow in slice mode',
-        (tester) async {
-          final svg =
-              '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      testWidgets('overflow:visible allows image overflow in slice mode', (
+        tester,
+      ) async {
+        final svg =
+            '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <image x="10" y="10" width="80" height="80" 
                  preserveAspectRatio="xMidYMid slice"
                  style="overflow: visible"
                  href="data:image/png;base64,$_wideRedPngBase64"/>
         </svg>''';
 
-          await tester.pumpWidget(
-            MaterialApp(
-              home: Scaffold(
-                body: AnimatedSvgPicture.string(svg, width: 200, height: 200),
-              ),
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svg, width: 200, height: 200),
             ),
-          );
-          await tester.pump();
-          await tester.pump(const Duration(milliseconds: 100));
+          ),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
 
-          // Should render with overflow visible (no clipping)
-          expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-        },
-      );
+        // Should render with overflow visible (no clipping)
+        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+      });
 
-      testWidgets(
-        'overflow:visible as attribute allows image overflow',
-        (tester) async {
-          final svg =
-              '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      testWidgets('overflow:visible as attribute allows image overflow', (
+        tester,
+      ) async {
+        final svg =
+            '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <image x="10" y="10" width="80" height="80" 
                  preserveAspectRatio="xMidYMid slice"
                  overflow="visible"
                  href="data:image/png;base64,$_wideRedPngBase64"/>
         </svg>''';
 
-          await tester.pumpWidget(
-            MaterialApp(
-              home: Scaffold(
-                body: AnimatedSvgPicture.string(svg, width: 200, height: 200),
-              ),
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svg, width: 200, height: 200),
             ),
-          );
-          await tester.pump();
-          await tester.pump(const Duration(milliseconds: 100));
+          ),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
 
-          // Should render with overflow visible (no clipping)
-          expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-        },
-      );
+        // Should render with overflow visible (no clipping)
+        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+      });
 
-      testWidgets(
-        'default overflow in slice mode clips image',
-        (tester) async {
-          final svg =
-              '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      testWidgets('default overflow in slice mode clips image', (tester) async {
+        final svg =
+            '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <image x="10" y="10" width="80" height="80" 
                  preserveAspectRatio="xMidYMid slice"
                  href="data:image/png;base64,$_wideRedPngBase64"/>
         </svg>''';
 
-          await tester.pumpWidget(
-            MaterialApp(
-              home: Scaffold(
-                body: AnimatedSvgPicture.string(svg, width: 200, height: 200),
-              ),
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svg, width: 200, height: 200),
             ),
-          );
-          await tester.pump();
-          await tester.pump(const Duration(milliseconds: 100));
+          ),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
 
-          // Should render with clipping (default behavior)
-          expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-        },
-      );
+        // Should render with clipping (default behavior)
+        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+      });
 
-      testWidgets(
-        'overflow:hidden in slice mode clips image',
-        (tester) async {
-          final svg =
-              '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      testWidgets('overflow:hidden in slice mode clips image', (tester) async {
+        final svg =
+            '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <image x="10" y="10" width="80" height="80" 
                  preserveAspectRatio="xMidYMid slice"
                  overflow="hidden"
                  href="data:image/png;base64,$_wideRedPngBase64"/>
         </svg>''';
 
-          await tester.pumpWidget(
-            MaterialApp(
-              home: Scaffold(
-                body: AnimatedSvgPicture.string(svg, width: 200, height: 200),
-              ),
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svg, width: 200, height: 200),
             ),
-          );
-          await tester.pump();
-          await tester.pump(const Duration(milliseconds: 100));
+          ),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
 
-          // Should render with clipping
-          expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-        },
-      );
+        // Should render with clipping
+        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+      });
     });
 
     group('preserveAspectRatio="none" (stretch to fill)', () {
@@ -702,7 +694,8 @@ void main() {
 
     group('Missing or invalid image references', () {
       testWidgets('missing href should not crash', (tester) async {
-        const svg = '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        const svg =
+            '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <image x="10" y="10" width="80" height="80"/>
         </svg>''';
 
@@ -721,7 +714,8 @@ void main() {
       });
 
       testWidgets('empty href should not crash', (tester) async {
-        const svg = '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        const svg =
+            '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <image x="10" y="10" width="80" height="80" href=""/>
         </svg>''';
 
@@ -740,7 +734,8 @@ void main() {
       });
 
       testWidgets('invalid data URI should not crash', (tester) async {
-        const svg = '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        const svg =
+            '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <image x="10" y="10" width="80" height="80" 
                  href="data:invalid"/>
         </svg>''';

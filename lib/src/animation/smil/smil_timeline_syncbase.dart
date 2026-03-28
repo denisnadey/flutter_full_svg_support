@@ -319,11 +319,13 @@ void _resolveTimingConditionsImpl(SvgTimeline timeline) {
       }
 
       if (conditionTime != null) {
-        resolvedTimings.add(_ResolvedTiming(
-          time: conditionTime,
-          documentOrder: anim.documentOrder,
-          isResolved: true,
-        ));
+        resolvedTimings.add(
+          _ResolvedTiming(
+            time: conditionTime,
+            documentOrder: anim.documentOrder,
+            isResolved: true,
+          ),
+        );
       }
     }
 

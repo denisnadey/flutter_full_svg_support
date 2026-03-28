@@ -18,13 +18,16 @@ void main() {
       expect(result, equals(55.0)); // 50 + 10 - 5 = 55
     });
 
-    test('deeply nested (3+ levels): calc(calc(calc(100% - 10px) / 2) + 5px)', () {
-      final result = CssCalcEvaluator.evaluate(
-        'calc(calc(calc(100% - 10px) / 2) + 5px)',
-        containerSize: 100.0,
-      );
-      expect(result, equals(50.0)); // ((100 - 10) / 2) + 5 = 45 + 5 = 50
-    });
+    test(
+      'deeply nested (3+ levels): calc(calc(calc(100% - 10px) / 2) + 5px)',
+      () {
+        final result = CssCalcEvaluator.evaluate(
+          'calc(calc(calc(100% - 10px) / 2) + 5px)',
+          containerSize: 100.0,
+        );
+        expect(result, equals(50.0)); // ((100 - 10) / 2) + 5 = 45 + 5 = 50
+      },
+    );
 
     test('deeply nested (4 levels)', () {
       final result = CssCalcEvaluator.evaluate(
@@ -37,7 +40,10 @@ void main() {
       final result = CssCalcEvaluator.evaluate(
         'calc(calc(calc(calc(calc(200 - 100) / 2) * 4) - 50) + 25)',
       );
-      expect(result, equals(175.0)); // ((((200 - 100) / 2) * 4) - 50) + 25 = 175
+      expect(
+        result,
+        equals(175.0),
+      ); // ((((200 - 100) / 2) * 4) - 50) + 25 = 175
     });
   });
 
@@ -146,9 +152,7 @@ void main() {
     });
 
     test('nested clamp inside calc', () {
-      final result = CssCalcEvaluator.evaluate(
-        'calc(clamp(10, 50, 100) + 10)',
-      );
+      final result = CssCalcEvaluator.evaluate('calc(clamp(10, 50, 100) + 10)');
       expect(result, equals(60.0)); // 50 + 10
     });
   });
@@ -612,7 +616,9 @@ void main() {
 
   group('Decimal precision', () {
     test('calc with many decimal places', () {
-      final result = CssCalcEvaluator.evaluate('calc(1.123456789 + 2.987654321)');
+      final result = CssCalcEvaluator.evaluate(
+        'calc(1.123456789 + 2.987654321)',
+      );
       expect(result, closeTo(4.11111111, 0.0001));
     });
 

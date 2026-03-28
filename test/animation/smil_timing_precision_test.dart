@@ -447,164 +447,168 @@ void main() {
         expect(anim2.isActive, isTrue);
       });
 
-      test('complex forward reference chain: B->C->D where all forward refs', () {
-        final node = SvgNode(tagName: 'rect', attributes: {});
+      test(
+        'complex forward reference chain: B->C->D where all forward refs',
+        () {
+          final node = SvgNode(tagName: 'rect', attributes: {});
 
-        // anim1 references anim2 (forward)
-        final anim1 = SmilAnimation(
-          id: 'anim1',
-          type: SmilAnimationType.animate,
-          targetNode: node,
-          attributeName: 'x',
-          attributeType: SvgAttributeType.number,
-          from: 0.0,
-          to: 100.0,
-          dur: const Duration(seconds: 1),
-          begin: Duration.zero,
-          beginConditions: [
-            SyncbaseCondition(animationId: 'anim2', type: SyncbaseType.end),
-          ],
-          documentOrder: 0,
-        );
+          // anim1 references anim2 (forward)
+          final anim1 = SmilAnimation(
+            id: 'anim1',
+            type: SmilAnimationType.animate,
+            targetNode: node,
+            attributeName: 'x',
+            attributeType: SvgAttributeType.number,
+            from: 0.0,
+            to: 100.0,
+            dur: const Duration(seconds: 1),
+            begin: Duration.zero,
+            beginConditions: [
+              SyncbaseCondition(animationId: 'anim2', type: SyncbaseType.end),
+            ],
+            documentOrder: 0,
+          );
 
-        // anim2 references anim3 (forward)
-        final anim2 = SmilAnimation(
-          id: 'anim2',
-          type: SmilAnimationType.animate,
-          targetNode: node,
-          attributeName: 'y',
-          attributeType: SvgAttributeType.number,
-          from: 0.0,
-          to: 100.0,
-          dur: const Duration(seconds: 1),
-          begin: Duration.zero,
-          beginConditions: [
-            SyncbaseCondition(animationId: 'anim3', type: SyncbaseType.end),
-          ],
-          documentOrder: 1,
-        );
+          // anim2 references anim3 (forward)
+          final anim2 = SmilAnimation(
+            id: 'anim2',
+            type: SmilAnimationType.animate,
+            targetNode: node,
+            attributeName: 'y',
+            attributeType: SvgAttributeType.number,
+            from: 0.0,
+            to: 100.0,
+            dur: const Duration(seconds: 1),
+            begin: Duration.zero,
+            beginConditions: [
+              SyncbaseCondition(animationId: 'anim3', type: SyncbaseType.end),
+            ],
+            documentOrder: 1,
+          );
 
-        // anim3 is the root (no dependencies)
-        final anim3 = SmilAnimation(
-          id: 'anim3',
-          type: SmilAnimationType.animate,
-          targetNode: node,
-          attributeName: 'width',
-          attributeType: SvgAttributeType.number,
-          from: 0.0,
-          to: 100.0,
-          dur: const Duration(seconds: 1),
-          begin: Duration.zero,
-          beginConditions: [OffsetCondition(Duration.zero)],
-          documentOrder: 2,
-        );
+          // anim3 is the root (no dependencies)
+          final anim3 = SmilAnimation(
+            id: 'anim3',
+            type: SmilAnimationType.animate,
+            targetNode: node,
+            attributeName: 'width',
+            attributeType: SvgAttributeType.number,
+            from: 0.0,
+            to: 100.0,
+            dur: const Duration(seconds: 1),
+            begin: Duration.zero,
+            beginConditions: [OffsetCondition(Duration.zero)],
+            documentOrder: 2,
+          );
 
-        final rootNode = SvgNode(tagName: 'svg', attributes: {});
-        SvgTimeline(
-          animations: [anim1, anim2, anim3],
-          rootNode: rootNode,
-        );
+          final rootNode = SvgNode(tagName: 'svg', attributes: {});
+          SvgTimeline(animations: [anim1, anim2, anim3], rootNode: rootNode);
 
-        // Resolution should work despite forward references:
-        // anim3: 0s -> 1s
-        // anim2: 1s -> 2s (after anim3.end)
-        // anim1: 2s -> 3s (after anim2.end)
-        expect(anim3.getEffectiveBeginTime(), Duration.zero);
-        expect(anim2.getEffectiveBeginTime(), const Duration(seconds: 1));
-        expect(anim1.getEffectiveBeginTime(), const Duration(seconds: 2));
-      });
+          // Resolution should work despite forward references:
+          // anim3: 0s -> 1s
+          // anim2: 1s -> 2s (after anim3.end)
+          // anim1: 2s -> 3s (after anim2.end)
+          expect(anim3.getEffectiveBeginTime(), Duration.zero);
+          expect(anim2.getEffectiveBeginTime(), const Duration(seconds: 1));
+          expect(anim1.getEffectiveBeginTime(), const Duration(seconds: 2));
+        },
+      );
     });
 
     group('Complex offset chains', () {
-      test('begin="a.end+200ms; b.begin-100ms" where both conditions resolve',
-          () {
-        // <animate id="a" begin="0s" dur="1s"/>
-        // <animate id="b" begin="500ms" dur="1s"/>
-        // <animate id="c" begin="a.end+200ms; b.begin-100ms" dur="1s"/>
-        //
-        // a.end+200ms = 1s + 200ms = 1200ms
-        // b.begin-100ms = 500ms - 100ms = 400ms
-        // Earliest is 400ms, so c should start at 400ms
+      test(
+        'begin="a.end+200ms; b.begin-100ms" where both conditions resolve',
+        () {
+          // <animate id="a" begin="0s" dur="1s"/>
+          // <animate id="b" begin="500ms" dur="1s"/>
+          // <animate id="c" begin="a.end+200ms; b.begin-100ms" dur="1s"/>
+          //
+          // a.end+200ms = 1s + 200ms = 1200ms
+          // b.begin-100ms = 500ms - 100ms = 400ms
+          // Earliest is 400ms, so c should start at 400ms
 
-        final node = SvgNode(tagName: 'rect', attributes: {});
+          final node = SvgNode(tagName: 'rect', attributes: {});
 
-        final animA = SmilAnimation(
-          id: 'a',
-          type: SmilAnimationType.animate,
-          targetNode: node,
-          attributeName: 'x',
-          attributeType: SvgAttributeType.number,
-          from: 0.0,
-          to: 100.0,
-          dur: const Duration(seconds: 1),
-          begin: Duration.zero,
-          beginConditions: [OffsetCondition(Duration.zero)],
-          documentOrder: 0,
-        );
+          final animA = SmilAnimation(
+            id: 'a',
+            type: SmilAnimationType.animate,
+            targetNode: node,
+            attributeName: 'x',
+            attributeType: SvgAttributeType.number,
+            from: 0.0,
+            to: 100.0,
+            dur: const Duration(seconds: 1),
+            begin: Duration.zero,
+            beginConditions: [OffsetCondition(Duration.zero)],
+            documentOrder: 0,
+          );
 
-        final animB = SmilAnimation(
-          id: 'b',
-          type: SmilAnimationType.animate,
-          targetNode: node,
-          attributeName: 'y',
-          attributeType: SvgAttributeType.number,
-          from: 0.0,
-          to: 50.0,
-          dur: const Duration(seconds: 1),
-          begin: const Duration(milliseconds: 500),
-          beginConditions: [OffsetCondition(const Duration(milliseconds: 500))],
-          documentOrder: 1,
-        );
+          final animB = SmilAnimation(
+            id: 'b',
+            type: SmilAnimationType.animate,
+            targetNode: node,
+            attributeName: 'y',
+            attributeType: SvgAttributeType.number,
+            from: 0.0,
+            to: 50.0,
+            dur: const Duration(seconds: 1),
+            begin: const Duration(milliseconds: 500),
+            beginConditions: [
+              OffsetCondition(const Duration(milliseconds: 500)),
+            ],
+            documentOrder: 1,
+          );
 
-        final animC = SmilAnimation(
-          id: 'c',
-          type: SmilAnimationType.animate,
-          targetNode: node,
-          attributeName: 'width',
-          attributeType: SvgAttributeType.number,
-          from: 10.0,
-          to: 100.0,
-          dur: const Duration(seconds: 1),
-          begin: Duration.zero,
-          beginConditions: [
-            // a.end+200ms = 1200ms
-            SyncbaseCondition(
-              animationId: 'a',
-              type: SyncbaseType.end,
-              offset: const Duration(milliseconds: 200),
-            ),
-            // b.begin-100ms = 400ms
-            SyncbaseCondition(
-              animationId: 'b',
-              type: SyncbaseType.begin,
-              offset: const Duration(milliseconds: -100),
-            ),
-          ],
-          documentOrder: 2,
-        );
+          final animC = SmilAnimation(
+            id: 'c',
+            type: SmilAnimationType.animate,
+            targetNode: node,
+            attributeName: 'width',
+            attributeType: SvgAttributeType.number,
+            from: 10.0,
+            to: 100.0,
+            dur: const Duration(seconds: 1),
+            begin: Duration.zero,
+            beginConditions: [
+              // a.end+200ms = 1200ms
+              SyncbaseCondition(
+                animationId: 'a',
+                type: SyncbaseType.end,
+                offset: const Duration(milliseconds: 200),
+              ),
+              // b.begin-100ms = 400ms
+              SyncbaseCondition(
+                animationId: 'b',
+                type: SyncbaseType.begin,
+                offset: const Duration(milliseconds: -100),
+              ),
+            ],
+            documentOrder: 2,
+          );
 
-        final rootNode = SvgNode(tagName: 'svg', attributes: {});
-        final timeline = SvgTimeline(
-          animations: [animA, animB, animC],
-          rootNode: rootNode,
-        );
+          final rootNode = SvgNode(tagName: 'svg', attributes: {});
+          final timeline = SvgTimeline(
+            animations: [animA, animB, animC],
+            rootNode: rootNode,
+          );
 
-        // animC should start at earliest: 400ms
-        expect(
-          animC.getEffectiveBeginTime(),
-          const Duration(milliseconds: 400),
-        );
+          // animC should start at earliest: 400ms
+          expect(
+            animC.getEffectiveBeginTime(),
+            const Duration(milliseconds: 400),
+          );
 
-        timeline.seek(const Duration(milliseconds: 400));
-        expect(animA.isActive, isTrue);
-        expect(animB.isActive, isFalse); // b starts at 500ms
-        expect(animC.isActive, isTrue);
+          timeline.seek(const Duration(milliseconds: 400));
+          expect(animA.isActive, isTrue);
+          expect(animB.isActive, isFalse); // b starts at 500ms
+          expect(animC.isActive, isTrue);
 
-        timeline.seek(const Duration(milliseconds: 500));
-        expect(animA.isActive, isTrue);
-        expect(animB.isActive, isTrue);
-        expect(animC.isActive, isTrue);
-      });
+          timeline.seek(const Duration(milliseconds: 500));
+          expect(animA.isActive, isTrue);
+          expect(animB.isActive, isTrue);
+          expect(animC.isActive, isTrue);
+        },
+      );
 
       test('multiple offsets with same base animation', () {
         // begin="a.end; a.end+500ms; a.end+1s"
@@ -653,10 +657,7 @@ void main() {
         );
 
         final rootNode = SvgNode(tagName: 'svg', attributes: {});
-        SvgTimeline(
-          animations: [animA, animB],
-          rootNode: rootNode,
-        );
+        SvgTimeline(animations: [animA, animB], rootNode: rootNode);
 
         // animB should start at a.end = 1s (earliest condition)
         expect(animB.getEffectiveBeginTime(), const Duration(seconds: 1));
@@ -735,10 +736,7 @@ void main() {
         );
 
         final rootNode = SvgNode(tagName: 'svg', attributes: {});
-        SvgTimeline(
-          animations: [anim],
-          rootNode: rootNode,
-        );
+        SvgTimeline(animations: [anim], rootNode: rootNode);
 
         // Should be resolved to "infinity" (never starts automatically)
         final beginTime = anim.getEffectiveBeginTime();
@@ -777,10 +775,7 @@ void main() {
           returnsNormally,
         );
 
-        SvgTimeline(
-          animations: [anim],
-          rootNode: rootNode,
-        );
+        SvgTimeline(animations: [anim], rootNode: rootNode);
 
         // Should use fallback begin time (3s)
         expect(anim.getEffectiveBeginTime(), const Duration(seconds: 3));
@@ -796,47 +791,48 @@ void main() {
         final animations = <SmilAnimation>[];
 
         // First animation starts at 0
-        animations.add(SmilAnimation(
-          id: 'chain0',
-          type: SmilAnimationType.animate,
-          targetNode: node,
-          attributeName: 'x',
-          attributeType: SvgAttributeType.number,
-          from: 0.0,
-          to: 10.0,
-          dur: const Duration(milliseconds: 100),
-          begin: Duration.zero,
-          beginConditions: [OffsetCondition(Duration.zero)],
-          documentOrder: 0,
-        ));
-
-        // Create 5 more animations, each depending on previous
-        for (int i = 1; i <= 5; i++) {
-          animations.add(SmilAnimation(
-            id: 'chain$i',
+        animations.add(
+          SmilAnimation(
+            id: 'chain0',
             type: SmilAnimationType.animate,
             targetNode: node,
             attributeName: 'x',
             attributeType: SvgAttributeType.number,
-            from: (i * 10).toDouble(),
-            to: ((i + 1) * 10).toDouble(),
+            from: 0.0,
+            to: 10.0,
             dur: const Duration(milliseconds: 100),
             begin: Duration.zero,
-            beginConditions: [
-              SyncbaseCondition(
-                animationId: 'chain${i - 1}',
-                type: SyncbaseType.end,
-              ),
-            ],
-            documentOrder: i,
-          ));
+            beginConditions: [OffsetCondition(Duration.zero)],
+            documentOrder: 0,
+          ),
+        );
+
+        // Create 5 more animations, each depending on previous
+        for (int i = 1; i <= 5; i++) {
+          animations.add(
+            SmilAnimation(
+              id: 'chain$i',
+              type: SmilAnimationType.animate,
+              targetNode: node,
+              attributeName: 'x',
+              attributeType: SvgAttributeType.number,
+              from: (i * 10).toDouble(),
+              to: ((i + 1) * 10).toDouble(),
+              dur: const Duration(milliseconds: 100),
+              begin: Duration.zero,
+              beginConditions: [
+                SyncbaseCondition(
+                  animationId: 'chain${i - 1}',
+                  type: SyncbaseType.end,
+                ),
+              ],
+              documentOrder: i,
+            ),
+          );
         }
 
         final rootNode = SvgNode(tagName: 'svg', attributes: {});
-        SvgTimeline(
-          animations: animations,
-          rootNode: rootNode,
-        );
+        SvgTimeline(animations: animations, rootNode: rootNode);
 
         // Verify each animation has correct resolved time
         for (int i = 0; i <= 5; i++) {

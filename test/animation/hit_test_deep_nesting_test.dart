@@ -970,7 +970,9 @@ void main() {
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 300));
 
-        final afterHitPixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final afterHitPixels = await VisualTestUtils.captureWidgetPixels(
+          tester,
+        );
         final afterHitAnalysis = VisualTestUtils.analyzeRedPixels(
           afterHitPixels,
           800,
