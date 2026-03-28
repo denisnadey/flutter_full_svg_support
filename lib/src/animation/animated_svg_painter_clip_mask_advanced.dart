@@ -872,9 +872,11 @@ extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
     paintContent();
 
     // Apply mask with proper type
-    final maskPaint = maskType == _SvgMaskType.luminance
-        ? _createLuminanceMaskPaintWithGradientSupport()
-        : ui.Paint()..blendMode = ui.BlendMode.dstIn;
+    final maskPaint =
+        maskType == _SvgMaskType.luminance
+              ? _createLuminanceMaskPaintWithGradientSupport()
+              : ui.Paint()
+          ..blendMode = ui.BlendMode.dstIn;
 
     canvas.saveLayer(effectiveBounds, maskPaint);
 

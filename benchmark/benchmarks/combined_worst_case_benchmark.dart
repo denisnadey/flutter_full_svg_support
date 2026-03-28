@@ -190,7 +190,7 @@ class CombinedWorstCaseContent {
     buffer.writeln(
       '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2000 2000">',
     );
-    
+
     // Defs
     buffer.writeln('  <defs>');
     for (var i = 0; i < 5; i++) {
@@ -205,14 +205,14 @@ class CombinedWorstCaseContent {
     </linearGradient>''');
     }
     buffer.writeln('  </defs>');
-    
+
     // Elements
     for (var i = 0; i < elementCount; i++) {
       final x = (i % 20) * 100 + 10;
       final y = (i ~/ 20) * 100 + 10;
       final filterIdx = i % 5;
       final gradIdx = i % 5;
-      
+
       if (i % 3 == 0) {
         buffer.writeln('''
   <rect x="$x" y="$y" width="80" height="80" fill="url(#grad$gradIdx)" filter="url(#filter$filterIdx)">
@@ -231,7 +231,7 @@ class CombinedWorstCaseContent {
   </text>''');
       }
     }
-    
+
     buffer.writeln('</svg>');
     return buffer.toString();
   }
@@ -264,7 +264,10 @@ List<BenchmarkResult> runCombinedWorstCaseBenchmarks() {
       benchmark: () {
         final doc = SvgParser.parse(CombinedWorstCaseContent.fullCombined);
         final animations = SmilParser.parseAnimations(doc);
-        final timeline = SvgTimeline(animations: animations, rootNode: doc.root);
+        final timeline = SvgTimeline(
+          animations: animations,
+          rootNode: doc.root,
+        );
         for (var t = 0; t < 30; t++) {
           timeline.seek(Duration(milliseconds: t * 16));
         }

@@ -811,10 +811,7 @@ extension AnimatedSvgPainterTextLayoutExtension on AnimatedSvgPainter {
   }
 
   /// Transforms a point using the accumulated transform matrix.
-  ui.Offset _transformPointForText(
-    ui.Offset point,
-    Matrix4 transform,
-  ) {
+  ui.Offset _transformPointForText(ui.Offset point, Matrix4 transform) {
     if (transform.isIdentity()) {
       return point;
     }
@@ -917,16 +914,16 @@ class _MultiRunTextRun {
 /// Distribution mode for textLength across nested tspan elements.
 class _TextLengthDistribution {
   const _TextLengthDistribution.none()
-      : mode = _TextLengthDistributionMode.none,
-        value = 0.0;
+    : mode = _TextLengthDistributionMode.none,
+      value = 0.0;
 
   const _TextLengthDistribution.spacing(double extraSpacing)
-      : mode = _TextLengthDistributionMode.spacing,
-        value = extraSpacing;
+    : mode = _TextLengthDistributionMode.spacing,
+      value = extraSpacing;
 
   const _TextLengthDistribution.scale(double scaleFactor)
-      : mode = _TextLengthDistributionMode.scale,
-        value = scaleFactor;
+    : mode = _TextLengthDistributionMode.scale,
+      value = scaleFactor;
 
   final _TextLengthDistributionMode mode;
   final double value;
@@ -939,8 +936,4 @@ class _TextLengthDistribution {
   double get scaleFactor => isScale ? value : 1.0;
 }
 
-enum _TextLengthDistributionMode {
-  none,
-  spacing,
-  scale,
-}
+enum _TextLengthDistributionMode { none, spacing, scale }

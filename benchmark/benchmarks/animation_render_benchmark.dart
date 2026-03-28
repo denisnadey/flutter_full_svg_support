@@ -98,14 +98,14 @@ class AnimationRenderContent {
     buffer.writeln(
       '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">',
     );
-    
+
     // Generate many animated elements
     for (var i = 0; i < 25; i++) {
       final x = (i % 5) * 200 + 20;
       final y = (i ~/ 5) * 200 + 20;
       final dur = 2 + (i % 5) * 0.5;
       final delay = i * 0.1;
-      
+
       buffer.writeln('''
   <rect id="r$i" x="$x" y="$y" width="80" height="80" fill="#${(i * 10).toRadixString(16).padLeft(2, '0')}88ff">
     <animate attributeName="x" values="$x;${x + 50};$x" dur="${dur}s" repeatCount="indefinite" begin="${delay}s"/>
@@ -115,7 +115,7 @@ class AnimationRenderContent {
       values="0 ${x + 40} ${y + 40};45 ${x + 40} ${y + 40};0 ${x + 40} ${y + 40}" dur="${dur * 1.5}s" repeatCount="indefinite"/>
   </rect>''');
     }
-    
+
     buffer.writeln('</svg>');
     return buffer.toString();
   }
@@ -189,12 +189,19 @@ List<BenchmarkResult> runAnimationRenderBenchmarks() {
     runBenchmark(
       name: 'animation_render_simultaneous_timeline',
       setup: () {
-        final doc = SvgParser.parse(AnimationRenderContent.simultaneousAnimations);
+        final doc = SvgParser.parse(
+          AnimationRenderContent.simultaneousAnimations,
+        );
         animations = SmilParser.parseAnimations(doc);
       },
       benchmark: () {
-        final doc = SvgParser.parse(AnimationRenderContent.simultaneousAnimations);
-        final timeline = SvgTimeline(animations: animations, rootNode: doc.root);
+        final doc = SvgParser.parse(
+          AnimationRenderContent.simultaneousAnimations,
+        );
+        final timeline = SvgTimeline(
+          animations: animations,
+          rootNode: doc.root,
+        );
         // Tick through animation frames
         for (var t = 0; t < 60; t++) {
           timeline.seek(Duration(milliseconds: t * 16));
@@ -237,12 +244,19 @@ List<BenchmarkResult> runAnimationRenderBenchmarks() {
     runBenchmark(
       name: 'animation_render_high_freq_tick',
       setup: () {
-        final doc = SvgParser.parse(AnimationRenderContent.simultaneousAnimations);
+        final doc = SvgParser.parse(
+          AnimationRenderContent.simultaneousAnimations,
+        );
         animations = SmilParser.parseAnimations(doc);
       },
       benchmark: () {
-        final doc = SvgParser.parse(AnimationRenderContent.simultaneousAnimations);
-        final timeline = SvgTimeline(animations: animations, rootNode: doc.root);
+        final doc = SvgParser.parse(
+          AnimationRenderContent.simultaneousAnimations,
+        );
+        final timeline = SvgTimeline(
+          animations: animations,
+          rootNode: doc.root,
+        );
         // Simulate high frequency updates (120fps equivalent)
         for (var t = 0; t < 120; t++) {
           timeline.seek(Duration(milliseconds: t * 8));

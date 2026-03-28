@@ -672,14 +672,16 @@ extension AnimatedSvgPainterTextStylePositioningExtension
       final unicodeBidi = _resolveUnicodeBidi(
         element.getAttributeValue('unicode-bidi')?.toString(),
       );
-      final isIsolate = unicodeBidi == 'isolate' ||
-          unicodeBidi == 'isolate-override';
+      final isIsolate =
+          unicodeBidi == 'isolate' || unicodeBidi == 'isolate-override';
 
-      levels.add(_BidiLevel(
-        direction: direction,
-        unicodeBidi: unicodeBidi,
-        isIsolate: isIsolate,
-      ));
+      levels.add(
+        _BidiLevel(
+          direction: direction,
+          unicodeBidi: unicodeBidi,
+          isIsolate: isIsolate,
+        ),
+      );
     }
 
     return _BidiContext(baseDirection: baseDirection, levels: levels);
@@ -754,10 +756,7 @@ class _AccumulatedBaselineOffset {
 /// contain LTR content (or vice versa), this class tracks the effective
 /// direction at each nesting level.
 class _BidiContext {
-  const _BidiContext({
-    required this.baseDirection,
-    required this.levels,
-  });
+  const _BidiContext({required this.baseDirection, required this.levels});
 
   /// The direction specified on the root text element.
   final ui.TextDirection baseDirection;

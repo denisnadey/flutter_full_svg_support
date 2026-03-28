@@ -312,9 +312,7 @@ List<BenchmarkResult> runMemoryBenchmarks() {
     final baseline = memoryResults[0].parseTimeMs;
     final current = memoryResults[i].parseTimeMs;
     final ratio = current / baseline;
-    print(
-      '  ${memoryResults[i].name}: ${ratio.toStringAsFixed(1)}x baseline',
-    );
+    print('  ${memoryResults[i].name}: ${ratio.toStringAsFixed(1)}x baseline');
   }
 
   return results;

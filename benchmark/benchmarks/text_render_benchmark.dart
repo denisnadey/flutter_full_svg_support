@@ -181,7 +181,7 @@ class TextRenderContent {
     buffer.writeln(
       '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 2000">',
     );
-    
+
     var y = 30;
     for (var paragraph = 0; paragraph < 20; paragraph++) {
       buffer.writeln('  <text x="20" y="$y" font-size="14" fill="#333">');
@@ -194,7 +194,7 @@ class TextRenderContent {
       buffer.writeln('  </text>');
       y += 100;
     }
-    
+
     buffer.writeln('</svg>');
     return buffer.toString();
   }

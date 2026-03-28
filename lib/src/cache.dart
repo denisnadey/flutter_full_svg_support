@@ -33,7 +33,7 @@ class CacheStats {
   double get hitRate => totalAccesses > 0 ? _hits / totalAccesses : 0.0;
 
   /// Hit rate including pending hits.
-  double get effectiveHitRate => 
+  double get effectiveHitRate =>
       totalAccesses > 0 ? (_hits + _pendingHits) / totalAccesses : 0.0;
 
   /// Records a cache hit.

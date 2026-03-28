@@ -134,7 +134,7 @@ class FilterChainContent {
       '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">',
     );
     buffer.writeln('  <defs>');
-    
+
     // Generate many unique filters
     for (var i = 0; i < 20; i++) {
       final blurAmount = 1 + i * 0.5;
@@ -144,9 +144,9 @@ class FilterChainContent {
       <feColorMatrix in="blur" type="hueRotate" values="${i * 18}"/>
     </filter>''');
     }
-    
+
     buffer.writeln('  </defs>');
-    
+
     // Apply each filter to elements
     for (var i = 0; i < 20; i++) {
       final x = (i % 5) * 200 + 10;
@@ -155,7 +155,7 @@ class FilterChainContent {
         '  <rect x="$x" y="$y" width="180" height="180" fill="#${(i * 12).toRadixString(16).padLeft(2, '0')}6699" filter="url(#filter$i)"/>',
       );
     }
-    
+
     buffer.writeln('</svg>');
     return buffer.toString();
   }

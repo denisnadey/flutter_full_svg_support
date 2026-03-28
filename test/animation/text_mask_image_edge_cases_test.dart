@@ -212,9 +212,7 @@ void main() {
         },
       );
 
-      testWidgets('deeply nested tspan with parent textLength', (
-        tester,
-      ) async {
+      testWidgets('deeply nested tspan with parent textLength', (tester) async {
         const svg = '''
           <svg viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
             <text x="10" y="50" font-size="14" textLength="250" lengthAdjust="spacing">
@@ -330,9 +328,7 @@ void main() {
         expect(find.byType(AnimatedSvgPicture), findsOneWidget);
       });
 
-      testWidgets('mask with blur + colorMatrix filter chain', (
-        tester,
-      ) async {
+      testWidgets('mask with blur + colorMatrix filter chain', (tester) async {
         const svg = '''
           <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
             <defs>
@@ -553,24 +549,25 @@ void main() {
         expect(find.byType(AnimatedSvgPicture), findsOneWidget);
       });
 
-      testWidgets(
-        'foreignObject with all preserveAspectRatio alignments',
-        (tester) async {
-          // Test all 9 alignment values
-          final alignments = [
-            'xMinYMin',
-            'xMidYMin',
-            'xMaxYMin',
-            'xMinYMid',
-            'xMidYMid',
-            'xMaxYMid',
-            'xMinYMax',
-            'xMidYMax',
-            'xMaxYMax',
-          ];
+      testWidgets('foreignObject with all preserveAspectRatio alignments', (
+        tester,
+      ) async {
+        // Test all 9 alignment values
+        final alignments = [
+          'xMinYMin',
+          'xMidYMin',
+          'xMaxYMin',
+          'xMinYMid',
+          'xMidYMid',
+          'xMaxYMid',
+          'xMinYMax',
+          'xMidYMax',
+          'xMaxYMax',
+        ];
 
-          for (final align in alignments) {
-            final svg = '''
+        for (final align in alignments) {
+          final svg =
+              '''
             <svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg">
               <rect width="200" height="150" fill="#eee"/>
               <foreignObject x="25" y="25" width="150" height="100">
@@ -581,23 +578,22 @@ void main() {
             </svg>
           ''';
 
-            await tester.pumpWidget(
-              MaterialApp(
-                key: ValueKey(align),
-                home: Scaffold(
-                  body: AnimatedSvgPicture.string(svg, width: 200, height: 150),
-                ),
+          await tester.pumpWidget(
+            MaterialApp(
+              key: ValueKey(align),
+              home: Scaffold(
+                body: AnimatedSvgPicture.string(svg, width: 200, height: 150),
               ),
-            );
-            await tester.pumpAndSettle();
-            expect(
-              find.byType(AnimatedSvgPicture),
-              findsOneWidget,
-              reason: 'Failed for $align',
-            );
-          }
-        },
-      );
+            ),
+          );
+          await tester.pumpAndSettle();
+          expect(
+            find.byType(AnimatedSvgPicture),
+            findsOneWidget,
+            reason: 'Failed for $align',
+          );
+        }
+      });
     });
   });
 }
