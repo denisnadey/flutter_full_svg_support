@@ -8,8 +8,7 @@ part of 'animated_svg_painter.dart';
 /// - glyph-orientation-vertical
 /// - unicode-bidi, text-combine-upright
 /// - paint-order, ruby-align, ruby-position
-extension AnimatedSvgPainterTextStyleResolutionExtension
-    on AnimatedSvgPainter {
+extension AnimatedSvgPainterTextStyleResolutionExtension on AnimatedSvgPainter {
   /// Resolves writing-mode CSS property.
   _SvgWritingMode _resolveWritingMode(String? value) {
     if (value == null || value.trim().isEmpty) {

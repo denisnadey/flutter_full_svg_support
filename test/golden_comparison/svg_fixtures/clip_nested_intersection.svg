@@ -1,61 +1,61 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
-  <!-- Nested clip-paths with intersection computation -->
-  <defs>
-    <!-- Outer clip: large rectangle -->
-    <clipPath id="outerClip">
-      <rect x="20" y="20" width="160" height="160"/>
-    </clipPath>
-    
-    <!-- Inner clip 1: circle -->
-    <clipPath id="innerClip1">
-      <circle cx="70" cy="70" r="50"/>
-    </clipPath>
-    
-    <!-- Inner clip 2: another circle -->
-    <clipPath id="innerClip2">
-      <circle cx="130" cy="130" r="50"/>
-    </clipPath>
-    
-    <!-- Combined nested clip -->
-    <clipPath id="nestedClip" clip-path="url(#outerClip)">
-      <circle cx="100" cy="100" r="60"/>
-    </clipPath>
-    
-    <!-- Deep nesting: rect inside circle inside rect -->
-    <clipPath id="deep1">
-      <rect x="100" y="10" width="80" height="80"/>
-    </clipPath>
-    <clipPath id="deep2" clip-path="url(#deep1)">
-      <circle cx="140" cy="50" r="35"/>
-    </clipPath>
-    <clipPath id="deep3" clip-path="url(#deep2)">
-      <rect x="115" y="25" width="50" height="50"/>
-    </clipPath>
-  </defs>
-  
-  <rect width="200" height="200" fill="#f5f5f5"/>
-  
-  <!-- Background pattern to show clipping -->
-  <defs>
-    <pattern id="gridPattern" width="10" height="10" patternUnits="userSpaceOnUse">
-      <rect width="10" height="10" fill="#eee"/>
-      <rect width="5" height="5" fill="#ddd"/>
-    </pattern>
-  </defs>
-  
-  <!-- Simple nested clip -->
-  <g clip-path="url(#nestedClip)">
-    <rect x="0" y="0" width="200" height="200" fill="#3366cc"/>
-    <rect x="40" y="40" width="120" height="120" fill="#6699ff"/>
-  </g>
-  
-  <!-- Deep nested clip -->
-  <rect x="100" y="10" width="90" height="85" fill="#cc3366" clip-path="url(#deep3)"/>
-  
-  <!-- Overlapping clips creating intersection -->
-  <g clip-path="url(#innerClip1)">
-    <g clip-path="url(#innerClip2)">
-      <rect x="0" y="0" width="200" height="200" fill="#33cc66"/>
+    <!-- Nested clip-paths with intersection computation -->
+    <defs>
+        <!-- Outer clip: large rectangle -->
+        <clipPath id="outerClip">
+            <rect x="20" y="20" width="160" height="160" />
+        </clipPath>
+
+        <!-- Inner clip 1: circle -->
+        <clipPath id="innerClip1">
+            <circle cx="70" cy="70" r="50" />
+        </clipPath>
+
+        <!-- Inner clip 2: another circle -->
+        <clipPath id="innerClip2">
+            <circle cx="130" cy="130" r="50" />
+        </clipPath>
+
+        <!-- Combined nested clip -->
+        <clipPath id="nestedClip" clip-path="url(#outerClip)">
+            <circle cx="100" cy="100" r="60" />
+        </clipPath>
+
+        <!-- Deep nesting: rect inside circle inside rect -->
+        <clipPath id="deep1">
+            <rect x="100" y="10" width="80" height="80" />
+        </clipPath>
+        <clipPath id="deep2" clip-path="url(#deep1)">
+            <circle cx="140" cy="50" r="35" />
+        </clipPath>
+        <clipPath id="deep3" clip-path="url(#deep2)">
+            <rect x="115" y="25" width="50" height="50" />
+        </clipPath>
+    </defs>
+
+    <rect width="200" height="200" fill="#f5f5f5" />
+
+    <!-- Background pattern to show clipping -->
+    <defs>
+        <pattern id="gridPattern" width="10" height="10" patternUnits="userSpaceOnUse">
+            <rect width="10" height="10" fill="#eee" />
+            <rect width="5" height="5" fill="#ddd" />
+        </pattern>
+    </defs>
+
+    <!-- Simple nested clip -->
+    <g clip-path="url(#nestedClip)">
+        <rect x="0" y="0" width="200" height="200" fill="#3366cc" />
+        <rect x="40" y="40" width="120" height="120" fill="#6699ff" />
     </g>
-  </g>
+
+    <!-- Deep nested clip -->
+    <rect x="100" y="10" width="90" height="85" fill="#cc3366" clip-path="url(#deep3)" />
+
+    <!-- Overlapping clips creating intersection -->
+    <g clip-path="url(#innerClip1)">
+        <g clip-path="url(#innerClip2)">
+            <rect x="0" y="0" width="200" height="200" fill="#33cc66" />
+        </g>
+    </g>
 </svg>

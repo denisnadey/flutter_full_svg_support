@@ -1,46 +1,47 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
-  <!-- Multi-step filter chain with feComposite arithmetic + feBlend + feMerge -->
-  <defs>
-    <filter id="chain_filter" x="-20%" y="-20%" width="140%" height="140%">
-      <!-- Step 1: Create blurred shadow -->
-      <feGaussianBlur in="SourceAlpha" stdDeviation="4" result="blur"/>
-      <feOffset in="blur" dx="3" dy="3" result="shadow"/>
-      
-      <!-- Step 2: Arithmetic composite for glow effect -->
-      <feFlood flood-color="#ffcc00" flood-opacity="0.8" result="glow_color"/>
-      <feComposite in="glow_color" in2="SourceAlpha" operator="arithmetic" k1="0" k2="1" k3="0.5" k4="0" result="glow"/>
-      
-      <!-- Step 3: Blend glow with original -->
-      <feBlend in="SourceGraphic" in2="glow" mode="screen" result="glowed"/>
-      
-      <!-- Step 4: Merge shadow, glow, and source -->
-      <feMerge>
-        <feMergeNode in="shadow"/>
-        <feMergeNode in="glowed"/>
-      </feMerge>
-    </filter>
-    
-    <filter id="chain_filter2" x="-20%" y="-20%" width="140%" height="140%">
-      <!-- Two-layer composite chain -->
-      <feFlood flood-color="#ff6666" result="red"/>
-      <feFlood flood-color="#6666ff" result="blue"/>
-      <feComposite in="red" in2="SourceAlpha" operator="in" result="red_in"/>
-      <feComposite in="blue" in2="SourceAlpha" operator="in" result="blue_in"/>
-      <feOffset in="blue_in" dx="5" dy="5" result="blue_offset"/>
-      <feBlend in="red_in" in2="blue_offset" mode="multiply" result="blended"/>
-      <feMerge>
-        <feMergeNode in="blended"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
-  </defs>
-  
-  <rect width="200" height="200" fill="#f0f0f0"/>
-  
-  <!-- Apply chain filter to shapes -->
-  <rect x="25" y="25" width="60" height="60" fill="#3399ff" filter="url(#chain_filter)"/>
-  <circle cx="145" cy="55" r="35" fill="#ff6633" filter="url(#chain_filter)"/>
-  
-  <!-- Second chain filter -->
-  <polygon points="100,120 140,180 60,180" fill="#33cc66" filter="url(#chain_filter2)"/>
+    <!-- Multi-step filter chain with feComposite arithmetic + feBlend + feMerge -->
+    <defs>
+        <filter id="chain_filter" x="-20%" y="-20%" width="140%" height="140%">
+            <!-- Step 1: Create blurred shadow -->
+            <feGaussianBlur in="SourceAlpha" stdDeviation="4" result="blur" />
+            <feOffset in="blur" dx="3" dy="3" result="shadow" />
+
+            <!-- Step 2: Arithmetic composite for glow effect -->
+            <feFlood flood-color="#ffcc00" flood-opacity="0.8" result="glow_color" />
+            <feComposite in="glow_color" in2="SourceAlpha" operator="arithmetic" k1="0" k2="1"
+                k3="0.5" k4="0" result="glow" />
+
+            <!-- Step 3: Blend glow with original -->
+            <feBlend in="SourceGraphic" in2="glow" mode="screen" result="glowed" />
+
+            <!-- Step 4: Merge shadow, glow, and source -->
+            <feMerge>
+                <feMergeNode in="shadow" />
+                <feMergeNode in="glowed" />
+            </feMerge>
+        </filter>
+
+        <filter id="chain_filter2" x="-20%" y="-20%" width="140%" height="140%">
+            <!-- Two-layer composite chain -->
+            <feFlood flood-color="#ff6666" result="red" />
+            <feFlood flood-color="#6666ff" result="blue" />
+            <feComposite in="red" in2="SourceAlpha" operator="in" result="red_in" />
+            <feComposite in="blue" in2="SourceAlpha" operator="in" result="blue_in" />
+            <feOffset in="blue_in" dx="5" dy="5" result="blue_offset" />
+            <feBlend in="red_in" in2="blue_offset" mode="multiply" result="blended" />
+            <feMerge>
+                <feMergeNode in="blended" />
+                <feMergeNode in="SourceGraphic" />
+            </feMerge>
+        </filter>
+    </defs>
+
+    <rect width="200" height="200" fill="#f0f0f0" />
+
+    <!-- Apply chain filter to shapes -->
+    <rect x="25" y="25" width="60" height="60" fill="#3399ff" filter="url(#chain_filter)" />
+    <circle cx="145" cy="55" r="35" fill="#ff6633" filter="url(#chain_filter)" />
+
+    <!-- Second chain filter -->
+    <polygon points="100,120 140,180 60,180" fill="#33cc66" filter="url(#chain_filter2)" />
 </svg>

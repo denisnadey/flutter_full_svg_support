@@ -222,7 +222,9 @@ void main() {
 ''';
 
       final document = SvgParser.parse(svgString);
-      final passes = document.filters!.resolvePaintPasses('displacementAlphaFx');
+      final passes = document.filters!.resolvePaintPasses(
+        'displacementAlphaFx',
+      );
 
       expect(passes, isNotEmpty);
       // SourceAlpha should have colorFilter for alpha extraction
@@ -559,7 +561,9 @@ void main() {
 ''';
 
       final document = SvgParser.parse(svgString);
-      final passes = document.filters!.resolvePaintPasses('subsequentImplicitFx');
+      final passes = document.filters!.resolvePaintPasses(
+        'subsequentImplicitFx',
+      );
 
       expect(passes, hasLength(1));
       // Cumulative: 1 + 2 + 3 = 6

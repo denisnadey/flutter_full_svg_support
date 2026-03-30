@@ -1,47 +1,40 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
-  <!-- Deeply nested tspan (3+ levels) with dx/dy transforms -->
-  <!-- Using simple, minimal text to reduce Ahem font impact -->
-  <rect width="200" height="200" fill="#f5f5f5"/>
-  
-  <!-- Background shapes for reference -->
-  <rect x="10" y="10" width="180" height="80" fill="#e8e8e8" rx="5"/>
-  <rect x="10" y="110" width="180" height="80" fill="#e0e0e0" rx="5"/>
-  
-  <!-- Simple nested tspan with dx/dy -->
-  <text x="20" y="40" font-size="14" fill="#333">
-    A<tspan dx="5">B
-      <tspan dy="10">C
-        <tspan dx="-5" dy="5">D</tspan>
-      </tspan>
-    </tspan>
-  </text>
-  
-  <!-- Nested with different transforms -->
-  <text x="100" y="40" font-size="14" fill="#3366cc">
-    X<tspan dx="10" dy="0">
-      Y<tspan dx="0" dy="15">
-        Z<tspan dx="-20" dy="-5">W</tspan>
-      </tspan>
-    </tspan>
-  </text>
-  
-  <!-- Multiple sibling tspans at same level -->
-  <text x="20" y="140" font-size="12" fill="#cc3366">
-    <tspan>1</tspan>
-    <tspan dx="10">2
-      <tspan dy="10">3</tspan>
-    </tspan>
-    <tspan dx="20">4</tspan>
-  </text>
-  
-  <!-- Complex nesting with color changes -->
-  <text x="100" y="140" font-size="12">
-    <tspan fill="#ff0000">R
-      <tspan dx="5" fill="#00ff00">G
-        <tspan dy="8" fill="#0000ff">B
-          <tspan dx="-10" fill="#ff00ff">M</tspan>
+    <!-- Deeply nested tspan (3+ levels) with dx/dy transforms -->
+    <!-- Using simple, minimal text to reduce Ahem font impact -->
+    <rect width="200" height="200" fill="#f5f5f5" />
+
+    <!-- Background shapes for reference -->
+    <rect x="10" y="10" width="180" height="80" fill="#e8e8e8" rx="5" />
+    <rect x="10" y="110" width="180" height="80" fill="#e0e0e0" rx="5" />
+
+    <!-- Simple nested tspan with dx/dy -->
+    <text x="20" y="40" font-size="14" fill="#333"> A<tspan dx="5">B <tspan dy="10">C <tspan dx="-5"
+                    dy="5">D</tspan>
+            </tspan>
         </tspan>
-      </tspan>
-    </tspan>
-  </text>
+    </text>
+
+    <!-- Nested with different transforms -->
+    <text x="100" y="40" font-size="14" fill="#3366cc"> X<tspan dx="10" dy="0"> Y<tspan dx="0"
+                dy="15"> Z<tspan dx="-20" dy="-5">W</tspan>
+            </tspan>
+        </tspan>
+    </text>
+
+    <!-- Multiple sibling tspans at same level -->
+    <text x="20" y="140" font-size="12" fill="#cc3366">
+        <tspan>1</tspan>
+        <tspan dx="10">2 <tspan dy="10">3</tspan>
+        </tspan>
+        <tspan dx="20">4</tspan>
+    </text>
+
+    <!-- Complex nesting with color changes -->
+    <text x="100" y="140" font-size="12">
+        <tspan fill="#ff0000">R <tspan dx="5" fill="#00ff00">G <tspan dy="8" fill="#0000ff">B <tspan
+                        dx="-10" fill="#ff00ff">M</tspan>
+                </tspan>
+            </tspan>
+        </tspan>
+    </text>
 </svg>

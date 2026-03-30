@@ -72,7 +72,9 @@ extension AnimatedSvgPainterMaskCompositionExtension on AnimatedSvgPainter {
 
     // Track mask animation state for cache invalidation
     if (hasAnimations) {
-      _renderCache.maskAnimationState[maskId] = _maskContentIsAnimated(maskNode);
+      _renderCache.maskAnimationState[maskId] = _maskContentIsAnimated(
+        maskNode,
+      );
     }
 
     if (maskBounds == null ||
