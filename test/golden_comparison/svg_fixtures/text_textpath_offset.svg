@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- textPath with startOffset percentage on a curved path -->
+  <defs>
+    <!-- Curved path for text -->
+    <path id="curvePath1" d="M 20,100 Q 100,20 180,100" fill="none" stroke="#ddd" stroke-width="2"/>
+    
+    <!-- S-curve path -->
+    <path id="curvePath2" d="M 20,150 C 60,120 140,180 180,150" fill="none" stroke="#ddd" stroke-width="2"/>
+    
+    <!-- Arc path -->
+    <path id="arcPath" d="M 30,180 A 70,70 0 0,1 170,180" fill="none" stroke="#ddd" stroke-width="2"/>
+  </defs>
+  
+  <rect width="200" height="200" fill="#f5f5f5"/>
+  
+  <!-- Show paths -->
+  <use href="#curvePath1"/>
+  <use href="#curvePath2"/>
+  <use href="#arcPath"/>
+  
+  <!-- Text along path with 0% offset -->
+  <text font-size="10" fill="#3366cc">
+    <textPath href="#curvePath1" startOffset="0%">ABC</textPath>
+  </text>
+  
+  <!-- Text along path with 50% offset (centered) -->
+  <text font-size="10" fill="#cc3366">
+    <textPath href="#curvePath1" startOffset="50%">XYZ</textPath>
+  </text>
+  
+  <!-- Text along S-curve with offset -->
+  <text font-size="10" fill="#33cc66">
+    <textPath href="#curvePath2" startOffset="25%">123</textPath>
+  </text>
+  
+  <!-- Text along arc -->
+  <text font-size="10" fill="#cc9933">
+    <textPath href="#arcPath" startOffset="40%">MNO</textPath>
+  </text>
+</svg>

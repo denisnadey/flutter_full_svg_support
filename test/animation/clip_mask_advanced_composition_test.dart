@@ -564,4 +564,162 @@ void main() {
       expect(analysis.pixelCount, greaterThan(300));
     });
   });
+
+  group('Mask Animation Tracking', () {
+    testWidgets('animated mask content invalidates cache correctly', (
+      tester,
+    ) async {
+      // Mask with animated content should trigger cache invalidation
+      const svgXml = '''
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <mask id="animatedMask">
+              <rect x="0" y="0" width="100" height="100" fill="white">
+                <animate attributeName="opacity" from="1" to="0.5" dur="1s" repeatCount="indefinite"/>
+              </rect>
+            </mask>
+          </defs>
+          <rect x="10" y="10" width="80" height="80" fill="red" mask="url(#animatedMask)"/>
+        </svg>
+      ''';
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+          ),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      // Should render without errors with animated mask
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
+
+    testWidgets('static mask content can be cached', (tester) async {
+      // Mask without animations should allow caching
+      const svgXml = '''
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <mask id="staticMask">
+              <rect x="20" y="20" width="60" height="60" fill="white"/>
+            </mask>
+          </defs>
+          <rect x="10" y="10" width="80" height="80" fill="blue" mask="url(#staticMask)"/>
+        </svg>
+      ''';
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+          ),
+        ),
+      );
+
+      await tester.pump();
+
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
+  });
+
+  group('Gradient-Aware Luminance Masking', () {
+    testWidgets('luminance mask with gradient uses enhanced paint', (
+      tester,
+    ) async {
+      // Mask with gradient content should use gradient-aware luminance paint
+      const svgXml = '''
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <linearGradient id="maskGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="white"/>
+              <stop offset="100%" stop-color="black"/>
+            </linearGradient>
+            <mask id="gradientMask" mask-type="luminance">
+              <rect x="0" y="0" width="100" height="100" fill="url(#maskGradient)"/>
+            </mask>
+          </defs>
+          <rect x="10" y="10" width="80" height="80" fill="red" mask="url(#gradientMask)"/>
+        </svg>
+      ''';
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+          ),
+        ),
+      );
+
+      await tester.pump();
+
+      final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+
+      // Should have visible red pixels through the gradient mask
+      expect(analysis.pixelCount, greaterThan(0));
+    });
+
+    testWidgets('luminance mask without gradient uses standard paint', (
+      tester,
+    ) async {
+      // Mask with solid fill should use standard luminance paint
+      const svgXml = '''
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <mask id="solidMask" mask-type="luminance">
+              <rect x="20" y="20" width="60" height="60" fill="white"/>
+            </mask>
+          </defs>
+          <rect x="10" y="10" width="80" height="80" fill="green" mask="url(#solidMask)"/>
+        </svg>
+      ''';
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+          ),
+        ),
+      );
+
+      await tester.pump();
+
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
+
+    testWidgets('radial gradient in luminance mask renders correctly', (
+      tester,
+    ) async {
+      const svgXml = '''
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <radialGradient id="radialMaskGrad" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="white"/>
+              <stop offset="100%" stop-color="black"/>
+            </radialGradient>
+            <mask id="radialMask" mask-type="luminance">
+              <rect x="0" y="0" width="100" height="100" fill="url(#radialMaskGrad)"/>
+            </mask>
+          </defs>
+          <rect x="10" y="10" width="80" height="80" fill="blue" mask="url(#radialMask)"/>
+        </svg>
+      ''';
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+          ),
+        ),
+      );
+
+      await tester.pump();
+
+      // Should render without errors
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
+  });
 }

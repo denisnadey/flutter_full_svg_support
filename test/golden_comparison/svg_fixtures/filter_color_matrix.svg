@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- feColorMatrix with saturate, hueRotate, and luminanceToAlpha types -->
+  <defs>
+    <!-- Saturate: desaturate to grayscale -->
+    <filter id="saturate_0">
+      <feColorMatrix type="saturate" values="0"/>
+    </filter>
+    
+    <!-- Saturate: oversaturate -->
+    <filter id="saturate_2">
+      <feColorMatrix type="saturate" values="2"/>
+    </filter>
+    
+    <!-- Hue rotate 90 degrees -->
+    <filter id="hue_90">
+      <feColorMatrix type="hueRotate" values="90"/>
+    </filter>
+    
+    <!-- Hue rotate 180 degrees -->
+    <filter id="hue_180">
+      <feColorMatrix type="hueRotate" values="180"/>
+    </filter>
+    
+    <!-- Luminance to alpha -->
+    <filter id="lum_alpha">
+      <feColorMatrix type="luminanceToAlpha"/>
+    </filter>
+    
+    <!-- Custom matrix for sepia effect -->
+    <filter id="sepia">
+      <feColorMatrix type="matrix" values="0.393 0.769 0.189 0 0
+                                            0.349 0.686 0.168 0 0
+                                            0.272 0.534 0.131 0 0
+                                            0     0     0     1 0"/>
+    </filter>
+  </defs>
+  
+  <rect width="200" height="200" fill="#f5f5f5"/>
+  
+  <!-- Original colorful rect -->
+  <defs>
+    <linearGradient id="rainbow" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ff0000"/>
+      <stop offset="33%" stop-color="#00ff00"/>
+      <stop offset="66%" stop-color="#0000ff"/>
+      <stop offset="100%" stop-color="#ff00ff"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Row 1: Saturate variations -->
+  <rect x="10" y="10" width="55" height="25" fill="url(#rainbow)"/>
+  <rect x="70" y="10" width="55" height="25" fill="url(#rainbow)" filter="url(#saturate_0)"/>
+  <rect x="135" y="10" width="55" height="25" fill="url(#rainbow)" filter="url(#saturate_2)"/>
+  
+  <!-- Row 2: Hue rotate -->
+  <rect x="10" y="50" width="55" height="25" fill="url(#rainbow)" filter="url(#hue_90)"/>
+  <rect x="70" y="50" width="55" height="25" fill="url(#rainbow)" filter="url(#hue_180)"/>
+  <rect x="135" y="50" width="55" height="25" fill="url(#rainbow)" filter="url(#sepia)"/>
+  
+  <!-- Row 3: luminanceToAlpha on solid colors -->
+  <g transform="translate(10, 100)">
+    <rect width="30" height="30" fill="#ffffff" filter="url(#lum_alpha)"/>
+    <rect x="35" y="0" width="30" height="30" fill="#ff0000" filter="url(#lum_alpha)"/>
+    <rect x="70" y="0" width="30" height="30" fill="#808080" filter="url(#lum_alpha)"/>
+    <rect x="105" y="0" width="30" height="30" fill="#000000" filter="url(#lum_alpha)"/>
+  </g>
+  
+  <!-- Row 4: Applied to shapes -->
+  <circle cx="45" cy="165" r="25" fill="#ff6633" filter="url(#saturate_0)"/>
+  <circle cx="100" cy="165" r="25" fill="#ff6633" filter="url(#hue_90)"/>
+  <circle cx="155" cy="165" r="25" fill="#ff6633" filter="url(#sepia)"/>
+</svg>

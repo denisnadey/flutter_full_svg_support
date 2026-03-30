@@ -3,18 +3,15 @@
 <cite>
 **Referenced Files in This Document**
 - [animated_svg_painter.dart](file://lib/src/animation/animated_svg_painter.dart)
+- [animated_svg_painter_text_types.dart](file://lib/src/animation/animated_svg_painter_text_types.dart)
+- [animated_svg_painter_text_layout.dart](file://lib/src/animation/animated_svg_painter_text_layout.dart)
+- [animated_svg_painter_text_paint.dart](file://lib/src/animation/animated_svg_painter_text_paint.dart)
 - [animated_svg_painter_text_paint_path.dart](file://lib/src/animation/animated_svg_painter_text_paint_path.dart)
 - [animated_svg_painter_text_paint_glyph.dart](file://lib/src/animation/animated_svg_painter_text_paint_glyph.dart)
 - [animated_svg_painter_text_paint_plain.dart](file://lib/src/animation/animated_svg_painter_text_paint_plain.dart)
 - [animated_svg_painter_text_decoration.dart](file://lib/src/animation/animated_svg_painter_text_decoration.dart)
-- [animated_svg_painter_text_layout.dart](file://lib/src/animation/animated_svg_painter_text_layout.dart)
 - [animated_svg_painter_text_measurement.dart](file://lib/src/animation/animated_svg_painter_text_measurement.dart)
 - [animated_svg_painter_text_style.dart](file://lib/src/animation/animated_svg_painter_text_style.dart)
-- [animated_svg_painter_text_style_font.dart](file://lib/src/animation/animated_svg_painter_text_style_font.dart)
-- [animated_svg_painter_text_style_decoration.dart](file://lib/src/animation/animated_svg_painter_text_style_decoration.dart)
-- [animated_svg_painter_text_style_layout.dart](file://lib/src/animation/animated_svg_painter_text_style_layout.dart)
-- [animated_svg_painter_text_style_positioning.dart](file://lib/src/animation/animated_svg_painter_text_style_positioning.dart)
-- [animated_svg_painter_text_style_rendering.dart](file://lib/src/animation/animated_svg_painter_text_style_rendering.dart)
 - [svg_font_registry.dart](file://lib/src/animation/svg_font_registry.dart)
 - [svg.dart](file://lib/svg.dart)
 - [css_cascade.dart](file://lib/src/animation/css_cascade.dart)
@@ -42,9 +39,10 @@
 ## Update Summary
 **Changes Made**
 - **MODULARIZATION**: Major text rendering system modularized from monolithic animated_svg_painter.dart into specialized modules
+- **NEW**: Text types module: animated_svg_painter_text_types.dart with comprehensive _ResolvedTextStyle class
+- **NEW**: Text layout module: animated_svg_painter_text_layout.dart with sophisticated text positioning algorithms
 - **NEW**: Text paint modules: animated_svg_painter_text_paint_path.dart, animated_svg_painter_text_paint_glyph.dart, animated_svg_painter_text_paint_plain.dart
 - **NEW**: Text measurement and Unicode processing module: animated_svg_painter_text_measurement.dart
-- **NEW**: Text layout and paragraph building module: animated_svg_painter_text_layout.dart
 - **NEW**: Text decoration and effects module: animated_svg_painter_text_decoration.dart
 - **MAINTENANCE**: Improved separation of concerns with dedicated modules for different text rendering aspects
 - **PERFORMANCE**: Enhanced caching and optimization through modularized text rendering pipeline
@@ -71,7 +69,7 @@
 
 The Enhanced Text Styling System represents a comprehensive implementation of SVG text rendering capabilities within the Flutter ecosystem. This system provides extensive support for CSS text properties, advanced typography features, and sophisticated layout algorithms that enable precise control over text appearance and positioning in SVG documents.
 
-**UPDATED**: The system has undergone major architectural changes with comprehensive text rendering system modularization. The monolithic text painting functionality in animated_svg_painter.dart has been split into specialized modules including animated_svg_painter_text_paint_path.dart for curved text rendering, animated_svg_painter_text_paint_glyph.dart for per-character glyph positioning, animated_svg_painter_text_paint_plain.dart for basic text rendering, animated_svg_painter_text_decoration.dart for text effects and decorations, animated_svg_painter_text_layout.dart for paragraph building and layout computation, and animated_svg_painter_text_measurement.dart for Unicode processing and text measurement. This modularization provides better maintainability and clearer separation of concerns for text rendering capabilities.
+**UPDATED**: The system has undergone major architectural changes with comprehensive text rendering system modularization. The monolithic text painting functionality in animated_svg_painter.dart has been split into specialized modules including animated_svg_painter_text_paint_path.dart for curved text rendering, animated_svg_painter_text_paint_glyph.dart for per-character glyph positioning, animated_svg_painter_text_paint_plain.dart for basic text rendering, animated_svg_painter_text_decoration.dart for text effects and decorations, animated_svg_painter_text_layout.dart for paragraph building and layout computation, animated_svg_painter_text_measurement.dart for Unicode processing and text measurement, and animated_svg_painter_text_types.dart for comprehensive type definitions. This modularization provides better maintainability and clearer separation of concerns for text rendering capabilities.
 
 The system extends beyond basic text rendering by implementing a complete cascade of CSS properties, supporting modern web standards while maintaining compatibility with Flutter's text rendering engine. It encompasses font handling, text decoration, layout management, positioning systems, and advanced typographic features including vertical writing modes, ruby annotations, emphasis marks, and modern CSS optimization features.
 
@@ -88,14 +86,17 @@ AP[AnimatedSvgPainter]
 RC[_RenderCache]
 RT[_ResolvedTextStyle]
 end
+subgraph "Text Types Module"
+TT[_ResolvedTextStyle Class]
+end
 subgraph "Text Painting Modules"
 TPP[Text Paint Path Module]
 TPG[Text Paint Glyph Module]
 TPL[Text Paint Plain Module]
 end
-subgraph "Text Measurement & Layout"
-TML[Text Measurement Module]
-TLL[Text Layout Module]
+subgraph "Text Layout & Measurement"
+TL[Text Layout Module]
+TM[Text Measurement Module]
 end
 subgraph "Text Decoration & Effects"
 TDE[Text Decoration Module]
@@ -131,49 +132,51 @@ PO[Paint Order Processor]
 FH[Font Feature Hash Key Generator]
 end
 AP --> RC
-AP --> TP2
+AP --> TT
 TP2 --> TPP
 TP2 --> TPG
 TP2 --> TPL
 TP2 --> TDE
-TP2 --> TML
-TP2 --> TLL
-TML --> UB
-TLL --> PB
-TLL --> EM
-TLL --> TP2
-TLL --> CV
-TLL --> FO
-TLL --> SO
-TLL --> PO
-TLL --> FH
+TP2 --> TL
+TP2 --> TM
+TL --> UB
+TL --> PB
+TL --> EM
+TL --> TP2
+TL --> CV
+TL --> FO
+TL --> SO
+TL --> PO
+TL --> FH
 FR --> FFR
 FR --> EF
 FR --> DR
 FO --> FOT
 FO --> FOP
 FC --> FO
-HP --> TLL
+HP --> TL
 LF --> PB
 ```
 
 **Diagram sources**
 - [animated_svg_painter.dart:148-200](file://lib/src/animation/animated_svg_painter.dart#L148-L200)
+- [animated_svg_painter_text_types.dart:3-451](file://lib/src/animation/animated_svg_painter_text_types.dart#L3-L451)
 - [animated_svg_painter_text_paint_path.dart:1-226](file://lib/src/animation/animated_svg_painter_text_paint_path.dart#L1-L226)
 - [animated_svg_painter_text_paint_glyph.dart:1-165](file://lib/src/animation/animated_svg_painter_text_paint_glyph.dart#L1-L165)
 - [animated_svg_painter_text_paint_plain.dart:1-210](file://lib/src/animation/animated_svg_painter_text_paint_plain.dart#L1-L210)
 - [animated_svg_painter_text_decoration.dart:1-357](file://lib/src/animation/animated_svg_painter_text_decoration.dart#L1-L357)
-- [animated_svg_painter_text_layout.dart:1-786](file://lib/src/animation/animated_svg_painter_text_layout.dart#L1-L786)
+- [animated_svg_painter_text_layout.dart:1-800](file://lib/src/animation/animated_svg_painter_text_layout.dart#L1-L800)
 - [animated_svg_painter_text_measurement.dart:1-389](file://lib/src/animation/animated_svg_painter_text_measurement.dart#L1-L389)
 - [svg_font_registry.dart:81-251](file://lib/src/animation/svg_font_registry.dart#L81-L251)
 
 **Section sources**
 - [animated_svg_painter.dart:148-200](file://lib/src/animation/animated_svg_painter.dart#L148-L200)
+- [animated_svg_painter_text_types.dart:3-451](file://lib/src/animation/animated_svg_painter_text_types.dart#L3-L451)
 - [animated_svg_painter_text_paint_path.dart:1-226](file://lib/src/animation/animated_svg_painter_text_paint_path.dart#L1-L226)
 - [animated_svg_painter_text_paint_glyph.dart:1-165](file://lib/src/animation/animated_svg_painter_text_paint_glyph.dart#L1-L165)
 - [animated_svg_painter_text_paint_plain.dart:1-210](file://lib/src/animation/animated_svg_painter_text_paint_plain.dart#L1-L210)
 - [animated_svg_painter_text_decoration.dart:1-357](file://lib/src/animation/animated_svg_painter_text_decoration.dart#L1-L357)
-- [animated_svg_painter_text_layout.dart:1-786](file://lib/src/animation/animated_svg_painter_text_layout.dart#L1-L786)
+- [animated_svg_painter_text_layout.dart:1-800](file://lib/src/animation/animated_svg_painter_text_layout.dart#L1-L800)
 - [animated_svg_painter_text_measurement.dart:1-389](file://lib/src/animation/animated_svg_painter_text_measurement.dart#L1-L389)
 - [svg_font_registry.dart:81-251](file://lib/src/animation/svg_font_registry.dart#L81-L251)
 
@@ -265,12 +268,11 @@ AnimatedSvgPainter --> _ResolvedTextStyle : "creates"
 
 **Diagram sources**
 - [animated_svg_painter.dart:148-200](file://lib/src/animation/animated_svg_painter.dart#L148-L200)
-- [animated_svg_painter.dart:50-139](file://lib/src/animation/animated_svg_painter.dart#L50-L139)
-- [animated_svg_painter_text_decoration.dart:225-296](file://lib/src/animation/animated_svg_painter_text_decoration.dart#L225-L296)
+- [animated_svg_painter_text_types.dart:3-451](file://lib/src/animation/animated_svg_painter_text_types.dart#L3-L451)
 
 **Section sources**
 - [animated_svg_painter.dart:148-200](file://lib/src/animation/animated_svg_painter.dart#L148-L200)
-- [animated_svg_painter_text_style.dart:18-342](file://lib/src/animation/animated_svg_painter_text_style.dart#L18-L342)
+- [animated_svg_painter_text_types.dart:3-451](file://lib/src/animation/animated_svg_painter_text_types.dart#L3-L451)
 
 ## Text Styling Architecture
 
@@ -356,6 +358,92 @@ TextDecorationResolver --> _SvgTextDecoration : "creates"
 ## Modular Text Rendering System
 
 **UPDATED**: The text rendering system has been comprehensively modularized into specialized components for better maintainability and separation of concerns.
+
+### Text Types Module
+
+The Text Types Module provides comprehensive type definitions and constants for text styling, including the central _ResolvedTextStyle class with 53+ properties covering all CSS text styling features.
+
+```mermaid
+classDiagram
+class _ResolvedTextStyle {
++Color color
++double fontSize
++String? fontFamily
++FontWeight fontWeight
++FontStyle fontStyle
++double letterSpacing
++double wordSpacing
++Set decorations
++WritingMode writingMode
++TextDirection textDirection
++double baselineShift
++String textAnchor
++String dominantBaseline
++String unicodeBidi
++double fontStretch
++double? fontSizeAdjust
++int tabSize
++double textIndent
++String wordBreak
++String overflowWrap
++String textTransform
++String hyphens
++String lineBreak
++String hangingPunctuation
++String textCombineUpright
++String textOrientation
++String textUnderlinePosition
++double? textUnderlineOffset
++double? textDecorationThickness
++String textDecorationSkipInk
++String textDecorationSkip
++String textDecorationStyle
++String? textShadow
++String whiteSpace
++String textOverflow
++double verticalAlign
++double? lineHeight
++String fontKerning
++String fontVariantNumeric
++String textJustify
++String fontVariantLigatures
++String fontVariantCaps
++String fontOpticalSizing
++String paintOrder
++String textAlignLast
++String fontSynthesis
++String fontVariantPosition
++String fontVariantEastAsian
++String? textEmphasis
++String textEmphasisPosition
++String? textEmphasisColor
++String rubyAlign
++String rubyPosition
++String? textEmphasisStyle
++String? quotes
++String? initialLetter
++String textSpacing
++String? fontLanguageOverride
++String? fontVariantAlternates
++String textWrap
++String? fontPalette
++String forcedColorAdjust
++String printColorAdjust
++String textDecorationLine
++String? fontVariationSettings
++String? cssTextDecorationColor
++String cssDirection
++String contentVisibility
++String? containIntrinsicSize
++String willChange
++String hyphenateCharacter
++String cssMixBlendMode
++copyWith() _ResolvedTextStyle
+}
+```
+
+**Diagram sources**
+- [animated_svg_painter_text_types.dart:3-451](file://lib/src/animation/animated_svg_painter_text_types.dart#L3-L451)
 
 ### Text Paint Path Module
 
@@ -448,11 +536,17 @@ class AnimatedSvgPainterTextLayoutExtension {
 +double _resolveTextLength(SvgNode) double?
 +_SvgTextLengthAdjust _resolveLengthAdjust(SvgNode) _SvgTextLengthAdjust
 +double _resolveTextTopFromBaseline(Paragraph, _ResolvedTextStyle, double) double
++double _textPathSpacingAfterGlyph(String, bool, _ResolvedTextStyle) double
++double? _resolveTextLength(SvgNode) double?
++_SvgTextLengthAdjust _resolveLengthAdjust(SvgNode) _SvgTextLengthAdjust
++Path? _resolveTextPathGeometry(SvgNode) Path?
++double _parseTextPathStartOffset(SvgNode, double) double
++Matrix4 _computeTextElementAccumulatedTransform(SvgNode) Matrix4
 }
 ```
 
 **Diagram sources**
-- [animated_svg_painter_text_layout.dart:1-786](file://lib/src/animation/animated_svg_painter_text_layout.dart#L1-L786)
+- [animated_svg_painter_text_layout.dart:1-800](file://lib/src/animation/animated_svg_painter_text_layout.dart#L1-L800)
 
 ### Text Decoration Module
 
@@ -476,11 +570,12 @@ class AnimatedSvgPainterTextDecorationExtension {
 - [animated_svg_painter_text_decoration.dart:1-357](file://lib/src/animation/animated_svg_painter_text_decoration.dart#L1-L357)
 
 **Section sources**
+- [animated_svg_painter_text_types.dart:3-451](file://lib/src/animation/animated_svg_painter_text_types.dart#L3-L451)
 - [animated_svg_painter_text_paint_path.dart:1-226](file://lib/src/animation/animated_svg_painter_text_paint_path.dart#L1-L226)
 - [animated_svg_painter_text_paint_glyph.dart:1-165](file://lib/src/animation/animated_svg_painter_text_paint_glyph.dart#L1-L165)
 - [animated_svg_painter_text_paint_plain.dart:1-210](file://lib/src/animation/animated_svg_painter_text_paint_plain.dart#L1-L210)
 - [animated_svg_painter_text_measurement.dart:1-389](file://lib/src/animation/animated_svg_painter_text_measurement.dart#L1-L389)
-- [animated_svg_painter_text_layout.dart:1-786](file://lib/src/animation/animated_svg_painter_text_layout.dart#L1-L786)
+- [animated_svg_painter_text_layout.dart:1-800](file://lib/src/animation/animated_svg_painter_text_layout.dart#L1-L800)
 - [animated_svg_painter_text_decoration.dart:1-357](file://lib/src/animation/animated_svg_painter_text_decoration.dart#L1-L357)
 
 ## SVG Font Registry System
@@ -1303,7 +1398,7 @@ Enhanced text decoration system with comprehensive thickness control and positio
 | Property | Values | Description |
 |----------|--------|-------------|
 | text-decoration-thickness | auto, from-font, length, percentage | Controls underline/overline thickness |
-| text-underline-position | auto, under, left, right, from-font | Controls underline positioning |
+| text-underline-position | auto, under, left, right | Controls underline positioning |
 | text-underline-offset | length, em | Controls underline offset distance |
 | text-decoration-skip | auto, all, none | Controls decoration skipping behavior |
 | text-decoration-skip-ink | auto, all, none | Controls ink skipping behavior
@@ -1484,7 +1579,7 @@ The Enhanced Text Styling System represents a comprehensive solution for advance
 
 **UPDATED** The system now provides comprehensive support for modern CSS features including content-visibility optimization, advanced text decoration controls, enhanced font variant resolution, sophisticated emphasis mark positioning with character-by-character rendering, improved baseline alignment with reference calculation, enhanced text-indent handling with unit conversion, comprehensive cursor management for precise text positioning, enhanced text geometry handling with stroke width and decoration expansion, comprehensive foreignObject CSS inheritance that ensures consistent typography and text styling across foreignObject boundaries, advanced text-decoration-style mapping with solid, double, dotted, dashed, and wavy styles, sophisticated text-shadow parsing with multiple shadows and color format recognition, comprehensive font-variation-settings parsing for multiple axes with four-character codes, enhanced font-family fallback chain parsing with robust quote handling, stroke-only paragraph builder with paint-order processing, and extensive code quality improvements with better formatting and consistency across all text styling modules. The font family resolution system has been significantly enhanced with complex fallback chains, platform-specific font stacks, comprehensive generic family mapping, emoji font support, math font support, and metric-compatible font selection for consistent typography, making it a complete solution for contemporary web typography requirements with robust foreignObject integration.
 
-The enhanced foreignObject CSS inheritance system ensures that typography properties flow seamlessly from SVG ancestors into foreign content, while preventing SVG-specific properties from leaking into foreign contexts. This provides developers with the flexibility to embed HTML/CSS content within SVG while maintaining consistent visual styling and proper text rendering behavior across the entire document hierarchy.
+The foreignObject CSS inheritance system ensures that typography properties flow seamlessly from SVG ancestors into foreign content, while preventing SVG-specific properties from leaking into foreign contexts. This provides developers with the flexibility to embed HTML/CSS content within SVG while maintaining consistent visual styling and proper text rendering behavior across the entire document hierarchy.
 
 The system's integration with the broader CSS cascade system and shadow boundary behavior ensures that foreignObject content receives proper CSS inheritance while maintaining the structural integrity of the SVG document. This comprehensive approach to foreignObject typography makes it possible to create sophisticated hybrid SVG/HTML content that leverages the strengths of both technologies while maintaining consistent visual presentation.
 

@@ -235,5 +235,103 @@ void main() {
         expect(find.byType(AnimatedSvgPicture), findsOneWidget);
       });
     });
+
+    group('Invalid Data URI Handling', () {
+      testWidgets('gracefully skips malformed data URI with missing comma', (
+        tester,
+      ) async {
+        // Invalid data URI - missing comma between header and data
+        const svg = '''
+          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <image x="10" y="10" width="80" height="80" 
+                   href="data:image/png;base64NOTVALIDBASE64"/>
+            <rect x="20" y="20" width="60" height="60" fill="green"/>
+          </svg>''';
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svg, width: 200, height: 200),
+            ),
+          ),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+
+        // Should render without errors - the invalid image is skipped
+        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+      });
+
+      testWidgets('gracefully skips data URI with truncated base64', (
+        tester,
+      ) async {
+        // Invalid data URI - truncated base64 data
+        const svg = '''
+          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <image x="10" y="10" width="80" height="80" 
+                   href="data:image/png;base64,iVBOR"/>
+            <rect x="30" y="30" width="40" height="40" fill="blue"/>
+          </svg>''';
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svg, width: 200, height: 200),
+            ),
+          ),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+
+        // Should render without errors - other elements still display
+        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+      });
+
+      testWidgets('gracefully skips data URI with empty data portion', (
+        tester,
+      ) async {
+        // Invalid data URI - empty data after comma
+        const svg = '''
+          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <image x="10" y="10" width="80" height="80" 
+                   href="data:image/png;base64,"/>
+            <circle cx="50" cy="50" r="20" fill="red"/>
+          </svg>''';
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svg, width: 200, height: 200),
+            ),
+          ),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+
+        // Should render without errors - invalid image skipped
+        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+      });
+
+      testWidgets('valid data URI still renders correctly', (tester) async {
+        // Valid data URI should still work
+        final svg = '''
+          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <image x="10" y="10" width="80" height="80" 
+                   href="data:image/png;base64,$_tinyBluePngBase64"/>
+          </svg>''';
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svg, width: 200, height: 200),
+            ),
+          ),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+
+        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+      });
+    });
   });
 }

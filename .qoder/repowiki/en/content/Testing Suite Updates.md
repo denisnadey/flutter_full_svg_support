@@ -4,6 +4,7 @@
 **Referenced Files in This Document**
 - [dart_test.yaml](file://dart_test.yaml)
 - [pubspec.yaml](file://pubspec.yaml)
+- [text_mask_image_edge_cases_test.dart](file://test/animation/text_mask_image_edge_cases_test.dart)
 - [css_nth_selectors_test.dart](file://test/animation/css_nth_selectors_test.dart)
 - [css_calc_edge_cases_test.dart](file://test/animation/css_calc_edge_cases_test.dart)
 - [foreign_object_nesting_test.dart](file://test/animation/foreign_object_nesting_test.dart)
@@ -44,12 +45,11 @@
 
 ## Update Summary
 **Changes Made**
-- Added comprehensive test coverage for advanced clip composition with 775 lines of tests covering deeply nested clipPaths, mixed units, transform compositions, text clipping, and polygon/polyline shapes
-- Added extensive filter advanced input graph testing with 707 lines of tests covering FillPaint/StrokePaint source distinction, recursive filter composition, advanced feDropShadow scenarios, and feMerge edge cases
-- Added detailed use symbol advanced edge cases testing with 644 lines of tests covering CSS cascade through nested use boundaries, visibility/display cascade, use within clipPath/mask regions, pointer events, transform composition, opacity compositing, and symbol viewBox handling
-- Enhanced visual regression testing with comprehensive edge case coverage for complex rendering scenarios
-- Expanded filter semantics testing with advanced input-graph resolution and circular reference detection
-- Improved use/symbol inheritance testing with comprehensive cascade behavior validation
+- Added comprehensive text mask image edge cases test module with 600 lines of test content covering complex text rendering scenarios, edge case handling, and performance validation
+- Enhanced testing infrastructure for newly improved text rendering capabilities and animation system
+- Expanded coverage for deeply nested tspan transforms, bidirectional text handling, textLength distribution, radial gradient masks, filter chains on mask content, and nested foreignObject scenarios
+- Integrated comprehensive error handling for missing image hrefs and invalid data URIs
+- Added extensive validation for preserveAspectRatio configurations in nested SVG contexts
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -60,32 +60,34 @@
 6. [Advanced Clip Composition Testing](#advanced-clip-composition-testing)
 7. [Filter Advanced Input Graph Testing](#filter-advanced-input-graph-testing)
 8. [Use Symbol Advanced Edge Cases Testing](#use-symbol-advanced-edge-cases-testing)
-9. [CSS Nth Selectors Test Suite](#css-nth-selectors-test-suite)
-10. [Enhanced SMIL Animation Runtime Testing](#enhanced-smil-animation-runtime-testing)
-11. [CSS Calc Edge Cases Testing](#css-calc-edge-cases-testing)
-12. [ForeignObject Nesting and Coordinate Systems](#foreignobject-nesting-and-coordinate-systems)
-13. [Deep Hit Testing and Event System](#deep-hit-testing-and-event-system)
-14. [Image Transform Edge Cases](#image-transform-edge-cases)
-15. [SMIL Timing Precision Testing](#smil-timing-precision-testing)
-16. [CSS Variables and Calc Integration](#css-variables-and-calc-integration)
-17. [Enhanced Visual Regression Testing](#enhanced-visual-regression-testing)
-18. [Font Registration Lifecycle Testing](#font-registration-lifecycle-testing)
-19. [Embedded Font Scenarios](#embedded-font-scenarios)
-20. [Dependency Analysis](#dependency-analysis)
-21. [Performance Considerations](#performance-considerations)
-22. [Troubleshooting Guide](#troubleshooting-guide)
-23. [Conclusion](#conclusion)
+9. [Text Mask Image Edge Cases Testing](#text-mask-image-edge-cases-testing)
+10. [CSS Nth Selectors Test Suite](#css-nth-selectors-test-suite)
+11. [Enhanced SMIL Animation Runtime Testing](#enhanced-smil-animation-runtime-testing)
+12. [CSS Calc Edge Cases Testing](#css-calc-edge-cases-testing)
+13. [ForeignObject Nesting and Coordinate Systems](#foreignobject-nesting-and-coordinate-systems)
+14. [Deep Hit Testing and Event System](#deep-hit-testing-and-event-system)
+15. [Image Transform Edge Cases](#image-transform-edge-cases)
+16. [SMIL Timing Precision Testing](#smil-timing-precision-testing)
+17. [CSS Variables and Calc Integration](#css-variables-and-calc-integration)
+18. [Enhanced Visual Regression Testing](#enhanced-visual-regression-testing)
+19. [Font Registration Lifecycle Testing](#font-registration-lifecycle-testing)
+20. [Embedded Font Scenarios](#embedded-font-scenarios)
+21. [Dependency Analysis](#dependency-analysis)
+22. [Performance Considerations](#performance-considerations)
+23. [Troubleshooting Guide](#troubleshooting-guide)
+24. [Conclusion](#conclusion)
 
 ## Introduction
-This document provides a comprehensive overview of the expanded testing suite for the Flutter SVG project, reflecting the recent addition of three major comprehensive test files that significantly enhance the reliability and robustness of SVG rendering. The testing suite now includes extensive coverage for advanced clip composition (775 lines), filter advanced input graph semantics (707 lines), and use symbol advanced edge cases (644 lines). These additions provide comprehensive validation for complex SVG features including deeply nested clipPaths, advanced filter composition, CSS cascade behavior through use/symbol boundaries, and sophisticated rendering scenarios.
+This document provides a comprehensive overview of the expanded testing suite for the Flutter SVG project, reflecting the recent addition of a major comprehensive test file that significantly enhances the reliability and robustness of SVG rendering. The testing suite now includes extensive coverage for advanced clip composition (775 lines), filter advanced input graph semantics (707 lines), use symbol advanced edge cases (644 lines), and the newly added text mask image edge cases testing (600 lines). These additions provide comprehensive validation for complex SVG features including deeply nested clipPaths, advanced filter composition, CSS cascade behavior through use/symbol boundaries, sophisticated rendering scenarios, and enhanced text rendering capabilities.
 
 ## Project Structure
-The testing suite has been expanded with three major comprehensive test categories:
+The testing suite has been expanded with four major comprehensive test categories:
 - Core widget and rendering tests
 - Animation and visual transformation tests
 - Advanced clip composition testing with deeply nested clipPaths and complex geometries
 - Filter advanced input graph testing with sophisticated filter semantics
 - Use symbol advanced edge cases testing with comprehensive cascade behavior
+- Text mask image edge cases testing with comprehensive text rendering and mask validation
 - CSS nth selectors test suite with comprehensive structural pseudo-class coverage
 - Enhanced SMIL animation runtime precision testing
 - CSS calc edge cases and mathematical function testing
@@ -120,6 +122,9 @@ FAG["filter_advanced_input_graph_test.dart"]
 end
 subgraph "Use Symbol Advanced Edge Cases Tests"
 USE["use_symbol_advanced_edge_cases_test.dart"]
+end
+subgraph "Text Mask Image Edge Cases Tests"
+TMIE["text_mask_image_edge_cases_test.dart"]
 end
 subgraph "CSS Nth Selectors Tests"
 CNST["css_nth_selectors_test.dart"]
@@ -168,6 +173,7 @@ VM --> VU
 ACC --> VU
 FAG --> VU
 USE --> VU
+TMIE --> VU
 CNST --> VU
 SART --> VU
 FRL --> TF
@@ -188,6 +194,7 @@ LT --> CT
 - [advanced_clip_composition_test.dart:1-776](file://test/animation/advanced_clip_composition_test.dart#L1-L776)
 - [filter_advanced_input_graph_test.dart:1-708](file://test/animation/filter_advanced_input_graph_test.dart#L1-L708)
 - [use_symbol_advanced_edge_cases_test.dart:1-645](file://test/animation/use_symbol_advanced_edge_cases_test.dart#L1-L645)
+- [text_mask_image_edge_cases_test.dart:1-600](file://test/animation/text_mask_image_edge_cases_test.dart#L1-L600)
 - [css_nth_selectors_test.dart:1-1001](file://test/animation/css_nth_selectors_test.dart#L1-L1001)
 - [css_calc_edge_cases_test.dart:1-658](file://test/animation/css_calc_edge_cases_test.dart#L1-L658)
 - [foreign_object_nesting_test.dart:1-869](file://test/animation/foreign_object_nesting_test.dart#L1-L869)
@@ -207,6 +214,7 @@ LT --> CT
 - [advanced_clip_composition_test.dart:1-776](file://test/animation/advanced_clip_composition_test.dart#L1-L776)
 - [filter_advanced_input_graph_test.dart:1-708](file://test/animation/filter_advanced_input_graph_test.dart#L1-L708)
 - [use_symbol_advanced_edge_cases_test.dart:1-645](file://test/animation/use_symbol_advanced_edge_cases_test.dart#L1-L645)
+- [text_mask_image_edge_cases_test.dart:1-600](file://test/animation/text_mask_image_edge_cases_test.dart#L1-L600)
 - [css_nth_selectors_test.dart:1-1001](file://test/animation/css_nth_selectors_test.dart#L1-L1001)
 - [css_calc_edge_cases_test.dart:1-658](file://test/animation/css_calc_edge_cases_test.dart#L1-L658)
 - [foreign_object_nesting_test.dart:1-869](file://test/animation/foreign_object_nesting_test.dart#L1-L869)
@@ -227,6 +235,7 @@ The testing suite now encompasses comprehensive coverage across multiple domains
 - Advanced clip composition testing: Comprehensive deeply nested clipPath validation with 775 lines covering intersection operations, mixed units, transform compositions, text clipping, polygon/polyline shapes, and use element integration
 - Filter advanced input graph testing: Sophisticated filter semantics validation with 707 lines covering FillPaint/StrokePaint source distinction, recursive filter composition, advanced feDropShadow scenarios, feMerge edge cases, and circular reference detection
 - Use symbol advanced edge cases testing: Detailed cascade behavior validation with 644 lines covering CSS cascade through nested use boundaries, visibility/display cascade, use within clipPath/mask regions, pointer events, transform composition, opacity compositing, and symbol viewBox handling
+- Text mask image edge cases testing: Comprehensive text rendering validation with 600 lines covering deeply nested tspan transforms, bidirectional text handling, textLength distribution, radial gradient masks, filter chains on mask content, nested foreignObject scenarios, and error handling for missing/invalid images
 - CSS nth selectors test suite: Comprehensive structural pseudo-class testing with 1000+ test cases covering :nth-child, :nth-last-child, :nth-of-type, and :nth-last-of-type
 - Enhanced SMIL animation runtime testing: Precision validation for long-running animations, boundary value corrections, and floating-point drift prevention
 - CSS calc edge cases testing: Comprehensive mathematical function evaluation including nested expressions, min/max/clamp functions, and unit conversions
@@ -247,6 +256,7 @@ The testing suite now encompasses comprehensive coverage across multiple domains
 - [advanced_clip_composition_test.dart:1-776](file://test/animation/advanced_clip_composition_test.dart#L1-L776)
 - [filter_advanced_input_graph_test.dart:1-708](file://test/animation/filter_advanced_input_graph_test.dart#L1-L708)
 - [use_symbol_advanced_edge_cases_test.dart:1-645](file://test/animation/use_symbol_advanced_edge_cases_test.dart#L1-L645)
+- [text_mask_image_edge_cases_test.dart:1-600](file://test/animation/text_mask_image_edge_cases_test.dart#L1-L600)
 - [css_nth_selectors_test.dart:1-1001](file://test/animation/css_nth_selectors_test.dart#L1-L1001)
 - [css_calc_edge_cases_test.dart:1-658](file://test/animation/css_calc_edge_cases_test.dart#L1-L658)
 - [foreign_object_nesting_test.dart:1-869](file://test/animation/foreign_object_nesting_test.dart#L1-L869)
@@ -279,6 +289,7 @@ The expanded testing suite leverages Flutter's widget testing framework with spe
 - Advanced clip composition validation with deeply nested geometries
 - Filter semantics testing with sophisticated input-graph resolution
 - Use/symbol cascade behavior validation
+- Comprehensive text rendering and mask validation with bidirectional text support
 
 ```mermaid
 sequenceDiagram
@@ -287,6 +298,7 @@ participant U as "VisualTestUtils"
 participant ACC as "AdvancedClipComposition"
 participant FAG as "FilterAdvancedGraph"
 participant USE as "UseSymbolEdgeCases"
+participant TMIE as "TextMaskImageEdgeCases"
 participant CNST as "CssNthSelectors"
 participant SART as "SmilRuntime"
 participant CE as "CssCalcEvaluator"
@@ -300,6 +312,8 @@ T->>FAG : "testAdvancedFilterSemantics()"
 FAG-->>T : "input-graph resolution"
 T->>USE : "testUseSymbolCascade()"
 USE-->>T : "cascade behavior validation"
+T->>TMIE : "testTextMaskScenarios()"
+TMIE-->>T : "text rendering validation"
 T->>CNST : "testNthSelectors()"
 CNST-->>T : "structural pseudo-class validation"
 T->>SART : "testAnimationPrecision()"
@@ -323,6 +337,7 @@ U-->>T : "pixel analysis"
 - [advanced_clip_composition_test.dart:11-85](file://test/animation/advanced_clip_composition_test.dart#L11-L85)
 - [filter_advanced_input_graph_test.dart:18-144](file://test/animation/filter_advanced_input_graph_test.dart#L18-L144)
 - [use_symbol_advanced_edge_cases_test.dart:8-644](file://test/animation/use_symbol_advanced_edge_cases_test.dart#L8-L644)
+- [text_mask_image_edge_cases_test.dart:6-240](file://test/animation/text_mask_image_edge_cases_test.dart#L6-L240)
 - [css_nth_selectors_test.dart:8-416](file://test/animation/css_nth_selectors_test.dart#L8-L416)
 - [smil_animation_runtime.dart:27-122](file://lib/src/animation/smil/smil_animation_runtime.dart#L27-L122)
 - [css_calc_edge_cases_test.dart:8-47](file://test/animation/css_calc_edge_cases_test.dart#L8-L47)
@@ -336,6 +351,7 @@ U-->>T : "pixel analysis"
 - [advanced_clip_composition_test.dart:1-776](file://test/animation/advanced_clip_composition_test.dart#L1-L776)
 - [filter_advanced_input_graph_test.dart:1-708](file://test/animation/filter_advanced_input_graph_test.dart#L1-L708)
 - [use_symbol_advanced_edge_cases_test.dart:1-645](file://test/animation/use_symbol_advanced_edge_cases_test.dart#L1-L645)
+- [text_mask_image_edge_cases_test.dart:1-600](file://test/animation/text_mask_image_edge_cases_test.dart#L1-L600)
 - [css_nth_selectors_test.dart:1-1001](file://test/animation/css_nth_selectors_test.dart#L1-L1001)
 - [smil_animation_runtime.dart:1-132](file://lib/src/animation/smil/smil_animation_runtime.dart#L1-L132)
 - [css_calc_edge_cases_test.dart:1-658](file://test/animation/css_calc_edge_cases_test.dart#L1-L658)
@@ -836,19 +852,123 @@ SymbolViewBox --> ViewBoxScale["ViewBox Scaling"]
 **Section sources**
 - [use_symbol_advanced_edge_cases_test.dart:1-645](file://test/animation/use_symbol_advanced_edge_cases_test.dart#L1-L645)
 
-## CSS Nth Selectors Test Suite
+## Text Mask Image Edge Cases Testing
 
-### Comprehensive Structural Pseudo-Class Testing
+### Comprehensive Text Rendering and Mask Validation
+The newly added text mask image edge cases testing provides extensive coverage for complex text rendering scenarios with 600 lines of comprehensive validation:
+
+#### Deeply Nested tspan with Transforms
+- **3+ level nested tspan with mixed transforms**: Validates complex transform hierarchies in deeply nested text spans
+- **Per-character x/y positioning in transformed tspan**: Tests precise character-level positioning within transformed contexts
+- **4-level deep tspan with mixed transform types**: Validates matrix, skewX, translate, rotate, and scale combinations
+- **dx/dy attribute handling**: Tests displacement attributes in complex transform chains
+- **Transform composition validation**: Ensures proper transform multiplication and inheritance behavior
+
+#### Bidirectional Text in Complex Hierarchies
+- **RTL parent with LTR tspan children**: Validates right-to-left text with left-to-right child segments
+- **LTR parent with RTL tspan and bidi-override**: Tests left-to-right parent with right-to-left child using unicode-bidi
+- **Nested direction changes with isolate**: Validates complex bidirectional text with isolation boundaries
+- **Direction attribute inheritance**: Tests proper direction handling through nested text hierarchies
+- **Unicode bidi override support**: Validates unicode-bidi="bidi-override" functionality
+
+#### textLength with Nested tspan
+- **textLength on parent distributes to children - spacing**: Validates text length distribution with spacing adjustment
+- **textLength on parent distributes to children - spacingAndGlyphs**: Tests glyph-based spacing adjustments
+- **Deeply nested tspan with parent textLength**: Validates complex nested hierarchies with parent text length constraints
+- **Length adjustment modes**: Tests both spacing and spacingAndGlyphs adjustment behaviors
+- **Child element positioning**: Validates proper positioning of nested tspan elements within text length constraints
+
+#### Radial Gradient in Mask Content
+- **Mask with radialGradient fill - luminance mode**: Validates radial gradient masks in luminance mode
+- **Mask with radialGradient with opacity stops**: Tests gradient masks with varying opacity values
+- **Gradient interpolation validation**: Ensures proper gradient interpolation within mask contexts
+- **Opacity stop handling**: Validates stop-opacity values in mask gradients
+- **Luminance mode compatibility**: Tests compatibility with luminance mask type
+
+#### Filter Chains on Mask Content
+- **Mask with blur filter on content**: Validates gaussian blur filters in mask contexts
+- **Mask with blur + colorMatrix filter chain**: Tests complex filter chains within masks
+- **Filter result chaining**: Validates proper filter result handling in mask chains
+- **Filter primitive interactions**: Tests interaction between different filter primitives
+- **Filter performance validation**: Ensures efficient filter processing in mask contexts
+
+#### Mask-to-Mask Intersection
+- **Nested elements with own masks intersect**: Validates mask intersection in nested contexts
+- **3-level deep mask nesting**: Tests complex hierarchical mask structures
+- **Mask composition validation**: Ensures proper mask composition behavior
+- **Nested mask inheritance**: Validates mask behavior through multiple nesting levels
+- **Intersection region handling**: Tests proper handling of intersecting mask regions
+
+#### Image Error Fallback
+- **Missing image href renders transparent fallback**: Validates error handling for missing image references
+- **Invalid data URI image renders fallback**: Tests fallback behavior for malformed data URIs
+- **Error boundary validation**: Ensures proper error boundaries in image rendering
+- **Fallback rendering consistency**: Validates consistent fallback rendering behavior
+- **Image loading failure handling**: Tests proper handling of various image loading failures
+
+#### Nested SVG in ForeignObject
+- **ForeignObject with nested svg - xMidYMid meet**: Validates preserveAspectRatio="xMidYMid meet" in nested contexts
+- **ForeignObject with nested svg - xMinYMin slice**: Tests preserveAspectRatio="xMinYMin slice" behavior
+- **ForeignObject with nested svg - none (stretch)**: Validates stretch behavior with preserveAspectRatio="none"
+- **All preserveAspectRatio alignments**: Tests all 9 alignment values in nested contexts
+- **Nested coordinate system validation**: Ensures proper coordinate system handling in nested SVG contexts
+
+```mermaid
+flowchart TD
+TextMaskImage["Text Mask Image Edge Cases Tests"] --> TextEdgeCases["Text Edge Cases"]
+TextMaskImage --> MaskRefinements["Mask Refinements"]
+TextMaskImage --> ImageForeignObject["Image/ForeignObject Edge Cases"]
+TextEdgeCases --> NestedTransforms["Deeply Nested Transforms"]
+TextEdgeCases --> BidirectionalText["Bidirectional Text"]
+TextEdgeCases --> TextLength["textLength Distribution"]
+NestedTransforms --> DeepHierarchy["3+ Level Hierarchy"]
+NestedTransforms --> CharacterPositioning["Per-Character Positioning"]
+NestedTransforms --> MixedTransforms["Mixed Transform Types"]
+BidirectionalText --> DirectionInheritance["Direction Inheritance"]
+BidirectionalText --> UnicodeBidi["Unicode Bidi Override"]
+BidirectionalText --> Isolation["Text Isolation"]
+TextLength --> SpacingAdjustment["Spacing Adjustment"]
+TextLength --> GlyphAdjustment["Glyph Adjustment"]
+TextLength --> ComplexHierarchies["Complex Hierarchies"]
+MaskRefinements --> RadialGradients["Radial Gradients"]
+MaskRefinements --> FilterChains["Filter Chains"]
+MaskRefinements --> MaskIntersections["Mask Intersections"]
+RadialGradients --> LuminanceMode["Luminance Mode"]
+RadialGradients --> OpacityStops["Opacity Stops"]
+FilterChains --> BlurFilters["Blur Filters"]
+FilterChains --> ColorMatrix["Color Matrix"]
+FilterChains --> ComplexChains["Complex Chains"]
+MaskIntersections --> NestedMasks["Nested Masks"]
+MaskIntersections --> DeepNesting["Deep Nesting"]
+ImageForeignObject --> ErrorFallback["Error Fallback"]
+ImageForeignObject --> NestedSVG["Nested SVG Contexts"]
+ErrorFallback --> MissingHref["Missing href"]
+ErrorFallback --> InvalidDataURI["Invalid Data URI"]
+NestedSVG --> AllAlignments["All Alignments"]
+NestedSVG --> CoordinateValidation["Coordinate Validation"]
+```
+
+**Diagram sources**
+- [text_mask_image_edge_cases_test.dart:6-240](file://test/animation/text_mask_image_edge_cases_test.dart#L6-L240)
+- [text_mask_image_edge_cases_test.dart:242-428](file://test/animation/text_mask_image_edge_cases_test.dart#L242-L428)
+- [text_mask_image_edge_cases_test.dart:430-598](file://test/animation/text_mask_image_edge_cases_test.dart#L430-L598)
+
+**Section sources**
+- [text_mask_image_edge_cases_test.dart:1-600](file://test/animation/text_mask_image_edge_cases_test.dart#L1-L600)
+
+### CSS Nth Selectors Test Suite
+
+#### Comprehensive Structural Pseudo-Class Testing
 The CSS nth selectors test suite provides extensive coverage for structural pseudo-classes with over 1000 test cases:
 
-#### CSS Nth Pseudo-Class Parsing
+##### CSS Nth Pseudo-Class Parsing
 - **Keyword parsing**: Validates "odd" and "even" keyword parsing with case-insensitive handling
 - **Simple number parsing**: Tests direct number parsing for nth-child(1), nth-child(3), nth-child(10)
 - **An+B formula parsing**: Comprehensive testing of formulas like "n", "2n", "2n+1", "3n+2", "n+3", "-n+3", "2n-1", "-2n+6"
 - **Whitespace handling**: Validates trimming of leading/trailing whitespace in nth expressions
 - **Case-insensitive parsing**: Tests uppercase and mixed case keyword handling
 
-#### CSS Nth Pseudo-Class Matching
+##### CSS Nth Pseudo-Class Matching
 - **Simple number matching**: Validates exact position matching for nth-child(1), nth-child(3)
 - **Odd/even matching**: Comprehensive testing of :nth-child(odd) and :nth-child(even) patterns
 - **An+B formula matching**: Extensive testing of mathematical formula matching including:
@@ -861,19 +981,19 @@ The CSS nth selectors test suite provides extensive coverage for structural pseu
   - :nth-child(-n+3) matches first 3 elements
   - :nth-child(-2n+6) matches 6, 4, 2
 
-#### CSS Selector Parser Integration
+##### CSS Selector Parser Integration
 - **nth pseudo-class parsing**: Validates CSS parser integration for selectors like rect:nth-child(2n+1), :nth-last-child(3), circle:nth-of-type(odd), rect:nth-last-of-type(even)
 - **Multiple nth pseudo-classes**: Tests selectors with multiple nth pseudo-classes like rect:nth-child(n+2):nth-child(-n+5)
 - **Edge case handling**: Validates behavior with single child elements and boundary conditions
 
-#### CSS Selector Matching Integration
+##### CSS Selector Matching Integration
 - **:nth-child selectors**: Comprehensive animation targeting validation for rect:nth-child(1), rect:nth-child(2), rect:nth-child(odd), rect:nth-child(even), rect:nth-child(3n), rect:nth-child(n+3), rect:nth-child(-n+3)
 - **:nth-last-child selectors**: Validates last-child positioning with rect:nth-last-child(1), rect:nth-last-child(2), rect:nth-last-child(odd), rect:nth-last-child(-n+2)
 - **:nth-of-type selectors**: Tests type-specific matching with rect:nth-of-type(1), rect:nth-of-type(2), rect:nth-of-type(odd), rect:nth-of-type(2n)
 - **:nth-last-of-type selectors**: Validates last-of-type positioning with rect:nth-last-of-type(1), rect:nth-last-of-type(2), rect:nth-last-of-type(odd)
 - **Integration with other selectors**: Tests combinations with tag selectors, class selectors, child combinators, attribute selectors, and :not() pseudo-class
 
-#### Edge Cases and Complex Scenarios
+##### Edge Cases and Complex Scenarios
 - **Single child validation**: Tests :nth-child(1) and :nth-last-child(1) with single child elements
 - **Boundary condition testing**: Validates :nth-child(100) with fewer children and :nth-of-type(1) with single element of type
 - **Integration edge cases**: Tests complex selector combinations like tag:nth-child(n).class, g > rect:nth-child(odd), rect:nth-child(n+2)[fill=red]:not(.excluded)
@@ -914,18 +1034,18 @@ EdgeCases --> Complex["Complex Combinations"]
 ### CSS Selectors Implementation
 The CSS selectors implementation provides comprehensive structural pseudo-class support:
 
-#### CssNthPseudoClass Class
+##### CssNthPseudoClass Class
 - **Parse method**: Handles keyword parsing ("odd", "even"), number parsing, and An+B formula parsing with regex validation
 - **Matches method**: Implements mathematical formula evaluation with proper integer division and remainder handling
 - **toString method**: Provides proper CSS string representation with coefficient normalization
 
-#### Selector Matching Logic
+##### Selector Matching Logic
 - **nthChild**: Uses 1-based index from start of siblings
 - **nthLastChild**: Uses 1-based index from end of siblings  
 - **nthOfType**: Counts only siblings of the same tag name from start
 - **nthLastOfType**: Counts only siblings of the same tag name from end
 
-#### CSS Parser Integration
+##### CSS Parser Integration
 - **Functional pseudo-classes**: Parses :nth-child(2n+1), :nth-last-child(3), :nth-of-type(odd), :nth-last-of-type(even)
 - **Multiple nth pseudo-classes**: Supports selectors with multiple nth pseudo-classes
 - **Integration with other selectors**: Works with tag selectors, class selectors, attribute selectors, and combinators
@@ -939,23 +1059,23 @@ The CSS selectors implementation provides comprehensive structural pseudo-class 
 ### Precision Validation for Long-Running Animations
 The enhanced SMIL animation runtime testing provides comprehensive validation for animation precision and boundary handling:
 
-#### Animation Progress Computation
+##### Animation Progress Computation
 - **High-precision math**: Uses microsecond-level precision to avoid floating-point drift in long-running animations
 - **Boundary value correction**: Implements epsilon correction for values near 0.0 and 1.0 to prevent boundary artifacts
 - **Fractional repeatCount handling**: Accurately calculates progress for fractional repeat counts with exact fractional part determination
 - **Iteration boundary detection**: Identifies exact iteration boundaries and handles them correctly
 
-#### Floating-Point Drift Prevention
+##### Floating-Point Drift Prevention
 - **Epsilon tolerance**: Uses 1 microsecond tolerance for boundary value comparisons
 - **Exact end-time calculation**: Determines when animations reach exactly the end of repeat cycles
 - **Progress normalization**: Normalizes progress values to prevent accumulation of floating-point errors
 
-#### Repeat Count Precision
+##### Repeat Count Precision
 - **Whole number repeatCount**: Correctly handles animations ending at t=1.0 of the last iteration
 - **Fractional repeatCount**: Calculates exact fractional progress for animations ending mid-iteration
 - **Large repeatCount validation**: Tests precision with 10,000+ iterations without drift accumulation
 
-#### Playback Direction Handling
+##### Playback Direction Handling
 - **Normal direction**: Standard 0.0 to 1.0 progression
 - **Reverse direction**: 1.0 to 0.0 progression for reverse playback
 - **Alternate direction**: Alternating normal/reverse for each iteration
@@ -989,22 +1109,22 @@ Runtime-->>Anim : "_AnimationProgress(t, completedRepeats)"
 ### SMIL Timeline Runtime Enhancements
 The SMIL timeline runtime provides enhanced event handling and animation sandwich model implementation:
 
-#### Event-Based Animation Activation
+##### Event-Based Animation Activation
 - **Event condition matching**: Finds matching EventCondition in begin conditions for event-triggered animations
 - **Offset calculation**: Computes start time with proper offset handling for event-triggered animations
 - **Resolved begin time management**: Updates resolved begin times in both timeline and animation instances
 
-#### Animation Sandwich Model
+##### Animation Sandwich Model
 - **Priority resolution**: Applies "last wins" rule for non-additive animations targeting the same attribute
 - **Additive stacking**: Stacks additive animations in document order for proper value computation
 - **Document order preservation**: Maintains animation order through sort operations for priority resolution
 
-#### State Transition Detection
+##### State Transition Detection
 - **Active state tracking**: Monitors animation activation and deactivation states for transition detection
 - **Iteration tracking**: Tracks current iteration changes for repeat event firing
 - **Event dispatching**: Dispatches beginEvent, endEvent, and repeatEvent for external listeners
 
-#### DOM Event Integration
+##### DOM Event Integration
 - **Event key generation**: Creates unique event keys combining elementId and eventType
 - **Event time registration**: Registers event times for event-based animation resolution
 - **Listener notification**: Notifies waiting animations when matching events occur
@@ -1412,6 +1532,7 @@ The expanded testing suite exhibits clear separation of concerns with comprehens
 - Advanced clip composition tests depend on visual utilities and complex rendering scenarios
 - Filter advanced input graph tests depend on SVG parser and filter semantics
 - Use symbol advanced edge cases tests depend on visual utilities and complex cascade behavior
+- Text mask image edge cases tests depend on visual utilities and comprehensive text rendering validation
 - CSS nth selectors tests depend on CSS selector parsing and matching implementations
 - SMIL animation runtime tests depend on enhanced precision handling and boundary value corrections
 - CSS calc tests depend on mathematical evaluation utilities and edge case handling
@@ -1435,6 +1556,7 @@ VU --> VM["visual_morph_test.dart"]
 VU --> ACC["advanced_clip_composition_test.dart"]
 VU --> FAG["filter_advanced_input_graph_test.dart"]
 VU --> USE["use_symbol_advanced_edge_cases_test.dart"]
+VU --> TMIE["text_mask_image_edge_cases_test.dart"]
 VU --> CNST["css_nth_selectors_test.dart"]
 VU --> SART["smil_animation_runtime.dart"]
 VU --> CCE["css_calc_edge_cases_test.dart"]
@@ -1464,6 +1586,7 @@ SART --> SMILTIMELINE["smil_timeline_runtime.dart"]
 ACC --> VU
 FAG --> FR
 USE --> VU
+TMIE --> VU
 ```
 
 **Diagram sources**
@@ -1471,6 +1594,7 @@ USE --> VU
 - [advanced_clip_composition_test.dart:1-776](file://test/animation/advanced_clip_composition_test.dart#L1-L776)
 - [filter_advanced_input_graph_test.dart:1-708](file://test/animation/filter_advanced_input_graph_test.dart#L1-L708)
 - [use_symbol_advanced_edge_cases_test.dart:1-645](file://test/animation/use_symbol_advanced_edge_cases_test.dart#L1-L645)
+- [text_mask_image_edge_cases_test.dart:1-600](file://test/animation/text_mask_image_edge_cases_test.dart#L1-L600)
 - [css_nth_selectors_test.dart:1-1001](file://test/animation/css_nth_selectors_test.dart#L1-L1001)
 - [css_calc_edge_cases_test.dart:1-658](file://test/animation/css_calc_edge_cases_test.dart#L1-L658)
 - [foreign_object_nesting_test.dart:1-869](file://test/animation/foreign_object_nesting_test.dart#L1-L869)
@@ -1492,6 +1616,7 @@ USE --> VU
 - [advanced_clip_composition_test.dart:1-776](file://test/animation/advanced_clip_composition_test.dart#L1-L776)
 - [filter_advanced_input_graph_test.dart:1-708](file://test/animation/filter_advanced_input_graph_test.dart#L1-L708)
 - [use_symbol_advanced_edge_cases_test.dart:1-645](file://test/animation/use_symbol_advanced_edge_cases_test.dart#L1-L645)
+- [text_mask_image_edge_cases_test.dart:1-600](file://test/animation/text_mask_image_edge_cases_test.dart#L1-L600)
 - [css_nth_selectors_test.dart:1-1001](file://test/animation/css_nth_selectors_test.dart#L1-L1001)
 - [css_calc_edge_cases_test.dart:1-658](file://test/animation/css_calc_edge_cases_test.dart#L1-L658)
 - [foreign_object_nesting_test.dart:1-869](file://test/animation/foreign_object_nesting_test.dart#L1-L869)
@@ -1527,6 +1652,7 @@ USE --> VU
 - Advanced clip composition tests optimize pixel analysis for complex geometries
 - Filter advanced input graph tests validate performance with deep filter chains
 - Use symbol advanced edge cases tests minimize redundant rendering operations
+- Text mask image edge cases tests validate performance with complex nested text hierarchies and mask operations
 
 ## Troubleshooting Guide
 Common issues and resolutions across the expanded test suite:
@@ -1549,6 +1675,7 @@ Common issues and resolutions across the expanded test suite:
 - Advanced clip composition failures: Check for proper clipPath unit handling and transform composition
 - Filter advanced input graph resolution errors: Validate filter chain depth limits and circular reference detection
 - Use symbol advanced edge cases failures: Verify CSS cascade behavior and transform composition
+- Text mask image edge cases failures: Check for proper text rendering in complex hierarchies and mask operations
 - Visual test debugging: Use detailed pixel analysis and geometric validation reports
 
 **Section sources**
@@ -1557,6 +1684,7 @@ Common issues and resolutions across the expanded test suite:
 - [advanced_clip_composition_test.dart:677-774](file://test/animation/advanced_clip_composition_test.dart#L677-L774)
 - [filter_advanced_input_graph_test.dart:610-663](file://test/animation/filter_advanced_input_graph_test.dart#L610-L663)
 - [use_symbol_advanced_edge_cases_test.dart:420-480](file://test/animation/use_symbol_advanced_edge_cases_test.dart#L420-L480)
+- [text_mask_image_edge_cases_test.dart:6-240](file://test/animation/text_mask_image_edge_cases_test.dart#L6-L240)
 - [css_nth_selectors_test.dart:271-324](file://test/animation/css_nth_selectors_test.dart#L271-L324)
 - [css_calc_edge_cases_test.dart:271-324](file://test/animation/css_calc_edge_cases_test.dart#L271-L324)
 - [foreign_object_nesting_test.dart:366-477](file://test/animation/foreign_object_nesting_test.dart#L366-L477)
@@ -1568,10 +1696,11 @@ Common issues and resolutions across the expanded test suite:
 - [text_font_face_test.dart:457-507](file://test/animation/text_font_face_test.dart#L457-L507)
 
 ## Conclusion
-The testing suite demonstrates a comprehensive approach to validating SVG rendering across multiple sources, themes, animations, font scenarios, mathematical functions, coordinate systems, hit testing, image transformations, CSS structural pseudo-classes, animation timing, and advanced rendering features. The expansion with three major comprehensive test files significantly enhances the reliability and robustness of the Flutter SVG project:
+The testing suite demonstrates a comprehensive approach to validating SVG rendering across multiple sources, themes, animations, font scenarios, mathematical functions, coordinate systems, hit testing, image transformations, CSS structural pseudo-classes, animation timing, and advanced rendering features. The expansion with four major comprehensive test files significantly enhances the reliability and robustness of the Flutter SVG project:
 
 - **Advanced Clip Composition Testing (775 lines)**: Provides extensive validation for deeply nested clipPaths, mixed units, transform compositions, text clipping, polygon/polyline shapes, and use element integration
 - **Filter Advanced Input Graph Testing (707 lines)**: Offers sophisticated filter semantics validation covering FillPaint/StrokePaint source distinction, recursive filter composition, advanced feDropShadow scenarios, and feMerge edge cases
 - **Use Symbol Advanced Edge Cases Testing (644 lines)**: Delivers comprehensive cascade behavior validation for CSS cascade through nested use boundaries, visibility/display cascade, use within clipPath/mask regions, pointer events, transform composition, opacity compositing, and symbol viewBox handling
+- **Text Mask Image Edge Cases Testing (600 lines)**: Provides comprehensive validation for complex text rendering scenarios including deeply nested tspan transforms, bidirectional text handling, textLength distribution, radial gradient masks, filter chains on mask content, nested foreignObject scenarios, and error handling for missing/invalid images
 
-These additions provide comprehensive coverage for complex SVG features including deeply nested clipPaths, advanced filter composition, CSS cascade behavior through use/symbol hierarchies, and sophisticated rendering scenarios. The expanded visual regression testing capabilities with comprehensive edge case coverage ensure reliable rendering validation. Typography feature testing validates CSS font property compliance across various scenarios. The integration of all test components with the existing testing infrastructure ensures comprehensive quality assurance for the Flutter SVG project, providing confidence in handling complex real-world SVG rendering scenarios with enhanced precision and reliability.
+These additions provide comprehensive coverage for complex SVG features including deeply nested clipPaths, advanced filter composition, CSS cascade behavior through use/symbol hierarchies, sophisticated rendering scenarios, and enhanced text rendering capabilities. The expanded visual regression testing capabilities with comprehensive edge case coverage ensure reliable rendering validation. Typography feature testing validates CSS font property compliance across various scenarios. The integration of all test components with the existing testing infrastructure ensures comprehensive quality assurance for the Flutter SVG project, providing confidence in handling complex real-world SVG rendering scenarios with enhanced precision and reliability.

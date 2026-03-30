@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Luminance mask with grayscale gradient -->
+  <defs>
+    <!-- Horizontal grayscale gradient for luminance mask -->
+    <linearGradient id="grayGrad1" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#000000"/>
+      <stop offset="50%" stop-color="#808080"/>
+      <stop offset="100%" stop-color="#ffffff"/>
+    </linearGradient>
+    
+    <!-- Radial grayscale gradient -->
+    <radialGradient id="grayGrad2" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#000000"/>
+    </radialGradient>
+    
+    <!-- Vertical gradient -->
+    <linearGradient id="grayGrad3" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#000000"/>
+    </linearGradient>
+    
+    <!-- Luminance masks -->
+    <mask id="lumMask1" maskContentUnits="objectBoundingBox">
+      <rect x="0" y="0" width="1" height="1" fill="url(#grayGrad1)"/>
+    </mask>
+    
+    <mask id="lumMask2" maskContentUnits="objectBoundingBox">
+      <rect x="0" y="0" width="1" height="1" fill="url(#grayGrad2)"/>
+    </mask>
+    
+    <mask id="lumMask3" maskContentUnits="objectBoundingBox">
+      <rect x="0" y="0" width="1" height="1" fill="url(#grayGrad3)"/>
+    </mask>
+  </defs>
+  
+  <rect width="200" height="200" fill="#f5f5f5"/>
+  
+  <!-- Horizontal fade -->
+  <rect x="10" y="10" width="80" height="50" fill="#3366cc" mask="url(#lumMask1)"/>
+  
+  <!-- Radial fade -->
+  <rect x="110" y="10" width="80" height="80" fill="#cc3366" mask="url(#lumMask2)"/>
+  
+  <!-- Vertical fade -->
+  <rect x="10" y="80" width="80" height="60" fill="#33cc66" mask="url(#lumMask3)"/>
+  
+  <!-- Luminance mask on circle -->
+  <circle cx="60" cy="165" r="30" fill="#cc9933" mask="url(#lumMask2)"/>
+  
+  <!-- Luminance mask on complex shape -->
+  <polygon points="150,110 180,170 120,170" fill="#9933cc" mask="url(#lumMask1)"/>
+</svg>

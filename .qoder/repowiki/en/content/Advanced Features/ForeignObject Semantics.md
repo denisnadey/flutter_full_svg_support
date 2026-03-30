@@ -9,6 +9,8 @@
 - [animated_svg_painter_use_foreign_object.dart](file://lib/src/animation/animated_svg_painter_use_foreign_object.dart)
 - [animated_svg_painter_use.dart](file://lib/src/animation/animated_svg_painter_use.dart)
 - [animated_svg_painter_geometry.dart](file://lib/src/animation/animated_svg_painter_geometry.dart)
+- [animated_svg_painter_use_context.dart](file://lib/src/animation/animated_svg_painter_use_context.dart)
+- [animated_svg_painter_tree.dart](file://lib/src/animation/animated_svg_painter_tree.dart)
 - [foreign_object_advanced_test.dart](file://test/animation/foreign_object_advanced_test.dart)
 - [foreignobject_css_inheritance_test.dart](file://test/animation/foreignobject_css_inheritance_test.dart)
 - [SVGElement.cpp](file://blink-b87d44f-Source-core-svg/SVGElement.cpp)
@@ -16,13 +18,12 @@
 
 ## Update Summary
 **Changes Made**
-- Comprehensive enhancement of CSS inheritance boundary enforcement system
-- Advanced viewport transform handling with specialized coordinate system management
-- Sophisticated CSS inheritance resolution system with boundary-aware property flow
-- Enhanced foreignObject viewport clipping and overflow handling
-- Advanced transform propagation through foreignObject hierarchies
-- Specialized CSS inheritance boundary enforcement with property categorization
-- New foreignObject-specific geometry and transform processing extensions
+- Enhanced CSS inheritance enforcement system with comprehensive _UseInheritanceContext class
+- Advanced property categorization with sophisticated boundary handling
+- Comprehensive CSS inheritance boundary enforcement with strict property filtering
+- Enhanced viewport clipping, transform propagation, and coordinate system management
+- New specialized CSS inheritance resolution system with boundary-aware property flow
+- Advanced transform computation with boundary enforcement and coordinate system isolation
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -80,6 +81,16 @@ class AnimatedSvgPainterUseForeignObjectExtension {
 +_applyForeignObjectViewport() void
 +_applyNestedSvgViewportInForeignObject() void
 }
+class _UseInheritanceContext {
++_UseInheritanceContext()
++_currentUseContext _UseInheritanceContext?
++_cssInheritablePropertiesForUse Set
++_cssInheritablePropertiesForForeignObject Set
++_resolvePropertyWithShadowCascade() String?
++_getInheritedValue() Object?
++_isForeignObjectInheritableProperty() bool
++_getInheritedValueRespectingForeignObjectBoundary() Object?
+}
 class CssInheritanceEngine {
 +_isForeignObjectCssInheritable() bool
 +_resolveForeignObjectInheritedCss() Object
@@ -95,8 +106,10 @@ SVGForeignObjectElement --> AnimatedSvgPainterGeometryForeignObjectExtension : "
 AnimatedSvgPainterGeometryForeignObjectExtension --> CssInheritanceEngine : "uses for CSS"
 AnimatedSvgPainterGeometryForeignObjectExtension --> CoordinateSystemManager : "uses for transforms"
 AnimatedSvgPainterUseForeignObjectExtension --> CoordinateSystemManager : "uses for viewport"
+AnimatedSvgPainterUseForeignObjectExtension --> _UseInheritanceContext : "uses for boundary"
 CssInheritanceEngine --> SvgNode : "resolves properties"
 CoordinateSystemManager --> SvgNode : "manages transforms"
+_UseInheritanceContext --> SvgNode : "manages boundary"
 ```
 
 **Diagram sources**
@@ -104,6 +117,7 @@ CoordinateSystemManager --> SvgNode : "manages transforms"
 - [animated_svg_painter_geometry_foreign_object.dart:49-117](file://lib/src/animation/animated_svg_painter_geometry_foreign_object.dart#L49-L117)
 - [animated_svg_painter_use_foreign_object.dart:5-34](file://lib/src/animation/animated_svg_painter_use_foreign_object.dart#L5-L34)
 - [animated_svg_painter_geometry_foreign_object.dart:119-174](file://lib/src/animation/animated_svg_painter_geometry_foreign_object.dart#L119-L174)
+- [animated_svg_painter_use_context.dart:32-149](file://lib/src/animation/animated_svg_painter_use_context.dart#L32-L149)
 
 The enhanced architecture ensures that ForeignObject maintains strict boundaries between the SVG coordinate system and embedded content while enabling sophisticated CSS inheritance and transform handling through specialized boundary enforcement mechanisms.
 
@@ -161,6 +175,7 @@ The ForeignObject implementation now includes a sophisticated CSS inheritance bo
 **Section sources**
 - [animated_svg_painter_geometry_foreign_object.dart:49-117](file://lib/src/animation/animated_svg_painter_geometry_foreign_object.dart#L49-L117)
 - [animated_svg_painter_geometry_foreign_object.dart:119-174](file://lib/src/animation/animated_svg_painter_geometry_foreign_object.dart#L119-L174)
+- [animated_svg_painter_use_context.dart:32-149](file://lib/src/animation/animated_svg_painter_use_context.dart#L32-L149)
 
 ## Rendering Pipeline
 
@@ -172,13 +187,15 @@ participant Parser as "SVG Parser"
 participant FO as "SVGForeignObjectElement"
 participant GeometryExt as "Geometry Extension"
 participant UseExt as "Use Extension"
+participant UseContext as "_UseInheritanceContext"
 participant Canvas as "UI Canvas"
 participant CSS as "CSS Inheritance Engine"
 participant Content as "Embedded Content"
 Parser->>FO : createElement()
 FO->>GeometryExt : _resolveForeignObjectViewport()
 GeometryExt->>Canvas : _applyForeignObjectViewport()
-GeometryExt->>CSS : _resolveForeignObjectCssContext()
+GeometryExt->>UseContext : _resolvePropertyWithShadowCascade()
+UseContext->>CSS : _resolveForeignObjectCssContext()
 CSS->>Content : applyInheritedProperties()
 Content->>UseExt : _applyNestedSvgViewportInForeignObject()
 UseExt->>Canvas : _applyNestedSvgViewportInForeignObject()
@@ -191,6 +208,7 @@ Canvas-->>GeometryExt : renderComplete()
 - [animated_svg_painter_geometry_foreign_object.dart:240-304](file://lib/src/animation/animated_svg_painter_geometry_foreign_object.dart#L240-L304)
 - [animated_svg_painter_use_foreign_object.dart:18-34](file://lib/src/animation/animated_svg_painter_use_foreign_object.dart#L18-L34)
 - [animated_svg_painter_use_foreign_object.dart:45-140](file://lib/src/animation/animated_svg_painter_use_foreign_object.dart#L45-L140)
+- [animated_svg_painter_use_context.dart:264-339](file://lib/src/animation/animated_svg_painter_use_context.dart#L264-L339)
 
 ### Enhanced Required Extensions Validation
 
@@ -307,10 +325,16 @@ The system includes sophisticated property resolution methods:
 - `_getAttributeWithinForeignObject()`: Restricts property lookup to ForeignObject subtree
 - `_extractCssPropertyFromStyle()`: Parses inline CSS properties with proper priority handling
 
+**Enhanced _UseInheritanceContext Integration**:
+- `_resolvePropertyWithShadowCascade()`: Handles shadow boundary behavior with full cascade
+- `_getInheritedValueRespectingForeignObjectBoundary()`: Respects boundary constraints
+- `_isForeignObjectInheritableProperty()`: Comprehensive property categorization
+
 **Section sources**
 - [animated_svg_painter_geometry_foreign_object.dart:119-174](file://lib/src/animation/animated_svg_painter_geometry_foreign_object.dart#L119-L174)
 - [animated_svg_painter_geometry_foreign_object.dart:176-211](file://lib/src/animation/animated_svg_painter_geometry_foreign_object.dart#L176-L211)
 - [animated_svg_painter_geometry_foreign_object.dart:213-234](file://lib/src/animation/animated_svg_painter_geometry_foreign_object.dart#L213-L234)
+- [animated_svg_painter_use_context.dart:264-339](file://lib/src/animation/animated_svg_painter_use_context.dart#L264-L339)
 
 ## Enhanced Transform Propagation
 
@@ -587,5 +611,7 @@ Key strengths of the enhanced implementation include comprehensive CSS inheritan
 The enhanced CSS inheritance boundary enforcement system provides precise control over property flow across the SVG-HTML boundary, ensuring proper styling while maintaining separation between SVG-specific and general CSS properties. The advanced transform handling supports complex hierarchical transformations with boundary enforcement while maintaining coordinate system integrity.
 
 The specialized CSS inheritance resolution system provides sophisticated property categorization and boundary enforcement mechanisms that ensure proper styling while maintaining strict separation between SVG and HTML contexts. The enhanced coordinate system management supports independent viewport establishment with boundary enforcement and sophisticated nested SVG processing.
+
+The new _UseInheritanceContext class provides comprehensive boundary-aware property resolution with sophisticated cascade handling, shadow boundary behavior, and ID namespace scoping. This system ensures that CSS properties respect ForeignObject boundaries while maintaining proper inheritance within the element.
 
 Future enhancements could focus on expanding supported embedded content types with boundary awareness, improving performance for large content areas with boundary enforcement, providing more granular control over CSS inheritance behavior with property categorization, and optimizing memory usage for complex ForeignObject hierarchies with boundary validation. The existing foundation provides excellent groundwork for continued evolution of ForeignObject capabilities with enhanced semantic richness, boundary enforcement, and performance characteristics.

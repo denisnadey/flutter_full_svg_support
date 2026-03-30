@@ -135,6 +135,11 @@ extension AnimatedSvgPainterShapesImageExtension on AnimatedSvgPainter {
       return;
     }
 
+    // Validate data URIs before processing - skip malformed ones gracefully
+    if (href.startsWith('data:') && !_isValidDataUri(href)) {
+      return;
+    }
+
     final x = _getNumber(node, 'x') ?? 0.0;
     final y = _getNumber(node, 'y') ?? 0.0;
 
@@ -515,7 +520,6 @@ extension AnimatedSvgPainterShapesImageExtension on AnimatedSvgPainter {
 
   /// Checks if a data URI is valid and can be processed.
   /// Returns false for malformed URIs without crashing.
-  // ignore: unused_element
   bool _isValidDataUri(String href) {
     if (!href.startsWith('data:')) return false;
 

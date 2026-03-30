@@ -70,6 +70,11 @@ extension AnimatedSvgPainterMaskCompositionExtension on AnimatedSvgPainter {
     final maskType = _parseMaskType(maskNode, node);
     final maskBounds = _computeMaskBounds(maskedNode: node, maskNode: maskNode);
 
+    // Track mask animation state for cache invalidation
+    if (hasAnimations) {
+      _renderCache.maskAnimationState[maskId] = _maskContentIsAnimated(maskNode);
+    }
+
     if (maskBounds == null ||
         maskBounds.width.abs() < _kMinBoundingBoxDimension ||
         maskBounds.height.abs() < _kMinBoundingBoxDimension) {
@@ -137,9 +142,15 @@ extension AnimatedSvgPainterMaskCompositionExtension on AnimatedSvgPainter {
     paintContent();
 
     // Create mask paint based on mask type
-    final maskPaint = maskType == _SvgMaskType.luminance
-        ? _createLuminanceMaskPaint()
-        : _createAlphaMaskPaint();
+    // Use gradient-aware luminance paint when mask content contains gradients
+    final ui.Paint maskPaint;
+    if (maskType == _SvgMaskType.luminance) {
+      maskPaint = _maskHasGradientContent(maskNode)
+          ? _createLuminanceMaskPaintWithGradientSupport()
+          : _createLuminanceMaskPaint();
+    } else {
+      maskPaint = _createAlphaMaskPaint();
+    }
 
     // Save mask layer with proper blend mode
     canvas.saveLayer(maskBounds, maskPaint);
@@ -374,7 +385,6 @@ extension AnimatedSvgPainterMaskCompositionExtension on AnimatedSvgPainter {
   /// Generates a cache key for animated mask content.
   ///
   /// Used to invalidate mask caches when mask content animates.
-  // ignore: unused_element
   String _generateMaskCacheKey(SvgNode maskNode, double? animationTime) {
     final buffer = StringBuffer();
     buffer.write(maskNode.getAttributeValue('id') ?? 'mask');
@@ -415,7 +425,6 @@ extension AnimatedSvgPainterMaskCompositionExtension on AnimatedSvgPainter {
   }
 
   /// Checks if mask content is animated and needs cache invalidation.
-  // ignore: unused_element
   bool _maskContentIsAnimated(SvgNode maskNode) {
     return _checkMaskContentForAnimations(maskNode);
   }

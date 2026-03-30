@@ -503,8 +503,11 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
       return fillHasLuminance || strokeHasLuminance;
     }
 
-    // For alpha-based hit testing, just check opacity
-    return (hasFill && fillOpacity > 0) || (hasStroke && strokeOpacity > 0);
+    // For alpha-based hit testing, check opacity against threshold
+    final effectiveFillAlpha = hasFill ? (opacity * fillOpacity) : 0.0;
+    final effectiveStrokeAlpha = hasStroke ? (opacity * strokeOpacity) : 0.0;
+    return effectiveFillAlpha >= _kMinAlphaForHit ||
+        effectiveStrokeAlpha >= _kMinAlphaForHit;
   }
 
   /// Computes the luminance of a color value for hit-testing purposes.

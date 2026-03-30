@@ -1,8 +1,8 @@
 # Next Steps
 
-**Last Updated:** March 29, 2026
+**Last Updated:** March 30, 2026
 
-**Current Status:** ~93-94% Blink SVG parity | ~99% Filter parity | ~97% SMIL parity | 4,330+ tests passing | 0 analyzer warnings
+**Current Status:** ~94-95% Blink SVG parity | ~99% Filter parity | ~97% SMIL parity | 4,403 tests passing | 0 analyzer errors
 
 Authoritative status is maintained in:
 - `/Users/denisnadey/apps/flutter_full_svg_support/CURRENT_STATUS.md`
@@ -15,29 +15,37 @@ Detailed Blink gap matrix:
 
 ## Active Feature Items (P0 Priorities)
 
-1. **Integrate edge case methods into render pipeline** - Wire up new edge case utility methods into active render path callsites
-2. **Address pre-existing golden test failures** - Fix known failing golden tests
+1. **Wire remaining 12 edge case methods** - Methods requiring significant refactoring:
+   - `_applyNestedMaskWithIntersection`
+   - `_generateMaskCacheKey`
+   - ForeignObject helpers (`_computeForeignObjectNestedSvgTransform`, `_parsePreserveAspectRatioForNested`)
+   - Text layout helpers (`_computeTextElementAccumulatedTransform`, `_transformPointForText`, `_computeTextLengthDistribution`)
+   - Bidi helpers (`_buildBidiContext`, `_resolveEffectiveBidiDirection`)
+   - Hit test utilities (`_isZeroOpacity`, `_isHitTestExcluded`)
+   - CSS shorthand (`_isShorthandProperty`)
 
-## P1 - Code Modularization
+## P1 - Performance Optimization
 
-1. **Remaining large files** - `text_layout` (785 lines), `text_style_positioning` (679 lines), `clip_mask_advanced` (715+ lines)
-2. Full regression checks after each split, API stability preserved
+1. **Profile critical render paths** - Identify bottlenecks in filter chains, text rendering, animation loops
+2. **Reduce memory allocations** - Optimize object creation in hot paths
+3. **Cache optimization** - Review cache hit rates and eviction policies
 
-## P2 - Quality & Coverage
+## P2 - Advanced Edge Cases
 
-1. **CSS selector edge case refinement** - Advanced structural pseudo-class combinations
-2. **Golden test coverage expansion** - Additional regression fixtures for edge cases
+1. **Advanced text positioning** - Unicode normalization, complex script shaping
+2. **Advanced use/symbol CSS cascade** - Further edge case refinement
+3. **CSS selector edge case refinement** - Advanced structural pseudo-class combinations
 
 ## Immediate (Execution Order)
 
-1. Integrate edge case utility methods into active render pipeline callsites.
-2. Address pre-existing golden test failures.
-3. Expand golden test coverage for new edge cases.
-4. Continue modular refactor of remaining large files with API-stability and full regression checks.
-   Priority targets: `text_layout` (785 lines), `text_style_positioning` (679 lines), `clip_mask_advanced` (715+ lines).
+1. Wire remaining 12 edge case methods into active render pipeline callsites.
+2. Profile and optimize critical render paths for performance.
+3. Address advanced text positioning edge cases (Unicode normalization, complex script shaping).
+4. Refine use/symbol CSS cascade for remaining edge cases.
 
 ## Completed P0 Items (Closed)
 
+- ~~**Render Pipeline & Golden Test Sprint (March 30, 2026)**~~ - Integrated edge case methods (data URI validation, mask animation tracking, gradient-aware luminance masking, alpha threshold hit testing), fixed all golden test failures (25 passing), expanded golden test coverage (19 new fixtures, 44 total), modularized 3 large files into 7 part files, verified filter light sources and input-graph semantics (32 new tests). All 4,403 tests pass.
 - ~~**Code Modularization Sprint (March 2026)**~~ - `animated_svg_painter.dart` split from 941→190 lines (3 part files), `animated_svg_picture.dart` split from 627→194 lines (5 part files). All 4,310 tests pass.
 - ~~**Performance Benchmarking Suite (March 2026)**~~ - 5 new benchmark files (filter_chain, text_render, animation_render, combined_worst_case, memory), CacheStats class for profiling, benchmark runner sections 6-10.
 - ~~**Text/Mask/Image Edge Cases (March 2026)**~~ - 21 new tests covering deeply nested tspan transforms, bidi in complex hierarchies, textLength distribution, radial gradient luminance masks, filter chains on mask content, mask-to-mask intersection, image error fallback, nested SVG in foreignObject.

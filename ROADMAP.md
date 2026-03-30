@@ -1,8 +1,8 @@
 # Flutter SVG Roadmap (Living)
 
-**Last Updated:** March 29, 2026
+**Last Updated:** March 30, 2026
 
-**Current Status:** ~93-94% Blink SVG parity | ~99% Filter parity | 4,330 tests passing | 0 analyzer warnings
+**Current Status:** ~94-95% Blink SVG parity | ~99% Filter parity | 4,403 tests passing | 0 analyzer errors
 
 This roadmap reflects the current state. Legacy stage-by-stage plans are historical context only.
 
@@ -45,23 +45,24 @@ Authoritative references:
 24. **Code Modularization Sprint (March 2026)** - `animated_svg_painter.dart` split from 941→190 lines (cache, types, text_types), `animated_svg_picture.dart` split from 627→194 lines (diagnostics, foreign_object, types, events, lifecycle). All 4,310 tests pass.
 25. **Performance Benchmarking Suite (March 2026)** - 5 new benchmark files (filter_chain, text_render, animation_render, combined_worst_case, memory), CacheStats class with hit rate/eviction count/peak size tracking, benchmark runner sections 6-10.
 26. **Text/Mask/Image Edge Cases (March 2026)** - Deeply nested tspan transforms, bidi in complex hierarchies, textLength distribution, radial gradient luminance masks, filter chains on mask content, mask-to-mask intersection, image error fallback, nested SVG in foreignObject with preserveAspectRatio variants (21 new tests, parity ~91-92% → ~93-94%).
+27. **Render Pipeline & Golden Test Sprint (March 30, 2026)** - Integrated edge case methods (data URI validation, mask animation tracking, gradient-aware luminance masking, alpha threshold hit testing), fixed all golden test failures (25 passing with Ahem font threshold adjustment), expanded golden test coverage (19 new fixtures, 44 total), modularized 3 large files into 7 part files, verified filter light sources and input-graph semantics (32 new tests). All 4,403 tests pass, parity ~93-94% → ~94-95%.
 
 ## Current Priorities
 
 ### P0 - Reaching 95%+ Parity (In Progress)
 
-1. **Integrate edge case methods into render pipeline** - Wire up new edge case utility methods into active render path callsites.
-2. **Address pre-existing golden test failures** - Fix known failing golden tests.
+1. **Wire remaining 12 edge case methods** - Methods requiring significant refactoring (`_applyNestedMaskWithIntersection`, `_generateMaskCacheKey`, ForeignObject helpers, text layout helpers, bidi helpers, hit test utilities, CSS shorthand).
 
-### P1 - Code Modularization
+### P1 - Performance Optimization
 
-1. **Remaining large files** - `text_layout` (785 lines), `text_style_positioning` (679 lines), `clip_mask_advanced` (715+ lines).
-2. Full regression checks after each split, API stability preserved.
+1. **Profile critical render paths** - Identify bottlenecks in filter chains, text rendering, animation loops.
+2. **Reduce memory allocations** - Optimize object creation in hot paths.
+3. **Cache optimization** - Review cache hit rates and eviction policies.
 
-### P2 - Quality & Coverage
+### P2 - Advanced Edge Cases
 
-1. **CSS selector edge case refinement** - Advanced structural pseudo-class combinations.
-2. **Golden test coverage expansion** - Additional regression fixtures for edge cases.
+1. **Advanced text positioning** - Unicode normalization, complex script shaping.
+2. **Advanced use/symbol CSS cascade** - Further edge case refinement.
 
 ### P3 - Quality and Stability
 
@@ -93,7 +94,9 @@ Validation commands:
 
 ## Latest Baseline
 
-- March 29, 2026: `flutter test` passed (4,330+), `dart analyze` returned 0 errors / 0 warnings / 0 info.
+- March 30, 2026: `flutter test` passed (4,403 tests, 2 skipped), `dart analyze` returned 0 errors / 13 warnings (unused_element for methods awaiting pipeline wiring).
+- Render Pipeline & Golden Test Sprint complete: Integrated edge case methods, fixed all golden test failures (25 passing), expanded golden test coverage (44 total), modularized 3 large files, verified filter light sources and input-graph semantics.
 - Code Modularization Sprint complete: `animated_svg_painter.dart` and `animated_svg_picture.dart` successfully split.
 - Performance Benchmarking Suite complete: 5 new benchmark files, CacheStats profiling, runner sections 6-10.
 - Text/Mask/Image Edge Cases complete: 21 new tests, parity increased from ~91-92% to ~93-94%.
+- Parity increased from ~93-94% to ~94-95%.

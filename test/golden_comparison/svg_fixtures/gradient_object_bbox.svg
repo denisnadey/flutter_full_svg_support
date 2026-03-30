@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- linearGradient with gradientUnits="objectBoundingBox" on non-square element -->
+  <defs>
+    <!-- ObjectBoundingBox gradient (default) - stretches to fit object -->
+    <linearGradient id="oBBHorizontal" gradientUnits="objectBoundingBox" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#3366cc"/>
+      <stop offset="50%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#cc3366"/>
+    </linearGradient>
+    
+    <!-- ObjectBoundingBox diagonal -->
+    <linearGradient id="oBBDiagonal" gradientUnits="objectBoundingBox" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#33cc66"/>
+      <stop offset="100%" stop-color="#cc9933"/>
+    </linearGradient>
+    
+    <!-- UserSpaceOnUse gradient - absolute coordinates -->
+    <linearGradient id="uSOUHorizontal" gradientUnits="userSpaceOnUse" x1="10" y1="0" x2="90" y2="0">
+      <stop offset="0%" stop-color="#6633cc"/>
+      <stop offset="100%" stop-color="#33cccc"/>
+    </linearGradient>
+    
+    <!-- Radial with objectBoundingBox on ellipse -->
+    <radialGradient id="oBBRadial" gradientUnits="objectBoundingBox" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#ff6633"/>
+    </radialGradient>
+  </defs>
+  
+  <rect width="200" height="200" fill="#f5f5f5"/>
+  
+  <!-- Wide rectangle with oBB horizontal gradient -->
+  <rect x="10" y="10" width="180" height="40" fill="url(#oBBHorizontal)"/>
+  
+  <!-- Tall rectangle with oBB horizontal gradient (same gradient, different aspect) -->
+  <rect x="10" y="60" width="40" height="80" fill="url(#oBBHorizontal)"/>
+  
+  <!-- Wide rect with diagonal gradient -->
+  <rect x="60" y="60" width="130" height="40" fill="url(#oBBDiagonal)"/>
+  
+  <!-- Tall rect with diagonal gradient -->
+  <rect x="60" y="110" width="40" height="80" fill="url(#oBBDiagonal)"/>
+  
+  <!-- userSpaceOnUse: same gradient appearance regardless of object -->
+  <rect x="10" y="150" width="40" height="40" fill="url(#uSOUHorizontal)"/>
+  
+  <!-- Ellipse with radial oBB (will stretch) -->
+  <ellipse cx="150" cy="165" rx="40" ry="25" fill="url(#oBBRadial)"/>
+</svg>
