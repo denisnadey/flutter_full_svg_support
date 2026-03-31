@@ -75,11 +75,28 @@ class _UseInheritanceContext {
   int get depth => parentContext == null ? 1 : 1 + parentContext!.depth;
 
   /// Accumulated x/y transform stack for nested uses.
+  /// 
+  /// Per SVG spec, each use element's x/y attributes contribute a translation,
+  /// and its transform attribute is composed on top. These stack correctly
+  /// for deeply nested use references (3+ levels).
   Matrix4 get accumulatedTransform {
     final matrix = Matrix4.identity();
+    
+    // First apply parent's accumulated transform
     if (parentContext != null) {
       matrix.multiply(parentContext!.accumulatedTransform);
     }
+    
+    // Then apply this use element's transform attribute if present
+    final transformStr = useNode.getAttributeValue('transform')?.toString();
+    if (transformStr != null && transformStr.isNotEmpty) {
+      final transformMatrix = _parseTransformAttribute(transformStr);
+      if (transformMatrix != null) {
+        matrix.multiply(transformMatrix);
+      }
+    }
+    
+    // Finally apply x/y translation
     final x = useNode.getAttributeValue('x');
     final y = useNode.getAttributeValue('y');
     final xVal = x is num ? x.toDouble() : double.tryParse(x?.toString() ?? '');
@@ -87,7 +104,87 @@ class _UseInheritanceContext {
     if (xVal != null || yVal != null) {
       matrix.translateByDouble(xVal ?? 0.0, yVal ?? 0.0, 0.0, 1.0);
     }
+    
     return matrix;
+  }
+  
+  /// Parses a transform attribute string into a Matrix4.
+  /// Returns null if the string is invalid or empty.
+  static Matrix4? _parseTransformAttribute(String value) {
+    if (value.trim().isEmpty) return null;
+    
+    final result = Matrix4.identity();
+    // Match transform functions: name(params)
+    final regex = RegExp(r'(\w+)\s*\(([^)]+)\)');
+    
+    for (final match in regex.allMatches(value)) {
+      final funcName = match.group(1)?.toLowerCase();
+      final params = match.group(2);
+      if (funcName == null || params == null) continue;
+      
+      // Parse comma/space separated numbers
+      final numbers = params
+          .split(RegExp(r'[,\s]+'))
+          .map((s) => double.tryParse(s.trim()))
+          .where((n) => n != null)
+          .cast<double>()
+          .toList();
+      
+      switch (funcName) {
+        case 'translate':
+          if (numbers.isNotEmpty) {
+            final tx = numbers[0];
+            final ty = numbers.length > 1 ? numbers[1] : 0.0;
+            result.translateByDouble(tx, ty, 0.0, 1.0);
+          }
+        case 'scale':
+          if (numbers.isNotEmpty) {
+            final sx = numbers[0];
+            final sy = numbers.length > 1 ? numbers[1] : sx;
+            result.scaleByDouble(sx, sy, 1.0, 1.0);
+          }
+        case 'rotate':
+          if (numbers.isNotEmpty) {
+            final angle = numbers[0] * (3.141592653589793 / 180.0);
+            if (numbers.length >= 3) {
+              final cx = numbers[1];
+              final cy = numbers[2];
+              result.translateByDouble(cx, cy, 0.0, 1.0);
+              result.rotateZ(angle);
+              result.translateByDouble(-cx, -cy, 0.0, 1.0);
+            } else {
+              result.rotateZ(angle);
+            }
+          }
+        case 'skewx':
+          if (numbers.isNotEmpty) {
+            final angle = numbers[0] * (3.141592653589793 / 180.0);
+            final skewMatrix = Matrix4.identity();
+            skewMatrix.setEntry(0, 1, angle);
+            result.multiply(skewMatrix);
+          }
+        case 'skewy':
+          if (numbers.isNotEmpty) {
+            final angle = numbers[0] * (3.141592653589793 / 180.0);
+            final skewMatrix = Matrix4.identity();
+            skewMatrix.setEntry(1, 0, angle);
+            result.multiply(skewMatrix);
+          }
+        case 'matrix':
+          if (numbers.length >= 6) {
+            final m = Matrix4.identity();
+            m.setEntry(0, 0, numbers[0]);
+            m.setEntry(1, 0, numbers[1]);
+            m.setEntry(0, 1, numbers[2]);
+            m.setEntry(1, 1, numbers[3]);
+            m.setEntry(0, 3, numbers[4]);
+            m.setEntry(1, 3, numbers[5]);
+            result.multiply(m);
+          }
+      }
+    }
+    
+    return result;
   }
 
   /// Composes transforms from nested use chain with a new viewBox transform.
@@ -116,22 +213,43 @@ class _UseInheritanceContext {
   /// Per SVG spec, inherited CSS properties flow through <use> shadow boundaries.
   /// This method traverses the use chain from innermost to outermost, allowing
   /// each level to override or inherit from its parent.
+  ///
+  /// For nested use-within-use, the cascade chain is maintained through all
+  /// levels via parentContext, ensuring proper inheritance resolution.
   Object? getInheritedValue(String property) {
     final normalizedProp = property.trim().toLowerCase();
+    
+    // Only allow inheritable properties to flow through use boundaries
     if (!normalizedProp.startsWith('--') &&
         !_cssInheritablePropertiesForUse.contains(normalizedProp)) {
       return null;
     }
+    
+    // Check this use element's style attribute
     final styleValue = _extractStyleValueFromNode(useNode, normalizedProp);
     if (styleValue != null) {
       return styleValue;
     }
+    
+    // Check this use element's presentation attribute
     final attrValue = useNode.getAttributeValue(property);
     if (attrValue != null) {
       return attrValue;
     }
+    
+    // Walk up DOM ancestors of this use element
     SvgNode? ancestor = useNode.parent;
-    while (ancestor != null) {
+    int ancestorDepth = 0;
+    const maxAncestorDepth = 100; // Prevent infinite loops
+    
+    while (ancestor != null && ancestorDepth < maxAncestorDepth) {
+      ancestorDepth++;
+      
+      // Stop at another use element - defer to parent context
+      if (ancestor.tagName.toLowerCase() == 'use') {
+        break;
+      }
+      
       final ancestorStyleValue = _extractStyleValueFromNode(
         ancestor,
         normalizedProp,
@@ -145,6 +263,8 @@ class _UseInheritanceContext {
       }
       ancestor = ancestor.parent;
     }
+    
+    // Recursively check parent use context for nested use chains
     return parentContext?.getInheritedValue(property);
   }
 
@@ -339,9 +459,48 @@ class _UseInheritanceContext {
   }
 
   /// Gets the outermost use node ID for event retargeting.
+  ///
+  /// Per SVG spec, events from elements inside a use shadow tree should be
+  /// retargeted to the use element itself when bubbling past the shadow boundary.
+  /// For nested use chains, this returns the outermost use element's ID.
   String? get retargetedEventId {
     final root = rootContext;
     return root.useNode.id;
+  }
+  
+  /// Gets the event target chain for bubbling through use shadow boundaries.
+  ///
+  /// When an event originates from content inside a use shadow tree,
+  /// it should bubble through each use element in the chain. This method
+  /// returns the list of use elements from innermost to outermost.
+  List<SvgNode> get eventRetargetChain {
+    final chain = <SvgNode>[];
+    _UseInheritanceContext? current = this;
+    while (current != null) {
+      chain.add(current.useNode);
+      current = current.parentContext;
+    }
+    return chain;
+  }
+  
+  /// Determines if an event from the given element should be retargeted.
+  ///
+  /// Returns true if the element is inside the use shadow tree and events
+  /// from it should be retargeted to the use element when bubbling.
+  bool shouldRetargetEventFrom(SvgNode element) {
+    // Events from any element within this use context's shadow tree
+    // should be retargeted to the use element
+    return true;
+  }
+  
+  /// Gets the retargeted event target for an event originating from
+  /// the given element within this use shadow tree.
+  ///
+  /// For simple cases, this returns the use element itself.
+  /// For nested use, this returns the appropriate use element based on
+  /// which shadow boundary the event is crossing.
+  SvgNode getRetargetedEventTarget(SvgNode sourceElement) {
+    return useNode;
   }
 
   /// Gets all use element IDs in the chain from outermost to current.

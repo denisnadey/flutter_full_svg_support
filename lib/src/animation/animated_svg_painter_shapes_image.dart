@@ -764,6 +764,10 @@ extension AnimatedSvgPainterShapesImageExtension on AnimatedSvgPainter {
   /// When a foreignObject contains an <svg> child with its own viewBox
   /// and preserveAspectRatio, the coordinate system composition must
   /// handle all preserveAspectRatio values correctly.
+  ///
+  /// Returns null if:
+  /// - foreignObject has no valid dimensions
+  /// - nested SVG has no viewBox (no coordinate system composition needed)
   Matrix4? _computeForeignObjectNestedSvgTransform(
     SvgNode foreignObjectNode,
     SvgNode nestedSvgNode,
@@ -782,11 +786,12 @@ extension AnimatedSvgPainterShapesImageExtension on AnimatedSvgPainter {
       return null;
     }
 
-    // Get nested SVG preserveAspectRatio
-    final preserveAspectRatio = _getString(
+    // Parse preserveAspectRatio using the dedicated parser
+    final preserveAspectRatioStr = _getString(
       nestedSvgNode,
       'preserveAspectRatio',
     );
+    final parsedPAR = _parsePreserveAspectRatioForNested(preserveAspectRatioStr);
 
     // Compute the viewport for the nested SVG within foreignObject
     final nestedX = _getNumber(nestedSvgNode, 'x') ?? 0.0;
@@ -802,10 +807,12 @@ extension AnimatedSvgPainterShapesImageExtension on AnimatedSvgPainter {
     );
 
     // Resolve the layout using preserveAspectRatio
+    // We pass the original string to resolveSvgViewportLayout as it handles
+    // all standard values, but we use parsedPAR for additional logic
     final layout = resolveSvgViewportLayout(
       viewport: viewport,
       sourceSize: ui.Size(viewBox.width, viewBox.height),
-      preserveAspectRatio: preserveAspectRatio,
+      preserveAspectRatio: parsedPAR.isNone ? 'none' : preserveAspectRatioStr,
     );
 
     // Compute transform from viewBox to viewport

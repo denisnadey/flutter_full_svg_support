@@ -1,8 +1,8 @@
 # Flutter SVG Roadmap (Living)
 
-**Last Updated:** March 30, 2026
+**Last Updated:** March 31, 2026
 
-**Current Status:** ~94-95% Blink SVG parity | ~99% Filter parity | 4,403 tests passing | 0 analyzer errors
+**Current Status:** ~95-96% Blink SVG parity | ~99% Filter parity | 4,496 tests passing | 0 analyzer errors | 1 warning
 
 This roadmap reflects the current state. Legacy stage-by-stage plans are historical context only.
 
@@ -46,33 +46,27 @@ Authoritative references:
 25. **Performance Benchmarking Suite (March 2026)** - 5 new benchmark files (filter_chain, text_render, animation_render, combined_worst_case, memory), CacheStats class with hit rate/eviction count/peak size tracking, benchmark runner sections 6-10.
 26. **Text/Mask/Image Edge Cases (March 2026)** - Deeply nested tspan transforms, bidi in complex hierarchies, textLength distribution, radial gradient luminance masks, filter chains on mask content, mask-to-mask intersection, image error fallback, nested SVG in foreignObject with preserveAspectRatio variants (21 new tests, parity ~91-92% → ~93-94%).
 27. **Render Pipeline & Golden Test Sprint (March 30, 2026)** - Integrated edge case methods (data URI validation, mask animation tracking, gradient-aware luminance masking, alpha threshold hit testing), fixed all golden test failures (25 passing with Ahem font threshold adjustment), expanded golden test coverage (19 new fixtures, 44 total), modularized 3 large files into 7 part files, verified filter light sources and input-graph semantics (32 new tests). All 4,403 tests pass, parity ~93-94% → ~94-95%.
+28. **Wire Edge Case Methods & Optimization Sprint (March 31, 2026)** - Wired all 12 staged methods into active render pipeline (mask cache keys, nested mask intersection, foreignObject nested SVG transforms, text accumulated transforms, textLength distribution, bidi context/direction, hit test exclusion with pointer-events, CSS shorthand guard), added 93 new tests, reduced analyzer warnings from 13→1, performance optimizations (cache eviction policies with size limits, in-place matrix ops, regex reduction). All 4,496 tests pass, parity ~94-95% → ~95-96%.
 
 ## Current Priorities
 
-### P0 - Reaching 95%+ Parity (In Progress)
-
-1. **Wire remaining 12 edge case methods** - Methods requiring significant refactoring (`_applyNestedMaskWithIntersection`, `_generateMaskCacheKey`, ForeignObject helpers, text layout helpers, bidi helpers, hit test utilities, CSS shorthand).
-
-### P1 - Performance Optimization
-
-1. **Profile critical render paths** - Identify bottlenecks in filter chains, text rendering, animation loops.
-2. **Reduce memory allocations** - Optimize object creation in hot paths.
-3. **Cache optimization** - Review cache hit rates and eviction policies.
-
-### P2 - Advanced Edge Cases
+### P1 - Reaching 96%+ Parity (In Progress)
 
 1. **Advanced text positioning** - Unicode normalization, complex script shaping.
 2. **Advanced use/symbol CSS cascade** - Further edge case refinement.
 
-### P3 - Quality and Stability
+### P2 - Quality and Stability
 
-1. Keep full regression suite green after every milestone.
-2. Reduce analyzer info-level deprecations over time.
-3. Keep docs synchronized with completed tasks and resolved bugs.
+1. **Parity regression suite** - Blink-style fixture-based regression testing.
+2. Keep full regression suite green after every milestone.
+3. Reduce analyzer info-level deprecations over time.
+4. Keep docs synchronized with completed tasks and resolved bugs.
+
+### P3 - Future Enhancements
 
 ## Future Milestones (Q2 2026+)
 
-1. **95%+ Blink Parity** - Complete all P0/P1 items, comprehensive edge case coverage.
+1. **96%+ Blink Parity** - Complete remaining P1 items, comprehensive edge case coverage.
 2. **Performance Optimization Phase** - Profile and optimize critical render paths, reduce memory allocations.
 3. **Stabilization Phase** - API freeze, comprehensive documentation, pub.dev publication readiness.
 
@@ -94,9 +88,8 @@ Validation commands:
 
 ## Latest Baseline
 
-- March 30, 2026: `flutter test` passed (4,403 tests, 2 skipped), `dart analyze` returned 0 errors / 13 warnings (unused_element for methods awaiting pipeline wiring).
+- March 31, 2026: `flutter test` passed (4,496 tests, 2 skipped), `dart analyze` returned 0 errors / 1 warning (unused variable in test file).
+- Wire Edge Case Methods & Optimization Sprint complete: Wired all 12 staged methods into active render pipeline, added 93 new tests, reduced analyzer warnings from 13→1, performance optimizations (cache eviction policies, in-place matrix ops, regex reduction). Parity ~94-95% → ~95-96%.
 - Render Pipeline & Golden Test Sprint complete: Integrated edge case methods, fixed all golden test failures (25 passing), expanded golden test coverage (44 total), modularized 3 large files, verified filter light sources and input-graph semantics.
 - Code Modularization Sprint complete: `animated_svg_painter.dart` and `animated_svg_picture.dart` successfully split.
 - Performance Benchmarking Suite complete: 5 new benchmark files, CacheStats profiling, runner sections 6-10.
-- Text/Mask/Image Edge Cases complete: 21 new tests, parity increased from ~91-92% to ~93-94%.
-- Parity increased from ~93-94% to ~94-95%.

@@ -32,6 +32,7 @@ part 'animated_svg_painter_clip_nested.dart';
 part 'animated_svg_painter_mask_luminance.dart';
 part 'animated_svg_painter_mask_clip_combination.dart';
 part 'animated_svg_painter_clip_mask_composition.dart';
+part 'animated_svg_painter_clip_mask_advanced.dart';
 part 'animated_svg_painter_shapes_basic.dart';
 part 'animated_svg_painter_shapes_lines.dart';
 part 'animated_svg_painter_shapes_rect.dart';

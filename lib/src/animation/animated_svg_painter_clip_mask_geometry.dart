@@ -146,11 +146,13 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
   /// - Applying viewBox transform for symbol/svg references
   /// - Circular reference prevention
   /// - Proper CSS property inheritance through use shadow boundary
+  /// - objectBoundingBox coordinate system when clipPathUnits="objectBoundingBox"
   ///
   /// Per SVG spec, when <use> appears in clipPath:
   /// - The referenced content contributes its geometry to the clip region
   /// - CSS properties like fill-rule and clip-rule cascade correctly
   /// - Transforms from the use element are applied to referenced content
+  /// - When clipPathUnits="objectBoundingBox", coordinates are in 0-1 range
   void _appendUseClipGeometry({
     required ui.Path target,
     required SvgNode useNode,
@@ -201,13 +203,26 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
     }
 
     // Apply viewport transform for symbol/svg references with viewBox
+    // This handles symbol viewBox in both clip-path and mask contexts
     if (_isUseViewportReferenceTag(referenced.tagName)) {
-      final viewportTransform = _resolveUseViewportTransform(
+      final viewportTransform = _resolveUseViewportTransformForClipMask(
         useNode: useNode,
         referenceNode: referenced,
+        currentTransform: translated,
       );
       if (viewportTransform != null) {
-        translated.multiply(viewportTransform.matrix);
+        translated.setFrom(viewportTransform);
+      }
+    }
+
+    // Apply transform from the referenced element itself (if any)
+    final refTransformStr = referenced.getAttributeValue('transform')?.toString();
+    if (refTransformStr != null &&
+        refTransformStr.isNotEmpty &&
+        !_isUseViewportReferenceTag(referenced.tagName)) {
+      final refTransform = _buildTransformMatrixFromValue(refTransformStr);
+      if (refTransform != null) {
+        translated.multiply(refTransform);
       }
     }
 
@@ -216,15 +231,87 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
     referenced.parent = useNode;
     try {
       final nextUseStack = <String>{...useStack, hrefId};
-      _appendClipGeometry(
-        target: target,
-        node: referenced,
-        currentTransform: translated,
-        useStack: nextUseStack,
-      );
+      
+      // For symbol/svg, iterate children instead of the element itself
+      // since the element acts as a container with its viewBox transform already applied
+      if (_isUseViewportReferenceTag(referenced.tagName)) {
+        for (final child in referenced.children) {
+          _appendClipGeometry(
+            target: target,
+            node: child,
+            currentTransform: translated,
+            useStack: nextUseStack,
+          );
+        }
+      } else {
+        _appendClipGeometry(
+          target: target,
+          node: referenced,
+          currentTransform: translated,
+          useStack: nextUseStack,
+        );
+      }
     } finally {
       referenced.parent = previousParent;
     }
+  }
+
+  /// Resolves viewport transform for use element in clip-path/mask context.
+  ///
+  /// This is specialized for clip-path and mask contexts where we need to:
+  /// - Map symbol/svg viewBox to the use element's width/height
+  /// - Handle the case where use width/height are not specified
+  /// - Support objectBoundingBox coordinate systems
+  Matrix4? _resolveUseViewportTransformForClipMask({
+    required SvgNode useNode,
+    required SvgNode referenceNode,
+    required Matrix4 currentTransform,
+  }) {
+    final viewBox = _parseViewBox(_getString(referenceNode, 'viewBox'));
+    if (viewBox == null || viewBox.width <= 0 || viewBox.height <= 0) {
+      // No viewBox, use identity transform
+      return null;
+    }
+
+    // Get use element's width/height (for symbol/svg references)
+    final width = _getNumber(useNode, 'width');
+    final height = _getNumber(useNode, 'height');
+
+    if (width == null || height == null || width <= 0 || height <= 0) {
+      // No explicit width/height, use viewBox dimensions
+      // Apply viewBox offset transform only
+      if (viewBox.left != 0 || viewBox.top != 0) {
+        final matrix = Matrix4.copy(currentTransform);
+        matrix.multiply(
+          Matrix4.identity()
+            ..setEntry(0, 3, -viewBox.left)
+            ..setEntry(1, 3, -viewBox.top),
+        );
+        return matrix;
+      }
+      return null;
+    }
+
+    // Map viewBox to use width/height using preserveAspectRatio
+    final viewport = ui.Rect.fromLTWH(0, 0, width, height);
+    final layout = resolveSvgViewportLayout(
+      viewport: viewport,
+      sourceSize: viewBox.size,
+      preserveAspectRatio: _getString(referenceNode, 'preserveAspectRatio'),
+    );
+
+    final scaleX = layout.destinationRect.width / viewBox.width;
+    final scaleY = layout.destinationRect.height / viewBox.height;
+    final translateX = layout.destinationRect.left - viewBox.left * scaleX;
+    final translateY = layout.destinationRect.top - viewBox.top * scaleY;
+
+    final matrix = Matrix4.copy(currentTransform);
+    matrix.multiply(
+      Matrix4.identity()
+        ..translateByDouble(translateX, translateY, 0, 1)
+        ..scaleByDouble(scaleX, scaleY, 1, 1),
+    );
+    return matrix;
   }
 
   /// Builds a clip path from image element.

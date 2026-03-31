@@ -90,7 +90,7 @@ class TurbulenceNoiseGenerator {
 
   late final List<int> _perm;
 
-  // Gradient vectors for 2D Perlin noise
+  // Gradient vectors for 2D Perlin noise (8 directions for better distribution)
   static const List<List<double>> _gradients = [
     [1.0, 1.0],
     [1.0, -1.0],
@@ -104,10 +104,19 @@ class TurbulenceNoiseGenerator {
 
   // Lattice size for standard Perlin noise
   static const int _latticeSize = 256;
+  static const int _latticeMask = _latticeSize - 1;
+
+  /// Maximum number of octaves to prevent overflow.
+  /// Higher values cause amplitude to become negligible and waste computation.
+  static const int maxOctaves = 16;
 
   // Stitch info for seamless tiling
   int _wrapX = _latticeSize;
   int _wrapY = _latticeSize;
+  
+  // Per-octave wrap values for seamless stitching
+  late List<int> _octaveWrapX;
+  late List<int> _octaveWrapY;
 
   // Tile dimensions for frequency adjustment
   double _tileWidth = 0.0;
@@ -129,6 +138,10 @@ class TurbulenceNoiseGenerator {
 
     // Duplicate the permutation table for easy wrapping
     _perm = [...p, ...p];
+    
+    // Initialize octave wrap arrays
+    _octaveWrapX = List.filled(maxOctaves, _latticeSize);
+    _octaveWrapY = List.filled(maxOctaves, _latticeSize);
   }
 
   /// Sets up stitching for seamless tiling.
@@ -155,6 +168,13 @@ class TurbulenceNoiseGenerator {
     // This is the number of noise "tiles" that fit in the filter region
     _wrapX = math.max(1, (width * baseFreqX).floor());
     _wrapY = math.max(1, (height * baseFreqY).floor());
+    
+    // Pre-compute per-octave wrap values for seamless stitching
+    // Each octave doubles the frequency, so wrap values also double
+    for (int i = 0; i < maxOctaves; i++) {
+      _octaveWrapX[i] = _wrapX << i;
+      _octaveWrapY[i] = _wrapY << i;
+    }
   }
 
   /// Returns the adjusted frequency for X axis when stitching is enabled.
@@ -181,13 +201,26 @@ class TurbulenceNoiseGenerator {
     _tileWidth = 0.0;
     _tileHeight = 0.0;
     _stitchingEnabled = false;
+    
+    // Reset octave wrap arrays to default
+    for (int i = 0; i < maxOctaves; i++) {
+      _octaveWrapX[i] = _latticeSize;
+      _octaveWrapY[i] = _latticeSize;
+    }
   }
 
   /// Compute single octave of Perlin noise at (x, y) with optional stitching.
+  ///
+  /// When [stitch] is true, lattice coordinates wrap at tile boundaries
+  /// to produce seamless noise at the edges. The wrap period doubles with
+  /// each octave to maintain proper frequency relationships.
   double noise2D(double x, double y, {bool stitch = false, int octave = 0}) {
-    // For stitching, we need to adjust wrap values for each octave
-    final wrapX = stitch ? (_wrapX << octave) : _latticeSize;
-    final wrapY = stitch ? (_wrapY << octave) : _latticeSize;
+    // Clamp octave to valid range
+    final safeOctave = octave.clamp(0, maxOctaves - 1);
+    
+    // For stitching, use pre-computed wrap values for this octave
+    final wrapX = stitch ? _octaveWrapX[safeOctave] : _latticeSize;
+    final wrapY = stitch ? _octaveWrapY[safeOctave] : _latticeSize;
 
     // Find unit square containing point
     var xi = x.floor();
@@ -198,26 +231,36 @@ class TurbulenceNoiseGenerator {
     final yf = y - yi;
 
     // Wrap grid coordinates for stitching
+    // Use modulo to ensure coordinates stay within wrap period
     xi = xi % wrapX;
     yi = yi % wrapY;
     if (xi < 0) xi += wrapX;
     if (yi < 0) yi += wrapY;
 
-    // Compute next grid coordinates with wrapping
+    // Compute next grid coordinates with proper wrapping at tile boundary
+    // This is critical for seamless tiling - when we're at the edge,
+    // the next coordinate wraps back to 0
     final xi1 = (xi + 1) % wrapX;
     final yi1 = (yi + 1) % wrapY;
 
-    // Compute fade curves
+    // Compute fade curves using improved Perlin fade function
     final u = _fade(xf);
     final v = _fade(yf);
 
     // Hash coordinates of the 4 square corners
-    final aa = _perm[(_perm[xi & 255] + yi) & 255];
-    final ab = _perm[(_perm[xi & 255] + yi1) & 255];
-    final ba = _perm[(_perm[xi1 & 255] + yi) & 255];
-    final bb = _perm[(_perm[xi1 & 255] + yi1) & 255];
+    // Apply lattice mask AFTER applying stitch wrapping to ensure
+    // proper permutation table indexing while respecting tile boundaries
+    final xiMasked = xi & _latticeMask;
+    final yiMasked = yi & _latticeMask;
+    final xi1Masked = xi1 & _latticeMask;
+    final yi1Masked = yi1 & _latticeMask;
+    
+    final aa = _perm[(_perm[xiMasked] + yiMasked) & _latticeMask];
+    final ab = _perm[(_perm[xiMasked] + yi1Masked) & _latticeMask];
+    final ba = _perm[(_perm[xi1Masked] + yiMasked) & _latticeMask];
+    final bb = _perm[(_perm[xi1Masked] + yi1Masked) & _latticeMask];
 
-    // Blend results from 4 corners
+    // Blend results from 4 corners using bilinear interpolation
     return _lerp(
       v,
       _lerp(u, _grad(aa, xf, yf), _grad(ba, xf - 1, yf)),
@@ -229,7 +272,7 @@ class TurbulenceNoiseGenerator {
   ///
   /// [x], [y] - Coordinates to sample
   /// [baseFreqX], [baseFreqY] - Base frequency
-  /// [numOctaves] - Number of octaves to sum
+  /// [numOctaves] - Number of octaves to sum (clamped to [maxOctaves])
   /// [isFractalNoise] - true for fractalNoise, false for turbulence
   /// [stitch] - true to enable seamless tiling
   double fractalNoise({
@@ -241,6 +284,10 @@ class TurbulenceNoiseGenerator {
     required bool isFractalNoise,
     bool stitch = false,
   }) {
+    // Clamp numOctaves to prevent overflow and wasted computation
+    // Values beyond maxOctaves contribute negligible amplitude (<0.003%)
+    final effectiveOctaves = numOctaves.clamp(1, maxOctaves);
+    
     var sum = 0.0;
     var amplitude = 1.0;
     var maxAmplitude = 0.0;
@@ -251,7 +298,7 @@ class TurbulenceNoiseGenerator {
     var freqX = stitch ? getAdjustedFreqX(baseFreqX) : baseFreqX;
     var freqY = stitch ? getAdjustedFreqY(baseFreqY) : baseFreqY;
 
-    for (var i = 0; i < numOctaves; i++) {
+    for (var i = 0; i < effectiveOctaves; i++) {
       final noiseValue = noise2D(
         x * freqX,
         y * freqY,

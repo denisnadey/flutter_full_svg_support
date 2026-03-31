@@ -614,5 +614,163 @@ void main() {
         expect(result['margin-right'], equals('20px'));
       });
     });
+
+    group('isShorthandProperty', () {
+      test('identifies font as shorthand', () {
+        expect(CssShorthandExpander.isShorthandProperty('font'), isTrue);
+      });
+
+      test('identifies animation as shorthand', () {
+        expect(CssShorthandExpander.isShorthandProperty('animation'), isTrue);
+      });
+
+      test('identifies transition as shorthand', () {
+        expect(CssShorthandExpander.isShorthandProperty('transition'), isTrue);
+      });
+
+      test('identifies margin as shorthand', () {
+        expect(CssShorthandExpander.isShorthandProperty('margin'), isTrue);
+      });
+
+      test('identifies padding as shorthand', () {
+        expect(CssShorthandExpander.isShorthandProperty('padding'), isTrue);
+      });
+
+      test('identifies marker as shorthand', () {
+        expect(CssShorthandExpander.isShorthandProperty('marker'), isTrue);
+      });
+
+      test('identifies border as shorthand', () {
+        expect(CssShorthandExpander.isShorthandProperty('border'), isTrue);
+      });
+
+      test('identifies border side properties as shorthand', () {
+        expect(CssShorthandExpander.isShorthandProperty('border-top'), isTrue);
+        expect(
+          CssShorthandExpander.isShorthandProperty('border-right'),
+          isTrue,
+        );
+        expect(
+          CssShorthandExpander.isShorthandProperty('border-bottom'),
+          isTrue,
+        );
+        expect(
+          CssShorthandExpander.isShorthandProperty('border-left'),
+          isTrue,
+        );
+      });
+
+      test('identifies border sub-properties as shorthand', () {
+        expect(
+          CssShorthandExpander.isShorthandProperty('border-width'),
+          isTrue,
+        );
+        expect(
+          CssShorthandExpander.isShorthandProperty('border-style'),
+          isTrue,
+        );
+        expect(
+          CssShorthandExpander.isShorthandProperty('border-color'),
+          isTrue,
+        );
+        expect(
+          CssShorthandExpander.isShorthandProperty('border-radius'),
+          isTrue,
+        );
+      });
+
+      test('identifies background as shorthand', () {
+        expect(CssShorthandExpander.isShorthandProperty('background'), isTrue);
+      });
+
+      test('identifies offset as shorthand', () {
+        expect(CssShorthandExpander.isShorthandProperty('offset'), isTrue);
+      });
+
+      test('returns false for non-shorthand properties', () {
+        // Colors
+        expect(CssShorthandExpander.isShorthandProperty('color'), isFalse);
+        expect(CssShorthandExpander.isShorthandProperty('fill'), isFalse);
+        expect(CssShorthandExpander.isShorthandProperty('stroke'), isFalse);
+
+        // Opacity
+        expect(CssShorthandExpander.isShorthandProperty('opacity'), isFalse);
+        expect(
+          CssShorthandExpander.isShorthandProperty('fill-opacity'),
+          isFalse,
+        );
+
+        // Transform
+        expect(CssShorthandExpander.isShorthandProperty('transform'), isFalse);
+
+        // Font longhand properties
+        expect(
+          CssShorthandExpander.isShorthandProperty('font-family'),
+          isFalse,
+        );
+        expect(CssShorthandExpander.isShorthandProperty('font-size'), isFalse);
+        expect(
+          CssShorthandExpander.isShorthandProperty('font-weight'),
+          isFalse,
+        );
+        expect(
+          CssShorthandExpander.isShorthandProperty('font-style'),
+          isFalse,
+        );
+
+        // Margin/padding longhand properties
+        expect(CssShorthandExpander.isShorthandProperty('margin-top'), isFalse);
+        expect(
+          CssShorthandExpander.isShorthandProperty('margin-left'),
+          isFalse,
+        );
+        expect(
+          CssShorthandExpander.isShorthandProperty('padding-top'),
+          isFalse,
+        );
+        expect(
+          CssShorthandExpander.isShorthandProperty('padding-bottom'),
+          isFalse,
+        );
+
+        // Animation longhand properties
+        expect(
+          CssShorthandExpander.isShorthandProperty('animation-name'),
+          isFalse,
+        );
+        expect(
+          CssShorthandExpander.isShorthandProperty('animation-duration'),
+          isFalse,
+        );
+
+        // Other SVG properties
+        expect(
+          CssShorthandExpander.isShorthandProperty('stroke-width'),
+          isFalse,
+        );
+        expect(
+          CssShorthandExpander.isShorthandProperty('stroke-dasharray'),
+          isFalse,
+        );
+        expect(
+          CssShorthandExpander.isShorthandProperty('visibility'),
+          isFalse,
+        );
+        expect(CssShorthandExpander.isShorthandProperty('display'), isFalse);
+      });
+
+      test('handles case insensitivity', () {
+        expect(CssShorthandExpander.isShorthandProperty('MARGIN'), isTrue);
+        expect(CssShorthandExpander.isShorthandProperty('Font'), isTrue);
+        expect(CssShorthandExpander.isShorthandProperty('ANIMATION'), isTrue);
+        expect(CssShorthandExpander.isShorthandProperty('Border'), isTrue);
+      });
+
+      test('handles whitespace', () {
+        expect(CssShorthandExpander.isShorthandProperty('  margin  '), isTrue);
+        expect(CssShorthandExpander.isShorthandProperty(' font '), isTrue);
+        expect(CssShorthandExpander.isShorthandProperty('\tpadding\t'), isTrue);
+      });
+    });
   });
 }

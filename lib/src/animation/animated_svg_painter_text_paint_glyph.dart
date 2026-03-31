@@ -1,6 +1,11 @@
 part of 'animated_svg_painter.dart';
 
 /// Extension for per-character glyph positioning in text rendering.
+///
+/// Supports grapheme cluster-aware rendering for proper handling of:
+/// - Combining marks and diacritics (e.g., 'e' + combining acute = 'é')
+/// - Complex scripts (Arabic, Thai, Devanagari, Bengali, Tamil)
+/// - Emoji sequences (ZWJ, skin tone modifiers, flags)
 extension AnimatedSvgPainterTextGlyphExtension on AnimatedSvgPainter {
   double _paintPlainTextWithPositions(
     ui.Canvas canvas, {
@@ -18,8 +23,18 @@ extension AnimatedSvgPainterTextGlyphExtension on AnimatedSvgPainter {
     ui.ColorFilter? colorFilter,
     ui.BlendMode? blendMode,
     _ResolvedTextStyle? parentStyle,
+    _TextLengthDistribution? textLengthDistribution,
   }) {
-    final glyphs = text.runes.map((r) => String.fromCharCode(r)).toList();
+    // Apply NFC normalization per SVG spec
+    final normalizedText = _normalizeTextToNFC(text);
+    
+    // Detect script type for appropriate handling
+    final scriptType = _detectScriptType(normalizedText);
+    final isComplexScript = _isComplexScript(scriptType);
+    
+    // Use grapheme clusters instead of runes for proper character handling
+    // This ensures combining marks and multi-codepoint characters are treated as single units
+    final glyphs = _segmentIntoGraphemeClusters(normalizedText);
     final hasMultiPositions =
         xList.length > 1 ||
         yList.length > 1 ||
@@ -27,6 +42,29 @@ extension AnimatedSvgPainterTextGlyphExtension on AnimatedSvgPainter {
         dyList.length > 1 ||
         rotateList.isNotEmpty;
     final hasExplicitPositions = xList.length > 1 || yList.length > 1;
+    
+    // For complex scripts with no multi-positions, render as a single unit
+    // to allow proper shaping and ligature formation
+    if (isComplexScript && !hasMultiPositions && !hasExplicitPositions) {
+      return _paintComplexScriptText(
+        canvas,
+        node: node,
+        text: normalizedText,
+        style: style,
+        cursor: cursor,
+        scriptType: scriptType,
+        imageFilter: imageFilter,
+        colorFilter: colorFilter,
+        blendMode: blendMode,
+      );
+    }
+
+    // Compute accumulated transform for deeply nested tspan elements.
+    // This ensures per-character positions are resolved in the correct
+    // coordinate space when transforms are applied at multiple nesting levels.
+    final accumulatedTransform = _computeTextElementAccumulatedTransform(node);
+    final hasAccumulatedTransform = !accumulatedTransform.isIdentity();
+
     if (!hasMultiPositions) {
       return _paintPlainText(
         canvas,
@@ -95,9 +133,19 @@ extension AnimatedSvgPainterTextGlyphExtension on AnimatedSvgPainter {
       final childBaseline = childParagraph.alphabeticBaseline;
       mixedBaselineOffset = parentBaseline - childBaseline;
     }
-    final paintOrderParts = style.paintOrder.split(RegExp(r'\s+'));
+    // Performance optimization: Check if stroke is first without regex allocation.
+    // paintOrder format is space-separated: "stroke fill markers" or similar.
+    final paintOrder = style.paintOrder;
     final strokeFirst =
-        paintOrderParts.isNotEmpty && paintOrderParts.first == 'stroke';
+        paintOrder.isNotEmpty && paintOrder.startsWith('stroke');
+
+    // Compute scale factor from textLength distribution if using spacingAndGlyphs mode.
+    final scaleFactor = textLengthDistribution != null &&
+            textLengthDistribution.isScale
+        ? textLengthDistribution.scaleFactor
+        : 1.0;
+    final hasScaleFactor = (scaleFactor - 1.0).abs() > 1e-6;
+
     for (int i = 0; i < glyphs.length; i++) {
       final charIdx = cursor.charIndex + i;
       if (charIdx < xList.length) cursor.x = xList[charIdx];
@@ -113,17 +161,39 @@ extension AnimatedSvgPainterTextGlyphExtension on AnimatedSvgPainter {
       var drawX =
           cursor.x +
           (i == 0 ? anchorOffset + textIndentOffset + startHangOffset : 0.0);
-      final drawY = _resolveTextTopFromBaseline(
+      var drawY = _resolveTextTopFromBaseline(
         paragraph: paragraph,
         style: style,
         baselineY: cursor.y + mixedBaselineOffset,
       );
+
+      // Apply accumulated transform for deeply nested tspan elements.
+      // This correctly positions glyphs when transforms exist at multiple
+      // ancestor levels in the tspan hierarchy.
+      if (hasAccumulatedTransform) {
+        final transformedPos = _transformPointForText(
+          ui.Offset(drawX, drawY),
+          accumulatedTransform,
+        );
+        drawX = transformedPos.dx;
+        drawY = transformedPos.dy;
+      }
+
       final strokeParagraph = _buildStrokeTextParagraph(glyph, style, node);
-      if (rotation != 0.0) {
+      final needsCanvasSave = rotation != 0.0 || hasScaleFactor;
+      if (needsCanvasSave) {
         canvas.save();
-        canvas.translate(drawX, cursor.y);
-        canvas.rotate(rotation * 3.1415926535897932 / 180.0);
-        canvas.translate(-drawX, -cursor.y);
+        if (hasScaleFactor) {
+          canvas.translate(drawX, 0.0);
+          canvas.scale(scaleFactor, 1.0);
+          drawX = 0.0;
+        }
+        if (rotation != 0.0) {
+          final pivotX = hasScaleFactor ? 0.0 : drawX;
+          canvas.translate(pivotX, cursor.y);
+          canvas.rotate(rotation * 3.1415926535897932 / 180.0);
+          canvas.translate(-pivotX, -cursor.y);
+        }
       }
       if (strokeFirst && strokeParagraph != null) {
         canvas.drawParagraph(strokeParagraph, ui.Offset(drawX, drawY));
@@ -153,12 +223,128 @@ extension AnimatedSvgPainterTextGlyphExtension on AnimatedSvgPainter {
         if (strokeParagraph != null)
           canvas.drawParagraph(strokeParagraph, ui.Offset(drawX, drawY));
       }
-      if (rotation != 0.0) canvas.restore();
-      cursor.x += glyphWidth + style.letterSpacing;
-      totalWidth += glyphWidth + style.letterSpacing;
+      if (needsCanvasSave) canvas.restore();
+      final scaledWidth = glyphWidth * scaleFactor;
+      cursor.x += scaledWidth + style.letterSpacing;
+      totalWidth += scaledWidth + style.letterSpacing;
     }
     cursor.charIndex += glyphs.length;
     cursor.chunkCharIndex += glyphs.length;
     return totalWidth;
+  }
+  
+  /// Renders complex script text as a single unit for proper shaping.
+  ///
+  /// Complex scripts like Arabic, Thai, Devanagari require contextual shaping
+  /// where glyphs change form based on their neighbors. Rendering the entire
+  /// text run together allows the text engine to apply proper ligatures,
+  /// conjuncts, and contextual alternates.
+  double _paintComplexScriptText(
+    ui.Canvas canvas, {
+    required SvgNode node,
+    required String text,
+    required _ResolvedTextStyle style,
+    required _TextCursor cursor,
+    required _ScriptType scriptType,
+    ui.ImageFilter? imageFilter,
+    ui.ColorFilter? colorFilter,
+    ui.BlendMode? blendMode,
+  }) {
+    // Use script-appropriate text direction
+    final effectiveDirection = _getScriptDirection(scriptType);
+    final effectiveStyle = style.textDirection != effectiveDirection
+        ? style.copyWith(textDirection: effectiveDirection)
+        : style;
+    
+    // Render as single text run for proper shaping
+    return _paintPlainText(
+      canvas,
+      node: node,
+      text: text,
+      style: effectiveStyle,
+      x: cursor.x,
+      baselineY: cursor.y,
+      ignoreTextLength: false,
+      isFirstLine: cursor.isFirstLine,
+      imageFilter: imageFilter,
+      colorFilter: colorFilter,
+      blendMode: blendMode,
+    );
+  }
+
+  /// Reorders glyphs for visual display in bidirectional text.
+  ///
+  /// For RTL text direction, this reverses the order of characters
+  /// within the visual run while preserving the overall run positions.
+  // ignore: unused_element
+  List<String> _bidiReorderGlyphsForDirection(
+    List<String> glyphs,
+    ui.TextDirection direction,
+  ) {
+    if (direction == ui.TextDirection.rtl) {
+      return glyphs.reversed.toList();
+    }
+    return glyphs;
+  }
+
+  /// Computes visual X offset for a glyph in RTL context.
+  ///
+  /// In RTL text, glyphs are laid out right-to-left, so we need
+  /// to compute the offset from the right edge.
+  // ignore: unused_element
+  double _bidiComputeVisualGlyphOffset(
+    int glyphIndex,
+    int totalGlyphs,
+    double totalWidth,
+    ui.TextDirection direction,
+  ) {
+    if (direction == ui.TextDirection.rtl) {
+      // For RTL, start from the right
+      return totalWidth - (glyphIndex + 1) * (totalWidth / totalGlyphs);
+    }
+    // For LTR, standard left-to-right offset
+    return glyphIndex * (totalWidth / totalGlyphs);
+  }
+
+  /// Adjusts cursor position after painting for bidirectional text.
+  ///
+  /// For RTL text, cursor advances leftward (negative direction),
+  /// while for LTR text, cursor advances rightward (positive).
+  // ignore: unused_element
+  double _bidiAdjustCursorAdvance(
+    double advance,
+    ui.TextDirection direction,
+  ) {
+    if (direction == ui.TextDirection.rtl) {
+      return -advance;
+    }
+    return advance;
+  }
+
+  /// Computes the visual bounds for hit-testing a glyph in mixed-direction text.
+  ///
+  /// Returns the visual rectangle where the glyph is rendered, accounting
+  /// for RTL text direction and any reordering.
+  // ignore: unused_element
+  ui.Rect _bidiComputeGlyphHitTestBounds(
+    int logicalIndex,
+    List<_BidiTextRun> runs,
+    double startX,
+    double baselineY,
+    double glyphWidth,
+    double glyphHeight,
+  ) {
+    // Map logical to visual position
+    final mapping = _bidiMapLogicalToVisualPosition(logicalIndex, runs);
+
+    // Calculate X position based on visual index
+    final visualX = startX + mapping.visualIndex * glyphWidth;
+
+    return ui.Rect.fromLTWH(
+      visualX,
+      baselineY - glyphHeight * 0.8, // Approximate ascent
+      glyphWidth,
+      glyphHeight,
+    );
   }
 }

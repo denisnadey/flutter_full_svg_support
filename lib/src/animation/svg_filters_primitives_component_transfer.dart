@@ -24,9 +24,19 @@ class SvgComponentTransferFunction {
   final double exponent;
   final double offset;
 
+  /// Maximum exponent value to prevent numerical overflow.
+  static const double _maxExponent = 100.0;
+  
+  /// Minimum positive value for gamma input to prevent log(0).
+  static const double _minGammaInput = 1e-10;
+  
+  /// Maximum amplitude to prevent overflow in gamma function.
+  static const double _maxAmplitude = 1e6;
+
   /// Applies the transfer function to a normalized value [0..1].
   /// Returns the result clamped to [0..1].
   double apply(double value) {
+    // Input clamping per SVG spec
     final clamped = value.clamp(0.0, 1.0);
     final result = switch (type) {
       SvgComponentTransferType.identity => clamped,
@@ -35,6 +45,7 @@ class SvgComponentTransferFunction {
       SvgComponentTransferType.table => _applyTable(clamped),
       SvgComponentTransferType.discrete => _applyDiscrete(clamped),
     };
+    // Output clamping per SVG spec - always clamp to [0, 1]
     return result.clamp(0.0, 1.0);
   }
 
@@ -42,30 +53,72 @@ class SvgComponentTransferFunction {
   double _applyLinear(double c) => slope * c + intercept;
 
   /// Gamma: C' = amplitude * pow(C, exponent) + offset
+  ///
+  /// Edge cases handled:
+  /// - c <= 0: Returns offset (pow(0, x) = 0 for x > 0, undefined for x <= 0)
+  /// - Very large exponents: Clamped to prevent overflow
+  /// - Very small exponents: Handled with precision
+  /// - Large amplitude: Clamped to prevent overflow
   double _applyGamma(double c) {
-    if (c <= 0.0) return offset.clamp(0.0, 1.0);
-    return amplitude * math.pow(c, exponent) + offset;
+    // Handle c = 0 case to avoid pow(0, negative) issues
+    if (c <= _minGammaInput) {
+      // For c ≈ 0, pow(c, exp) → 0 for positive exp, → infinity for negative
+      // Clamp the result to offset for safety
+      return offset.clamp(0.0, 1.0);
+    }
+    
+    // Clamp exponent to prevent extreme values
+    final safeExponent = exponent.clamp(-_maxExponent, _maxExponent);
+    
+    // Clamp amplitude to prevent overflow
+    final safeAmplitude = amplitude.clamp(-_maxAmplitude, _maxAmplitude);
+    
+    // Compute gamma with safe values
+    final powResult = math.pow(c, safeExponent);
+    
+    // Check for infinity/NaN from pow operation
+    if (powResult.isInfinite || powResult.isNaN) {
+      // Return clamped offset as fallback
+      return offset.clamp(0.0, 1.0);
+    }
+    
+    return safeAmplitude * powResult + offset;
   }
 
   /// Table: piecewise linear interpolation using tableValues.
   /// For n values, there are n-1 intervals covering [0..1].
+  ///
+  /// Edge cases handled:
+  /// - Empty tableValues: Returns input unchanged (identity)
+  /// - Single value: Returns that value for all inputs
   double _applyTable(double c) {
     if (tableValues.isEmpty) return c;
-    if (tableValues.length == 1) return tableValues[0];
+    if (tableValues.length == 1) return tableValues[0].clamp(0.0, 1.0);
 
     final n = tableValues.length;
+    // Map input [0, 1] to [0, n-1] range for interpolation
     final k = (c * (n - 1)).clamp(0.0, (n - 1).toDouble());
     final i = k.floor().clamp(0, n - 2);
     final f = k - i;
+    
+    // Linear interpolation between adjacent table values
     return tableValues[i] * (1.0 - f) + tableValues[i + 1] * f;
   }
 
   /// Discrete: step function using tableValues.
   /// For n values, input is divided into n equal intervals.
+  ///
+  /// Edge cases handled:
+  /// - Empty tableValues: Returns input unchanged (identity)
+  /// - Single value: Returns that value for all inputs  
+  /// - Input = 1.0: Returns last table value (clamped index)
   double _applyDiscrete(double c) {
     if (tableValues.isEmpty) return c;
+    if (tableValues.length == 1) return tableValues[0].clamp(0.0, 1.0);
 
     final n = tableValues.length;
+    // Map input [0, 1) to indices [0, n-1]
+    // Use floor and clamp to handle edge case where c = 1.0
     final i = (c * n).floor().clamp(0, n - 1);
     return tableValues[i];
   }
@@ -83,6 +136,26 @@ class SvgComponentTransferFunction {
     }
     return false;
   }
+  
+  /// Creates a pre-computed lookup table for fast pixel processing.
+  ///
+  /// Returns a 256-entry table where index i maps to the transformed value
+  /// for input i/255. Values are pre-clamped to [0, 255] as integers.
+  ///
+  /// This is useful for table and discrete functions where the same
+  /// computation would be repeated for many pixels.
+  List<int> buildLookupTable() {
+    final table = List<int>.filled(256, 0);
+    const normalizer = 1.0 / 255.0;
+    
+    for (int i = 0; i < 256; i++) {
+      final input = i * normalizer;
+      final output = apply(input);
+      table[i] = (output * 255.0).round().clamp(0, 255);
+    }
+    
+    return table;
+  }
 }
 
 /// feComponentTransfer primitive
@@ -94,6 +167,12 @@ class SvgComponentTransferFilter extends SvgFilter {
   final SvgComponentTransferFunction? funcG;
   final SvgComponentTransferFunction? funcB;
   final SvgComponentTransferFunction? funcA;
+
+  // Cached lookup tables for optimized pixel processing
+  List<int>? _lookupR;
+  List<int>? _lookupG;
+  List<int>? _lookupB;
+  List<int>? _lookupA;
 
   SvgComponentTransferFilter({
     required super.id,
@@ -128,10 +207,23 @@ class SvgComponentTransferFilter extends SvgFilter {
       effectiveFuncB.isIdentity &&
       effectiveFuncA.isIdentity;
 
+  /// Returns pre-computed lookup table for red channel.
+  /// Lazily builds the table on first access.
+  List<int> get lookupTableR => _lookupR ??= effectiveFuncR.buildLookupTable();
+
+  /// Returns pre-computed lookup table for green channel.
+  List<int> get lookupTableG => _lookupG ??= effectiveFuncG.buildLookupTable();
+
+  /// Returns pre-computed lookup table for blue channel.
+  List<int> get lookupTableB => _lookupB ??= effectiveFuncB.buildLookupTable();
+
+  /// Returns pre-computed lookup table for alpha channel.
+  List<int> get lookupTableA => _lookupA ??= effectiveFuncA.buildLookupTable();
+
   /// Creates a ColorFilter matrix for linear-only transforms.
   ///
   /// Returns null if any channel uses table, discrete, or gamma functions.
-  /// In that case, use the full pixel-by-pixel processing.
+  /// In that case, use the full pixel-by-pixel processing or lookup tables.
   ui.ColorFilter? linearColorFilter() {
     final r = effectiveFuncR;
     final g = effectiveFuncG;
@@ -184,12 +276,28 @@ class SvgComponentTransferFilter extends SvgFilter {
   }
 
   /// Transform a single pixel color using the transfer functions.
+  ///
+  /// For better performance with many pixels, use [transformPixelFast]
+  /// with pre-computed lookup tables.
   ui.Color transformPixel(ui.Color color) {
     final r = effectiveFuncR.apply(color.r);
     final g = effectiveFuncG.apply(color.g);
     final b = effectiveFuncB.apply(color.b);
     final a = effectiveFuncA.apply(color.a);
     return ui.Color.from(alpha: a, red: r, green: g, blue: b);
+  }
+
+  /// Transform pixel using pre-computed lookup tables for optimal performance.
+  ///
+  /// [r], [g], [b], [a] are 0-255 integer values.
+  /// Returns transformed values as [r, g, b, a] integers 0-255.
+  List<int> transformPixelFast(int r, int g, int b, int a) {
+    return <int>[
+      lookupTableR[r.clamp(0, 255)],
+      lookupTableG[g.clamp(0, 255)],
+      lookupTableB[b.clamp(0, 255)],
+      lookupTableA[a.clamp(0, 255)],
+    ];
   }
 
   @override

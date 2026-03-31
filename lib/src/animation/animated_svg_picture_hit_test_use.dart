@@ -215,14 +215,15 @@ extension _AnimatedSvgPictureStateHitTestUseExtension
       return null;
     }
 
-    // Check display:none on the use element - not hit-testable
-    if (_isDisplayNone(useNode)) {
-      return null;
-    }
-
     // Check pointer-events on the <use> element itself
     // Per SVG spec, pointer-events on <use> affects the entire shadow tree
     final usePointerEvents = _resolvePointerEventsMode(useNode);
+
+    // Check display:none and visibility:hidden based on pointer-events mode
+    if (_isHitTestExcluded(useNode, pointerEventsMode: usePointerEvents)) {
+      return null;
+    }
+
     if (usePointerEvents == 'none') {
       return null;
     }
@@ -339,13 +340,19 @@ extension _AnimatedSvgPictureStateHitTestUseExtension
     if (_isDefinitionOnlyTag(node.tagName)) {
       return null;
     }
-    // Per CSS spec: display:none elements are NOT hit-testable
-    if (_isDisplayNone(node)) {
+
+    // Resolve pointer-events with inheritance from <use>
+    final nodePointerEvents = _resolvePointerEventsMode(node);
+    final effectivePointerEvents =
+        nodePointerEvents == 'auto' || nodePointerEvents == 'visiblepainted'
+        ? useContext.inheritedPointerEvents ?? nodePointerEvents
+        : nodePointerEvents;
+
+    // Check display:none and visibility:hidden based on pointer-events mode
+    if (_isHitTestExcluded(node, pointerEventsMode: effectivePointerEvents)) {
       return null;
     }
-    // Per CSS spec: visibility:hidden elements are NOT hit-testable
-    // But we check this at the pointer-events level for proper inheritance
-    // Note: opacity:0 elements ARE still hit-testable per CSS spec
+    // Per CSS spec: opacity:0 elements ARE still hit-testable
 
     // Check requiredExtensions for foreignObject
     if (node.tagName == 'foreignObject') {
@@ -364,12 +371,6 @@ extension _AnimatedSvgPictureStateHitTestUseExtension
       return null;
     }
 
-    // Check pointer-events with inheritance from <use>
-    final nodePointerEvents = _resolvePointerEventsMode(node);
-    final effectivePointerEvents =
-        nodePointerEvents == 'auto' || nodePointerEvents == 'visiblepainted'
-        ? useContext.inheritedPointerEvents ?? nodePointerEvents
-        : nodePointerEvents;
     if (effectivePointerEvents == 'none') {
       return null;
     }
@@ -440,9 +441,19 @@ extension _AnimatedSvgPictureStateHitTestUseExtension
       return null;
     }
 
-    return _nodeContainsPoint(node, documentPoint, currentTransform)
-        ? node.id
-        : null;
+    if (_nodeContainsPoint(node, documentPoint, currentTransform)) {
+      // Trace diagnostic for zero-opacity hits (still hittable per CSS spec)
+      if (_isZeroOpacity(node)) {
+        _trace(
+          category: 'hit-test',
+          message:
+              'Hit on zero-opacity element: ${node.tagName}#${node.getAttributeValue("id") ?? ""}',
+          level: SvgTraceLevel.debug,
+        );
+      }
+      return node.id;
+    }
+    return null;
   }
 
   bool _isUseViewportReferenceTag(String tagName) {

@@ -132,11 +132,22 @@ extension AnimatedSvgPainterClipNestedExtension on AnimatedSvgPainter {
   /// - objectBoundingBox: coordinates are relative to the clipped element's bbox (0-1)
   /// - When units differ between cascade levels, each path is computed in its own
   ///   coordinate system before intersection
+  ///
+  /// For use elements within clipPath:
+  /// - Referenced element's geometry is used for clipping
+  /// - Symbol viewBox transforms are applied correctly
+  /// - objectBoundingBox coordinates are passed through use resolution
+  ///
+  /// Transform propagation through the chain:
+  /// - Each clipPath's transform attribute is accumulated into the chain
+  /// - objectBoundingBox transforms are computed per level relative to original element
+  /// - The final clip path is the intersection of all levels in user space
   ui.Path? _buildCascadingClipPathWithUnits({
     required SvgNode clippedNode,
     required SvgNode clipPathNode,
     required Set<String> useStack,
     int depth = 0,
+    Matrix4? accumulatedTransform,
   }) {
     const maxDepth = 10;
     if (depth > maxDepth) {
@@ -155,8 +166,11 @@ extension AnimatedSvgPainterClipNestedExtension on AnimatedSvgPainter {
     )?.trim().toLowerCase();
     final isObjectBoundingBox = units == 'objectboundingbox';
 
-    // Build primary clip path with correct coordinate system
-    Matrix4 rootMatrix = Matrix4.identity();
+    // Build transform for this level, accumulating from parent transforms
+    Matrix4 rootMatrix = accumulatedTransform != null
+        ? Matrix4.copy(accumulatedTransform)
+        : Matrix4.identity();
+
     if (isObjectBoundingBox) {
       final obbResult = _computeObjectBoundingBoxTransformForClipWithBounds(
         clippedNode,
@@ -165,8 +179,8 @@ extension AnimatedSvgPainterClipNestedExtension on AnimatedSvgPainter {
         // Zero-size element with objectBoundingBox - hide all content
         return ui.Path();
       }
-      rootMatrix = obbResult.$1;
-      // obbResult.$2 contains the bounds, available for future use
+      // Apply OBB transform to current accumulated transform
+      rootMatrix.multiply(obbResult.$1);
     }
 
     // Apply clipPath's own transform attribute if present
@@ -214,11 +228,13 @@ extension AnimatedSvgPainterClipNestedExtension on AnimatedSvgPainter {
     // For nested clipPath, the coordinate system depends on:
     // - userSpaceOnUse: use the same coordinate system
     // - objectBoundingBox: relative to original clipped element's bbox
+    // Pass the accumulated transform for proper transform chain propagation
     final cascadePath = _buildCascadingClipPathWithUnits(
       clippedNode: clippedNode, // Use original clipped node for consistent OBB
       clipPathNode: cascadeClipNode,
       useStack: {...useStack, cascadeClipId},
       depth: depth + 1,
+      accumulatedTransform: rootMatrix, // Pass current transform to next level
     );
 
     if (cascadePath == null) {

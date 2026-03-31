@@ -113,7 +113,18 @@ class CssShorthandExpander {
   }
 
   /// Checks if a property is a shorthand that can be expanded.
-  static bool _isShorthandProperty(String property) {
+  ///
+  /// This method identifies CSS shorthand properties that can be expanded
+  /// into their longhand equivalents. For example:
+  /// - `font` expands to `font-family`, `font-size`, `font-weight`, etc.
+  /// - `margin` expands to `margin-top`, `margin-right`, `margin-bottom`, `margin-left`
+  /// - `animation` expands to `animation-name`, `animation-duration`, etc.
+  ///
+  /// Use this as a guard check before calling [expandProperty] to optimize
+  /// cascade resolution when dealing with potentially shorthand properties.
+  ///
+  /// Returns `true` if the property is a shorthand that should be expanded.
+  static bool isShorthandProperty(String property) {
     const shorthands = {
       'font',
       'animation',

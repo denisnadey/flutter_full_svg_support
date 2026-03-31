@@ -1,11 +1,18 @@
 part of 'animated_svg_painter.dart';
 
+/// Global mask nesting context for tracking nested masks.
+/// Tracks the current mask bounds for intersection calculation.
+_MaskNestingContext? _currentMaskNestingContext;
+
 /// Tracks nested mask context for mask-to-mask intersection handling.
 class _MaskNestingContext {
   const _MaskNestingContext({
     required this.depth,
     required this.parentMaskBounds,
     required this.hasParentMask,
+    this.parentMaskContentUnits = 'userSpaceOnUse',
+    this.parentObjectBounds,
+    this.accumulatedTransform,
   });
 
   /// Current mask nesting depth (0 = no mask, 1 = first mask, etc.)
@@ -17,12 +24,33 @@ class _MaskNestingContext {
   /// Whether there is a parent mask to intersect with
   final bool hasParentMask;
 
+  /// The maskContentUnits of the parent mask for coordinate transitions
+  final String parentMaskContentUnits;
+
+  /// The objectBoundingBox of the parent masked element
+  final ui.Rect? parentObjectBounds;
+
+  /// Accumulated transform through the mask nesting chain
+  final Matrix4? accumulatedTransform;
+
   /// Creates a new context for an additional mask level.
-  _MaskNestingContext withChildMask(ui.Rect childBounds) {
+  _MaskNestingContext withChildMask(
+    ui.Rect childBounds, {
+    String? maskContentUnits,
+    ui.Rect? objectBounds,
+    Matrix4? transform,
+  }) {
     return _MaskNestingContext(
       depth: depth + 1,
       parentMaskBounds: childBounds,
       hasParentMask: true,
+      parentMaskContentUnits: maskContentUnits ?? 'userSpaceOnUse',
+      parentObjectBounds: objectBounds ?? parentObjectBounds,
+      accumulatedTransform: transform != null
+          ? (accumulatedTransform != null
+              ? (Matrix4.copy(accumulatedTransform!)..multiply(transform))
+              : transform)
+          : accumulatedTransform,
     );
   }
 

@@ -578,5 +578,113 @@ void main() {
       final spec = CssSpecificityCalculator.calculate('#a#b');
       expect(spec, equals(CssSpecificity(0, 2, 0, 0)));
     });
+
+    group('shorthand expansion', () {
+      test('expands margin shorthand in inline style', () {
+        final node = createNode(
+          tag: 'rect',
+          style: 'margin: 10px',
+        );
+
+        final resolver = CssCascadeResolver(cssRules: []);
+        expect(resolver.resolveProperty(node, 'margin-top'), equals('10px'));
+        expect(resolver.resolveProperty(node, 'margin-right'), equals('10px'));
+        expect(resolver.resolveProperty(node, 'margin-bottom'), equals('10px'));
+        expect(resolver.resolveProperty(node, 'margin-left'), equals('10px'));
+      });
+
+      test('expands margin shorthand with multiple values', () {
+        final node = createNode(
+          tag: 'rect',
+          style: 'margin: 10px 20px',
+        );
+
+        final resolver = CssCascadeResolver(cssRules: []);
+        expect(resolver.resolveProperty(node, 'margin-top'), equals('10px'));
+        expect(resolver.resolveProperty(node, 'margin-right'), equals('20px'));
+        expect(resolver.resolveProperty(node, 'margin-bottom'), equals('10px'));
+        expect(resolver.resolveProperty(node, 'margin-left'), equals('20px'));
+      });
+
+      test('expands padding shorthand in inline style', () {
+        final node = createNode(
+          tag: 'rect',
+          style: 'padding: 5px 10px 15px 20px',
+        );
+
+        final resolver = CssCascadeResolver(cssRules: []);
+        expect(resolver.resolveProperty(node, 'padding-top'), equals('5px'));
+        expect(resolver.resolveProperty(node, 'padding-right'), equals('10px'));
+        expect(resolver.resolveProperty(node, 'padding-bottom'), equals('15px'));
+        expect(resolver.resolveProperty(node, 'padding-left'), equals('20px'));
+      });
+
+      test('expands font shorthand in inline style', () {
+        final node = createNode(
+          tag: 'text',
+          style: 'font: bold 16px Arial',
+        );
+
+        final resolver = CssCascadeResolver(cssRules: []);
+        expect(resolver.resolveProperty(node, 'font-weight'), equals('bold'));
+        expect(resolver.resolveProperty(node, 'font-size'), equals('16px'));
+        expect(resolver.resolveProperty(node, 'font-family'), equals('Arial'));
+      });
+
+      test('longhand property overrides shorthand', () {
+        final node = createNode(
+          tag: 'rect',
+          style: 'margin: 10px; margin-left: 20px',
+        );
+
+        final resolver = CssCascadeResolver(cssRules: []);
+        expect(resolver.resolveProperty(node, 'margin-top'), equals('10px'));
+        expect(resolver.resolveProperty(node, 'margin-left'), equals('20px'));
+      });
+
+      test('marker shorthand expands to start/mid/end', () {
+        final node = createNode(
+          tag: 'path',
+          style: 'marker: url(#arrow)',
+        );
+
+        final resolver = CssCascadeResolver(cssRules: []);
+        expect(
+          resolver.resolveProperty(node, 'marker-start'),
+          equals('url(#arrow)'),
+        );
+        expect(
+          resolver.resolveProperty(node, 'marker-mid'),
+          equals('url(#arrow)'),
+        );
+        expect(
+          resolver.resolveProperty(node, 'marker-end'),
+          equals('url(#arrow)'),
+        );
+      });
+
+      test('direct property without shorthand still works', () {
+        final node = createNode(
+          tag: 'rect',
+          style: 'fill: red; stroke: blue',
+        );
+
+        final resolver = CssCascadeResolver(cssRules: []);
+        expect(resolver.resolveProperty(node, 'fill'), equals('red'));
+        expect(resolver.resolveProperty(node, 'stroke'), equals('blue'));
+      });
+
+      test('mixed shorthand and non-shorthand properties', () {
+        final node = createNode(
+          tag: 'rect',
+          style: 'margin: 10px; fill: green; padding: 5px',
+        );
+
+        final resolver = CssCascadeResolver(cssRules: []);
+        expect(resolver.resolveProperty(node, 'margin-top'), equals('10px'));
+        expect(resolver.resolveProperty(node, 'fill'), equals('green'));
+        expect(resolver.resolveProperty(node, 'padding-top'), equals('5px'));
+      });
+    });
   });
 }

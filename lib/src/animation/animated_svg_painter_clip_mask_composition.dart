@@ -71,10 +71,16 @@ extension AnimatedSvgPainterMaskCompositionExtension on AnimatedSvgPainter {
     final maskBounds = _computeMaskBounds(maskedNode: node, maskNode: maskNode);
 
     // Track mask animation state for cache invalidation
+    String? animatedMaskCacheKey;
     if (hasAnimations) {
-      _renderCache.maskAnimationState[maskId] = _maskContentIsAnimated(
-        maskNode,
-      );
+      final isAnimated = _maskContentIsAnimated(maskNode);
+      _renderCache.maskAnimationState[maskId] = isAnimated;
+      // Generate cache key for animated masks to enable content caching
+      if (isAnimated) {
+        animatedMaskCacheKey = _generateMaskCacheKey(maskNode, animationTime);
+        // Store the cache key for potential mask image caching
+        _renderCache.animatedMaskCacheKeys[maskId] = animatedMaskCacheKey;
+      }
     }
 
     if (maskBounds == null ||
@@ -127,6 +133,8 @@ extension AnimatedSvgPainterMaskCompositionExtension on AnimatedSvgPainter {
   /// 3. Save layer with blend mode for mask
   /// 4. Paint mask content
   /// 5. Restore layers
+  ///
+  /// Supports nested mask intersection when masks are nested.
   void _renderWithMaskComposition(
     ui.Canvas canvas, {
     required SvgNode node,
@@ -137,40 +145,79 @@ extension AnimatedSvgPainterMaskCompositionExtension on AnimatedSvgPainter {
     required Set<String> useStack,
     required void Function() paintContent,
   }) {
-    // Save content layer - captures all painted content
-    canvas.saveLayer(maskBounds, ui.Paint());
-
-    // Paint the content (with any filters already applied)
-    paintContent();
-
-    // Create mask paint based on mask type
-    // Use gradient-aware luminance paint when mask content contains gradients
-    final ui.Paint maskPaint;
-    if (maskType == _SvgMaskType.luminance) {
-      maskPaint = _maskHasGradientContent(maskNode)
-          ? _createLuminanceMaskPaintWithGradientSupport()
-          : _createLuminanceMaskPaint();
-    } else {
-      maskPaint = _createAlphaMaskPaint();
+    // Check for nested mask context and use intersection handling
+    final parentContext = _currentMaskNestingContext;
+    if (parentContext != null && parentContext.hasParentMask) {
+      // Use nested mask intersection handling
+      _applyNestedMaskWithIntersection(
+        canvas,
+        node,
+        maskNode: maskNode,
+        maskBounds: maskBounds,
+        maskType: maskType,
+        useStack: useStack,
+        nestingContext: parentContext,
+        paintContent: () {
+          // Update context for children before painting
+          final previousContext = _currentMaskNestingContext;
+          _currentMaskNestingContext = parentContext.withChildMask(maskBounds);
+          try {
+            paintContent();
+          } finally {
+            _currentMaskNestingContext = previousContext;
+          }
+        },
+      );
+      return;
     }
 
-    // Save mask layer with proper blend mode
-    canvas.saveLayer(maskBounds, maskPaint);
-
-    // Paint mask content with proper coordinate system
-    _paintMaskContentWithFeathering(
-      canvas,
-      maskNode: maskNode,
-      maskedNode: node,
-      hasFeathering: hasFeathering,
-      useStack: useStack,
+    // Set up mask nesting context for children
+    final previousContext = _currentMaskNestingContext;
+    _currentMaskNestingContext = _MaskNestingContext(
+      depth: 1,
+      parentMaskBounds: maskBounds,
+      hasParentMask: true,
     );
 
-    // Restore mask layer
-    canvas.restore();
+    try {
+      // Save content layer - captures all painted content
+      canvas.saveLayer(maskBounds, ui.Paint());
 
-    // Restore content layer
-    canvas.restore();
+      // Paint the content (with any filters already applied)
+      paintContent();
+
+      // Create mask paint based on mask type
+      // Use gradient-aware luminance paint when mask content contains gradients
+      final ui.Paint maskPaint;
+      if (maskType == _SvgMaskType.luminance) {
+        maskPaint = _maskHasGradientContent(maskNode)
+            ? _createLuminanceMaskPaintWithGradientSupport()
+            : _createLuminanceMaskPaint();
+      } else {
+        maskPaint = _createAlphaMaskPaint();
+      }
+
+      // Save mask layer with proper blend mode
+      canvas.saveLayer(maskBounds, maskPaint);
+
+      // Paint mask content with proper coordinate system
+      _paintMaskContentWithFeathering(
+        canvas,
+        maskNode: maskNode,
+        maskedNode: node,
+        hasFeathering: hasFeathering,
+        useStack: useStack,
+      );
+
+      // Restore mask layer
+      canvas.restore();
+
+      // Restore content layer
+      canvas.restore();
+    } finally {
+      // Restore previous context
+      _currentMaskNestingContext = previousContext;
+    }
   }
 
   /// Creates paint for alpha-based masking.

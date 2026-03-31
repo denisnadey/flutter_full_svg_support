@@ -37,10 +37,12 @@
 - [lib/src/animation/animated_svg_painter_gradients_resolver.dart](file://lib/src/animation/animated_svg_painter_gradients_resolver.dart)
 - [lib/src/animation/animated_svg_painter_gradients_values.dart](file://lib/src/animation/animated_svg_painter_gradients_values.dart)
 - [lib/src/animation/animated_svg_painter_clip_mask.dart](file://lib/src/animation/animated_svg_painter_clip_mask.dart)
-- [lib/src/animation/animated_svg_painter_clip_mask_advanced.dart](file://lib/src/animation/animated_svg_painter_clip_mask_advanced.dart)
 - [lib/src/animation/animated_svg_painter_clip_mask_composition.dart](file://lib/src/animation/animated_svg_painter_clip_mask_composition.dart)
 - [lib/src/animation/animated_svg_painter_clip_mask_geometry.dart](file://lib/src/animation/animated_svg_painter_clip_mask_geometry.dart)
 - [lib/src/animation/animated_svg_painter_clip_mask_units.dart](file://lib/src/animation/animated_svg_painter_clip_mask_units.dart)
+- [lib/src/animation/animated_svg_painter_mask_clip_combination.dart](file://lib/src/animation/animated_svg_painter_mask_clip_combination.dart)
+- [lib/src/animation/animated_svg_painter_mask_luminance.dart](file://lib/src/animation/animated_svg_painter_mask_luminance.dart)
+- [lib/src/animation/animated_svg_painter_clip_nested.dart](file://lib/src/animation/animated_svg_painter_clip_nested.dart)
 - [example/lib/advanced_path_morphing.dart](file://example/lib/advanced_path_morphing.dart)
 - [example/lib/path_morphing_example.dart](file://example/lib/path_morphing_example.dart)
 - [test/animation/path_morphing_test.dart](file://test/animation/path_morphing_test.dart)
@@ -73,12 +75,12 @@
 
 ## Update Summary
 **Changes Made**
-- Enhanced text styling and typography features documentation with comprehensive CSS text property support
-- Added detailed coverage of font variant resolution, writing mode support, and text decoration thickness/positioning
-- Updated text styling system documentation to reflect expanded CSS property support
-- Enhanced typography features documentation with advanced OpenType font features and grapheme cluster handling
-- Added comprehensive text decoration thickness testing and implementation details
-- Updated text positioning and hit testing precision documentation
+- Updated Advanced Clipping and Masking System section to reflect modular architecture replacing unified animated_svg_painter_clip_mask_advanced.dart
+- Added new specialized modules documentation: animated_svg_painter_mask_clip_combination.dart, animated_svg_painter_mask_luminance.dart, and animated_svg_painter_clip_nested.dart
+- Updated architecture diagrams to show new modular component structure
+- Revised dependency analysis to reflect new specialized module organization
+- Enhanced documentation of advanced clipping and masking capabilities with modular approach
+- Updated troubleshooting guide with new module-specific considerations
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -210,12 +212,14 @@ AC["svg_parser_constants.dart (stop-color support)"]
 AD["css_to_smil_converter_core.dart (stop-color parsing)"]
 AE["smil_parser_animation_parsing.dart (stop-color type inference)"]
 end
-subgraph "Advanced Clipping and Masking"
+subgraph "Advanced Clipping and Masking System"
 AF["animated_svg_painter_clip_mask.dart"]
-AG["animated_svg_painter_clip_mask_advanced.dart"]
-AH["animated_svg_painter_clip_mask_composition.dart"]
-AI["animated_svg_painter_clip_mask_geometry.dart"]
-AJ["animated_svg_painter_clip_mask_units.dart"]
+AF1["animated_svg_painter_mask_clip_combination.dart"]
+AF2["animated_svg_painter_mask_luminance.dart"]
+AF3["animated_svg_painter_clip_nested.dart"]
+AF4["animated_svg_painter_clip_mask_composition.dart"]
+AF5["animated_svg_painter_clip_mask_geometry.dart"]
+AF6["animated_svg_painter_clip_mask_units.dart"]
 AK["advanced_clip_mask_test.dart"]
 AL["clip_mask_advanced_composition_test.dart"]
 AM["advanced_mask_semantics_test.dart"]
@@ -252,10 +256,12 @@ Z --> AA
 AA --> AB
 AC --> AD
 AD --> AE
-AF --> AG
-AG --> AH
-AH --> AI
-AI --> AJ
+AF --> AF1
+AF1 --> AF2
+AF2 --> AF3
+AF3 --> AF4
+AF4 --> AF5
+AF5 --> AF6
 AK --> AL
 AM --> AN
 ```
@@ -292,10 +298,12 @@ AM --> AN
 - [lib/src/animation/css_to_smil_converter_core.dart:1-277](file://lib/src/animation/css_to_smil_converter_core.dart#L1-L277)
 - [lib/src/animation/smil/smil_parser_animation_parsing.dart:1-451](file://lib/src/animation/smil/smil_parser_animation_parsing.dart#L1-L451)
 - [lib/src/animation/animated_svg_painter_clip_mask.dart:1-279](file://lib/src/animation/animated_svg_painter_clip_mask.dart#L1-L279)
-- [lib/src/animation/animated_svg_painter_clip_mask_advanced.dart:1-1031](file://lib/src/animation/animated_svg_painter_clip_mask_advanced.dart#L1-L1031)
-- [lib/src/animation/animated_svg_painter_clip_mask_composition.dart:1-979](file://lib/src/animation/animated_svg_painter_clip_mask_composition.dart#L1-L979)
-- [lib/src/animation/animated_svg_painter_clip_mask_geometry.dart:1-376](file://lib/src/animation/animated_svg_painter_clip_mask_geometry.dart#L1-L376)
-- [lib/src/animation/animated_svg_painter_clip_mask_units.dart:1-754](file://lib/src/animation/animated_svg_painter_clip_mask_units.dart#L1-L754)
+- [lib/src/animation/animated_svg_painter_mask_clip_combination.dart:1-211](file://lib/src/animation/animated_svg_painter_mask_clip_combination.dart#L1-L211)
+- [lib/src/animation/animated_svg_painter_mask_luminance.dart:1-410](file://lib/src/animation/animated_svg_painter_mask_luminance.dart#L1-L410)
+- [lib/src/animation/animated_svg_painter_clip_nested.dart:1-325](file://lib/src/animation/animated_svg_painter_clip_nested.dart#L1-L325)
+- [lib/src/animation/animated_svg_painter_clip_mask_composition.dart:1-458](file://lib/src/animation/animated_svg_painter_clip_mask_composition.dart#L1-L458)
+- [lib/src/animation/animated_svg_painter_clip_mask_geometry.dart:1-537](file://lib/src/animation/animated_svg_painter_clip_mask_geometry.dart#L1-L537)
+- [lib/src/animation/animated_svg_painter_clip_mask_units.dart:1-373](file://lib/src/animation/animated_svg_painter_clip_mask_units.dart#L1-L373)
 - [test/animation/advanced_clip_mask_test.dart:1-766](file://test/animation/advanced_clip_mask_test.dart#L1-L766)
 - [test/animation/clip_mask_advanced_composition_test.dart:1-568](file://test/animation/clip_mask_advanced_composition_test.dart#L1-L568)
 - [test/animation/advanced_mask_semantics_test.dart:1-111](file://test/animation/advanced_mask_semantics_test.dart#L1-L111)
@@ -349,8 +357,6 @@ AM --> AN
 - [lib/src/animation/animated_svg_painter_gradients.dart:1-190](file://lib/src/animation/animated_svg_painter_gradients.dart#L1-L190)
 - [lib/src/animation/animated_svg_painter_gradients_resolver.dart:1-157](file://lib/src/animation/animated_svg_painter_gradients_resolver.dart#L1-L157)
 - [lib/src/animation/animated_svg_painter_clip_mask.dart:1-279](file://lib/src/animation/animated_svg_painter_clip_mask.dart#L1-L279)
-- [lib/src/animation/animated_svg_painter_clip_mask_advanced.dart:1-1031](file://lib/src/animation/animated_svg_painter_clip_mask_advanced.dart#L1-L1031)
-- [lib/src/animation/animated_svg_painter_clip_mask_composition.dart:1-979](file://lib/src/animation/animated_svg_painter_clip_mask_composition.dart#L1-L979)
 
 ## Architecture Overview
 The animated pipeline separates concerns across parsing, CSS processing, animation extraction, timeline management, and rendering. It preserves DOM for SMIL support and provides a CustomPainter-based renderer with comprehensive text styling capabilities, advanced CSS processing with modular shorthand expansion, performance optimizations through intelligent caching, and enhanced hit testing precision.
@@ -369,7 +375,9 @@ participant GradientResolver as "Gradient Resolver"
 participant TextStyle as "TextStyleResolver"
 participant TextPaint as "TextPainter"
 participant ClipMask as "Clip-Mask System"
-participant AdvancedClipMask as "Advanced Clip-Mask"
+participant MaskLuminance as "Mask Luminance Module"
+participant MaskCombination as "Mask Combination Module"
+participant NestedClip as "Nested Clip Module"
 participant HitTest as "Enhanced Hit Testing"
 participant RenderCache as "_RenderCache"
 participant Painter as "AnimatedSvgPainter"
@@ -386,13 +394,15 @@ Picture->>GradientResolver : Resolve gradient stops with animated colors
 GradientResolver->>GradientResolver : Extract stop-color from CSS variables
 GradientResolver-->>Picture : Animated gradient stops
 Picture->>ClipMask : Process advanced clipping and masking
-ClipMask->>AdvancedClipMask : Handle composition chains, CSS mask support
-AdvancedClipMask->>AdvancedClipMask : Apply cascading clipPath with transform stacking
-AdvancedClipMask->>AdvancedClipMask : Handle multiple masks with priority parsing
-AdvancedClipMask->>AdvancedClipMask : Apply subgraph masking with proper ordering
-AdvancedClipMask->>AdvancedClipMask : Enhanced unit handling with 10% default extension
-AdvancedClipMask->>AdvancedClipMask : Improved text approximation within clipPath
-AdvancedClipMask->>AdvancedClipMask : Advanced edge feathering with soft edges
+ClipMask->>MaskLuminance : Handle mask type parsing and luminance conversion
+MaskLuminance->>MaskCombination : Manage mask combinations and intersections
+MaskCombination->>NestedClip : Apply nested clip-path operations with transform stacking
+NestedClip->>NestedClip : Handle cascading clipPath with mixed units
+NestedClip->>NestedClip : Apply multiple masks with priority parsing
+NestedClip->>NestedClip : Handle subgraph masking with proper ordering
+NestedClip->>NestedClip : Enhanced unit handling with 10% default extension
+NestedClip->>NestedClip : Improved text approximation within clipPath
+NestedClip->>NestedClip : Advanced edge feathering with soft edges
 ClipMask-->>Picture : Final clip-path and mask results
 Picture->>HitTest : Perform enhanced hit testing
 HitTest->>HitTest : Advanced marker precision with vertex sampling
@@ -416,7 +426,9 @@ Painter-->>App : Draw Canvas
 - [lib/src/animation/animated_svg_painter.dart:177-200](file://lib/src/animation/animated_svg_painter.dart#L177-L200)
 - [lib/src/animation/animated_svg_painter_gradients_resolver.dart:69-121](file://lib/src/animation/animated_svg_painter_gradients_resolver.dart#L69-L121)
 - [lib/src/animation/animated_svg_painter_clip_mask_composition.dart:18-84](file://lib/src/animation/animated_svg_painter_clip_mask_composition.dart#L18-L84)
-- [lib/src/animation/animated_svg_painter_clip_mask_advanced.dart:18-66](file://lib/src/animation/animated_svg_painter_clip_mask_advanced.dart#L18-L66)
+- [lib/src/animation/animated_svg_painter_mask_luminance.dart:27-76](file://lib/src/animation/animated_svg_painter_mask_luminance.dart#L27-L76)
+- [lib/src/animation/animated_svg_painter_mask_clip_combination.dart:48-100](file://lib/src/animation/animated_svg_painter_mask_clip_combination.dart#L48-L100)
+- [lib/src/animation/animated_svg_painter_clip_nested.dart:118-231](file://lib/src/animation/animated_svg_painter_clip_nested.dart#L118-L231)
 - [lib/src/animation/animated_svg_picture_hit_test_traversal.dart:60-173](file://lib/src/animation/animated_svg_picture_hit_test_traversal.dart#L60-L173)
 - [lib/src/animation/animated_svg_picture_hit_test_geometry.dart:5-406](file://lib/src/animation/animated_svg_picture_hit_test_geometry.dart#L5-L406)
 - [lib/src/animation/animated_svg_picture_hit_test_advanced.dart:11-800](file://lib/src/animation/animated_svg_picture_hit_test_advanced.dart#L11-L800)
@@ -1076,68 +1088,71 @@ The gradient shader system has been enhanced to properly handle animated stop co
 
 ## Advanced Clipping and Masking System
 
-### Comprehensive Advanced Clipping and Masking Architecture
-The codebase now provides sophisticated clipping and masking capabilities with comprehensive support for advanced composition chains, CSS mask support, cascading operations, and enhanced units handling.
+### Modular Advanced Clipping and Masking Architecture
+The codebase now provides sophisticated clipping and masking capabilities through a modular architecture that replaces the unified animated_svg_painter_clip_mask_advanced.dart with specialized components for enhanced maintainability and functionality.
 
 ```mermaid
 classDiagram
-class AnimatedSvgPainterClipMaskCompositionExtension {
-+applyCompositionChain(canvas, node, useStack, paintContent)
-+applyGroupCompositionChain(canvas, groupNode, useStack, paintChildren)
-+computeNestedMaskBounds(node, parentMaskNode, useStack)
-+buildNestedClipPath(clippedNode, clipPathNode, useStack, depth)
-+buildClipPathWithNestedClips(clippedNode, clipPathNode, useStack)
-+applyClipPathAntiAliased(canvas, node, useStack, doAntiAlias)
-+getClipMaskFeatherRadius(node)
-+findInheritedMaskNode(node)
-+findInheritedClipNode(node)
+class AnimatedSvgPainterMaskLuminanceExtension {
++parseMaskType(maskNode, maskedNode) _SvgMaskType
++createLuminanceMaskPaint() ui.Paint
++computeMaskBounds(maskedNode, maskNode) ui.Rect?
++paintMaskContent(canvas, maskNode, maskedNode, useStack) void
++createLuminanceMaskPaintWithGradientSupport() ui.Paint
++paintMaskContentWithFilters(canvas, maskNode, maskedNode, useStack, maskType, maskBounds) void
++maskHasGradientContent(maskNode) bool
 }
-class AnimatedSvgPainterClipMaskAdvancedExtension {
-+parseMaskType(maskNode, maskedNode)
-+applyAdvancedMask(canvas, node, useStack, paintContent)
-+applyMultipleMasks(canvas, node, useStack, paintContent)
-+parseMultipleMaskReferences(maskValue)
-+applySequentialMasks(canvas, node, maskIds, useStack, paintContent)
-+applyMaskChain(canvas, node, masks, currentIndex, bounds, useStack, paintContent)
-+createLuminanceMaskPaint()
-+computeMaskBounds(maskedNode, maskNode)
-+renderWithMask(canvas, node, maskNode, maskType, maskBounds, useStack, paintContent)
-+renderWithAlphaMask(canvas, node, maskNode, maskBounds, useStack, paintContent)
-+renderWithLuminanceMask(canvas, node, maskNode, maskBounds, useStack, paintContent)
-+paintMaskContent(canvas, maskNode, maskedNode, useStack)
-+hasMask(node)
-+hasClipPath(node)
-+hasMultipleMasks(node)
+class AnimatedSvgPainterMaskClipCombinationExtension {
++applySubgraphMask(canvas, node, useStack, paintFilteredContent) void
++renderSubgraphWithMask(canvas, node, maskNode, maskType, maskBounds, useStack, paintContent) void
++applyNestedMaskWithIntersection(canvas, node, maskNode, maskBounds, maskType, useStack, nestingContext, paintContent) void
+}
+class AnimatedSvgPainterClipNestedExtension {
++buildClipPathTransformStack(targetNode, clipPathNode) Matrix4
++buildClipPathWithTransformStack(clippedNode, clipPathNode, useStack) ui.Path?
++applyClipPathWithTransformStack(canvas, node, useStack) void
++buildCascadingClipPathWithUnits(clippedNode, clipPathNode, useStack, depth) ui.Path?
++computeObjectBoundingBoxTransformForClipWithBounds(targetNode) (Matrix4, ui.Rect)?
+}
+class AnimatedSvgPainterClipMaskCompositionExtension {
++applyAdvancedMask(canvas, node, useStack, paintContent) bool
++renderWithMaskComposition(canvas, node, maskNode, maskType, maskBounds, hasFeathering, useStack, paintContent) void
++createAlphaMaskPaint() ui.Paint
++maskContentHasFeathering(maskNode) bool
++expandMaskBoundsForFeathering(bounds, maskNode) ui.Rect
++applySubgraphMaskWithFilter(canvas, node, useStack, paintFilteredContent) bool
 }
 class AnimatedSvgPainterClipMaskGeometryExtension {
-+appendClipGeometry(target, node, currentTransform, useStack)
-+isUseViewportReferenceTag(tagName)
-+isUseReferenceAllowedTag(tagName)
-+resolveUseViewportTransform(useNode, referenceNode)
-+computeNodeLocalBounds(node)
++appendClipGeometry(target, node, currentTransform, useStack) void
++applyClipRuleToPath(path, node) void
++appendUseClipGeometry(target, useNode, currentTransform, useStack) void
++buildImageClipPath(imageNode) ui.Path?
++buildTextClipPath(textNode) ui.Path?
++buildTextCharacterPaths(textNode) ui.Path?
++computeTextClipBounds(textNode) ui.Rect?
++collectTextContent(node) String
++computeSymbolViewBoxTransform(symbolNode) Matrix4?
++resolveUseViewportTransform(useNode, referenceNode) _UseViewportTransform?
++computeNodeLocalBounds(node) ui.Rect?
 }
 class AnimatedSvgPainterClipMaskUnitsExtension {
-+buildMaskUnitsRegionPath(maskedNode, maskNode)
-+resolveMaskUserSpaceLength(maskNode, attributeName, horizontal, isSize, defaultRaw)
-+resolveMaskUnitsViewportRect()
-+parseObjectBoundingBoxValue(rawValue)
-+computeObjectBoundingBoxTransform(targetNode, preserveAspectRatio)
-+computeUserSpaceTransformStack(node)
-+transformClipPathForUnits(clipPath, targetNode, clipPathNode, additionalTransform)
-+computeMaskContentTransform(maskedNode, preserveAspectRatio)
-+getAnimatedMaskAttribute(maskNode, attributeName, defaultValue)
-+computeAnimatedMaskBounds(maskedNode, maskNode)
-+hasMaskAttributeAnimation(maskNode)
-+hasMaskContentAnimation(maskNode)
-+hasAnyAnimation(node)
++buildMaskUnitsRegionPath(maskedNode, maskNode) ui.Path?
++buildMaskRegionPathObjectBoundingBox(maskedNode, maskNode) ui.Path?
++buildMaskRegionPathUserSpaceOnUse(maskNode) ui.Path?
++resolveMaskUserSpaceLength(maskNode, attributeName, horizontal, isSize, defaultRaw) double?
++resolveMaskUnitsViewportRect() ui.Rect?
++computeObjectBoundingBoxTransform(targetNode, preserveAspectRatio) Matrix4?
++computeMaskContentObjectBoundingBoxTransform(maskedNode, clampToSafe) Matrix4?
 }
 ```
 
 **Diagram sources**
-- [lib/src/animation/animated_svg_painter_clip_mask_composition.dart:18-979](file://lib/src/animation/animated_svg_painter_clip_mask_composition.dart#L18-L979)
-- [lib/src/animation/animated_svg_painter_clip_mask_advanced.dart:17-1031](file://lib/src/animation/animated_svg_painter_clip_mask_advanced.dart#L17-L1031)
-- [lib/src/animation/animated_svg_painter_clip_mask_geometry.dart:4-376](file://lib/src/animation/animated_svg_painter_clip_mask_geometry.dart#L4-L376)
-- [lib/src/animation/animated_svg_painter_clip_mask_units.dart:9-754](file://lib/src/animation/animated_svg_painter_clip_mask_units.dart#L9-L754)
+- [lib/src/animation/animated_svg_painter_mask_luminance.dart:26-410](file://lib/src/animation/animated_svg_painter_mask_luminance.dart#L26-L410)
+- [lib/src/animation/animated_svg_painter_mask_clip_combination.dart:48-211](file://lib/src/animation/animated_svg_painter_mask_clip_combination.dart#L48-L211)
+- [lib/src/animation/animated_svg_painter_clip_nested.dart:9-325](file://lib/src/animation/animated_svg_painter_clip_nested.dart#L9-L325)
+- [lib/src/animation/animated_svg_painter_clip_mask_composition.dart:30-458](file://lib/src/animation/animated_svg_painter_clip_mask_composition.dart#L30-L458)
+- [lib/src/animation/animated_svg_painter_clip_mask_geometry.dart:3-537](file://lib/src/animation/animated_svg_painter_clip_mask_geometry.dart#L3-L537)
+- [lib/src/animation/animated_svg_painter_clip_mask_units.dart:9-373](file://lib/src/animation/animated_svg_painter_clip_mask_units.dart#L9-L373)
 
 ### Enhanced CSS Mask Support with Priority Handling
 The system now provides comprehensive CSS mask support with sophisticated priority handling for mask type determination:
@@ -1161,7 +1176,7 @@ The system now provides comprehensive CSS mask support with sophisticated priori
 - **luminance**: Uses luminance-based masking with RGB-to-luminance conversion
 
 **Section sources**
-- [lib/src/animation/animated_svg_painter_clip_mask_advanced.dart:18-66](file://lib/src/animation/animated_svg_painter_clip_mask_advanced.dart#L18-L66)
+- [lib/src/animation/animated_svg_painter_mask_luminance.dart:27-76](file://lib/src/animation/animated_svg_painter_mask_luminance.dart#L27-L76)
 - [test/animation/advanced_mask_semantics_test.dart:79-111](file://test/animation/advanced_mask_semantics_test.dart#L79-L111)
 
 ### Major Enhancement: Cascading ClipPath Support with Transform Stacking
@@ -1187,7 +1202,7 @@ The system implements comprehensive cascading clipPath support with proper trans
 - **Use Stack Management**: Tracks referenced elements to prevent circular references
 
 **Section sources**
-- [lib/src/animation/animated_svg_painter_clip_mask_advanced.dart:911-940](file://lib/src/animation/animated_svg_painter_clip_mask_advanced.dart#L911-L940)
+- [lib/src/animation/animated_svg_painter_clip_nested.dart:135-231](file://lib/src/animation/animated_svg_painter_clip_nested.dart#L135-L231)
 - [lib/src/animation/animated_svg_painter_clip_mask_composition.dart:215-263](file://lib/src/animation/animated_svg_painter_clip_mask_composition.dart#L215-L263)
 - [lib/src/animation/animated_svg_painter_clip_mask_composition.dart:445-485](file://lib/src/animation/animated_svg_painter_clip_mask_composition.dart#L445-L485)
 
@@ -1207,8 +1222,8 @@ The system provides comprehensive subgraph masking support for proper filter and
 - **Performance Optimization**: Minimizes unnecessary layer operations
 
 **Section sources**
-- [lib/src/animation/animated_svg_painter_clip_mask_advanced.dart:422-510](file://lib/src/animation/animated_svg_painter_clip_mask_advanced.dart#L422-L510)
-- [lib/src/animation/animated_svg_painter_clip_mask_composition.dart:847-895](file://lib/src/animation/animated_svg_painter_clip_mask_composition.dart#L847-L895)
+- [lib/src/animation/animated_svg_painter_clip_mask_composition.dart:131-174](file://lib/src/animation/animated_svg_painter_clip_mask_composition.dart#L131-L174)
+- [lib/src/animation/animated_svg_painter_mask_clip_combination.dart:58-100](file://lib/src/animation/animated_svg_painter_mask_clip_combination.dart#L58-L100)
 
 ### Comprehensive Unit Handling with Default 10% Extension
 The system provides extensive mask units support with proper coordinate transformation and enhanced default behavior:
@@ -1264,8 +1279,8 @@ The system supports advanced multiple mask composition with sequential applicati
 - **Safe Scaling**: Prevents issues with very small or degenerate mask regions
 
 **Section sources**
-- [lib/src/animation/animated_svg_painter_clip_mask_advanced.dart:115-193](file://lib/src/animation/animated_svg_painter_clip_mask_advanced.dart#L115-L193)
-- [lib/src/animation/animated_svg_painter_clip_mask_advanced.dart:196-273](file://lib/src/animation/animated_svg_painter_clip_mask_advanced.dart#L196-L273)
+- [lib/src/animation/animated_svg_painter_mask_clip_combination.dart:156-211](file://lib/src/animation/animated_svg_painter_mask_clip_combination.dart#L156-L211)
+- [lib/src/animation/animated_svg_painter_clip_mask_composition.dart:195-243](file://lib/src/animation/animated_svg_painter_clip_mask_composition.dart#L195-L243)
 
 ### Enhanced Recursive Nested Operations with Depth Limiting
 The system provides comprehensive support for nested composition chains with proper depth limiting and recursion prevention:
@@ -1332,7 +1347,7 @@ The system provides comprehensive mask bounds computation with stroke width and 
 
 **Section sources**
 - [lib/src/animation/animated_svg_painter_clip_mask.dart:184-277](file://lib/src/animation/animated_svg_painter_clip_mask.dart#L184-L277)
-- [lib/src/animation/animated_svg_painter_clip_mask_units.dart:1-754](file://lib/src/animation/animated_svg_painter_clip_mask_units.dart#L1-L754)
+- [lib/src/animation/animated_svg_painter_clip_mask_units.dart:1-373](file://lib/src/animation/animated_svg_painter_clip_mask_units.dart#L1-L373)
 - [lib/src/animation/animated_svg_painter_clip_mask_geometry.dart:229-268](file://lib/src/animation/animated_svg_painter_clip_mask_geometry.dart#L229-L268)
 
 ## Custom Properties and Calc() Function Support
@@ -1920,7 +1935,7 @@ The system provides advanced text positioning capabilities with precise hit test
 - CSS processing depends on CssCascadeResolver, CssSelectorParser, CssVariableResolver, CssCalcEvaluator, and SvgPseudoClassState
 - **Enhanced CSS shorthand expansion depends on modular components: CssShorthandExpansionAnimation, CssShorthandExpansionFont, CssShorthandExpansionBox**
 - **Stop-color animation system depends on css_to_smil_converter_core, smil_parser_animation_parsing, svg_parser_constants, and animated_svg_painter_gradients**
-- **Advanced clipping and masking system depends on animated_svg_painter_clip_mask, animated_svg_painter_clip_mask_advanced, animated_svg_painter_clip_mask_composition, animated_svg_painter_clip_mask_geometry, and animated_svg_painter_clip_mask_units**
+- **Advanced clipping and masking system depends on modular components: animated_svg_painter_mask_luminance, animated_svg_painter_mask_clip_combination, animated_svg_painter_clip_nested, animated_svg_painter_clip_mask_composition, animated_svg_painter_clip_mask_geometry, and animated_svg_painter_clip_mask_units**
 - **Enhanced hit testing system depends on animated_svg_picture_hit_test_traversal, animated_svg_picture_hit_test_geometry, animated_svg_picture_hit_test_advanced, animated_svg_picture_hit_test_use, animated_svg_picture_hit_test_text_runs, animated_svg_picture_hit_test_text_layout, and animated_svg_picture_hit_test_text_path_segments**
 - 3D transforms depend on Matrix4x4 and Transform3DContext
 - Rendering cache depends on _RenderCache and AnimatedSvgPainter
@@ -1959,8 +1974,10 @@ Picture --> StopColorSystem["Stop-Color Animation System"]
 StopColorSystem --> GradientResolver["Gradient Stop Resolver"]
 GradientResolver --> GradientShader["Animated Gradient Shader"]
 Picture --> ClipMaskSystem["Advanced Clipping and Masking System"]
-ClipMaskSystem --> ClipMaskAdvanced["Clip-Mask Advanced"]
-ClipMaskAdvanced --> ClipMaskComposition["Clip-Mask Composition"]
+ClipMaskSystem --> MaskLuminance["Mask Luminance Module"]
+MaskLuminance --> MaskCombination["Mask Combination Module"]
+MaskCombination --> NestedClip["Nested Clip Module"]
+NestedClip --> ClipMaskComposition["Clip-Mask Composition"]
 ClipMaskComposition --> ClipMaskGeometry["Clip-Mask Geometry"]
 ClipMaskGeometry --> ClipMaskUnits["Clip-Mask Units"]
 Picture --> HitTestSystem["Enhanced Hit Testing System"]
@@ -1995,11 +2012,12 @@ HitTestLayout --> HitTestTextPathSegments["Hit Test Text Path Segments"]
 - [lib/src/animation/animated_svg_painter.dart:258-460](file://lib/src/animation/animated_svg_painter.dart#L258-L460)
 - [lib/src/animation/animated_svg_painter_gradients.dart:1-190](file://lib/src/animation/animated_svg_painter_gradients.dart#L1-L190)
 - [lib/src/animation/animated_svg_painter_gradients_resolver.dart:1-157](file://lib/src/animation/animated_svg_painter_gradients_resolver.dart#L1-L157)
-- [lib/src/animation/animated_svg_painter_clip_mask.dart:1-279](file://lib/src/animation/animated_svg_painter_clip_mask.dart#L1-L279)
-- [lib/src/animation/animated_svg_painter_clip_mask_advanced.dart:1-1031](file://lib/src/animation/animated_svg_painter_clip_mask_advanced.dart#L1-L1031)
-- [lib/src/animation/animated_svg_painter_clip_mask_composition.dart:1-979](file://lib/src/animation/animated_svg_painter_clip_mask_composition.dart#L1-L979)
-- [lib/src/animation/animated_svg_painter_clip_mask_geometry.dart:1-376](file://lib/src/animation/animated_svg_painter_clip_mask_geometry.dart#L1-L376)
-- [lib/src/animation/animated_svg_painter_clip_mask_units.dart:1-754](file://lib/src/animation/animated_svg_painter_clip_mask_units.dart#L1-L754)
+- [lib/src/animation/animated_svg_painter_mask_luminance.dart:1-410](file://lib/src/animation/animated_svg_painter_mask_luminance.dart#L1-L410)
+- [lib/src/animation/animated_svg_painter_mask_clip_combination.dart:1-211](file://lib/src/animation/animated_svg_painter_mask_clip_combination.dart#L1-L211)
+- [lib/src/animation/animated_svg_painter_clip_nested.dart:1-325](file://lib/src/animation/animated_svg_painter_clip_nested.dart#L1-L325)
+- [lib/src/animation/animated_svg_painter_clip_mask_composition.dart:1-458](file://lib/src/animation/animated_svg_painter_clip_mask_composition.dart#L1-L458)
+- [lib/src/animation/animated_svg_painter_clip_mask_geometry.dart:1-537](file://lib/src/animation/animated_svg_painter_clip_mask_geometry.dart#L1-L537)
+- [lib/src/animation/animated_svg_painter_clip_mask_units.dart:1-373](file://lib/src/animation/animated_svg_painter_clip_mask_units.dart#L1-L373)
 - [lib/src/animation/animated_svg_picture_hit_test_traversal.dart:1-296](file://lib/src/animation/animated_svg_picture_hit_test_traversal.dart#L1-L296)
 - [lib/src/animation/animated_svg_picture_hit_test_geometry.dart:1-436](file://lib/src/animation/animated_svg_picture_hit_test_geometry.dart#L1-L436)
 - [lib/src/animation/animated_svg_picture_hit_test_advanced.dart:1-816](file://lib/src/animation/animated_svg_picture_hit_test_advanced.dart#L1-L816)
@@ -2069,6 +2087,7 @@ Practical tips:
 - **Limit use element recursion**: Respect depth limiting to prevent performance issues with complex use chains**
 - **Optimize text decoration thickness**: Use efficient value resolution and caching for complex text layouts**
 - **Leverage font variant caching**: Cache font feature resolution for improved performance with complex typography**
+- **Utilize enhanced modular architecture**: Take advantage of specialized modules for better performance and maintainability**
 
 ## Troubleshooting Guide
 Common issues and resolutions:
@@ -2135,6 +2154,7 @@ Common issues and resolutions:
   - **Font variant resolution failures**: Check OpenType feature integration and fallback handling
   - **Text positioning precision**: Verify per-character bounding box calculation and hit testing accuracy
   - **Advanced text rendering**: Check font metrics caching and paragraph builder optimization
+  - **Modular architecture issues**: Verify proper loading and initialization of specialized modules
 - **Animation sandwich model issues**
   - **State transition detection failures**: Verify previous state tracking and iteration counting
   - **Begin/end event timing**: Check event dispatch timing and syncbase condition resolution
@@ -2146,8 +2166,13 @@ Common issues and resolutions:
 - **Text styling and typography issues**
   - **Text decoration thickness not applying**: Check CSS parsing and unit conversion
   - **Font variant features not rendering**: Verify OpenType feature integration
-  - **Text positioning accuracy**: Check per-character bounding box calculation
+  - **Text positioning accuracy**: Verify per-character bounding box calculation
   - **Hit testing precision**: Verify glyph-precision text hit testing implementation
+- **Modular architecture troubleshooting**
+  - **Module loading issues**: Verify all specialized modules are properly imported and initialized
+  - **Method resolution failures**: Check that specialized methods are properly attached to AnimatedSvgPainter
+  - **Memory leaks**: Monitor for proper cleanup of mask nesting contexts and circular reference tracking
+  - **Performance regressions**: Compare performance with unified architecture to ensure improvements
 
 Diagnostic utilities:
 - AnimatedSvgPicture exposes trace callbacks and frame tick logging for detailed runtime insights
@@ -2166,6 +2191,7 @@ Diagnostic utilities:
 - **Text decoration thickness tests**: Validate comprehensive text-decoration-thickness property support
 - **Font variant resolution tests**: Verify advanced OpenType font feature integration
 - **Text positioning precision tests**: Validate per-character bounding box calculation and hit testing accuracy
+- **Modular architecture tests**: Validate proper functioning of specialized modules and their interactions
 
 **Section sources**
 - [lib/src/animation/animated_svg_picture.dart:52-86](file://lib/src/animation/animated_svg_picture.dart#L52-L86)
@@ -2230,13 +2256,13 @@ The codebase delivers a robust animated SVG pipeline with comprehensive advanced
 - **Enhanced text positioning and hit testing precision for complex text layouts**
 - Strong performance strategies and extensible architecture
 
-The major enhancement of the clip-path and mask system represents a significant advancement in the animation system. The new cascading support with recursive clipPath intersections up to 10 levels provides professional-grade compositing capabilities for complex SVG animations. The comprehensive unit handling with objectBoundingBox and userSpaceOnUse support, including the default 10% extension per SVG specification, ensures consistent and predictable mask behavior. The enhanced coordinate transform stacking for nested group operations maintains proper coordinate systems across complex hierarchies. The subgraph masking system with proper filter/mask ordering enables sophisticated compositing scenarios. The improved text approximation within clipPath enhances text-based clipping operations. The advanced edge feathering through Gaussian blur detection significantly improves visual quality.
+The major enhancement of the clip-path and mask system represents a significant advancement in the animation system. The new modular architecture with specialized components provides professional-grade compositing capabilities for complex SVG animations. The cascading support with recursive clipPath intersections up to 10 levels provides sophisticated nested operation handling. The comprehensive unit handling with objectBoundingBox and userSpaceOnUse support, including the default 10% extension per SVG specification, ensures consistent and predictable mask behavior. The enhanced coordinate transform stacking for nested group operations maintains proper coordinate systems across complex hierarchies. The subgraph masking system with proper filter/mask ordering enables sophisticated compositing scenarios. The improved text approximation within clipPath enhances text-based clipping operations. The advanced edge feathering through Gaussian blur detection significantly improves visual quality.
 
 **The enhanced hit testing system represents a major improvement in animation precision and performance. The advanced marker hit testing with vertex sampling and angle calculations provides accurate marker detection on complex paths. The glyph-precision text hit testing using per-character bounding boxes and font metrics dramatically improves text interaction accuracy. The enhanced evenodd fill rule containment testing with robust edge case handling ensures reliable path containment detection. The improved mask bounds caching with animated content invalidation tracking optimizes performance for complex animated scenes. The advanced use element hit testing with viewport clipping and recursion depth limiting prevents performance issues with complex use chains. The enhanced pointer event handling with better stroke tolerance and line cap considerations provides more accurate hit detection across all element types.**
 
 **The enhanced text styling and typography system represents a comprehensive upgrade to text rendering capabilities. The extensive CSS text property support now includes advanced text decoration thickness with multiple value types and inheritance. The font variant resolution system provides complete OpenType feature integration with support for small caps, numeric formatting, ligatures, and stylistic sets. The glyph-precision text hit testing system dramatically improves text interaction accuracy across complex layouts. The enhanced text positioning capabilities with per-character control and mixed font sizes provide professional-grade typography support. The comprehensive text decoration system now supports underline, overline, and line-through with individual control and advanced positioning options.**
 
-The enhanced CSS shorthand expansion system with dedicated modular components provides comprehensive property expansion capabilities, improving maintainability and performance across animation, font, and box model properties. The stop-color animation system enables sophisticated gradient animations with precise CSS selector targeting and SVGator compatibility. The advanced clipping and masking system with comprehensive CSS mask support, cascading operations, and enhanced units handling provides professional-grade compositing capabilities for complex SVG animations. The recursive depth limiting with 10-level protection ensures stability in complex nested structures. The default 10% extension implementation ensures SVG specification compliance. Adopt the examples and tests as references for building complex, performant animations while adhering to normalization and interpolation constraints.
+The enhanced CSS shorthand expansion system with dedicated modular components provides comprehensive property expansion capabilities, improving maintainability and performance across animation, font, and box model properties. The stop-color animation system enables sophisticated gradient animations with precise CSS selector targeting and SVGator compatibility. The advanced clipping and masking system with comprehensive CSS mask support, cascading operations, and enhanced units handling provides professional-grade compositing capabilities for complex SVG animations. The recursive depth limiting with 10-level protection ensures stability in complex nested structures. The default 10% extension implementation ensures SVG specification compliance. The modular architecture provides better maintainability and performance compared to the previous unified approach. Adopt the examples and tests as references for building complex, performant animations while adhering to normalization and interpolation constraints.
 
 ## Appendices
 
@@ -2272,6 +2298,7 @@ The enhanced CSS shorthand expansion system with dedicated modular components pr
 - Filters: color matrix, blur, lighting primitives (baseline pass-through)
 - **Enhanced text styling**: Comprehensive CSS text property support including underline, overline, line-through, writing-mode, font variants, and advanced typography features
 - **Advanced typography features**: Text decoration thickness, font variant resolution, and glyph-precision hit testing
+- **Modular architecture**: Specialized components for enhanced maintainability and performance**
 
 **Section sources**
 - [ANIMATION.md:21-66](file://ANIMATION.md#L21-L66)
@@ -2297,10 +2324,12 @@ The enhanced CSS shorthand expansion system with dedicated modular components pr
 - [test/animation/gradient_stop_color_animation_test.dart:1-412](file://test/animation/gradient_stop_color_animation_test.dart#L1-L412)
 - [test/animation/stop_color_animation_test.dart:1-433](file://test/animation/stop_color_animation_test.dart#L1-L433)
 - [test/animation/stroke_dash_stop_color_test.dart:1-368](file://test/animation/stroke_dash_stop_color_test.dart#L1-L368)
-- [lib/src/animation/animated_svg_painter_clip_mask_composition.dart:18-979](file://lib/src/animation/animated_svg_painter_clip_mask_composition.dart#L18-L979)
-- [lib/src/animation/animated_svg_painter_clip_mask_advanced.dart:1-1031](file://lib/src/animation/animated_svg_painter_clip_mask_advanced.dart#L1-L1031)
-- [lib/src/animation/animated_svg_painter_clip_mask_geometry.dart:1-376](file://lib/src/animation/animated_svg_painter_clip_mask_geometry.dart#L1-L376)
-- [lib/src/animation/animated_svg_painter_clip_mask_units.dart:1-754](file://lib/src/animation/animated_svg_painter_clip_mask_units.dart#L1-L754)
+- [lib/src/animation/animated_svg_painter_mask_luminance.dart:1-410](file://lib/src/animation/animated_svg_painter_mask_luminance.dart#L1-L410)
+- [lib/src/animation/animated_svg_painter_mask_clip_combination.dart:1-211](file://lib/src/animation/animated_svg_painter_mask_clip_combination.dart#L1-L211)
+- [lib/src/animation/animated_svg_painter_clip_nested.dart:1-325](file://lib/src/animation/animated_svg_painter_clip_nested.dart#L1-L325)
+- [lib/src/animation/animated_svg_painter_clip_mask_composition.dart:1-458](file://lib/src/animation/animated_svg_painter_clip_mask_composition.dart#L1-L458)
+- [lib/src/animation/animated_svg_painter_clip_mask_geometry.dart:1-537](file://lib/src/animation/animated_svg_painter_clip_mask_geometry.dart#L1-L537)
+- [lib/src/animation/animated_svg_painter_clip_mask_units.dart:1-373](file://lib/src/animation/animated_svg_painter_clip_mask_units.dart#L1-L373)
 - [test/animation/advanced_clip_mask_test.dart:1-766](file://test/animation/advanced_clip_mask_test.dart#L1-L766)
 - [test/animation/clip_mask_advanced_composition_test.dart:1-568](file://test/animation/clip_mask_advanced_composition_test.dart#L1-L568)
 - [test/animation/advanced_mask_semantics_test.dart:1-111](file://test/animation/advanced_mask_semantics_test.dart#L1-L111)

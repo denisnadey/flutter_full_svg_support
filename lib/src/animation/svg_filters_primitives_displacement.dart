@@ -49,9 +49,12 @@ enum SvgDisplacementEdgeMode {
 /// Utility class for performing displacement map operations on image data.
 ///
 /// Implements the SVG feDisplacementMap algorithm for pixel-level displacement
-/// with support for edge handling modes.
+/// with support for edge handling modes and high-precision bilinear interpolation.
 class DisplacementMapProcessor {
   const DisplacementMapProcessor._();
+
+  /// Default displacement scale limit to prevent extreme values.
+  static const double maxScale = 10000.0;
 
   /// Applies displacement map to RGBA pixel data.
   ///
@@ -84,6 +87,9 @@ class DisplacementMapProcessor {
       return inputPixels;
     }
 
+    // Clamp scale to reasonable bounds to prevent overflow
+    final effectiveScale = scale.clamp(-maxScale, maxScale);
+    
     final result = Uint8List(inputPixels.length);
 
     for (int y = 0; y < height; y++) {
@@ -91,17 +97,19 @@ class DisplacementMapProcessor {
         final mapIndex = (y * width + x) * 4;
 
         // Get displacement values from map channels (0-255 -> 0-1)
-        final xDisp = _getChannelValue(mapPixels, mapIndex, xChannel) / 255.0;
-        final yDisp = _getChannelValue(mapPixels, mapIndex, yChannel) / 255.0;
+        // Use double precision for accurate channel extraction
+        final xDisp = _getChannelValueNormalized(mapPixels, mapIndex, xChannel);
+        final yDisp = _getChannelValueNormalized(mapPixels, mapIndex, yChannel);
 
         // Calculate displaced source coordinates
         // Per SVG spec: P'(x,y) = P(x + scale*(XC(x,y) - 0.5), y + scale*(YC(x,y) - 0.5))
-        final srcX = x + scale * (xDisp - 0.5);
-        final srcY = y + scale * (yDisp - 0.5);
+        final srcX = x + effectiveScale * (xDisp - 0.5);
+        final srcY = y + effectiveScale * (yDisp - 0.5);
 
         // Get source pixel using bilinear interpolation or nearest-neighbor
+        // Always use bilinear for subpixel accuracy unless explicitly disabled
         final srcPixel = useBilinear
-            ? _getPixelBilinear(
+            ? _getPixelBilinearPrecise(
                 inputPixels,
                 width,
                 height,
@@ -130,11 +138,33 @@ class DisplacementMapProcessor {
     return result;
   }
 
-  /// Gets interpolated pixel value using bilinear interpolation.
+  /// Gets normalized channel value (0.0-1.0) with proper precision.
+  static double _getChannelValueNormalized(
+    Uint8List pixels,
+    int index,
+    SvgChannelSelector channel,
+  ) {
+    // Use 1/255 for accurate normalization
+    const normalizer = 1.0 / 255.0;
+    switch (channel) {
+      case SvgChannelSelector.r:
+        return pixels[index] * normalizer;
+      case SvgChannelSelector.g:
+        return pixels[index + 1] * normalizer;
+      case SvgChannelSelector.b:
+        return pixels[index + 2] * normalizer;
+      case SvgChannelSelector.a:
+        return pixels[index + 3] * normalizer;
+    }
+  }
+
+  /// Gets interpolated pixel value using high-precision bilinear interpolation.
   ///
-  /// When the displacement map produces non-integer coordinates, this
-  /// interpolates between the 4 nearest pixels for smooth results.
-  static List<int> _getPixelBilinear(
+  /// This implementation ensures proper handling of all edge cases:
+  /// - Coordinates outside bounds return transparent black per SVG spec (edgeMode.none)
+  /// - Fractional coordinates are properly interpolated
+  /// - All four contributing pixels are handled with correct weights
+  static List<int> _getPixelBilinearPrecise(
     Uint8List pixels,
     int width,
     int height,
@@ -142,71 +172,94 @@ class DisplacementMapProcessor {
     double y,
     SvgDisplacementEdgeMode edgeMode,
   ) {
-    // Get integer and fractional parts
+    // Handle completely out-of-bounds case early for 'none' mode
+    if (edgeMode == SvgDisplacementEdgeMode.none) {
+      // If any part of the interpolation region is outside, we need to
+      // handle it carefully - some pixels may contribute, others not
+      if (x < -1.0 || x >= width || y < -1.0 || y >= height) {
+        return const <int>[0, 0, 0, 0];
+      }
+    }
+
+    // Get integer and fractional parts with proper floor behavior
     final x0 = x.floor();
     final y0 = y.floor();
     final x1 = x0 + 1;
     final y1 = y0 + 1;
+    
+    // Calculate fractional position with proper precision
     final fx = x - x0;
     final fy = y - y0;
 
-    // Get the 4 corner pixels
-    final p00 = _getPixelWithEdgeMode(pixels, width, height, x0, y0, edgeMode);
-    final p10 = _getPixelWithEdgeMode(pixels, width, height, x1, y0, edgeMode);
-    final p01 = _getPixelWithEdgeMode(pixels, width, height, x0, y1, edgeMode);
-    final p11 = _getPixelWithEdgeMode(pixels, width, height, x1, y1, edgeMode);
+    // Get the 4 corner pixels with edge mode handling
+    final p00 = _getPixelWithEdgeModeDouble(pixels, width, height, x0, y0, edgeMode);
+    final p10 = _getPixelWithEdgeModeDouble(pixels, width, height, x1, y0, edgeMode);
+    final p01 = _getPixelWithEdgeModeDouble(pixels, width, height, x0, y1, edgeMode);
+    final p11 = _getPixelWithEdgeModeDouble(pixels, width, height, x1, y1, edgeMode);
 
-    // Bilinear interpolation for each channel
-    final ifx = 1.0 - fx;
-    final ify = 1.0 - fy;
+    // Bilinear interpolation weights
+    final w00 = (1.0 - fx) * (1.0 - fy);
+    final w10 = fx * (1.0 - fy);
+    final w01 = (1.0 - fx) * fy;
+    final w11 = fx * fy;
 
-    final r =
-        (p00[0] * ifx * ify +
-                p10[0] * fx * ify +
-                p01[0] * ifx * fy +
-                p11[0] * fx * fy)
-            .round()
-            .clamp(0, 255);
-    final g =
-        (p00[1] * ifx * ify +
-                p10[1] * fx * ify +
-                p01[1] * ifx * fy +
-                p11[1] * fx * fy)
-            .round()
-            .clamp(0, 255);
-    final b =
-        (p00[2] * ifx * ify +
-                p10[2] * fx * ify +
-                p01[2] * ifx * fy +
-                p11[2] * fx * fy)
-            .round()
-            .clamp(0, 255);
-    final a =
-        (p00[3] * ifx * ify +
-                p10[3] * fx * ify +
-                p01[3] * ifx * fy +
-                p11[3] * fx * fy)
-            .round()
-            .clamp(0, 255);
+    // Interpolate each channel with full precision
+    final r = (p00[0] * w00 + p10[0] * w10 + p01[0] * w01 + p11[0] * w11).round().clamp(0, 255);
+    final g = (p00[1] * w00 + p10[1] * w10 + p01[1] * w01 + p11[1] * w11).round().clamp(0, 255);
+    final b = (p00[2] * w00 + p10[2] * w10 + p01[2] * w01 + p11[2] * w11).round().clamp(0, 255);
+    final a = (p00[3] * w00 + p10[3] * w10 + p01[3] * w01 + p11[3] * w11).round().clamp(0, 255);
 
     return <int>[r, g, b, a];
   }
 
-  /// Gets channel value from pixel data.
-  static int _getChannelValue(
+  /// Gets pixel values as doubles for high-precision interpolation.
+  static List<double> _getPixelWithEdgeModeDouble(
     Uint8List pixels,
-    int index,
-    SvgChannelSelector channel,
+    int width,
+    int height,
+    int x,
+    int y,
+    SvgDisplacementEdgeMode edgeMode,
   ) {
-    switch (channel) {
-      case SvgChannelSelector.r:
-        return pixels[index];
-      case SvgChannelSelector.g:
-        return pixels[index + 1];
-      case SvgChannelSelector.b:
-        return pixels[index + 2];
-      case SvgChannelSelector.a:
-        return pixels[index + 3];
+    switch (edgeMode) {
+      case SvgDisplacementEdgeMode.clamp:
+        // Clamp coordinates to valid range
+        final clampedX = x.clamp(0, width - 1);
+        final clampedY = y.clamp(0, height - 1);
+        final index = (clampedY * width + clampedX) * 4;
+        return <double>[
+          pixels[index].toDouble(),
+          pixels[index + 1].toDouble(),
+          pixels[index + 2].toDouble(),
+          pixels[index + 3].toDouble(),
+        ];
+
+      case SvgDisplacementEdgeMode.wrap:
+        // Wrap coordinates around
+        var wrappedX = x % width;
+        var wrappedY = y % height;
+        if (wrappedX < 0) wrappedX += width;
+        if (wrappedY < 0) wrappedY += height;
+        final index = (wrappedY * width + wrappedX) * 4;
+        return <double>[
+          pixels[index].toDouble(),
+          pixels[index + 1].toDouble(),
+          pixels[index + 2].toDouble(),
+          pixels[index + 3].toDouble(),
+        ];
+
+      case SvgDisplacementEdgeMode.none:
+        // Return transparent black for out-of-bounds (SVG default)
+        if (x < 0 || x >= width || y < 0 || y >= height) {
+          return const <double>[0.0, 0.0, 0.0, 0.0];
+        }
+        final index = (y * width + x) * 4;
+        return <double>[
+          pixels[index].toDouble(),
+          pixels[index + 1].toDouble(),
+          pixels[index + 2].toDouble(),
+          pixels[index + 3].toDouble(),
+        ];
     }
   }
 

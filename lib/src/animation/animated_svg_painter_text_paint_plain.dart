@@ -97,11 +97,13 @@ extension AnimatedSvgPainterTextPlainExtension on AnimatedSvgPainter {
       effectiveStyle,
       node,
     );
-    final paintOrderParts = effectiveStyle.paintOrder.split(RegExp(r'\s+'));
+    // Performance optimization: Check if stroke is first without regex allocation.
+    // paintOrder format is space-separated: "stroke fill markers" or similar.
+    final paintOrder = effectiveStyle.paintOrder;
     final strokeFirst =
         strokeParagraph != null &&
-        paintOrderParts.isNotEmpty &&
-        paintOrderParts.first == 'stroke';
+        paintOrder.isNotEmpty &&
+        paintOrder.startsWith('stroke');
     void drawFill() {
       if ((scaleX - 1.0).abs() > 1e-6) {
         canvas.save();

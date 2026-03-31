@@ -1,30 +1,36 @@
 # TODO - Animation Work Queue
 
-**Last Updated:** March 30, 2026  
+**Last Updated:** March 31, 2026  
 **Status Source:** `/Users/denisnadey/apps/flutter_full_svg_support/CURRENT_STATUS.md`  
 **Closed Issues Registry:** `/Users/denisnadey/apps/flutter_full_svg_support/docs/RESOLVED_ISSUES.md`
 
-**Current Status:** ~94-95% Blink parity | ~99% Text parity | ~99% Filter parity | ~97% SMIL parity | 4,403 tests passing | 0 analyzer errors
+**Current Status:** ~96-97% Blink parity | ~99% Text parity | ~99% Filter parity | ~97% SMIL parity | 4,882 tests passing | 0 analyzer errors | 1 warning
 
 This file tracks actionable implementation tasks.
 For factual project status, use `CURRENT_STATUS.md` only.
 
-## Current Sprint (P0 - Active)
+## Current Sprint (P2 - Active)
 
-- [ ] **Wire remaining 12 edge case methods** - Methods requiring significant refactoring:
-  - `_applyNestedMaskWithIntersection`
-  - `_generateMaskCacheKey`
-  - ForeignObject helpers (`_computeForeignObjectNestedSvgTransform`, `_parsePreserveAspectRatioForNested`)
-  - Text layout helpers (`_computeTextElementAccumulatedTransform`, `_transformPointForText`, `_computeTextLengthDistribution`)
-  - Bidi helpers (`_buildBidiContext`, `_resolveEffectiveBidiDirection`)
-  - Hit test utilities (`_isZeroOpacity`, `_isHitTestExcluded`)
-  - CSS shorthand (`_isShorthandProperty`)
-- [ ] **Performance optimization** - Profile and optimize critical render paths
-- [ ] **Advanced text positioning** - Unicode normalization, complex script shaping
-- [ ] **Advanced use/symbol CSS cascade** - Further edge case refinement
+_Sprint complete as of March 31, 2026. No active items._
+
+Next sprint candidates:
+- [ ] **Additional profiling** - Ongoing identification of bottlenecks
+- [ ] **Memory allocation monitoring** - Monitor object creation in hot paths
+- [ ] **CSS selector edge case refinement** - Advanced structural pseudo-class combinations
 
 ## Completed Recently (March 2026)
 
+- [x] **Advanced Parity Sprint (March 31, 2026)** - 8 tasks completed, ~548 new tests added, parity ~95-96% → ~96-97%, 4,882 tests passing:
+  - Unicode normalization and complex script text (NFC, Arabic/Thai/Devanagari/CJK detection, grapheme cluster hit-testing) - 25 tests
+  - Advanced bi-directional text edge cases (BDO element, unicode-bidi interaction, mixed RTL/LTR reordering) - 18 tests
+  - CSS cascade through use/symbol shadow boundary (selector matching, nested inheritance, transform stacking, event retargeting) - 20 tests
+  - Use element in clip-path/mask (use resolution, symbol viewBox in mask, objectBoundingBox coordinates) - 19 tests
+  - Filter input-graph advanced chains (multi-reference caching, FillPaint/StrokePaint sources, cycle prevention) - 23 tests
+  - Filter primitive edge cases (feTurbulence tile stitching, feDisplacementMap bilinear interpolation, feComponentTransfer clamping) - 76 tests
+  - Advanced clip/mask composition (cascading clip-paths, luminance mask formula, maskContentUnits transitions) - 16 tests
+  - Blink-style regression test suite - 351 new regression tests
+
+- [x] **Wire Edge Case Methods & Optimization Sprint (March 31, 2026)** - Wired all 12 staged methods into active render pipeline (mask cache keys, nested mask intersection, foreignObject nested SVG transforms, text accumulated transforms, textLength distribution, bidi context/direction, hit test exclusion with pointer-events, CSS shorthand guard), added 93 new tests, reduced analyzer warnings from 13→1, performance optimizations (cache eviction policies with size limits, in-place matrix ops, regex reduction). All 4,496 tests pass, parity ~94-95% → ~95-96%.
 - [x] **Render Pipeline & Golden Test Sprint (March 30, 2026)** - Integrated edge case methods (data URI validation, mask animation tracking, gradient-aware luminance masking, alpha threshold hit testing), fixed all golden test failures (25 passing), expanded golden test coverage (19 new fixtures, 44 total), modularized 3 large files into 7 part files, verified filter light sources and input-graph semantics (32 new tests). All 4,403 tests pass.
 - [x] **Code Modularization** - `animated_svg_painter.dart` split from 941→190 lines into 3 part files (cache, types, text_types); `animated_svg_picture.dart` split from 627→194 lines into 5 part files (diagnostics, foreign_object, types, events, lifecycle). All 4,310 tests pass, 0 analyzer errors.
 - [x] **Performance Benchmarking Suite** - 5 new benchmark files (filter_chain, text_render, animation_render, combined_worst_case, memory), CacheStats class for cache profiling (hit rate, eviction count, peak size), benchmark runner sections 6-10 added.
@@ -65,7 +71,7 @@ All P3 items have been completed. See CURRENT_STATUS.md for details.
 
 ## P4 - Quality
 
-- [ ] Add parity regression suite based on Blink-style fixtures.
+- [x] Add parity regression suite based on Blink-style fixtures.
 - [x] Add performance benchmarks for new renderer coverage.
 - [x] Add playground import of exported JSON report bundles.
 - [x] Add playground analyzer/trace-store unit tests in `test/playground/**`.

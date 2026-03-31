@@ -42,6 +42,9 @@ extension AnimatedSvgPainterUseForeignObjectExtension on AnimatedSvgPainter {
   /// - The nested SVG's overflow attribute is respected
   /// - Percentage-based dimensions on nested SVG are resolved against
   ///   the foreignObject viewport
+  ///
+  /// Delegates transform computation to [_computeForeignObjectNestedSvgTransform]
+  /// which correctly handles all preserveAspectRatio values.
   void _applyNestedSvgViewportInForeignObject(
     ui.Canvas canvas,
     SvgNode svgNode,
@@ -80,51 +83,43 @@ extension AnimatedSvgPainterUseForeignObjectExtension on AnimatedSvgPainter {
       canvas.translate(svgX, svgY);
     }
 
-    final viewBoxAttr = svgNode.getAttributeValue('viewBox')?.toString();
-    if (viewBoxAttr != null && viewBoxAttr.trim().isNotEmpty) {
-      final viewBox = _parseForeignObjectViewBox(viewBoxAttr);
-      if (viewBox != null && viewBox.width > 0 && viewBox.height > 0) {
-        // Compute viewport layout according to preserveAspectRatio
-        final layout = resolveSvgViewportLayout(
-          viewport: ui.Rect.fromLTWH(0, 0, svgWidth, svgHeight),
-          sourceSize: ui.Size(viewBox.width, viewBox.height),
-          preserveAspectRatio: svgNode
-              .getAttributeValue('preserveAspectRatio')
-              ?.toString(),
+    // Use the dedicated transform computation method from shapes_image extension
+    // This properly handles all preserveAspectRatio values via _parsePreserveAspectRatioForNested
+    final transform = _computeForeignObjectNestedSvgTransform(
+      foreignObjectParent,
+      svgNode,
+    );
+
+    if (transform != null) {
+      // Apply the computed transform
+      canvas.transform(transform.storage);
+
+      // Get viewBox for clipping calculation
+      final viewBoxAttr = svgNode.getAttributeValue('viewBox')?.toString();
+      final viewBox = viewBoxAttr != null && viewBoxAttr.trim().isNotEmpty
+          ? _parseForeignObjectViewBox(viewBoxAttr)
+          : null;
+
+      // Handle overflow clipping for nested SVG
+      final overflow = svgNode
+          .getAttributeValue('overflow')
+          ?.toString()
+          .toLowerCase();
+
+      // Default overflow for SVG is 'hidden' unless explicitly set to 'visible'
+      if (viewBox != null && overflow != 'visible') {
+        canvas.clipRect(
+          ui.Rect.fromLTWH(
+            viewBox.left,
+            viewBox.top,
+            viewBox.width,
+            viewBox.height,
+          ),
+          doAntiAlias: true,
         );
-
-        // Compute the viewBox-to-viewport transform
-        final scaleX = layout.destinationRect.width / viewBox.width;
-        final scaleY = layout.destinationRect.height / viewBox.height;
-        final translateX = layout.destinationRect.left - viewBox.left * scaleX;
-        final translateY = layout.destinationRect.top - viewBox.top * scaleY;
-
-        // Apply the transform - this resets the coordinate system to viewBox coords
-        final transform = Matrix4.identity()
-          ..translateByDouble(translateX, translateY, 0, 1)
-          ..scaleByDouble(scaleX, scaleY, 1, 1);
-        canvas.transform(transform.storage);
-
-        // Handle overflow clipping for nested SVG
-        final overflow = svgNode
-            .getAttributeValue('overflow')
-            ?.toString()
-            .toLowerCase();
-        // Default overflow for SVG is 'hidden' unless explicitly set to 'visible'
-        if (layout.clipToViewport || overflow != 'visible') {
-          canvas.clipRect(
-            ui.Rect.fromLTWH(
-              viewBox.left,
-              viewBox.top,
-              viewBox.width,
-              viewBox.height,
-            ),
-            doAntiAlias: true,
-          );
-        }
       }
     } else {
-      // No viewBox - apply overflow clipping to SVG viewport
+      // No viewBox transform needed - apply overflow clipping to SVG viewport
       final overflow = svgNode
           .getAttributeValue('overflow')
           ?.toString()

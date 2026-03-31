@@ -168,10 +168,21 @@ mixin _SelectorMatchingMixin {
 
   /// Finds an ancestor matching the selector, respecting shadow boundaries.
   /// When shadowBoundaryId is set, stops at the element with that ID.
+  ///
+  /// Per SVG 2 spec:
+  /// - CSS combinator selectors (descendant, child, sibling) STOP at shadow boundary
+  /// - Simple selectors (ID, class) can still match elements within shadow tree
+  /// - The shadow boundary is formed by <use> and <symbol> elements
   SvgNode? _findMatchingAncestor(SvgNode node, CssSimpleSelector selector) {
     var current = node.parent;
-    while (current != null) {
+    int ancestorDepth = 0;
+    const maxAncestorDepth = 100; // Prevent infinite loops
+    
+    while (current != null && ancestorDepth < maxAncestorDepth) {
+      ancestorDepth++;
+      
       // Check for shadow DOM boundary - stop at use/symbol or explicit boundary
+      // Per SVG spec, combinator selectors stop at shadow boundary
       if (_isShadowBoundary(current)) {
         return null;
       }

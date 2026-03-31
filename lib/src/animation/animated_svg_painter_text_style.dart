@@ -20,7 +20,14 @@ extension AnimatedSvgPainterTextStyleExtension on AnimatedSvgPainter {
   ///
   /// This method gathers all relevant CSS properties for text rendering
   /// and returns a [_ResolvedTextStyle] containing the computed values.
-  _ResolvedTextStyle _resolveTextStyle(SvgNode node) {
+  ///
+  /// When [parentStyle] is provided (for nested tspan elements), the method
+  /// uses bidi-aware direction resolution via [_resolveEffectiveBidiDirection]
+  /// to properly handle RTL/LTR direction inheritance in nested text.
+  _ResolvedTextStyle _resolveTextStyle(
+    SvgNode node, {
+    _ResolvedTextStyle? parentStyle,
+  }) {
     final fontSize = (_getInheritedNumber(node, 'font-size') ?? 16.0).clamp(
       1.0,
       4096.0,
@@ -92,9 +99,11 @@ extension AnimatedSvgPainterTextStyleExtension on AnimatedSvgPainter {
       ...textRenderingFeatures,
       ...fontFeatureSettings,
     ];
-    final textDirection = _resolveTextDirection(
-      _getInheritedString(node, 'direction'),
-    );
+    // Use bidi-aware direction resolution when we have a parent style
+    // (nested tspan elements), otherwise use simple inheritance.
+    final textDirection = parentStyle != null
+        ? _resolveEffectiveBidiDirection(node, parentStyle)
+        : _resolveTextDirection(_getInheritedString(node, 'direction'));
     final glyphOrientationVertical = _resolveGlyphOrientationVertical(
       _getInheritedString(node, 'glyph-orientation-vertical'),
     );

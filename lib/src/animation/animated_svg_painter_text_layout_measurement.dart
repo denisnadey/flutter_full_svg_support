@@ -156,32 +156,48 @@ extension AnimatedSvgPainterTextLayoutMeasurementExtension
   /// transform attributes. This ensures that per-character positions are
   /// resolved in the correct coordinate space when transforms are applied
   /// at multiple nesting levels.
+  ///
+  /// Performance optimization: Uses in-place matrix multiplication instead of
+  /// creating new Matrix4 objects via multiplied(). Collects transforms during
+  /// tree walk and composes in reverse order without intermediate allocations.
   Matrix4 _computeTextElementAccumulatedTransform(SvgNode node) {
-    final transformStack = <Matrix4>[];
+    // Count transforms first to avoid List resizing
+    int transformCount = 0;
     SvgNode? current = node;
-
-    // Walk up to root text element, collecting transforms
     while (current != null) {
-      final tagName = current.tagName;
+      if (current.getAttributeValue('transform') != null) {
+        transformCount++;
+      }
+      if (current.tagName == 'text') break;
+      current = current.parent;
+    }
+
+    // Early exit if no transforms found
+    if (transformCount == 0) {
+      return Matrix4.identity();
+    }
+
+    // Collect transforms into pre-sized list
+    final transformStack = List<Matrix4>.filled(transformCount, Matrix4.identity());
+    int insertIndex = 0;
+    current = node;
+    while (current != null) {
       final transformStr = current.getAttributeValue('transform');
       if (transformStr != null) {
         final matrix = _buildTransformMatrixFromValue(transformStr);
         if (matrix != null) {
-          transformStack.add(matrix);
+          transformStack[insertIndex++] = matrix;
         }
       }
-
-      // Stop at root text element
-      if (tagName == 'text') {
-        break;
-      }
+      if (current.tagName == 'text') break;
       current = current.parent;
     }
 
-    // Compose transforms in reverse order (root to leaf)
-    var result = Matrix4.identity();
-    for (int i = transformStack.length - 1; i >= 0; i--) {
-      result = result.multiplied(transformStack[i]);
+    // Compose transforms in reverse order (root to leaf) using in-place multiply.
+    // Start with the root transform (last collected) and multiply in-place.
+    final result = transformStack[insertIndex - 1].clone();
+    for (int i = insertIndex - 2; i >= 0; i--) {
+      result.multiply(transformStack[i]);
     }
     return result;
   }
@@ -218,7 +234,7 @@ extension AnimatedSvgPainterTextLayoutMeasurementExtension
 
     for (final child in textNode.children) {
       if (child.tagName == 'tspan') {
-        final childStyle = _resolveTextStyle(child);
+        final childStyle = _resolveTextStyle(child, parentStyle: parentStyle);
         totalWidth += _computeNestedTspanTotalWidth(child, childStyle);
       }
     }

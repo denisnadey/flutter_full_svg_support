@@ -322,8 +322,16 @@ extension AnimatedSvgPainterTextStyleFontExtension on AnimatedSvgPainter {
   /// different font-feature-settings produce different cache entries.
   /// Critical for proper rendering of tabular vs proportional numerals,
   /// ligature variations, etc.
+  ///
+  /// Performance optimization: Avoids sorting for small lists (0-1 features)
+  /// since sorting overhead is unnecessary when order cannot vary.
   String _fontFeaturesHashKey(List<ui.FontFeature> features) {
     if (features.isEmpty) return 'ff:none';
+    // Single feature needs no sorting
+    if (features.length == 1) {
+      final f = features[0];
+      return 'ff:${f.feature}=${f.value}';
+    }
     // Sort features by tag for consistent cache keys regardless of order
     final sortedFeatures = List<ui.FontFeature>.from(features)
       ..sort((a, b) => a.feature.compareTo(b.feature));

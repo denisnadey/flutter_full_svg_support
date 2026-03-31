@@ -112,22 +112,59 @@ mixin _ResolutionMixin on _SelectorMatchingMixin {
   }
 
   /// Extracts value from inline style attribute.
+  ///
+  /// This method properly handles CSS shorthand properties by expanding them
+  /// before looking up the requested property. For example, if the style is
+  /// `margin: 10px` and we're looking for `margin-top`, this will expand the
+  /// shorthand and return `10px`.
   String? _extractInlineStyleValue(SvgNode node, String property) {
     final style = node.getAttributeValue('style')?.toString();
     if (style == null || style.trim().isEmpty) {
       return null;
     }
 
+    // First, try direct match (fast path for non-shorthand properties)
+    String? directValue;
+    bool hasShorthands = false;
+    final declarations = <(String, String)>[];
+
     for (final declaration in style.split(';')) {
       final parts = declaration.split(':');
       if (parts.length < 2) continue;
 
       final key = parts.first.trim().toLowerCase();
-      if (key != property) continue;
+      final value = parts.sublist(1).join(':').trim();
+      if (value.isEmpty) continue;
 
-      return parts.sublist(1).join(':').trim();
+      declarations.add((key, value));
+
+      if (key == property) {
+        directValue = value;
+      }
+
+      // Check if this is a shorthand that might affect our target property
+      if (CssShorthandExpander.isShorthandProperty(key)) {
+        hasShorthands = true;
+      }
     }
-    return null;
+
+    // If we found a direct match and no shorthands, return it
+    if (directValue != null && !hasShorthands) {
+      return directValue;
+    }
+
+    // If there are shorthands, expand them and look for the property
+    if (hasShorthands) {
+      final expanded = CssShorthandExpander.expandAllOrdered(declarations);
+      final expandedValue = expanded[property];
+      if (expandedValue != null) {
+        return expandedValue;
+      }
+    }
+
+    // Return direct match if we had one (for cases where shorthand didn't
+    // override our property)
+    return directValue;
   }
 
   /// Strips !important from a value.

@@ -15,7 +15,15 @@
 - [animation_render_benchmark.dart](file://benchmark/benchmarks/animation_render_benchmark.dart)
 - [combined_worst_case_benchmark.dart](file://benchmark/benchmarks/combined_worst_case_benchmark.dart)
 - [memory_benchmark.dart](file://benchmark/benchmarks/memory_benchmark.dart)
+- [cache.dart](file://lib/src/cache.dart)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Added comprehensive documentation for 5 new benchmark files: filter_chain, text_render, animation_render, combined_worst_case, and memory benchmarks
+- Introduced CacheStats class documentation for tracking cache performance metrics
+- Enhanced benchmark suite coverage with specialized test categories
+- Updated project structure to reflect expanded benchmark capabilities
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -23,13 +31,16 @@
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
 5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Dependency Analysis](#dependency-analysis)
-7. [Performance Considerations](#performance-considerations)
-8. [Troubleshooting Guide](#troubleshooting-guide)
-9. [Conclusion](#conclusion)
+6. [Cache Performance Monitoring](#cache-performance-monitoring)
+7. [Dependency Analysis](#dependency-analysis)
+8. [Performance Considerations](#performance-considerations)
+9. [Troubleshooting Guide](#troubleshooting-guide)
+10. [Conclusion](#conclusion)
 
 ## Introduction
 This document describes the comprehensive benchmark performance testing suite for the Flutter SVG rendering library. The suite measures parsing performance, filter processing, animation setup and playback, text layout, dash pattern computation, combined worst-case scenarios, and memory usage across a wide range of SVG features. The benchmarks are designed to establish baselines, detect regressions, and guide cache tuning and optimization efforts.
+
+**Updated** The benchmark suite has been significantly expanded with 5 new specialized benchmark categories covering complex filter chains, advanced text rendering, high-frequency animation rendering, comprehensive worst-case scenarios, and detailed memory usage analysis.
 
 ## Project Structure
 The benchmark system is organized into a central orchestrator and specialized suites for different SVG feature areas:
@@ -260,26 +271,28 @@ Warn --> End
 - [dash_pattern_benchmark.dart:16-199](file://benchmark/benchmarks/dash_pattern_benchmark.dart#L16-L199)
 
 ### Filter Chain Benchmarks
-Complex filter chain parsing and setup:
+**Updated** Complex filter chain parsing and setup with ultra-complex multi-stage chains:
 - Ultra-complex multi-stage chains (blur → color matrix → composite)
 - Nested filter chains with multiple levels
 - High filter count stress test (20+ filters applied to elements)
+- Performance analysis of complex filter graph traversal
 
 **Section sources**
 - [filter_chain_benchmark.dart:167-211](file://benchmark/benchmarks/filter_chain_benchmark.dart#L167-L211)
 
 ### Text Render Benchmarks
-Text layout parsing focusing on complex scenarios:
+**Updated** Advanced text layout parsing focusing on complex scenarios:
 - Nested tspan elements with mixed styling
 - textPath elements with various path types (quadratic, cubic, circular, zigzag)
 - Per-character positioning (x, y, dx, dy, rotate)
 - Large document simulations with many paragraphs
+- Complex typography rendering with multiple font families and weights
 
 **Section sources**
 - [text_render_benchmark.dart:206-263](file://benchmark/benchmarks/text_render_benchmark.dart#L206-L263)
 
 ### Animation Render Benchmarks
-Multiple simultaneous animations and high-frequency updates:
+**Updated** Multiple simultaneous animations and high-frequency updates:
 - Simultaneous property animations on single elements
 - Multiple animated elements with staggering
 - Transform animations (translate, rotate, scale)
@@ -287,27 +300,30 @@ Multiple simultaneous animations and high-frequency updates:
 - High animation count stress test (25+ elements)
 - Complex timing synchronization (begin/end dependencies)
 - High-frequency timeline ticks (120fps equivalent)
+- Performance analysis of animation timeline evaluation
 
 **Section sources**
 - [animation_render_benchmark.dart:170-271](file://benchmark/benchmarks/animation_render_benchmark.dart#L170-L271)
 
 ### Combined Worst-Case Benchmarks
-Comprehensive integration test combining all major features:
+**Updated** Comprehensive integration test combining all major features:
 - Full combined SVG with filters, gradients, masks, clipping, text, and animations
 - Timeline evaluation of the combined document
 - Scaled stress tests (50, 100, 200 elements)
 - Mixed content: rectangles, circles, text, and animated paths
+- End-to-end performance analysis of complex SVG processing pipelines
 
 **Section sources**
 - [combined_worst_case_benchmark.dart:243-324](file://benchmark/benchmarks/combined_worst_case_benchmark.dart#L243-L324)
 
 ### Memory Benchmarks
-Memory usage assessment across complexity levels:
+**Updated** Memory usage assessment across complexity levels:
 - Minimal, low, medium, high, and very high complexity SVGs
 - Heap usage estimation using developer service when available
 - Peak heap tracking during repeated parsing
 - Garbage collection encouragement through temporary allocations
 - Baseline comparisons across complexity tiers
+- Memory complexity ratio analysis and performance scaling evaluation
 
 ```mermaid
 flowchart TD
@@ -324,6 +340,37 @@ Compare --> End(["Return BenchmarkResults"])
 
 **Section sources**
 - [memory_benchmark.dart:234-320](file://benchmark/benchmarks/memory_benchmark.dart#L234-L320)
+
+## Cache Performance Monitoring
+**New Section** The benchmark suite now includes comprehensive cache performance monitoring through the CacheStats class:
+
+The CacheStats class provides detailed metrics for cache profiling and diagnostics:
+- Total cache hits (found in completed cache)
+- Total cache misses (not found, had to load)
+- Total evictions from cache
+- Hits on pending (in-flight) entries
+- Peak cache size observed
+- Hit rate calculations (including effective hit rates)
+- Performance analysis of cache efficiency
+
+```mermaid
+graph TB
+subgraph "Cache Performance Metrics"
+HS["Hits: $_hits"]
+MS["Misses: $_misses"]
+PH["Pending Hits: $_pendingHits"]
+EV["Evictions: $_evictions"]
+PS["Peak Size: $_peakSize"]
+HR["Hit Rate: ${hitRate * 100}%"]
+EHR["Effective Hit Rate: ${effectiveHitRate * 100}%"]
+END
+```
+
+**Diagram sources**
+- [cache.dart:4-81](file://lib/src/cache.dart#L4-L81)
+
+**Section sources**
+- [cache.dart:4-81](file://lib/src/cache.dart#L4-L81)
 
 ## Dependency Analysis
 The benchmark suite exhibits clear modularity with explicit dependencies:
@@ -386,6 +433,7 @@ MB -.-> Parser
 - Memory estimation: Current implementation provides estimations; accurate measurements require VM integration
 - Regression detection: Baseline metrics enable early detection of performance regressions
 - Cache tuning: Repeated access benchmarks help evaluate cache effectiveness for parsed documents
+- **Updated** Comprehensive cache performance monitoring through CacheStats class for detailed cache efficiency analysis
 
 ## Troubleshooting Guide
 Common issues and remedies:
@@ -393,6 +441,7 @@ Common issues and remedies:
 - Memory measurement limitations: Standalone Dart lacks direct memory APIs; use DevTools or Observatory for accurate measurements
 - Timeout violations: Increase timeoutMs in configuration if legitimate processing requires more time
 - Garbage collection interference: Temporary allocations are used to encourage GC; avoid running memory benchmarks concurrently with other memory-intensive tasks
+- **Updated** Cache performance issues: Monitor CacheStats metrics to identify cache inefficiencies and optimize cache sizing and eviction policies
 
 **Section sources**
 - [dash_pattern_benchmark.dart:168-197](file://benchmark/benchmarks/dash_pattern_benchmark.dart#L168-L197)
@@ -401,3 +450,5 @@ Common issues and remedies:
 
 ## Conclusion
 The benchmark suite provides comprehensive performance insights across all major SVG feature areas. By establishing baselines, detecting regressions, and guiding optimization efforts, it supports continued improvements in parsing speed, filter processing, animation performance, text layout, dash pattern computation, and memory usage. The modular design enables targeted investigations while the combined worst-case scenarios ensure readiness for complex real-world usage.
+
+**Updated** The addition of 5 new specialized benchmark categories and the CacheStats class provides unprecedented insight into cache performance, complex filter chain processing, advanced text rendering, high-frequency animation evaluation, and comprehensive memory usage analysis. This enhanced suite enables developers to identify performance bottlenecks across the entire SVG processing pipeline and make data-driven decisions for optimization and cache tuning.

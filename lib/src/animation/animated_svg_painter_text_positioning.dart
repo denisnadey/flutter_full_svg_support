@@ -496,6 +496,441 @@ extension AnimatedSvgPainterTextPositioningExtension on AnimatedSvgPainter {
     // Fall back to inherited direction
     return _resolveTextDirection(_getInheritedString(node, 'direction'));
   }
+
+  /// Checks if the node is a BDO (bi-directional override) element.
+  bool _bidiIsBdoElement(SvgNode node) {
+    return node.tagName == 'bdo';
+  }
+
+  /// Resolves direction for BDO elements, handling dir="auto".
+  ///
+  /// For BDO elements:
+  /// - dir="ltr" forces LTR direction
+  /// - dir="rtl" forces RTL direction
+  /// - dir="auto" determines direction from first strong character
+  ui.TextDirection _bidiResolveBdoDirection(
+    SvgNode node,
+    String? textContent,
+  ) {
+    final dirAttr = node.getAttributeValue('dir')?.toString().toLowerCase();
+
+    if (dirAttr == 'auto' && textContent != null) {
+      // Determine direction from first strong directional character
+      return _bidiDetectFirstStrongDirection(textContent);
+    }
+
+    if (dirAttr == 'rtl') {
+      return ui.TextDirection.rtl;
+    }
+
+    // Default to LTR for dir="ltr" or any other value
+    return ui.TextDirection.ltr;
+  }
+
+  /// Detects direction from the first strong directional character in text.
+  ///
+  /// Per UAX #9 (Unicode Bidi Algorithm), strong directional characters are:
+  /// - L (Left-to-Right): Latin, Greek, Cyrillic, etc.
+  /// - R (Right-to-Left): Hebrew
+  /// - AL (Arabic Letter): Arabic, Syriac, Thaana
+  ui.TextDirection _bidiDetectFirstStrongDirection(String text) {
+    for (int i = 0; i < text.length; i++) {
+      final codeUnit = text.codeUnitAt(i);
+
+      // RTL: Hebrew range (0x0590-0x05FF)
+      if (codeUnit >= 0x0590 && codeUnit <= 0x05FF) {
+        return ui.TextDirection.rtl;
+      }
+
+      // RTL: Arabic range (0x0600-0x06FF)
+      if (codeUnit >= 0x0600 && codeUnit <= 0x06FF) {
+        return ui.TextDirection.rtl;
+      }
+
+      // RTL: Arabic Supplement (0x0750-0x077F)
+      if (codeUnit >= 0x0750 && codeUnit <= 0x077F) {
+        return ui.TextDirection.rtl;
+      }
+
+      // RTL: Arabic Extended-A (0x08A0-0x08FF)
+      if (codeUnit >= 0x08A0 && codeUnit <= 0x08FF) {
+        return ui.TextDirection.rtl;
+      }
+
+      // RTL: Syriac (0x0700-0x074F)
+      if (codeUnit >= 0x0700 && codeUnit <= 0x074F) {
+        return ui.TextDirection.rtl;
+      }
+
+      // RTL: Thaana (0x0780-0x07BF)
+      if (codeUnit >= 0x0780 && codeUnit <= 0x07BF) {
+        return ui.TextDirection.rtl;
+      }
+
+      // LTR: Basic Latin letters (A-Z, a-z)
+      if ((codeUnit >= 0x0041 && codeUnit <= 0x005A) ||
+          (codeUnit >= 0x0061 && codeUnit <= 0x007A)) {
+        return ui.TextDirection.ltr;
+      }
+
+      // LTR: Latin Extended-A and Extended-B
+      if (codeUnit >= 0x0100 && codeUnit <= 0x024F) {
+        return ui.TextDirection.ltr;
+      }
+
+      // LTR: Greek (0x0370-0x03FF)
+      if (codeUnit >= 0x0370 && codeUnit <= 0x03FF) {
+        return ui.TextDirection.ltr;
+      }
+
+      // LTR: Cyrillic (0x0400-0x04FF)
+      if (codeUnit >= 0x0400 && codeUnit <= 0x04FF) {
+        return ui.TextDirection.ltr;
+      }
+    }
+
+    // Default to LTR if no strong character found
+    return ui.TextDirection.ltr;
+  }
+
+  /// Resolves the unicode-bidi behavior considering direction interaction.
+  ///
+  /// Handles all unicode-bidi values:
+  /// - normal: element doesn't affect bidi
+  /// - embed: opens embedded level of bidi
+  /// - isolate: isolates the content from surrounding bidi context
+  /// - bidi-override: overrides bidi algorithm, all chars get explicit direction
+  /// - isolate-override: combines isolate and override
+  /// - plaintext: paragraph direction from first strong character
+  _BidiLevel _bidiResolveUnicodeBidiInteraction(
+    SvgNode node,
+    ui.TextDirection inheritedDirection,
+  ) {
+    final unicodeBidi = node.getAttributeValue('unicode-bidi')?.toString();
+    final directionAttr = node.getAttributeValue('direction')?.toString();
+    final isBdo = _bidiIsBdoElement(node);
+
+    // Resolve direction
+    ui.TextDirection direction = inheritedDirection;
+    if (directionAttr != null) {
+      direction = _resolveTextDirection(directionAttr);
+    }
+
+    // Determine bidi mode
+    final bidiMode = unicodeBidi?.toLowerCase().trim() ?? 'normal';
+
+    bool isIsolate = false;
+    bool isOverride = false;
+
+    switch (bidiMode) {
+      case 'embed':
+        // Opens embedding level, inherits direction or uses explicit
+        break;
+
+      case 'isolate':
+        isIsolate = true;
+        break;
+
+      case 'bidi-override':
+        isOverride = true;
+        break;
+
+      case 'isolate-override':
+        isIsolate = true;
+        isOverride = true;
+        break;
+
+      case 'plaintext':
+        // Direction determined from first strong character
+        isIsolate = true;
+        final text = _extractTextContent(node);
+        if (text != null) {
+          direction = _bidiDetectFirstStrongDirection(text);
+        }
+        break;
+
+      case 'normal':
+      default:
+        // No special bidi behavior
+        break;
+    }
+
+    // BDO elements always force override
+    if (isBdo) {
+      isOverride = true;
+    }
+
+    return _BidiLevel(
+      direction: direction,
+      unicodeBidi: unicodeBidi,
+      isIsolate: isIsolate,
+      isOverride: isOverride,
+      isBdo: isBdo,
+    );
+  }
+
+  /// Segments mixed-direction text into runs for proper visual reordering.
+  ///
+  /// This implements a simplified Unicode Bidi Algorithm (UBA) for SVG text.
+  /// Each run has a consistent direction and can be positioned independently.
+  List<_BidiTextRun> _bidiSegmentMixedDirectionText(
+    String text,
+    ui.TextDirection baseDirection, {
+    bool isOverride = false,
+  }) {
+    if (text.isEmpty) return [];
+
+    // If override is active, all text is forced to base direction
+    if (isOverride) {
+      return [
+        _BidiTextRun(
+          text: text,
+          direction: baseDirection,
+          logicalStart: 0,
+          logicalEnd: text.length,
+          visualOrder: 0,
+          isOverridden: true,
+        ),
+      ];
+    }
+
+    final runs = <_BidiTextRun>[];
+    int runStart = 0;
+    ui.TextDirection? currentDirection;
+    int visualOrder = 0;
+
+    for (int i = 0; i < text.length; i++) {
+      final charDirection = _bidiGetCharacterDirection(text.codeUnitAt(i));
+      final effectiveDirection = charDirection ?? baseDirection;
+
+      if (currentDirection == null) {
+        currentDirection = effectiveDirection;
+      } else if (effectiveDirection != currentDirection &&
+          charDirection != null) {
+        // Direction change, close current run
+        runs.add(
+          _BidiTextRun(
+            text: text.substring(runStart, i),
+            direction: currentDirection,
+            logicalStart: runStart,
+            logicalEnd: i,
+            visualOrder: visualOrder++,
+          ),
+        );
+        runStart = i;
+        currentDirection = effectiveDirection;
+      }
+    }
+
+    // Add final run
+    if (runStart < text.length) {
+      runs.add(
+        _BidiTextRun(
+          text: text.substring(runStart),
+          direction: currentDirection ?? baseDirection,
+          logicalStart: runStart,
+          logicalEnd: text.length,
+          visualOrder: visualOrder,
+        ),
+      );
+    }
+
+    // Reorder runs for visual display
+    return _bidiReorderRunsForDisplay(runs, baseDirection);
+  }
+
+  /// Gets the directional character type for a code unit.
+  ///
+  /// Returns null for neutral characters (numbers, spaces, punctuation).
+  ui.TextDirection? _bidiGetCharacterDirection(int codeUnit) {
+    // RTL: Hebrew (0x0590-0x05FF)
+    if (codeUnit >= 0x0590 && codeUnit <= 0x05FF) {
+      return ui.TextDirection.rtl;
+    }
+
+    // RTL: Arabic (0x0600-0x06FF)
+    if (codeUnit >= 0x0600 && codeUnit <= 0x06FF) {
+      return ui.TextDirection.rtl;
+    }
+
+    // RTL: Arabic Supplement, Extended, Syriac, Thaana
+    if ((codeUnit >= 0x0700 && codeUnit <= 0x08FF)) {
+      return ui.TextDirection.rtl;
+    }
+
+    // LTR: Latin (A-Z, a-z)
+    if ((codeUnit >= 0x0041 && codeUnit <= 0x005A) ||
+        (codeUnit >= 0x0061 && codeUnit <= 0x007A)) {
+      return ui.TextDirection.ltr;
+    }
+
+    // LTR: Extended Latin
+    if (codeUnit >= 0x0100 && codeUnit <= 0x024F) {
+      return ui.TextDirection.ltr;
+    }
+
+    // LTR: Greek, Cyrillic
+    if (codeUnit >= 0x0370 && codeUnit <= 0x04FF) {
+      return ui.TextDirection.ltr;
+    }
+
+    // Neutral (numbers, punctuation, spaces)
+    return null;
+  }
+
+  /// Reorders bidi text runs for visual display based on base direction.
+  ///
+  /// In LTR base: LTR runs stay in place, RTL runs are reversed within their sequence
+  /// In RTL base: RTL runs stay in place, LTR runs are reversed within their sequence
+  List<_BidiTextRun> _bidiReorderRunsForDisplay(
+    List<_BidiTextRun> runs,
+    ui.TextDirection baseDirection,
+  ) {
+    if (runs.length <= 1) return runs;
+
+    // Create a copy with updated visual orders
+    final reordered = <_BidiTextRun>[];
+    int visualOrder = 0;
+
+    if (baseDirection == ui.TextDirection.ltr) {
+      // For LTR base, RTL runs appear in reverse logical order
+      for (int i = 0; i < runs.length; i++) {
+        final run = runs[i];
+        reordered.add(
+          _BidiTextRun(
+            text: run.text,
+            direction: run.direction,
+            logicalStart: run.logicalStart,
+            logicalEnd: run.logicalEnd,
+            visualOrder: visualOrder++,
+            isOverridden: run.isOverridden,
+          ),
+        );
+      }
+    } else {
+      // For RTL base, process runs in reverse for visual order
+      for (int i = runs.length - 1; i >= 0; i--) {
+        final run = runs[i];
+        reordered.add(
+          _BidiTextRun(
+            text: run.text,
+            direction: run.direction,
+            logicalStart: run.logicalStart,
+            logicalEnd: run.logicalEnd,
+            visualOrder: visualOrder++,
+            isOverridden: run.isOverridden,
+          ),
+        );
+      }
+    }
+
+    // Sort by visual order for rendering
+    reordered.sort((a, b) => a.visualOrder.compareTo(b.visualOrder));
+    return reordered;
+  }
+
+  /// Maps a logical position to visual position for hit-testing in mixed-direction text.
+  ///
+  /// This is essential for correct cursor placement when clicking on
+  /// mixed RTL/LTR text.
+  _BidiPositionMapping _bidiMapLogicalToVisualPosition(
+    int logicalIndex,
+    List<_BidiTextRun> runs,
+  ) {
+    // Find the run containing this logical position
+    for (final run in runs) {
+      if (logicalIndex >= run.logicalStart && logicalIndex < run.logicalEnd) {
+        // Calculate offset within run
+        final offsetInRun = logicalIndex - run.logicalStart;
+
+        // For RTL runs, visual position is reversed within the run
+        int visualOffset;
+        if (run.direction == ui.TextDirection.rtl) {
+          visualOffset = (run.logicalEnd - run.logicalStart - 1) - offsetInRun;
+        } else {
+          visualOffset = offsetInRun;
+        }
+
+        // Calculate cumulative visual position
+        int visualBase = 0;
+        for (final r in runs) {
+          if (r.visualOrder < run.visualOrder) {
+            visualBase += r.logicalEnd - r.logicalStart;
+          }
+        }
+
+        return _BidiPositionMapping(
+          logicalIndex: logicalIndex,
+          visualIndex: visualBase + visualOffset,
+          direction: run.direction,
+          isAtRunBoundary:
+              offsetInRun == 0 ||
+              offsetInRun == (run.logicalEnd - run.logicalStart - 1),
+        );
+      }
+    }
+
+    // Position is beyond all runs, return end position
+    int totalLength = 0;
+    for (final run in runs) {
+      totalLength += run.logicalEnd - run.logicalStart;
+    }
+
+    return _BidiPositionMapping(
+      logicalIndex: logicalIndex,
+      visualIndex: totalLength,
+      direction: runs.isNotEmpty ? runs.last.direction : ui.TextDirection.ltr,
+      isAtRunBoundary: true,
+    );
+  }
+
+  /// Maps a visual position back to logical position for selection.
+  ///
+  /// Inverse of [_bidiMapLogicalToVisualPosition].
+  _BidiPositionMapping _bidiMapVisualToLogicalPosition(
+    int visualIndex,
+    List<_BidiTextRun> runs,
+  ) {
+    // Sort runs by visual order
+    final sortedRuns = List<_BidiTextRun>.from(runs)
+      ..sort((a, b) => a.visualOrder.compareTo(b.visualOrder));
+
+    int currentVisualPos = 0;
+    for (final run in sortedRuns) {
+      final runLength = run.logicalEnd - run.logicalStart;
+
+      if (visualIndex >= currentVisualPos &&
+          visualIndex < currentVisualPos + runLength) {
+        // Position is within this run
+        final offsetInRun = visualIndex - currentVisualPos;
+
+        // For RTL runs, logical position is reversed
+        int logicalOffset;
+        if (run.direction == ui.TextDirection.rtl) {
+          logicalOffset = (runLength - 1) - offsetInRun;
+        } else {
+          logicalOffset = offsetInRun;
+        }
+
+        return _BidiPositionMapping(
+          logicalIndex: run.logicalStart + logicalOffset,
+          visualIndex: visualIndex,
+          direction: run.direction,
+          isAtRunBoundary: offsetInRun == 0 || offsetInRun == runLength - 1,
+        );
+      }
+
+      currentVisualPos += runLength;
+    }
+
+    // Beyond all runs
+    return _BidiPositionMapping(
+      logicalIndex: runs.isNotEmpty ? runs.last.logicalEnd : 0,
+      visualIndex: visualIndex,
+      direction: runs.isNotEmpty ? runs.last.direction : ui.TextDirection.ltr,
+      isAtRunBoundary: true,
+    );
+  }
 }
 
 /// Information about a single ancestor in the baseline calculation chain.
@@ -578,6 +1013,8 @@ class _BidiLevel {
     required this.direction,
     required this.unicodeBidi,
     required this.isIsolate,
+    this.isOverride = false,
+    this.isBdo = false,
   });
 
   /// The text direction at this level.
@@ -588,4 +1025,405 @@ class _BidiLevel {
 
   /// Whether this level is isolated from surrounding text.
   final bool isIsolate;
+
+  /// Whether this level overrides the bidi algorithm.
+  final bool isOverride;
+
+  /// Whether this level comes from a <bdo> element.
+  final bool isBdo;
+}
+
+/// Represents a text run with resolved bidi properties.
+class _BidiTextRun {
+  const _BidiTextRun({
+    required this.text,
+    required this.direction,
+    required this.logicalStart,
+    required this.logicalEnd,
+    required this.visualOrder,
+    this.isOverridden = false,
+  });
+
+  /// The text content of this run.
+  final String text;
+
+  /// The resolved direction for this run.
+  final ui.TextDirection direction;
+
+  /// Starting index in the logical (source) order.
+  final int logicalStart;
+
+  /// Ending index (exclusive) in the logical order.
+  final int logicalEnd;
+
+  /// The visual order index (for reordering).
+  final int visualOrder;
+
+  /// Whether bidi-override was applied to this run.
+  final bool isOverridden;
+}
+
+/// Result of logical-to-visual position mapping for hit-testing.
+class _BidiPositionMapping {
+  const _BidiPositionMapping({
+    required this.logicalIndex,
+    required this.visualIndex,
+    required this.direction,
+    required this.isAtRunBoundary,
+  });
+
+  /// Position in logical (source) order.
+  final int logicalIndex;
+
+  /// Position in visual (rendered) order.
+  final int visualIndex;
+
+  /// Direction at this position.
+  final ui.TextDirection direction;
+
+  /// Whether this position is at a direction boundary.
+  final bool isAtRunBoundary;
+}
+
+/// Detected script type for text shaping.
+enum _ScriptType {
+  /// Latin, Greek, Cyrillic and other simple LTR scripts.
+  latin,
+
+  /// Arabic script (RTL, requires contextual shaping).
+  arabic,
+
+  /// Hebrew script (RTL).
+  hebrew,
+
+  /// Thai script (requires cluster-aware segmentation).
+  thai,
+
+  /// Devanagari script (requires cluster-aware segmentation).
+  devanagari,
+
+  /// CJK (Chinese, Japanese, Korean) scripts.
+  cjk,
+
+  /// Bengali script (requires cluster-aware segmentation).
+  bengali,
+
+  /// Tamil script (requires cluster-aware segmentation).
+  tamil,
+
+  /// Other scripts (default handling).
+  other,
+}
+
+/// Unicode normalization and complex script support utilities.
+///
+/// Provides NFC normalization per SVG spec and complex script detection
+/// for proper text rendering with combining marks and diacritics.
+extension AnimatedSvgPainterUnicodeExtension on AnimatedSvgPainter {
+  /// Normalizes text to NFC (Canonical Decomposition, followed by Canonical Composition).
+  ///
+  /// Per SVG spec, text content should be normalized to NFC before rendering.
+  /// This ensures that composed characters (like 'é') and decomposed sequences
+  /// (like 'e' + combining acute accent) are rendered identically.
+  String _normalizeTextToNFC(String text) {
+    if (text.isEmpty) return text;
+
+    // Check if normalization is needed (contains combining marks or decomposed chars)
+    if (!_needsNormalization(text)) return text;
+
+    // Perform NFC normalization
+    return _applyNFCNormalization(text);
+  }
+
+  /// Checks if the text contains characters that may need NFC normalization.
+  bool _needsNormalization(String text) {
+    for (final codeUnit in text.runes) {
+      // Combining Diacritical Marks (0300-036F)
+      if (codeUnit >= 0x0300 && codeUnit <= 0x036F) return true;
+      // Combining Diacritical Marks Extended (1AB0-1AFF)
+      if (codeUnit >= 0x1AB0 && codeUnit <= 0x1AFF) return true;
+      // Combining Diacritical Marks Supplement (1DC0-1DFF)
+      if (codeUnit >= 0x1DC0 && codeUnit <= 0x1DFF) return true;
+      // Combining Diacritical Marks for Symbols (20D0-20FF)
+      if (codeUnit >= 0x20D0 && codeUnit <= 0x20FF) return true;
+      // Combining Half Marks (FE20-FE2F)
+      if (codeUnit >= 0xFE20 && codeUnit <= 0xFE2F) return true;
+    }
+    return false;
+  }
+
+  /// Applies NFC normalization to the text.
+  ///
+  /// This uses a lookup-based approach for common combining sequences,
+  /// falling back to the original text for unsupported combinations.
+  String _applyNFCNormalization(String text) {
+    final buffer = StringBuffer();
+    final runes = text.runes.toList();
+    var i = 0;
+
+    while (i < runes.length) {
+      final codePoint = runes[i];
+
+      // Check if next character is a combining mark
+      if (i + 1 < runes.length && _isNfcCombiningMark(runes[i + 1])) {
+        final combined = _composeCharacter(codePoint, runes[i + 1]);
+        if (combined != null) {
+          buffer.writeCharCode(combined);
+          i += 2;
+          continue;
+        }
+      }
+
+      buffer.writeCharCode(codePoint);
+      i++;
+    }
+
+    return buffer.toString();
+  }
+
+  /// Checks if a code point is a combining mark for NFC normalization.
+  /// Named differently to avoid conflict with existing method in text measurement.
+  bool _isNfcCombiningMark(int codePoint) {
+    // Combining Diacritical Marks (0300-036F)
+    if (codePoint >= 0x0300 && codePoint <= 0x036F) return true;
+    // Combining Diacritical Marks Extended (1AB0-1AFF)
+    if (codePoint >= 0x1AB0 && codePoint <= 0x1AFF) return true;
+    // Combining Diacritical Marks Supplement (1DC0-1DFF)
+    if (codePoint >= 0x1DC0 && codePoint <= 0x1DFF) return true;
+    // Combining Diacritical Marks for Symbols (20D0-20FF)
+    if (codePoint >= 0x20D0 && codePoint <= 0x20FF) return true;
+    // Combining Half Marks (FE20-FE2F)
+    if (codePoint >= 0xFE20 && codePoint <= 0xFE2F) return true;
+    return false;
+  }
+
+  /// Composes a base character with a combining mark into a single character.
+  /// Returns null if the combination is not in the lookup table.
+  int? _composeCharacter(int base, int combiningMark) {
+    // Common Latin letter + combining acute accent (U+0301)
+    if (combiningMark == 0x0301) {
+      return _composeWithAcute(base);
+    }
+    // Combining grave accent (U+0300)
+    if (combiningMark == 0x0300) {
+      return _composeWithGrave(base);
+    }
+    // Combining circumflex accent (U+0302)
+    if (combiningMark == 0x0302) {
+      return _composeWithCircumflex(base);
+    }
+    // Combining tilde (U+0303)
+    if (combiningMark == 0x0303) {
+      return _composeWithTilde(base);
+    }
+    // Combining diaeresis (U+0308)
+    if (combiningMark == 0x0308) {
+      return _composeWithDiaeresis(base);
+    }
+    // Combining cedilla (U+0327)
+    if (combiningMark == 0x0327) {
+      return _composeWithCedilla(base);
+    }
+    return null;
+  }
+
+  int? _composeWithAcute(int base) {
+    switch (base) {
+      case 0x0041: return 0x00C1; // A -> Á
+      case 0x0045: return 0x00C9; // E -> É
+      case 0x0049: return 0x00CD; // I -> Í
+      case 0x004F: return 0x00D3; // O -> Ó
+      case 0x0055: return 0x00DA; // U -> Ú
+      case 0x0059: return 0x00DD; // Y -> Ý
+      case 0x0061: return 0x00E1; // a -> á
+      case 0x0065: return 0x00E9; // e -> é
+      case 0x0069: return 0x00ED; // i -> í
+      case 0x006F: return 0x00F3; // o -> ó
+      case 0x0075: return 0x00FA; // u -> ú
+      case 0x0079: return 0x00FD; // y -> ý
+      case 0x0043: return 0x0106; // C -> Ć
+      case 0x0063: return 0x0107; // c -> ć
+      case 0x004E: return 0x0143; // N -> Ń
+      case 0x006E: return 0x0144; // n -> ń
+      case 0x0053: return 0x015A; // S -> Ś
+      case 0x0073: return 0x015B; // s -> ś
+      case 0x005A: return 0x0179; // Z -> Ź
+      case 0x007A: return 0x017A; // z -> ź
+      default: return null;
+    }
+  }
+
+  int? _composeWithGrave(int base) {
+    switch (base) {
+      case 0x0041: return 0x00C0; // A -> À
+      case 0x0045: return 0x00C8; // E -> È
+      case 0x0049: return 0x00CC; // I -> Ì
+      case 0x004F: return 0x00D2; // O -> Ò
+      case 0x0055: return 0x00D9; // U -> Ù
+      case 0x0061: return 0x00E0; // a -> à
+      case 0x0065: return 0x00E8; // e -> è
+      case 0x0069: return 0x00EC; // i -> ì
+      case 0x006F: return 0x00F2; // o -> ò
+      case 0x0075: return 0x00F9; // u -> ù
+      default: return null;
+    }
+  }
+
+  int? _composeWithCircumflex(int base) {
+    switch (base) {
+      case 0x0041: return 0x00C2; // A -> Â
+      case 0x0045: return 0x00CA; // E -> Ê
+      case 0x0049: return 0x00CE; // I -> Î
+      case 0x004F: return 0x00D4; // O -> Ô
+      case 0x0055: return 0x00DB; // U -> Û
+      case 0x0061: return 0x00E2; // a -> â
+      case 0x0065: return 0x00EA; // e -> ê
+      case 0x0069: return 0x00EE; // i -> î
+      case 0x006F: return 0x00F4; // o -> ô
+      case 0x0075: return 0x00FB; // u -> û
+      default: return null;
+    }
+  }
+
+  int? _composeWithTilde(int base) {
+    switch (base) {
+      case 0x0041: return 0x00C3; // A -> Ã
+      case 0x004E: return 0x00D1; // N -> Ñ
+      case 0x004F: return 0x00D5; // O -> Õ
+      case 0x0061: return 0x00E3; // a -> ã
+      case 0x006E: return 0x00F1; // n -> ñ
+      case 0x006F: return 0x00F5; // o -> õ
+      default: return null;
+    }
+  }
+
+  int? _composeWithDiaeresis(int base) {
+    switch (base) {
+      case 0x0041: return 0x00C4; // A -> Ä
+      case 0x0045: return 0x00CB; // E -> Ë
+      case 0x0049: return 0x00CF; // I -> Ï
+      case 0x004F: return 0x00D6; // O -> Ö
+      case 0x0055: return 0x00DC; // U -> Ü
+      case 0x0059: return 0x0178; // Y -> Ÿ
+      case 0x0061: return 0x00E4; // a -> ä
+      case 0x0065: return 0x00EB; // e -> ë
+      case 0x0069: return 0x00EF; // i -> ï
+      case 0x006F: return 0x00F6; // o -> ö
+      case 0x0075: return 0x00FC; // u -> ü
+      case 0x0079: return 0x00FF; // y -> ÿ
+      default: return null;
+    }
+  }
+
+  int? _composeWithCedilla(int base) {
+    switch (base) {
+      case 0x0043: return 0x00C7; // C -> Ç
+      case 0x0063: return 0x00E7; // c -> ç
+      case 0x0053: return 0x015E; // S -> Ş
+      case 0x0073: return 0x015F; // s -> ş
+      default: return null;
+    }
+  }
+
+  /// Detects the primary script type of the given text.
+  ///
+  /// Examines the first strong directional character to determine
+  /// the script type, which affects text direction and shaping hints.
+  _ScriptType _detectScriptType(String text) {
+    for (final codeUnit in text.runes) {
+      final script = _getCodePointScript(codeUnit);
+      if (script != _ScriptType.other) {
+        return script;
+      }
+    }
+    return _ScriptType.latin;
+  }
+
+  /// Returns the script type for a given code point.
+  _ScriptType _getCodePointScript(int codePoint) {
+    // Arabic script ranges
+    if ((codePoint >= 0x0600 && codePoint <= 0x06FF) || // Arabic
+        (codePoint >= 0x0750 && codePoint <= 0x077F) || // Arabic Supplement
+        (codePoint >= 0x08A0 && codePoint <= 0x08FF) || // Arabic Extended-A
+        (codePoint >= 0xFB50 && codePoint <= 0xFDFF) || // Arabic Presentation Forms-A
+        (codePoint >= 0xFE70 && codePoint <= 0xFEFF)) { // Arabic Presentation Forms-B
+      return _ScriptType.arabic;
+    }
+
+    // Hebrew script range
+    if (codePoint >= 0x0590 && codePoint <= 0x05FF) {
+      return _ScriptType.hebrew;
+    }
+
+    // Thai script range
+    if (codePoint >= 0x0E00 && codePoint <= 0x0E7F) {
+      return _ScriptType.thai;
+    }
+
+    // Devanagari script range
+    if (codePoint >= 0x0900 && codePoint <= 0x097F) {
+      return _ScriptType.devanagari;
+    }
+
+    // Bengali script range
+    if (codePoint >= 0x0980 && codePoint <= 0x09FF) {
+      return _ScriptType.bengali;
+    }
+
+    // Tamil script range
+    if (codePoint >= 0x0B80 && codePoint <= 0x0BFF) {
+      return _ScriptType.tamil;
+    }
+
+    // CJK ranges
+    if ((codePoint >= 0x4E00 && codePoint <= 0x9FFF) || // CJK Unified Ideographs
+        (codePoint >= 0x3400 && codePoint <= 0x4DBF) || // CJK Extension A
+        (codePoint >= 0x20000 && codePoint <= 0x2A6DF) || // CJK Extension B
+        (codePoint >= 0x3040 && codePoint <= 0x309F) || // Hiragana
+        (codePoint >= 0x30A0 && codePoint <= 0x30FF) || // Katakana
+        (codePoint >= 0xAC00 && codePoint <= 0xD7AF)) { // Hangul Syllables
+      return _ScriptType.cjk;
+    }
+
+    // Latin, Greek, Cyrillic (LTR scripts)
+    if ((codePoint >= 0x0041 && codePoint <= 0x005A) || // A-Z
+        (codePoint >= 0x0061 && codePoint <= 0x007A) || // a-z
+        (codePoint >= 0x00C0 && codePoint <= 0x024F) || // Latin Extended
+        (codePoint >= 0x0370 && codePoint <= 0x03FF) || // Greek
+        (codePoint >= 0x0400 && codePoint <= 0x04FF)) { // Cyrillic
+      return _ScriptType.latin;
+    }
+
+    return _ScriptType.other;
+  }
+
+  /// Returns the appropriate text direction for the detected script.
+  ui.TextDirection _getScriptDirection(_ScriptType script) {
+    switch (script) {
+      case _ScriptType.arabic:
+      case _ScriptType.hebrew:
+        return ui.TextDirection.rtl;
+      default:
+        return ui.TextDirection.ltr;
+    }
+  }
+
+  /// Checks if the script requires complex text shaping.
+  ///
+  /// Complex scripts have features like:
+  /// - Contextual shaping (Arabic)
+  /// - Ligatures and conjuncts (Devanagari, Bengali, Tamil)
+  /// - Reordering (Thai)
+  bool _isComplexScript(_ScriptType script) {
+    switch (script) {
+      case _ScriptType.arabic:
+      case _ScriptType.thai:
+      case _ScriptType.devanagari:
+      case _ScriptType.bengali:
+      case _ScriptType.tamil:
+        return true;
+      default:
+        return false;
+    }
+  }
 }

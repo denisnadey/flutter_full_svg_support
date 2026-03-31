@@ -20,6 +20,19 @@ extension AnimatedSvgPainterTextPathExtension on AnimatedSvgPainter {
     final method = _resolveTextPathMethod(textPathNode);
     double offset = _parseTextPathStartOffset(textPathNode, metric.length);
     var consumed = 0.0;
+
+    // Compute textLength distribution for textPath with nested tspan children.
+    final textPathStyle = _resolveTextStyle(textPathNode);
+    final hasTspanChildren =
+        textPathNode.children.any((c) => c.tagName == 'tspan');
+    _TextLengthDistribution? textLengthDistribution;
+    if (hasTspanChildren && _resolveTextLength(textPathNode) != null) {
+      textLengthDistribution = _computeTextLengthDistribution(
+        textPathNode,
+        textPathStyle,
+      );
+    }
+
     final directText = _extractTextContent(textPathNode);
     if (directText != null && directText.isNotEmpty) {
       final style = _resolveTextStyle(textPathNode);
@@ -36,6 +49,7 @@ extension AnimatedSvgPainterTextPathExtension on AnimatedSvgPainter {
         imageFilter: imageFilter,
         colorFilter: colorFilter,
         blendMode: blendMode,
+        textLengthDistribution: textLengthDistribution,
       );
       offset += textConsumed;
       consumed += textConsumed;
@@ -44,7 +58,7 @@ extension AnimatedSvgPainterTextPathExtension on AnimatedSvgPainter {
       if (child.tagName != 'tspan') continue;
       final childText = _extractTextContent(child);
       if (childText == null || childText.isEmpty) continue;
-      final style = _resolveTextStyle(child);
+      final style = _resolveTextStyle(child, parentStyle: textPathStyle);
       final textConsumed = _paintTextAlongPath(
         canvas,
         layoutNode: child,
@@ -58,6 +72,7 @@ extension AnimatedSvgPainterTextPathExtension on AnimatedSvgPainter {
         imageFilter: imageFilter,
         colorFilter: colorFilter,
         blendMode: blendMode,
+        textLengthDistribution: textLengthDistribution,
       );
       offset += textConsumed;
       consumed += textConsumed;
@@ -78,6 +93,7 @@ extension AnimatedSvgPainterTextPathExtension on AnimatedSvgPainter {
     ui.ImageFilter? imageFilter,
     ui.ColorFilter? colorFilter,
     ui.BlendMode? blendMode,
+    _TextLengthDistribution? textLengthDistribution,
   }) {
     final glyphs = text.runes
         .map((rune) => String.fromCharCode(rune))
@@ -117,8 +133,30 @@ extension AnimatedSvgPainterTextPathExtension on AnimatedSvgPainter {
       }
       totalWidth = availableLength;
     }
+
+    // Apply textLength distribution from parent if provided.
+    // This takes precedence over local textLength when the parent has nested
+    // tspan children with textLength set on the parent.
     final targetLength = _resolveTextLength(layoutNode);
-    if (targetLength != null && targetLength > 0 && totalWidth > 0) {
+    final bool useInheritedDistribution =
+        textLengthDistribution != null &&
+        !textLengthDistribution.isNone &&
+        targetLength == null;
+
+    if (useInheritedDistribution) {
+      if (textLengthDistribution.isSpacing && glyphs.length > 1) {
+        for (int i = 0; i < displayAdvances.length - 1; i++) {
+          displayAdvances[i] += textLengthDistribution.extraSpacing;
+        }
+      } else if (textLengthDistribution.isScale) {
+        glyphScaleX *= textLengthDistribution.scaleFactor;
+        for (int i = 0; i < displayWidths.length; i++) {
+          displayWidths[i] *= textLengthDistribution.scaleFactor;
+          displayAdvances[i] *= textLengthDistribution.scaleFactor;
+        }
+      }
+      totalWidth = displayAdvances.fold<double>(0.0, (sum, w) => sum + w);
+    } else if (targetLength != null && targetLength > 0 && totalWidth > 0) {
       final lengthAdjust = _resolveLengthAdjust(layoutNode);
       if (lengthAdjust == _SvgTextLengthAdjust.spacing && glyphs.length > 1) {
         final extraSpacing = (targetLength - totalWidth) / (glyphs.length - 1);
@@ -158,9 +196,11 @@ extension AnimatedSvgPainterTextPathExtension on AnimatedSvgPainter {
           .inflate(style.fontSize * 2.0);
       canvas.saveLayer(pathBounds, layerPaint);
     }
-    final paintOrderParts = style.paintOrder.split(RegExp(r'\s+'));
+    // Performance optimization: Check if stroke is first without regex allocation.
+    // paintOrder format is space-separated: "stroke fill markers" or similar.
+    final paintOrder = style.paintOrder;
     final strokeFirst =
-        paintOrderParts.isNotEmpty && paintOrderParts.first == 'stroke';
+        paintOrder.isNotEmpty && paintOrder.startsWith('stroke');
     var consumed = 0.0;
     var cursor = drawOffset;
     for (int i = 0; i < paragraphs.length; i++) {

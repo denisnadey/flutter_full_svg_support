@@ -6,6 +6,7 @@ part of 'animated_svg_painter.dart';
 /// - clipPathUnits: userSpaceOnUse (default) | objectBoundingBox
 /// - maskUnits: objectBoundingBox (default) | userSpaceOnUse
 /// - maskContentUnits: userSpaceOnUse (default) | objectBoundingBox
+/// - Coordinate system transitions between nested mask contexts
 extension AnimatedSvgPainterClipMaskUnitsExtension on AnimatedSvgPainter {
   /// Builds the mask region path based on maskUnits attribute.
   ///
@@ -368,5 +369,126 @@ extension AnimatedSvgPainterClipMaskUnitsExtension on AnimatedSvgPainter {
 
     // Try parsing as number
     return double.tryParse(raw);
+  }
+
+  /// Computes transform for maskContentUnits transitions between nested masks.
+  ///
+  /// When a mask is nested inside another mask with different maskContentUnits,
+  /// this method computes the proper coordinate transition transform.
+  ///
+  /// Handles:
+  /// - userSpaceOnUse -> objectBoundingBox: Apply OBB transform
+  /// - objectBoundingBox -> userSpaceOnUse: Invert OBB transform
+  /// - Non-square bounding boxes with proper aspect ratio handling
+  Matrix4? _computeMaskContentUnitsTransitionTransform({
+    required String fromUnits,
+    required String toUnits,
+    required SvgNode maskedNode,
+    Matrix4? parentTransform,
+  }) {
+    final normalizedFrom = fromUnits.trim().toLowerCase();
+    final normalizedTo = toUnits.trim().toLowerCase();
+
+    // Same units - no transition needed
+    if (normalizedFrom == normalizedTo) {
+      return null;
+    }
+
+    final bounds = _computeNodeLocalBoundsWithStroke(maskedNode);
+    if (bounds == null) return null;
+
+    // Edge case: zero dimensions
+    if (bounds.width.abs() < _kMinBoundingBoxDimension ||
+        bounds.height.abs() < _kMinBoundingBoxDimension) {
+      return null;
+    }
+
+    // Use safe dimensions for very small values
+    final safeWidth = bounds.width.abs() < _kMinSafeScaleDimension
+        ? _kMinSafeScaleDimension
+        : bounds.width;
+    final safeHeight = bounds.height.abs() < _kMinSafeScaleDimension
+        ? _kMinSafeScaleDimension
+        : bounds.height;
+
+    if (normalizedFrom == 'userspaceonuse' &&
+        normalizedTo == 'objectboundingbox') {
+      // Transitioning to objectBoundingBox - apply OBB transform
+      return Matrix4.identity()
+        ..setEntry(0, 0, safeWidth)
+        ..setEntry(1, 1, safeHeight)
+        ..setEntry(0, 3, bounds.left)
+        ..setEntry(1, 3, bounds.top);
+    } else if (normalizedFrom == 'objectboundingbox' &&
+        normalizedTo == 'userspaceonuse') {
+      // Transitioning from objectBoundingBox - invert OBB transform
+      // Need to scale from OBB (0-1) to user space
+      // This is the inverse: translate then scale
+      final matrix = Matrix4.identity()
+        ..setEntry(0, 0, 1.0 / safeWidth)
+        ..setEntry(1, 1, 1.0 / safeHeight)
+        ..setEntry(0, 3, -bounds.left / safeWidth)
+        ..setEntry(1, 3, -bounds.top / safeHeight);
+
+      // If there's a parent transform, compose with its inverse
+      if (parentTransform != null) {
+        final det = parentTransform.determinant();
+        if (det.abs() > 1e-10) {
+          final invParent = Matrix4.copy(parentTransform)..invert();
+          matrix.multiply(invParent);
+        }
+      }
+
+      return matrix;
+    }
+
+    return null;
+  }
+
+  /// Handles non-square bounding box coordinate mapping for maskContentUnits.
+  ///
+  /// When maskContentUnits="objectBoundingBox" and the element's bounding box
+  /// is non-square, this ensures proper aspect ratio handling.
+  Matrix4? _computeNonSquareOBBTransform({
+    required SvgNode maskedNode,
+    bool preserveAspectRatio = false,
+  }) {
+    final bounds = _computeNodeLocalBoundsWithStroke(maskedNode);
+    if (bounds == null) return null;
+
+    // Edge case: zero dimensions
+    if (bounds.width.abs() < _kMinBoundingBoxDimension ||
+        bounds.height.abs() < _kMinBoundingBoxDimension) {
+      return null;
+    }
+
+    // Use safe dimensions
+    final safeWidth = bounds.width.abs() < _kMinSafeScaleDimension
+        ? _kMinSafeScaleDimension
+        : bounds.width;
+    final safeHeight = bounds.height.abs() < _kMinSafeScaleDimension
+        ? _kMinSafeScaleDimension
+        : bounds.height;
+
+    if (preserveAspectRatio) {
+      // Use uniform scale (smaller of width/height)
+      final scale = safeWidth < safeHeight ? safeWidth : safeHeight;
+      // Center the content within the bounding box
+      final offsetX = bounds.left + (safeWidth - scale) / 2;
+      final offsetY = bounds.top + (safeHeight - scale) / 2;
+
+      return Matrix4.identity()
+        ..setEntry(0, 0, scale)
+        ..setEntry(1, 1, scale)
+        ..setEntry(0, 3, offsetX)
+        ..setEntry(1, 3, offsetY);
+    }
+
+    // Non-uniform scaling (default for SVG)
+    return Matrix4.identity()
+      ..setEntry(0, 0, safeWidth)
+      ..setEntry(1, 1, safeHeight)
+      ..setEntry(0, 3, bounds.left)
+      ..setEntry(1, 3, bounds.top);
   }
 }

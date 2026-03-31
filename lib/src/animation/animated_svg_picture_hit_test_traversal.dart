@@ -61,7 +61,9 @@ extension _AnimatedSvgPictureStateHitTestTraversalExtension
   ///
   /// Visibility handling per CSS/SVG spec:
   /// - display:none - NOT hit-testable, element doesn't exist for layout
-  /// - visibility:hidden/collapse - NOT hit-testable (but children can override)
+  /// - visibility:hidden/collapse - depends on pointer-events mode:
+  ///   - visible* modes: NOT hit-testable
+  ///   - painted/fill/stroke/all: still hit-testable if element has paint
   /// - opacity:0 - IS still hit-testable (opacity doesn't affect pointer events)
   _HitTestResult _hitTestNodeWithAnchor(
     SvgNode node,
@@ -74,12 +76,12 @@ extension _AnimatedSvgPictureStateHitTestTraversalExtension
     if (_isDefinitionOnlyTag(node.tagName)) {
       return const _HitTestResult();
     }
-    // display:none elements are never hit-testable
-    if (_isDisplayNone(node)) {
+    // Resolve pointer-events mode early for hit test exclusion check
+    final pointerEventsMode = _resolvePointerEventsMode(node);
+    // Check display:none and visibility:hidden based on pointer-events mode
+    if (_isHitTestExcluded(node, pointerEventsMode: pointerEventsMode)) {
       return const _HitTestResult();
     }
-    // Note: visibility:hidden is checked via pointer-events, allowing
-    // children to override with visibility:visible
     // Note: opacity:0 elements ARE still hit-testable per CSS spec
 
     // Check requiredExtensions for foreignObject
@@ -107,7 +109,7 @@ extension _AnimatedSvgPictureStateHitTestTraversalExtension
     if (!_isPointVisibleForNode(node, documentPoint, currentTransform)) {
       return const _HitTestResult();
     }
-    final pointerEventsNone = _isPointerEventsNone(node);
+    final pointerEventsNone = pointerEventsMode == 'none';
 
     final childTransform = Matrix4.copy(currentTransform);
     _applyForeignObjectChildTransform(childTransform, node);
@@ -176,6 +178,15 @@ extension _AnimatedSvgPictureStateHitTestTraversalExtension
     }
 
     if (_nodeContainsPoint(node, documentPoint, currentTransform)) {
+      // Trace diagnostic for zero-opacity hits (still hittable per CSS spec)
+      if (_isZeroOpacity(node)) {
+        _trace(
+          category: 'hit-test',
+          message:
+              'Hit on zero-opacity element: ${node.tagName}#${node.getAttributeValue("id") ?? ""}',
+          level: SvgTraceLevel.debug,
+        );
+      }
       return _HitTestResult(elementId: node.id, anchorInfo: activeAnchor);
     }
     return const _HitTestResult();

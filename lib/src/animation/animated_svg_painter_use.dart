@@ -1,7 +1,82 @@
 part of 'animated_svg_painter.dart';
 
 /// Extension for painting <use> elements and their referenced content.
+///
+/// This extension handles:
+/// - Basic use element rendering with x/y translation
+/// - Symbol and SVG element references with viewBox transforms
+/// - Use element within clip-path and mask definitions
+/// - CSS cascade through use shadow boundaries
+/// - Nested use element chains (up to _kMaxUseRecursionDepth levels)
 extension AnimatedSvgPainterUseExtension on AnimatedSvgPainter {
+  /// Checks if the current rendering context is within a clip-path definition.
+  ///
+  /// This affects how coordinates are interpreted when clipPathUnits="objectBoundingBox".
+  // ignore: unused_element
+  bool _isInClipPathContext(SvgNode node) {
+    SvgNode? current = node.parent;
+    while (current != null) {
+      if (current.tagName == 'clipPath') {
+        return true;
+      }
+      current = current.parent;
+    }
+    return false;
+  }
+
+  /// Checks if the current rendering context is within a mask definition.
+  ///
+  /// This affects how coordinates are interpreted when maskContentUnits="objectBoundingBox".
+  // ignore: unused_element
+  bool _isInMaskContext(SvgNode node) {
+    SvgNode? current = node.parent;
+    while (current != null) {
+      if (current.tagName == 'mask') {
+        return true;
+      }
+      current = current.parent;
+    }
+    return false;
+  }
+
+  /// Gets the clipPathUnits value from the nearest ancestor clipPath.
+  ///
+  /// Returns 'userSpaceOnUse' (default) or 'objectBoundingBox'.
+  // ignore: unused_element
+  String _getAncestorClipPathUnits(SvgNode node) {
+    SvgNode? current = node.parent;
+    while (current != null) {
+      if (current.tagName == 'clipPath') {
+        final units = current.getAttributeValue('clipPathUnits')?.toString();
+        if (units != null && units.isNotEmpty) {
+          return units.trim().toLowerCase();
+        }
+        return 'userspaceonuse'; // Default
+      }
+      current = current.parent;
+    }
+    return 'userspaceonuse';
+  }
+
+  /// Gets the maskContentUnits value from the nearest ancestor mask.
+  ///
+  /// Returns 'userSpaceOnUse' (default) or 'objectBoundingBox'.
+  // ignore: unused_element
+  String _getAncestorMaskContentUnits(SvgNode node) {
+    SvgNode? current = node.parent;
+    while (current != null) {
+      if (current.tagName == 'mask') {
+        final units = current.getAttributeValue('maskContentUnits')?.toString();
+        if (units != null && units.isNotEmpty) {
+          return units.trim().toLowerCase();
+        }
+        return 'userspaceonuse'; // Default
+      }
+      current = current.parent;
+    }
+    return 'userspaceonuse';
+  }
+
   void _paintUse(
     ui.Canvas canvas,
     SvgNode node, {

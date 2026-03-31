@@ -20,6 +20,12 @@ part of 'css_cascade.dart';
 /// - Inherited CSS properties flow through the boundary
 /// - Original definition context CSS rules still apply to referenced elements
 /// - !important declarations from use context can override referenced content
+///
+/// CRITICAL EDGE CASES:
+/// - Presentation attributes on use element do NOT override explicitly set
+///   values on the referenced element (only provide inherited values)
+/// - CSS rules from outside CAN match elements in shadow tree via simple selectors
+/// - Nested use-within-use maintains cascade chain through all levels
 class UseCascadeContext {
   const UseCascadeContext({
     required this.cssRules,
@@ -63,19 +69,28 @@ class UseCascadeContext {
 
   /// Resolves a property with full cascade through use boundary.
   ///
-  /// This method implements the correct cascade order:
+  /// This method implements the correct cascade order per SVG 2 spec:
   /// 1. Node's inline style (with !important check)
   /// 2. CSS rules from <style> matching node (by specificity)
   /// 3. Presentation attributes on node
   /// 4. Use element's style with !important (overrides referenced content)
   /// 5. Use element's inherited values (for inheritable properties only)
+  ///
+  /// EDGE CASE HANDLING:
+  /// - Explicitly set values on referenced element take precedence over
+  ///   use element's presentation attributes (per SVG spec)
+  /// - CSS rules can match elements in shadow tree via ID/class selectors
+  /// - !important on use element can override referenced content
   String? resolvePropertyForUseContent(
     SvgNode node,
     String property, {
     bool isInheritable = true,
   }) {
     final normalizedProperty = property.trim().toLowerCase();
-    final resolver = CssCascadeResolver(cssRules: cssRules);
+    final resolver = CssCascadeResolver(
+      cssRules: cssRules,
+      shadowBoundaryId: shadowRootId,
+    );
 
     // Check for !important on use element first - it has highest priority
     // per SVG spec: use element's !important overrides referenced content
@@ -100,6 +115,8 @@ class UseCascadeContext {
     }
 
     // 2. Check CSS rules from <style> (by specificity)
+    // CSS rules can still match elements in shadow tree via ID/class selectors
+    // but combinator-based selectors are blocked by shadow boundary
     String? cssRuleValue;
     bool cssHasImportant = false;
     if (cssRules.isNotEmpty) {
@@ -148,6 +165,8 @@ class UseCascadeContext {
     }
 
     // 3. Check presentation attribute on node
+    // Per SVG spec, explicitly set presentation attributes on referenced
+    // element take precedence over use element's inherited values
     final attrValue = node.getAttributeValue(normalizedProperty)?.toString();
     if (attrValue != null && attrValue.trim().isNotEmpty) {
       return attrValue.trim();

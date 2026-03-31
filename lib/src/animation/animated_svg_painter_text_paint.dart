@@ -38,6 +38,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
     List<double> parentRotateList = const <double>[],
     bool isRootText = false,
     _ResolvedTextStyle? parentStyle,
+    _TextLengthDistribution? inheritedDistribution,
   }) {
     final nodeXList = _getNumberList(node, 'x');
     final nodeYList = _getNumberList(node, 'y');
@@ -61,7 +62,48 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
       cursor.x += dxList[cursor.charIndex];
     if (dyList.isNotEmpty && cursor.charIndex < dyList.length)
       cursor.y += dyList[cursor.charIndex];
-    final style = _resolveTextStyle(node);
+    final style = _resolveTextStyle(node, parentStyle: parentStyle);
+
+    // Build bidi context for elements with direction or unicode-bidi attributes.
+    // This tracks direction changes through the hierarchy for proper RTL/LTR handling.
+    final hasBidiAttributes =
+        node.getAttributeValue('direction') != null ||
+        node.getAttributeValue('unicode-bidi') != null;
+    _BidiContext? bidiContext;
+    if (hasBidiAttributes || isRootText) {
+      bidiContext = _buildBidiContext(node);
+    }
+
+    // Track whether we're at a direction boundary (RTL<->LTR transition).
+    // This is used for correct cursor advancement in mixed-direction text.
+    final isDirectionBoundary = bidiContext?.isDirectionBoundary ?? false;
+    final effectiveTextDirection =
+        bidiContext?.currentDirection ?? style.textDirection;
+
+    // Compute textLength distribution for parent elements with nested tspan
+    // children. This distributes the textLength proportionally across all
+    // children, either as extra spacing or scale factor.
+    _TextLengthDistribution? effectiveDistribution = inheritedDistribution;
+    final hasTspanChildren = node.children.any((c) => c.tagName == 'tspan');
+    if (isRootText && hasTspanChildren && _resolveTextLength(node) != null) {
+      effectiveDistribution = _computeTextLengthDistribution(node, style);
+    }
+
+    // Apply distribution to the style if needed.
+    // Also apply effective text direction from bidi context if available.
+    var effectiveStyle = style;
+    if (effectiveDistribution != null && effectiveDistribution.isSpacing) {
+      effectiveStyle = style.copyWith(
+        letterSpacing: style.letterSpacing + effectiveDistribution.extraSpacing,
+      );
+    }
+    // Use bidi context direction if it differs from style direction (direction boundary)
+    if (isDirectionBoundary && effectiveTextDirection != style.textDirection) {
+      effectiveStyle = effectiveStyle.copyWith(
+        textDirection: effectiveTextDirection,
+      );
+    }
+
     final text = _extractTextContentWithWhitespaceNormalization(
       node,
       parentStyle,
@@ -71,7 +113,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
         canvas,
         node: node,
         text: text,
-        style: style,
+        style: effectiveStyle,
         cursor: cursor,
         xList: xList,
         yList: yList,
@@ -83,6 +125,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
         colorFilter: colorFilter,
         blendMode: blendMode,
         parentStyle: parentStyle,
+        textLengthDistribution: effectiveDistribution,
       );
       cursor.x += consumed;
     }
@@ -109,7 +152,8 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
           parentDxList: dxList,
           parentDyList: dyList,
           parentRotateList: rotateList,
-          parentStyle: style,
+          parentStyle: effectiveStyle,
+          inheritedDistribution: effectiveDistribution,
         );
       } else if (child.tagName == 'tref') {
         final consumed = _paintTrefNode(
@@ -136,6 +180,23 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
           blendMode: blendMode,
         );
         cursor.x += consumed;
+      } else if (child.tagName == 'bdo') {
+        // BDO (bi-directional override) element - forces direction
+        _paintBdoNode(
+          canvas,
+          child,
+          cursor,
+          imageFilter: imageFilter,
+          colorFilter: colorFilter,
+          blendMode: blendMode,
+          parentXList: xList,
+          parentYList: yList,
+          parentDxList: dxList,
+          parentDyList: dyList,
+          parentRotateList: rotateList,
+          parentStyle: effectiveStyle,
+          inheritedDistribution: effectiveDistribution,
+        );
       }
     }
   }
@@ -178,7 +239,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
       cursor.x += dxList[cursor.charIndex];
     if (dyList.isNotEmpty && cursor.charIndex < dyList.length)
       cursor.y += dyList[cursor.charIndex];
-    final style = _resolveTextStyle(trefNode);
+    final style = _resolveTextStyle(trefNode, parentStyle: parentStyle);
     final consumed = _paintPlainTextWithPositions(
       canvas,
       node: trefNode,
@@ -215,5 +276,130 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
       buffer.write(_extractAllTextContent(child));
     }
     return buffer.toString();
+  }
+
+  /// Paints a BDO (bi-directional override) element.
+  ///
+  /// BDO elements force direction override for their content.
+  /// The `dir` attribute controls the direction:
+  /// - dir="ltr" - forces left-to-right
+  /// - dir="rtl" - forces right-to-left
+  /// - dir="auto" - determines direction from first strong character
+  void _paintBdoNode(
+    ui.Canvas canvas,
+    SvgNode bdoNode,
+    _TextCursor cursor, {
+    ui.ImageFilter? imageFilter,
+    ui.ColorFilter? colorFilter,
+    ui.BlendMode? blendMode,
+    List<double> parentXList = const <double>[],
+    List<double> parentYList = const <double>[],
+    List<double> parentDxList = const <double>[],
+    List<double> parentDyList = const <double>[],
+    List<double> parentRotateList = const <double>[],
+    _ResolvedTextStyle? parentStyle,
+    _TextLengthDistribution? inheritedDistribution,
+  }) {
+    // Extract text content for auto-direction detection
+    final textContent = _extractTextContent(bdoNode);
+
+    // Resolve BDO direction
+    final bdoDirection = _bidiResolveBdoDirection(bdoNode, textContent);
+
+    // Get position lists
+    final nodeXList = _getNumberList(bdoNode, 'x');
+    final nodeYList = _getNumberList(bdoNode, 'y');
+    final nodeDxList = _getNumberList(bdoNode, 'dx');
+    final nodeDyList = _getNumberList(bdoNode, 'dy');
+    final nodeRotateList = _getNumberList(bdoNode, 'rotate');
+
+    final hasAbsoluteX = nodeXList.isNotEmpty;
+    final hasAbsoluteY = nodeYList.isNotEmpty;
+    final startsNewChunk = hasAbsoluteX || hasAbsoluteY;
+    if (startsNewChunk) cursor.chunkCharIndex = 0;
+
+    final xList = nodeXList.isNotEmpty ? nodeXList : parentXList;
+    final yList = nodeYList.isNotEmpty ? nodeYList : parentYList;
+    final dxList = nodeDxList.isNotEmpty ? nodeDxList : parentDxList;
+    final dyList = nodeDyList.isNotEmpty ? nodeDyList : parentDyList;
+    final rotateList = nodeRotateList.isNotEmpty
+        ? nodeRotateList
+        : parentRotateList;
+
+    if (hasAbsoluteX && nodeXList.isNotEmpty) cursor.x = nodeXList[0];
+    if (hasAbsoluteY && nodeYList.isNotEmpty) cursor.y = nodeYList[0];
+    if (dxList.isNotEmpty && cursor.charIndex < dxList.length)
+      cursor.x += dxList[cursor.charIndex];
+    if (dyList.isNotEmpty && cursor.charIndex < dyList.length)
+      cursor.y += dyList[cursor.charIndex];
+
+    // Resolve style with forced direction from BDO
+    final baseStyle = _resolveTextStyle(bdoNode, parentStyle: parentStyle);
+    final style = baseStyle.copyWith(
+      textDirection: bdoDirection,
+      unicodeBidi: 'bidi-override',
+    );
+
+    // Paint direct text content with override
+    if (textContent != null && textContent.isNotEmpty) {
+      final consumed = _paintPlainTextWithPositions(
+        canvas,
+        node: bdoNode,
+        text: textContent,
+        style: style,
+        cursor: cursor,
+        xList: xList,
+        yList: yList,
+        dxList: dxList,
+        dyList: dyList,
+        rotateList: rotateList,
+        startsNewChunk: startsNewChunk,
+        imageFilter: imageFilter,
+        colorFilter: colorFilter,
+        blendMode: blendMode,
+        parentStyle: parentStyle,
+        textLengthDistribution: inheritedDistribution,
+      );
+      cursor.x += consumed;
+    }
+
+    // Paint child elements with inherited BDO direction
+    for (final child in bdoNode.children) {
+      if (child.tagName == 'tspan' || child.tagName == 'bdo') {
+        if (child.tagName == 'bdo') {
+          _paintBdoNode(
+            canvas,
+            child,
+            cursor,
+            imageFilter: imageFilter,
+            colorFilter: colorFilter,
+            blendMode: blendMode,
+            parentXList: xList,
+            parentYList: yList,
+            parentDxList: dxList,
+            parentDyList: dyList,
+            parentRotateList: rotateList,
+            parentStyle: style,
+            inheritedDistribution: inheritedDistribution,
+          );
+        } else {
+          _paintTextNode(
+            canvas,
+            child,
+            cursor,
+            imageFilter: imageFilter,
+            colorFilter: colorFilter,
+            blendMode: blendMode,
+            parentXList: xList,
+            parentYList: yList,
+            parentDxList: dxList,
+            parentDyList: dyList,
+            parentRotateList: rotateList,
+            parentStyle: style,
+            inheritedDistribution: inheritedDistribution,
+          );
+        }
+      }
+    }
   }
 }

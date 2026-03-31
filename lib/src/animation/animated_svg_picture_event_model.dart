@@ -82,7 +82,9 @@ extension _AnimatedSvgPictureStateEventModelExtension
   ///
   /// Visibility handling per CSS/SVG spec:
   /// - display:none - NOT hit-testable
-  /// - visibility:hidden - NOT hit-testable (checked via pointer-events)
+  /// - visibility:hidden - depends on pointer-events mode:
+  ///   - visible* modes: NOT hit-testable
+  ///   - painted/fill/stroke/all: still hit-testable if element has paint
   /// - opacity:0 - IS still hit-testable (opacity doesn't affect pointer events)
   _EventHitTestResult _hitTestNodeWithEventPath(
     SvgNode node,
@@ -97,8 +99,10 @@ extension _AnimatedSvgPictureStateEventModelExtension
     if (_isDefinitionOnlyTag(node.tagName)) {
       return const _EventHitTestResult();
     }
-    // display:none elements are never hit-testable
-    if (_isDisplayNone(node)) {
+    // Resolve pointer-events mode early for hit test exclusion check
+    final pointerEventsMode = _resolvePointerEventsMode(node);
+    // Check display:none and visibility:hidden based on pointer-events mode
+    if (_isHitTestExcluded(node, pointerEventsMode: pointerEventsMode)) {
       return const _EventHitTestResult();
     }
     // Note: opacity:0 elements ARE still hit-testable per CSS spec
@@ -125,7 +129,7 @@ extension _AnimatedSvgPictureStateEventModelExtension
     if (!_isPointVisibleForNode(node, documentPoint, currentTransform)) {
       return const _EventHitTestResult();
     }
-    final pointerEventsNone = _isPointerEventsNone(node);
+    final pointerEventsNone = pointerEventsMode == 'none';
 
     final childTransform = Matrix4.copy(currentTransform);
     _applyForeignObjectChildTransform(childTransform, node);
@@ -215,6 +219,15 @@ extension _AnimatedSvgPictureStateEventModelExtension
       // This allows event retargeting to work properly for elements without IDs.
       if (node.id == null && useContext?.useElementId == null) {
         return const _EventHitTestResult();
+      }
+      // Trace diagnostic for zero-opacity hits (still hittable per CSS spec)
+      if (_isZeroOpacity(node)) {
+        _trace(
+          category: 'hit-test',
+          message:
+              'Hit on zero-opacity element: ${node.tagName}#${node.getAttributeValue("id") ?? ""}',
+          level: SvgTraceLevel.debug,
+        );
       }
       return _EventHitTestResult(
         elementId: node.id,

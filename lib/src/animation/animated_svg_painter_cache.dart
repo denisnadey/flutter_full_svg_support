@@ -5,7 +5,19 @@ part of 'animated_svg_painter.dart';
 /// This cache stores expensive-to-compute values that can be reused between
 /// frames when the underlying SVG elements haven't changed. Cache keys include
 /// element ID and a hash of relevant attributes to ensure proper invalidation.
+///
+/// Performance optimization: Implements LRU-style eviction to prevent unbounded
+/// cache growth. Each cache type has a maximum size; when exceeded, oldest
+/// entries are evicted to maintain memory efficiency.
 class _RenderCache {
+  /// Maximum cache sizes to prevent unbounded memory growth.
+  /// These values are tuned for typical SVG document complexity.
+  static const int _maxGradientShaders = 128;
+  static const int _maxPatternImages = 64;
+  static const int _maxTextParagraphs = 512;
+  static const int _maxHitTestPaths = 256;
+  static const int _maxMaskBounds = 128;
+
   /// Cached gradient shaders keyed by gradient ID + paint bounds hash.
   final Map<String, ui.Shader> gradientShaders = <String, ui.Shader>{};
 
@@ -26,10 +38,15 @@ class _RenderCache {
   /// True if mask content is animated and needs per-frame invalidation.
   final Map<String, bool> maskAnimationState = <String, bool>{};
 
+  /// Cached animated mask cache keys for content caching.
+  /// Used to determine if animated mask content needs re-rendering.
+  final Map<String, String> animatedMaskCacheKeys = <String, String>{};
+
   /// Last animation time when cache was valid.
   double? _lastAnimationTime;
 
   /// Initialize or update cache state for new frame.
+  /// Performance optimization: Enforces cache size limits via LRU eviction.
   void prepareFrame(double? animationTime, bool hasAnimations) {
     // If animation time changed, invalidate caches that depend on animated values
     if (_lastAnimationTime != animationTime && hasAnimations) {
@@ -41,6 +58,75 @@ class _RenderCache {
       _invalidateAnimatedMaskCaches();
     }
     _lastAnimationTime = animationTime;
+
+    // Enforce cache size limits to prevent unbounded memory growth.
+    // Uses simple eviction: when limit exceeded, clear oldest half of entries.
+    // This is more efficient than per-entry LRU tracking for hot paths.
+    _enforceGradientCacheLimit();
+    _enforcePatternCacheLimit();
+    _enforceTextCacheLimit();
+    _enforceHitTestCacheLimit();
+    _enforceMaskBoundsCacheLimit();
+  }
+
+  /// Evicts oldest gradient shader entries when cache exceeds size limit.
+  void _enforceGradientCacheLimit() {
+    if (gradientShaders.length > _maxGradientShaders) {
+      final keysToRemove = gradientShaders.keys
+          .take(gradientShaders.length - _maxGradientShaders ~/ 2)
+          .toList();
+      for (final key in keysToRemove) {
+        gradientShaders.remove(key);
+      }
+    }
+  }
+
+  /// Evicts oldest pattern image entries when cache exceeds size limit.
+  void _enforcePatternCacheLimit() {
+    if (patternImages.length > _maxPatternImages) {
+      final keysToRemove = patternImages.keys
+          .take(patternImages.length - _maxPatternImages ~/ 2)
+          .toList();
+      for (final key in keysToRemove) {
+        patternImages.remove(key);
+      }
+    }
+  }
+
+  /// Evicts oldest text paragraph entries when cache exceeds size limit.
+  void _enforceTextCacheLimit() {
+    if (textParagraphs.length > _maxTextParagraphs) {
+      final keysToRemove = textParagraphs.keys
+          .take(textParagraphs.length - _maxTextParagraphs ~/ 2)
+          .toList();
+      for (final key in keysToRemove) {
+        textParagraphs.remove(key);
+      }
+    }
+  }
+
+  /// Evicts oldest hit-test path entries when cache exceeds size limit.
+  void _enforceHitTestCacheLimit() {
+    if (hitTestPaths.length > _maxHitTestPaths) {
+      final keysToRemove = hitTestPaths.keys
+          .take(hitTestPaths.length - _maxHitTestPaths ~/ 2)
+          .toList();
+      for (final key in keysToRemove) {
+        hitTestPaths.remove(key);
+      }
+    }
+  }
+
+  /// Evicts oldest mask bounds entries when cache exceeds size limit.
+  void _enforceMaskBoundsCacheLimit() {
+    if (maskBounds.length > _maxMaskBounds) {
+      final keysToRemove = maskBounds.keys
+          .take(maskBounds.length - _maxMaskBounds ~/ 2)
+          .toList();
+      for (final key in keysToRemove) {
+        maskBounds.remove(key);
+      }
+    }
   }
 
   /// Invalidates mask caches that contain animated content.
@@ -51,6 +137,8 @@ class _RenderCache {
         .toList();
     for (final maskId in animatedMasks) {
       maskBounds.removeWhere((key, _) => key.startsWith('m:$maskId|'));
+      // Clear cache keys for animated masks to force re-evaluation
+      animatedMaskCacheKeys.remove(maskId);
     }
   }
 
@@ -62,6 +150,7 @@ class _RenderCache {
     hitTestPaths.clear();
     maskBounds.clear();
     maskAnimationState.clear();
+    animatedMaskCacheKeys.clear();
     _lastAnimationTime = null;
   }
 
