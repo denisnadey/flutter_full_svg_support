@@ -654,10 +654,7 @@ void main() {
           CssShorthandExpander.isShorthandProperty('border-bottom'),
           isTrue,
         );
-        expect(
-          CssShorthandExpander.isShorthandProperty('border-left'),
-          isTrue,
-        );
+        expect(CssShorthandExpander.isShorthandProperty('border-left'), isTrue);
       });
 
       test('identifies border sub-properties as shorthand', () {
@@ -713,10 +710,7 @@ void main() {
           CssShorthandExpander.isShorthandProperty('font-weight'),
           isFalse,
         );
-        expect(
-          CssShorthandExpander.isShorthandProperty('font-style'),
-          isFalse,
-        );
+        expect(CssShorthandExpander.isShorthandProperty('font-style'), isFalse);
 
         // Margin/padding longhand properties
         expect(CssShorthandExpander.isShorthandProperty('margin-top'), isFalse);
@@ -752,10 +746,7 @@ void main() {
           CssShorthandExpander.isShorthandProperty('stroke-dasharray'),
           isFalse,
         );
-        expect(
-          CssShorthandExpander.isShorthandProperty('visibility'),
-          isFalse,
-        );
+        expect(CssShorthandExpander.isShorthandProperty('visibility'), isFalse);
         expect(CssShorthandExpander.isShorthandProperty('display'), isFalse);
       });
 

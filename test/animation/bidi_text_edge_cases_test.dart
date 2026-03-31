@@ -42,9 +42,7 @@ void main() {
         expect(find.byType(AnimatedSvgPicture), findsOneWidget);
       });
 
-      testWidgets('Multiple direction changes in single tspan', (
-        tester,
-      ) async {
+      testWidgets('Multiple direction changes in single tspan', (tester) async {
         const svg = '''
           <svg viewBox="0 0 500 100" xmlns="http://www.w3.org/2000/svg">
             <text x="10" y="30" font-size="16">
@@ -243,10 +241,10 @@ void main() {
         expect(find.byType(AnimatedSvgPicture), findsOneWidget);
       });
 
-      testWidgets('Complex mixed script positioning with explicit coordinates', (
-        tester,
-      ) async {
-        const svg = '''
+      testWidgets(
+        'Complex mixed script positioning with explicit coordinates',
+        (tester) async {
+          const svg = '''
           <svg viewBox="0 0 500 100" xmlns="http://www.w3.org/2000/svg">
             <text font-size="16" direction="ltr">
               <tspan x="10" y="30">Start</tspan>
@@ -258,13 +256,14 @@ void main() {
           </svg>
         ''';
 
-        await tester.pumpWidget(
-          AnimatedSvgPicture.string(svg, width: 500, height: 100),
-        );
-        await tester.pumpAndSettle();
+          await tester.pumpWidget(
+            AnimatedSvgPicture.string(svg, width: 500, height: 100),
+          );
+          await tester.pumpAndSettle();
 
-        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-      });
+          expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+        },
+      );
 
       testWidgets('Per-character dx/dy with RTL text', (tester) async {
         const svg = '''

@@ -178,7 +178,10 @@ extension AnimatedSvgPainterTextLayoutMeasurementExtension
     }
 
     // Collect transforms into pre-sized list
-    final transformStack = List<Matrix4>.filled(transformCount, Matrix4.identity());
+    final transformStack = List<Matrix4>.filled(
+      transformCount,
+      Matrix4.identity(),
+    );
     int insertIndex = 0;
     current = node;
     while (current != null) {

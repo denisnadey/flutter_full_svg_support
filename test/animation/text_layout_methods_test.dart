@@ -4,10 +4,11 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('Deeply nested tspan transform accumulation', () {
-    testWidgets('should apply accumulated transforms for 3-level nested tspan',
-        (tester) async {
-      // SVG with deeply nested tspan elements, each with its own transform
-      const svg = '''
+    testWidgets(
+      'should apply accumulated transforms for 3-level nested tspan',
+      (tester) async {
+        // SVG with deeply nested tspan elements, each with its own transform
+        const svg = '''
 <svg width="200" height="100" xmlns="http://www.w3.org/2000/svg">
   <text x="10" y="30" transform="translate(5, 0)">
     <tspan transform="translate(10, 0)">
@@ -19,25 +20,26 @@ void main() {
 </svg>
 ''';
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AnimatedSvgPicture.string(svg, width: 200, height: 100),
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svg, width: 200, height: 100),
+            ),
           ),
-        ),
-      );
-      await tester.pump();
-      await tester.pump();
+        );
+        await tester.pump();
+        await tester.pump();
 
-      // The text should render without errors
-      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-    });
+        // The text should render without errors
+        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+      },
+    );
 
     testWidgets(
-        'should correctly compose transforms from nested tspan hierarchy',
-        (tester) async {
-      // SVG with transforms at text and multiple tspan levels
-      const svg = '''
+      'should correctly compose transforms from nested tspan hierarchy',
+      (tester) async {
+        // SVG with transforms at text and multiple tspan levels
+        const svg = '''
 <svg width="300" height="100" xmlns="http://www.w3.org/2000/svg">
   <text x="10" y="50" transform="scale(1.5)">
     <tspan transform="rotate(10)">
@@ -49,21 +51,23 @@ void main() {
 </svg>
 ''';
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AnimatedSvgPicture.string(svg, width: 300, height: 100),
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svg, width: 300, height: 100),
+            ),
           ),
-        ),
-      );
-      await tester.pump();
-      await tester.pump();
+        );
+        await tester.pump();
+        await tester.pump();
 
-      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-    });
+        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+      },
+    );
 
-    testWidgets('should handle identity transforms in nested hierarchy',
-        (tester) async {
+    testWidgets('should handle identity transforms in nested hierarchy', (
+      tester,
+    ) async {
       // SVG with nested tspans where some have transforms and some don't
       const svg = '''
 <svg width="200" height="100" xmlns="http://www.w3.org/2000/svg">
@@ -117,8 +121,9 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('should transform positions with non-identity transform',
-        (tester) async {
+    testWidgets('should transform positions with non-identity transform', (
+      tester,
+    ) async {
       // SVG with actual transform applied to nested tspan
       const svg = '''
 <svg width="200" height="100" xmlns="http://www.w3.org/2000/svg">
@@ -143,7 +148,9 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('should handle scale transform in nested tspan', (tester) async {
+    testWidgets('should handle scale transform in nested tspan', (
+      tester,
+    ) async {
       const svg = '''
 <svg width="200" height="100" xmlns="http://www.w3.org/2000/svg">
   <text x="10" y="50">
@@ -169,8 +176,9 @@ void main() {
   });
 
   group('TextLength distribution across nested tspans', () {
-    testWidgets('should distribute textLength with spacing mode',
-        (tester) async {
+    testWidgets('should distribute textLength with spacing mode', (
+      tester,
+    ) async {
       // SVG with textLength on parent and nested tspan children
       const svg = '''
 <svg width="300" height="100" xmlns="http://www.w3.org/2000/svg">
@@ -194,8 +202,9 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('should distribute textLength with spacingAndGlyphs mode',
-        (tester) async {
+    testWidgets('should distribute textLength with spacingAndGlyphs mode', (
+      tester,
+    ) async {
       // SVG with textLength and spacingAndGlyphs on parent
       const svg = '''
 <svg width="300" height="100" xmlns="http://www.w3.org/2000/svg">
@@ -220,10 +229,10 @@ void main() {
     });
 
     testWidgets(
-        'should apply textLength distribution when parent has it but children do not',
-        (tester) async {
-      // Parent has textLength, children do not override it
-      const svg = '''
+      'should apply textLength distribution when parent has it but children do not',
+      (tester) async {
+        // Parent has textLength, children do not override it
+        const svg = '''
 <svg width="400" height="100" xmlns="http://www.w3.org/2000/svg">
   <text x="10" y="50" textLength="350" lengthAdjust="spacing">
     <tspan>This </tspan>
@@ -234,21 +243,23 @@ void main() {
 </svg>
 ''';
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AnimatedSvgPicture.string(svg, width: 400, height: 100),
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svg, width: 400, height: 100),
+            ),
           ),
-        ),
-      );
-      await tester.pump();
-      await tester.pump();
+        );
+        await tester.pump();
+        await tester.pump();
 
-      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-    });
+        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+      },
+    );
 
-    testWidgets('should handle nested tspans with different depths',
-        (tester) async {
+    testWidgets('should handle nested tspans with different depths', (
+      tester,
+    ) async {
       // Complex nested structure with textLength on root
       const svg = '''
 <svg width="400" height="100" xmlns="http://www.w3.org/2000/svg">
@@ -275,8 +286,9 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('should handle textLength distribution in textPath',
-        (tester) async {
+    testWidgets('should handle textLength distribution in textPath', (
+      tester,
+    ) async {
       // textPath with nested tspans and textLength
       const svg = '''
 <svg width="400" height="200" xmlns="http://www.w3.org/2000/svg">
@@ -306,9 +318,10 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('should handle scale distribution in textPath with spacingAndGlyphs',
-        (tester) async {
-      const svg = '''
+    testWidgets(
+      'should handle scale distribution in textPath with spacingAndGlyphs',
+      (tester) async {
+        const svg = '''
 <svg width="400" height="200" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <path id="curve2" d="M 10,100 Q 200,10 390,100"/>
@@ -322,25 +335,26 @@ void main() {
 </svg>
 ''';
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AnimatedSvgPicture.string(svg, width: 400, height: 200),
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svg, width: 400, height: 200),
+            ),
           ),
-        ),
-      );
-      await tester.pump();
-      await tester.pump();
+        );
+        await tester.pump();
+        await tester.pump();
 
-      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-    });
+        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+      },
+    );
   });
 
   group('Combined transform and textLength scenarios', () {
     testWidgets(
-        'should handle both transforms and textLength in nested structure',
-        (tester) async {
-      const svg = '''
+      'should handle both transforms and textLength in nested structure',
+      (tester) async {
+        const svg = '''
 <svg width="400" height="100" xmlns="http://www.w3.org/2000/svg">
   <text x="10" y="50" textLength="300" lengthAdjust="spacing">
     <tspan transform="translate(5, 0)">
@@ -352,21 +366,23 @@ void main() {
 </svg>
 ''';
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AnimatedSvgPicture.string(svg, width: 400, height: 100),
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svg, width: 400, height: 100),
+            ),
           ),
-        ),
-      );
-      await tester.pump();
-      await tester.pump();
+        );
+        await tester.pump();
+        await tester.pump();
 
-      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-    });
+        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+      },
+    );
 
-    testWidgets('should handle per-character positioning with transforms',
-        (tester) async {
+    testWidgets('should handle per-character positioning with transforms', (
+      tester,
+    ) async {
       const svg = '''
 <svg width="300" height="100" xmlns="http://www.w3.org/2000/svg">
   <text x="10" y="50">

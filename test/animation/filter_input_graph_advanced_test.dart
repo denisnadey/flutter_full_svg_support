@@ -16,8 +16,10 @@ void main() {
   // 4. Complex graph topologies with multiple merges and branches
 
   group('Multi-Reference Input Chains - Caching Verification', () {
-    test('Same named result referenced 5 times produces consistent results', () {
-      final svgString = '''
+    test(
+      'Same named result referenced 5 times produces consistent results',
+      () {
+        final svgString = '''
 <svg viewBox="0 0 100 100">
   <defs>
     <filter id="multiRef5Fx">
@@ -35,15 +37,16 @@ void main() {
 </svg>
 ''';
 
-      final document = SvgParser.parse(svgString);
-      final passes = document.filters!.resolvePaintPasses('multiRef5Fx');
+        final document = SvgParser.parse(svgString);
+        final passes = document.filters!.resolvePaintPasses('multiRef5Fx');
 
-      expect(passes, hasLength(5));
-      // All passes should have identical blur filter (from cached result)
-      for (final pass in passes) {
-        expect(pass.imageFilter, isNotNull);
-      }
-    });
+        expect(passes, hasLength(5));
+        // All passes should have identical blur filter (from cached result)
+        for (final pass in passes) {
+          expect(pass.imageFilter, isNotNull);
+        }
+      },
+    );
 
     test('Multi-reference with intermediate processing uses cached base', () {
       final svgString = '''
@@ -137,8 +140,8 @@ void main() {
       expect(passes, hasLength(4));
       expect(passes[0].offset.dx, 11); // a1(1) + 10
       expect(passes[1].offset.dx, 23); // b1 chains from a1: 1+2+20=23
-      expect(passes[2].offset.dx, 1);  // a1 cached
-      expect(passes[3].offset.dx, 3);  // b1 cached (chains from a1: 1+2)
+      expect(passes[2].offset.dx, 1); // a1 cached
+      expect(passes[3].offset.dx, 3); // b1 cached (chains from a1: 1+2)
     });
   });
 
@@ -410,7 +413,9 @@ void main() {
 ''';
 
       final document = SvgParser.parse(svgString);
-      final passes = document.filters!.resolvePaintPasses('tripleNestedMergeFx');
+      final passes = document.filters!.resolvePaintPasses(
+        'tripleNestedMergeFx',
+      );
 
       // m1: 2 passes, m2: m1(2) + c(2)=4, final: m2(4) + d(4)=8
       expect(passes, hasLength(8));
@@ -535,7 +540,8 @@ void main() {
         }
       }
 
-      final svgString = '''
+      final svgString =
+          '''
 <svg viewBox="0 0 100 100">
   <defs>
     <filter id="veryDeepChainFx">

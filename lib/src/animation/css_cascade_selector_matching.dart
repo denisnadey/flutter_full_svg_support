@@ -177,10 +177,10 @@ mixin _SelectorMatchingMixin {
     var current = node.parent;
     int ancestorDepth = 0;
     const maxAncestorDepth = 100; // Prevent infinite loops
-    
+
     while (current != null && ancestorDepth < maxAncestorDepth) {
       ancestorDepth++;
-      
+
       // Check for shadow DOM boundary - stop at use/symbol or explicit boundary
       // Per SVG spec, combinator selectors stop at shadow boundary
       if (_isShadowBoundary(current)) {

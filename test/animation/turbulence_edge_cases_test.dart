@@ -35,8 +35,11 @@ void main() {
         );
 
         // The values should be identical or very close for seamless tiling
-        expect((leftEdge - rightEdge).abs(), lessThan(0.01),
-            reason: 'Noise should be seamless at X boundary');
+        expect(
+          (leftEdge - rightEdge).abs(),
+          lessThan(0.01),
+          reason: 'Noise should be seamless at X boundary',
+        );
 
         // Test Y boundaries
         final topEdge = generator.fractalNoise(
@@ -58,8 +61,11 @@ void main() {
           stitch: true,
         );
 
-        expect((topEdge - bottomEdge).abs(), lessThan(0.01),
-            reason: 'Noise should be seamless at Y boundary');
+        expect(
+          (topEdge - bottomEdge).abs(),
+          lessThan(0.01),
+          reason: 'Noise should be seamless at Y boundary',
+        );
       });
 
       test('stitched noise should be continuous across corners', () {
@@ -73,24 +79,40 @@ void main() {
 
         // Test all four corners - they should all produce the same value
         final corner00 = generator.fractalNoise(
-          x: 0.0, y: 0.0,
-          baseFreqX: baseFreqX, baseFreqY: baseFreqY,
-          numOctaves: 2, isFractalNoise: false, stitch: true,
+          x: 0.0,
+          y: 0.0,
+          baseFreqX: baseFreqX,
+          baseFreqY: baseFreqY,
+          numOctaves: 2,
+          isFractalNoise: false,
+          stitch: true,
         );
         final corner10 = generator.fractalNoise(
-          x: tileWidth, y: 0.0,
-          baseFreqX: baseFreqX, baseFreqY: baseFreqY,
-          numOctaves: 2, isFractalNoise: false, stitch: true,
+          x: tileWidth,
+          y: 0.0,
+          baseFreqX: baseFreqX,
+          baseFreqY: baseFreqY,
+          numOctaves: 2,
+          isFractalNoise: false,
+          stitch: true,
         );
         final corner01 = generator.fractalNoise(
-          x: 0.0, y: tileHeight,
-          baseFreqX: baseFreqX, baseFreqY: baseFreqY,
-          numOctaves: 2, isFractalNoise: false, stitch: true,
+          x: 0.0,
+          y: tileHeight,
+          baseFreqX: baseFreqX,
+          baseFreqY: baseFreqY,
+          numOctaves: 2,
+          isFractalNoise: false,
+          stitch: true,
         );
         final corner11 = generator.fractalNoise(
-          x: tileWidth, y: tileHeight,
-          baseFreqX: baseFreqX, baseFreqY: baseFreqY,
-          numOctaves: 2, isFractalNoise: false, stitch: true,
+          x: tileWidth,
+          y: tileHeight,
+          baseFreqX: baseFreqX,
+          baseFreqY: baseFreqY,
+          numOctaves: 2,
+          isFractalNoise: false,
+          stitch: true,
         );
 
         // All corners should have the same value in a stitched tile
@@ -127,27 +149,43 @@ void main() {
 
         // Sample along X axis - should vary more
         final x0 = generator.fractalNoise(
-          x: 0.0, y: 50.0,
-          baseFreqX: baseFreqX, baseFreqY: baseFreqY,
-          numOctaves: 1, isFractalNoise: true, stitch: false,
+          x: 0.0,
+          y: 50.0,
+          baseFreqX: baseFreqX,
+          baseFreqY: baseFreqY,
+          numOctaves: 1,
+          isFractalNoise: true,
+          stitch: false,
         );
         final x10 = generator.fractalNoise(
-          x: 10.0, y: 50.0,
-          baseFreqX: baseFreqX, baseFreqY: baseFreqY,
-          numOctaves: 1, isFractalNoise: true, stitch: false,
+          x: 10.0,
+          y: 50.0,
+          baseFreqX: baseFreqX,
+          baseFreqY: baseFreqY,
+          numOctaves: 1,
+          isFractalNoise: true,
+          stitch: false,
         );
         final xVariation = (x0 - x10).abs();
 
         // Sample along Y axis with same distance - should vary less
         final y0 = generator.fractalNoise(
-          x: 50.0, y: 0.0,
-          baseFreqX: baseFreqX, baseFreqY: baseFreqY,
-          numOctaves: 1, isFractalNoise: true, stitch: false,
+          x: 50.0,
+          y: 0.0,
+          baseFreqX: baseFreqX,
+          baseFreqY: baseFreqY,
+          numOctaves: 1,
+          isFractalNoise: true,
+          stitch: false,
         );
         final y10 = generator.fractalNoise(
-          x: 50.0, y: 10.0,
-          baseFreqX: baseFreqX, baseFreqY: baseFreqY,
-          numOctaves: 1, isFractalNoise: true, stitch: false,
+          x: 50.0,
+          y: 10.0,
+          baseFreqX: baseFreqX,
+          baseFreqY: baseFreqY,
+          numOctaves: 1,
+          isFractalNoise: true,
+          stitch: false,
         );
         final yVariation = (y0 - y10).abs();
 
@@ -163,11 +201,17 @@ void main() {
         // Sample multiple points - with very small frequency, values should be similar
         final values = <double>[];
         for (var i = 0; i < 5; i++) {
-          values.add(generator.fractalNoise(
-            x: i.toDouble(), y: 0.0,
-            baseFreqX: verySmallFreq, baseFreqY: verySmallFreq,
-            numOctaves: 1, isFractalNoise: true, stitch: false,
-          ));
+          values.add(
+            generator.fractalNoise(
+              x: i.toDouble(),
+              y: 0.0,
+              baseFreqX: verySmallFreq,
+              baseFreqY: verySmallFreq,
+              numOctaves: 1,
+              isFractalNoise: true,
+              stitch: false,
+            ),
+          );
         }
 
         // Adjacent values should be very close with small frequency
@@ -184,10 +228,13 @@ void main() {
         // Very large numOctaves value - should be clamped internally
         expect(() {
           generator.fractalNoise(
-            x: 50.0, y: 50.0,
-            baseFreqX: 0.05, baseFreqY: 0.05,
+            x: 50.0,
+            y: 50.0,
+            baseFreqX: 0.05,
+            baseFreqY: 0.05,
             numOctaves: 100, // Way too high
-            isFractalNoise: true, stitch: false,
+            isFractalNoise: true,
+            stitch: false,
           );
         }, returnsNormally);
       });
@@ -197,16 +244,22 @@ void main() {
 
         // Value with 16 octaves (max) should equal value with 100 octaves (clamped)
         final with16 = generator.fractalNoise(
-          x: 50.0, y: 50.0,
-          baseFreqX: 0.05, baseFreqY: 0.05,
+          x: 50.0,
+          y: 50.0,
+          baseFreqX: 0.05,
+          baseFreqY: 0.05,
           numOctaves: 16,
-          isFractalNoise: true, stitch: false,
+          isFractalNoise: true,
+          stitch: false,
         );
         final with100 = generator.fractalNoise(
-          x: 50.0, y: 50.0,
-          baseFreqX: 0.05, baseFreqY: 0.05,
+          x: 50.0,
+          y: 50.0,
+          baseFreqX: 0.05,
+          baseFreqY: 0.05,
           numOctaves: 100,
-          isFractalNoise: true, stitch: false,
+          isFractalNoise: true,
+          stitch: false,
         );
 
         expect(with16, equals(with100));
@@ -217,16 +270,22 @@ void main() {
 
         // 0 octaves should produce same result as 1 octave
         final with0 = generator.fractalNoise(
-          x: 50.0, y: 50.0,
-          baseFreqX: 0.05, baseFreqY: 0.05,
+          x: 50.0,
+          y: 50.0,
+          baseFreqX: 0.05,
+          baseFreqY: 0.05,
           numOctaves: 0,
-          isFractalNoise: true, stitch: false,
+          isFractalNoise: true,
+          stitch: false,
         );
         final with1 = generator.fractalNoise(
-          x: 50.0, y: 50.0,
-          baseFreqX: 0.05, baseFreqY: 0.05,
+          x: 50.0,
+          y: 50.0,
+          baseFreqX: 0.05,
+          baseFreqY: 0.05,
           numOctaves: 1,
-          isFractalNoise: true, stitch: false,
+          isFractalNoise: true,
+          stitch: false,
         );
 
         expect(with0, equals(with1));
@@ -237,10 +296,13 @@ void main() {
 
         expect(() {
           generator.fractalNoise(
-            x: 50.0, y: 50.0,
-            baseFreqX: 0.05, baseFreqY: 0.05,
+            x: 50.0,
+            y: 50.0,
+            baseFreqX: 0.05,
+            baseFreqY: 0.05,
             numOctaves: -5,
-            isFractalNoise: true, stitch: false,
+            isFractalNoise: true,
+            stitch: false,
           );
         }, returnsNormally);
       });
@@ -253,9 +315,13 @@ void main() {
         for (var x = 0; x < 100; x += 10) {
           for (var y = 0; y < 100; y += 10) {
             final value = generator.fractalNoise(
-              x: x.toDouble(), y: y.toDouble(),
-              baseFreqX: 0.05, baseFreqY: 0.05,
-              numOctaves: 4, isFractalNoise: false, stitch: false,
+              x: x.toDouble(),
+              y: y.toDouble(),
+              baseFreqX: 0.05,
+              baseFreqY: 0.05,
+              numOctaves: 4,
+              isFractalNoise: false,
+              stitch: false,
             );
             expect(value, greaterThanOrEqualTo(0.0));
             expect(value, lessThanOrEqualTo(1.0));
@@ -263,21 +329,28 @@ void main() {
         }
       });
 
-      test('fractalNoise type should produce values in [0, 1] after normalization', () {
-        final generator = TurbulenceNoiseGenerator(42.0);
+      test(
+        'fractalNoise type should produce values in [0, 1] after normalization',
+        () {
+          final generator = TurbulenceNoiseGenerator(42.0);
 
-        for (var x = 0; x < 100; x += 10) {
-          for (var y = 0; y < 100; y += 10) {
-            final value = generator.fractalNoise(
-              x: x.toDouble(), y: y.toDouble(),
-              baseFreqX: 0.05, baseFreqY: 0.05,
-              numOctaves: 4, isFractalNoise: true, stitch: false,
-            );
-            expect(value, greaterThanOrEqualTo(0.0));
-            expect(value, lessThanOrEqualTo(1.0));
+          for (var x = 0; x < 100; x += 10) {
+            for (var y = 0; y < 100; y += 10) {
+              final value = generator.fractalNoise(
+                x: x.toDouble(),
+                y: y.toDouble(),
+                baseFreqX: 0.05,
+                baseFreqY: 0.05,
+                numOctaves: 4,
+                isFractalNoise: true,
+                stitch: false,
+              );
+              expect(value, greaterThanOrEqualTo(0.0));
+              expect(value, lessThanOrEqualTo(1.0));
+            }
           }
-        }
-      });
+        },
+      );
     });
 
     group('deterministic seed behavior', () {
@@ -287,14 +360,22 @@ void main() {
 
         for (var i = 0; i < 10; i++) {
           final v1 = gen1.fractalNoise(
-            x: i * 10.0, y: i * 5.0,
-            baseFreqX: 0.03, baseFreqY: 0.03,
-            numOctaves: 3, isFractalNoise: true, stitch: false,
+            x: i * 10.0,
+            y: i * 5.0,
+            baseFreqX: 0.03,
+            baseFreqY: 0.03,
+            numOctaves: 3,
+            isFractalNoise: true,
+            stitch: false,
           );
           final v2 = gen2.fractalNoise(
-            x: i * 10.0, y: i * 5.0,
-            baseFreqX: 0.03, baseFreqY: 0.03,
-            numOctaves: 3, isFractalNoise: true, stitch: false,
+            x: i * 10.0,
+            y: i * 5.0,
+            baseFreqX: 0.03,
+            baseFreqY: 0.03,
+            numOctaves: 3,
+            isFractalNoise: true,
+            stitch: false,
           );
           expect(v1, equals(v2));
         }
@@ -307,14 +388,22 @@ void main() {
         var sameCount = 0;
         for (var i = 0; i < 10; i++) {
           final v1 = gen1.fractalNoise(
-            x: i * 10.0, y: i * 5.0,
-            baseFreqX: 0.03, baseFreqY: 0.03,
-            numOctaves: 3, isFractalNoise: true, stitch: false,
+            x: i * 10.0,
+            y: i * 5.0,
+            baseFreqX: 0.03,
+            baseFreqY: 0.03,
+            numOctaves: 3,
+            isFractalNoise: true,
+            stitch: false,
           );
           final v2 = gen2.fractalNoise(
-            x: i * 10.0, y: i * 5.0,
-            baseFreqX: 0.03, baseFreqY: 0.03,
-            numOctaves: 3, isFractalNoise: true, stitch: false,
+            x: i * 10.0,
+            y: i * 5.0,
+            baseFreqX: 0.03,
+            baseFreqY: 0.03,
+            numOctaves: 3,
+            isFractalNoise: true,
+            stitch: false,
           );
           if (v1 == v2) sameCount++;
         }
@@ -410,7 +499,7 @@ void main() {
       for (var y = 0; y < height; y++) {
         final leftIdx = (y * width + 0) * 4;
         final rightIdx = (y * width + (width - 1)) * 4;
-        
+
         // Values should be in valid range
         expect(pixels[leftIdx], inInclusiveRange(0, 255));
         expect(pixels[rightIdx], inInclusiveRange(0, 255));
@@ -435,8 +524,11 @@ void main() {
       );
 
       for (var i = 0; i < pixels.length; i++) {
-        expect(pixels[i], inInclusiveRange(0, 255),
-            reason: 'Pixel value at index $i should be 0-255');
+        expect(
+          pixels[i],
+          inInclusiveRange(0, 255),
+          reason: 'Pixel value at index $i should be 0-255',
+        );
       }
     });
   });

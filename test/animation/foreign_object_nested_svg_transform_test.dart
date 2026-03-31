@@ -157,9 +157,7 @@ void main() {
         );
       });
 
-      testWidgets('xMidYMid meet centers content', (
-        WidgetTester tester,
-      ) async {
+      testWidgets('xMidYMid meet centers content', (WidgetTester tester) async {
         // Default preserveAspectRatio behavior - centered
         const svgXml = '''
           <svg viewBox="0 0 200 200">
@@ -289,9 +287,7 @@ void main() {
         );
       });
 
-      testWidgets('xMidYMid slice clips overflow', (
-        WidgetTester tester,
-      ) async {
+      testWidgets('xMidYMid slice clips overflow', (WidgetTester tester) async {
         // slice = scale to fill, clip overflow
         const svgXml = '''
           <svg viewBox="0 0 200 200">
@@ -498,7 +494,8 @@ void main() {
           testWidgets('$alignment meet handles alignment correctly', (
             WidgetTester tester,
           ) async {
-            final svgXml = '''
+            final svgXml =
+                '''
               <svg viewBox="0 0 200 200">
                 <foreignObject x="0" y="0" width="100" height="100">
                   <svg viewBox="0 0 100 50" preserveAspectRatio="$alignment meet">
@@ -537,7 +534,8 @@ void main() {
           testWidgets('$alignment slice handles alignment correctly', (
             WidgetTester tester,
           ) async {
-            final svgXml = '''
+            final svgXml =
+                '''
               <svg viewBox="0 0 200 200">
                 <foreignObject x="0" y="0" width="100" height="100">
                   <svg viewBox="0 0 50 100" preserveAspectRatio="$alignment slice">
@@ -564,8 +562,7 @@ void main() {
             await tester.pump();
 
             final pixels = await VisualTestUtils.captureWidgetPixels(tester);
-            final analysis =
-                VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+            final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
 
             expect(
               analysis.pixelCount,

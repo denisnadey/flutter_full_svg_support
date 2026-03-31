@@ -26,10 +26,10 @@ class SvgComponentTransferFunction {
 
   /// Maximum exponent value to prevent numerical overflow.
   static const double _maxExponent = 100.0;
-  
+
   /// Minimum positive value for gamma input to prevent log(0).
   static const double _minGammaInput = 1e-10;
-  
+
   /// Maximum amplitude to prevent overflow in gamma function.
   static const double _maxAmplitude = 1e6;
 
@@ -66,22 +66,22 @@ class SvgComponentTransferFunction {
       // Clamp the result to offset for safety
       return offset.clamp(0.0, 1.0);
     }
-    
+
     // Clamp exponent to prevent extreme values
     final safeExponent = exponent.clamp(-_maxExponent, _maxExponent);
-    
+
     // Clamp amplitude to prevent overflow
     final safeAmplitude = amplitude.clamp(-_maxAmplitude, _maxAmplitude);
-    
+
     // Compute gamma with safe values
     final powResult = math.pow(c, safeExponent);
-    
+
     // Check for infinity/NaN from pow operation
     if (powResult.isInfinite || powResult.isNaN) {
       // Return clamped offset as fallback
       return offset.clamp(0.0, 1.0);
     }
-    
+
     return safeAmplitude * powResult + offset;
   }
 
@@ -100,7 +100,7 @@ class SvgComponentTransferFunction {
     final k = (c * (n - 1)).clamp(0.0, (n - 1).toDouble());
     final i = k.floor().clamp(0, n - 2);
     final f = k - i;
-    
+
     // Linear interpolation between adjacent table values
     return tableValues[i] * (1.0 - f) + tableValues[i + 1] * f;
   }
@@ -110,7 +110,7 @@ class SvgComponentTransferFunction {
   ///
   /// Edge cases handled:
   /// - Empty tableValues: Returns input unchanged (identity)
-  /// - Single value: Returns that value for all inputs  
+  /// - Single value: Returns that value for all inputs
   /// - Input = 1.0: Returns last table value (clamped index)
   double _applyDiscrete(double c) {
     if (tableValues.isEmpty) return c;
@@ -136,7 +136,7 @@ class SvgComponentTransferFunction {
     }
     return false;
   }
-  
+
   /// Creates a pre-computed lookup table for fast pixel processing.
   ///
   /// Returns a 256-entry table where index i maps to the transformed value
@@ -147,13 +147,13 @@ class SvgComponentTransferFunction {
   List<int> buildLookupTable() {
     final table = List<int>.filled(256, 0);
     const normalizer = 1.0 / 255.0;
-    
+
     for (int i = 0; i < 256; i++) {
       final input = i * normalizer;
       final output = apply(input);
       table[i] = (output * 255.0).round().clamp(0, 255);
     }
-    
+
     return table;
   }
 }

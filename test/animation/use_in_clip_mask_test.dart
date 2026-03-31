@@ -460,15 +460,13 @@ void main() {
 
       // Both transforms should stack
       expect(analysis.pixelCount, greaterThan(50));
-      // Position should be at 40,40 (10+30) 
+      // Position should be at 40,40 (10+30)
       expect(analysis.boundingBox.left, greaterThan(70));
     });
   });
 
   group('Nested use within clip/mask', () {
-    testWidgets('nested use elements in clipPath', (
-      WidgetTester tester,
-    ) async {
+    testWidgets('nested use elements in clipPath', (WidgetTester tester) async {
       const svgXml = '''
         <svg viewBox="0 0 100 100">
           <defs>

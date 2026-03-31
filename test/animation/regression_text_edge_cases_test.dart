@@ -222,7 +222,9 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('textPath on closed path (circle)', (WidgetTester tester) async {
+    testWidgets('textPath on closed path (circle)', (
+      WidgetTester tester,
+    ) async {
       const svgXml = '''
         <svg viewBox="0 0 200 200">
           <defs>
@@ -618,8 +620,9 @@ void main() {
       ''';
 
       final document = SvgParser.parse(svgString);
-      final text = document.root.children
-          .firstWhere((n) => n.tagName == 'text');
+      final text = document.root.children.firstWhere(
+        (n) => n.tagName == 'text',
+      );
 
       expect(text.getAttributeValue('font-size'), 24.0);
       expect(text.getAttributeValue('font-weight'), 'bold');
@@ -638,8 +641,9 @@ void main() {
       ''';
 
       final document = SvgParser.parse(svgString);
-      final text = document.root.children
-          .firstWhere((n) => n.tagName == 'text');
+      final text = document.root.children.firstWhere(
+        (n) => n.tagName == 'text',
+      );
       final tspan = text.children.firstWhere((n) => n.tagName == 'tspan');
 
       expect(tspan.id, 'child');
@@ -654,8 +658,9 @@ void main() {
       ''';
 
       final document = SvgParser.parse(svgString);
-      final text = document.root.children
-          .firstWhere((n) => n.tagName == 'text');
+      final text = document.root.children.firstWhere(
+        (n) => n.tagName == 'text',
+      );
 
       // Parser returns first value for position lists
       expect(text.getAttributeValue('x'), isNotNull);
@@ -672,8 +677,9 @@ void main() {
       ''';
 
       final document = SvgParser.parse(svgString);
-      final text = document.root.children
-          .firstWhere((n) => n.tagName == 'text');
+      final text = document.root.children.firstWhere(
+        (n) => n.tagName == 'text',
+      );
 
       expect(text.getAttributeValue('textLength'), 200.0);
       expect(text.getAttributeValue('lengthAdjust'), 'spacing');
@@ -690,8 +696,9 @@ void main() {
       ''';
 
       final document = SvgParser.parse(svgString);
-      final text = document.root.children
-          .firstWhere((n) => n.tagName == 'text');
+      final text = document.root.children.firstWhere(
+        (n) => n.tagName == 'text',
+      );
 
       expect(text.getAttributeValue('dominant-baseline'), 'middle');
       expect(text.getAttributeValue('alignment-baseline'), 'central');

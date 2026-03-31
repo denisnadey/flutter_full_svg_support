@@ -113,7 +113,7 @@ class TurbulenceNoiseGenerator {
   // Stitch info for seamless tiling
   int _wrapX = _latticeSize;
   int _wrapY = _latticeSize;
-  
+
   // Per-octave wrap values for seamless stitching
   late List<int> _octaveWrapX;
   late List<int> _octaveWrapY;
@@ -138,7 +138,7 @@ class TurbulenceNoiseGenerator {
 
     // Duplicate the permutation table for easy wrapping
     _perm = [...p, ...p];
-    
+
     // Initialize octave wrap arrays
     _octaveWrapX = List.filled(maxOctaves, _latticeSize);
     _octaveWrapY = List.filled(maxOctaves, _latticeSize);
@@ -168,7 +168,7 @@ class TurbulenceNoiseGenerator {
     // This is the number of noise "tiles" that fit in the filter region
     _wrapX = math.max(1, (width * baseFreqX).floor());
     _wrapY = math.max(1, (height * baseFreqY).floor());
-    
+
     // Pre-compute per-octave wrap values for seamless stitching
     // Each octave doubles the frequency, so wrap values also double
     for (int i = 0; i < maxOctaves; i++) {
@@ -201,7 +201,7 @@ class TurbulenceNoiseGenerator {
     _tileWidth = 0.0;
     _tileHeight = 0.0;
     _stitchingEnabled = false;
-    
+
     // Reset octave wrap arrays to default
     for (int i = 0; i < maxOctaves; i++) {
       _octaveWrapX[i] = _latticeSize;
@@ -217,7 +217,7 @@ class TurbulenceNoiseGenerator {
   double noise2D(double x, double y, {bool stitch = false, int octave = 0}) {
     // Clamp octave to valid range
     final safeOctave = octave.clamp(0, maxOctaves - 1);
-    
+
     // For stitching, use pre-computed wrap values for this octave
     final wrapX = stitch ? _octaveWrapX[safeOctave] : _latticeSize;
     final wrapY = stitch ? _octaveWrapY[safeOctave] : _latticeSize;
@@ -254,7 +254,7 @@ class TurbulenceNoiseGenerator {
     final yiMasked = yi & _latticeMask;
     final xi1Masked = xi1 & _latticeMask;
     final yi1Masked = yi1 & _latticeMask;
-    
+
     final aa = _perm[(_perm[xiMasked] + yiMasked) & _latticeMask];
     final ab = _perm[(_perm[xiMasked] + yi1Masked) & _latticeMask];
     final ba = _perm[(_perm[xi1Masked] + yiMasked) & _latticeMask];
@@ -287,7 +287,7 @@ class TurbulenceNoiseGenerator {
     // Clamp numOctaves to prevent overflow and wasted computation
     // Values beyond maxOctaves contribute negligible amplitude (<0.003%)
     final effectiveOctaves = numOctaves.clamp(1, maxOctaves);
-    
+
     var sum = 0.0;
     var amplitude = 1.0;
     var maxAmplitude = 0.0;

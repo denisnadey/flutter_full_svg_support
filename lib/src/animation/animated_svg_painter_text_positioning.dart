@@ -508,10 +508,7 @@ extension AnimatedSvgPainterTextPositioningExtension on AnimatedSvgPainter {
   /// - dir="ltr" forces LTR direction
   /// - dir="rtl" forces RTL direction
   /// - dir="auto" determines direction from first strong character
-  ui.TextDirection _bidiResolveBdoDirection(
-    SvgNode node,
-    String? textContent,
-  ) {
+  ui.TextDirection _bidiResolveBdoDirection(SvgNode node, String? textContent) {
     final dirAttr = node.getAttributeValue('dir')?.toString().toLowerCase();
 
     if (dirAttr == 'auto' && textContent != null) {
@@ -1229,99 +1226,167 @@ extension AnimatedSvgPainterUnicodeExtension on AnimatedSvgPainter {
 
   int? _composeWithAcute(int base) {
     switch (base) {
-      case 0x0041: return 0x00C1; // A -> Á
-      case 0x0045: return 0x00C9; // E -> É
-      case 0x0049: return 0x00CD; // I -> Í
-      case 0x004F: return 0x00D3; // O -> Ó
-      case 0x0055: return 0x00DA; // U -> Ú
-      case 0x0059: return 0x00DD; // Y -> Ý
-      case 0x0061: return 0x00E1; // a -> á
-      case 0x0065: return 0x00E9; // e -> é
-      case 0x0069: return 0x00ED; // i -> í
-      case 0x006F: return 0x00F3; // o -> ó
-      case 0x0075: return 0x00FA; // u -> ú
-      case 0x0079: return 0x00FD; // y -> ý
-      case 0x0043: return 0x0106; // C -> Ć
-      case 0x0063: return 0x0107; // c -> ć
-      case 0x004E: return 0x0143; // N -> Ń
-      case 0x006E: return 0x0144; // n -> ń
-      case 0x0053: return 0x015A; // S -> Ś
-      case 0x0073: return 0x015B; // s -> ś
-      case 0x005A: return 0x0179; // Z -> Ź
-      case 0x007A: return 0x017A; // z -> ź
-      default: return null;
+      case 0x0041:
+        return 0x00C1; // A -> Á
+      case 0x0045:
+        return 0x00C9; // E -> É
+      case 0x0049:
+        return 0x00CD; // I -> Í
+      case 0x004F:
+        return 0x00D3; // O -> Ó
+      case 0x0055:
+        return 0x00DA; // U -> Ú
+      case 0x0059:
+        return 0x00DD; // Y -> Ý
+      case 0x0061:
+        return 0x00E1; // a -> á
+      case 0x0065:
+        return 0x00E9; // e -> é
+      case 0x0069:
+        return 0x00ED; // i -> í
+      case 0x006F:
+        return 0x00F3; // o -> ó
+      case 0x0075:
+        return 0x00FA; // u -> ú
+      case 0x0079:
+        return 0x00FD; // y -> ý
+      case 0x0043:
+        return 0x0106; // C -> Ć
+      case 0x0063:
+        return 0x0107; // c -> ć
+      case 0x004E:
+        return 0x0143; // N -> Ń
+      case 0x006E:
+        return 0x0144; // n -> ń
+      case 0x0053:
+        return 0x015A; // S -> Ś
+      case 0x0073:
+        return 0x015B; // s -> ś
+      case 0x005A:
+        return 0x0179; // Z -> Ź
+      case 0x007A:
+        return 0x017A; // z -> ź
+      default:
+        return null;
     }
   }
 
   int? _composeWithGrave(int base) {
     switch (base) {
-      case 0x0041: return 0x00C0; // A -> À
-      case 0x0045: return 0x00C8; // E -> È
-      case 0x0049: return 0x00CC; // I -> Ì
-      case 0x004F: return 0x00D2; // O -> Ò
-      case 0x0055: return 0x00D9; // U -> Ù
-      case 0x0061: return 0x00E0; // a -> à
-      case 0x0065: return 0x00E8; // e -> è
-      case 0x0069: return 0x00EC; // i -> ì
-      case 0x006F: return 0x00F2; // o -> ò
-      case 0x0075: return 0x00F9; // u -> ù
-      default: return null;
+      case 0x0041:
+        return 0x00C0; // A -> À
+      case 0x0045:
+        return 0x00C8; // E -> È
+      case 0x0049:
+        return 0x00CC; // I -> Ì
+      case 0x004F:
+        return 0x00D2; // O -> Ò
+      case 0x0055:
+        return 0x00D9; // U -> Ù
+      case 0x0061:
+        return 0x00E0; // a -> à
+      case 0x0065:
+        return 0x00E8; // e -> è
+      case 0x0069:
+        return 0x00EC; // i -> ì
+      case 0x006F:
+        return 0x00F2; // o -> ò
+      case 0x0075:
+        return 0x00F9; // u -> ù
+      default:
+        return null;
     }
   }
 
   int? _composeWithCircumflex(int base) {
     switch (base) {
-      case 0x0041: return 0x00C2; // A -> Â
-      case 0x0045: return 0x00CA; // E -> Ê
-      case 0x0049: return 0x00CE; // I -> Î
-      case 0x004F: return 0x00D4; // O -> Ô
-      case 0x0055: return 0x00DB; // U -> Û
-      case 0x0061: return 0x00E2; // a -> â
-      case 0x0065: return 0x00EA; // e -> ê
-      case 0x0069: return 0x00EE; // i -> î
-      case 0x006F: return 0x00F4; // o -> ô
-      case 0x0075: return 0x00FB; // u -> û
-      default: return null;
+      case 0x0041:
+        return 0x00C2; // A -> Â
+      case 0x0045:
+        return 0x00CA; // E -> Ê
+      case 0x0049:
+        return 0x00CE; // I -> Î
+      case 0x004F:
+        return 0x00D4; // O -> Ô
+      case 0x0055:
+        return 0x00DB; // U -> Û
+      case 0x0061:
+        return 0x00E2; // a -> â
+      case 0x0065:
+        return 0x00EA; // e -> ê
+      case 0x0069:
+        return 0x00EE; // i -> î
+      case 0x006F:
+        return 0x00F4; // o -> ô
+      case 0x0075:
+        return 0x00FB; // u -> û
+      default:
+        return null;
     }
   }
 
   int? _composeWithTilde(int base) {
     switch (base) {
-      case 0x0041: return 0x00C3; // A -> Ã
-      case 0x004E: return 0x00D1; // N -> Ñ
-      case 0x004F: return 0x00D5; // O -> Õ
-      case 0x0061: return 0x00E3; // a -> ã
-      case 0x006E: return 0x00F1; // n -> ñ
-      case 0x006F: return 0x00F5; // o -> õ
-      default: return null;
+      case 0x0041:
+        return 0x00C3; // A -> Ã
+      case 0x004E:
+        return 0x00D1; // N -> Ñ
+      case 0x004F:
+        return 0x00D5; // O -> Õ
+      case 0x0061:
+        return 0x00E3; // a -> ã
+      case 0x006E:
+        return 0x00F1; // n -> ñ
+      case 0x006F:
+        return 0x00F5; // o -> õ
+      default:
+        return null;
     }
   }
 
   int? _composeWithDiaeresis(int base) {
     switch (base) {
-      case 0x0041: return 0x00C4; // A -> Ä
-      case 0x0045: return 0x00CB; // E -> Ë
-      case 0x0049: return 0x00CF; // I -> Ï
-      case 0x004F: return 0x00D6; // O -> Ö
-      case 0x0055: return 0x00DC; // U -> Ü
-      case 0x0059: return 0x0178; // Y -> Ÿ
-      case 0x0061: return 0x00E4; // a -> ä
-      case 0x0065: return 0x00EB; // e -> ë
-      case 0x0069: return 0x00EF; // i -> ï
-      case 0x006F: return 0x00F6; // o -> ö
-      case 0x0075: return 0x00FC; // u -> ü
-      case 0x0079: return 0x00FF; // y -> ÿ
-      default: return null;
+      case 0x0041:
+        return 0x00C4; // A -> Ä
+      case 0x0045:
+        return 0x00CB; // E -> Ë
+      case 0x0049:
+        return 0x00CF; // I -> Ï
+      case 0x004F:
+        return 0x00D6; // O -> Ö
+      case 0x0055:
+        return 0x00DC; // U -> Ü
+      case 0x0059:
+        return 0x0178; // Y -> Ÿ
+      case 0x0061:
+        return 0x00E4; // a -> ä
+      case 0x0065:
+        return 0x00EB; // e -> ë
+      case 0x0069:
+        return 0x00EF; // i -> ï
+      case 0x006F:
+        return 0x00F6; // o -> ö
+      case 0x0075:
+        return 0x00FC; // u -> ü
+      case 0x0079:
+        return 0x00FF; // y -> ÿ
+      default:
+        return null;
     }
   }
 
   int? _composeWithCedilla(int base) {
     switch (base) {
-      case 0x0043: return 0x00C7; // C -> Ç
-      case 0x0063: return 0x00E7; // c -> ç
-      case 0x0053: return 0x015E; // S -> Ş
-      case 0x0073: return 0x015F; // s -> ş
-      default: return null;
+      case 0x0043:
+        return 0x00C7; // C -> Ç
+      case 0x0063:
+        return 0x00E7; // c -> ç
+      case 0x0053:
+        return 0x015E; // S -> Ş
+      case 0x0073:
+        return 0x015F; // s -> ş
+      default:
+        return null;
     }
   }
 
@@ -1345,8 +1410,10 @@ extension AnimatedSvgPainterUnicodeExtension on AnimatedSvgPainter {
     if ((codePoint >= 0x0600 && codePoint <= 0x06FF) || // Arabic
         (codePoint >= 0x0750 && codePoint <= 0x077F) || // Arabic Supplement
         (codePoint >= 0x08A0 && codePoint <= 0x08FF) || // Arabic Extended-A
-        (codePoint >= 0xFB50 && codePoint <= 0xFDFF) || // Arabic Presentation Forms-A
-        (codePoint >= 0xFE70 && codePoint <= 0xFEFF)) { // Arabic Presentation Forms-B
+        (codePoint >= 0xFB50 &&
+            codePoint <= 0xFDFF) || // Arabic Presentation Forms-A
+        (codePoint >= 0xFE70 && codePoint <= 0xFEFF)) {
+      // Arabic Presentation Forms-B
       return _ScriptType.arabic;
     }
 
@@ -1376,12 +1443,14 @@ extension AnimatedSvgPainterUnicodeExtension on AnimatedSvgPainter {
     }
 
     // CJK ranges
-    if ((codePoint >= 0x4E00 && codePoint <= 0x9FFF) || // CJK Unified Ideographs
+    if ((codePoint >= 0x4E00 &&
+            codePoint <= 0x9FFF) || // CJK Unified Ideographs
         (codePoint >= 0x3400 && codePoint <= 0x4DBF) || // CJK Extension A
         (codePoint >= 0x20000 && codePoint <= 0x2A6DF) || // CJK Extension B
         (codePoint >= 0x3040 && codePoint <= 0x309F) || // Hiragana
         (codePoint >= 0x30A0 && codePoint <= 0x30FF) || // Katakana
-        (codePoint >= 0xAC00 && codePoint <= 0xD7AF)) { // Hangul Syllables
+        (codePoint >= 0xAC00 && codePoint <= 0xD7AF)) {
+      // Hangul Syllables
       return _ScriptType.cjk;
     }
 
@@ -1390,7 +1459,8 @@ extension AnimatedSvgPainterUnicodeExtension on AnimatedSvgPainter {
         (codePoint >= 0x0061 && codePoint <= 0x007A) || // a-z
         (codePoint >= 0x00C0 && codePoint <= 0x024F) || // Latin Extended
         (codePoint >= 0x0370 && codePoint <= 0x03FF) || // Greek
-        (codePoint >= 0x0400 && codePoint <= 0x04FF)) { // Cyrillic
+        (codePoint >= 0x0400 && codePoint <= 0x04FF)) {
+      // Cyrillic
       return _ScriptType.latin;
     }
 

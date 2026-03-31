@@ -791,7 +791,9 @@ extension AnimatedSvgPainterShapesImageExtension on AnimatedSvgPainter {
       nestedSvgNode,
       'preserveAspectRatio',
     );
-    final parsedPAR = _parsePreserveAspectRatioForNested(preserveAspectRatioStr);
+    final parsedPAR = _parsePreserveAspectRatioForNested(
+      preserveAspectRatioStr,
+    );
 
     // Compute the viewport for the nested SVG within foreignObject
     final nestedX = _getNumber(nestedSvgNode, 'x') ?? 0.0;

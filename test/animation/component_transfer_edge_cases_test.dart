@@ -310,14 +310,17 @@ void main() {
         expect(func.apply(0.0), equals(0.0));
       });
 
-      test('input values outside [0,1] should be clamped before processing', () {
-        const func = SvgComponentTransferFunction(
-          type: SvgComponentTransferType.identity,
-        );
+      test(
+        'input values outside [0,1] should be clamped before processing',
+        () {
+          const func = SvgComponentTransferFunction(
+            type: SvgComponentTransferType.identity,
+          );
 
-        expect(func.apply(-0.5), equals(0.0));
-        expect(func.apply(1.5), equals(1.0));
-      });
+          expect(func.apply(-0.5), equals(0.0));
+          expect(func.apply(1.5), equals(1.0));
+        },
+      );
     });
 
     group('lookup table generation', () {
@@ -382,8 +385,11 @@ void main() {
         for (var i = 0; i < 256; i += 17) {
           final input = i / 255.0;
           final fromApply = (func.apply(input) * 255.0).round().clamp(0, 255);
-          expect(table[i], equals(fromApply),
-              reason: 'Lookup table should match apply() for index $i');
+          expect(
+            table[i],
+            equals(fromApply),
+            reason: 'Lookup table should match apply() for index $i',
+          );
         }
       });
     });

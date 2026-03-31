@@ -89,7 +89,7 @@ class DisplacementMapProcessor {
 
     // Clamp scale to reasonable bounds to prevent overflow
     final effectiveScale = scale.clamp(-maxScale, maxScale);
-    
+
     final result = Uint8List(inputPixels.length);
 
     for (int y = 0; y < height; y++) {
@@ -186,16 +186,44 @@ class DisplacementMapProcessor {
     final y0 = y.floor();
     final x1 = x0 + 1;
     final y1 = y0 + 1;
-    
+
     // Calculate fractional position with proper precision
     final fx = x - x0;
     final fy = y - y0;
 
     // Get the 4 corner pixels with edge mode handling
-    final p00 = _getPixelWithEdgeModeDouble(pixels, width, height, x0, y0, edgeMode);
-    final p10 = _getPixelWithEdgeModeDouble(pixels, width, height, x1, y0, edgeMode);
-    final p01 = _getPixelWithEdgeModeDouble(pixels, width, height, x0, y1, edgeMode);
-    final p11 = _getPixelWithEdgeModeDouble(pixels, width, height, x1, y1, edgeMode);
+    final p00 = _getPixelWithEdgeModeDouble(
+      pixels,
+      width,
+      height,
+      x0,
+      y0,
+      edgeMode,
+    );
+    final p10 = _getPixelWithEdgeModeDouble(
+      pixels,
+      width,
+      height,
+      x1,
+      y0,
+      edgeMode,
+    );
+    final p01 = _getPixelWithEdgeModeDouble(
+      pixels,
+      width,
+      height,
+      x0,
+      y1,
+      edgeMode,
+    );
+    final p11 = _getPixelWithEdgeModeDouble(
+      pixels,
+      width,
+      height,
+      x1,
+      y1,
+      edgeMode,
+    );
 
     // Bilinear interpolation weights
     final w00 = (1.0 - fx) * (1.0 - fy);
@@ -204,10 +232,18 @@ class DisplacementMapProcessor {
     final w11 = fx * fy;
 
     // Interpolate each channel with full precision
-    final r = (p00[0] * w00 + p10[0] * w10 + p01[0] * w01 + p11[0] * w11).round().clamp(0, 255);
-    final g = (p00[1] * w00 + p10[1] * w10 + p01[1] * w01 + p11[1] * w11).round().clamp(0, 255);
-    final b = (p00[2] * w00 + p10[2] * w10 + p01[2] * w01 + p11[2] * w11).round().clamp(0, 255);
-    final a = (p00[3] * w00 + p10[3] * w10 + p01[3] * w01 + p11[3] * w11).round().clamp(0, 255);
+    final r = (p00[0] * w00 + p10[0] * w10 + p01[0] * w01 + p11[0] * w11)
+        .round()
+        .clamp(0, 255);
+    final g = (p00[1] * w00 + p10[1] * w10 + p01[1] * w01 + p11[1] * w11)
+        .round()
+        .clamp(0, 255);
+    final b = (p00[2] * w00 + p10[2] * w10 + p01[2] * w01 + p11[2] * w11)
+        .round()
+        .clamp(0, 255);
+    final a = (p00[3] * w00 + p10[3] * w10 + p01[3] * w01 + p11[3] * w11)
+        .round()
+        .clamp(0, 255);
 
     return <int>[r, g, b, a];
   }

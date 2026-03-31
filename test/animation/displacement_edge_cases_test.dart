@@ -10,7 +10,12 @@ void main() {
         // Create a simple 4x4 gradient image
         final inputPixels = _createGradientImage(4, 4);
         // Create a map that causes 0.5 pixel displacement
-        final mapPixels = _createConstantMap(4, 4, 191, 191); // (191/255 - 0.5) * scale = 0.5
+        final mapPixels = _createConstantMap(
+          4,
+          4,
+          191,
+          191,
+        ); // (191/255 - 0.5) * scale = 0.5
 
         final result = DisplacementMapProcessor.applyDisplacement(
           inputPixels: inputPixels,
@@ -30,43 +35,56 @@ void main() {
         expect(result, isNot(equals(inputPixels)));
       });
 
-      test('bilinear should differ from nearest-neighbor for subpixel coords', () {
-        final inputPixels = _createCheckerboard(8, 8);
-        // Map causing 0.25 pixel displacement
-        final mapPixels = _createConstantMap(8, 8, 143, 143); // ~0.25 displacement
+      test(
+        'bilinear should differ from nearest-neighbor for subpixel coords',
+        () {
+          final inputPixels = _createCheckerboard(8, 8);
+          // Map causing 0.25 pixel displacement
+          final mapPixels = _createConstantMap(
+            8,
+            8,
+            143,
+            143,
+          ); // ~0.25 displacement
 
-        final bilinear = DisplacementMapProcessor.applyDisplacement(
-          inputPixels: inputPixels,
-          mapPixels: mapPixels,
-          width: 8,
-          height: 8,
-          scale: 2.0,
-          xChannel: SvgChannelSelector.r,
-          yChannel: SvgChannelSelector.g,
-          edgeMode: SvgDisplacementEdgeMode.clamp,
-          useBilinear: true,
-        );
+          final bilinear = DisplacementMapProcessor.applyDisplacement(
+            inputPixels: inputPixels,
+            mapPixels: mapPixels,
+            width: 8,
+            height: 8,
+            scale: 2.0,
+            xChannel: SvgChannelSelector.r,
+            yChannel: SvgChannelSelector.g,
+            edgeMode: SvgDisplacementEdgeMode.clamp,
+            useBilinear: true,
+          );
 
-        final nearest = DisplacementMapProcessor.applyDisplacement(
-          inputPixels: inputPixels,
-          mapPixels: mapPixels,
-          width: 8,
-          height: 8,
-          scale: 2.0,
-          xChannel: SvgChannelSelector.r,
-          yChannel: SvgChannelSelector.g,
-          edgeMode: SvgDisplacementEdgeMode.clamp,
-          useBilinear: false,
-        );
+          final nearest = DisplacementMapProcessor.applyDisplacement(
+            inputPixels: inputPixels,
+            mapPixels: mapPixels,
+            width: 8,
+            height: 8,
+            scale: 2.0,
+            xChannel: SvgChannelSelector.r,
+            yChannel: SvgChannelSelector.g,
+            edgeMode: SvgDisplacementEdgeMode.clamp,
+            useBilinear: false,
+          );
 
-        // Results should differ for non-integer displacements
-        expect(bilinear, isNot(equals(nearest)));
-      });
+          // Results should differ for non-integer displacements
+          expect(bilinear, isNot(equals(nearest)));
+        },
+      );
 
       test('bilinear should be smooth at pixel boundaries', () {
         final inputPixels = _createGradientImage(10, 10);
         // Map causing exact 1.0 pixel displacement - should be same as integer offset
-        final mapPixels = _createConstantMap(10, 10, 255, 127); // max X, neutral Y
+        final mapPixels = _createConstantMap(
+          10,
+          10,
+          255,
+          127,
+        ); // max X, neutral Y
 
         final result = DisplacementMapProcessor.applyDisplacement(
           inputPixels: inputPixels,
@@ -92,7 +110,12 @@ void main() {
         // Create solid white 4x4 image
         final inputPixels = _createSolidColor(4, 4, 255, 255, 255, 255);
         // Map causing large displacement outside bounds
-        final mapPixels = _createConstantMap(4, 4, 255, 255); // Max displacement
+        final mapPixels = _createConstantMap(
+          4,
+          4,
+          255,
+          255,
+        ); // Max displacement
 
         final result = DisplacementMapProcessor.applyDisplacement(
           inputPixels: inputPixels,
@@ -109,13 +132,18 @@ void main() {
         // Many pixels should be transparent black (sampling outside)
         var transparentCount = 0;
         for (var i = 0; i < result.length; i += 4) {
-          if (result[i] == 0 && result[i+1] == 0 && 
-              result[i+2] == 0 && result[i+3] == 0) {
+          if (result[i] == 0 &&
+              result[i + 1] == 0 &&
+              result[i + 2] == 0 &&
+              result[i + 3] == 0) {
             transparentCount++;
           }
         }
-        expect(transparentCount, greaterThan(0),
-            reason: 'Should have transparent pixels when sampling outside');
+        expect(
+          transparentCount,
+          greaterThan(0),
+          reason: 'Should have transparent pixels when sampling outside',
+        );
       });
 
       test('clamp mode should repeat edge pixels', () {
@@ -148,7 +176,12 @@ void main() {
         // Create distinct quadrant image
         final inputPixels = _createQuadrantImage(4, 4);
         // Map causing 2-pixel displacement (should wrap)
-        final mapPixels = _createConstantMap(4, 4, 255, 127); // X displacement only
+        final mapPixels = _createConstantMap(
+          4,
+          4,
+          255,
+          127,
+        ); // X displacement only
 
         final result = DisplacementMapProcessor.applyDisplacement(
           inputPixels: inputPixels,
@@ -203,7 +236,14 @@ void main() {
       test('R channel for X displacement', () {
         final inputPixels = _createGradientImage(4, 4);
         // Red channel varies, others constant
-        final mapPixels = _createChannelMap(4, 4, rVal: 200, gVal: 127, bVal: 127, aVal: 255);
+        final mapPixels = _createChannelMap(
+          4,
+          4,
+          rVal: 200,
+          gVal: 127,
+          bVal: 127,
+          aVal: 255,
+        );
 
         final result = DisplacementMapProcessor.applyDisplacement(
           inputPixels: inputPixels,
@@ -221,7 +261,14 @@ void main() {
 
       test('G channel for Y displacement', () {
         final inputPixels = _createGradientImage(4, 4);
-        final mapPixels = _createChannelMap(4, 4, rVal: 127, gVal: 200, bVal: 127, aVal: 255);
+        final mapPixels = _createChannelMap(
+          4,
+          4,
+          rVal: 127,
+          gVal: 200,
+          bVal: 127,
+          aVal: 255,
+        );
 
         final result = DisplacementMapProcessor.applyDisplacement(
           inputPixels: inputPixels,
@@ -239,7 +286,14 @@ void main() {
 
       test('B channel for both X and Y displacement', () {
         final inputPixels = _createGradientImage(4, 4);
-        final mapPixels = _createChannelMap(4, 4, rVal: 127, gVal: 127, bVal: 200, aVal: 255);
+        final mapPixels = _createChannelMap(
+          4,
+          4,
+          rVal: 127,
+          gVal: 127,
+          bVal: 200,
+          aVal: 255,
+        );
 
         final result = DisplacementMapProcessor.applyDisplacement(
           inputPixels: inputPixels,
@@ -257,7 +311,14 @@ void main() {
 
       test('A channel for displacement', () {
         final inputPixels = _createGradientImage(4, 4);
-        final mapPixels = _createChannelMap(4, 4, rVal: 127, gVal: 127, bVal: 127, aVal: 200);
+        final mapPixels = _createChannelMap(
+          4,
+          4,
+          rVal: 127,
+          gVal: 127,
+          bVal: 127,
+          aVal: 200,
+        );
 
         final result = DisplacementMapProcessor.applyDisplacement(
           inputPixels: inputPixels,
@@ -275,7 +336,14 @@ void main() {
 
       test('mixed channel selectors R/B', () {
         final inputPixels = _createGradientImage(4, 4);
-        final mapPixels = _createChannelMap(4, 4, rVal: 180, gVal: 127, bVal: 200, aVal: 255);
+        final mapPixels = _createChannelMap(
+          4,
+          4,
+          rVal: 180,
+          gVal: 127,
+          bVal: 200,
+          aVal: 255,
+        );
 
         final result = DisplacementMapProcessor.applyDisplacement(
           inputPixels: inputPixels,
@@ -314,7 +382,12 @@ void main() {
 
       test('negative scale should invert displacement direction', () {
         final inputPixels = _createGradientImage(8, 8);
-        final mapPixels = _createConstantMap(8, 8, 200, 127); // Positive X displacement
+        final mapPixels = _createConstantMap(
+          8,
+          8,
+          200,
+          127,
+        ); // Positive X displacement
 
         final positiveScale = DisplacementMapProcessor.applyDisplacement(
           inputPixels: inputPixels,
@@ -441,7 +514,11 @@ void main() {
           final diff = (result[i] - inputPixels[i]).abs();
           if (diff > maxDiff) maxDiff = diff;
         }
-        expect(maxDiff, lessThan(10), reason: 'Neutral map should cause minimal change');
+        expect(
+          maxDiff,
+          lessThan(10),
+          reason: 'Neutral map should cause minimal change',
+        );
       });
     });
   });
@@ -455,7 +532,10 @@ Uint8List _createGradientImage(int width, int height) {
     for (var x = 0; x < width; x++) {
       final index = (y * width + x) * 4;
       pixels[index] = (x * 255 ~/ (width - 1)).clamp(0, 255); // R gradient X
-      pixels[index + 1] = (y * 255 ~/ (height - 1)).clamp(0, 255); // G gradient Y
+      pixels[index + 1] = (y * 255 ~/ (height - 1)).clamp(
+        0,
+        255,
+      ); // G gradient Y
       pixels[index + 2] = 128; // B constant
       pixels[index + 3] = 255; // A opaque
     }
@@ -466,7 +546,7 @@ Uint8List _createGradientImage(int width, int height) {
 Uint8List _createConstantMap(int width, int height, int rg, int ba) {
   final pixels = Uint8List(width * height * 4);
   for (var i = 0; i < pixels.length; i += 4) {
-    pixels[i] = rg;     // R
+    pixels[i] = rg; // R
     pixels[i + 1] = ba; // G
     pixels[i + 2] = rg; // B
     pixels[i + 3] = 255; // A
@@ -474,8 +554,13 @@ Uint8List _createConstantMap(int width, int height, int rg, int ba) {
   return pixels;
 }
 
-Uint8List _createChannelMap(int width, int height, {
-  required int rVal, required int gVal, required int bVal, required int aVal,
+Uint8List _createChannelMap(
+  int width,
+  int height, {
+  required int rVal,
+  required int gVal,
+  required int bVal,
+  required int aVal,
 }) {
   final pixels = Uint8List(width * height * 4);
   for (var i = 0; i < pixels.length; i += 4) {
@@ -523,13 +608,21 @@ Uint8List _createQuadrantImage(int width, int height) {
       final index = (y * width + x) * 4;
       // Different colors for each quadrant
       if (x < midX && y < midY) {
-        pixels[index] = 255; pixels[index + 1] = 0; pixels[index + 2] = 0;
+        pixels[index] = 255;
+        pixels[index + 1] = 0;
+        pixels[index + 2] = 0;
       } else if (x >= midX && y < midY) {
-        pixels[index] = 0; pixels[index + 1] = 255; pixels[index + 2] = 0;
+        pixels[index] = 0;
+        pixels[index + 1] = 255;
+        pixels[index + 2] = 0;
       } else if (x < midX && y >= midY) {
-        pixels[index] = 0; pixels[index + 1] = 0; pixels[index + 2] = 255;
+        pixels[index] = 0;
+        pixels[index + 1] = 0;
+        pixels[index + 2] = 255;
       } else {
-        pixels[index] = 255; pixels[index + 1] = 255; pixels[index + 2] = 0;
+        pixels[index] = 255;
+        pixels[index + 1] = 255;
+        pixels[index + 2] = 0;
       }
       pixels[index + 3] = 255;
     }

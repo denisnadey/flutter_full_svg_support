@@ -48,8 +48,8 @@ class _MaskNestingContext {
       parentObjectBounds: objectBounds ?? parentObjectBounds,
       accumulatedTransform: transform != null
           ? (accumulatedTransform != null
-              ? (Matrix4.copy(accumulatedTransform!)..multiply(transform))
-              : transform)
+                ? (Matrix4.copy(accumulatedTransform!)..multiply(transform))
+                : transform)
           : accumulatedTransform,
     );
   }

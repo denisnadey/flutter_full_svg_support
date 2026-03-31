@@ -4,8 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('Bidi Text Methods Integration', () {
     group('_buildBidiContext', () {
-      testWidgets('builds correct context for nested elements with direction',
-          (tester) async {
+      testWidgets('builds correct context for nested elements with direction', (
+        tester,
+      ) async {
         // Tests that bidi context is built for nested tspans with direction attributes
         const svg = '''
           <svg viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
@@ -25,8 +26,9 @@ void main() {
         expect(find.byType(AnimatedSvgPicture), findsOneWidget);
       });
 
-      testWidgets('builds context for deeply nested direction changes',
-          (tester) async {
+      testWidgets('builds context for deeply nested direction changes', (
+        tester,
+      ) async {
         // Tests 3+ levels of direction nesting
         const svg = '''
           <svg viewBox="0 0 500 100" xmlns="http://www.w3.org/2000/svg">
@@ -47,8 +49,9 @@ void main() {
         expect(find.byType(AnimatedSvgPicture), findsOneWidget);
       });
 
-      testWidgets('builds context with unicode-bidi attributes',
-          (tester) async {
+      testWidgets('builds context with unicode-bidi attributes', (
+        tester,
+      ) async {
         const svg = '''
           <svg viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
             <text x="10" y="30" font-size="16" direction="rtl" unicode-bidi="embed">
@@ -85,8 +88,9 @@ void main() {
         expect(find.byType(AnimatedSvgPicture), findsOneWidget);
       });
 
-      testWidgets('inherits direction from parent when not specified',
-          (tester) async {
+      testWidgets('inherits direction from parent when not specified', (
+        tester,
+      ) async {
         // Child without direction should inherit from parent
         const svg = '''
           <svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
@@ -105,8 +109,9 @@ void main() {
         expect(find.byType(AnimatedSvgPicture), findsOneWidget);
       });
 
-      testWidgets('falls back to inherited direction through hierarchy',
-          (tester) async {
+      testWidgets('falls back to inherited direction through hierarchy', (
+        tester,
+      ) async {
         // Direction inherited through multiple levels
         const svg = '''
           <svg viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
@@ -128,8 +133,9 @@ void main() {
     });
 
     group('unicode-bidi override/isolate modes', () {
-      testWidgets('unicode-bidi: bidi-override forces direction',
-          (tester) async {
+      testWidgets('unicode-bidi: bidi-override forces direction', (
+        tester,
+      ) async {
         const svg = '''
           <svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
             <text x="250" y="30" font-size="16" direction="rtl" unicode-bidi="bidi-override">
@@ -146,8 +152,9 @@ void main() {
         expect(find.byType(AnimatedSvgPicture), findsOneWidget);
       });
 
-      testWidgets('unicode-bidi: isolate creates isolated segment',
-          (tester) async {
+      testWidgets('unicode-bidi: isolate creates isolated segment', (
+        tester,
+      ) async {
         const svg = '''
           <svg viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
             <text x="10" y="30" font-size="16" direction="ltr">
@@ -166,9 +173,10 @@ void main() {
         expect(find.byType(AnimatedSvgPicture), findsOneWidget);
       });
 
-      testWidgets('unicode-bidi: isolate-override combines isolation and override',
-          (tester) async {
-        const svg = '''
+      testWidgets(
+        'unicode-bidi: isolate-override combines isolation and override',
+        (tester) async {
+          const svg = '''
           <svg viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
             <text x="10" y="30" font-size="16">
               Start 
@@ -178,13 +186,14 @@ void main() {
           </svg>
         ''';
 
-        await tester.pumpWidget(
-          AnimatedSvgPicture.string(svg, width: 400, height: 100),
-        );
-        await tester.pumpAndSettle();
+          await tester.pumpWidget(
+            AnimatedSvgPicture.string(svg, width: 400, height: 100),
+          );
+          await tester.pumpAndSettle();
 
-        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-      });
+          expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+        },
+      );
     });
 
     group('mixed-direction nested tspans', () {
@@ -249,8 +258,9 @@ void main() {
         expect(find.byType(AnimatedSvgPicture), findsOneWidget);
       });
 
-      testWidgets('deeply nested direction changes with content',
-          (tester) async {
+      testWidgets('deeply nested direction changes with content', (
+        tester,
+      ) async {
         const svg = '''
           <svg viewBox="0 0 600 100" xmlns="http://www.w3.org/2000/svg">
             <text x="10" y="30" font-size="14" direction="ltr">

@@ -216,7 +216,9 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
     }
 
     // Apply transform from the referenced element itself (if any)
-    final refTransformStr = referenced.getAttributeValue('transform')?.toString();
+    final refTransformStr = referenced
+        .getAttributeValue('transform')
+        ?.toString();
     if (refTransformStr != null &&
         refTransformStr.isNotEmpty &&
         !_isUseViewportReferenceTag(referenced.tagName)) {
@@ -231,7 +233,7 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
     referenced.parent = useNode;
     try {
       final nextUseStack = <String>{...useStack, hrefId};
-      
+
       // For symbol/svg, iterate children instead of the element itself
       // since the element acts as a container with its viewBox transform already applied
       if (_isUseViewportReferenceTag(referenced.tagName)) {

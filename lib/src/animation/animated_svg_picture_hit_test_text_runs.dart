@@ -456,66 +456,106 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
     // Combining acute accent (U+0301)
     if (combiningMark == 0x0301) {
       switch (base) {
-        case 0x0041: return 0x00C1; // A -> Á
-        case 0x0045: return 0x00C9; // E -> É
-        case 0x0049: return 0x00CD; // I -> Í
-        case 0x004F: return 0x00D3; // O -> Ó
-        case 0x0055: return 0x00DA; // U -> Ú
-        case 0x0059: return 0x00DD; // Y -> Ý
-        case 0x0061: return 0x00E1; // a -> á
-        case 0x0065: return 0x00E9; // e -> é
-        case 0x0069: return 0x00ED; // i -> í
-        case 0x006F: return 0x00F3; // o -> ó
-        case 0x0075: return 0x00FA; // u -> ú
-        case 0x0079: return 0x00FD; // y -> ý
+        case 0x0041:
+          return 0x00C1; // A -> Á
+        case 0x0045:
+          return 0x00C9; // E -> É
+        case 0x0049:
+          return 0x00CD; // I -> Í
+        case 0x004F:
+          return 0x00D3; // O -> Ó
+        case 0x0055:
+          return 0x00DA; // U -> Ú
+        case 0x0059:
+          return 0x00DD; // Y -> Ý
+        case 0x0061:
+          return 0x00E1; // a -> á
+        case 0x0065:
+          return 0x00E9; // e -> é
+        case 0x0069:
+          return 0x00ED; // i -> í
+        case 0x006F:
+          return 0x00F3; // o -> ó
+        case 0x0075:
+          return 0x00FA; // u -> ú
+        case 0x0079:
+          return 0x00FD; // y -> ý
       }
     }
     // Combining grave accent (U+0300)
     if (combiningMark == 0x0300) {
       switch (base) {
-        case 0x0041: return 0x00C0; // A -> À
-        case 0x0045: return 0x00C8; // E -> È
-        case 0x0049: return 0x00CC; // I -> Ì
-        case 0x004F: return 0x00D2; // O -> Ò
-        case 0x0055: return 0x00D9; // U -> Ù
-        case 0x0061: return 0x00E0; // a -> à
-        case 0x0065: return 0x00E8; // e -> è
-        case 0x0069: return 0x00EC; // i -> ì
-        case 0x006F: return 0x00F2; // o -> ò
-        case 0x0075: return 0x00F9; // u -> ù
+        case 0x0041:
+          return 0x00C0; // A -> À
+        case 0x0045:
+          return 0x00C8; // E -> È
+        case 0x0049:
+          return 0x00CC; // I -> Ì
+        case 0x004F:
+          return 0x00D2; // O -> Ò
+        case 0x0055:
+          return 0x00D9; // U -> Ù
+        case 0x0061:
+          return 0x00E0; // a -> à
+        case 0x0065:
+          return 0x00E8; // e -> è
+        case 0x0069:
+          return 0x00EC; // i -> ì
+        case 0x006F:
+          return 0x00F2; // o -> ò
+        case 0x0075:
+          return 0x00F9; // u -> ù
       }
     }
     // Combining tilde (U+0303)
     if (combiningMark == 0x0303) {
       switch (base) {
-        case 0x0041: return 0x00C3; // A -> Ã
-        case 0x004E: return 0x00D1; // N -> Ñ
-        case 0x004F: return 0x00D5; // O -> Õ
-        case 0x0061: return 0x00E3; // a -> ã
-        case 0x006E: return 0x00F1; // n -> ñ
-        case 0x006F: return 0x00F5; // o -> õ
+        case 0x0041:
+          return 0x00C3; // A -> Ã
+        case 0x004E:
+          return 0x00D1; // N -> Ñ
+        case 0x004F:
+          return 0x00D5; // O -> Õ
+        case 0x0061:
+          return 0x00E3; // a -> ã
+        case 0x006E:
+          return 0x00F1; // n -> ñ
+        case 0x006F:
+          return 0x00F5; // o -> õ
       }
     }
     // Combining diaeresis (U+0308)
     if (combiningMark == 0x0308) {
       switch (base) {
-        case 0x0041: return 0x00C4; // A -> Ä
-        case 0x0045: return 0x00CB; // E -> Ë
-        case 0x0049: return 0x00CF; // I -> Ï
-        case 0x004F: return 0x00D6; // O -> Ö
-        case 0x0055: return 0x00DC; // U -> Ü
-        case 0x0061: return 0x00E4; // a -> ä
-        case 0x0065: return 0x00EB; // e -> ë
-        case 0x0069: return 0x00EF; // i -> ï
-        case 0x006F: return 0x00F6; // o -> ö
-        case 0x0075: return 0x00FC; // u -> ü
+        case 0x0041:
+          return 0x00C4; // A -> Ä
+        case 0x0045:
+          return 0x00CB; // E -> Ë
+        case 0x0049:
+          return 0x00CF; // I -> Ï
+        case 0x004F:
+          return 0x00D6; // O -> Ö
+        case 0x0055:
+          return 0x00DC; // U -> Ü
+        case 0x0061:
+          return 0x00E4; // a -> ä
+        case 0x0065:
+          return 0x00EB; // e -> ë
+        case 0x0069:
+          return 0x00EF; // i -> ï
+        case 0x006F:
+          return 0x00F6; // o -> ö
+        case 0x0075:
+          return 0x00FC; // u -> ü
       }
     }
     // Combining cedilla (U+0327)
     if (combiningMark == 0x0327) {
       switch (base) {
-        case 0x0043: return 0x00C7; // C -> Ç
-        case 0x0063: return 0x00E7; // c -> ç
+        case 0x0043:
+          return 0x00C7; // C -> Ç
+        case 0x0063:
+          return 0x00E7; // c -> ç
       }
     }
     return null;

@@ -27,11 +27,11 @@ extension AnimatedSvgPainterTextGlyphExtension on AnimatedSvgPainter {
   }) {
     // Apply NFC normalization per SVG spec
     final normalizedText = _normalizeTextToNFC(text);
-    
+
     // Detect script type for appropriate handling
     final scriptType = _detectScriptType(normalizedText);
     final isComplexScript = _isComplexScript(scriptType);
-    
+
     // Use grapheme clusters instead of runes for proper character handling
     // This ensures combining marks and multi-codepoint characters are treated as single units
     final glyphs = _segmentIntoGraphemeClusters(normalizedText);
@@ -42,7 +42,7 @@ extension AnimatedSvgPainterTextGlyphExtension on AnimatedSvgPainter {
         dyList.length > 1 ||
         rotateList.isNotEmpty;
     final hasExplicitPositions = xList.length > 1 || yList.length > 1;
-    
+
     // For complex scripts with no multi-positions, render as a single unit
     // to allow proper shaping and ligature formation
     if (isComplexScript && !hasMultiPositions && !hasExplicitPositions) {
@@ -140,8 +140,8 @@ extension AnimatedSvgPainterTextGlyphExtension on AnimatedSvgPainter {
         paintOrder.isNotEmpty && paintOrder.startsWith('stroke');
 
     // Compute scale factor from textLength distribution if using spacingAndGlyphs mode.
-    final scaleFactor = textLengthDistribution != null &&
-            textLengthDistribution.isScale
+    final scaleFactor =
+        textLengthDistribution != null && textLengthDistribution.isScale
         ? textLengthDistribution.scaleFactor
         : 1.0;
     final hasScaleFactor = (scaleFactor - 1.0).abs() > 1e-6;
@@ -232,7 +232,7 @@ extension AnimatedSvgPainterTextGlyphExtension on AnimatedSvgPainter {
     cursor.chunkCharIndex += glyphs.length;
     return totalWidth;
   }
-  
+
   /// Renders complex script text as a single unit for proper shaping.
   ///
   /// Complex scripts like Arabic, Thai, Devanagari require contextual shaping
@@ -255,7 +255,7 @@ extension AnimatedSvgPainterTextGlyphExtension on AnimatedSvgPainter {
     final effectiveStyle = style.textDirection != effectiveDirection
         ? style.copyWith(textDirection: effectiveDirection)
         : style;
-    
+
     // Render as single text run for proper shaping
     return _paintPlainText(
       canvas,
@@ -311,10 +311,7 @@ extension AnimatedSvgPainterTextGlyphExtension on AnimatedSvgPainter {
   /// For RTL text, cursor advances leftward (negative direction),
   /// while for LTR text, cursor advances rightward (positive).
   // ignore: unused_element
-  double _bidiAdjustCursorAdvance(
-    double advance,
-    ui.TextDirection direction,
-  ) {
+  double _bidiAdjustCursorAdvance(double advance, ui.TextDirection direction) {
     if (direction == ui.TextDirection.rtl) {
       return -advance;
     }

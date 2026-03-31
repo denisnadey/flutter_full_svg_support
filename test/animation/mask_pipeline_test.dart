@@ -7,11 +7,11 @@ import 'package:flutter_test/flutter_test.dart';
 /// - _applyNestedMaskWithIntersection (nested mask intersection)
 void main() {
   group('Animated Mask Cache Key Generation', () {
-    testWidgets(
-      'animated mask content triggers cache key generation',
-      (WidgetTester tester) async {
-        // SVG with animated mask content - the mask circle radius is animated
-        const svgXml = '''
+    testWidgets('animated mask content triggers cache key generation', (
+      WidgetTester tester,
+    ) async {
+      // SVG with animated mask content - the mask circle radius is animated
+      const svgXml = '''
           <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <mask id="animatedMask">
@@ -24,31 +24,30 @@ void main() {
           </svg>
         ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-            ),
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
           ),
-        );
+        ),
+      );
 
-        // First frame
-        await tester.pump();
+      // First frame
+      await tester.pump();
 
-        // Advance animation and pump again
-        await tester.pump(const Duration(milliseconds: 500));
+      // Advance animation and pump again
+      await tester.pump(const Duration(milliseconds: 500));
 
-        // The visible area should change as the mask animates
-        // (different cache keys are generated for different animation states)
-        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-      },
-    );
+      // The visible area should change as the mask animates
+      // (different cache keys are generated for different animation states)
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
 
-    testWidgets(
-      'non-animated mask does not require cache key per frame',
-      (WidgetTester tester) async {
-        // SVG with static mask content (no animation)
-        const svgXml = '''
+    testWidgets('non-animated mask does not require cache key per frame', (
+      WidgetTester tester,
+    ) async {
+      // SVG with static mask content (no animation)
+      const svgXml = '''
           <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <mask id="staticMask">
@@ -59,28 +58,27 @@ void main() {
           </svg>
         ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-            ),
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
           ),
-        );
+        ),
+      );
 
-        // Multiple frames with no animation should render consistently
-        await tester.pump();
-        await tester.pump();
-        await tester.pump();
+      // Multiple frames with no animation should render consistently
+      await tester.pump();
+      await tester.pump();
+      await tester.pump();
 
-        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-      },
-    );
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
 
-    testWidgets(
-      'cache key changes when animated attribute values change',
-      (WidgetTester tester) async {
-        // SVG with animated fill color in mask
-        const svgXml = '''
+    testWidgets('cache key changes when animated attribute values change', (
+      WidgetTester tester,
+    ) async {
+      // SVG with animated fill color in mask
+      const svgXml = '''
           <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <mask id="colorAnimMask">
@@ -93,24 +91,23 @@ void main() {
           </svg>
         ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-            ),
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
           ),
-        );
+        ),
+      );
 
-        // First frame - white mask = full visibility
-        await tester.pump();
+      // First frame - white mask = full visibility
+      await tester.pump();
 
-        // Advance to gray mask time
-        await tester.pump(const Duration(milliseconds: 500));
+      // Advance to gray mask time
+      await tester.pump(const Duration(milliseconds: 500));
 
-        // Both should render without errors
-        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-      },
-    );
+      // Both should render without errors
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
   });
 
   group('Nested Mask Intersection', () {
@@ -153,12 +150,12 @@ void main() {
       },
     );
 
-    testWidgets(
-      'nested masks with no intersection renders nothing',
-      (WidgetTester tester) async {
-        // Parent mask covers left side, child mask covers right side
-        // No intersection = nothing visible
-        const svgXml = '''
+    testWidgets('nested masks with no intersection renders nothing', (
+      WidgetTester tester,
+    ) async {
+      // Parent mask covers left side, child mask covers right side
+      // No intersection = nothing visible
+      const svgXml = '''
           <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <!-- Outer mask: left quarter -->
@@ -176,26 +173,25 @@ void main() {
           </svg>
         ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-            ),
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
           ),
-        );
+        ),
+      );
 
-        await tester.pump();
+      await tester.pump();
 
-        // Should render - masks applied with no intersection
-        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-      },
-    );
+      // Should render - masks applied with no intersection
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
 
-    testWidgets(
-      'deeply nested masks all intersect correctly',
-      (WidgetTester tester) async {
-        // Three levels of nested masks
-        const svgXml = '''
+    testWidgets('deeply nested masks all intersect correctly', (
+      WidgetTester tester,
+    ) async {
+      // Three levels of nested masks
+      const svgXml = '''
           <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <mask id="mask1">
@@ -216,26 +212,25 @@ void main() {
           </svg>
         ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-            ),
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
           ),
-        );
+        ),
+      );
 
-        await tester.pump();
+      await tester.pump();
 
-        // Should render without errors - all three masks applied
-        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-      },
-    );
+      // Should render without errors - all three masks applied
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
 
-    testWidgets(
-      'nested mask with animated parent mask',
-      (WidgetTester tester) async {
-        // Parent mask is animated, child has static mask
-        const svgXml = '''
+    testWidgets('nested mask with animated parent mask', (
+      WidgetTester tester,
+    ) async {
+      // Parent mask is animated, child has static mask
+      const svgXml = '''
           <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <mask id="animParentMask">
@@ -253,30 +248,29 @@ void main() {
           </svg>
         ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-            ),
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
           ),
-        );
+        ),
+      );
 
-        // Pump multiple frames to test animation
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 500));
-        await tester.pump(const Duration(milliseconds: 500));
+      // Pump multiple frames to test animation
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
 
-        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-      },
-    );
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
   });
 
   group('Mask Pipeline Edge Cases', () {
-    testWidgets(
-      'mask with set animation element is detected as animated',
-      (WidgetTester tester) async {
-        // SVG with <set> animation in mask content
-        const svgXml = '''
+    testWidgets('mask with set animation element is detected as animated', (
+      WidgetTester tester,
+    ) async {
+      // SVG with <set> animation in mask content
+      const svgXml = '''
           <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <mask id="setAnimMask">
@@ -289,26 +283,25 @@ void main() {
           </svg>
         ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-            ),
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
           ),
-        );
+        ),
+      );
 
-        await tester.pump();
-        await tester.pump(const Duration(seconds: 1));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
 
-        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-      },
-    );
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
 
-    testWidgets(
-      'mask with animateTransform is detected as animated',
-      (WidgetTester tester) async {
-        // SVG with animateTransform in mask content
-        const svgXml = '''
+    testWidgets('mask with animateTransform is detected as animated', (
+      WidgetTester tester,
+    ) async {
+      // SVG with animateTransform in mask content
+      const svgXml = '''
           <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <mask id="transformAnimMask">
@@ -322,26 +315,25 @@ void main() {
           </svg>
         ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-            ),
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
           ),
-        );
+        ),
+      );
 
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
 
-        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-      },
-    );
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
 
-    testWidgets(
-      'mask with nested animated child is detected as animated',
-      (WidgetTester tester) async {
-        // Animation is in a nested child within the mask
-        const svgXml = '''
+    testWidgets('mask with nested animated child is detected as animated', (
+      WidgetTester tester,
+    ) async {
+      // Animation is in a nested child within the mask
+      const svgXml = '''
           <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <mask id="nestedAnimMask">
@@ -358,19 +350,18 @@ void main() {
           </svg>
         ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-            ),
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
           ),
-        );
+        ),
+      );
 
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
-        expect(find.byType(AnimatedSvgPicture), findsOneWidget);
-      },
-    );
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+    });
   });
 }

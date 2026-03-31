@@ -77,7 +77,8 @@ extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
     required Set<String> useStack,
     _CascadingClipContext? context,
   }) {
-    final effectiveContext = context ??
+    final effectiveContext =
+        context ??
         _CascadingClipContext(
           depth: 0,
           accumulatedTransform: Matrix4.identity(),
@@ -90,14 +91,15 @@ extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
     }
 
     // Determine clipPathUnits for this level
-    final units = _getString(clipPathNode, 'clipPathUnits')
-            ?.trim()
-            .toLowerCase() ??
+    final units =
+        _getString(clipPathNode, 'clipPathUnits')?.trim().toLowerCase() ??
         'userspaceonuse';
     final isObjectBoundingBox = units == 'objectboundingbox';
 
     // Compute base transform for this clip level
-    Matrix4 levelTransform = Matrix4.copy(effectiveContext.accumulatedTransform);
+    Matrix4 levelTransform = Matrix4.copy(
+      effectiveContext.accumulatedTransform,
+    );
 
     // Apply objectBoundingBox transform if needed
     if (isObjectBoundingBox) {
@@ -251,7 +253,8 @@ extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
     }
 
     // Check for feathering (blur filters in mask content)
-    final hasFeathering = enableFeathering && _maskContentHasFeathering(maskNode);
+    final hasFeathering =
+        enableFeathering && _maskContentHasFeathering(maskNode);
     final effectiveBounds = hasFeathering
         ? _expandMaskBoundsForFeathering(maskBounds, maskNode)
         : maskBounds;
@@ -296,7 +299,11 @@ extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
       0, 0, 0, 0, 0, // R output = 0
       0, 0, 0, 0, 0, // G output = 0
       0, 0, 0, 0, 0, // B output = 0
-      _kLuminanceR, _kLuminanceG, _kLuminanceB, 0, 0, // A = luminance * srcAlpha
+      _kLuminanceR,
+      _kLuminanceG,
+      _kLuminanceB,
+      0,
+      0, // A = luminance * srcAlpha
     ]);
 
     return ui.Paint()
@@ -319,10 +326,10 @@ extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
     required SvgNode maskedNode,
     required Set<String> useStack,
   }) {
-    final contentUnits = (_getString(maskNode, 'maskContentUnits') ??
-            'userSpaceOnUse')
-        .trim()
-        .toLowerCase();
+    final contentUnits =
+        (_getString(maskNode, 'maskContentUnits') ?? 'userSpaceOnUse')
+            .trim()
+            .toLowerCase();
 
     Matrix4? contentTransform;
     if (contentUnits == 'objectboundingbox') {
@@ -444,10 +451,10 @@ extension AnimatedSvgPainterClipMaskAdvancedExtension on AnimatedSvgPainter {
     required _MaskNestingContext parentContext,
     required Set<String> useStack,
   }) {
-    final contentUnits = (_getString(maskNode, 'maskContentUnits') ??
-            'userSpaceOnUse')
-        .trim()
-        .toLowerCase();
+    final contentUnits =
+        (_getString(maskNode, 'maskContentUnits') ?? 'userSpaceOnUse')
+            .trim()
+            .toLowerCase();
     final parentUnits = parentContext.parentMaskContentUnits.toLowerCase();
 
     Matrix4? contentTransform;

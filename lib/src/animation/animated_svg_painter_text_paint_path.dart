@@ -23,8 +23,9 @@ extension AnimatedSvgPainterTextPathExtension on AnimatedSvgPainter {
 
     // Compute textLength distribution for textPath with nested tspan children.
     final textPathStyle = _resolveTextStyle(textPathNode);
-    final hasTspanChildren =
-        textPathNode.children.any((c) => c.tagName == 'tspan');
+    final hasTspanChildren = textPathNode.children.any(
+      (c) => c.tagName == 'tspan',
+    );
     _TextLengthDistribution? textLengthDistribution;
     if (hasTspanChildren && _resolveTextLength(textPathNode) != null) {
       textLengthDistribution = _computeTextLengthDistribution(

@@ -532,9 +532,7 @@ void main() {
       expect(analysis.pixelCount, greaterThan(100));
     });
 
-    testWidgets('clipPathUnits objectBoundingBox', (
-      WidgetTester tester,
-    ) async {
+    testWidgets('clipPathUnits objectBoundingBox', (WidgetTester tester) async {
       const svgXml = '''
         <svg viewBox="0 0 200 200">
           <defs>
@@ -704,9 +702,7 @@ void main() {
       expect(analysis.pixelCount, greaterThan(100));
     });
 
-    testWidgets('mask containing clipped content', (
-      WidgetTester tester,
-    ) async {
+    testWidgets('mask containing clipped content', (WidgetTester tester) async {
       const svgXml = '''
         <svg viewBox="0 0 200 200">
           <defs>
@@ -784,16 +780,13 @@ void main() {
       ''';
 
       final document = SvgParser.parse(svgString);
-      final defs = document.root.children
-          .firstWhere((n) => n.tagName == 'defs');
-      final clipPath = defs.children
-          .firstWhere((n) => n.tagName == 'clipPath');
+      final defs = document.root.children.firstWhere(
+        (n) => n.tagName == 'defs',
+      );
+      final clipPath = defs.children.firstWhere((n) => n.tagName == 'clipPath');
 
       expect(clipPath.id, 'clip1');
-      expect(
-        clipPath.getAttributeValue('clipPathUnits'),
-        'userSpaceOnUse',
-      );
+      expect(clipPath.getAttributeValue('clipPathUnits'), 'userSpaceOnUse');
     });
 
     test('mask element parses correctly', () {
@@ -809,17 +802,14 @@ void main() {
       ''';
 
       final document = SvgParser.parse(svgString);
-      final defs = document.root.children
-          .firstWhere((n) => n.tagName == 'defs');
-      final mask = defs.children
-          .firstWhere((n) => n.tagName == 'mask');
+      final defs = document.root.children.firstWhere(
+        (n) => n.tagName == 'defs',
+      );
+      final mask = defs.children.firstWhere((n) => n.tagName == 'mask');
 
       expect(mask.id, 'mask1');
       expect(mask.getAttributeValue('maskUnits'), 'userSpaceOnUse');
-      expect(
-        mask.getAttributeValue('maskContentUnits'),
-        'objectBoundingBox',
-      );
+      expect(mask.getAttributeValue('maskContentUnits'), 'objectBoundingBox');
       expect(mask.getAttributeValue('mask-type'), 'luminance');
     });
 
@@ -831,8 +821,9 @@ void main() {
       ''';
 
       final document = SvgParser.parse(svgString);
-      final rect = document.root.children
-          .firstWhere((n) => n.tagName == 'rect');
+      final rect = document.root.children.firstWhere(
+        (n) => n.tagName == 'rect',
+      );
 
       expect(rect.getAttributeValue('clip-path'), 'url(#myClip)');
     });
@@ -845,8 +836,9 @@ void main() {
       ''';
 
       final document = SvgParser.parse(svgString);
-      final circle = document.root.children
-          .firstWhere((n) => n.tagName == 'circle');
+      final circle = document.root.children.firstWhere(
+        (n) => n.tagName == 'circle',
+      );
 
       expect(circle.getAttributeValue('mask'), 'url(#myMask)');
     });

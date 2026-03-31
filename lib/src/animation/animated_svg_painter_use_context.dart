@@ -75,18 +75,18 @@ class _UseInheritanceContext {
   int get depth => parentContext == null ? 1 : 1 + parentContext!.depth;
 
   /// Accumulated x/y transform stack for nested uses.
-  /// 
+  ///
   /// Per SVG spec, each use element's x/y attributes contribute a translation,
   /// and its transform attribute is composed on top. These stack correctly
   /// for deeply nested use references (3+ levels).
   Matrix4 get accumulatedTransform {
     final matrix = Matrix4.identity();
-    
+
     // First apply parent's accumulated transform
     if (parentContext != null) {
       matrix.multiply(parentContext!.accumulatedTransform);
     }
-    
+
     // Then apply this use element's transform attribute if present
     final transformStr = useNode.getAttributeValue('transform')?.toString();
     if (transformStr != null && transformStr.isNotEmpty) {
@@ -95,7 +95,7 @@ class _UseInheritanceContext {
         matrix.multiply(transformMatrix);
       }
     }
-    
+
     // Finally apply x/y translation
     final x = useNode.getAttributeValue('x');
     final y = useNode.getAttributeValue('y');
@@ -104,24 +104,24 @@ class _UseInheritanceContext {
     if (xVal != null || yVal != null) {
       matrix.translateByDouble(xVal ?? 0.0, yVal ?? 0.0, 0.0, 1.0);
     }
-    
+
     return matrix;
   }
-  
+
   /// Parses a transform attribute string into a Matrix4.
   /// Returns null if the string is invalid or empty.
   static Matrix4? _parseTransformAttribute(String value) {
     if (value.trim().isEmpty) return null;
-    
+
     final result = Matrix4.identity();
     // Match transform functions: name(params)
     final regex = RegExp(r'(\w+)\s*\(([^)]+)\)');
-    
+
     for (final match in regex.allMatches(value)) {
       final funcName = match.group(1)?.toLowerCase();
       final params = match.group(2);
       if (funcName == null || params == null) continue;
-      
+
       // Parse comma/space separated numbers
       final numbers = params
           .split(RegExp(r'[,\s]+'))
@@ -129,7 +129,7 @@ class _UseInheritanceContext {
           .where((n) => n != null)
           .cast<double>()
           .toList();
-      
+
       switch (funcName) {
         case 'translate':
           if (numbers.isNotEmpty) {
@@ -183,7 +183,7 @@ class _UseInheritanceContext {
           }
       }
     }
-    
+
     return result;
   }
 
@@ -218,38 +218,38 @@ class _UseInheritanceContext {
   /// levels via parentContext, ensuring proper inheritance resolution.
   Object? getInheritedValue(String property) {
     final normalizedProp = property.trim().toLowerCase();
-    
+
     // Only allow inheritable properties to flow through use boundaries
     if (!normalizedProp.startsWith('--') &&
         !_cssInheritablePropertiesForUse.contains(normalizedProp)) {
       return null;
     }
-    
+
     // Check this use element's style attribute
     final styleValue = _extractStyleValueFromNode(useNode, normalizedProp);
     if (styleValue != null) {
       return styleValue;
     }
-    
+
     // Check this use element's presentation attribute
     final attrValue = useNode.getAttributeValue(property);
     if (attrValue != null) {
       return attrValue;
     }
-    
+
     // Walk up DOM ancestors of this use element
     SvgNode? ancestor = useNode.parent;
     int ancestorDepth = 0;
     const maxAncestorDepth = 100; // Prevent infinite loops
-    
+
     while (ancestor != null && ancestorDepth < maxAncestorDepth) {
       ancestorDepth++;
-      
+
       // Stop at another use element - defer to parent context
       if (ancestor.tagName.toLowerCase() == 'use') {
         break;
       }
-      
+
       final ancestorStyleValue = _extractStyleValueFromNode(
         ancestor,
         normalizedProp,
@@ -263,7 +263,7 @@ class _UseInheritanceContext {
       }
       ancestor = ancestor.parent;
     }
-    
+
     // Recursively check parent use context for nested use chains
     return parentContext?.getInheritedValue(property);
   }
@@ -467,7 +467,7 @@ class _UseInheritanceContext {
     final root = rootContext;
     return root.useNode.id;
   }
-  
+
   /// Gets the event target chain for bubbling through use shadow boundaries.
   ///
   /// When an event originates from content inside a use shadow tree,
@@ -482,7 +482,7 @@ class _UseInheritanceContext {
     }
     return chain;
   }
-  
+
   /// Determines if an event from the given element should be retargeted.
   ///
   /// Returns true if the element is inside the use shadow tree and events
@@ -492,7 +492,7 @@ class _UseInheritanceContext {
     // should be retargeted to the use element
     return true;
   }
-  
+
   /// Gets the retargeted event target for an event originating from
   /// the given element within this use shadow tree.
   ///

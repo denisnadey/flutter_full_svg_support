@@ -708,8 +708,7 @@ void main() {
       ''';
 
       final document = SvgParser.parse(svgString);
-      final use = document.root.children
-          .firstWhere((n) => n.tagName == 'use');
+      final use = document.root.children.firstWhere((n) => n.tagName == 'use');
 
       expect(use.getAttributeValue('href'), '#r1');
       expect(use.getAttributeValue('x'), 10.0);
@@ -728,10 +727,10 @@ void main() {
       ''';
 
       final document = SvgParser.parse(svgString);
-      final defs = document.root.children
-          .firstWhere((n) => n.tagName == 'defs');
-      final symbol = defs.children
-          .firstWhere((n) => n.tagName == 'symbol');
+      final defs = document.root.children.firstWhere(
+        (n) => n.tagName == 'defs',
+      );
+      final symbol = defs.children.firstWhere((n) => n.tagName == 'symbol');
 
       expect(symbol.id, 'icon');
       expect(symbol.getAttributeValue('viewBox'), '0 0 24 24');
@@ -745,8 +744,7 @@ void main() {
       ''';
 
       final document = SvgParser.parse(svgString);
-      final use = document.root.children
-          .firstWhere((n) => n.tagName == 'use');
+      final use = document.root.children.firstWhere((n) => n.tagName == 'use');
 
       expect(use.getAttributeValue('width'), 100.0);
       expect(use.getAttributeValue('height'), 80.0);
@@ -764,15 +762,12 @@ void main() {
       ''';
 
       final document = SvgParser.parse(svgString);
-      final defs = document.root.children
-          .firstWhere((n) => n.tagName == 'defs');
-      final symbol = defs.children
-          .firstWhere((n) => n.tagName == 'symbol');
-
-      expect(
-        symbol.getAttributeValue('preserveAspectRatio'),
-        'xMinYMin slice',
+      final defs = document.root.children.firstWhere(
+        (n) => n.tagName == 'defs',
       );
+      final symbol = defs.children.firstWhere((n) => n.tagName == 'symbol');
+
+      expect(symbol.getAttributeValue('preserveAspectRatio'), 'xMinYMin slice');
     });
   });
 
