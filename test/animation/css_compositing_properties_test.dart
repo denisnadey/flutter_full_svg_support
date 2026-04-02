@@ -155,9 +155,7 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('color-interpolation-filters: sRGB explicit', (
-      tester,
-    ) async {
+    testWidgets('color-interpolation-filters: sRGB explicit', (tester) async {
       const svg = '''
         <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
           <defs>
@@ -277,9 +275,7 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets('isolation: auto does not create extra layer', (
-      tester,
-    ) async {
+    testWidgets('isolation: auto does not create extra layer', (tester) async {
       const svg = '''
         <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
           <g style="isolation: auto">

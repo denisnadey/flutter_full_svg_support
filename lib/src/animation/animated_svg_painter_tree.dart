@@ -365,8 +365,8 @@ bool _paintGroupWithOpacity(
       ?.toString()
       .trim()
       .toLowerCase();
-  final hasEnableBackground = enableBgValue != null &&
-      enableBgValue.startsWith('new');
+  final hasEnableBackground =
+      enableBgValue != null && enableBgValue.startsWith('new');
 
   // Check for mix-blend-mode on the group itself.
   // Per CSS spec, any non-normal mix-blend-mode creates implicit isolation.
@@ -374,10 +374,8 @@ bool _paintGroupWithOpacity(
   final hasGroupBlendMode = groupBlendMode != null;
 
   // Determine if saveLayer is needed for compositing
-  final needsLayer = opacity < 1.0 ||
-      isIsolated ||
-      hasEnableBackground ||
-      hasGroupBlendMode;
+  final needsLayer =
+      opacity < 1.0 || isIsolated || hasEnableBackground || hasGroupBlendMode;
 
   // If no compositing needed, children painted normally by the
   // recursive call after this switch statement.

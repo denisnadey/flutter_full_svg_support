@@ -497,7 +497,6 @@ extension AnimatedSvgPainterTextPositioningExtension on AnimatedSvgPainter {
     return _resolveTextDirection(_getInheritedString(node, 'direction'));
   }
 
-
   /// Resolves direction for BDO elements, handling dir="auto".
   ///
   /// For BDO elements:
@@ -586,8 +585,6 @@ extension AnimatedSvgPainterTextPositioningExtension on AnimatedSvgPainter {
     return ui.TextDirection.ltr;
   }
 
-
-
   /// Maps a logical position to visual position for hit-testing in mixed-direction text.
   ///
   /// This is essential for correct cursor placement when clicking on
@@ -642,8 +639,6 @@ extension AnimatedSvgPainterTextPositioningExtension on AnimatedSvgPainter {
       isAtRunBoundary: true,
     );
   }
-
-
 }
 
 /// Information about a single ancestor in the baseline calculation chain.
@@ -762,7 +757,6 @@ class _BidiTextRun {
 
   /// The visual order index (for reordering).
   final int visualOrder;
-
 }
 
 /// Result of logical-to-visual position mapping for hit-testing.

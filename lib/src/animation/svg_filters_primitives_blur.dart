@@ -130,9 +130,7 @@ class GaussianBlurProcessor {
     }
 
     // Convert sRGB → linearRGB before blur if requested.
-    var data = useLinearRGB
-        ? _convertSrgbToLinearRGB(pixels)
-        : pixels;
+    var data = useLinearRGB ? _convertSrgbToLinearRGB(pixels) : pixels;
 
     // Use box blur approximation for large values
     if (stdDeviationX > _maxGaussianBlurStdDeviation ||
