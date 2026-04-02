@@ -1,36 +1,40 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
-  <defs>
-    <!-- Figure-8 path -->
-    <path id="path1" d="M 100,300 C 100,100 400,100 400,300 C 400,500 700,500 700,300 C 700,100 400,100 400,300 C 400,500 100,500 100,300" fill="none" stroke="#ddd" stroke-width="2" stroke-dasharray="8,4"/>
-    <!-- Circular orbit -->
-    <path id="path2" d="M 400,150 A 150,150 0 1,1 399.9,150" fill="none" stroke="#ddd" stroke-width="2" stroke-dasharray="8,4"/>
-    <!-- Straight line -->
-    <path id="path3" d="M 50,550 L 750,550" fill="none" stroke="#ddd" stroke-width="2" stroke-dasharray="8,4"/>
-  </defs>
+    <defs>
+        <!-- Figure-8 path -->
+        <path id="path1"
+            d="M 100,300 C 100,100 400,100 400,300 C 400,500 700,500 700,300 C 700,100 400,100 400,300 C 400,500 100,500 100,300"
+            fill="none" stroke="#ddd" stroke-width="2" stroke-dasharray="8,4" />
+        <!-- Circular orbit -->
+        <path id="path2" d="M 400,150 A 150,150 0 1,1 399.9,150" fill="none" stroke="#ddd"
+            stroke-width="2" stroke-dasharray="8,4" />
+        <!-- Straight line -->
+        <path id="path3" d="M 50,550 L 750,550" fill="none" stroke="#ddd" stroke-width="2"
+            stroke-dasharray="8,4" />
+    </defs>
 
-  <!-- Show the paths -->
-  <use href="#path1"/>
-  <use href="#path2"/>
-  <use href="#path3"/>
+    <!-- Show the paths -->
+    <use href="#path1" />
+    <use href="#path2" />
+    <use href="#path3" />
 
-  <!-- Object following figure-8 -->
-  <circle r="15" fill="#e74c3c">
-    <animateMotion dur="15s" fill="freeze">
-      <mpath href="#path1"/>
-    </animateMotion>
-  </circle>
+    <!-- Object following figure-8 -->
+    <circle r="15" fill="#e74c3c">
+        <animateMotion dur="15s" fill="freeze">
+            <mpath href="#path1" />
+        </animateMotion>
+    </circle>
 
-  <!-- Object following circular orbit with rotate auto -->
-  <polygon points="0,-12 10,8 -10,8" fill="#3498db">
-    <animateMotion dur="15s" rotate="auto" fill="freeze">
-      <mpath href="#path2"/>
-    </animateMotion>
-  </polygon>
+    <!-- Object following circular orbit with rotate auto -->
+    <polygon points="0,-12 10,8 -10,8" fill="#3498db">
+        <animateMotion dur="15s" rotate="auto" fill="freeze">
+            <mpath href="#path2" />
+        </animateMotion>
+    </polygon>
 
-  <!-- Object following straight line -->
-  <rect x="-15" y="-10" width="30" height="20" rx="4" fill="#2ecc71">
-    <animateMotion dur="15s" rotate="auto" fill="freeze">
-      <mpath href="#path3"/>
-    </animateMotion>
-  </rect>
+    <!-- Object following straight line -->
+    <rect x="-15" y="-10" width="30" height="20" rx="4" fill="#2ecc71">
+        <animateMotion dur="15s" rotate="auto" fill="freeze">
+            <mpath href="#path3" />
+        </animateMotion>
+    </rect>
 </svg>

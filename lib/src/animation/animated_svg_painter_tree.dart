@@ -533,7 +533,8 @@ void _syncDropShadowValues(SvgDropShadowFilter shadow, SvgNode node) {
     } else if (val is String) {
       final parts = val.trim().split(RegExp(r'[\s,]+'));
       if (parts.isNotEmpty) {
-        shadow.stdDeviationX = double.tryParse(parts[0]) ?? shadow.stdDeviationX;
+        shadow.stdDeviationX =
+            double.tryParse(parts[0]) ?? shadow.stdDeviationX;
         shadow.stdDeviationY = parts.length > 1
             ? (double.tryParse(parts[1]) ?? shadow.stdDeviationX)
             : shadow.stdDeviationX;

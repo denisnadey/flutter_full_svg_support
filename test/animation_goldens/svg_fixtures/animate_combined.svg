@@ -1,47 +1,51 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
-  <defs>
-    <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#e74c3c"/>
-      <stop offset="100%" stop-color="#f39c12"/>
-    </linearGradient>
-  </defs>
+    <defs>
+        <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#e74c3c" />
+            <stop offset="100%" stop-color="#f39c12" />
+        </linearGradient>
+    </defs>
 
-  <!-- Position + color + opacity combined -->
-  <rect x="50" y="50" width="100" height="100" rx="10" fill="url(#g1)">
-    <animate attributeName="x" values="50;350;650;350;50" dur="15s" fill="freeze"/>
-    <animate attributeName="y" values="50;200;50;200;50" dur="15s" fill="freeze"/>
-    <animate attributeName="opacity" values="1;0.4;1;0.4;1" dur="15s" fill="freeze"/>
-    <animate attributeName="width" values="100;150;80;120;100" dur="15s" fill="freeze"/>
-    <animate attributeName="height" values="100;80;150;120;100" dur="15s" fill="freeze"/>
-  </rect>
-
-  <!-- Rotating group with scaling children -->
-  <g>
-    <animateTransform attributeName="transform" type="rotate"
-      from="0 400 400" to="360 400 400" dur="15s" fill="freeze"/>
-    <circle cx="400" cy="320" r="25" fill="#3498db">
-      <animate attributeName="r" values="25;50;15;40;25" dur="15s" fill="freeze"/>
-    </circle>
-    <circle cx="400" cy="480" r="20" fill="#2ecc71">
-      <animate attributeName="r" values="20;10;40;30;20" dur="15s" fill="freeze"/>
-    </circle>
-    <rect x="340" y="375" width="30" height="30" fill="#9b59b6">
-      <animate attributeName="fill" values="#9b59b6;#e74c3c;#f1c40f;#9b59b6" dur="15s" fill="freeze"/>
+    <!-- Position + color + opacity combined -->
+    <rect x="50" y="50" width="100" height="100" rx="10" fill="url(#g1)">
+        <animate attributeName="x" values="50;350;650;350;50" dur="15s" fill="freeze" />
+        <animate attributeName="y" values="50;200;50;200;50" dur="15s" fill="freeze" />
+        <animate attributeName="opacity" values="1;0.4;1;0.4;1" dur="15s" fill="freeze" />
+        <animate attributeName="width" values="100;150;80;120;100" dur="15s" fill="freeze" />
+        <animate attributeName="height" values="100;80;150;120;100" dur="15s" fill="freeze" />
     </rect>
-    <rect x="430" y="375" width="30" height="30" fill="#e67e22">
-      <animate attributeName="fill" values="#e67e22;#1abc9c;#e74c3c;#e67e22" dur="15s" fill="freeze"/>
-    </rect>
-  </g>
 
-  <!-- animateMotion + color change -->
-  <defs>
-    <path id="wave" d="M 50,550 Q 200,480 350,550 Q 500,620 650,550 Q 720,520 750,550" fill="none" stroke="#eee" stroke-width="1" stroke-dasharray="4,4"/>
-  </defs>
-  <use href="#wave"/>
-  <ellipse rx="20" ry="12" fill="#1abc9c">
-    <animateMotion dur="15s" fill="freeze">
-      <mpath href="#wave"/>
-    </animateMotion>
-    <animate attributeName="fill" values="#1abc9c;#e74c3c;#3498db;#1abc9c" dur="15s" fill="freeze"/>
-  </ellipse>
+    <!-- Rotating group with scaling children -->
+    <g>
+        <animateTransform attributeName="transform" type="rotate"
+            from="0 400 400" to="360 400 400" dur="15s" fill="freeze" />
+        <circle cx="400" cy="320" r="25" fill="#3498db">
+            <animate attributeName="r" values="25;50;15;40;25" dur="15s" fill="freeze" />
+        </circle>
+        <circle cx="400" cy="480" r="20" fill="#2ecc71">
+            <animate attributeName="r" values="20;10;40;30;20" dur="15s" fill="freeze" />
+        </circle>
+        <rect x="340" y="375" width="30" height="30" fill="#9b59b6">
+            <animate attributeName="fill" values="#9b59b6;#e74c3c;#f1c40f;#9b59b6" dur="15s"
+                fill="freeze" />
+        </rect>
+        <rect x="430" y="375" width="30" height="30" fill="#e67e22">
+            <animate attributeName="fill" values="#e67e22;#1abc9c;#e74c3c;#e67e22" dur="15s"
+                fill="freeze" />
+        </rect>
+    </g>
+
+    <!-- animateMotion + color change -->
+    <defs>
+        <path id="wave" d="M 50,550 Q 200,480 350,550 Q 500,620 650,550 Q 720,520 750,550"
+            fill="none" stroke="#eee" stroke-width="1" stroke-dasharray="4,4" />
+    </defs>
+    <use href="#wave" />
+    <ellipse rx="20" ry="12" fill="#1abc9c">
+        <animateMotion dur="15s" fill="freeze">
+            <mpath href="#wave" />
+        </animateMotion>
+        <animate attributeName="fill" values="#1abc9c;#e74c3c;#3498db;#1abc9c" dur="15s"
+            fill="freeze" />
+    </ellipse>
 </svg>

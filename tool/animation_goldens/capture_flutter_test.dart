@@ -34,15 +34,11 @@ import 'package:flutter_test/flutter_test.dart';
 // Configuration from environment
 // ---------------------------------------------------------------------------
 
-final int _animDuration = int.tryParse(
-      Platform.environment['ANIM_DURATION'] ?? '',
-    ) ??
-    15;
+final int _animDuration =
+    int.tryParse(Platform.environment['ANIM_DURATION'] ?? '') ?? 15;
 
-final int _animFrames = int.tryParse(
-      Platform.environment['ANIM_FRAMES'] ?? '',
-    ) ??
-    15;
+final int _animFrames =
+    int.tryParse(Platform.environment['ANIM_FRAMES'] ?? '') ?? 15;
 
 final int? _animSubset = int.tryParse(
   Platform.environment['ANIM_SUBSET'] ?? '',
@@ -83,7 +79,7 @@ List<FileSystemEntity> _discoverSvgFixtures() {
           .listSync()
           .where((e) => e.path.toLowerCase().endsWith('.svg'))
           .toList()
-    ..sort((a, b) => a.path.compareTo(b.path));
+        ..sort((a, b) => a.path.compareTo(b.path));
   return files;
 }
 
@@ -102,7 +98,9 @@ void main() {
   }
 
   // Subset mode
-  if (_animSubset != null && _animSubset! > 0 && _animSubset! < fixtures.length) {
+  if (_animSubset != null &&
+      _animSubset! > 0 &&
+      _animSubset! < fixtures.length) {
     final shuffled = List<FileSystemEntity>.from(fixtures)..shuffle();
     fixtures = shuffled.take(_animSubset!).toList();
     // ignore: avoid_print
@@ -133,129 +131,122 @@ void main() {
   group('Animation Frame Capture', () {
     for (final fixture in fixtures) {
       final svgPath = fixture.path;
-      final baseName =
-          svgPath.split('/').last.replaceAll('.svg', '');
+      final baseName = svgPath.split('/').last.replaceAll('.svg', '');
 
-      testWidgets(
-        'Capture frames: $baseName',
-        (tester) async {
+      testWidgets('Capture frames: $baseName', (tester) async {
+        // ignore: avoid_print
+        print('\n  Capturing: $baseName ($_animFrames frames)...');
+
+        // Read SVG
+        final svgFile = File(svgPath);
+        if (!svgFile.existsSync()) {
           // ignore: avoid_print
-          print('\n  Capturing: $baseName ($_animFrames frames)...');
+          print('    SKIP: SVG file not found');
+          return;
+        }
+        final svgString = svgFile.readAsStringSync();
 
-          // Read SVG
-          final svgFile = File(svgPath);
-          if (!svgFile.existsSync()) {
-            // ignore: avoid_print
-            print('    SKIP: SVG file not found');
-            return;
+        // Create output directory
+        final outputDir = Directory('$kFlutterOutputDir/$baseName');
+        await tester.runAsync(() async {
+          if (!outputDir.existsSync()) {
+            outputDir.createSync(recursive: true);
           }
-          final svgString = svgFile.readAsStringSync();
+        });
 
-          // Create output directory
-          final outputDir = Directory('$kFlutterOutputDir/$baseName');
-          await tester.runAsync(() async {
-            if (!outputDir.existsSync()) {
-              outputDir.createSync(recursive: true);
-            }
-          });
+        // Set viewport
+        tester.view.physicalSize = const Size(kViewportWidth, kViewportHeight);
+        tester.view.devicePixelRatio = 1.0;
 
-          // Set viewport
-          tester.view.physicalSize =
-              const Size(kViewportWidth, kViewportHeight);
-          tester.view.devicePixelRatio = 1.0;
+        try {
+          // Create controller for seeking
+          final controller = AnimatedSvgController();
+          final repaintKey = GlobalKey();
 
-          try {
-            // Create controller for seeking
-            final controller = AnimatedSvgController();
-            final repaintKey = GlobalKey();
-
-            // Build widget — autoPlay false, we control time via seek.
-            // White Container ensures background matches browser capture.
-            await tester.pumpWidget(
-              MaterialApp(
-                debugShowCheckedModeBanner: false,
-                home: RepaintBoundary(
-                  key: repaintKey,
-                  child: Container(
+          // Build widget — autoPlay false, we control time via seek.
+          // White Container ensures background matches browser capture.
+          await tester.pumpWidget(
+            MaterialApp(
+              debugShowCheckedModeBanner: false,
+              home: RepaintBoundary(
+                key: repaintKey,
+                child: Container(
+                  width: kViewportWidth,
+                  height: kViewportHeight,
+                  color: Colors.white,
+                  child: AnimatedSvgPicture.string(
+                    svgString,
                     width: kViewportWidth,
                     height: kViewportHeight,
-                    color: Colors.white,
-                    child: AnimatedSvgPicture.string(
-                      svgString,
-                      width: kViewportWidth,
-                      height: kViewportHeight,
-                      fit: BoxFit.contain,
-                      autoPlay: false,
-                      controller: controller,
-                    ),
+                    fit: BoxFit.contain,
+                    autoPlay: false,
+                    controller: controller,
                   ),
                 ),
               ),
+            ),
+          );
+
+          // Initial pump to build widget tree
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 200));
+
+          // Capture frames at each time point
+          for (int i = 0; i < _animFrames; i++) {
+            final timeSeconds = (_animDuration / _animFrames) * i;
+            final timeDuration = Duration(
+              milliseconds: (timeSeconds * 1000).round(),
             );
+            final frameIndex = i.toString().padLeft(2, '0');
 
-            // Initial pump to build widget tree
+            // Seek to the target time
+            controller.seek(timeDuration);
+
+            // Pump to process the seek and re-render
             await tester.pump();
-            await tester.pump(const Duration(milliseconds: 200));
+            await tester.pump(const Duration(milliseconds: 100));
 
-            // Capture frames at each time point
-            for (int i = 0; i < _animFrames; i++) {
-              final timeSeconds = (_animDuration / _animFrames) * i;
-              final timeDuration = Duration(
-                milliseconds: (timeSeconds * 1000).round(),
+            // Capture the frame
+            final pngBytes = await tester.runAsync<Uint8List?>(() async {
+              final boundary =
+                  repaintKey.currentContext?.findRenderObject()
+                      as RenderRepaintBoundary?;
+              if (boundary == null) return null;
+
+              final image = await boundary.toImage(pixelRatio: 1.0);
+              final byteData = await image.toByteData(
+                format: ui.ImageByteFormat.png,
               );
-              final frameIndex = i.toString().padLeft(2, '0');
+              image.dispose();
+              return byteData?.buffer.asUint8List();
+            });
 
-              // Seek to the target time
-              controller.seek(timeDuration);
-
-              // Pump to process the seek and re-render
-              await tester.pump();
-              await tester.pump(const Duration(milliseconds: 100));
-
-              // Capture the frame
-              final pngBytes = await tester.runAsync<Uint8List?>(() async {
-                final boundary =
-                    repaintKey.currentContext?.findRenderObject()
-                        as RenderRepaintBoundary?;
-                if (boundary == null) return null;
-
-                final image = await boundary.toImage(pixelRatio: 1.0);
-                final byteData = await image.toByteData(
-                  format: ui.ImageByteFormat.png,
-                );
-                image.dispose();
-                return byteData?.buffer.asUint8List();
-              });
-
-              if (pngBytes == null) {
-                // ignore: avoid_print
-                print(
-                  '    WARN: Failed to capture frame $frameIndex (t=${timeSeconds.toStringAsFixed(1)}s)',
-                );
-                continue;
-              }
-
-              // Save frame
-              await tester.runAsync(() async {
-                final frameFile =
-                    File('${outputDir.path}/frame_$frameIndex.png');
-                await frameFile.writeAsBytes(pngBytes);
-              });
+            if (pngBytes == null) {
+              // ignore: avoid_print
+              print(
+                '    WARN: Failed to capture frame $frameIndex (t=${timeSeconds.toStringAsFixed(1)}s)',
+              );
+              continue;
             }
 
-            // ignore: avoid_print
-            print(
-              '    -> $_animFrames frames saved to $kFlutterOutputDir/$baseName/',
-            );
-
-            controller.dispose();
-          } finally {
-            tester.view.resetPhysicalSize();
-            tester.view.resetDevicePixelRatio();
+            // Save frame
+            await tester.runAsync(() async {
+              final frameFile = File('${outputDir.path}/frame_$frameIndex.png');
+              await frameFile.writeAsBytes(pngBytes);
+            });
           }
-        },
-        timeout: _testTimeout,
-      );
+
+          // ignore: avoid_print
+          print(
+            '    -> $_animFrames frames saved to $kFlutterOutputDir/$baseName/',
+          );
+
+          controller.dispose();
+        } finally {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        }
+      }, timeout: _testTimeout);
     }
   });
 }

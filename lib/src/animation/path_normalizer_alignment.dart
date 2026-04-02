@@ -40,7 +40,8 @@ NormalizedPathPair _alignPaths(
       } else if (cmd is CubicBezierCommand) {
         // Approximate length using chord + control polygon.
         final chordLen = _dist(cx, cy, cmd.x, cmd.y);
-        final polyLen = _dist(cx, cy, cmd.x1, cmd.y1) +
+        final polyLen =
+            _dist(cx, cy, cmd.x1, cmd.y1) +
             _dist(cmd.x1, cmd.y1, cmd.x2, cmd.y2) +
             _dist(cmd.x2, cmd.y2, cmd.x, cmd.y);
         final approxLen = (chordLen + polyLen) / 2;
@@ -127,15 +128,21 @@ double _dist(double x1, double y1, double x2, double y2) {
 
   return (
     CubicBezierCommand(
-      x1: p01x, y1: p01y,
-      x2: p012x, y2: p012y,
-      x: px, y: py,
+      x1: p01x,
+      y1: p01y,
+      x2: p012x,
+      y2: p012y,
+      x: px,
+      y: py,
       isRelative: false,
     ),
     CubicBezierCommand(
-      x1: p123x, y1: p123y,
-      x2: p23x, y2: p23y,
-      x: p3x, y: p3y,
+      x1: p123x,
+      y1: p123y,
+      x2: p23x,
+      y2: p23y,
+      x: p3x,
+      y: p3y,
       isRelative: false,
     ),
   );
@@ -169,7 +176,13 @@ void _insertDegenerateCurves(List<PathCommand> path, int count) {
     path.insert(
       insertIndex,
       CubicBezierCommand(
-        x1: x, y1: y, x2: x, y2: y, x: x, y: y, isRelative: false,
+        x1: x,
+        y1: y,
+        x2: x,
+        y2: y,
+        x: x,
+        y: y,
+        isRelative: false,
       ),
     );
   }

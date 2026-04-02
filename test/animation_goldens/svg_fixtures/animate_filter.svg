@@ -1,41 +1,41 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
-  <defs>
-    <filter id="blur1" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur in="SourceGraphic" result="blurred">
-        <animate attributeName="stdDeviation" values="0;15;0" dur="15s" fill="freeze"/>
-      </feGaussianBlur>
-    </filter>
+    <defs>
+        <filter id="blur1" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur in="SourceGraphic" result="blurred">
+                <animate attributeName="stdDeviation" values="0;15;0" dur="15s" fill="freeze" />
+            </feGaussianBlur>
+        </filter>
 
-    <filter id="blur2" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur in="SourceGraphic" result="blurred">
-        <animate attributeName="stdDeviation" values="0;8;20;3;0" dur="15s" fill="freeze"/>
-      </feGaussianBlur>
-    </filter>
+        <filter id="blur2" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur in="SourceGraphic" result="blurred">
+                <animate attributeName="stdDeviation" values="0;8;20;3;0" dur="15s" fill="freeze" />
+            </feGaussianBlur>
+        </filter>
 
-    <filter id="offset_anim" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur in="SourceAlpha" stdDeviation="4" result="shadow"/>
-      <feOffset in="shadow" result="moved">
-        <animate attributeName="dx" values="0;20;0;-20;0" dur="15s" fill="freeze"/>
-        <animate attributeName="dy" values="0;10;20;10;0" dur="15s" fill="freeze"/>
-      </feOffset>
-      <feFlood flood-color="#000" flood-opacity="0.4" result="color"/>
-      <feComposite in="color" in2="moved" operator="in" result="shadow_colored"/>
-      <feMerge>
-        <feMergeNode in="shadow_colored"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
-  </defs>
+        <filter id="offset_anim" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="4" result="shadow" />
+            <feOffset in="shadow" result="moved">
+                <animate attributeName="dx" values="0;20;0;-20;0" dur="15s" fill="freeze" />
+                <animate attributeName="dy" values="0;10;20;10;0" dur="15s" fill="freeze" />
+            </feOffset>
+            <feFlood flood-color="#000" flood-opacity="0.4" result="color" />
+            <feComposite in="color" in2="moved" operator="in" result="shadow_colored" />
+            <feMerge>
+                <feMergeNode in="shadow_colored" />
+                <feMergeNode in="SourceGraphic" />
+            </feMerge>
+        </filter>
+    </defs>
 
-  <!-- Blur animation -->
-  <rect x="50" y="100" width="200" height="200" fill="#e74c3c" rx="20" filter="url(#blur1)"/>
+    <!-- Blur animation -->
+    <rect x="50" y="100" width="200" height="200" fill="#e74c3c" rx="20" filter="url(#blur1)" />
 
-  <!-- Different blur keyframes -->
-  <circle cx="450" cy="200" r="80" fill="#3498db" filter="url(#blur2)"/>
+    <!-- Different blur keyframes -->
+    <circle cx="450" cy="200" r="80" fill="#3498db" filter="url(#blur2)" />
 
-  <!-- Animated shadow offset -->
-  <rect x="550" y="350" width="180" height="180" fill="#2ecc71" rx="15" filter="url(#offset_anim)"/>
+    <!-- Animated shadow offset -->
+    <rect x="550" y="350" width="180" height="180" fill="#2ecc71" rx="15" filter="url(#offset_anim)" />
 
-  <!-- Static reference shape (no filter) -->
-  <rect x="50" y="400" width="150" height="150" fill="#f39c12" rx="10" opacity="0.5"/>
+    <!-- Static reference shape (no filter) -->
+    <rect x="50" y="400" width="150" height="150" fill="#f39c12" rx="10" opacity="0.5" />
 </svg>
