@@ -67,14 +67,14 @@ String _pathCommandsToString(List<PathCommand> commands) {
 
   for (final cmd in commands) {
     if (cmd is MoveToCommand) {
-      buffer.write('M${cmd.x.toStringAsFixed(2)},${cmd.y.toStringAsFixed(2)} ');
+      buffer.write('M${cmd.x.toStringAsFixed(4)},${cmd.y.toStringAsFixed(4)} ');
       continue;
     }
     if (cmd is CubicBezierCommand) {
       buffer.write(
-        'C${cmd.x1.toStringAsFixed(2)},${cmd.y1.toStringAsFixed(2)} '
-        '${cmd.x2.toStringAsFixed(2)},${cmd.y2.toStringAsFixed(2)} '
-        '${cmd.x.toStringAsFixed(2)},${cmd.y.toStringAsFixed(2)} ',
+        'C${cmd.x1.toStringAsFixed(4)},${cmd.y1.toStringAsFixed(4)} '
+        '${cmd.x2.toStringAsFixed(4)},${cmd.y2.toStringAsFixed(4)} '
+        '${cmd.x.toStringAsFixed(4)},${cmd.y.toStringAsFixed(4)} ',
       );
       continue;
     }

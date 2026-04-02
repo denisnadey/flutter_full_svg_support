@@ -140,6 +140,14 @@ class Interpolators {
           return result;
         }
         return base;
+      case SvgAttributeType.transform:
+        // For transforms, additive="sum" means post-multiply (concatenate).
+        // Per SMIL spec: the animated transform is appended to the base transform list.
+        final baseStr = base.toString().trim();
+        final deltaStr = delta.toString().trim();
+        if (baseStr.isEmpty || baseStr.toLowerCase() == 'none') return delta;
+        if (deltaStr.isEmpty || deltaStr.toLowerCase() == 'none') return base;
+        return '$baseStr $deltaStr';
       default:
         return base;
     }

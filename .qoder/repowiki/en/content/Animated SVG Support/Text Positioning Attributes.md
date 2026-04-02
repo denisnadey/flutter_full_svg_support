@@ -11,17 +11,13 @@
 - [SVGFontData.cpp](file://blink-b87d44f-Source-core-svg/SVGFontData.cpp)
 - [SVGFontFaceElement.cpp](file://blink-b87d44f-Source-core-svg/SVGFontFaceElement.cpp)
 - [animated_svg_painter.dart](file://lib/src/animation/animated_svg_painter.dart)
-- [animated_svg_painter_text_style_positioning.dart](file://lib/src/animation/animated_svg_painter_text_style_positioning.dart)
+- [animated_svg_painter_text_positioning.dart](file://lib/src/animation/animated_svg_painter_text_positioning.dart)
 - [animated_svg_painter_text_paint.dart](file://lib/src/animation/animated_svg_painter_text_paint.dart)
-- [animated_svg_painter_text_paint_glyph.dart](file://lib/src/animation/animated_svg_painter_text_paint_glyph.dart)
-- [animated_svg_painter_text_paint_plain.dart](file://lib/src/animation/animated_svg_painter_text_paint_plain.dart)
-- [animated_svg_painter_text_paint_path.dart](file://lib/src/animation/animated_svg_painter_text_paint_path.dart)
-- [animated_svg_painter_text_style_layout.dart](file://lib/src/animation/animated_svg_painter_text_style_layout.dart)
-- [animated_svg_painter_text_style_font.dart](file://lib/src/animation/animated_svg_painter_text_style_font.dart)
+- [animated_svg_painter_text_measurement.dart](file://lib/src/animation/animated_svg_painter_text_measurement.dart)
+- [animated_svg_painter_text_layout_render.dart](file://lib/src/animation/animated_svg_painter_text_layout_render.dart)
 - [animated_svg_painter_text_style_rendering.dart](file://lib/src/animation/animated_svg_painter_text_style_rendering.dart)
 - [animated_svg_picture_hit_test_text_runs.dart](file://lib/src/animation/animated_svg_picture_hit_test_text_runs.dart)
-- [animated_svg_picture_hit_test_text_layout.dart](file://lib/src/animation/animated_svg_picture_hit_test_text_layout.dart)
-- [animated_svg_picture_hit_test_text_path_segments.dart](file://lib/src/animation/animated_svg_picture_hit_test_text_path_segments.dart)
+- [animated_svg_picture_hit_test_advanced.dart](file://lib/src/animation/animated_svg_picture_hit_test_advanced.dart)
 - [text_position_list_test.dart](file://test/animation/text_position_list_test.dart)
 - [text_advanced_typography_test.dart](file://test/animation/text_advanced_typography_test.dart)
 - [text_advanced_features_test.dart](file://test/animation/text_advanced_features_test.dart)
@@ -48,6 +44,7 @@
 
 ## Update Summary
 **Changes Made**
+- Consolidated standalone text positioning system into main animation pipeline with sophisticated baseline calculation and bidirectional text handling now integrated more deeply into core rendering
 - Enhanced text positioning attributes with comprehensive multi-position support for x, y, dx, dy, and rotate attributes
 - Added sophisticated textPath spacing control with exact/auto modes and startOffset positioning
 - Implemented full href/xlink:href attribute support for textPath and tref elements
@@ -109,31 +106,22 @@ G["Advanced Text Decoration<br/>Enhanced underline positioning,<br/>decoration t
 H["Modern Typography Features<br/>Font variants, paint order,<br/>text emphasis, ruby alignment,<br/>variable font support"]
 I["Performance Optimization<br/>Text rendering hints,<br/>visibility controls,<br/>blend modes"]
 end
-subgraph "Enhanced Vertical Writing Modes"
-J["_SvgWritingMode Enum<br/>horizontalTb, verticalRl, verticalLr"]
-K["Vertical Baseline Calculator<br/>Enhanced vertical baseline models"]
-L["Vertical Text Painter<br/>90-degree rotation and stacking"]
-M["Internationalization Support<br/>Vertical text rendering for CJK,<br/>Arabic, and other scripts"]
+subgraph "Consolidated Animation Pipeline"
+J["_TextPositioningExtension<br/>Baseline calculation,<br/>bidirectional context,<br/>accumulated offsets"]
+K["_TextMeasurementExtension<br/>Unicode processing,<br/>grapheme clustering,<br/>NFC normalization"]
+L["_TextLayoutRenderExtension<br/>Paragraph building,<br/>font features,<br/>text rendering"]
+M["Independent Text Chunk System<br/>tspan absolute positioning,<br/>chunkCharIndex management,<br/>intelligent textLength conflict resolution"]
+N["Enhanced TextPath Rendering<br/>Align and stretch modes,<br/>overflow handling, endpoint clamping"]
+O["Text Rendering Optimization<br/>Cache system, performance hints,<br/>text-rendering modes"]
+P["Enhanced Text-Indent System<br/>Comprehensive unit support,<br/>inheritance patterns, mixed font-size alignment"]
+Q["Hanging Punctuation System<br/>First/last/force-end/allow-end modes,<br/>CJK punctuation support"]
+R["Deep Nesting Baseline System<br/>Enhanced baseline calculation,<br/>mixed font-size alignment"]
+S["Ligature Shaping Compatibility<br/>Feature compatibility checking,<br/>cross-boundary ligature preservation"]
 end
-subgraph "CSS Variables and Calc System"
-N["CssVariableResolver<br/>var(--name, fallback) resolution"]
-O["CssCalcEvaluator<br/>calc() expression evaluation"]
-P["CssCustomProperties<br/>Custom property store and inheritance"]
-Q["CssValueResolver<br/>Combined var() and calc() support"]
-end
-subgraph "Flutter Rendering Pipeline"
-R["AnimatedSvgPainter<br/>Enhanced text painting logic"]
-S["Advanced Text Styles<br/>x,y,dx,dy,rotate + 53 CSS properties"]
-T["Sophisticated Typography<br/>Vertical text, combining,<br/>emphasis marks, ruby text"]
-U["Independent Text Chunks<br/>tspan absolute positioning,<br/>chunkCharIndex management"]
+subgraph "Advanced Hit-Testing System"
+T["Per-Character Hit Testing<br/>Individual bounding boxes,<br/>rotation-aware hit regions"]
+U["Independent Chunk Management<br/>tspan absolute positioning,<br/>per-chunk text-anchor calculations"]
 V["Intelligent Text Length<br/>Conflict resolution,<br/>explicit position handling"]
-W["Per-Character Hit Testing<br/>Individual bounding boxes,<br/>rotation-aware hit regions"]
-X["Enhanced TextPath Rendering<br/>Align and stretch modes,<br/>overflow handling, endpoint clamping"]
-Y["Text Rendering Optimization<br/>Cache system, performance hints,<br/>text-rendering modes"]
-Z["Enhanced Text-Indent System<br/>Comprehensive unit support,<br/>inheritance patterns, mixed font-size alignment"]
-AA["Hanging Punctuation System<br/>First/last/force-end/allow-end modes,<br/>CJK punctuation support"]
-BB["Deep Nesting Baseline System<br/>Enhanced baseline calculation,<br/>mixed font-size alignment"]
-CC["Ligature Shaping Compatibility<br/>Feature compatibility checking,<br/>cross-boundary ligature preservation"]
 end
 A --> B
 B --> C
@@ -141,14 +129,14 @@ B --> D
 C --> E
 D --> E
 E --> F
-F --> R
-G --> R
-H --> R
-I --> R
-J --> K
+F --> L
+G --> L
+H --> L
+I --> L
+J --> L
 K --> L
 L --> M
-M --> R
+M --> N
 N --> O
 O --> P
 P --> Q
@@ -157,13 +145,6 @@ R --> S
 S --> T
 T --> U
 U --> V
-V --> W
-W --> X
-X --> Y
-Y --> Z
-Z --> AA
-AA --> BB
-BB --> CC
 ```
 
 **Diagram sources**
@@ -172,11 +153,11 @@ BB --> CC
 - [SVGTextPathElement.h:29-42](file://blink-b87d44f-Source-core-svg/SVGTextPathElement.h#L29-L42)
 - [SVGTRefElement.cpp:134-148](file://blink-b87d44f-Source-core-svg/SVGTRefElement.cpp#L134-L148)
 - [SVGFontData.cpp:71-130](file://blink-b87d44f-Source-core-svg/SVGFontData.cpp#L71-L130)
-- [animated_svg_painter.dart:350-351](file://lib/src/animation/animated_svg_painter.dart#L350-L351)
-- [animated_svg_painter_text_style_positioning.dart:228-241](file://lib/src/animation/animated_svg_painter_text_style_positioning.dart#L228-L241)
-- [animated_svg_painter_text_paint.dart:475-526](file://lib/src/animation/animated_svg_painter_text_paint.dart#L475-L526)
-- [animated_svg_painter_text_style_layout.dart:445-502](file://lib/src/animation/animated_svg_painter_text_style_layout.dart#L445-L502)
-- [animated_svg_painter_text_style_font.dart:340-381](file://lib/src/animation/animated_svg_painter_text_style_font.dart#L340-L381)
+- [animated_svg_painter.dart:40-55](file://lib/src/animation/animated_svg_painter.dart#L40-L55)
+- [animated_svg_painter_text_positioning.dart:1-10](file://lib/src/animation/animated_svg_painter_text_positioning.dart#L1-L10)
+- [animated_svg_painter_text_measurement.dart:1-10](file://lib/src/animation/animated_svg_painter_text_measurement.dart#L1-L10)
+- [animated_svg_painter_text_layout_render.dart:1-10](file://lib/src/animation/animated_svg_painter_text_layout_render.dart#L1-L10)
+- [animated_svg_painter_text_paint.dart:1-4](file://lib/src/animation/animated_svg_painter_text_paint.dart#L1-L4)
 
 **Section sources**
 - [SVGTextPositioningElement.h:21-53](file://blink-b87d44f-Source-core-svg/SVGTextPositioningElement.h#L21-L53)
@@ -184,11 +165,7 @@ BB --> CC
 - [SVGTextPathElement.h:1-152](file://blink-b87d44f-Source-core-svg/SVGTextPathElement.h#L1-L152)
 - [SVGTRefElement.cpp:134-148](file://blink-b87d44f-Source-core-svg/SVGTRefElement.cpp#L134-L148)
 - [SVGFontData.cpp:71-130](file://blink-b87d44f-Source-core-svg/SVGFontData.cpp#L71-L130)
-- [animated_svg_painter.dart:350-351](file://lib/src/animation/animated_svg_painter.dart#L350-L351)
-- [animated_svg_painter_text_style_positioning.dart:228-241](file://lib/src/animation/animated_svg_painter_text_style_positioning.dart#L228-L241)
-- [animated_svg_painter_text_paint.dart:475-526](file://lib/src/animation/animated_svg_painter_text_paint.dart#L475-L526)
-- [animated_svg_painter_text_style_layout.dart:445-502](file://lib/src/animation/animated_svg_painter_text_style_layout.dart#L445-L502)
-- [animated_svg_painter_text_style_font.dart:340-381](file://lib/src/animation/animated_svg_painter_text_style_font.dart#L340-L381)
+- [animated_svg_painter.dart:40-55](file://lib/src/animation/animated_svg_painter.dart#L40-L55)
 
 ## Core Components
 This section outlines the primary components involved in text positioning and CSS styling:
@@ -235,11 +212,7 @@ Key responsibilities:
 - [SVGTextPathElement.h:29-42](file://blink-b87d44f-Source-core-svg/SVGTextPathElement.h#L29-L42)
 - [SVGTRefElement.cpp:134-148](file://blink-b87d44f-Source-core-svg/SVGTRefElement.cpp#L134-L148)
 - [SVGFontData.cpp:71-130](file://blink-b87d44f-Source-core-svg/SVGFontData.cpp#L71-L130)
-- [animated_svg_painter.dart:350-351](file://lib/src/animation/animated_svg_painter.dart#L350-L351)
-- [animated_svg_painter_text_style_positioning.dart:228-241](file://lib/src/animation/animated_svg_painter_text_style_positioning.dart#L228-L241)
-- [animated_svg_painter_text_paint.dart:475-526](file://lib/src/animation/animated_svg_painter_text_paint.dart#L475-L526)
-- [animated_svg_painter_text_style_layout.dart:445-502](file://lib/src/animation/animated_svg_painter_text_style_layout.dart#L445-L502)
-- [animated_svg_painter_text_style_font.dart:340-381](file://lib/src/animation/animated_svg_painter_text_style_font.dart#L340-L381)
+- [animated_svg_painter.dart:40-55](file://lib/src/animation/animated_svg_painter.dart#L40-L55)
 
 ## Architecture Overview
 The enhanced text positioning and styling pipeline follows a comprehensive flow from attribute parsing to advanced CSS property resolution and canvas drawing with robust unit conversion and inheritance patterns:
@@ -1001,7 +974,7 @@ The enhanced system provides comprehensive support for vertical writing modes wi
 **Updated** Comprehensive vertical writing modes support with dedicated rendering pipeline, 90-degree character rotation, vertical stacking with proper spacing, enhanced baseline calculations for vertical contexts, and internationalization support for CJK and other scripts.
 
 **Section sources**
-- [animated_svg_painter.dart:350-351](file://lib/src/animation/animated_svg_painter.dart#L350-L351)
+- [animated_svg_painter.dart:40-55](file://lib/src/animation/animated_svg_painter.dart#L40-L55)
 - [animated_svg_painter_text_style_positioning.dart:15-33](file://lib/src/animation/animated_svg_painter_text_style_positioning.dart#L15-L33)
 - [animated_svg_painter_text_style_positioning.dart:228-241](file://lib/src/animation/animated_svg_painter_text_style_positioning.dart#L228-L241)
 - [animated_svg_painter_text_paint.dart:475-526](file://lib/src/animation/animated_svg_painter_text_paint.dart#L475-L526)
@@ -1361,7 +1334,7 @@ Common issues and resolutions with the enhanced feature set and robust fallback 
 - [animated_svg_painter_text_style_positioning.dart:120-147](file://lib/src/animation/animated_svg_painter_text_style_positioning.dart#L120-L147)
 - [animated_svg_painter_text_style_font.dart:105-116](file://lib/src/animation/animated_svg_painter_text_style_font.dart#L105-L116)
 - [animated_svg_painter_text_style_rendering.dart:94-148](file://lib/src/animation/animated_svg_painter_text_style_rendering.dart#L94-L148)
-- [animated_svg_painter.dart:350-351](file://lib/src/animation/animated_svg_painter.dart#L350-L351)
+- [animated_svg_painter.dart:40-55](file://lib/src/animation/animated_svg_painter.dart#L40-L55)
 - [animated_svg_painter_text_style_positioning.dart:228-241](file://lib/src/animation/animated_svg_painter_text_style_positioning.dart#L228-L241)
 - [animated_svg_painter_text_paint.dart:475-526](file://lib/src/animation/animated_svg_painter_text_paint.dart#L475-L526)
 - [css_variables_calc.dart:100-173](file://lib/src/animation/css_variables_calc.dart#L100-L173)

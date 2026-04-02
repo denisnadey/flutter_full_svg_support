@@ -26,6 +26,7 @@
 - [svg_filters_registry_outputs.dart](file://lib/src/animation/svg_filters_registry_outputs.dart)
 - [svg_parser_filters.dart](file://lib/src/animation/svg_parser_filters.dart)
 - [svg_parser_filters_lighting.dart](file://lib/src/animation/svg_parser_filters_lighting.dart)
+- [animated_svg_painter_values.dart](file://lib/src/animation/animated_svg_painter_values.dart)
 - [filter_component_transfer_test.dart](file://test/animation/filter_component_transfer_test.dart)
 - [filter_advanced_graph_test.dart](file://test/animation/filter_advanced_graph_test.dart)
 - [filter_input_graph_hardening_test.dart](file://test/animation/filter_input_graph_hardening_test.dart)
@@ -34,6 +35,8 @@
 - [fe_convolve_matrix_test.dart](file://test/animation/fe_convolve_matrix_test.dart)
 - [filter_displacement_tile_test.dart](file://test/animation/filter_displacement_tile_test.dart)
 - [filter_primitive_edge_cases_test.dart](file://test/animation/filter_primitive_edge_cases_test.dart)
+- [component_transfer_functions_test.dart](file://test/animation/component_transfer_functions_test.dart)
+- [css_compositing_properties_test.dart](file://test/animation/css_compositing_properties_test.dart)
 - [SVGFEComponentTransferElement.cpp](file://blink-b87d44f-Source-core-svg/SVGFEComponentTransferElement.cpp)
 - [SVGFEComponentTransferElement.h](file://blink-b87d44f-Source-core-svg/SVGFEComponentTransferElement.h)
 - [SVGFEDisplacementMapElement.cpp](file://blink-b87d44f-Source-core-svg/SVGFEDisplacementMapElement.cpp)
@@ -46,162 +49,239 @@
 
 ## Update Summary
 **Changes Made**
-- Enhanced lighting filter primitives with comprehensive 3D vector mathematics and advanced surface normal computation
-- Implemented sophisticated Sobel-like kernel-based surface normal calculation with multiple edge mode support
-- Added specialized light source implementations including distant, point, and spot light sources with realistic physics
-- Expanded lighting system with per-pixel processing capabilities and kernel unit length scaling
-- Enhanced filter pipeline with improved lighting primitive integration and edge handling modes
+- Enhanced GaussianBlurProcessor with lookup table-based color space transformations for automatic sRGB-to-linearRGB conversion
+- Added comprehensive color-interpolation-filters support with automatic color space handling
+- Implemented improved component transfer functions with lookup table optimization and linear-only color matrix generation
+- Enhanced filter pipeline integration with automatic color space detection and conversion
+- Added specialized paint passes for color space conversion and lookup table processing
 
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
-5. [Enhanced Lighting System](#enhanced-lighting-system)
-6. [Advanced Surface Normal Computation](#advanced-surface-normal-computation)
-7. [Specialized Light Source Implementations](#specialized-light-source-implementations)
-8. [Per-Pixel Lighting Processing](#per-pixel-lighting-processing)
-9. [Enhanced Displacement Map System](#enhanced-displacement-map-system)
-10. [Advanced Tile Primitive Implementation](#advanced-tile-primitive-implementation)
-11. [Enhanced Color Matrix Operations](#enhanced-color-matrix-operations)
-12. [Enhanced Filter Registry Pipeline](#enhanced-filter-registry-pipeline)
-13. [Enhanced Component Transfer Functions](#enhanced-component-transfer-functions)
-14. [Built-in Filter Primitives](#built-in-filter-primitives)
-15. [Filter Animation Support](#filter-animation-support)
-16. [Comprehensive Testing Framework](#comprehensive-testing-framework)
-17. [Performance Optimizations](#performance-optimizations)
-18. [Troubleshooting Guide](#troubleshooting-guide)
-19. [Conclusion](#conclusion)
-20. [Appendices](#appendices)
+5. [Enhanced Color Space Processing](#enhanced-color-space-processing)
+6. [Automatic sRGB-to-linearRGB Conversion](#automatic-srgb-to-linearrgb-conversion)
+7. [Lookup Table-Based Color Transformations](#lookup-table-based-color-transformations)
+8. [Enhanced Component Transfer Functions](#enhanced-component-transfer-functions)
+9. [Improved GaussianBlurProcessor](#improved-gaussianblurprocessor)
+10. [Filter Pipeline Integration](#filter-pipeline-integration)
+11. [Enhanced Lighting System](#enhanced-lighting-system)
+12. [Advanced Surface Normal Computation](#advanced-surface-normal-computation)
+13. [Specialized Light Source Implementations](#specialized-light-source-implementations)
+14. [Per-Pixel Lighting Processing](#per-pixel-lighting-processing)
+15. [Enhanced Displacement Map System](#enhanced-displacement-map-system)
+16. [Advanced Tile Primitive Implementation](#advanced-tile-primitive-implementation)
+17. [Enhanced Color Matrix Operations](#enhanced-color-matrix-operations)
+18. [Enhanced Filter Registry Pipeline](#enhanced-filter-registry-pipeline)
+19. [Built-in Filter Primitives](#built-in-filter-primitives)
+20. [Filter Animation Support](#filter-animation-support)
+21. [Comprehensive Testing Framework](#comprehensive-testing-framework)
+22. [Performance Optimizations](#performance-optimizations)
+23. [Troubleshooting Guide](#troubleshooting-guide)
+24. [Conclusion](#conclusion)
+25. [Appendices](#appendices)
 
 ## Introduction
-This document explains the enhanced SVG filter system and effects implemented in the codebase. The system has been comprehensively upgraded with advanced lighting calculations featuring sophisticated 3D vector mathematics, comprehensive surface normal computation using Sobel-like kernels, multiple edge mode support, and specialized light source implementations. The enhanced system now provides realistic lighting models with per-pixel processing capabilities, advanced kernel unit length scaling, and comprehensive edge handling modes including duplicate, wrap, and none modes. Recent enhancements include sophisticated lighting system architecture with dedicated processors, improved surface normal computation with proper boundary handling, and expanded testing coverage validating all lighting primitive types and edge cases.
+This document explains the enhanced SVG filter system and effects implemented in the codebase. The system has been comprehensively upgraded with advanced color space processing capabilities, automatic sRGB-to-linearRGB conversion, lookup table-based color transformations, and improved filter pipeline integration. The enhanced system now provides sophisticated color interpolation support through color-interpolation-filters property, comprehensive component transfer optimization with lookup tables, and intelligent color space conversion for accurate color processing in filter chains.
 
 ## Project Structure
-The enhanced filter system is organized around comprehensive lighting calculations, advanced surface normal computation, specialized light source modeling, and sophisticated per-pixel processing:
+The enhanced filter system is organized around comprehensive color space processing, lookup table optimization, and sophisticated filter pipeline integration:
 
 ```mermaid
 graph TB
-subgraph "Enhanced Lighting System Architecture"
-LightingSystem["Enhanced Lighting System<br/>3D vector mathematics, surface normal computation, light sources"]
-VectorMath["3D Vector Mathematics<br/>LightingVector3 class, vector operations"]
-SurfaceNormal["Surface Normal Computation<br/>Sobel-like kernels, edge handling modes"]
-LightSources["Light Source Implementations<br/>Distant, Point, Spot light sources"]
-LightingProcessor["LightingProcessor<br/>Per-pixel lighting calculations"]
+subgraph "Enhanced Color Space Processing"
+ColorSpace["Color Space Processing<br/>Automatic sRGB-to-linearRGB conversion"]
+LookupTables["Lookup Tables<br/>Precomputed color transformations"]
+ColorInterpolation["Color Interpolation<br/>color-interpolation-filters support"]
+PipelineIntegration["Pipeline Integration<br/>Automatic color space detection"]
 end
-subgraph "Advanced Surface Normal Computation"
-SobelKernels["Sobel Kernels<br/>Gradient estimation, convolution operators"]
-EdgeModes["Edge Modes<br/>duplicate, wrap, none boundary handling"]
-KernelScaling["Kernel Unit Length Scaling<br/>surfaceScale, factor calculations"]
-NormalCalculation["Normal Calculation<br/>-surfaceScale * dN/dx, -surfaceScale * dN/dy, 1"]
+subgraph "Enhanced Component Transfer"
+ComponentTransfer["Component Transfer<br/>Lookup table optimization, linear-only matrices"]
+TransferFunctions["Transfer Functions<br/>Identity, linear, gamma, table, discrete"]
+LookupOptimization["Lookup Optimization<br/>Cached pre-computed tables"]
+ColorMatrixGeneration["Color Matrix Generation<br/>Linear-only transforms to ColorFilter"]
 end
-subgraph "Specialized Light Sources"
-DistantLight["Distant Light<br/>azimuth, elevation angles, constant direction"]
-PointLight["Point Light<br/>3D positioning, distance attenuation"]
-SpotLight["Spot Light<br/>cone attenuation, limiting angle, specular exponent"]
-LightCalculators["Light Calculators<br/>_DistantLightCalculator, _PointLightCalculator, _SpotLightCalculator"]
+subgraph "Improved GaussianBlurProcessor"
+BlurProcessor["GaussianBlurProcessor<br/>Lookup table-based color space transformations"]
+ColorConversion["Color Conversion<br/>sRGB↔linearRGB conversion"]
+BoxBlurApproximation["Box Blur Approximation<br/>3-pass approximation for large sigma"]
+EdgeModeHandling["Edge Mode Handling<br/>Proper boundary pixel processing"]
 end
-subgraph "Per-Pixel Processing"
-LightingModels["Lighting Models<br/>Diffuse (Lambert), Specular (Blinn-Phong)"]
-ColorFilters["Color Filter Generation<br/>Average intensity approximation"]
-PreviewSampling["Preview Sampling<br/>LightingSampler for color previews"]
+subgraph "Filter Pipeline Integration"
+PipelineDetection["Pipeline Detection<br/>Automatic color space determination"]
+SpecializedPasses["Specialized Passes<br/>Color space conversion and lookup processing"]
+FilterChain["Filter Chain<br/>Multi-hop color space handling"]
 end
-LightingSystem --> VectorMath
-LightingSystem --> SurfaceNormal
-LightingSystem --> LightSources
-LightingSystem --> LightingProcessor
-SurfaceNormal --> SobelKernels
-SurfaceNormal --> EdgeModes
-SurfaceNormal --> KernelScaling
-SurfaceNormal --> NormalCalculation
-LightSources --> DistantLight
-LightSources --> PointLight
-LightSources --> SpotLight
-LightSources --> LightCalculators
-LightingProcessor --> LightingModels
-LightingProcessor --> ColorFilters
-LightingProcessor --> PreviewSampling
+ColorSpace --> LookupTables
+ColorSpace --> ColorInterpolation
+ColorSpace --> PipelineIntegration
+ComponentTransfer --> TransferFunctions
+ComponentTransfer --> LookupOptimization
+ComponentTransfer --> ColorMatrixGeneration
+BlurProcessor --> ColorConversion
+BlurProcessor --> BoxBlurApproximation
+BlurProcessor --> EdgeModeHandling
+PipelineIntegration --> SpecializedPasses
+PipelineIntegration --> FilterChain
 ```
 
 **Diagram sources**
-- [svg_filters_primitives_lighting_common.dart:16-65](file://lib/src/animation/svg_filters_primitives_lighting_common.dart#L16-L65)
-- [svg_filters_primitives_lighting_common.dart:75-230](file://lib/src/animation/svg_filters_primitives_lighting_common.dart#L75-L230)
-- [svg_filters_primitives_lighting_sources.dart:151-172](file://lib/src/animation/svg_filters_primitives_lighting_sources.dart#L151-L172)
-- [svg_filters_primitives_lighting_sources.dart:180-250](file://lib/src/animation/svg_filters_primitives_lighting_sources.dart#L180-L250)
-- [svg_filters_primitives_lighting_sources.dart:257-333](file://lib/src/animation/svg_filters_primitives_lighting_sources.dart#L257-L333)
-- [svg_filters_primitives_lighting_processor.dart:99-276](file://lib/src/animation/svg_filters_primitives_lighting_processor.dart#L99-L276)
-- [svg_filters_primitives_lighting_diffuse.dart:7-48](file://lib/src/animation/svg_filters_primitives_lighting_diffuse.dart#L7-L48)
-- [svg_filters_primitives_lighting_specular.dart:9-64](file://lib/src/animation/svg_filters_primitives_lighting_specular.dart#L9-L64)
+- [svg_filters_primitives_blur.dart:452-511](file://lib/src/animation/svg_filters_primitives_blur.dart#L452-L511)
+- [svg_filters_primitives_component_transfer.dart:140-159](file://lib/src/animation/svg_filters_primitives_component_transfer.dart#L140-L159)
+- [svg_filters_primitives_component_transfer.dart:223-276](file://lib/src/animation/svg_filters_primitives_component_transfer.dart#L223-L276)
+- [animated_svg_painter_values.dart:468-481](file://lib/src/animation/animated_svg_painter_values.dart#L468-L481)
 
 **Section sources**
-- [svg_filters_primitives_lighting_common.dart:1-231](file://lib/src/animation/svg_filters_primitives_lighting_common.dart#L1-L231)
-- [svg_filters_primitives_lighting_sources.dart:1-334](file://lib/src/animation/svg_filters_primitives_lighting_sources.dart#L1-L334)
-- [svg_filters_primitives_lighting_processor.dart:1-378](file://lib/src/animation/svg_filters_primitives_lighting_processor.dart#L1-L378)
-- [svg_filters_primitives_lighting_diffuse.dart:1-49](file://lib/src/animation/svg_filters_primitives_lighting_diffuse.dart#L1-L49)
-- [svg_filters_primitives_lighting_specular.dart:1-65](file://lib/src/animation/svg_filters_primitives_lighting_specular.dart#L1-L65)
-- [svg_filters_primitives_lighting.dart:1-348](file://lib/src/animation/svg_filters_primitives_lighting.dart#L1-L348)
+- [svg_filters_primitives_blur.dart:1-745](file://lib/src/animation/svg_filters_primitives_blur.dart#L1-L745)
+- [svg_filters_primitives_component_transfer.dart:1-345](file://lib/src/animation/svg_filters_primitives_component_transfer.dart#L1-L345)
+- [animated_svg_painter_values.dart:468-481](file://lib/src/animation/animated_svg_painter_values.dart#L468-L481)
 
 ## Core Components
-The enhanced lighting system introduces several key components with advanced functionality:
+The enhanced filter system introduces several key components with advanced color space processing and optimization capabilities:
 
-**Enhanced Lighting System**: Comprehensive 3D vector mathematics with the LightingVector3 class providing complete vector operations including length calculation, normalization, dot product, cross product, and arithmetic operations with proper numerical stability and edge case handling.
+**Enhanced Color Space Processing**: Automatic sRGB-to-linearRGB conversion with lookup table optimization, supporting the color-interpolation-filters property for accurate color processing in filter chains.
 
-**Advanced Surface Normal Computation**: Sophisticated Sobel-like convolution kernel implementation for gradient estimation with proper edge mode handling (duplicate, wrap, none) and kernel unit length scaling for accurate surface normal calculation from alpha channels.
+**Lookup Table Optimization**: Pre-computed lookup tables for component transfer functions and color space conversions, providing significant performance improvements for repeated color transformations.
 
-**Specialized Light Source Implementations**: Comprehensive light source support including distant light with azimuth/elevation angles, point light with 3D positioning and optional distance attenuation, and spot light with cone attenuation and limiting angle control.
+**Enhanced Component Transfer Functions**: Sophisticated transfer function processing with lookup table caching, linear-only color matrix generation, and specialized paint passes for complex transformations.
 
-**Per-Pixel Lighting Processing**: Advanced per-pixel lighting calculations implementing realistic lighting models using established reflection equations with proper vector normalization and intensity computation.
+**Improved GaussianBlurProcessor**: Advanced blur processing with automatic color space conversion, lookup table-based transformations, and optimized edge mode handling.
 
-**Enhanced Edge Mode Support**: Multiple edge handling modes for surface normal computation including duplicate (Blink default), wrap (modulus wrapping), and none (transparent black) modes for border pixel handling.
+**Filter Pipeline Integration**: Intelligent color space detection and automatic conversion throughout filter chains, ensuring consistent color processing across multiple filter operations.
 
 **Section sources**
-- [svg_filters_primitives_lighting_common.dart:16-65](file://lib/src/animation/svg_filters_primitives_lighting_common.dart#L16-L65)
-- [svg_filters_primitives_lighting_common.dart:75-230](file://lib/src/animation/svg_filters_primitives_lighting_common.dart#L75-L230)
-- [svg_filters_primitives_lighting_sources.dart:151-333](file://lib/src/animation/svg_filters_primitives_lighting_sources.dart#L151-L333)
-- [svg_filters_primitives_lighting_processor.dart:99-276](file://lib/src/animation/svg_filters_primitives_lighting_processor.dart#L99-L276)
+- [svg_filters_primitives_blur.dart:452-511](file://lib/src/animation/svg_filters_primitives_blur.dart#L452-L511)
+- [svg_filters_primitives_component_transfer.dart:140-159](file://lib/src/animation/svg_filters_primitives_component_transfer.dart#L140-L159)
+- [svg_filters_primitives_component_transfer.dart:223-276](file://lib/src/animation/svg_filters_primitives_component_transfer.dart#L223-L276)
+- [animated_svg_painter_values.dart:468-481](file://lib/src/animation/animated_svg_painter_values.dart#L468-L481)
 
 ## Architecture Overview
-The enhanced lighting system architecture provides sophisticated lighting calculations with comprehensive 3D vector mathematics, advanced surface normal computation, and specialized light source modeling. The system now includes per-pixel processing capabilities with realistic lighting models, kernel unit length scaling, and comprehensive edge case management.
+The enhanced filter system architecture provides sophisticated color space processing with automatic sRGB-to-linearRGB conversion, lookup table optimization, and comprehensive filter pipeline integration. The system now includes intelligent color space detection, automatic conversion handling, and optimized processing paths for both simple and complex filter chains.
 
 ```mermaid
 sequenceDiagram
 participant Parser as "SVG Parser"
-participant LightingSystem as "Enhanced Lighting System"
-participant VectorMath as "3D Vector Mathematics"
-participant SurfaceNormal as "Surface Normal Computation"
-participant LightSources as "Light Source Models"
-participant LightingProcessor as "Per-Pixel Lighting Processor"
-participant LightingModels as "Lighting Models"
-Parser->>LightingSystem : "parse lighting filters"
-LightingSystem->>VectorMath : "initialize LightingVector3"
-VectorMath->>VectorMath : "vector operations, normalization"
-LightingSystem->>SurfaceNormal : "setup _SurfaceNormalCalculator"
-SurfaceNormal->>SurfaceNormal : "Sobel kernel computation"
-SurfaceNormal->>SurfaceNormal : "edge mode handling"
-LightingSystem->>LightSources : "parse light source types"
-LightSources->>LightSources : "distant, point, spot light models"
-LightingSystem->>LightingProcessor : "create LightingProcessor"
-LightingProcessor->>LightingModels : "apply lighting calculations"
-LightingModels->>LightingModels : "diffuse (Lambert) & specular (Blinn-Phong)"
-LightingProcessor-->>Parser : "processed lighting results"
+participant Pipeline as "Filter Pipeline"
+participant ColorSpace as "Color Space Processor"
+participant ComponentTransfer as "Component Transfer"
+participant BlurProcessor as "GaussianBlurProcessor"
+participant LookupTables as "Lookup Tables"
+Parser->>Pipeline : "parse filter chain"
+Pipeline->>ColorSpace : "detect color-interpolation-filters"
+ColorSpace->>LookupTables : "load precomputed tables"
+Pipeline->>ComponentTransfer : "process component transfer"
+ComponentTransfer->>LookupTables : "use cached lookup tables"
+Pipeline->>BlurProcessor : "apply blur with color space"
+BlurProcessor->>LookupTables : "convert colors using lookup tables"
+BlurProcessor-->>Pipeline : "return processed results"
+Pipeline-->>Parser : "optimized filter chain"
 ```
 
 **Diagram sources**
-- [svg_filters_primitives_lighting_common.dart:16-65](file://lib/src/animation/svg_filters_primitives_lighting_common.dart#L16-L65)
-- [svg_filters_primitives_lighting_common.dart:75-230](file://lib/src/animation/svg_filters_primitives_lighting_common.dart#L75-L230)
-- [svg_filters_primitives_lighting_sources.dart:151-333](file://lib/src/animation/svg_filters_primitives_lighting_sources.dart#L151-L333)
-- [svg_filters_primitives_lighting_processor.dart:99-276](file://lib/src/animation/svg_filters_primitives_lighting_processor.dart#L99-L276)
+- [svg_filters_primitives_blur.dart:452-511](file://lib/src/animation/svg_filters_primitives_blur.dart#L452-L511)
+- [svg_filters_primitives_component_transfer.dart:210-221](file://lib/src/animation/svg_filters_primitives_component_transfer.dart#L210-L221)
+- [svg_filters_registry_pipeline.dart:178-186](file://lib/src/animation/svg_filters_registry_pipeline.dart#L178-L186)
+
+## Enhanced Color Space Processing
+The enhanced color space processing system provides automatic sRGB-to-linearRGB conversion with lookup table optimization and comprehensive color interpolation support.
+
+**Automatic Color Space Detection**: The system automatically detects color-interpolation-filters property values and determines whether filters should operate in linearRGB or sRGB color space. By default, filters operate in linearRGB per SVG specification.
+
+**Lookup Table Optimization**: Pre-computed lookup tables provide efficient color space conversion with 256-entry tables for both sRGB-to-linearRGB and linearRGB-to-sRGB transformations, eliminating expensive mathematical calculations during runtime processing.
+
+**Color Interpolation Support**: Comprehensive support for the color-interpolation-filters property, allowing precise control over color space processing in filter chains with automatic conversion handling.
+
+**Section sources**
+- [svg_filters_primitives_blur.dart:452-511](file://lib/src/animation/svg_filters_primitives_blur.dart#L452-L511)
+- [animated_svg_painter_values.dart:468-481](file://lib/src/animation/animated_svg_painter_values.dart#L468-L481)
+
+## Automatic sRGB-to-linearRGB Conversion
+The automatic color space conversion system provides seamless sRGB-to-linearRGB transformation with lookup table optimization and intelligent pipeline integration.
+
+**Lookup Table Implementation**: Two pre-computed lookup tables provide efficient color conversion:
+- `_srgbToLinearLut`: 256-entry Float64List for sRGB-to-linearRGB conversion
+- `_linearToSrgbLut`: 256-entry Uint8List for linearRGB-to-sRGB conversion
+
+**Conversion Algorithms**: Mathematical formulas for accurate color space conversion:
+- sRGB to linearRGB: piecewise function with threshold at 0.04045
+- linearRGB to sRGB: inverse piecewise function with threshold at 0.0031308
+
+**Pipeline Integration**: Automatic color space conversion integrated into filter processing, ensuring accurate color reproduction throughout filter chains without manual intervention.
+
+**Section sources**
+- [svg_filters_primitives_blur.dart:462-483](file://lib/src/animation/svg_filters_primitives_blur.dart#L462-L483)
+- [svg_filters_primitives_blur.dart:487-511](file://lib/src/animation/svg_filters_primitives_blur.dart#L487-L511)
+
+## Lookup Table-Based Color Transformations
+The lookup table system provides optimized color transformations with caching and efficient processing for component transfer functions and color space conversions.
+
+**Component Transfer Lookup Tables**: Each component transfer filter caches pre-computed lookup tables for R, G, B, and A channels, eliminating repeated mathematical calculations during pixel processing.
+
+**Table Generation**: Lookup tables are generated with 256 entries (one for each possible 8-bit color value) and cached for performance optimization, with lazy initialization on first access.
+
+**Linear-Only Optimization**: The system can generate ColorFilter matrices for linear-only component transfer functions, bypassing pixel-by-pixel processing for improved performance.
+
+**Specialized Paint Passes**: Complex transfer functions (table, discrete, gamma) use specialized paint passes with lookup table processing for optimal performance.
+
+**Section sources**
+- [svg_filters_primitives_component_transfer.dart:140-159](file://lib/src/animation/svg_filters_primitives_component_transfer.dart#L140-L159)
+- [svg_filters_primitives_component_transfer.dart:210-221](file://lib/src/animation/svg_filters_primitives_component_transfer.dart#L210-L221)
+- [svg_filters_primitives_component_transfer.dart:223-276](file://lib/src/animation/svg_filters_primitives_component_transfer.dart#L223-L276)
+
+## Enhanced Component Transfer Functions
+The enhanced component transfer system provides comprehensive transfer function implementations with lookup table optimization and linear-only color matrix generation.
+
+**Transfer Function Types**: Five distinct types - identity (no change), linear (C' = slope * C + intercept), gamma (C' = amplitude * pow(C, exponent) + offset), table (piecewise linear interpolation), and discrete (step function) - each with proper parameter validation and clamping.
+
+**Lookup Table Caching**: Pre-computed lookup tables are cached and reused for performance optimization, with lazy initialization on first access to minimize memory usage.
+
+**Linear-Only Color Matrix Generation**: When all channels use identity or linear transforms, the system generates optimized ColorFilter matrices instead of pixel-by-pixel processing, leveraging GPU acceleration.
+
+**Specialized Processing Paths**: Complex transfer functions trigger specialized paint passes with lookup table processing for optimal performance and accuracy.
+
+**Section sources**
+- [svg_filters_primitives_component_transfer.dart:1-345](file://lib/src/animation/svg_filters_primitives_component_transfer.dart#L1-L345)
+
+## Improved GaussianBlurProcessor
+The improved GaussianBlurProcessor provides enhanced blur processing with automatic color space conversion, lookup table optimization, and advanced edge mode handling.
+
+**Lookup Table-Based Color Conversion**: The processor uses pre-computed lookup tables for sRGB-to-linearRGB and linearRGB-to-sRGB conversions, eliminating expensive mathematical calculations during blur processing.
+
+**Automatic Color Space Detection**: The processor automatically detects when color space conversion is needed based on the color-interpolation-filters property and applies appropriate conversions before and after blur processing.
+
+**Box Blur Approximation**: For large standard deviations (>50), the processor uses 3-pass box blur approximation (3 consecutive box blurs) to achieve Gaussian blur behavior while maintaining performance.
+
+**Edge Mode Optimization**: Enhanced edge mode handling with proper boundary pixel processing for duplicate, wrap, and none modes, utilizing lookup tables for efficient coordinate calculations.
+
+**Section sources**
+- [svg_filters_primitives_blur.dart:95-512](file://lib/src/animation/svg_filters_primitives_blur.dart#L95-L512)
+
+## Filter Pipeline Integration
+The enhanced filter pipeline provides intelligent color space detection and automatic conversion handling throughout filter chains.
+
+**Named Result Caching**: Enhanced caching with unmodifiable views prevents accidental mutation while enabling result sharing between references. The `_cacheNamedResult` method returns immutable lists to protect cached results.
+
+**Color Space Propagation**: Color space information is propagated through filter chains, ensuring consistent color processing across multiple filter operations with automatic conversion handling.
+
+**Specialized Paint Passes**: The pipeline creates specialized paint passes for complex operations requiring color space conversion or lookup table processing, optimizing performance while maintaining accuracy.
+
+**Circular Reference Prevention**: Enhanced circular reference detection with depth tracking and reference state management prevents infinite loops and stack overflows in complex filter graphs.
+
+**Section sources**
+- [svg_filters_registry_pipeline.dart:178-186](file://lib/src/animation/svg_filters_registry_pipeline.dart#L178-L186)
+- [svg_filters_registry_pipeline_primitives_effects.dart:1-200](file://lib/src/animation/svg_filters_registry_pipeline_primitives_effects.dart#L1-L200)
 
 ## Enhanced Lighting System
 The enhanced lighting system provides comprehensive 3D vector mathematics and surface normal computation with realistic lighting models.
 
-**3D Vector Mathematics**: The LightingVector3 class implements complete 3D vector operations including length calculation, normalization, dot product, cross product, and arithmetic operations with proper numerical stability and edge case handling. The class provides vector arithmetic operations, comparison methods, and string representation for debugging purposes.
+**3D Vector Mathematics**: The LightingVector3 class implements complete 3D vector operations including length calculation, normalization, dot product, cross product, and arithmetic operations with proper numerical stability and edge case handling.
 
-**Surface Normal Computation**: Advanced Sobel operator implementation for gradient estimation with proper edge mode handling (duplicate, wrap, none) and kernel unit length scaling for accurate surface normal calculation from alpha channels. The system uses standard Sobel kernels for gradient estimation and constructs normals using the formula N = normalize(-surfaceScale * dN/dx, -surfaceScale * dN/dy, 1).
+**Surface Normal Computation**: Advanced Sobel operator implementation for gradient estimation with proper edge mode handling (duplicate, wrap, none) and kernel unit length scaling for accurate surface normal calculation from alpha channels.
 
-**Lighting Models**: Realistic lighting calculations using Lambertian diffuse reflection and Blinn-Phong specular reflection models with proper vector normalization and intensity computation. The system supports both diffuse and specular lighting with appropriate alpha channel handling.
+**Lighting Models**: Realistic lighting calculations using Lambertian diffuse reflection and Blinn-Phong specular reflection models with proper vector normalization and intensity computation.
 
-**Edge Mode Handling**: Enhanced edge mode support for surface normal computation including duplicate (Blink default), wrap (modulus wrapping), and none (transparent black) modes for border pixel handling. The edge handling ensures proper behavior when computing gradients at image boundaries.
+**Edge Mode Handling**: Enhanced edge mode support for surface normal computation including duplicate (Blink default), wrap (modulus wrapping), and none (transparent black) modes for border pixel handling.
 
 **Section sources**
 - [svg_filters_primitives_lighting_common.dart:16-65](file://lib/src/animation/svg_filters_primitives_lighting_common.dart#L16-L65)
@@ -329,21 +409,6 @@ The enhanced pipeline optimization system provides sophisticated filter chain re
 - [svg_filters_registry_pipeline_primitives_effects.dart:210-224](file://lib/src/animation/svg_filters_registry_pipeline_primitives_effects.dart#L210-L224)
 - [svg_filters_registry_pipeline_primitives_paint.dart:295-309](file://lib/src/animation/svg_filters_registry_pipeline_primitives_paint.dart#L295-L309)
 
-## Enhanced Component Transfer Functions
-The enhanced component transfer system provides comprehensive transfer function implementations with mathematical precision and optimized processing paths.
-
-**Transfer Function Types**: Five distinct types - identity (no change), linear (C' = slope * C + intercept), gamma (C' = amplitude * pow(C, exponent) + offset), table (piecewise linear interpolation), and discrete (step function) - each with proper parameter validation and clamping.
-
-**Mathematical Precision**: All functions implement proper mathematical formulas with input clamping to [0,1] and result clamping to [0,1]. Gamma functions handle edge cases like zero input correctly.
-
-**Identity Detection**: Sophisticated identity detection for optimization - linear functions with slope=1 and intercept=0, gamma functions with amplitude=1, exponent=1, and offset=0, and identity type functions.
-
-**Linear Optimization**: When all channels use identity or linear transforms, the system generates a color matrix instead of pixel-by-pixel processing, providing significant performance improvements.
-
-**Section sources**
-- [svg_filters_primitives_component_transfer.dart:27-86](file://lib/src/animation/svg_filters_primitives_component_transfer.dart#L27-L86)
-- [svg_filters_primitives_component_transfer.dart:135-197](file://lib/src/animation/svg_filters_primitives_component_transfer.dart#L135-L197)
-
 ## Built-in Filter Primitives
 The enhanced filter system includes comprehensive support for all major SVG filter primitives with specialized implementations and optimized processing paths.
 
@@ -380,29 +445,31 @@ The enhanced filter system provides comprehensive animation support for filter a
 ## Comprehensive Testing Framework
 The comprehensive testing framework validates the enhanced filter system with extensive scenarios covering all filter primitive types and edge cases.
 
-**Lighting System Testing**: Comprehensive validation of lighting calculations including surface normal computation, light source positioning, and color filter generation with multiple edge modes and kernel unit length configurations.
+**Color Space Testing**: Comprehensive validation of automatic sRGB-to-linearRGB conversion, lookup table accuracy, and color interpolation filtering behavior.
 
-**Edge Mode Validation**: Complete testing of edge handling modes including duplicate clamping, wrap modulus wrapping, and none transparent black behavior for border pixel computation.
+**Component Transfer Testing**: Extensive testing of lookup table generation, linear-only optimization, and specialized paint pass functionality.
 
-**Light Source Testing**: Extensive validation of all light source types including distant light azimuth/elevation calculations, point light 3D positioning and distance attenuation, and spot light cone attenuation and limiting angle control.
+**GaussianBlurProcessor Testing**: Validation of color space conversion accuracy, box blur approximation, and edge mode handling.
 
-**Per-Pixel Processing Testing**: Comprehensive testing of per-pixel lighting calculations with realistic lighting models, proper vector operations, and intensity computations.
+**Pipeline Integration Testing**: Testing of color space propagation through filter chains, automatic conversion detection, and specialized pass creation.
 
-**Kernel Unit Length Testing**: Validation of kernel unit length scaling with proper surfaceScale application and gradient normalization.
-
-**Preview Sampling Testing**: Testing of LightingSampler functionality for generating preview colors and testing lighting setups across multiple sample points.
+**Performance Testing**: Validation of lookup table caching benefits, linear-only optimization effectiveness, and overall system performance improvements.
 
 **Section sources**
-- [fe_lighting_test.dart:1-200](file://test/animation/fe_lighting_test.dart#L1-L200)
-- [fe_lighting_test.dart:1201-1546](file://test/animation/fe_lighting_test.dart#L1201-L1546)
-- [fe_lighting_test.dart:1496-1494](file://test/animation/fe_lighting_test.dart#L1496-L1494)
+- [css_compositing_properties_test.dart:193-238](file://test/animation/css_compositing_properties_test.dart#L193-L238)
+- [component_transfer_functions_test.dart:290-543](file://test/animation/component_transfer_functions_test.dart#L290-L543)
+- [filter_primitive_edge_cases_test.dart:350-396](file://test/animation/filter_primitive_edge_cases_test.dart#L350-L396)
 
 ## Performance Optimizations
 The enhanced filter system includes several performance optimizations and considerations:
 
-**Identity Detection**: Comprehensive identity detection for component transfer functions eliminates unnecessary processing for identity transforms.
+**Lookup Table Caching**: Pre-computed lookup tables for component transfer functions and color space conversions eliminate repeated mathematical calculations and provide significant performance improvements.
 
-**Color Matrix Optimization**: Linear-only transforms are processed using optimized color matrices instead of pixel-by-pixel operations, leveraging GPU acceleration.
+**Linear-Only Optimization**: When all component transfer functions are linear or identity, the system generates optimized ColorFilter matrices instead of pixel-by-pixel processing, leveraging GPU acceleration.
+
+**Color Space Conversion Optimization**: Lookup table-based color space conversion eliminates expensive mathematical calculations during blur processing and filter chain operations.
+
+**Box Blur Approximation**: For large standard deviations, the system uses 3-pass box blur approximation instead of computationally expensive Gaussian blur calculations.
 
 **Caching Mechanisms**: Enhanced named result caching with unmodifiable views prevents recomputation in complex filter chains with shared intermediate results.
 
@@ -412,124 +479,66 @@ The enhanced filter system includes several performance optimizations and consid
 
 **Arithmetic Optimization**: Intelligent arithmetic mode approximation reduces complex operations to simple blend modes and color filters.
 
-**Displacement Map Optimization**: Scale=0 optimization eliminates unnecessary displacement processing, and proper edge mode handling prevents expensive boundary computations.
-
-**Tiling Optimization**: Efficient tiling algorithms with modulus arithmetic and boundary condition optimization.
-
-**Lighting Optimization**: Average intensity approximation for ColorFilter-based lighting eliminates per-pixel processing overhead while maintaining visual quality.
-
 **Section sources**
-- [svg_filters_primitives_component_transfer.dart:74-86](file://lib/src/animation/svg_filters_primitives_component_transfer.dart#L74-L86)
+- [svg_filters_primitives_component_transfer.dart:140-159](file://lib/src/animation/svg_filters_primitives_component_transfer.dart#L140-L159)
+- [svg_filters_primitives_blur.dart:462-483](file://lib/src/animation/svg_filters_primitives_blur.dart#L462-L483)
 - [svg_filters_registry_pipeline.dart:178-186](file://lib/src/animation/svg_filters_registry_pipeline.dart#L178-L186)
 - [svg_filters_registry_pipeline_compositing.dart:182-269](file://lib/src/animation/svg_filters_registry_pipeline_compositing.dart#L182-L269)
-- [svg_filters_primitives_lighting.dart:88-120](file://lib/src/animation/svg_filters_primitives_lighting.dart#L88-L120)
-- [svg_filters_primitives_lighting.dart:162-196](file://lib/src/animation/svg_filters_primitives_lighting.dart#L162-L196)
 
 ## Troubleshooting Guide
 Common issues and remedies for the enhanced filter system:
 
-**Lighting System Issues**: Verify surfaceScale values are appropriate for the intended effect, check that light source parameters are within valid ranges, and ensure edge modes are properly configured for boundary handling.
+**Color Space Issues**: Verify color-interpolation-filters property values are correctly parsed and applied, check that automatic conversion is working properly for filter chains, and ensure lookup tables are being used efficiently.
 
-**Surface Normal Computation Issues**: Verify alpha channel data is properly formatted (0-255 values), check kernel unit length parameters are positive and non-zero, and ensure edge modes are correctly set for boundary conditions.
+**Component Transfer Problems**: Verify lookup table caching is functioning correctly, check that linear-only optimization is being applied when appropriate, and ensure specialized paint passes are created for complex transfer functions.
 
-**Light Source Positioning Issues**: Verify light source coordinates are within reasonable ranges, check azimuth/elevation angles for distant lights, and validate spot light cone angles and limiting angles.
+**GaussianBlurProcessor Issues**: Verify color space conversion is working correctly for large standard deviations, check that box blur approximation is being used appropriately, and ensure edge mode handling is functioning as expected.
 
-**Per-Pixel Processing Issues**: Ensure image data is properly formatted as RGBA with 4 bytes per pixel, verify dimensions match expected width and height, and check for proper alpha channel handling.
+**Pipeline Integration Problems**: Verify color space information is being propagated correctly through filter chains, check that specialized paint passes are being created for complex operations, and ensure circular reference detection is working properly.
 
-**Edge Mode Issues**: Verify edge mode selection matches expected boundary behavior, check for proper handling of edge pixels in surface normal computation, and ensure kernel unit length scaling is appropriate.
+**Performance Issues**: Complex filter chains with multiple color space conversions can impact performance, consider using lookup table caching more effectively, and optimize component transfer function usage for better performance.
 
-**Color Filter Generation Issues**: Verify lighting color values are properly formatted, check average intensity calculations for ColorFilter approximation, and ensure proper alpha channel handling for lighting effects.
-
-**Performance Issues**: Complex lighting calculations with large images can impact performance, consider using ColorFilter approximation instead of per-pixel processing, and optimize surfaceScale and kernel unit length parameters.
-
-**Kernel Unit Length Issues**: Verify kernel unit length parameters are positive and non-zero, check for proper scaling with surfaceScale, and ensure gradient normalization is working correctly.
+**Lookup Table Issues**: Verify lookup tables are being generated correctly, check that cached tables are being reused appropriately, and ensure table generation is not causing memory issues.
 
 **Section sources**
-- [fe_lighting_test.dart:1496-1546](file://test/animation/fe_lighting_test.dart#L1496-L1546)
-- [svg_filters_primitives_lighting_common.dart:152-173](file://lib/src/animation/svg_filters_primitives_lighting_common.dart#L152-L173)
-- [svg_filters_primitives_lighting_sources.dart:151-172](file://lib/src/animation/svg_filters_primitives_lighting_sources.dart#L151-L172)
+- [css_compositing_properties_test.dart:193-238](file://test/animation/css_compositing_properties_test.dart#L193-L238)
+- [component_transfer_functions_test.dart:290-543](file://test/animation/component_transfer_functions_test.dart#L290-L543)
+- [svg_filters_primitives_blur.dart:452-511](file://lib/src/animation/svg_filters_primitives_blur.dart#L452-L511)
 
 ## Conclusion
-The enhanced SVG filter system provides a comprehensive and sophisticated architecture for filter chain processing with advanced lighting calculations featuring realistic 3D vector mathematics, sophisticated surface normal computation using Sobel-like kernels, multiple edge mode support, and specialized light source implementations. The system successfully handles complex filter graphs with multi-hop chains, named result caching, circular reference prevention, and sophisticated edge case handling. The enhanced convolution matrix processing, advanced lighting system with comprehensive surface normal computation, arithmetic mode optimization, and comprehensive testing framework ensure reliable and performant filter operations across diverse use cases with significant performance improvements through intelligent optimization strategies.
+The enhanced SVG filter system provides a comprehensive and sophisticated architecture for filter chain processing with advanced color space processing capabilities, automatic sRGB-to-linearRGB conversion, lookup table optimization, and intelligent pipeline integration. The system successfully handles complex filter graphs with multi-hop chains, named result caching, circular reference prevention, and sophisticated edge case handling. The enhanced color space processing, lookup table-based transformations, arithmetic mode optimization, and comprehensive testing framework ensure reliable and performant filter operations across diverse use cases with significant performance improvements through intelligent optimization strategies.
 
 ## Appendices
 
-### Enhanced Lighting System Examples
-- **3D Vector Mathematics**: Complete vector operations with proper numerical stability and edge case handling including length calculation, normalization, dot product, and cross product
-- **Surface Normal Computation**: Advanced Sobel operator implementation with proper edge mode support including duplicate, wrap, and none modes for border pixel handling
-- **Light Source Modeling**: Comprehensive light source support with realistic physical models including distant light with azimuth/elevation angles, point light with 3D positioning, and spot light with cone attenuation
-- **Per-Pixel Processing**: Realistic lighting models using established reflection equations with proper vector operations and intensity computation
-- **Edge Mode Handling**: Multiple edge handling modes for surface normal computation with proper boundary pixel behavior
+### Enhanced Color Space Processing Examples
+- **Automatic Color Detection**: Per-SVG specification default of linearRGB with automatic detection of sRGB overrides
+- **Lookup Table Implementation**: Pre-computed 256-entry tables for efficient sRGB-to-linearRGB and linearRGB-to-sRGB conversion
+- **Color Interpolation Filtering**: Comprehensive support for color-interpolation-filters property with automatic pipeline integration
+- **Pipeline Color Propagation**: Automatic color space handling throughout filter chains with optimized conversion paths
 
-### Advanced Surface Normal Computation Details
-- **Sobel Kernel Implementation**: Standard Sobel kernels for gradient estimation with proper convolution operator application
-- **Edge Mode Support**: Comprehensive edge handling including duplicate clamping, wrap modulus wrapping, and none transparent black behavior
-- **Kernel Unit Length Scaling**: Proper scaling factors with surfaceScale application and gradient normalization
-- **Normal Calculation**: Accurate normal vector construction using mathematical formulas with proper vector normalization
-
-### Specialized Light Source Implementations
-- **Distant Light Source**: Azimuth/elevation angle calculations with proper vector normalization and constant direction computation
-- **Point Light Source**: 3D positioning with distance attenuation using inverse square falloff and proper intensity calculation
-- **Spot Light Source**: Cone attenuation with limiting angle control and specular exponent application
-- **Light Direction Calculation**: Position-dependent lighting with proper normalization and intensity computation
-
-### Per-Pixel Lighting Processing Details
-- **Lighting Models**: Diffuse (Lambert) and specular (Blinn-Phong) lighting with proper vector operations and intensity calculations
-- **Color Filter Generation**: Average intensity approximation for efficient ColorFilter-based rendering
-- **Preview Sampling**: LightingSampler functionality for generating preview colors and testing lighting setups
-- **LightingProcessor**: Complete per-pixel processing pipeline with alpha channel extraction and surface normal computation
-
-### Enhanced Displacement Map System Examples
-- **Channel Selection**: R, G, B, A channel selectors for X and Y displacement with proper parsing and validation
-- **Scale Animation**: Dynamic scale parameter support with optimization for scale=0 (identity)
-- **Edge Mode Handling**: Three edge modes (none, clamp, wrap) with proper boundary pixel handling
-- **Pixel-Level Processing**: Advanced displacement algorithm with coordinate calculation and edge mode integration
-- **Pipeline Integration**: Seamless integration with filter chain resolution and input/output management
-
-### Advanced Tile Primitive Examples
-- **Subregion Support**: Custom tile regions defined by x, y, width, height coordinates
-- **Tiling Algorithms**: Modulus-based wrapping with proper boundary condition handling
-- **Offset Handling**: Tile origin alignment with filter region origin and offset calculations
-- **Boundary Conditions**: Proper handling of oversized tile regions and empty inputs
-- **SVG Compliance**: Full adherence to SVG specification for tile primitive behavior
-
-### Enhanced Color Matrix Operations
-- **Matrix Type Support**: Generic 5x4 matrices, saturation adjustment, hue rotation, luminance-to-alpha conversion
-- **Matrix Conversion**: SVG 5x4 to Flutter 4x5 format conversion with proper ordering and scaling
-- **Specialized Matrices**: Optimized implementations for common transformations with mathematical precision
-- **Performance Optimization**: GPU-accelerated color transformations using Flutter's ColorFilter.matrix
-
-### Enhanced Filter Registry Pipeline Features
-- **Identity Kernel Detection**: Sophisticated convolution matrix identity detection for performance optimization
-- **Circular Reference Prevention**: Enhanced depth tracking and state management for complex filter graphs
-- **Unmodifiable Caching**: Immutable result caching preventing accidental mutation and ensuring thread safety
-- **Arithmetic Mode Intelligence**: Coefficient-based optimization reducing complex operations to simple blend modes
-- **Specialized Processing Paths**: Intelligent decision-making between color matrix and pixel-by-pixel processing
+### Lookup Table-Based Color Transformations Details
+- **Component Transfer Optimization**: Cached lookup tables for R, G, B, A channels with lazy initialization
+- **Linear-Only Matrix Generation**: ColorFilter matrices for identity and linear transfer functions
+- **Specialized Paint Passes**: Lookup table processing for complex transfer functions (table, discrete, gamma)
+- **Memory Efficiency**: Optimized table storage with 256-entry arrays for each color component
 
 ### Enhanced Component Transfer Function Examples
-- **Identity Transforms**: No-op processing for unchanged output, optimized to bypass all processing
-- **Linear Transforms**: Slope and intercept processing with mathematical precision and clamping
-- **Gamma Transforms**: Power function processing with amplitude, exponent, and offset parameters
-- **Table Transforms**: Piecewise linear interpolation with proper interval calculation
-- **Discrete Transforms**: Step function processing with equal interval division
+- **Lookup Table Generation**: Pre-computed 256-entry tables for efficient pixel processing
+- **Linear-Only Optimization**: Automatic detection and ColorFilter matrix generation for linear transforms
+- **Specialized Processing**: Pixel-by-pixel processing for complex transfer functions with lookup table support
+- **Caching Mechanisms**: Lazy initialization and reuse of lookup tables for performance optimization
 
-### Built-in Filter Primitive Categories
-- **Basic Primitives**: Blur, morphology, displacement, image, convolution, turbulence, component transfer, offset, flood
-- **Compositing Primitives**: Blend, composite, merge, tile, drop shadow, color matrix
-- **Lighting Primitives**: Diffuse lighting, specular lighting with multiple light source types
-- **Pipeline Integration**: Dedicated resolver methods for each primitive type with optimized processing
+### Improved GaussianBlurProcessor Examples
+- **Lookup Table Integration**: Pre-computed color conversion tables for efficient blur processing
+- **Box Blur Approximation**: 3-pass box blur for large standard deviations with performance optimization
+- **Edge Mode Handling**: Proper boundary pixel processing with coordinate calculation optimization
+- **Color Space Conversion**: Automatic sRGB-to-linearRGB conversion before blur and back conversion after
 
-### Comprehensive Testing Coverage
-- **Lighting System Validation**: Complete testing of lighting calculations, surface normal computation, and color filter generation
-- **Edge Mode Testing**: Validation of duplicate, wrap, and none edge handling modes for boundary pixel computation
-- **Light Source Testing**: Comprehensive testing of all light source types with mathematical precision
-- **Per-Pixel Processing Validation**: Testing of lighting models, vector operations, and intensity calculations
-- **Kernel Unit Length Testing**: Validation of scaling factors and gradient normalization
-- **Preview Sampling Testing**: Testing of LightingSampler functionality for color previews
-- **Performance Scenario Testing**: Validation of optimization effectiveness and caching benefits
-- **Advanced Graph Scenarios**: Extensive validation of complex filter chains with multi-hop references and circular dependencies
-- **Animation Support**: Validation of filter attribute animation and real-time parameter updates
-- **Filter Graph Semantics**: Advanced testing of filter graph resolution, input handling, and error scenarios
+### Filter Pipeline Integration Features
+- **Color Space Detection**: Automatic detection of color-interpolation-filters property values
+- **Specialized Paint Passes**: Creation of paint passes for complex operations requiring color processing
+- **Pipeline Optimization**: Intelligent color space propagation and conversion throughout filter chains
+- **Performance Monitoring**: Efficient caching and lookup table utilization for optimal performance
 
 ### Enhanced Lighting System Details
 The enhanced lighting system provides:
@@ -553,3 +562,7 @@ The enhanced lighting system provides:
 - [fe_lighting_test.dart:1-200](file://test/animation/fe_lighting_test.dart#L1-L200)
 - [fe_lighting_test.dart:1201-1546](file://test/animation/fe_lighting_test.dart#L1201-L1546)
 - [fe_lighting_test.dart:1496-1494](file://test/animation/fe_lighting_test.dart#L1496-L1494)
+- [svg_filters_primitives_blur.dart:452-511](file://lib/src/animation/svg_filters_primitives_blur.dart#L452-L511)
+- [svg_filters_primitives_component_transfer.dart:140-159](file://lib/src/animation/svg_filters_primitives_component_transfer.dart#L140-L159)
+- [svg_filters_primitives_component_transfer.dart:223-276](file://lib/src/animation/svg_filters_primitives_component_transfer.dart#L223-L276)
+- [animated_svg_painter_values.dart:468-481](file://lib/src/animation/animated_svg_painter_values.dart#L468-L481)

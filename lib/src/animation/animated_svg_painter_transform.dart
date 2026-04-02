@@ -282,16 +282,16 @@ extension AnimatedSvgPainterCanvasTransformExtension on AnimatedSvgPainter {
 
       case SvgTransformType.skewX:
         final angle = transform.values.isNotEmpty ? transform.values[0] : 0.0;
-        final radians = angle * 3.14159 / 180.0;
-        final tanValue = radians.isFinite ? radians : 0.0;
+        final radians = angle * math.pi / 180.0;
+        final tanValue = radians.isFinite ? math.tan(radians) : 0.0;
         final matrix = Matrix4.identity()
           ..setEntry(0, 1, tanValue); // Set skewX component
         canvas.transform(matrix.storage);
 
       case SvgTransformType.skewY:
         final angle = transform.values.isNotEmpty ? transform.values[0] : 0.0;
-        final radians = angle * 3.14159 / 180.0;
-        final tanValue = radians.isFinite ? radians : 0.0;
+        final radians = angle * math.pi / 180.0;
+        final tanValue = radians.isFinite ? math.tan(radians) : 0.0;
         final matrix = Matrix4.identity()
           ..setEntry(1, 0, tanValue); // Set skewY component
         canvas.transform(matrix.storage);
@@ -622,21 +622,23 @@ extension AnimatedSvgPainterCanvasTransformExtension on AnimatedSvgPainter {
   }
 
   /// Gets the reference box for transform-origin based on transform-box property.
-  /// Supports: fill-box (default for SVG), view-box, content-box, border-box.
+  /// Supports: view-box (default for SVG per CSS Transforms Level 2),
+  /// fill-box, content-box, border-box.
   ui.Rect _getTransformReferenceBox(SvgNode node) {
     final transformBox = _getStyleOrAttributeValue(node, 'transform-box');
-    final boxType = transformBox?.toString().toLowerCase().trim() ?? 'fill-box';
+    final boxType = transformBox?.toString().toLowerCase().trim() ?? 'view-box';
 
     switch (boxType) {
-      case 'view-box':
-        // Use the nearest viewBox as reference
-        return _getNearestViewBox(node) ?? _getNodeBounds(node);
       case 'fill-box':
       case 'content-box':
       case 'border-box':
-      default:
         // For SVG, fill-box is the object bounding box
         return _getNodeBounds(node);
+      case 'view-box':
+      default:
+        // CSS Transforms Level 2: default is view-box for SVG elements.
+        // This matches Chrome/Firefox behavior.
+        return _getNearestViewBox(node) ?? _getNodeBounds(node);
     }
   }
 

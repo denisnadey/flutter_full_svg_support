@@ -5,16 +5,16 @@ part of 'svg_filters.dart';
 /// Создает тень от объекта
 class SvgDropShadowFilter extends SvgFilter {
   /// Смещение по X
-  final double dx;
+  double dx;
 
   /// Смещение по Y
-  final double dy;
+  double dy;
 
   /// Стандартное отклонение по X (размытие тени)
-  final double stdDeviationX;
+  double stdDeviationX;
 
   /// Стандартное отклонение по Y (размытие тени)
-  final double stdDeviationY;
+  double stdDeviationY;
 
   /// Цвет тени
   final ui.Color? floodColor;

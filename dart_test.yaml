@@ -13,3 +13,9 @@ tags:
     # Compare tests - compare Flutter vs browser goldens
   full:
     # Full pipeline tests - capture and compare in one test
+  animation_golden:
+    # Animation frame capture - generate Flutter animation frames
+    # Run with: flutter test --tags=animation_golden
+  animation_compare:
+    # Animation frame comparison - compare Flutter vs browser frames
+    # Run with: flutter test --tags=animation_compare

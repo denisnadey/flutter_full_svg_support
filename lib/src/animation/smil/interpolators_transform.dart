@@ -90,7 +90,7 @@ String _interpolateTransformValue(Object from, Object to, double t) {
         .map((transform) {
           final name = transform.type.toString().split('.').last;
           final values = transform.values
-              .map((v) => v.toStringAsFixed(2))
+              .map((v) => v.toStringAsFixed(4))
               .join(', ');
           return '$name($values)';
         })
@@ -124,7 +124,7 @@ String _interpolateTransformValue(Object from, Object to, double t) {
       .map((transform) {
         final name = transform.type.toString().split('.').last;
         final values = transform.values
-            .map((v) => v.toStringAsFixed(2))
+            .map((v) => v.toStringAsFixed(4))
             .join(', ');
         return '$name($values)';
       })
@@ -157,7 +157,7 @@ String _interpolateSingleTransformValue(
     }
 
     final valueStr = interpolatedValues
-        .map((v) => v.toStringAsFixed(2))
+        .map((v) => v.toStringAsFixed(4))
         .join(' ');
     return '$name($valueStr)';
   }
@@ -170,7 +170,7 @@ String _interpolateSingleTransformValue(
   }
 
   final valueStr = interpolatedValues
-      .map((v) => v.toStringAsFixed(2))
+      .map((v) => v.toStringAsFixed(4))
       .join(' ');
   return '$name($valueStr)';
 }

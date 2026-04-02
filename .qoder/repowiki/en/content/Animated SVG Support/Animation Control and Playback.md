@@ -29,6 +29,11 @@
 - [lib/src/animation/animated_svg_painter_matrix.dart](file://lib/src/animation/animated_svg_painter_matrix.dart)
 - [lib/src/animation/css_shorthand_expansion.dart](file://lib/src/animation/css_shorthand_expansion.dart)
 - [lib/src/animation/css_variables_calc.dart](file://lib/src/animation/css_variables_calc.dart)
+- [lib/src/animation/svg_filters_registry_pipeline_compositing.dart](file://lib/src/animation/svg_filters_registry_pipeline_compositing.dart)
+- [lib/src/animation/svg_filters_registry_pipeline_primitives.dart](file://lib/src/animation/svg_filters_registry_pipeline_primitives.dart)
+- [lib/src/animation/svg_filters_primitives_lighting.dart](file://lib/src/animation/svg_filters_primitives_lighting.dart)
+- [lib/src/animation/animated_svg_painter_cache.dart](file://lib/src/animation/animated_svg_painter_cache.dart)
+- [lib/src/cache.dart](file://lib/src/cache.dart)
 - [test/animation/controller_test.dart](file://test/animation/controller_test.dart)
 - [test/animation/font_registration_lifecycle_test.dart](file://test/animation/font_registration_lifecycle_test.dart)
 - [test/animation/css_animation_edge_cases_test.dart](file://test/animation/css_animation_edge_cases_test.dart)
@@ -41,21 +46,28 @@
 - [test/animation/css_variables_calc_viewport_test.dart](file://test/animation/css_variables_calc_viewport_test.dart)
 - [test/animation/css_calc_edge_cases_test.dart](file://test/animation/css_calc_edge_cases_test.dart)
 - [test/animation/css_property_rendering_test.dart](file://test/animation/css_property_rendering_test.dart)
+- [test/animation/blend_mode_test.dart](file://test/animation/blend_mode_test.dart)
+- [test/animation/css_compositing_properties_test.dart](file://test/animation/css_compositing_properties_test.dart)
 - [test/css_shorthand_edge_cases_test.dart](file://test/css_shorthand_edge_cases_test.dart)
 - [test/css_unit_precision_test.dart](file://test/css_unit_precision_test.dart)
 - [example/lib/pages/controller_demo_page.dart](file://example/lib/pages/controller_demo_page.dart)
 - [example/lib/pages/custom_svg_viewer_page.dart](file://example/lib/pages/custom_svg_viewer_page.dart)
 - [example/lib/widgets/smil_event_timing_widget.dart](file://example/lib/widgets/smil_event_timing_widget.dart)
+- [benchmark/benchmarks/animation_benchmark.dart](file://benchmark/benchmarks/animation_benchmark.dart)
+- [benchmark/benchmarks/animation_render_benchmark.dart](file://benchmark/benchmarks/animation_render_benchmark.dart)
+- [benchmark/svg_render_benchmark.dart](file://benchmark/svg_render_benchmark.dart)
+- [CURRENT_STATUS.md](file://CURRENT_STATUS.md)
 </cite>
 
 ## Update Summary
 **Changes Made**
-- Enhanced CSS animation conversion system with improved transform decomposition and compound transform preservation
-- Added comprehensive CSS shorthand expansion infrastructure with cascade and specificity handling
-- Implemented advanced CSS variables and calc() expression support with nested fallback resolution
-- Strengthened 3D transform handling with sophisticated decomposition algorithms
-- Expanded testing infrastructure covering CSS animations, 3D transforms, and complex animation scenarios
-- Enhanced transform normalization with better unit handling and edge case management
+- Enhanced opacity compositing logic with improved isolation boundary handling
+- Improved mix-blend-mode operations with better compositing boundary detection
+- Added performance optimizations including cache eviction policies and in-place matrix operations
+- Implemented enable-background CSS property for compositing layer management
+- Enhanced color-interpolation-filters support with linearRGB pixel-level conversion
+- Added comprehensive compositing property testing with 14 new test cases
+- Improved render-time caching with size-limited eviction policies
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -72,19 +84,21 @@
 12. [Dual-Mode Animation Control](#dual-mode-animation-control)
 13. [Event-Driven Animation Management](#event-driven-animation-management)
 14. [External Controller Integration](#external-controller-integration)
-15. [Dependency Analysis](#dependency-analysis)
-16. [Performance Considerations](#performance-considerations)
-17. [Troubleshooting Guide](#troubleshooting-guide)
-18. [Conclusion](#conclusion)
-19. [Appendices](#appendices)
+15. [Performance Optimizations and Cache Management](#performance-optimizations-and-cache-management)
+16. [Compositing Properties and Blend Modes](#compositing-properties-and-blend-modes)
+17. [Dependency Analysis](#dependency-analysis)
+18. [Performance Considerations](#performance-considerations)
+19. [Troubleshooting Guide](#troubleshooting-guide)
+20. [Conclusion](#conclusion)
+21. [Appendices](#appendices)
 
 ## Introduction
 This document explains the animation control and playback mechanisms for animated SVGs in the project. It focuses on the AnimatedSvgController API, programmatic animation control, playback rate adjustment, and timeline manipulation. The system now includes enhanced CSS animation support with improved edge case handling, including multiple animations per element, animation-play-state control, negative animation delays, and comprehensive 3D transform support with automatic 2D/3D fallback. It also covers controller methods for play, pause, stop, reset, and seek operations, along with examples of manual animation control, animation synchronization, state management, lifecycle handling, and performance considerations. Guidance is provided for integrating animations with user interactions and application state.
 
-**Updated** Enhanced with comprehensive font registration lifecycle capabilities that mirror the existing image preload pattern with async font loading, generation guards, and graceful error handling. The system now supports embedded @font-face fonts through Flutter's FontLoader with robust error handling and state management.
+**Updated** Enhanced with comprehensive font registration lifecycle capabilities that mirror the existing image preload pattern with async font loading, generation guards, and graceful error handling. The system now supports embedded @font-face fonts through Flutter's FontLoader with robust error handling and state management. Additionally, the animation system now includes performance optimizations and code simplifications with improved opacity compositing logic, better isolation boundary handling, and enhanced mix-blend-mode operations.
 
 ## Project Structure
-The animated SVG pipeline is implemented as a separate rendering path from the static SVG pipeline. The animated pipeline parses SVG into a DOM, extracts SMIL animations, manages time via a timeline, and renders via a CustomPainter. The enhanced system now includes comprehensive CSS animation parsing and conversion capabilities with improved event-driven animation detection and compound transform handling. **Updated** The system now includes a complete font registration lifecycle that mirrors the image preload pattern with async font loading, generation guards, and graceful error handling.
+The animated SVG pipeline is implemented as a separate rendering path from the static SVG pipeline. The animated pipeline parses SVG into a DOM, extracts SMIL animations, manages time via a timeline, and renders via a CustomPainter. The enhanced system now includes comprehensive CSS animation parsing and conversion capabilities with improved event-driven animation detection and compound transform handling. **Updated** The system now includes a complete font registration lifecycle that mirrors the image preload pattern with async font loading, generation guards, and graceful error handling, along with performance optimizations for compositing operations.
 
 ```mermaid
 graph TB
@@ -116,6 +130,12 @@ S["SvgFontRegistry<br/>Font Loader"]
 T["SvgDocument<br/>registerEmbeddedFonts()"]
 U["Async Generation Guards<br/>Graceful Error Handling"]
 end
+subgraph "Performance Optimizations"
+V["Cache Management<br/>Size-limited eviction"]
+W["Compositing Properties<br/>Isolation boundaries"]
+X["Mix-Blend-Mode<br/>Enhanced handling"]
+Y["Render-time Caching<br/>Smart invalidation"]
+end
 G --> C
 H --> C
 I --> C
@@ -130,6 +150,10 @@ Q --> D
 R --> S
 S --> T
 T --> U
+D --> V
+V --> W
+W --> X
+X --> Y
 ```
 
 **Diagram sources**
@@ -145,6 +169,8 @@ T --> U
 - [lib/src/animation/svg_parser_css.dart:38-58](file://lib/src/animation/svg_parser_css.dart#L38-L58)
 - [lib/src/animation/svg_font_registry.dart:77-251](file://lib/src/animation/svg_font_registry.dart#L77-L251)
 - [lib/src/animation/svg_dom.dart:586-604](file://lib/src/animation/svg_dom.dart#L586-L604)
+- [lib/src/animation/animated_svg_painter_cache.dart:62-94](file://lib/src/animation/animated_svg_painter_cache.dart#L62-L94)
+- [lib/src/animation/svg_filters_registry_pipeline_compositing.dart:3-521](file://lib/src/animation/svg_filters_registry_pipeline_compositing.dart#L3-L521)
 
 **Section sources**
 - [ARCHITECTURE.md:6-58](file://ARCHITECTURE.md#L6-L58)
@@ -164,6 +190,9 @@ T --> U
 - **Updated** Font Registration Lifecycle: Implements async font loading with generation guards, graceful error handling, and widget disposal safety.
 - **Updated** CssShorthandExpander: Comprehensive CSS shorthand expansion system with cascade and specificity handling for proper property inheritance.
 - **Updated** CssVariablesCalc: Advanced CSS variables and calc() expression support with nested fallback resolution and unit conversion.
+- **Updated** Cache Management: Implements size-limited eviction policies for gradient shaders, pattern images, text paragraphs, and hit-test geometries.
+- **Updated** Compositing Properties: Enhanced opacity compositing logic with improved isolation boundary handling and mix-blend-mode operations.
+- **Updated** Performance Optimizations: In-place matrix operations, regex allocation reduction, and render-time caching for improved animation performance.
 
 Key capabilities:
 - Programmatic control via AnimatedSvgController
@@ -188,6 +217,13 @@ Key capabilities:
 - **Enhanced**: Comprehensive CSS shorthand expansion with cascade handling
 - **Enhanced**: Advanced CSS variables and calc() expression processing
 - **Enhanced**: Nested fallback resolution for complex variable chains
+- **Enhanced**: Size-limited cache eviction policies with smart invalidation
+- **Enhanced**: Performance optimizations including in-place matrix operations
+- **Enhanced**: Regex allocation reduction in text processing
+- **Enhanced**: Render-time caching for gradients, patterns, text, and hit-tests
+- **Enhanced**: Compositing layer management with enable-background property
+- **Enhanced**: Mix-blend-mode isolation boundaries and boundary detection
+- **Enhanced**: LinearRGB color space conversion for filter operations
 
 **Section sources**
 - [lib/src/animation/animated_svg_controller.dart:25-160](file://lib/src/animation/animated_svg_controller.dart#L25-L160)
@@ -201,9 +237,11 @@ Key capabilities:
 - [lib/src/animation/svg_dom.dart:586-604](file://lib/src/animation/svg_dom.dart#L586-L604)
 - [lib/src/animation/css_shorthand_expansion.dart:1-158](file://lib/src/animation/css_shorthand_expansion.dart#L1-158)
 - [lib/src/animation/css_variables_calc.dart:1-200](file://lib/src/animation/css_variables_calc.dart#L1-200)
+- [lib/src/animation/animated_svg_painter_cache.dart:62-94](file://lib/src/animation/animated_svg_painter_cache.dart#L62-L94)
+- [lib/src/animation/svg_filters_registry_pipeline_compositing.dart:3-521](file://lib/src/animation/svg_filters_registry_pipeline_compositing.dart#L3-L521)
 
 ## Architecture Overview
-The enhanced animated pipeline separates concerns across parsing, CSS-to-SMIL conversion, timeline management, and rendering with comprehensive 3D transform support and improved controller lifecycle management. **Updated** The system now includes a complete font registration lifecycle that mirrors the image preload pattern with async font loading, generation guards, and graceful error handling.
+The enhanced animated pipeline separates concerns across parsing, CSS-to-SMIL conversion, timeline management, and rendering with comprehensive 3D transform support and improved controller lifecycle management. **Updated** The system now includes a complete font registration lifecycle that mirrors the image preload pattern with async font loading, generation guards, and graceful error handling, along with performance optimizations for compositing operations and render-time caching.
 
 ```mermaid
 sequenceDiagram
@@ -214,12 +252,14 @@ participant Lifecycle as "Lifecycle Manager"
 participant Parser as "SvgParser"
 participant FontRegistry as "SvgFontRegistry"
 participant CssParser as "CssParser"
-participant ShorthandExpander as "CssShorthandExpander"
+participate ShorthandExpander as "CssShorthandExpander"
 participant VariablesCalc as "CssVariablesCalc"
 participant Converter as "CssToSmilConverter"
 participant Timeline as "SvgTimeline"
 participant Animation as "SmilAnimation"
 participant Painter as "AnimatedSvgPainter"
+participant Cache as "Cache Manager"
+participant Compositing as "Compositing Properties"
 User->>Controller : "seek()/pause()/resume()/setPlaybackRate()"
 Controller-->>Picture : "notifyListeners()"
 Picture->>Lifecycle : "_onControllerUpdate()"
@@ -238,6 +278,10 @@ Converter->>Timeline : "create SMIL animations with REPLACE semantics"
 Timeline->>Animation : "updateForTime(time) with additive replace"
 Animation-->>Timeline : "applies compound transform values"
 Timeline-->>Painter : "updated attribute values"
+Painter->>Cache : "check/render-time cache"
+Cache-->>Painter : "cached or computed result"
+Painter->>Compositing : "apply isolation boundaries"
+Compositing-->>Painter : "optimized compositing result"
 Painter-->>User : "rendered frame"
 ```
 
@@ -254,6 +298,8 @@ Painter-->>User : "rendered frame"
 - [lib/src/animation/smil/smil_timeline.dart:82-98](file://lib/src/animation/smil/smil_timeline.dart#L82-L98)
 - [lib/src/animation/smil/smil_animation_runtime.dart:3-25](file://lib/src/animation/smil/smil_animation_runtime.dart#L3-L25)
 - [lib/src/animation/animated_svg_picture.dart:236-269](file://lib/src/animation/animated_svg_picture.dart#L236-L269)
+- [lib/src/animation/animated_svg_painter_cache.dart:62-94](file://lib/src/animation/animated_svg_painter_cache.dart#L62-L94)
+- [lib/src/animation/svg_filters_registry_pipeline_compositing.dart:3-521](file://lib/src/animation/svg_filters_registry_pipeline_compositing.dart#L3-L521)
 
 ## Detailed Component Analysis
 
@@ -511,7 +557,7 @@ Cascade and specificity handling:
 - [lib/src/animation/css_shorthand_expansion.dart:139-157](file://lib/src/animation/css_shorthand_expansion.dart#L139-L157)
 - [test/animation/css_shorthand_expansion_test.dart:83-110](file://test/animation/css_shorthand_expansion_test.dart#L83-L110)
 - [test/animation/css_shorthand_timing_test.dart:379-390](file://test/animation/css_shorthand_timing_test.dart#L379-L390)
-- [test/css_shorthand_edge_cases_test.dart:146-413](file://test/css_shorthand_edge_cases_test.dart#L146-413)
+- [test/css_shorthand_edge_cases_test.dart:146-413](file://test/css_shorthand_edge_cases_test.dart#L146-L413)
 
 ### Motion Property Detection
 The system includes specialized detection for CSS motion path properties that extend beyond standard offset-* properties:
@@ -894,8 +940,168 @@ The system provides enhanced integration with external controllers for event-dri
 **Section sources**
 - [example/lib/pages/custom_svg_viewer_page.dart:278-285](file://example/lib/pages/custom_svg_viewer_page.dart#L278-L285)
 
+## Performance Optimizations and Cache Management
+
+### Render-Time Caching System
+The enhanced animation system includes comprehensive render-time caching to improve performance:
+
+- **Gradient shader caching**: Shader objects cached by gradient ID + paint bounds + attributes
+- **Pattern image caching**: Pattern tile images cached and reused across frames
+- **Text paragraph caching**: Paragraph objects cached by text content + style properties
+- **Hit-test path geometry caching**: Path objects cached for repeated hit-testing
+- **Smart cache invalidation**: Caches cleared when animation time changes for animated SVGs
+
+Cache eviction policies:
+- **Size-limited eviction**: When cache exceeds size limit, clear oldest half of entries
+- **Efficient tracking**: More efficient than per-entry LRU tracking for hot paths
+- **Multiple cache types**: Separate limits for gradients (128), patterns (64), text (512), hit-tests (256), masks (128)
+
+**Section sources**
+- [lib/src/animation/animated_svg_painter_cache.dart:62-94](file://lib/src/animation/animated_svg_painter_cache.dart#L62-L94)
+- [lib/src/cache.dart:1-56](file://lib/src/cache.dart#L1-L56)
+
+### In-Place Matrix Operations
+Performance optimizations include in-place matrix multiplication for text transform accumulation:
+
+- **Matrix reuse**: Instead of creating new matrices, operations modify existing matrices
+- **Reduced allocations**: Eliminates temporary matrix objects during transform composition
+- **Improved performance**: Particularly beneficial for complex nested transforms in text elements
+
+**Section sources**
+- [CURRENT_STATUS.md:80](file://CURRENT_STATUS.md#L80)
+
+### Regex Allocation Reduction
+The system includes regex allocation reduction in text paint order checks:
+
+- **Fast path optimization**: Font features hash key fast path eliminates regex allocations
+- **Pattern reuse**: Common patterns reused instead of recompiled
+- **Reduced GC pressure**: Minimizes regular expression object creation during rendering
+
+**Section sources**
+- [CURRENT_STATUS.md:80](file://CURRENT_STATUS.md#L80)
+
+### Performance Benchmarking Suite
+The system includes comprehensive performance benchmarking:
+
+- **Animation benchmarks**: Dedicated animation performance measurement
+- **Render benchmarks**: Animation-specific rendering performance testing
+- **Memory benchmarks**: Cache usage and allocation tracking
+- **Combined benchmarks**: Worst-case scenario performance testing
+- **Cache statistics**: CacheStats class for hit rate, eviction count, peak size tracking
+
+**Section sources**
+- [benchmark/benchmarks/animation_benchmark.dart](file://benchmark/benchmarks/animation_benchmark.dart)
+- [benchmark/benchmarks/animation_render_benchmark.dart](file://benchmark/benchmarks/animation_render_benchmark.dart)
+- [benchmark/svg_render_benchmark.dart](file://benchmark/svg_render_benchmark.dart)
+- [lib/src/cache.dart:1-56](file://lib/src/cache.dart#L1-L56)
+
+## Compositing Properties and Blend Modes
+
+### Enable-Background CSS Property
+The system now fully implements the `enable-background` CSS property for compositing layer management:
+
+- **enable-background: new** creates compositing boundary via saveLayer
+- **Background context management**: Push/pop background context for child filter primitives
+- **BackgroundImage support**: Proper handling for child filters using BackgroundImage/BackgroundAlpha
+- **Bounding box parameters**: Support for `enable-background: new x y width height`
+
+Implementation details:
+- **Layer creation**: saveLayer operations for proper compositing boundaries
+- **Context stack management**: Background context pushed/popped around child filters
+- **Filter input resolution**: BackgroundImage properly resolved within new background context
+
+**Section sources**
+- [test/animation/css_compositing_properties_test.dart:13-98](file://test/animation/css_compositing_properties_test.dart#L13-L98)
+- [CURRENT_STATUS.md:55](file://CURRENT_STATUS.md#L55)
+
+### Color-Interpolation-Filters Support
+Enhanced color-interpolation-filters implementation with linearRGB pixel-level conversion:
+
+- **CSS cascade resolution**: Property resolved from CSS cascade with proper inheritance
+- **Pixel-level processors**: GaussianBlurProcessor supports sRGB↔linearRGB conversion
+- **LUT tables**: Precomputed lookup tables for efficient color space conversion
+- **SvgFilterSourceContext**: Carries `useLinearRGB` flag for filter operations
+
+Conversion features:
+- **Round-trip preservation**: Zero blur with linearRGB returns original data
+- **Valid output generation**: Proper RGBA output with alpha preservation
+- **Edge mode support**: Works with duplicate/wrap/none edge modes
+
+**Section sources**
+- [test/animation/css_compositing_properties_test.dart:134-247](file://test/animation/css_compositing_properties_test.dart#L134-L247)
+- [CURRENT_STATUS.md:56](file://CURRENT_STATUS.md#L56)
+
+### Isolation Boundary Handling
+The system implements comprehensive isolation boundary handling with improved mix-blend-mode operations:
+
+- **isolation: isolate** creates stacking context boundary
+- **Prevents parent compositing**: Mix-blend-mode doesn't blend with parent content
+- **Implicit isolation**: Groups with non-normal mix-blend-mode create implicit isolation
+- **Opacity compositing**: Works correctly with opacity combinations
+
+Boundary detection:
+- **Stacking context creation**: Isolation boundaries prevent cross-layer blending
+- **Mix-blend-mode containment**: Reduces unintended blending with parent layers
+- **Performance benefits**: Reduces compositing complexity in complex layered animations
+
+**Section sources**
+- [test/animation/css_compositing_properties_test.dart:252-336](file://test/animation/css_compositing_properties_test.dart#L252-L336)
+- [CURRENT_STATUS.md:57](file://CURRENT_STATUS.md#L57)
+
+### Enhanced Mix-Blend-Mode Operations
+Improved mix-blend-mode support with better compositing boundary detection:
+
+- **Group-level blend modes**: Mix-blend-mode on groups creates implicit isolation
+- **Opacity isolation**: Works correctly with opacity combinations and isolation boundaries
+- **Performance optimization**: Reduced compositing operations through better boundary detection
+- **Visual accuracy**: Proper blend mode rendering with isolation boundaries
+
+Blend mode improvements:
+- **Boundary-aware rendering**: Mix-blend-mode operations respect isolation boundaries
+- **Reduced layer complexity**: Fewer layers needed for complex blend scenarios
+- **Better performance**: Isolation boundaries reduce compositing overhead
+
+**Section sources**
+- [test/animation/blend_mode_test.dart:98-304](file://test/animation/blend_mode_test.dart#L98-L304)
+- [CURRENT_STATUS.md:57](file://CURRENT_STATUS.md#L57)
+
+### Compositing Pipeline Extensions
+The compositing system includes enhanced pipeline extensions for improved performance:
+
+- **SvgFiltersPipelineCompositingExtension**: Extends SvgFilters with compositing operations
+- **Paint pass optimization**: Efficient compositing through optimized paint pass chains
+- **Boundary detection**: Automatic detection of compositing boundaries in filter chains
+- **Performance monitoring**: Cache statistics and performance tracking for compositing operations
+
+Pipeline features:
+- **Blend mode preservation**: Blend modes maintained through compositing chains
+- **Input reference resolution**: Proper handling of complex input reference chains
+- **Arithmetic composite approximation**: Efficient arithmetic composite operations
+- **Color filter optimization**: Optimized color filter operations for performance
+
+**Section sources**
+- [lib/src/animation/svg_filters_registry_pipeline_compositing.dart:3-521](file://lib/src/animation/svg_filters_registry_pipeline_compositing.dart#L3-L521)
+
+### Performance Testing and Validation
+Comprehensive testing ensures compositing performance and correctness:
+
+- **14 new compositing tests**: Cover enable-background, color-interpolation-filters, and isolation properties
+- **Blend mode validation**: All standard mix-blend-mode values tested
+- **Opacity isolation testing**: Isolation boundaries with opacity combinations
+- **Performance regression testing**: Continuous performance monitoring
+
+Test coverage includes:
+- **Enable-background scenarios**: New vs accumulate contexts, bounding box parameters
+- **Color-interpolation-filters**: LinearRGB conversion accuracy, pixel-level processing
+- **Isolation boundaries**: Group-level isolation, implicit isolation detection
+- **Mix-blend-mode combinations**: Complex blend scenarios with isolation boundaries
+
+**Section sources**
+- [test/animation/css_compositing_properties_test.dart:1-338](file://test/animation/css_compositing_properties_test.dart#L1-L338)
+- [test/animation/blend_mode_test.dart:1-306](file://test/animation/blend_mode_test.dart#L1-L306)
+
 ## Dependency Analysis
-High-level dependencies among core components with enhanced CSS animation support, improved controller lifecycle, and comprehensive font registration capabilities:
+High-level dependencies among core components with enhanced CSS animation support, improved controller lifecycle, comprehensive font registration capabilities, and performance optimizations:
 
 ```mermaid
 classDiagram
@@ -987,6 +1193,19 @@ class LifecycleManager {
 +_scheduleFontRegistration()
 +_registerFontsAndRepaint(generation)
 }
+class CacheManager {
++_enforceGradientCacheLimit()
++_enforcePatternCacheLimit()
++_enforceTextCacheLimit()
++_enforceHitTestCacheLimit()
++_enforceMaskBoundsCacheLimit()
+}
+class CompositingProperties {
++enableBackground
++colorInterpolationFilters
++isolationBoundary
++mixBlendMode
+}
 AnimatedSvgPicture --> AnimatedSvgController : "subscribes to"
 AnimatedSvgPicture --> SvgTimeline : "drives"
 SvgTimeline --> SmilAnimation : "updates"
@@ -1003,6 +1222,9 @@ AnimatedSvgController --> SvgTimeline : "controls rate/direction"
 LifecycleManager --> AnimatedSvgController : "manages state"
 LifecycleManager --> SvgTimeline : "controls startup"
 LifecycleManager --> SvgDocument : "manages font registration"
+LifecycleManager --> CacheManager : "manages caches"
+CacheManager --> CompositingProperties : "optimizes compositing"
+CompositingProperties --> SvgTimeline : "enhances rendering"
 Transform3DContext --> SvgTimeline : "3D context management"
 ```
 
@@ -1019,6 +1241,8 @@ Transform3DContext --> SvgTimeline : "3D context management"
 - [lib/src/animation/svg_dom.dart:443-614](file://lib/src/animation/svg_dom.dart#L443-L614)
 - [lib/src/animation/transform_3d.dart:329-369](file://lib/src/animation/transform_3d.dart#L329-L369)
 - [lib/src/animation/animated_svg_picture_lifecycle.dart:111-152](file://lib/src/animation/animated_svg_picture_lifecycle.dart#L111-L152)
+- [lib/src/animation/animated_svg_painter_cache.dart:62-94](file://lib/src/animation/animated_svg_painter_cache.dart#L62-L94)
+- [lib/src/animation/svg_filters_registry_pipeline_compositing.dart:3-521](file://lib/src/animation/svg_filters_registry_pipeline_compositing.dart#L3-L521)
 
 **Section sources**
 - [lib/src/animation.dart:21-31](file://lib/src/animation.dart#L21-L31)
@@ -1047,6 +1271,12 @@ Transform3DContext --> SvgTimeline : "3D context management"
 - **Enhanced**: CSS shorthand expansion with cascade handling reduces property processing overhead.
 - **Enhanced**: Advanced CSS variables and calc() evaluation with caching mechanisms.
 - **Enhanced**: Transform normalization with optimized regex patterns and argument parsing.
+- **Enhanced**: Render-time caching with size-limited eviction policies reduces memory usage.
+- **Enhanced**: In-place matrix operations minimize allocations during transform composition.
+- **Enhanced**: Regex allocation reduction in text processing improves performance.
+- **Enhanced**: Compositing boundary detection reduces unnecessary layer operations.
+- **Enhanced**: Cache statistics and performance monitoring enable optimization tracking.
+- **Enhanced**: Performance benchmarking suite provides quantitative performance metrics.
 
 ## Troubleshooting Guide
 Common issues and remedies:
@@ -1072,6 +1302,10 @@ Common issues and remedies:
 - **Enhanced**: CSS variables resolution problems: Check for circular references and iteration limits in variable chains.
 - **Enhanced**: Calc() expression evaluation errors: Verify unit compatibility and mathematical operator precedence.
 - **Enhanced**: 3D transform decomposition failures: Check for zero-length vectors and identity transform edge cases.
+- **Enhanced**: Cache performance issues: Monitor cache hit rates and eviction counts; adjust cache limits as needed.
+- **Enhanced**: Compositing boundary problems: Verify isolation boundaries are properly detected and applied.
+- **Enhanced**: Mix-blend-mode rendering issues: Check that isolation boundaries prevent unintended parent blending.
+- **Enhanced**: Performance regression: Use benchmark suite to identify performance bottlenecks and monitor cache statistics.
 
 **Section sources**
 - [lib/src/animation/animated_svg_controller.dart:83-91](file://lib/src/animation/animated_svg_controller.dart#L83-L91)
@@ -1081,6 +1315,9 @@ Common issues and remedies:
 - [lib/src/animation/svg_font_registry.dart:92-99](file://lib/src/animation/svg_font_registry.dart#L92-L99)
 - [lib/src/animation/svg_dom.dart:603-604](file://lib/src/animation/svg_dom.dart#L603-L604)
 - [test/animation/css_animation_edge_cases_test.dart:459-499](file://test/animation/css_animation_edge_cases_test.dart#L459-L499)
+- [lib/src/animation/animated_svg_painter_cache.dart:62-94](file://lib/src/animation/animated_svg_painter_cache.dart#L62-L94)
+- [lib/src/cache.dart:1-56](file://lib/src/cache.dart#L1-L56)
+- [test/animation/css_compositing_properties_test.dart:1-338](file://test/animation/css_compositing_properties_test.dart#L1-L338)
 
 ## Conclusion
 The enhanced animated SVG system provides robust programmatic control via AnimatedSvgController, precise timeline manipulation through SvgTimeline, and comprehensive CSS animation support with improved edge case handling. The system now supports multiple animations per element, animation-play-state control, negative animation delays, and full 3D transform capabilities with automatic 2D/3D fallback.
@@ -1093,7 +1330,9 @@ The enhanced animated SVG system provides robust programmatic control via Animat
 
 **Updated** The sophisticated 3D transform decomposition system handles complex transform scenarios with proper matrix mathematics and edge case management, providing accurate 3D animation support with automatic 2D projection for rendering compatibility.
 
-Developers can integrate animations with user interactions, manage playback rates and directions, synchronize animations using event and syncbase mechanisms, leverage the enhanced CSS parsing capabilities for complex animation scenarios, utilize the comprehensive font registration system for custom typography, and benefit from the advanced CSS shorthand expansion and variable resolution systems. The architecture cleanly separates parsing, CSS-to-SMIL conversion, timing, rendering, font management, and CSS processing, enabling maintainability, extensibility, and optimal performance across diverse animation and typography requirements.
+**Updated** The animation system now includes comprehensive performance optimizations including render-time caching with size-limited eviction policies, in-place matrix operations, regex allocation reduction, and comprehensive performance benchmarking. The compositing system provides enhanced opacity compositing logic with improved isolation boundary handling and enhanced mix-blend-mode operations, including enable-background CSS property support, color-interpolation-filters with linearRGB conversion, and comprehensive compositing property testing.
+
+Developers can integrate animations with user interactions, manage playback rates and directions, synchronize animations using event and syncbase mechanisms, leverage the enhanced CSS parsing capabilities for complex animation scenarios, utilize the comprehensive font registration system for custom typography, benefit from the advanced CSS shorthand expansion and variable resolution systems, implement performance optimizations through the caching and compositing systems, and take advantage of the comprehensive performance benchmarking suite for optimization tracking. The architecture cleanly separates parsing, CSS-to-SMIL conversion, timing, rendering, font management, CSS processing, cache management, and compositing, enabling maintainability, extensibility, and optimal performance across diverse animation and typography requirements.
 
 ## Appendices
 
@@ -1148,6 +1387,18 @@ Developers can integrate animations with user interactions, manage playback rate
   - Startup control: _startPlayback(), _controller!.repeat()
   - State synchronization: _onControllerUpdate()
   - Font management: _scheduleFontRegistration(), _registerFontsAndRepaint()
+- **Enhanced** CacheManager
+  - Cache eviction: _enforceGradientCacheLimit(), _enforcePatternCacheLimit()
+  - Cache limits: gradientShaders, patternImages, textParagraphs, hitTestPaths, maskBounds
+- **Enhanced** CompositingProperties
+  - Enable-background: enableBackground, backgroundContext
+  - Color-interpolation: colorInterpolationFilters, useLinearRGB
+  - Isolation: isolationBoundary, implicitIsolation
+  - Blend modes: mixBlendMode, boundaryAwareRendering
+- **Enhanced** PerformanceBenchmarking
+  - Animation benchmarks: animation_benchmark.dart, animation_render_benchmark.dart
+  - Cache statistics: CacheStats class with hitRate, evictions, peakSize
+  - Memory benchmarks: memory_benchmark.dart with allocation tracking
 
 **Section sources**
 - [lib/src/animation/animated_svg_controller.dart:25-160](file://lib/src/animation/animated_svg_controller.dart#L25-L160)
@@ -1162,3 +1413,9 @@ Developers can integrate animations with user interactions, manage playback rate
 - [lib/src/animation/svg_dom.dart:443-614](file://lib/src/animation/svg_dom.dart#L443-L614)
 - [lib/src/animation/transform_3d.dart:333-373](file://lib/src/animation/transform_3d.dart#L333-L373)
 - [lib/src/animation/animated_svg_picture_lifecycle.dart:111-152](file://lib/src/animation/animated_svg_picture_lifecycle.dart#L111-L152)
+- [lib/src/animation/animated_svg_painter_cache.dart:62-94](file://lib/src/animation/animated_svg_painter_cache.dart#L62-L94)
+- [lib/src/animation/svg_filters_registry_pipeline_compositing.dart:3-521](file://lib/src/animation/svg_filters_registry_pipeline_compositing.dart#L3-L521)
+- [lib/src/cache.dart:1-56](file://lib/src/cache.dart#L1-L56)
+- [benchmark/benchmarks/animation_benchmark.dart](file://benchmark/benchmarks/animation_benchmark.dart)
+- [benchmark/benchmarks/animation_render_benchmark.dart](file://benchmark/benchmarks/animation_render_benchmark.dart)
+- [benchmark/benchmarks/memory_benchmark.dart](file://benchmark/benchmarks/memory_benchmark.dart)

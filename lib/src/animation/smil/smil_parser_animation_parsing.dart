@@ -203,13 +203,10 @@ SmilAnimationType _parseAnimationType(String tagName) {
 
 /// Определить тип атрибута
 SvgAttributeType _inferAttributeType(String attributeName, SvgNode targetNode) {
-  // Сначала проверяем, есть ли уже атрибут на узле
-  final existingAttr = targetNode.getAttribute(attributeName);
-  if (existingAttr != null) {
-    return existingAttr.type;
-  }
-
-  // Иначе определяем по имени
+  // Check known attribute types first — these should always use their canonical
+  // type for animation interpolation, regardless of how they're stored on the
+  // node (e.g. filter primitive attributes may be stored as strings but need
+  // numeric interpolation for smooth animation).
   if (_numberAttributes.contains(attributeName)) {
     return SvgAttributeType.number;
   }
@@ -224,6 +221,12 @@ SvgAttributeType _inferAttributeType(String attributeName, SvgNode targetNode) {
   }
   if (attributeName == 'points') {
     return SvgAttributeType.points;
+  }
+
+  // Fallback: check existing attribute on node for unknown attributes
+  final existingAttr = targetNode.getAttribute(attributeName);
+  if (existingAttr != null) {
+    return existingAttr.type;
   }
 
   return SvgAttributeType.string;
@@ -479,6 +482,10 @@ const Set<String> _numberAttributes = {
   'scale',
   // feMorphology attributes
   'radius',
+  // Filter primitive attributes that can be animated
+  'stdDeviation',
+  'dx',
+  'dy',
 };
 
 const Set<String> _colorAttributes = {

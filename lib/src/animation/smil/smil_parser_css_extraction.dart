@@ -56,10 +56,23 @@ void _extractCssSelectorAnimations(
     final matches = _matchesCssRule(node, rule);
 
     if (matches) {
-      // Apply custom properties from the rule to the node
+      // Apply CSS properties from the rule to the node.
+      // Non-animation and non-custom properties are set as node attributes
+      // so that the painter can resolve them at render time (e.g.
+      // transform-origin, fill, stroke, opacity set via <style> selectors).
       for (final entry in rule.declarations.entries) {
         if (isCustomProperty(entry.key)) {
           node.cssCustomProperties.set(entry.key, entry.value);
+        } else if (!_isAnimationProperty(entry.key)) {
+          // Apply CSS rule value as node attribute (overrides presentation
+          // attributes per CSS cascade, but inline styles still win via
+          // _getStyleOrAttributeValue which checks style first).
+          node.setAttribute(
+            entry.key,
+            entry.value,
+            type: SvgAttributeType.string,
+            rawValue: entry.value,
+          );
         }
       }
 
@@ -429,4 +442,23 @@ bool _isAnimationElement(String tagName) {
       tagName == 'animateMotion' ||
       tagName == 'set' ||
       tagName == 'animateColor';
+}
+
+/// CSS animation properties that should NOT be applied as node attributes
+/// (they are handled by the animation extraction pipeline instead).
+const Set<String> _cssAnimationProperties = {
+  'animation',
+  'animation-name',
+  'animation-duration',
+  'animation-timing-function',
+  'animation-delay',
+  'animation-iteration-count',
+  'animation-direction',
+  'animation-fill-mode',
+  'animation-play-state',
+};
+
+/// Checks if a CSS property name is an animation-related property.
+bool _isAnimationProperty(String property) {
+  return _cssAnimationProperties.contains(property.trim().toLowerCase());
 }

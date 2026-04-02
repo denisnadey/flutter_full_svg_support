@@ -15,10 +15,10 @@ const int _maxBlurKernelRadius = 256;
 /// For extreme stdDeviation values (>50), uses iterative box blur approximation.
 class SvgGaussianBlurFilter extends SvgFilter {
   /// Стандартное отклонение по X (размытие по горизонтали)
-  final double stdDeviationX;
+  double stdDeviationX;
 
   /// Стандартное отклонение по Y (размытие по вертикали)
-  final double stdDeviationY;
+  double stdDeviationY;
 
   /// Edge mode for handling pixels at the filter region boundary.
   /// Per SVG spec:

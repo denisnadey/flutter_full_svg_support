@@ -17,6 +17,11 @@ abstract class SvgFilter {
   /// Named primitive result (`result` attribute).
   final String? resultName;
 
+  /// Reference to the source SvgNode in the DOM tree.
+  /// Used to read animated attribute values at render time.
+  /// Typed as Object? to avoid circular dependency with svg_dom.dart.
+  Object? sourceElement;
+
   SvgFilter({
     required this.id,
     required this.type,

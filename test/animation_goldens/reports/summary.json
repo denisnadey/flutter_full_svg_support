@@ -1,0 +1,81 @@
+{
+  "total_svgs": 10,
+  "total_frames": 150,
+  "overall_average_similarity": 0.9826,
+  "svgs_above_95": 8,
+  "svgs_below_90": 0,
+  "worst_svg": "animate_path_morph",
+  "worst_svg_similarity": 0.9356,
+  "per_svg": [
+    {
+      "svg": "animate_color",
+      "average_similarity": 1.0,
+      "worst_frame": 0,
+      "worst_similarity": 0.9998,
+      "frames": 15
+    },
+    {
+      "svg": "animate_combined",
+      "average_similarity": 0.9999,
+      "worst_frame": 8,
+      "worst_similarity": 0.9999,
+      "frames": 15
+    },
+    {
+      "svg": "animate_filter",
+      "average_similarity": 0.9423,
+      "worst_frame": 7,
+      "worst_similarity": 0.8932,
+      "frames": 15
+    },
+    {
+      "svg": "animate_motion_path",
+      "average_similarity": 0.9997,
+      "worst_frame": 4,
+      "worst_similarity": 0.9996,
+      "frames": 15
+    },
+    {
+      "svg": "animate_opacity",
+      "average_similarity": 0.9723,
+      "worst_frame": 4,
+      "worst_similarity": 0.9654,
+      "frames": 15
+    },
+    {
+      "svg": "animate_path_morph",
+      "average_similarity": 0.9356,
+      "worst_frame": 5,
+      "worst_similarity": 0.863,
+      "frames": 15
+    },
+    {
+      "svg": "animate_position",
+      "average_similarity": 0.9999,
+      "worst_frame": 2,
+      "worst_similarity": 0.9998,
+      "frames": 15
+    },
+    {
+      "svg": "animate_transform_rotate",
+      "average_similarity": 0.9999,
+      "worst_frame": 0,
+      "worst_similarity": 0.9998,
+      "frames": 15
+    },
+    {
+      "svg": "animate_transform_scale",
+      "average_similarity": 0.9983,
+      "worst_frame": 8,
+      "worst_similarity": 0.9969,
+      "frames": 15
+    },
+    {
+      "svg": "css_animation",
+      "average_similarity": 0.9785,
+      "worst_frame": 5,
+      "worst_similarity": 0.9718,
+      "frames": 15
+    }
+  ]
+}

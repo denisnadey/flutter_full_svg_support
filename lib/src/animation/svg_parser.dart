@@ -47,6 +47,9 @@ class SvgParser {
     // Парсим корневой <svg> элемент
     final rootNode = _parseElement(svgElement);
 
+    // Link filter primitives to their DOM SvgNodes for animated attribute access
+    _linkFilterPrimitivesToNodes(rootNode, filters);
+
     // Извлекаем viewBox, width, height из корневого элемента
     final viewBox = _parseViewBox(svgElement.getAttribute('viewBox'));
     final width = _parseLength(svgElement.getAttribute('width'));

@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+  <!-- Single rotation around center -->
+  <rect x="-50" y="-50" width="100" height="100" fill="#e74c3c" rx="10">
+    <animateTransform attributeName="transform" type="rotate"
+      from="0 400 300" to="360 400 300" dur="15s" fill="freeze"/>
+  </rect>
+
+  <!-- Group rotation with multiple children -->
+  <g>
+    <animateTransform attributeName="transform" type="rotate"
+      from="0 200 200" to="720 200 200" dur="15s" fill="freeze"/>
+    <rect x="160" y="160" width="30" height="30" fill="#3498db"/>
+    <rect x="210" y="160" width="30" height="30" fill="#2ecc71"/>
+    <rect x="160" y="210" width="30" height="30" fill="#f39c12"/>
+    <rect x="210" y="210" width="30" height="30" fill="#9b59b6"/>
+  </g>
+
+  <!-- Rotation with values (oscillating) -->
+  <polygon points="600,350 550,450 650,450" fill="#1abc9c">
+    <animateTransform attributeName="transform" type="rotate"
+      values="0 600 400;90 600 400;-45 600 400;180 600 400;0 600 400"
+      dur="15s" fill="freeze"/>
+  </polygon>
+
+  <!-- Static reference cross -->
+  <line x1="390" y1="290" x2="410" y2="310" stroke="#999" stroke-width="2"/>
+  <line x1="410" y1="290" x2="390" y2="310" stroke="#999" stroke-width="2"/>
+</svg>

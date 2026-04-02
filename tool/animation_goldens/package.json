@@ -1,0 +1,9 @@
+{
+  "name": "animation-golden-capture",
+  "version": "1.0.0",
+  "description": "Capture animated SVG frames from headless Chrome for golden comparison",
+  "private": true,
+  "dependencies": {
+    "puppeteer": "^22.0.0"
+  }
+}

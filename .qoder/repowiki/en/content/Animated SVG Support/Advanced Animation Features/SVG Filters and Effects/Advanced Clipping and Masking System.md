@@ -2,17 +2,21 @@
 
 <cite>
 **Referenced Files in This Document**
+- [animated_svg_painter.dart](file://lib/src/animation/animated_svg_painter.dart)
 - [animated_svg_painter_clip_mask.dart](file://lib/src/animation/animated_svg_painter_clip_mask.dart)
 - [animated_svg_painter_clip_mask_composition.dart](file://lib/src/animation/animated_svg_painter_clip_mask_composition.dart)
 - [animated_svg_painter_clip_mask_geometry.dart](file://lib/src/animation/animated_svg_painter_clip_mask_geometry.dart)
 - [animated_svg_painter_clip_mask_units.dart](file://lib/src/animation/animated_svg_painter_clip_mask_units.dart)
+- [animated_svg_painter_clip_nested.dart](file://lib/src/animation/animated_svg_painter_clip_nested.dart)
 - [animated_svg_painter_mask_clip_combination.dart](file://lib/src/animation/animated_svg_painter_mask_clip_combination.dart)
 - [animated_svg_painter_mask_luminance.dart](file://lib/src/animation/animated_svg_painter_mask_luminance.dart)
-- [animated_svg_painter_clip_nested.dart](file://lib/src/animation/animated_svg_painter_clip_nested.dart)
-- [animated_svg_painter.dart](file://lib/src/animation/animated_svg_painter.dart)
+- [animated_svg_painter_clip_mask_advanced.dart](file://lib/src/animation/animated_svg_painter_clip_mask_advanced.dart)
 - [advanced_clip_mask_test.dart](file://test/animation/advanced_clip_mask_test.dart)
+- [advanced_clip_mask_composition_test.dart](file://test/animation/advanced_clip_mask_composition_test.dart)
 - [clip_mask_advanced_composition_test.dart](file://test/animation/clip_mask_advanced_composition_test.dart)
 - [clip_mask_use_verification_test.dart](file://test/animation/clip_mask_use_verification_test.dart)
+- [regression_clip_mask_edge_cases_test.dart](file://test/animation/regression_clip_mask_edge_cases_test.dart)
+- [use_in_clip_mask_test.dart](file://test/animation/use_in_clip_mask_test.dart)
 - [animated_svg_picture_hit_test_visibility.dart](file://lib/src/animation/animated_svg_picture_hit_test_visibility.dart)
 - [animated_svg_picture_hit_test_text_runs.dart](file://lib/src/animation/animated_svg_picture_hit_test_text_runs.dart)
 - [animated_svg_picture_hit_test_text_path_segments.dart](file://lib/src/animation/animated_svg_picture_hit_test_text_path_segments.dart)
@@ -20,72 +24,67 @@
 
 ## Update Summary
 **Changes Made**
-- Complete architectural restructuring from unified to modular design with specialized extensions
-- Removal of animated_svg_painter_clip_mask_advanced.dart (complete removal)
-- Split advanced clipping/masking system into dedicated specialized modules
-- Enhanced layer-based masking with improved circular reference protection
-- Modularized text clipping with character-level precision improvements
-- Separated mask composition, geometry, units, and luminance handling into dedicated extensions
-- Streamlined architecture with better separation of concerns
-- Added enhanced cascading clip-path operations with proper transform propagation
+- Complete architectural consolidation from modular to unified design with advanced clip-path and mask composition functionality integrated into main animation pipeline
+- Removal of specialized extension modules in favor of consolidated functionality within core rendering system
+- Integration of complex coordinate system handling into main animation pipeline
+- Streamlined architecture with reduced complexity and improved performance
+- Consolidated advanced masking features into unified system with enhanced layer-based masking
 - Integrated mask_content_units transition handling for nested mask scenarios
+- Unified approach to cascading clip-path operations with mixed coordinate systems
 
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [System Architecture](#system-architecture)
 3. [Core Components](#core-components)
-4. [Modular Architecture](#modular-architecture)
-5. [Layer-Based Masking Implementation](#layer-based-masking-implementation)
-6. [Advanced Masking Features](#advanced-masking-features)
-7. [Enhanced Cascading ClipPath Composition](#enhanced-cascading-clippath-composition)
-8. [Mixed Coordinate System Support](#mixed-coordinate-system-support)
-9. [Enhanced Text Clipping with Character-Level Precision](#enhanced-text-clipping-with-character-level-precision)
-10. [Circular Reference Protection](#circular-reference-protection)
-11. [Improved Luminance-Based Hit Testing](#improved-luminance-based-hit-testing)
-12. [Edge Feathering and Soft Edges](#edge-feathering-and-soft-edges)
-13. [Composition and Nesting Support](#composition-and-nesting-support)
-14. [Performance Optimizations](#performance-optimizations)
-15. [Testing Framework](#testing-framework)
-16. [Troubleshooting Guide](#troubleshooting-guide)
-17. [Conclusion](#conclusion)
+4. [Unified Architecture](#unified-architecture)
+5. [Advanced Masking Implementation](#advanced-masking-implementation)
+6. [Enhanced Cascading ClipPath Composition](#enhanced-cascading-clippath-composition)
+7. [Mixed Coordinate System Support](#mixed-coordinate-system-support)
+8. [Enhanced Text Clipping with Character-Level Precision](#enhanced-text-clipping-with-character-level-precision)
+9. [Circular Reference Protection](#circular-reference-protection)
+10. [Improved Luminance-Based Hit Testing](#improved-luminance-based-hit-testing)
+11. [Edge Feathering and Soft Edges](#edge-feathering-and-soft-edges)
+12. [Composition and Nesting Support](#composition-and-nesting-support)
+13. [Performance Optimizations](#performance-optimizations)
+14. [Testing Framework](#testing-framework)
+15. [Troubleshooting Guide](#troubleshooting-guide)
+16. [Conclusion](#conclusion)
 
 ## Introduction
 
-The Advanced Clipping and Masking System represents a complete architectural overhaul of the Flutter SVG library's clipping and masking capabilities. The system has been completely restructured from a unified monolithic approach to a sophisticated modular architecture that provides enhanced maintainability, performance, and feature completeness.
+The Advanced Clipping and Masking System represents a significant architectural evolution from a modular to a unified design approach. The system has been consolidated from specialized extension modules back into the main animation pipeline, providing enhanced maintainability, performance, and feature completeness through integrated functionality.
 
-**Updated** The system now implements a modular architecture with specialized extensions replacing the previous unified animated_svg_painter_clip_mask_advanced.dart. Each module focuses on specific aspects of clipping and masking, providing better separation of concerns and improved maintainability.
+**Updated** The system now implements a unified architecture where advanced clip-path and mask composition functionality has been consolidated into the main animation pipeline, eliminating the previous specialized modules and integrating complex coordinate system handling directly into the core rendering system.
 
-The new modular approach provides comprehensive support for SVG 2.0 specification compliance while delivering superior performance and visual fidelity. The system utilizes Flutter's Canvas.saveLayer mechanism for proper compositing, enabling advanced features like luminance-based masking, alpha masking, edge feathering, and complex nested composition scenarios.
+The unified approach provides comprehensive support for SVG 2.0 specification compliance while delivering superior performance and visual fidelity. The system utilizes Flutter's Canvas.saveLayer mechanism for proper compositing, enabling advanced features like luminance-based masking, alpha masking, edge feathering, and complex nested composition scenarios.
 
 ## System Architecture
 
-The clipping and masking system has been restructured into a modular architecture with specialized extensions:
+The clipping and masking system has been restructured into a unified architecture that consolidates functionality into the main animation pipeline:
 
 ```mermaid
 graph TB
 subgraph "Core SVG Painter"
 AP[AnimatedSvgPainter]
 end
-subgraph "Modular Masking Extensions"
-CM[ClipMaskExtension]
-MC[MaskCompositionExtension]
-ML[MaskLuminanceExtension]
-end
-subgraph "Specialized Modules"
-CG[ClipGeometryExtension]
-CU[ClipUnitsExtension]
-CC[ClipCombinationExtension]
-CN[ClipNestedExtension]
+subgraph "Integrated Masking System"
+CM[Clip-Mask Composition]
+MC[Mask Composition]
+ML[Luminance Processing]
+CG[Geometry Building]
+CU[Coordinate Units]
+CC[Composition Logic]
+CN[Cascading Support]
 end
 subgraph "Advanced Features"
-CR[CircularReferenceProtection]
-TCP[TextClippingPrecision]
-LHT[LuminanceHitTesting]
+CR[Circular Reference Protection]
+TCP[Text Clipping Precision]
+LHT[Luminance Hit Testing]
 end
 subgraph "Performance Optimization"
-RC[RenderCache]
-MA[MaskAnimation]
-CF[CacheInvalidation]
+RC[Render Cache]
+MA[Mask Animation]
+CF[Cache Invalidation]
 end
 subgraph "Testing Framework"
 AT[Advanced Tests]
@@ -96,10 +95,10 @@ end
 AP --> CM
 AP --> MC
 AP --> ML
-CM --> CG
-CM --> CU
-MC --> CC
-MC --> CN
+AP --> CG
+AP --> CU
+AP --> CC
+AP --> CN
 CG --> TCP
 CU --> CR
 CC --> LHT
@@ -111,25 +110,25 @@ HT --> AP
 ```
 
 **Diagram sources**
-- [animated_svg_painter_clip_mask.dart:11-83](file://lib/src/animation/animated_svg_painter_clip_mask.dart#L11-L83)
 - [animated_svg_painter_clip_mask_composition.dart:30-120](file://lib/src/animation/animated_svg_painter_clip_mask_composition.dart#L30-L120)
 - [animated_svg_painter_mask_luminance.dart:26-76](file://lib/src/animation/animated_svg_painter_mask_luminance.dart#L26-L76)
+- [animated_svg_painter_clip_mask_units.dart:179-263](file://lib/src/animation/animated_svg_painter_clip_mask_units.dart#L179-L263)
 
-The architecture centers around five core extension modules that work together to provide comprehensive masking capabilities:
+The architecture centers around seven integrated components that work together to provide comprehensive masking capabilities:
 
-- **ClipMaskExtension**: Handles basic clip-path and mask application with geometric clipping
-- **MaskCompositionExtension**: Implements advanced layer-based masking with luminance/alpha modes
-- **MaskLuminanceExtension**: Manages mask type resolution, bounds computation, and luminance conversion
-- **ClipGeometryExtension**: Provides enhanced clip-path geometry building with text and use element support
-- **ClipUnitsExtension**: Handles coordinate system transformations and unit conversions
-- **ClipCombinationExtension**: Manages complex composition scenarios and nested mask intersections
-- **ClipNestedExtension**: Supports cascading clip-path with mixed coordinate systems
+- **Clip-Mask Composition**: Handles basic clip-path and mask application with geometric clipping
+- **Mask Composition**: Implements advanced layer-based masking with luminance/alpha modes
+- **Luminance Processing**: Manages mask type resolution, bounds computation, and luminance conversion
+- **Geometry Building**: Provides enhanced clip-path geometry building with text and use element support
+- **Coordinate Units**: Handles coordinate system transformations and unit conversions
+- **Composition Logic**: Manages complex composition scenarios and nested mask intersections
+- **Cascading Support**: Supports cascading clip-path with mixed coordinate systems
 
 ## Core Components
 
-### Modular Clip-Mask Extension
+### Unified Clip-Mask Extension
 
-The foundation of the new system is the enhanced ClipMaskExtension that provides both basic and advanced clipping capabilities:
+The foundation of the new system is the integrated ClipMaskExtension that provides both basic and advanced clipping capabilities:
 
 **Key Features:**
 - **Basic Clip-Path Support**: Simple path-based clipping for basic use cases
@@ -138,9 +137,9 @@ The foundation of the new system is the enhanced ClipMaskExtension that provides
 - **Text Element Support**: Enhanced text clipping with character-level precision
 - **Use Element Resolution**: Proper handling of referenced elements in clip/mask contexts
 
-### Advanced Mask Composition Extension
+### Advanced Mask Composition System
 
-The MaskCompositionExtension implements the sophisticated layer-based masking system:
+The unified MaskComposition system implements the sophisticated layer-based masking system:
 
 **Key Features:**
 - **Canvas.saveLayer Integration**: Uses Flutter's native saveLayer mechanism for proper compositing
@@ -151,9 +150,9 @@ The MaskCompositionExtension implements the sophisticated layer-based masking sy
 - **Circular Reference Protection**: Prevents infinite loops in nested mask references
 - **Animation Awareness**: Properly handles animated mask content with cache invalidation
 
-### Mask Luminance Extension
+### Luminance Processing System
 
-The MaskLuminanceExtension provides comprehensive mask type resolution and luminance handling:
+The unified MaskLuminance system provides comprehensive mask type resolution and luminance handling:
 
 **Key Features:**
 - **Mask Type Resolution**: Follows CSS Masking Level 1 specification for mask-type determination
@@ -163,25 +162,25 @@ The MaskLuminanceExtension provides comprehensive mask type resolution and lumin
 - **Filter Chain Support**: Proper handling of filter chains in mask content
 
 **Section sources**
-- [animated_svg_painter_clip_mask.dart:11-83](file://lib/src/animation/animated_svg_painter_clip_mask.dart#L11-L83)
 - [animated_svg_painter_clip_mask_composition.dart:30-120](file://lib/src/animation/animated_svg_painter_clip_mask_composition.dart#L30-L120)
 - [animated_svg_painter_mask_luminance.dart:26-76](file://lib/src/animation/animated_svg_painter_mask_luminance.dart#L26-L76)
+- [animated_svg_painter_clip_mask_units.dart:179-263](file://lib/src/animation/animated_svg_painter_clip_mask_units.dart#L179-L263)
 
-## Modular Architecture
+## Unified Architecture
 
-### Extension-Based Design
+### Integrated Extension-Based Design
 
-The system now uses a modular extension-based architecture where each functionality is encapsulated in dedicated extensions:
+The system now uses a unified extension-based architecture where all functionality is integrated into the main animation pipeline:
 
 ```mermaid
 flowchart TD
-ME[Modular Extensions] --> CME[ClipMaskExtension]
-ME --> MCE[MaskCompositionExtension]
-ME --> MLE[MaskLuminanceExtension]
-ME --> CGE[ClipGeometryExtension]
-ME --> CUE[ClipUnitsExtension]
-ME --> CCE[ClipCombinationExtension]
-ME --> CNE[ClipNestedExtension]
+ME[Integrated Extensions] --> CME[Clip-Mask Composition]
+ME --> MCE[Mask Composition]
+ME --> MLE[Luminance Processing]
+ME --> CGE[Geometry Building]
+ME --> CUE[Coordinate Units]
+ME --> CCE[Composition Logic]
+ME --> CNE[Cascading Support]
 CME --> BasicClip[Basic Clip-Path]
 CME --> GeometricMask[Geometric Mask Region]
 MCE --> LayerMasking[Layer-Based Masking]
@@ -199,42 +198,47 @@ CNE --> MixedUnits[Mixed Unit Support]
 ```
 
 **Diagram sources**
-- [animated_svg_painter_clip_mask.dart:11-83](file://lib/src/animation/animated_svg_painter_clip_mask.dart#L11-L83)
 - [animated_svg_painter_clip_mask_composition.dart:30-120](file://lib/src/animation/animated_svg_painter_clip_mask_composition.dart#L30-L120)
 - [animated_svg_painter_mask_luminance.dart:26-76](file://lib/src/animation/animated_svg_painter_mask_luminance.dart#L26-L76)
+- [animated_svg_painter_clip_mask_units.dart:179-263](file://lib/src/animation/animated_svg_painter_clip_mask_units.dart#L179-L263)
 
-### Benefits of Modular Design
+### Benefits of Unified Design
 
-**Enhanced Maintainability:**
-- Each extension has a single responsibility and clear boundaries
-- Easier to test and debug individual components
-- Reduced coupling between different functionalities
+**Enhanced Performance:**
+- Elimination of module loading overhead and inter-module communication
+- Reduced memory footprint through integrated functionality
+- Optimized code paths for common use cases without module switching
+- Better cache locality and reduced context switching
 
-**Improved Performance:**
-- Only relevant extensions are loaded for specific operations
-- Better cache management and memory usage
-- Optimized code paths for common use cases
+**Improved Maintainability:**
+- Single codebase for all clipping and masking functionality
+- Simplified debugging and testing through unified architecture
+- Reduced complexity in module coordination and communication
+- Easier maintenance of shared state and resources
 
 **Better Scalability:**
-- Easy to add new features by creating new extensions
-- Modular testing allows focused validation of individual components
-- Simplified code navigation and understanding
+- Unified testing framework validates all functionality together
+- Simplified code navigation and understanding through centralized design
+- Reduced coupling between different functional areas
+- Streamlined development process with single integration point
 
 **Section sources**
-- [animated_svg_painter_clip_mask.dart:11-83](file://lib/src/animation/animated_svg_painter_clip_mask.dart#L11-L83)
 - [animated_svg_painter_clip_mask_composition.dart:30-120](file://lib/src/animation/animated_svg_painter_clip_mask_composition.dart#L30-L120)
 - [animated_svg_painter_mask_luminance.dart:26-76](file://lib/src/animation/animated_svg_painter_mask_luminance.dart#L26-L76)
+- [animated_svg_painter_clip_mask_units.dart:179-263](file://lib/src/animation/animated_svg_painter_clip_mask_units.dart#L179-L263)
 
-## Layer-Based Masking Implementation
+## Advanced Masking Implementation
 
-The new layer-based masking system fundamentally changes how SVG clipping and masking are implemented through modular extensions:
+### Unified Layer-Based Masking System
+
+The new unified layer-based masking system fundamentally changes how SVG clipping and masking are implemented through integrated extensions:
 
 ```mermaid
 sequenceDiagram
 participant Canvas as Canvas
-participant ClipMask as ClipMaskExtension
-participant MaskComp as MaskCompositionExtension
-participant MaskLum as MaskLuminanceExtension
+participant ClipMask as Clip-Mask Composition
+participant MaskComp as Mask Composition
+participant MaskLum as Luminance Processing
 participant ContentLayer as ContentLayer
 participant MaskLayer as MaskLayer
 Canvas->>ClipMask : _applyMask
@@ -253,79 +257,38 @@ MaskLayer->>Canvas : restoreLayers
 - [animated_svg_painter_clip_mask_composition.dart:130-174](file://lib/src/animation/animated_svg_painter_clip_mask_composition.dart#L130-L174)
 - [animated_svg_painter_clip_mask.dart:51-83](file://lib/src/animation/animated_svg_painter_clip_mask.dart#L51-L83)
 
-### Layer Composition Process
+### Unified Layer Composition Process
 
-The system implements a precise compositing order through modular extensions:
+The system implements a precise compositing order through integrated extensions:
 
-1. **Clip-Mask Extension**: Handles basic mask application and geometric clipping
-2. **Mask Composition Extension**: Manages advanced layer-based masking workflow
-3. **Mask Luminance Extension**: Provides mask type resolution and bounds computation
+1. **Clip-Mask Composition**: Handles basic mask application and geometric clipping
+2. **Mask Composition**: Manages advanced layer-based masking workflow
+3. **Luminance Processing**: Provides mask type resolution and bounds computation
 4. **Content Layer Creation**: `canvas.saveLayer(maskBounds, ui.Paint())` - Captures all painted content
 5. **Content Rendering**: Executes the provided `paintContent` callback to render element content
 6. **Mask Layer Setup**: `canvas.saveLayer(maskBounds, maskPaint)` - Creates layer with proper blend mode
 7. **Mask Content Painting**: Renders mask content with appropriate coordinate transformation
 8. **Layer Restoration**: Properly restores both content and mask layers in reverse order
 
-### Blend Mode Implementation
+### Unified Blend Mode Implementation
 
-The system uses different blend modes based on mask type through the modular architecture:
+The system uses different blend modes based on mask type through the integrated architecture:
 
 - **Luminance Masks**: Uses `ui.BlendMode.dstIn` with color matrix filter for luminance conversion
 - **Alpha Masks**: Uses `ui.BlendMode.dstIn` with direct alpha channel compositing
-- **Automatic Detection**: Intelligent mask type resolution through dedicated extension
+- **Automatic Detection**: Intelligent mask type resolution through unified extension
 
 **Section sources**
 - [animated_svg_painter_clip_mask_composition.dart:130-174](file://lib/src/animation/animated_svg_painter_clip_mask_composition.dart#L130-L174)
 - [animated_svg_painter_mask_luminance.dart:78-98](file://lib/src/animation/animated_svg_painter_mask_luminance.dart#L78-L98)
 
-## Advanced Masking Features
-
-### Luminance Masking
-
-The system provides comprehensive luminance masking support following ITU-R BT.709 standards through specialized extensions:
-
-**Luminance Formula**: `0.2126 × R + 0.7152 × G + 0.0722 × B`
-
-The implementation includes:
-- **Color Matrix Filter**: Uses Flutter's ColorFilter.matrix for efficient luminance conversion
-- **Alpha Channel Preservation**: Maintains original alpha channel in final result
-- **Performance Optimization**: Single-pass luminance calculation using hardware acceleration
-- **Gradient Support**: Enhanced luminance handling for gradient-filled mask content
-
-### Alpha Masking
-
-Direct alpha channel masking provides explicit control over transparency:
-
-**Features:**
-- **Direct Alpha Usage**: Ignores color information, uses alpha channel directly
-- **Color Independence**: Mask content color has no effect on final result
-- **Precision Control**: Exact alpha channel values determine opacity
-
-### Mask Bounds Computation
-
-The system provides flexible bounds computation supporting both unit types through dedicated extensions:
-
-**ObjectBoundingBox Units:**
-- Relative coordinates (0.0 to 1.0) based on element bounds
-- Default 10% extension in all directions per SVG specification
-- Proper handling of percentage values and non-uniform scaling
-
-**UserSpaceOnUse Units:**
-- Absolute coordinates in current user space
-- Direct viewport resolution for percentage values
-- No automatic bounds expansion
-
-**Section sources**
-- [animated_svg_painter_mask_luminance.dart:100-251](file://lib/src/animation/animated_svg_painter_mask_luminance.dart#L100-L251)
-- [animated_svg_painter_clip_mask_composition.dart:176-181](file://lib/src/animation/animated_svg_painter_clip_mask_composition.dart#L176-L181)
-
 ## Enhanced Cascading ClipPath Composition
 
-**Updated** The system now provides comprehensive support for advanced cascading clipPath composition with mixed coordinate system support through specialized extensions:
+**Updated** The system now provides comprehensive support for advanced cascading clipPath composition with mixed coordinate system support through integrated unit handling:
 
-### Cascading ClipPath Architecture
+### Unified Cascading ClipPath Architecture
 
-The system handles complex nested clipPath scenarios with proper coordinate system management through modular extensions:
+The system handles complex nested clipPath scenarios with proper coordinate system management through integrated extensions:
 
 ```mermaid
 flowchart TD
@@ -347,9 +310,9 @@ OBCUR --> OBCURF[Final Coordinate Space]
 **Diagram sources**
 - [animated_svg_painter_clip_nested.dart:135-231](file://lib/src/animation/animated_svg_painter_clip_nested.dart#L135-L231)
 
-### Mixed Coordinate System Handling
+### Unified Mixed Coordinate System Handling
 
-The system supports complex combinations of clipPathUnits across cascade levels through specialized extensions:
+The system supports complex combinations of clipPathUnits across cascade levels through integrated unit handling:
 
 **Supported Combinations:**
 - `userSpaceOnUse` → `objectBoundingBox` cascade
@@ -367,11 +330,11 @@ The system supports complex combinations of clipPathUnits across cascade levels 
 
 ## Mixed Coordinate System Support
 
-**Updated** The system now provides robust support for mixed coordinate systems in clipPath composition through dedicated unit handling extensions:
+**Updated** The system now provides robust support for mixed coordinate systems in clipPath composition through integrated unit handling:
 
-### Coordinate System Resolution
+### Unified Coordinate System Resolution
 
-The system intelligently handles coordinate system transformations at each cascade level through specialized extensions:
+The system intelligently handles coordinate system transformations at each cascade level through integrated extensions:
 
 ```mermaid
 flowchart TD
@@ -390,7 +353,7 @@ USUTF --> COORD
 **Diagram sources**
 - [animated_svg_painter_clip_mask_units.dart:179-263](file://lib/src/animation/animated_svg_painter_clip_mask_units.dart#L179-L263)
 
-### Implementation Details
+### Unified Implementation Details
 
 **Coordinate System Mapping:**
 - `objectBoundingBox`: Coordinates relative to clipped element's bounding box (0.0-1.0)
@@ -407,11 +370,11 @@ USUTF --> COORD
 
 ## Enhanced Text Clipping with Character-Level Precision
 
-**Updated** The system now provides significantly improved text clipping capabilities using advanced character-level approximate paths through specialized geometry extensions:
+**Updated** The system now provides significantly improved text clipping capabilities using advanced character-level approximate paths through integrated geometry extensions:
 
-### Character-Level Text Clipping Strategy
+### Unified Character-Level Text Clipping Strategy
 
-The text clipping system has been enhanced with sophisticated character-level approximation through dedicated extensions:
+The text clipping system has been enhanced with sophisticated character-level approximation through integrated extensions:
 
 ```mermaid
 flowchart TD
@@ -423,7 +386,7 @@ TCP --> GPC
 TCP --> TP
 CLP --> CCP[Character-by-Character Precision]
 GPC --> GPE[Glyph Estimation Engine]
-TP --> TPA[Text Alignment Handling]
+TP --> TPA[Text Anchor Alignment]
 CCP --> CCPD[Detailed Character Dimensions]
 GPE --> GPED[Glyph Metric Approximation]
 TPA --> TAA[Text Anchor Alignment]
@@ -432,7 +395,7 @@ TPA --> TAA[Text Anchor Alignment]
 **Diagram sources**
 - [animated_svg_painter_clip_mask_geometry.dart:291-352](file://lib/src/animation/animated_svg_painter_clip_mask_geometry.dart#L291-L352)
 
-### Enhanced Text Geometry Approximation
+### Unified Enhanced Text Geometry Approximation
 
 **Improved Character-Level Path Generation:**
 - **Individual Character Paths**: Each character generates its own rounded rectangle path
@@ -456,11 +419,11 @@ TPA --> TAA[Text Anchor Alignment]
 
 ## Circular Reference Protection
 
-**Updated** The system now includes comprehensive circular reference protection to prevent infinite loops in nested mask scenarios through specialized composition extensions:
+**Updated** The system now includes comprehensive circular reference protection to prevent infinite loops in nested mask scenarios through integrated protection mechanisms:
 
-### Protection Mechanism
+### Unified Protection Mechanism
 
-The circular reference protection system uses a global stack to track currently painting masks through modular extensions:
+The circular reference protection system uses a global stack to track currently painting masks through integrated extensions:
 
 ```mermaid
 flowchart TD
@@ -477,7 +440,7 @@ HR --> PC[Paint Content Without Mask]
 **Diagram sources**
 - [animated_svg_painter_clip_mask_composition.dart:60-110](file://lib/src/animation/animated_svg_painter_clip_mask_composition.dart#L60-L110)
 
-### Implementation Details
+### Unified Implementation Details
 
 **Key Features:**
 - **Global Stack Tracking**: `_currentPaintingMasksStack` tracks all currently processed masks
@@ -491,11 +454,11 @@ HR --> PC[Paint Content Without Mask]
 
 ## Improved Luminance-Based Hit Testing
 
-**Updated** The system now includes enhanced luminance-based hit testing with proper RGB-to-luminance conversion using ITU-R BT.709 coefficients through specialized hit testing extensions:
+**Updated** The system now includes enhanced luminance-based hit testing with proper RGB-to-luminance conversion using ITU-R BT.709 coefficients through integrated hit testing extensions:
 
-### Hit Testing Architecture
+### Unified Hit Testing Architecture
 
-The hit testing system provides accurate point testing for masked elements through modular extensions:
+The hit testing system provides accurate point testing for masked elements through integrated extensions:
 
 ```mermaid
 flowchart TD
@@ -511,7 +474,7 @@ RESULT --> |Outside| HIDDEN[Hidden]
 **Diagram sources**
 - [animated_svg_picture_hit_test_visibility.dart:30-45](file://lib/src/animation/animated_svg_picture_hit_test_visibility.dart#L30-L45)
 
-### Luminance Conversion for Hit Testing
+### Unified Luminance Conversion for Hit Testing
 
 **ITU-R BT.709 Coefficients**: Uses standard coefficients for accurate RGB-to-luminance conversion:
 - Red: 0.2126
@@ -529,7 +492,7 @@ RESULT --> |Outside| HIDDEN[Hidden]
 
 ## Edge Feathering and Soft Edges
 
-The new system includes sophisticated edge feathering support through blur filter detection managed by specialized composition extensions:
+The new unified system includes sophisticated edge feathering support through blur filter detection managed by integrated composition extensions:
 
 ```mermaid
 flowchart TD
@@ -547,18 +510,18 @@ NO --> NB[No Bounds Expansion]
 **Diagram sources**
 - [animated_svg_painter_clip_mask_composition.dart:238-254](file://lib/src/animation/animated_svg_painter_clip_mask_composition.dart#L238-L254)
 
-### Blur Filter Detection
+### Unified Blur Filter Detection
 
-The system automatically detects blur effects in mask content through specialized extensions:
+The system automatically detects blur effects in mask content through integrated extensions:
 
 **Detection Methods:**
 - **Direct Filter Check**: Scans for `feGaussianBlur` primitive in mask content
 - **Recursive Child Search**: Examines all nested elements and groups
 - **Filter Pipeline Analysis**: Evaluates complete filter chain for blur effects
 
-### Bounds Expansion Algorithm
+### Unified Bounds Expansion Algorithm
 
-When blur effects are detected, the system expands mask bounds through dedicated extensions:
+When blur effects are detected, the system expands mask bounds through integrated extensions:
 
 **Calculation Method:**
 - **Maximum Radius Detection**: Finds largest blur radius in filter chain
@@ -570,7 +533,7 @@ When blur effects are detected, the system expands mask bounds through dedicated
 
 ## Composition and Nesting Support
 
-The system provides comprehensive support for complex nested masking scenarios through specialized combination extensions:
+The system provides comprehensive support for complex nested masking scenarios through integrated combination extensions:
 
 ```mermaid
 flowchart TD
@@ -597,17 +560,17 @@ GI --> GIP[Group Masks Affect Children]
 **Diagram sources**
 - [animated_svg_painter_mask_clip_combination.dart:48-100](file://lib/src/animation/animated_svg_painter_mask_clip_combination.dart#L48-L100)
 
-### Composition Precedence Rules
+### Unified Composition Precedence Rules
 
-The system follows SVG 2.0 specification for proper composition order through modular extensions:
+The system follows SVG 2.0 specification for proper composition order through integrated extensions:
 
 1. **Transforms**: Applied first (handled by core transform system)
 2. **Clip-Path**: Applied second (geometric clipping)
 3. **Mask**: Applied last (alpha/luminance masking)
 
-### Subgraph Masking
+### Unified Subgraph Masking
 
-Special handling for elements with both filters and masks through dedicated combination extensions:
+Special handling for elements with both filters and masks through integrated combination extensions:
 
 **Process Flow:**
 1. Render element content
@@ -620,9 +583,9 @@ Special handling for elements with both filters and masks through dedicated comb
 
 ## Performance Optimizations
 
-The new modular system includes extensive performance optimizations through specialized cache management extensions:
+The new unified system includes extensive performance optimizations through integrated cache management:
 
-### Render Cache System
+### Unified Render Cache System
 
 **Cache Categories:**
 - **Gradient Shaders**: Cached by gradient ID + paint bounds hash
@@ -637,14 +600,14 @@ The new modular system includes extensive performance optimizations through spec
 - Animation-aware invalidation prevents stale cache entries
 - Separate handling for static vs animated mask content
 
-### Animation-Aware Invalidation
+### Unified Animation-Aware Invalidation
 
 **Features:**
 - **Animated Mask Detection**: Recursively scans mask content for SMIL animations
 - **Per-Frame Cache Management**: Clears animated mask caches when animation time changes
 - **Selective Invalidation**: Preserves static mask caches while clearing animated ones
 
-### Layer Management Optimization
+### Unified Layer Management Optimization
 
 **Efficiency Measures:**
 - **Minimal Layer Usage**: Only creates layers when necessary for masking
@@ -657,9 +620,9 @@ The new modular system includes extensive performance optimizations through spec
 
 ## Testing Framework
 
-The testing framework has been enhanced to validate the new modular masking system:
+The testing framework has been enhanced to validate the new unified masking system:
 
-### Test Categories
+### Unified Test Categories
 
 **Enhanced Coverage Areas:**
 - **Luminance Masking**: RGB to grayscale conversion accuracy using ITU-R BT.709 coefficients
@@ -672,7 +635,7 @@ The testing framework has been enhanced to validate the new modular masking syst
 - **Cascading ClipPath**: Mixed coordinate system testing
 - **Hit Testing**: Luminance-based point testing with proper threshold handling
 
-### Advanced Visual Testing
+### Enhanced Visual Testing
 
 **Testing Capabilities:**
 - **Pixel-Perfect Comparison**: Direct pixel analysis for masking accuracy
@@ -681,7 +644,7 @@ The testing framework has been enhanced to validate the new modular masking syst
 - **Animation Performance**: Cache invalidation timing analysis
 - **Text Geometry Testing**: Character-level clipping precision
 
-### Test Scenarios
+### Unified Test Scenarios
 
 **Comprehensive Test Coverage:**
 - **Basic Operations**: Simple mask and clip-path functionality
@@ -694,6 +657,7 @@ The testing framework has been enhanced to validate the new modular masking syst
 
 **Section sources**
 - [advanced_clip_mask_test.dart:1-766](file://test/animation/advanced_clip_mask_test.dart#L1-L766)
+- [advanced_clip_mask_composition_test.dart:1-726](file://test/animation/advanced_clip_mask_composition_test.dart#L1-L726)
 - [clip_mask_advanced_composition_test.dart:1-726](file://test/animation/clip_mask_advanced_composition_test.dart#L1-L726)
 - [clip_mask_use_verification_test.dart:1-800](file://test/animation/clip_mask_use_verification_test.dart#L1-L800)
 
@@ -745,10 +709,10 @@ The testing framework has been enhanced to validate the new modular masking syst
 
 ## Conclusion
 
-The Advanced Clipping and Masking System represents a revolutionary advancement in Flutter SVG rendering capabilities through its complete architectural overhaul from unified to modular design. The removal of the monolithic animated_svg_painter_clip_mask_advanced.dart and replacement with specialized extensions delivers superior performance, enhanced visual fidelity, and comprehensive SVG 2.0 specification compliance.
+The Advanced Clipping and Masking System represents a revolutionary advancement in Flutter SVG rendering capabilities through its complete architectural consolidation from modular to unified design. The system has been successfully consolidated from specialized extension modules back into the main animation pipeline, delivering superior performance, enhanced visual fidelity, and comprehensive SVG 2.0 specification compliance.
 
 **Key Achievements:**
-- **Modular Architecture**: Complete restructuring from unified to specialized extensions
+- **Unified Architecture**: Complete restructuring from specialized modules to integrated system
 - **Advanced Masking Support**: Comprehensive luminance and alpha masking with intelligent type resolution
 - **Enhanced Cascading ClipPath**: Supports mixed coordinate systems with up to 10 levels of recursion
 - **Improved Text Clipping**: Character-level precision using advanced glyph approximation algorithms
@@ -758,6 +722,6 @@ The Advanced Clipping and Masking System represents a revolutionary advancement 
 - **Performance Optimization**: Advanced caching system with animation-aware invalidation
 - **Complex Composition**: Full support for nested masking scenarios and mixed composition chains
 
-The modular approach's robust handling of complex masking scenarios, from simple alpha masking to sophisticated luminance masking with edge feathering, demonstrates its maturity and suitability for production applications requiring advanced SVG rendering capabilities.
+The unified approach's robust handling of complex masking scenarios, from simple alpha masking to sophisticated luminance masking with edge feathering, demonstrates its maturity and suitability for production applications requiring advanced SVG rendering capabilities.
 
-Future enhancements could include additional SVG filter integration, expanded support for CSS masking specifications, and further optimization of text clipping precision, building upon this solid modular foundation.
+Future enhancements could include additional SVG filter integration, expanded support for CSS masking specifications, and further optimization of text clipping precision, building upon this solid unified foundation.

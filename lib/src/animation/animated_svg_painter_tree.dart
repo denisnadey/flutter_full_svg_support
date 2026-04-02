@@ -441,6 +441,13 @@ List<SvgFilterPaintPass> _resolveFilterPassesImpl(
   if (filterId == null || painter.document.filters == null) {
     return const <SvgFilterPaintPass>[SvgFilterPaintPass.identity];
   }
+
+  // Sync animated attribute values from DOM nodes to filter objects
+  // before resolving paint passes. This ensures that SMIL animations
+  // targeting filter primitive attributes (stdDeviation, dx, dy, etc.)
+  // are reflected in the rendered filter output.
+  _syncFilterAnimatedValues(painter.document.filters!, filterId);
+
   final passes = painter.document.filters!.resolvePaintPasses(
     filterId,
     sourceContext: _buildFilterSourceContextImpl(painter, node),
@@ -449,6 +456,110 @@ List<SvgFilterPaintPass> _resolveFilterPassesImpl(
     return const <SvgFilterPaintPass>[SvgFilterPaintPass.identity];
   }
   return passes;
+}
+
+/// Syncs animated attribute values from source SvgNodes to SvgFilter objects.
+///
+/// When SMIL animations target attributes on filter primitive elements
+/// (e.g. `<animate attributeName="stdDeviation">` inside `<feGaussianBlur>`),
+/// the animation updates the SvgNode's animated attribute, but the SvgFilter
+/// object retains its static parse-time value. This method bridges the gap
+/// by reading animated values from the source nodes and updating the filter
+/// objects' mutable fields.
+void _syncFilterAnimatedValues(SvgFilters filters, String filterId) {
+  final primitives = filters.getAllById(filterId);
+  for (final primitive in primitives) {
+    final sourceNode = primitive.sourceElement;
+    if (sourceNode == null || sourceNode is! SvgNode) continue;
+
+    if (primitive is SvgGaussianBlurFilter) {
+      _syncGaussianBlurValues(primitive, sourceNode);
+    } else if (primitive is SvgOffsetFilter) {
+      _syncOffsetValues(primitive, sourceNode);
+    } else if (primitive is SvgDropShadowFilter) {
+      _syncDropShadowValues(primitive, sourceNode);
+    }
+  }
+}
+
+void _syncGaussianBlurValues(SvgGaussianBlurFilter blur, SvgNode node) {
+  final attr = node.getAttribute('stdDeviation');
+  if (attr == null || !attr.isAnimated) return;
+
+  final val = attr.effectiveValue;
+  if (val is num) {
+    blur.stdDeviationX = val.toDouble();
+    blur.stdDeviationY = val.toDouble();
+  } else if (val is String) {
+    final parts = val.trim().split(RegExp(r'[\s,]+'));
+    if (parts.isNotEmpty) {
+      blur.stdDeviationX = double.tryParse(parts[0]) ?? blur.stdDeviationX;
+      blur.stdDeviationY = parts.length > 1
+          ? (double.tryParse(parts[1]) ?? blur.stdDeviationX)
+          : blur.stdDeviationX;
+    }
+  }
+}
+
+void _syncOffsetValues(SvgOffsetFilter offset, SvgNode node) {
+  final dxAttr = node.getAttribute('dx');
+  if (dxAttr != null && dxAttr.isAnimated) {
+    final val = dxAttr.effectiveValue;
+    if (val is num) {
+      offset.dx = val.toDouble();
+    } else if (val is String) {
+      offset.dx = double.tryParse(val) ?? offset.dx;
+    }
+  }
+
+  final dyAttr = node.getAttribute('dy');
+  if (dyAttr != null && dyAttr.isAnimated) {
+    final val = dyAttr.effectiveValue;
+    if (val is num) {
+      offset.dy = val.toDouble();
+    } else if (val is String) {
+      offset.dy = double.tryParse(val) ?? offset.dy;
+    }
+  }
+}
+
+void _syncDropShadowValues(SvgDropShadowFilter shadow, SvgNode node) {
+  final stdAttr = node.getAttribute('stdDeviation');
+  if (stdAttr != null && stdAttr.isAnimated) {
+    final val = stdAttr.effectiveValue;
+    if (val is num) {
+      shadow.stdDeviationX = val.toDouble();
+      shadow.stdDeviationY = val.toDouble();
+    } else if (val is String) {
+      final parts = val.trim().split(RegExp(r'[\s,]+'));
+      if (parts.isNotEmpty) {
+        shadow.stdDeviationX = double.tryParse(parts[0]) ?? shadow.stdDeviationX;
+        shadow.stdDeviationY = parts.length > 1
+            ? (double.tryParse(parts[1]) ?? shadow.stdDeviationX)
+            : shadow.stdDeviationX;
+      }
+    }
+  }
+
+  final dxAttr = node.getAttribute('dx');
+  if (dxAttr != null && dxAttr.isAnimated) {
+    final val = dxAttr.effectiveValue;
+    if (val is num) {
+      shadow.dx = val.toDouble();
+    } else if (val is String) {
+      shadow.dx = double.tryParse(val) ?? shadow.dx;
+    }
+  }
+
+  final dyAttr = node.getAttribute('dy');
+  if (dyAttr != null && dyAttr.isAnimated) {
+    final val = dyAttr.effectiveValue;
+    if (val is num) {
+      shadow.dy = val.toDouble();
+    } else if (val is String) {
+      shadow.dy = double.tryParse(val) ?? shadow.dy;
+    }
+  }
 }
 
 SvgFilterSourceContext _buildFilterSourceContextImpl(

@@ -75,3 +75,55 @@ SvgFilter? _parseFilterPrimitive(XmlElement element, String filterId) {
       return null;
   }
 }
+
+/// Set of recognized filter primitive tag names.
+const Set<String> _filterPrimitiveTags = {
+  'feGaussianBlur',
+  'feMorphology',
+  'feDisplacementMap',
+  'feImage',
+  'feConvolveMatrix',
+  'feTurbulence',
+  'feComponentTransfer',
+  'feDiffuseLighting',
+  'feSpecularLighting',
+  'feOffset',
+  'feFlood',
+  'feBlend',
+  'feComposite',
+  'feMerge',
+  'feTile',
+  'feDropShadow',
+  'feColorMatrix',
+};
+
+/// Links filter primitive SvgFilter objects to their corresponding SvgNodes
+/// in the DOM tree. This enables filter primitives to read animated attribute
+/// values at render time.
+///
+/// Walks the DOM tree to find <defs><filter><fe*> elements, then matches
+/// them positionally to the SvgFilter objects in the filter registry.
+void _linkFilterPrimitivesToNodes(SvgNode root, SvgFilters filters) {
+  for (final child in root.children) {
+    if (child.tagName == 'defs') {
+      for (final filterNode in child.children) {
+        if (filterNode.tagName != 'filter') continue;
+        final filterId = filterNode.id;
+        if (filterId == null || filterId.isEmpty) continue;
+
+        final filterPrimitives = filters.getAllById(filterId);
+        if (filterPrimitives.isEmpty) continue;
+
+        // Match fe* children to SvgFilter objects by position
+        int primitiveIndex = 0;
+        for (final feNode in filterNode.children) {
+          if (!_filterPrimitiveTags.contains(feNode.tagName)) continue;
+          if (primitiveIndex < filterPrimitives.length) {
+            filterPrimitives[primitiveIndex].sourceElement = feNode;
+          }
+          primitiveIndex++;
+        }
+      }
+    }
+  }
+}

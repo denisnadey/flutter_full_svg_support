@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+  <!-- Simple opacity fade in/out -->
+  <rect x="50" y="50" width="200" height="200" fill="#e74c3c" rx="15">
+    <animate attributeName="opacity" values="1;0;1" dur="15s" fill="freeze"/>
+  </rect>
+
+  <!-- Additive opacity on group children -->
+  <g opacity="0.8">
+    <animate attributeName="opacity" values="0.8;0.2;0.8" dur="15s" fill="freeze"/>
+    <circle cx="450" cy="150" r="70" fill="#3498db"/>
+    <circle cx="500" cy="200" r="50" fill="#2ecc71"/>
+  </g>
+
+  <!-- Fill-opacity animation (not overall opacity) -->
+  <rect x="600" y="50" width="150" height="150" fill="#9b59b6" stroke="#2c3e50" stroke-width="4">
+    <animate attributeName="fill-opacity" values="1;0.1;1" dur="15s" fill="freeze"/>
+  </rect>
+
+  <!-- Stroke-opacity animation -->
+  <circle cx="200" cy="450" r="80" fill="none" stroke="#e67e22" stroke-width="10">
+    <animate attributeName="stroke-opacity" values="1;0;1" dur="15s" fill="freeze"/>
+  </circle>
+
+  <!-- Multiple overlapping shapes with staggered opacity -->
+  <rect x="400" y="350" width="160" height="160" fill="#e74c3c" rx="10">
+    <animate attributeName="opacity" values="0;1;0" dur="15s" fill="freeze"/>
+  </rect>
+  <rect x="450" y="380" width="160" height="160" fill="#3498db" rx="10">
+    <animate attributeName="opacity" values="1;0;1" dur="15s" fill="freeze"/>
+  </rect>
+</svg>

@@ -261,10 +261,10 @@ class SvgFilterSourceContext {
 /// Смещает входное изображение на dx/dy.
 class SvgOffsetFilter extends SvgFilter {
   /// Смещение по X
-  final double dx;
+  double dx;
 
   /// Смещение по Y
-  final double dy;
+  double dy;
 
   SvgOffsetFilter({
     required super.id,
