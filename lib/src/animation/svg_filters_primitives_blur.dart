@@ -106,6 +106,9 @@ class GaussianBlurProcessor {
   /// [stdDeviationX] - Blur standard deviation in X.
   /// [stdDeviationY] - Blur standard deviation in Y.
   /// [edgeMode] - How to handle pixels outside image bounds.
+  /// [useLinearRGB] - If true, convert sRGB→linearRGB before blur and
+  ///   linearRGB→sRGB after. Per SVG spec, the default for
+  ///   color-interpolation-filters is linearRGB.
   ///
   /// Returns new RGBA pixel data with blur applied.
   static Uint8List applyBlur({
@@ -115,6 +118,7 @@ class GaussianBlurProcessor {
     required double stdDeviationX,
     required double stdDeviationY,
     required SvgConvolveEdgeMode edgeMode,
+    bool useLinearRGB = false,
   }) {
     if (width <= 0 || height <= 0) {
       return pixels;
@@ -125,11 +129,26 @@ class GaussianBlurProcessor {
       return pixels;
     }
 
+    // Convert sRGB → linearRGB before blur if requested.
+    var data = useLinearRGB
+        ? _convertSrgbToLinearRGB(pixels)
+        : pixels;
+
     // Use box blur approximation for large values
     if (stdDeviationX > _maxGaussianBlurStdDeviation ||
         stdDeviationY > _maxGaussianBlurStdDeviation) {
-      return _applyBoxBlurApproximation(
-        pixels: pixels,
+      data = _applyBoxBlurApproximation(
+        pixels: data,
+        width: width,
+        height: height,
+        stdDeviationX: stdDeviationX,
+        stdDeviationY: stdDeviationY,
+        edgeMode: edgeMode,
+      );
+    } else {
+      // Standard Gaussian blur for reasonable values
+      data = _applyGaussianBlur(
+        pixels: data,
         width: width,
         height: height,
         stdDeviationX: stdDeviationX,
@@ -138,15 +157,12 @@ class GaussianBlurProcessor {
       );
     }
 
-    // Standard Gaussian blur for reasonable values
-    return _applyGaussianBlur(
-      pixels: pixels,
-      width: width,
-      height: height,
-      stdDeviationX: stdDeviationX,
-      stdDeviationY: stdDeviationY,
-      edgeMode: edgeMode,
-    );
+    // Convert linearRGB → sRGB after blur if we converted before.
+    if (useLinearRGB) {
+      data = _convertLinearRGBToSrgb(data);
+    }
+
+    return data;
   }
 
   /// Applies standard Gaussian blur using separable convolution.
@@ -433,6 +449,67 @@ class GaussianBlurProcessor {
       case SvgConvolveEdgeMode.none:
         return -1; // Signal to skip this sample
     }
+  }
+
+  // ------------------------------------------------------------------
+  // sRGB <-> linearRGB conversion for color-interpolation-filters support
+  // ------------------------------------------------------------------
+
+  /// Precomputed sRGB-to-linearRGB lookup table (256 entries).
+  static final Float64List _srgbToLinearLut = _buildSrgbToLinearLut();
+
+  /// Precomputed linearRGB-to-sRGB lookup table (256 entries).
+  static final Uint8List _linearToSrgbLut = _buildLinearToSrgbLut();
+
+  static Float64List _buildSrgbToLinearLut() {
+    final lut = Float64List(256);
+    for (int i = 0; i < 256; i++) {
+      final s = i / 255.0;
+      lut[i] = s <= 0.04045
+          ? s / 12.92
+          : math.pow((s + 0.055) / 1.055, 2.4).toDouble();
+    }
+    return lut;
+  }
+
+  static Uint8List _buildLinearToSrgbLut() {
+    final lut = Uint8List(256);
+    for (int i = 0; i < 256; i++) {
+      final l = i / 255.0;
+      final s = l <= 0.0031308
+          ? 12.92 * l
+          : 1.055 * math.pow(l, 1.0 / 2.4) - 0.055;
+      lut[i] = (s * 255.0).round().clamp(0, 255);
+    }
+    return lut;
+  }
+
+  /// Converts RGBA pixel buffer from sRGB to linearRGB color space.
+  /// Alpha channel is left unchanged.
+  static Uint8List _convertSrgbToLinearRGB(Uint8List pixels) {
+    final result = Uint8List(pixels.length);
+    final lut = _srgbToLinearLut;
+    for (int i = 0; i < pixels.length; i += 4) {
+      result[i] = (lut[pixels[i]] * 255.0).round().clamp(0, 255);
+      result[i + 1] = (lut[pixels[i + 1]] * 255.0).round().clamp(0, 255);
+      result[i + 2] = (lut[pixels[i + 2]] * 255.0).round().clamp(0, 255);
+      result[i + 3] = pixels[i + 3]; // alpha unchanged
+    }
+    return result;
+  }
+
+  /// Converts RGBA pixel buffer from linearRGB to sRGB color space.
+  /// Alpha channel is left unchanged.
+  static Uint8List _convertLinearRGBToSrgb(Uint8List pixels) {
+    final result = Uint8List(pixels.length);
+    final lut = _linearToSrgbLut;
+    for (int i = 0; i < pixels.length; i += 4) {
+      result[i] = lut[pixels[i]];
+      result[i + 1] = lut[pixels[i + 1]];
+      result[i + 2] = lut[pixels[i + 2]];
+      result[i + 3] = pixels[i + 3]; // alpha unchanged
+    }
+    return result;
   }
 }
 

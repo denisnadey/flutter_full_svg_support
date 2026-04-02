@@ -151,6 +151,18 @@ Implemented:
 Missing:
 - advanced CSS shorthand edge cases and high-fidelity transform semantics
 
+### 11) CSS Compositing Properties
+
+Implemented:
+- `enable-background: new` — creates compositing boundary via saveLayer on container elements, pushes/pops background context for child filter BackgroundImage/BackgroundAlpha resolution
+- `color-interpolation-filters` — inherited CSS property resolved from cascade, pixel-level processors (GaussianBlurProcessor) support sRGB↔linearRGB conversion with precomputed lookup tables
+- `isolation: isolate` — creates stacking context boundary preventing mix-blend-mode from compositing with parent content
+- `mix-blend-mode` on groups — implicit isolation creating saveLayer with group blend mode
+- All 14+ blend mode values fully mapped to Flutter BlendMode enums
+
+Missing:
+- GPU-level linearRGB filter operations (Flutter ImageFilter operates in sRGB natively; pixel-level conversion available for software path)
+
 ## Prioritized Backlog (Execution)
 
 ### P0: Foundation

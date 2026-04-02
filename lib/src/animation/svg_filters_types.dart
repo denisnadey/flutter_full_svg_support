@@ -241,12 +241,19 @@ class SvgFilterSourceContext {
     this.strokePaint,
     this.backgroundImage,
     this.backgroundAlpha,
+    this.useLinearRGB = false,
   });
 
   final List<SvgFilterPaintPass>? fillPaint;
   final List<SvgFilterPaintPass>? strokePaint;
   final List<SvgFilterPaintPass>? backgroundImage;
   final List<SvgFilterPaintPass>? backgroundAlpha;
+
+  /// Whether filter primitives should operate in linearRGB color space.
+  /// Per SVG spec, the default for color-interpolation-filters is linearRGB.
+  /// When true, pixel-level filter processors should convert sRGB→linearRGB
+  /// before processing and linearRGB→sRGB afterwards.
+  final bool useLinearRGB;
 }
 
 /// Offset фильтр

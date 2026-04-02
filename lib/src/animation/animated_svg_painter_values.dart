@@ -464,4 +464,18 @@ extension AnimatedSvgPainterValuesExtension on AnimatedSvgPainter {
         return null;
     }
   }
+
+  /// Resolves `color-interpolation-filters` for a node.
+  ///
+  /// Per SVG spec, the default value is `linearRGB`.
+  /// Returns true when filters should operate in linearRGB color space.
+  bool _isLinearRGBFilterSpace(SvgNode node) {
+    final value = _getInheritedString(
+      node,
+      'color-interpolation-filters',
+    )?.trim().toLowerCase();
+    // Per SVG spec, the initial (default) value is linearRGB.
+    // Only returns false when explicitly set to sRGB.
+    return value != 'srgb';
+  }
 }

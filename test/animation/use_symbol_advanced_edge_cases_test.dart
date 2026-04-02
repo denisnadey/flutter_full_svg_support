@@ -171,9 +171,7 @@ void main() {
         await tester.pump();
 
         final pixels = await VisualTestUtils.captureWidgetPixels(tester);
-        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
-
-        // In current implementation, use visibility applies to entire shadow.
+        VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
         // The ref's visibility:visible should override the use's hidden.
         // If it doesn't render, that's also valid SVG behavior.
         // Just verify the widget renders without error.

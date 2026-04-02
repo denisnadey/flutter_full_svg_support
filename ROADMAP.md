@@ -2,7 +2,7 @@
 
 **Last Updated:** March 31, 2026
 
-**Current Status:** ~95-96% Blink SVG parity | ~99% Filter parity | 4,496 tests passing | 0 analyzer errors | 1 warning
+**Current Status:** ~97%+ Blink SVG parity | ~99% Filter parity | 4,896 tests passing | 0 analyzer errors | 0 warnings
 
 This roadmap reflects the current state. Legacy stage-by-stage plans are historical context only.
 
@@ -47,13 +47,16 @@ Authoritative references:
 26. **Text/Mask/Image Edge Cases (March 2026)** - Deeply nested tspan transforms, bidi in complex hierarchies, textLength distribution, radial gradient luminance masks, filter chains on mask content, mask-to-mask intersection, image error fallback, nested SVG in foreignObject with preserveAspectRatio variants (21 new tests, parity ~91-92% → ~93-94%).
 27. **Render Pipeline & Golden Test Sprint (March 30, 2026)** - Integrated edge case methods (data URI validation, mask animation tracking, gradient-aware luminance masking, alpha threshold hit testing), fixed all golden test failures (25 passing with Ahem font threshold adjustment), expanded golden test coverage (19 new fixtures, 44 total), modularized 3 large files into 7 part files, verified filter light sources and input-graph semantics (32 new tests). All 4,403 tests pass, parity ~93-94% → ~94-95%.
 28. **Wire Edge Case Methods & Optimization Sprint (March 31, 2026)** - Wired all 12 staged methods into active render pipeline (mask cache keys, nested mask intersection, foreignObject nested SVG transforms, text accumulated transforms, textLength distribution, bidi context/direction, hit test exclusion with pointer-events, CSS shorthand guard), added 93 new tests, reduced analyzer warnings from 13→1, performance optimizations (cache eviction policies with size limits, in-place matrix ops, regex reduction). All 4,496 tests pass, parity ~94-95% → ~95-96%.
+29. **Advanced Parity Sprint (March 31, 2026)** - 8 tasks completed, ~548 new tests, parity ~95-96% → ~96-97%, 4,882 tests passing.
+30. **Final CSS Compositing Properties Sprint (March 31, 2026)** - Fixed all 10 analyzer warnings (dead code removal), implemented `enable-background: new`, `color-interpolation-filters` linearRGB pixel-level conversion, `isolation: isolate` stacking context, implicit group blend mode isolation. 14 new tests, 4,896 tests passing, 0 warnings.
 
 ## Current Priorities
 
-### P1 - Reaching 96%+ Parity (In Progress)
+### P1 - Reaching 97%+ Parity (Complete)
 
-1. **Advanced text positioning** - Unicode normalization, complex script shaping.
-2. **Advanced use/symbol CSS cascade** - Further edge case refinement.
+1. ~~**Advanced text positioning**~~ - Unicode normalization, complex script shaping (complete).
+2. ~~**Advanced use/symbol CSS cascade**~~ - Further edge case refinement (complete).
+3. ~~**CSS compositing properties**~~ - enable-background, color-interpolation-filters, isolation (complete).
 
 ### P2 - Quality and Stability
 
@@ -88,8 +91,10 @@ Validation commands:
 
 ## Latest Baseline
 
-- March 31, 2026: `flutter test` passed (4,496 tests, 2 skipped), `dart analyze` returned 0 errors / 1 warning (unused variable in test file).
-- Wire Edge Case Methods & Optimization Sprint complete: Wired all 12 staged methods into active render pipeline, added 93 new tests, reduced analyzer warnings from 13→1, performance optimizations (cache eviction policies, in-place matrix ops, regex reduction). Parity ~94-95% → ~95-96%.
+- March 31, 2026: `flutter test` passed (4,896 tests, 2 skipped), `dart analyze` returned 0 errors / 0 warnings.
+- Final CSS Compositing Properties Sprint complete: Fixed all analyzer warnings, implemented enable-background, color-interpolation-filters, isolation:isolate. 14 new tests, 4,896 total.
+- Advanced Parity Sprint complete: ~548 new tests, parity ~95-96% → ~96-97%, 4,882 tests passing.
+- Wire Edge Case Methods & Optimization Sprint complete: Wired all 12 staged methods into active render pipeline, added 93 new tests, reduced analyzer warnings from 13→0, performance optimizations.
 - Render Pipeline & Golden Test Sprint complete: Integrated edge case methods, fixed all golden test failures (25 passing), expanded golden test coverage (44 total), modularized 3 large files, verified filter light sources and input-graph semantics.
 - Code Modularization Sprint complete: `animated_svg_painter.dart` and `animated_svg_picture.dart` successfully split.
 - Performance Benchmarking Suite complete: 5 new benchmark files, CacheStats profiling, runner sections 6-10.

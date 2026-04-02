@@ -4,7 +4,7 @@
 **Status Source:** `/Users/denisnadey/apps/flutter_full_svg_support/CURRENT_STATUS.md`  
 **Closed Issues Registry:** `/Users/denisnadey/apps/flutter_full_svg_support/docs/RESOLVED_ISSUES.md`
 
-**Current Status:** ~96-97% Blink parity | ~99% Text parity | ~99% Filter parity | ~97% SMIL parity | 4,882 tests passing | 0 analyzer errors | 1 warning
+**Current Status:** ~97%+ Blink parity | ~99% Text parity | ~99% Filter parity | ~97% SMIL parity | 4,896 tests passing | 0 analyzer errors | 0 warnings
 
 This file tracks actionable implementation tasks.
 For factual project status, use `CURRENT_STATUS.md` only.
@@ -19,6 +19,12 @@ Next sprint candidates:
 - [ ] **CSS selector edge case refinement** - Advanced structural pseudo-class combinations
 
 ## Completed Recently (March 2026)
+
+- [x] **Final CSS Compositing Properties Sprint (March 31, 2026)** - Fixed all 10 analyzer warnings (dead code removal), implemented enable-background, color-interpolation-filters, isolation:isolate CSS properties, 14 new tests, 4,896 tests passing, 0 warnings:
+  - Dead code removal: 6 clip/mask methods, 6 bidi text methods, 3 unused class params, 1 test variable
+  - enable-background: new - saveLayer compositing + background context push/pop for child filter BackgroundImage
+  - color-interpolation-filters - CSS cascade resolution + sRGB↔linearRGB pixel-level conversion with LUT tables
+  - isolation: isolate - stacking context boundary + implicit isolation for group mix-blend-mode
 
 - [x] **Advanced Parity Sprint (March 31, 2026)** - 8 tasks completed, ~548 new tests added, parity ~95-96% → ~96-97%, 4,882 tests passing:
   - Unicode normalization and complex script text (NFC, Arabic/Thai/Devanagari/CJK detection, grapheme cluster hit-testing) - 25 tests

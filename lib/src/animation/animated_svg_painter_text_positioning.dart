@@ -497,10 +497,6 @@ extension AnimatedSvgPainterTextPositioningExtension on AnimatedSvgPainter {
     return _resolveTextDirection(_getInheritedString(node, 'direction'));
   }
 
-  /// Checks if the node is a BDO (bi-directional override) element.
-  bool _bidiIsBdoElement(SvgNode node) {
-    return node.tagName == 'bdo';
-  }
 
   /// Resolves direction for BDO elements, handling dir="auto".
   ///
@@ -590,241 +586,7 @@ extension AnimatedSvgPainterTextPositioningExtension on AnimatedSvgPainter {
     return ui.TextDirection.ltr;
   }
 
-  /// Resolves the unicode-bidi behavior considering direction interaction.
-  ///
-  /// Handles all unicode-bidi values:
-  /// - normal: element doesn't affect bidi
-  /// - embed: opens embedded level of bidi
-  /// - isolate: isolates the content from surrounding bidi context
-  /// - bidi-override: overrides bidi algorithm, all chars get explicit direction
-  /// - isolate-override: combines isolate and override
-  /// - plaintext: paragraph direction from first strong character
-  _BidiLevel _bidiResolveUnicodeBidiInteraction(
-    SvgNode node,
-    ui.TextDirection inheritedDirection,
-  ) {
-    final unicodeBidi = node.getAttributeValue('unicode-bidi')?.toString();
-    final directionAttr = node.getAttributeValue('direction')?.toString();
-    final isBdo = _bidiIsBdoElement(node);
 
-    // Resolve direction
-    ui.TextDirection direction = inheritedDirection;
-    if (directionAttr != null) {
-      direction = _resolveTextDirection(directionAttr);
-    }
-
-    // Determine bidi mode
-    final bidiMode = unicodeBidi?.toLowerCase().trim() ?? 'normal';
-
-    bool isIsolate = false;
-    bool isOverride = false;
-
-    switch (bidiMode) {
-      case 'embed':
-        // Opens embedding level, inherits direction or uses explicit
-        break;
-
-      case 'isolate':
-        isIsolate = true;
-        break;
-
-      case 'bidi-override':
-        isOverride = true;
-        break;
-
-      case 'isolate-override':
-        isIsolate = true;
-        isOverride = true;
-        break;
-
-      case 'plaintext':
-        // Direction determined from first strong character
-        isIsolate = true;
-        final text = _extractTextContent(node);
-        if (text != null) {
-          direction = _bidiDetectFirstStrongDirection(text);
-        }
-        break;
-
-      case 'normal':
-      default:
-        // No special bidi behavior
-        break;
-    }
-
-    // BDO elements always force override
-    if (isBdo) {
-      isOverride = true;
-    }
-
-    return _BidiLevel(
-      direction: direction,
-      unicodeBidi: unicodeBidi,
-      isIsolate: isIsolate,
-      isOverride: isOverride,
-      isBdo: isBdo,
-    );
-  }
-
-  /// Segments mixed-direction text into runs for proper visual reordering.
-  ///
-  /// This implements a simplified Unicode Bidi Algorithm (UBA) for SVG text.
-  /// Each run has a consistent direction and can be positioned independently.
-  List<_BidiTextRun> _bidiSegmentMixedDirectionText(
-    String text,
-    ui.TextDirection baseDirection, {
-    bool isOverride = false,
-  }) {
-    if (text.isEmpty) return [];
-
-    // If override is active, all text is forced to base direction
-    if (isOverride) {
-      return [
-        _BidiTextRun(
-          text: text,
-          direction: baseDirection,
-          logicalStart: 0,
-          logicalEnd: text.length,
-          visualOrder: 0,
-          isOverridden: true,
-        ),
-      ];
-    }
-
-    final runs = <_BidiTextRun>[];
-    int runStart = 0;
-    ui.TextDirection? currentDirection;
-    int visualOrder = 0;
-
-    for (int i = 0; i < text.length; i++) {
-      final charDirection = _bidiGetCharacterDirection(text.codeUnitAt(i));
-      final effectiveDirection = charDirection ?? baseDirection;
-
-      if (currentDirection == null) {
-        currentDirection = effectiveDirection;
-      } else if (effectiveDirection != currentDirection &&
-          charDirection != null) {
-        // Direction change, close current run
-        runs.add(
-          _BidiTextRun(
-            text: text.substring(runStart, i),
-            direction: currentDirection,
-            logicalStart: runStart,
-            logicalEnd: i,
-            visualOrder: visualOrder++,
-          ),
-        );
-        runStart = i;
-        currentDirection = effectiveDirection;
-      }
-    }
-
-    // Add final run
-    if (runStart < text.length) {
-      runs.add(
-        _BidiTextRun(
-          text: text.substring(runStart),
-          direction: currentDirection ?? baseDirection,
-          logicalStart: runStart,
-          logicalEnd: text.length,
-          visualOrder: visualOrder,
-        ),
-      );
-    }
-
-    // Reorder runs for visual display
-    return _bidiReorderRunsForDisplay(runs, baseDirection);
-  }
-
-  /// Gets the directional character type for a code unit.
-  ///
-  /// Returns null for neutral characters (numbers, spaces, punctuation).
-  ui.TextDirection? _bidiGetCharacterDirection(int codeUnit) {
-    // RTL: Hebrew (0x0590-0x05FF)
-    if (codeUnit >= 0x0590 && codeUnit <= 0x05FF) {
-      return ui.TextDirection.rtl;
-    }
-
-    // RTL: Arabic (0x0600-0x06FF)
-    if (codeUnit >= 0x0600 && codeUnit <= 0x06FF) {
-      return ui.TextDirection.rtl;
-    }
-
-    // RTL: Arabic Supplement, Extended, Syriac, Thaana
-    if ((codeUnit >= 0x0700 && codeUnit <= 0x08FF)) {
-      return ui.TextDirection.rtl;
-    }
-
-    // LTR: Latin (A-Z, a-z)
-    if ((codeUnit >= 0x0041 && codeUnit <= 0x005A) ||
-        (codeUnit >= 0x0061 && codeUnit <= 0x007A)) {
-      return ui.TextDirection.ltr;
-    }
-
-    // LTR: Extended Latin
-    if (codeUnit >= 0x0100 && codeUnit <= 0x024F) {
-      return ui.TextDirection.ltr;
-    }
-
-    // LTR: Greek, Cyrillic
-    if (codeUnit >= 0x0370 && codeUnit <= 0x04FF) {
-      return ui.TextDirection.ltr;
-    }
-
-    // Neutral (numbers, punctuation, spaces)
-    return null;
-  }
-
-  /// Reorders bidi text runs for visual display based on base direction.
-  ///
-  /// In LTR base: LTR runs stay in place, RTL runs are reversed within their sequence
-  /// In RTL base: RTL runs stay in place, LTR runs are reversed within their sequence
-  List<_BidiTextRun> _bidiReorderRunsForDisplay(
-    List<_BidiTextRun> runs,
-    ui.TextDirection baseDirection,
-  ) {
-    if (runs.length <= 1) return runs;
-
-    // Create a copy with updated visual orders
-    final reordered = <_BidiTextRun>[];
-    int visualOrder = 0;
-
-    if (baseDirection == ui.TextDirection.ltr) {
-      // For LTR base, RTL runs appear in reverse logical order
-      for (int i = 0; i < runs.length; i++) {
-        final run = runs[i];
-        reordered.add(
-          _BidiTextRun(
-            text: run.text,
-            direction: run.direction,
-            logicalStart: run.logicalStart,
-            logicalEnd: run.logicalEnd,
-            visualOrder: visualOrder++,
-            isOverridden: run.isOverridden,
-          ),
-        );
-      }
-    } else {
-      // For RTL base, process runs in reverse for visual order
-      for (int i = runs.length - 1; i >= 0; i--) {
-        final run = runs[i];
-        reordered.add(
-          _BidiTextRun(
-            text: run.text,
-            direction: run.direction,
-            logicalStart: run.logicalStart,
-            logicalEnd: run.logicalEnd,
-            visualOrder: visualOrder++,
-            isOverridden: run.isOverridden,
-          ),
-        );
-      }
-    }
-
-    // Sort by visual order for rendering
-    reordered.sort((a, b) => a.visualOrder.compareTo(b.visualOrder));
-    return reordered;
-  }
 
   /// Maps a logical position to visual position for hit-testing in mixed-direction text.
   ///
@@ -881,53 +643,7 @@ extension AnimatedSvgPainterTextPositioningExtension on AnimatedSvgPainter {
     );
   }
 
-  /// Maps a visual position back to logical position for selection.
-  ///
-  /// Inverse of [_bidiMapLogicalToVisualPosition].
-  _BidiPositionMapping _bidiMapVisualToLogicalPosition(
-    int visualIndex,
-    List<_BidiTextRun> runs,
-  ) {
-    // Sort runs by visual order
-    final sortedRuns = List<_BidiTextRun>.from(runs)
-      ..sort((a, b) => a.visualOrder.compareTo(b.visualOrder));
 
-    int currentVisualPos = 0;
-    for (final run in sortedRuns) {
-      final runLength = run.logicalEnd - run.logicalStart;
-
-      if (visualIndex >= currentVisualPos &&
-          visualIndex < currentVisualPos + runLength) {
-        // Position is within this run
-        final offsetInRun = visualIndex - currentVisualPos;
-
-        // For RTL runs, logical position is reversed
-        int logicalOffset;
-        if (run.direction == ui.TextDirection.rtl) {
-          logicalOffset = (runLength - 1) - offsetInRun;
-        } else {
-          logicalOffset = offsetInRun;
-        }
-
-        return _BidiPositionMapping(
-          logicalIndex: run.logicalStart + logicalOffset,
-          visualIndex: visualIndex,
-          direction: run.direction,
-          isAtRunBoundary: offsetInRun == 0 || offsetInRun == runLength - 1,
-        );
-      }
-
-      currentVisualPos += runLength;
-    }
-
-    // Beyond all runs
-    return _BidiPositionMapping(
-      logicalIndex: runs.isNotEmpty ? runs.last.logicalEnd : 0,
-      visualIndex: visualIndex,
-      direction: runs.isNotEmpty ? runs.last.direction : ui.TextDirection.ltr,
-      isAtRunBoundary: true,
-    );
-  }
 }
 
 /// Information about a single ancestor in the baseline calculation chain.
@@ -1010,8 +726,6 @@ class _BidiLevel {
     required this.direction,
     required this.unicodeBidi,
     required this.isIsolate,
-    this.isOverride = false,
-    this.isBdo = false,
   });
 
   /// The text direction at this level.
@@ -1022,12 +736,6 @@ class _BidiLevel {
 
   /// Whether this level is isolated from surrounding text.
   final bool isIsolate;
-
-  /// Whether this level overrides the bidi algorithm.
-  final bool isOverride;
-
-  /// Whether this level comes from a <bdo> element.
-  final bool isBdo;
 }
 
 /// Represents a text run with resolved bidi properties.
@@ -1038,7 +746,6 @@ class _BidiTextRun {
     required this.logicalStart,
     required this.logicalEnd,
     required this.visualOrder,
-    this.isOverridden = false,
   });
 
   /// The text content of this run.
@@ -1056,8 +763,6 @@ class _BidiTextRun {
   /// The visual order index (for reordering).
   final int visualOrder;
 
-  /// Whether bidi-override was applied to this run.
-  final bool isOverridden;
 }
 
 /// Result of logical-to-visual position mapping for hit-testing.

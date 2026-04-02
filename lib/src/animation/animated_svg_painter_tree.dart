@@ -321,9 +321,15 @@ void _paintNodeImplWithUseContext(
   canvas.restore();
 }
 
-/// Paints group children with proper opacity compositing.
-/// If the group has opacity < 1, uses saveLayer to composite children
-/// before applying opacity to the whole group.
+/// Paints group children with proper opacity, isolation, and
+/// enable-background compositing.
+///
+/// Uses saveLayer when the group requires compositing isolation:
+/// - opacity < 1.0: composite children with reduced opacity
+/// - isolation: isolate: create stacking context boundary
+/// - enable-background: new: create background capture context
+/// - mix-blend-mode on group: implicit stacking context
+///
 /// Returns true if children were painted (caller should skip normal recursion).
 bool _paintGroupWithOpacity(
   AnimatedSvgPainter painter,
@@ -339,18 +345,60 @@ bool _paintGroupWithOpacity(
       ? (double.tryParse(opacityValue.toString()) ?? 1.0).clamp(0.0, 1.0)
       : 1.0;
 
-  // If opacity is 1.0, no special handling needed - children painted normally
-  // by the recursive call after this switch statement
-  if (opacity >= 1.0) {
+  // Check for isolation: isolate CSS property.
+  // Per CSS Compositing spec, isolation: isolate creates a new stacking
+  // context that prevents mix-blend-mode from compositing with content
+  // behind the isolated group.
+  final isolationValue = painter
+      ._getStyleOrAttributeValue(node, 'isolation')
+      ?.toString()
+      .trim()
+      .toLowerCase();
+  final isIsolated = isolationValue == 'isolate';
+
+  // Check for enable-background: new.
+  // Per SVG 1.1 spec, enable-background: new on a container element
+  // establishes a new background image context for child filter primitives
+  // that reference BackgroundImage/BackgroundAlpha.
+  final enableBgValue = painter
+      ._getStyleOrAttributeValue(node, 'enable-background')
+      ?.toString()
+      .trim()
+      .toLowerCase();
+  final hasEnableBackground = enableBgValue != null &&
+      enableBgValue.startsWith('new');
+
+  // Check for mix-blend-mode on the group itself.
+  // Per CSS spec, any non-normal mix-blend-mode creates implicit isolation.
+  final groupBlendMode = painter._resolveMixBlendMode(node);
+  final hasGroupBlendMode = groupBlendMode != null;
+
+  // Determine if saveLayer is needed for compositing
+  final needsLayer = opacity < 1.0 ||
+      isIsolated ||
+      hasEnableBackground ||
+      hasGroupBlendMode;
+
+  // If no compositing needed, children painted normally by the
+  // recursive call after this switch statement.
+  if (!needsLayer) {
     return false;
   }
 
-  // Use saveLayer for opacity compositing
-  // Using null bounds lets Flutter determine the layer size
+  // Build the layer paint with opacity and optional blend mode.
   final layerPaint = ui.Paint()
     ..color = ui.Color.fromARGB((opacity * 255).round(), 255, 255, 255);
+  if (hasGroupBlendMode) {
+    layerPaint.blendMode = groupBlendMode;
+  }
 
   canvas.saveLayer(null, layerPaint);
+
+  // Push background context for enable-background: new.
+  // This makes BackgroundImage/BackgroundAlpha available to child filters.
+  if (hasEnableBackground && painter.document.filters != null) {
+    painter.document.filters!.pushBackgroundContext();
+  }
 
   // Paint children into the layer
   if (painter._shouldPaintChildren(node)) {
@@ -376,6 +424,11 @@ bool _paintGroupWithOpacity(
         useContext: useContext,
       );
     }
+  }
+
+  // Pop background context if it was pushed.
+  if (hasEnableBackground && painter.document.filters != null) {
+    painter.document.filters!.popBackgroundContext();
   }
 
   canvas.restore();
@@ -432,6 +485,8 @@ SvgFilterSourceContext _buildFilterSourceContextImpl(
     // Default fallback to source placeholders handled in filter pipeline.
     backgroundImage: null,
     backgroundAlpha: null,
+    // Resolve color-interpolation-filters for pixel-level processing.
+    useLinearRGB: painter._isLinearRGBFilterSpace(node),
   );
 }
 
