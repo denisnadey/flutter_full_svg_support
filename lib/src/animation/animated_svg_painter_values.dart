@@ -31,6 +31,18 @@ extension AnimatedSvgPainterValuesExtension on AnimatedSvgPainter {
     return null;
   }
 
+  /// SVG/CSS properties that are NOT inherited per spec.
+  /// These should only be read from the node itself, not from ancestors.
+  /// Per CSS spec: opacity creates a stacking context and is NOT inherited.
+  /// Per SVG spec: filter, mask, clip-path are NOT inherited.
+  static const _nonInheritedProperties = {
+    'opacity',
+    'filter',
+    'mask',
+    'clip-path',
+    'overflow',
+  };
+
   Object? _getInheritedAttributeValue(SvgNode node, String attributeName) {
     final normalizedName = attributeName.trim().toLowerCase();
     SvgNode? current = node;
@@ -70,6 +82,14 @@ extension AnimatedSvgPainterValuesExtension on AnimatedSvgPainter {
     }
     if (nodeAttrValue != null) {
       return nodeAttrValue;
+    }
+
+    // Non-inherited properties: only check the node itself, never walk up
+    // the parent chain. Per CSS spec, opacity creates a stacking context and
+    // is NOT inherited. Group opacity is applied via saveLayer in
+    // _paintGroupWithOpacity; child paints must NOT re-apply it.
+    if (_nonInheritedProperties.contains(normalizedName)) {
+      return null;
     }
 
     // Walk up the parent chain looking for inherited values

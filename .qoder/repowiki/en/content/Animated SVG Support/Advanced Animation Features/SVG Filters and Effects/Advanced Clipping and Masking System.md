@@ -10,7 +10,6 @@
 - [animated_svg_painter_clip_nested.dart](file://lib/src/animation/animated_svg_painter_clip_nested.dart)
 - [animated_svg_painter_mask_clip_combination.dart](file://lib/src/animation/animated_svg_painter_mask_clip_combination.dart)
 - [animated_svg_painter_mask_luminance.dart](file://lib/src/animation/animated_svg_painter_mask_luminance.dart)
-- [animated_svg_painter_clip_mask_advanced.dart](file://lib/src/animation/animated_svg_painter_clip_mask_advanced.dart)
 - [advanced_clip_mask_test.dart](file://test/animation/advanced_clip_mask_test.dart)
 - [advanced_clip_mask_composition_test.dart](file://test/animation/advanced_clip_mask_composition_test.dart)
 - [clip_mask_advanced_composition_test.dart](file://test/animation/clip_mask_advanced_composition_test.dart)
@@ -19,7 +18,6 @@
 - [use_in_clip_mask_test.dart](file://test/animation/use_in_clip_mask_test.dart)
 - [animated_svg_picture_hit_test_visibility.dart](file://lib/src/animation/animated_svg_picture_hit_test_visibility.dart)
 - [animated_svg_picture_hit_test_text_runs.dart](file://lib/src/animation/animated_svg_picture_hit_test_text_runs.dart)
-- [animated_svg_picture_hit_test_text_path_segments.dart](file://lib/src/animation/animated_svg_picture_hit_test_text_path_segments.dart)
 </cite>
 
 ## Update Summary
@@ -31,6 +29,9 @@
 - Consolidated advanced masking features into unified system with enhanced layer-based masking
 - Integrated mask_content_units transition handling for nested mask scenarios
 - Unified approach to cascading clip-path operations with mixed coordinate systems
+- Enhanced Canvas.saveLayer compositing with improved layer management
+- Strengthened circular reference protection mechanisms
+- Expanded mixed coordinate system support for clip-path operations
 
 ## Table of Contents
 1. [Introduction](#introduction)

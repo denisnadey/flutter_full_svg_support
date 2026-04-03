@@ -12,103 +12,103 @@
     {
       "frame": 1,
       "time_s": 1.0,
-      "similarity": 0.9836,
-      "different_pixels": 7893,
+      "similarity": 0.9964,
+      "different_pixels": 1749,
       "total_pixels": 480000
     },
     {
       "frame": 2,
       "time_s": 2.0,
-      "similarity": 0.9687,
-      "different_pixels": 15024,
+      "similarity": 0.9935,
+      "different_pixels": 3133,
       "total_pixels": 480000
     },
     {
       "frame": 3,
       "time_s": 3.0,
-      "similarity": 0.9509,
-      "different_pixels": 23567,
+      "similarity": 0.9906,
+      "different_pixels": 4491,
       "total_pixels": 480000
     },
     {
       "frame": 4,
       "time_s": 4.0,
-      "similarity": 0.9345,
-      "different_pixels": 31441,
+      "similarity": 0.9885,
+      "different_pixels": 5522,
       "total_pixels": 480000
     },
     {
       "frame": 5,
       "time_s": 5.0,
-      "similarity": 0.9224,
-      "different_pixels": 37269,
+      "similarity": 0.99,
+      "different_pixels": 4806,
       "total_pixels": 480000
     },
     {
       "frame": 6,
       "time_s": 6.0,
-      "similarity": 0.9074,
-      "different_pixels": 44441,
+      "similarity": 0.9906,
+      "different_pixels": 4497,
       "total_pixels": 480000
     },
     {
       "frame": 7,
       "time_s": 7.0,
-      "similarity": 0.8932,
-      "different_pixels": 51269,
+      "similarity": 0.9911,
+      "different_pixels": 4295,
       "total_pixels": 480000
     },
     {
       "frame": 8,
       "time_s": 8.0,
-      "similarity": 0.896,
-      "different_pixels": 49931,
+      "similarity": 0.9902,
+      "different_pixels": 4706,
       "total_pixels": 480000
     },
     {
       "frame": 9,
       "time_s": 9.0,
-      "similarity": 0.9065,
-      "different_pixels": 44865,
+      "similarity": 0.9906,
+      "different_pixels": 4522,
       "total_pixels": 480000
     },
     {
       "frame": 10,
       "time_s": 10.0,
-      "similarity": 0.9243,
-      "different_pixels": 36329,
+      "similarity": 0.99,
+      "different_pixels": 4806,
       "total_pixels": 480000
     },
     {
       "frame": 11,
       "time_s": 11.0,
-      "similarity": 0.9384,
-      "different_pixels": 29572,
+      "similarity": 0.9886,
+      "different_pixels": 5489,
       "total_pixels": 480000
     },
     {
       "frame": 12,
       "time_s": 12.0,
-      "similarity": 0.9544,
-      "different_pixels": 21904,
+      "similarity": 0.9906,
+      "different_pixels": 4491,
       "total_pixels": 480000
     },
     {
       "frame": 13,
       "time_s": 13.0,
-      "similarity": 0.9709,
-      "different_pixels": 13990,
+      "similarity": 0.9935,
+      "different_pixels": 3134,
       "total_pixels": 480000
     },
     {
       "frame": 14,
       "time_s": 14.0,
-      "similarity": 0.9844,
-      "different_pixels": 7469,
+      "similarity": 0.9964,
+      "different_pixels": 1749,
       "total_pixels": 480000
     }
   ],
-  "average_similarity": 0.9423,
-  "worst_frame": 7,
-  "worst_similarity": 0.8932
+  "average_similarity": 0.9919,
+  "worst_frame": 4,
+  "worst_similarity": 0.9885
 }

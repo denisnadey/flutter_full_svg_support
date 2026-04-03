@@ -100,6 +100,18 @@ void _paintNodeImplWithUseContext(
 
   final filterPasses = _resolveFilterPassesImpl(painter, node);
 
+  // Compute filter region clip rect for output clipping.
+  // Per SVG spec, filter output is clipped to the filter region.
+  ui.Rect? filterRegionClip;
+  final filterId = painter._getFilterId(node);
+  if (filterId != null && painter.document.filters != null) {
+    final region = painter.document.filters!.getFilterRegion(filterId);
+    final nodeBounds = painter._getNodeBounds(node);
+    if (nodeBounds.width > 0 && nodeBounds.height > 0) {
+      filterRegionClip = region.computeRect(nodeBounds);
+    }
+  }
+
   // Рисуем сам узел в зависимости от типа.
   if (!isHidden) {
     switch (node.tagName) {
@@ -115,6 +127,7 @@ void _paintNodeImplWithUseContext(
             colorFilter: colorFilter,
             blendMode: blendMode,
           ),
+          filterRegionClip: filterRegionClip,
         );
         break;
       case 'circle':
@@ -129,6 +142,7 @@ void _paintNodeImplWithUseContext(
             colorFilter: colorFilter,
             blendMode: blendMode,
           ),
+          filterRegionClip: filterRegionClip,
         );
         break;
       case 'ellipse':
@@ -143,6 +157,7 @@ void _paintNodeImplWithUseContext(
             colorFilter: colorFilter,
             blendMode: blendMode,
           ),
+          filterRegionClip: filterRegionClip,
         );
         break;
       case 'path':
@@ -157,6 +172,7 @@ void _paintNodeImplWithUseContext(
             colorFilter: colorFilter,
             blendMode: blendMode,
           ),
+          filterRegionClip: filterRegionClip,
         );
         break;
       case 'polygon':
@@ -171,6 +187,7 @@ void _paintNodeImplWithUseContext(
             colorFilter: colorFilter,
             blendMode: blendMode,
           ),
+          filterRegionClip: filterRegionClip,
         );
         break;
       case 'polyline':
@@ -185,6 +202,7 @@ void _paintNodeImplWithUseContext(
             colorFilter: colorFilter,
             blendMode: blendMode,
           ),
+          filterRegionClip: filterRegionClip,
         );
         break;
       case 'line':
@@ -199,6 +217,7 @@ void _paintNodeImplWithUseContext(
             colorFilter: colorFilter,
             blendMode: blendMode,
           ),
+          filterRegionClip: filterRegionClip,
         );
         break;
       case 'image':
@@ -213,6 +232,7 @@ void _paintNodeImplWithUseContext(
             colorFilter: colorFilter,
             blendMode: blendMode,
           ),
+          filterRegionClip: filterRegionClip,
         );
         break;
       case 'text':
@@ -227,6 +247,7 @@ void _paintNodeImplWithUseContext(
             colorFilter: colorFilter,
             blendMode: blendMode,
           ),
+          filterRegionClip: filterRegionClip,
         );
         break;
       case 'tspan':
@@ -651,12 +672,16 @@ void _paintWithFilterPassesImpl(
     ui.ColorFilter? colorFilter,
     ui.BlendMode? blendMode,
   )
-  paint,
-) {
+  paint, {
+  ui.Rect? filterRegionClip,
+}) {
   final previousFillFlag = painter._currentPassPaintFill;
   final previousStrokeFlag = painter._currentPassPaintStroke;
   for (final pass in passes) {
     canvas.save();
+    if (filterRegionClip != null) {
+      canvas.clipRect(filterRegionClip);
+    }
     painter._currentPassPaintFill = pass.paintFill;
     painter._currentPassPaintStroke = pass.paintStroke;
     if (pass.offset != ui.Offset.zero) {

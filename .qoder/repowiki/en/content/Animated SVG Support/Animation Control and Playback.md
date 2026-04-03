@@ -33,6 +33,13 @@
 - [lib/src/animation/svg_filters_registry_pipeline_primitives.dart](file://lib/src/animation/svg_filters_registry_pipeline_primitives.dart)
 - [lib/src/animation/svg_filters_primitives_lighting.dart](file://lib/src/animation/svg_filters_primitives_lighting.dart)
 - [lib/src/animation/animated_svg_painter_cache.dart](file://lib/src/animation/animated_svg_painter_cache.dart)
+- [lib/src/animation/animated_svg_painter_tree.dart](file://lib/src/animation/animated_svg_painter_tree.dart)
+- [lib/src/animation/svg_parser_filters.dart](file://lib/src/animation/svg_parser_filters.dart)
+- [lib/src/animation/svg_filters.dart](file://lib/src/animation/svg_filters.dart)
+- [lib/src/animation/svg_filters_types.dart](file://lib/src/animation/svg_filters_types.dart)
+- [lib/src/animation/svg_filters_primitives_blur.dart](file://lib/src/animation/svg_filters_primitives_blur.dart)
+- [lib/src/animation/svg_filters_primitives_lighting.dart](file://lib/src/animation/svg_filters_primitives_lighting.dart)
+- [lib/src/animation/svg_filters_registry.dart](file://lib/src/animation/svg_filters_registry.dart)
 - [lib/src/cache.dart](file://lib/src/cache.dart)
 - [test/animation/controller_test.dart](file://test/animation/controller_test.dart)
 - [test/animation/font_registration_lifecycle_test.dart](file://test/animation/font_registration_lifecycle_test.dart)
@@ -61,13 +68,12 @@
 
 ## Update Summary
 **Changes Made**
-- Enhanced opacity compositing logic with improved isolation boundary handling
-- Improved mix-blend-mode operations with better compositing boundary detection
-- Added performance optimizations including cache eviction policies and in-place matrix operations
-- Implemented enable-background CSS property for compositing layer management
-- Enhanced color-interpolation-filters support with linearRGB pixel-level conversion
-- Added comprehensive compositing property testing with 14 new test cases
-- Improved render-time caching with size-limited eviction policies
+- Enhanced filter animation synchronization system implemented to bridge animated attribute values between DOM and filter objects
+- Added comprehensive filter primitive animation support for stdDeviation, dx, dy attributes
+- Implemented DOM-to-filter value synchronization during render pipeline
+- Enhanced filter parsing to link DOM nodes to filter objects for animation access
+- Added specialized synchronization methods for Gaussian blur, offset, and drop shadow primitives
+- Improved SMIL animation support for filter primitive attributes
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -77,7 +83,7 @@
 5. [Detailed Component Analysis](#detailed-component-analysis)
 6. [Enhanced CSS Animation System](#enhanced-css-animation-system)
 7. [Advanced CSS Shorthand Expansion](#advanced-css-shorthand-expansion)
-8. [Sophisticated CSS Variables and Calculations](#sophisticated-css-variables-and-calculations)
+8. [Sophisticated CSS Variables and Calculations](#sophisticated-css-variables-and-calulations)
 9. [Enhanced 3D Transform Support](#enhanced-3d-transform-support)
 10. [Enhanced Controller Lifecycle](#enhanced-controller-lifecycle)
 11. [Font Registration Lifecycle](#font-registration-lifecycle)
@@ -86,11 +92,12 @@
 14. [External Controller Integration](#external-controller-integration)
 15. [Performance Optimizations and Cache Management](#performance-optimizations-and-cache-management)
 16. [Compositing Properties and Blend Modes](#compositing-properties-and-blend-modes)
-17. [Dependency Analysis](#dependency-analysis)
-18. [Performance Considerations](#performance-considerations)
-19. [Troubleshooting Guide](#troubleshooting-guide)
-20. [Conclusion](#conclusion)
-21. [Appendices](#appendices)
+17. [Enhanced Filter Animation Synchronization](#enhanced-filter-animation-synchronization)
+18. [Dependency Analysis](#dependency-analysis)
+19. [Performance Considerations](#performance-considerations)
+20. [Troubleshooting Guide](#troubleshooting-guide)
+21. [Conclusion](#conclusion)
+22. [Appendices](#appendices)
 
 ## Introduction
 This document explains the animation control and playback mechanisms for animated SVGs in the project. It focuses on the AnimatedSvgController API, programmatic animation control, playback rate adjustment, and timeline manipulation. The system now includes enhanced CSS animation support with improved edge case handling, including multiple animations per element, animation-play-state control, negative animation delays, and comprehensive 3D transform support with automatic 2D/3D fallback. It also covers controller methods for play, pause, stop, reset, and seek operations, along with examples of manual animation control, animation synchronization, state management, lifecycle handling, and performance considerations. Guidance is provided for integrating animations with user interactions and application state.
@@ -130,11 +137,17 @@ S["SvgFontRegistry<br/>Font Loader"]
 T["SvgDocument<br/>registerEmbeddedFonts()"]
 U["Async Generation Guards<br/>Graceful Error Handling"]
 end
+subgraph "Enhanced Filter Animation Synchronization"
+V["DOM Filter Primitives<br/>sourceElement linking"]
+W["Filter Value Synchronization<br/>stdDeviation, dx, dy"]
+X["Render Pipeline Integration<br/>_syncFilterAnimatedValues()"]
+Y["Specialized Sync Methods<br/>GaussianBlur, Offset, DropShadow"]
+end
 subgraph "Performance Optimizations"
-V["Cache Management<br/>Size-limited eviction"]
-W["Compositing Properties<br/>Isolation boundaries"]
-X["Mix-Blend-Mode<br/>Enhanced handling"]
-Y["Render-time Caching<br/>Smart invalidation"]
+Z["Cache Management<br/>Size-limited eviction"]
+AA["Compositing Properties<br/>Isolation boundaries"]
+AB["Mix-Blend-Mode<br/>Enhanced handling"]
+AC["Render-time Caching<br/>Smart invalidation"]
 end
 G --> C
 H --> C
@@ -154,6 +167,10 @@ D --> V
 V --> W
 W --> X
 X --> Y
+D --> Z
+Z --> AA
+AA --> AB
+AB --> AC
 ```
 
 **Diagram sources**
@@ -171,6 +188,8 @@ X --> Y
 - [lib/src/animation/svg_dom.dart:586-604](file://lib/src/animation/svg_dom.dart#L586-L604)
 - [lib/src/animation/animated_svg_painter_cache.dart:62-94](file://lib/src/animation/animated_svg_painter_cache.dart#L62-L94)
 - [lib/src/animation/svg_filters_registry_pipeline_compositing.dart:3-521](file://lib/src/animation/svg_filters_registry_pipeline_compositing.dart#L3-L521)
+- [lib/src/animation/animated_svg_painter_tree.dart:466-470](file://lib/src/animation/animated_svg_painter_tree.dart#L466-L470)
+- [lib/src/animation/svg_parser_filters.dart:105-134](file://lib/src/animation/svg_parser_filters.dart#L105-L134)
 
 **Section sources**
 - [ARCHITECTURE.md:6-58](file://ARCHITECTURE.md#L6-L58)
@@ -193,6 +212,7 @@ X --> Y
 - **Updated** Cache Management: Implements size-limited eviction policies for gradient shaders, pattern images, text paragraphs, and hit-test geometries.
 - **Updated** Compositing Properties: Enhanced opacity compositing logic with improved isolation boundary handling and mix-blend-mode operations.
 - **Updated** Performance Optimizations: In-place matrix operations, regex allocation reduction, and render-time caching for improved animation performance.
+- **Updated** Enhanced Filter Animation Synchronization: Bridges animated attribute values between DOM nodes and filter objects for proper SMIL animation rendering on filter primitives.
 
 Key capabilities:
 - Programmatic control via AnimatedSvgController
@@ -224,6 +244,9 @@ Key capabilities:
 - **Enhanced**: Compositing layer management with enable-background property
 - **Enhanced**: Mix-blend-mode isolation boundaries and boundary detection
 - **Enhanced**: LinearRGB color space conversion for filter operations
+- **Enhanced**: DOM-to-filter value synchronization for filter primitive animations
+- **Enhanced**: Specialized synchronization methods for Gaussian blur, offset, and drop shadow
+- **Enhanced**: Filter primitive animation support for stdDeviation, dx, dy attributes
 
 **Section sources**
 - [lib/src/animation/animated_svg_controller.dart:25-160](file://lib/src/animation/animated_svg_controller.dart#L25-L160)
@@ -239,6 +262,8 @@ Key capabilities:
 - [lib/src/animation/css_variables_calc.dart:1-200](file://lib/src/animation/css_variables_calc.dart#L1-200)
 - [lib/src/animation/animated_svg_painter_cache.dart:62-94](file://lib/src/animation/animated_svg_painter_cache.dart#L62-L94)
 - [lib/src/animation/svg_filters_registry_pipeline_compositing.dart:3-521](file://lib/src/animation/svg_filters_registry_pipeline_compositing.dart#L3-L521)
+- [lib/src/animation/animated_svg_painter_tree.dart:466-585](file://lib/src/animation/animated_svg_painter_tree.dart#L466-L585)
+- [lib/src/animation/svg_parser_filters.dart:105-134](file://lib/src/animation/svg_parser_filters.dart#L105-L134)
 
 ## Architecture Overview
 The enhanced animated pipeline separates concerns across parsing, CSS-to-SMIL conversion, timeline management, and rendering with comprehensive 3D transform support and improved controller lifecycle management. **Updated** The system now includes a complete font registration lifecycle that mirrors the image preload pattern with async font loading, generation guards, and graceful error handling, along with performance optimizations for compositing operations and render-time caching.
@@ -257,6 +282,8 @@ participant VariablesCalc as "CssVariablesCalc"
 participant Converter as "CssToSmilConverter"
 participant Timeline as "SvgTimeline"
 participant Animation as "SmilAnimation"
+participant FilterSync as "Filter Animation Sync"
+participant FilterPipeline as "Filter Pipeline"
 participant Painter as "AnimatedSvgPainter"
 participant Cache as "Cache Manager"
 participant Compositing as "Compositing Properties"
@@ -277,6 +304,9 @@ CssParser->>Converter : "parseMultipleAnimations()"
 Converter->>Timeline : "create SMIL animations with REPLACE semantics"
 Timeline->>Animation : "updateForTime(time) with additive replace"
 Animation-->>Timeline : "applies compound transform values"
+Timeline-->>FilterSync : "DOM filter primitive values"
+FilterSync->>FilterPipeline : "_syncFilterAnimatedValues()"
+FilterPipeline-->>Timeline : "updated filter attribute values"
 Timeline-->>Painter : "updated attribute values"
 Painter->>Cache : "check/render-time cache"
 Cache-->>Painter : "cached or computed result"
@@ -300,6 +330,7 @@ Painter-->>User : "rendered frame"
 - [lib/src/animation/animated_svg_picture.dart:236-269](file://lib/src/animation/animated_svg_picture.dart#L236-L269)
 - [lib/src/animation/animated_svg_painter_cache.dart:62-94](file://lib/src/animation/animated_svg_painter_cache.dart#L62-L94)
 - [lib/src/animation/svg_filters_registry_pipeline_compositing.dart:3-521](file://lib/src/animation/svg_filters_registry_pipeline_compositing.dart#L3-L521)
+- [lib/src/animation/animated_svg_painter_tree.dart:466-470](file://lib/src/animation/animated_svg_painter_tree.dart#L466-L470)
 
 ## Detailed Component Analysis
 
@@ -1100,8 +1131,127 @@ Test coverage includes:
 - [test/animation/css_compositing_properties_test.dart:1-338](file://test/animation/css_compositing_properties_test.dart#L1-L338)
 - [test/animation/blend_mode_test.dart:1-306](file://test/animation/blend_mode_test.dart#L1-L306)
 
+## Enhanced Filter Animation Synchronization
+
+### DOM-to-Filter Value Bridge System
+The enhanced filter animation synchronization system provides a critical bridge between DOM animation values and filter object properties:
+
+- **Synchronization Point**: `_syncFilterAnimatedValues()` method called during filter pass resolution
+- **DOM Filter Primitive Linking**: Filter objects maintain references to their source DOM nodes
+- **Real-time Value Updates**: Animated attribute values are synchronized before filter pipeline execution
+- **SMIL Animation Targeting**: Ensures SMIL animations targeting filter primitive attributes render correctly
+
+Synchronization workflow:
+1. **Filter Pass Resolution**: Before resolving paint passes, synchronization is triggered
+2. **Primitive Enumeration**: All filter primitives for the current filter ID are enumerated
+3. **Source Node Access**: Each primitive accesses its linked DOM source node
+4. **Animated Attribute Check**: Source node attributes are checked for animation activity
+5. **Value Propagation**: Effective animated values are propagated to filter object properties
+
+**Section sources**
+- [lib/src/animation/animated_svg_painter_tree.dart:466-470](file://lib/src/animation/animated_svg_painter_tree.dart#L466-L470)
+- [lib/src/animation/animated_svg_painter_tree.dart:490-504](file://lib/src/animation/animated_svg_painter_tree.dart#L490-L504)
+
+### Filter Primitive DOM Linking
+The filter parsing system establishes critical connections between DOM nodes and filter objects:
+
+- **Positional Matching**: Filter primitives are matched to DOM nodes by their position within `<filter>` elements
+- **Source Element References**: Filter objects store references to their corresponding DOM nodes
+- **ID-based Association**: Matching occurs within the same filter ID scope
+- **Parser Integration**: `_linkFilterPrimitivesToNodes()` performs the linking during SVG parsing
+
+Linking implementation:
+- **DOM Tree Traversal**: Parser walks `<defs><filter><fe*>` structure
+- **Primitive Index Tracking**: Position determines which filter object receives the DOM node reference
+- **Validation Checks**: Ensures filter primitives exist and DOM nodes match expected types
+- **Reference Assignment**: `sourceElement` property on filter objects is populated
+
+**Section sources**
+- [lib/src/animation/svg_parser_filters.dart:105-134](file://lib/src/animation/svg_parser_filters.dart#L105-L134)
+
+### Specialized Synchronization Methods
+The system implements specialized synchronization methods for different filter primitive types:
+
+#### Gaussian Blur Synchronization
+- **stdDeviation Attribute**: Handles both single and dual-parameter stdDeviation values
+- **String Parsing**: Supports space/comma-separated stdDeviation values
+- **Fallback Behavior**: Maintains existing values when animation is not active
+- **Dual Parameter Support**: Properly handles separate X/Y standard deviations
+
+Synchronization logic:
+- **Attribute Retrieval**: Gets `stdDeviation` attribute from source node
+- **Animation Check**: Verifies attribute is currently animated
+- **Value Processing**: Parses numeric or string values with proper fallback
+- **Property Update**: Updates both `stdDeviationX` and `stdDeviationY` properties
+
+**Section sources**
+- [lib/src/animation/animated_svg_painter_tree.dart:506-523](file://lib/src/animation/animated_svg_painter_tree.dart#L506-L523)
+
+#### Offset Synchronization
+- **dx and dy Attributes**: Synchronizes both horizontal and vertical offset values
+- **Independent Processing**: Each offset dimension is processed separately
+- **Numeric and String Values**: Handles both pure numeric and string-formatted values
+- **Separate Fallback Logic**: Each dimension maintains independent default values
+
+Synchronization process:
+- **dx Processing**: Retrieves and processes `dx` attribute with animation validation
+- **dy Processing**: Retrieves and processes `dy` attribute with animation validation
+- **Type Safety**: Ensures numeric conversion with safe fallback handling
+
+**Section sources**
+- [lib/src/animation/animated_svg_painter_tree.dart:525-545](file://lib/src/animation/animated_svg_painter_tree.dart#L525-L545)
+
+#### Drop Shadow Synchronization
+- **Multi-Attribute Support**: Synchronizes stdDeviation, dx, and dy for shadow effects
+- **Complex Value Processing**: Handles stdDeviation parsing with dual parameter support
+- **Color Integration**: Works with existing flood color and opacity synchronization
+- **Shadow-Specific Logic**: Combines blur, offset, and color processing for shadow effects
+
+Synchronization features:
+- **stdDeviation Handling**: Dual-parameter stdDeviation processing for blur effect
+- **Offset Processing**: Independent dx/dy synchronization for shadow positioning
+- **Color Preservation**: Maintains existing color and opacity settings
+- **Shadow Calculation**: Proper coordination between blur and offset for shadow appearance
+
+**Section sources**
+- [lib/src/animation/animated_svg_painter_tree.dart:547-585](file://lib/src/animation/animated_svg_painter_tree.dart#L547-L585)
+
+### SMIL Animation Attribute Support
+The enhanced system now supports SMIL animations targeting filter primitive attributes:
+
+- **stdDeviation Animation**: `stdDeviation` attribute on filter primitives can be animated
+- **dx and dy Animation**: Offset attributes support SMIL animation for dynamic positioning
+- **Attribute Type Recognition**: System recognizes filter primitive attributes as animatable
+- **Animation Timing Integration**: Filter animations respect timeline timing and interpolation
+
+Supported filter primitive attributes:
+- **Gaussian Blur**: `stdDeviation` (single or dual parameter)
+- **Offset**: `dx`, `dy` (independent animations)
+- **Drop Shadow**: `stdDeviation`, `dx`, `dy` (combined animations)
+- **Other Primitives**: Additional filter primitive attributes may support animation
+
+**Section sources**
+- [lib/src/animation/smil/smil_parser_animation_parsing.dart:431-489](file://lib/src/animation/smil/smil_parser_animation_parsing.dart#L431-L489)
+
+### Render Pipeline Integration
+The filter animation synchronization is integrated into the core render pipeline:
+
+- **Pre-Pass Synchronization**: Synchronization occurs before filter pass resolution
+- **Filter Context Building**: Synchronized values are available during filter pipeline construction
+- **Performance Optimization**: Synchronization is performed only when filter animations exist
+- **Memory Efficiency**: Minimal overhead for non-animated filter scenarios
+
+Pipeline integration points:
+- **Filter Pass Resolution**: `_resolveFilterPassesImpl()` triggers synchronization
+- **Source Context Creation**: Synchronized values contribute to filter source context
+- **Filter Execution**: Final synchronized values drive filter primitive execution
+- **Render Output**: Properly synchronized filter animations appear in final render
+
+**Section sources**
+- [lib/src/animation/animated_svg_painter_tree.dart:457-480](file://lib/src/animation/animated_svg_painter_tree.dart#L457-L480)
+
 ## Dependency Analysis
-High-level dependencies among core components with enhanced CSS animation support, improved controller lifecycle, comprehensive font registration capabilities, and performance optimizations:
+High-level dependencies among core components with enhanced CSS animation support, improved controller lifecycle, comprehensive font registration capabilities, performance optimizations, and enhanced filter animation synchronization:
 
 ```mermaid
 classDiagram
@@ -1206,9 +1356,21 @@ class CompositingProperties {
 +isolationBoundary
 +mixBlendMode
 }
+class FilterAnimationSync {
++_syncFilterAnimatedValues()
++_syncGaussianBlurValues()
++_syncOffsetValues()
++_syncDropShadowValues()
++sourceElement linking
+}
+class FilterParser {
++_linkFilterPrimitivesToNodes()
++filter primitive parsing
+}
 AnimatedSvgPicture --> AnimatedSvgController : "subscribes to"
 AnimatedSvgPicture --> SvgTimeline : "drives"
 SvgTimeline --> SmilAnimation : "updates"
+SvgTimeline --> FilterAnimationSync : "requests sync"
 AnimatedSvgPicture --> CssParser : "parses CSS"
 CssParser --> CssShorthandExpander : "expands shorthands"
 CssParser --> CssVariablesCalc : "processes vars/calc"
@@ -1223,6 +1385,8 @@ LifecycleManager --> AnimatedSvgController : "manages state"
 LifecycleManager --> SvgTimeline : "controls startup"
 LifecycleManager --> SvgDocument : "manages font registration"
 LifecycleManager --> CacheManager : "manages caches"
+FilterParser --> FilterAnimationSync : "links DOM to filters"
+FilterAnimationSync --> FilterParser : "uses sourceElement"
 CacheManager --> CompositingProperties : "optimizes compositing"
 CompositingProperties --> SvgTimeline : "enhances rendering"
 Transform3DContext --> SvgTimeline : "3D context management"
@@ -1243,6 +1407,8 @@ Transform3DContext --> SvgTimeline : "3D context management"
 - [lib/src/animation/animated_svg_picture_lifecycle.dart:111-152](file://lib/src/animation/animated_svg_picture_lifecycle.dart#L111-L152)
 - [lib/src/animation/animated_svg_painter_cache.dart:62-94](file://lib/src/animation/animated_svg_painter_cache.dart#L62-L94)
 - [lib/src/animation/svg_filters_registry_pipeline_compositing.dart:3-521](file://lib/src/animation/svg_filters_registry_pipeline_compositing.dart#L3-L521)
+- [lib/src/animation/animated_svg_painter_tree.dart:466-585](file://lib/src/animation/animated_svg_painter_tree.dart#L466-L585)
+- [lib/src/animation/svg_parser_filters.dart:105-134](file://lib/src/animation/svg_parser_filters.dart#L105-L134)
 
 **Section sources**
 - [lib/src/animation.dart:21-31](file://lib/src/animation.dart#L21-L31)
@@ -1277,6 +1443,9 @@ Transform3DContext --> SvgTimeline : "3D context management"
 - **Enhanced**: Compositing boundary detection reduces unnecessary layer operations.
 - **Enhanced**: Cache statistics and performance monitoring enable optimization tracking.
 - **Enhanced**: Performance benchmarking suite provides quantitative performance metrics.
+- **Enhanced**: Filter animation synchronization adds minimal overhead with targeted value updates.
+- **Enhanced**: DOM-to-filter synchronization only executes when filter animations are present.
+- **Enhanced**: Specialized synchronization methods optimize value processing for different filter types.
 
 ## Troubleshooting Guide
 Common issues and remedies:
@@ -1305,6 +1474,11 @@ Common issues and remedies:
 - **Enhanced**: Cache performance issues: Monitor cache hit rates and eviction counts; adjust cache limits as needed.
 - **Enhanced**: Compositing boundary problems: Verify isolation boundaries are properly detected and applied.
 - **Enhanced**: Mix-blend-mode rendering issues: Check that isolation boundaries prevent unintended parent blending.
+- **Enhanced**: Filter animation synchronization issues: Verify that DOM filter primitives are properly linked and synchronized.
+- **Enhanced**: SMIL filter attribute animation problems: Check that filter primitive attributes are recognized as animatable.
+- **Enhanced**: Gaussian blur animation not updating: Verify stdDeviation attribute synchronization and DOM-to-filter value propagation.
+- **Enhanced**: Offset animation issues: Check dx/dy attribute synchronization and independent processing logic.
+- **Enhanced**: Drop shadow animation problems: Verify multi-attribute synchronization for stdDeviation, dx, and dy.
 - **Enhanced**: Performance regression: Use benchmark suite to identify performance bottlenecks and monitor cache statistics.
 
 **Section sources**
@@ -1318,6 +1492,7 @@ Common issues and remedies:
 - [lib/src/animation/animated_svg_painter_cache.dart:62-94](file://lib/src/animation/animated_svg_painter_cache.dart#L62-L94)
 - [lib/src/cache.dart:1-56](file://lib/src/cache.dart#L1-L56)
 - [test/animation/css_compositing_properties_test.dart:1-338](file://test/animation/css_compositing_properties_test.dart#L1-L338)
+- [lib/src/animation/animated_svg_painter_tree.dart:466-585](file://lib/src/animation/animated_svg_painter_tree.dart#L466-L585)
 
 ## Conclusion
 The enhanced animated SVG system provides robust programmatic control via AnimatedSvgController, precise timeline manipulation through SvgTimeline, and comprehensive CSS animation support with improved edge case handling. The system now supports multiple animations per element, animation-play-state control, negative animation delays, and full 3D transform capabilities with automatic 2D/3D fallback.
@@ -1332,7 +1507,9 @@ The enhanced animated SVG system provides robust programmatic control via Animat
 
 **Updated** The animation system now includes comprehensive performance optimizations including render-time caching with size-limited eviction policies, in-place matrix operations, regex allocation reduction, and comprehensive performance benchmarking. The compositing system provides enhanced opacity compositing logic with improved isolation boundary handling and enhanced mix-blend-mode operations, including enable-background CSS property support, color-interpolation-filters with linearRGB conversion, and comprehensive compositing property testing.
 
-Developers can integrate animations with user interactions, manage playback rates and directions, synchronize animations using event and syncbase mechanisms, leverage the enhanced CSS parsing capabilities for complex animation scenarios, utilize the comprehensive font registration system for custom typography, benefit from the advanced CSS shorthand expansion and variable resolution systems, implement performance optimizations through the caching and compositing systems, and take advantage of the comprehensive performance benchmarking suite for optimization tracking. The architecture cleanly separates parsing, CSS-to-SMIL conversion, timing, rendering, font management, CSS processing, cache management, and compositing, enabling maintainability, extensibility, and optimal performance across diverse animation and typography requirements.
+**Updated** Most significantly, the system now includes a comprehensive filter animation synchronization system that bridges animated attribute values between DOM nodes and filter objects. This enhancement ensures proper rendering of SMIL animations targeting filter primitive attributes such as stdDeviation, dx, and dy. The system implements DOM-to-filter value synchronization during the render pipeline, with specialized methods for Gaussian blur, offset, and drop shadow primitives. Filter primitives maintain references to their source DOM nodes, enabling real-time value updates during animation playback.
+
+Developers can integrate animations with user interactions, manage playback rates and directions, synchronize animations using event and syncbase mechanisms, leverage the enhanced CSS parsing capabilities for complex animation scenarios, utilize the comprehensive font registration system for custom typography, benefit from the advanced CSS shorthand expansion and variable resolution systems, implement performance optimizations through the caching and compositing systems, take advantage of the comprehensive performance benchmarking suite for optimization tracking, and ensure proper filter animation rendering through the enhanced synchronization system. The architecture cleanly separates parsing, CSS-to-SMIL conversion, timing, rendering, font management, CSS processing, cache management, compositing, and filter animation synchronization, enabling maintainability, extensibility, and optimal performance across diverse animation and typography requirements.
 
 ## Appendices
 
@@ -1395,6 +1572,13 @@ Developers can integrate animations with user interactions, manage playback rate
   - Color-interpolation: colorInterpolationFilters, useLinearRGB
   - Isolation: isolationBoundary, implicitIsolation
   - Blend modes: mixBlendMode, boundaryAwareRendering
+- **Enhanced** FilterAnimationSync
+  - Synchronization: _syncFilterAnimatedValues(), _syncGaussianBlurValues()
+  - Specialized methods: _syncOffsetValues(), _syncDropShadowValues()
+  - DOM linking: sourceElement property maintenance
+- **Enhanced** FilterParser
+  - DOM linking: _linkFilterPrimitivesToNodes()
+  - Filter primitive parsing: positional matching and validation
 - **Enhanced** PerformanceBenchmarking
   - Animation benchmarks: animation_benchmark.dart, animation_render_benchmark.dart
   - Cache statistics: CacheStats class with hitRate, evictions, peakSize
@@ -1415,6 +1599,8 @@ Developers can integrate animations with user interactions, manage playback rate
 - [lib/src/animation/animated_svg_picture_lifecycle.dart:111-152](file://lib/src/animation/animated_svg_picture_lifecycle.dart#L111-L152)
 - [lib/src/animation/animated_svg_painter_cache.dart:62-94](file://lib/src/animation/animated_svg_painter_cache.dart#L62-L94)
 - [lib/src/animation/svg_filters_registry_pipeline_compositing.dart:3-521](file://lib/src/animation/svg_filters_registry_pipeline_compositing.dart#L3-L521)
+- [lib/src/animation/animated_svg_painter_tree.dart:466-585](file://lib/src/animation/animated_svg_painter_tree.dart#L466-L585)
+- [lib/src/animation/svg_parser_filters.dart:105-134](file://lib/src/animation/svg_parser_filters.dart#L105-L134)
 - [lib/src/cache.dart:1-56](file://lib/src/cache.dart#L1-L56)
 - [benchmark/benchmarks/animation_benchmark.dart](file://benchmark/benchmarks/animation_benchmark.dart)
 - [benchmark/benchmarks/animation_render_benchmark.dart](file://benchmark/benchmarks/animation_render_benchmark.dart)

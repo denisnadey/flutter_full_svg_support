@@ -76,10 +76,25 @@ class SvgGaussianBlurFilter extends SvgFilter {
   }
 
   /// Convert SVG edge mode to Flutter TileMode for blur filter.
+  ///
+  /// NOTE: For `edgeMode=duplicate` (the SVG default) we use `TileMode.decal`
+  /// instead of `TileMode.clamp` to match Chrome/Blink parity.
+  ///
+  /// In Chrome, feGaussianBlur operates on an intermediate image surface where
+  /// the shape is rendered on a transparent background. Edge duplication happens
+  /// at the surface boundary (which contains transparent pixels), so the blur
+  /// naturally fades to transparent around the shape.
+  ///
+  /// Flutter's ImageFilter.blur with TileMode.clamp stretches the SHAPE's edge
+  /// pixels outward, creating rectangular/diamond halos instead of a natural
+  /// gaussian fade. TileMode.decal treats out-of-bounds as transparent, which
+  /// matches Chrome's effective behavior for typical SVG blur cases.
   ui.TileMode _edgeModeToTileMode(SvgConvolveEdgeMode mode) {
     switch (mode) {
       case SvgConvolveEdgeMode.duplicate:
-        return ui.TileMode.clamp;
+        // Use decal to match Chrome's effective blur behavior.
+        // See comment above for rationale.
+        return ui.TileMode.decal;
       case SvgConvolveEdgeMode.wrap:
         return ui.TileMode.repeated;
       case SvgConvolveEdgeMode.none:

@@ -15,9 +15,37 @@ String _interpolatePathValue(Object from, Object to, double t) {
     final fromCommands = parser.parse(fromStr);
     final toCommands = parser.parse(toStr);
 
-    final normalizer = PathNormalizer();
-    final normalizedPair = normalizer.normalize(fromCommands, toCommands);
+    // Per SVG spec (and Blink behavior): blending requires MATCHING segment
+    // types and counts in the original paths. Blink's SVGPathBlender walks
+    // both paths simultaneously, comparing segment types at each position.
+    // If any segment type differs or counts don't match, it returns false
+    // and the animation falls back to discrete interpolation.
+    if (!_canBlendPaths(fromCommands, toCommands)) {
+      // Blink distinguishes two failure modes:
+      // 1. Different command COUNTS → adjustFromToListValues detects byte stream
+      //    size mismatch → applies discrete fallback (from/to based on t).
+      // 2. Same command count but different TYPES → adjustFromToListValues
+      //    sees matching byte sizes → passes through to blender → blender fails
+      //    → animated path is cleared → element becomes invisible.
+      // We replicate both behaviors for Blink parity.
+      if (fromCommands.length == toCommands.length) {
+        // Case 2: counts match but types differ → empty path (invisible).
+        return '';
+      }
+      // Case 1: different counts → discrete snap.
+      return clampedT < 0.5 ? fromStr : toStr;
+    }
 
+    final normalizer = PathNormalizer();
+    final norm1 = normalizer.normalizeSingle(fromCommands);
+    final norm2 = normalizer.normalizeSingle(toCommands);
+
+    // After normalization to cubics, verify counts still match.
+    if (norm1.length != norm2.length) {
+      return clampedT < 0.5 ? fromStr : toStr;
+    }
+
+    final normalizedPair = NormalizedPathPair(from: norm1, to: norm2);
     final interpolatedCommands = <PathCommand>[];
     for (int i = 0; i < normalizedPair.from.length; i++) {
       final cmdFrom = normalizedPair.from[i];
@@ -30,6 +58,19 @@ String _interpolatePathValue(Object from, Object to, double t) {
   } catch (_) {
     return clampedT < 0.5 ? fromStr : toStr;
   }
+}
+
+/// Check whether two parsed path command lists can be smoothly blended.
+///
+/// Matches Blink's SVGPathBlender behavior: paths can only be blended if
+/// they have the same number of segments AND the same segment type at each
+/// position. Different types (L vs C, Q vs C, etc.) cause discrete fallback.
+bool _canBlendPaths(List<PathCommand> from, List<PathCommand> to) {
+  if (from.length != to.length) return false;
+  for (int i = 0; i < from.length; i++) {
+    if (from[i].runtimeType != to[i].runtimeType) return false;
+  }
+  return true;
 }
 
 PathCommand _interpolatePathCommand(

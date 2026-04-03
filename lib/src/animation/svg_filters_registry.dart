@@ -1,9 +1,45 @@
 part of 'svg_filters.dart';
 
+/// Parsed filter region (x, y, width, height on `<filter>`).
+///
+/// Per SVG spec, the filter region clips the filter output.
+/// Default: x=-10%, y=-10%, width=120%, height=120% (objectBoundingBox).
+class SvgFilterRegion {
+  final double x;
+  final double y;
+  final double width;
+  final double height;
+  final bool isObjectBoundingBox; // filterUnits
+
+  const SvgFilterRegion({
+    this.x = -0.10,
+    this.y = -0.10,
+    this.width = 1.20,
+    this.height = 1.20,
+    this.isObjectBoundingBox = true,
+  });
+
+  /// Compute the absolute filter region rect from an element bounding box.
+  ui.Rect computeRect(ui.Rect objectBBox) {
+    if (isObjectBoundingBox) {
+      return ui.Rect.fromLTWH(
+        objectBBox.left + x * objectBBox.width,
+        objectBBox.top + y * objectBBox.height,
+        width * objectBBox.width,
+        height * objectBBox.height,
+      );
+    }
+    return ui.Rect.fromLTWH(x, y, width, height);
+  }
+}
+
 /// Коллекция фильтров в SVG документе
 class SvgFilters {
   /// Карта ID фильтра -> список примитивов в порядке объявления.
   final Map<String, List<SvgFilter>> _filters = {};
+
+  /// Карта ID фильтра -> filter region (x, y, width, height).
+  final Map<String, SvgFilterRegion> _filterRegions = {};
   List<SvgFilterPaintPass>? _activeFillPaint;
   List<SvgFilterPaintPass>? _activeStrokePaint;
   List<SvgFilterPaintPass>? _activeBackgroundImage;
@@ -18,6 +54,17 @@ class SvgFilters {
   /// Добавить фильтр
   void add(SvgFilter filter) {
     _filters.putIfAbsent(filter.id, () => <SvgFilter>[]).add(filter);
+  }
+
+  /// Set filter region for a given filter ID.
+  void setFilterRegion(String id, SvgFilterRegion region) {
+    _filterRegions[id] = region;
+  }
+
+  /// Get filter region for a given filter ID.
+  /// Returns the default SVG region if not explicitly set.
+  SvgFilterRegion getFilterRegion(String id) {
+    return _filterRegions[id] ?? const SvgFilterRegion();
   }
 
   /// Получить последний примитив фильтра по ID (совместимость с legacy API).

@@ -19,6 +19,11 @@ SvgFilters _parseFilters(XmlElement svgElement) {
       continue; // Фильтр без ID не может быть использован
     }
 
+    // Parse filter region (x, y, width, height) for output clipping.
+    // Per SVG spec, default is -10%, -10%, 120%, 120% (objectBoundingBox).
+    final filterRegion = _parseFilterRegion(filterElement);
+    filters.setFilterRegion(filterId, filterRegion);
+
     // Парсим примитивы фильтра (feGaussianBlur, feDropShadow, etc.)
     for (final child in filterElement.childElements) {
       final filter = _parseFilterPrimitive(child, filterId);
@@ -126,4 +131,49 @@ void _linkFilterPrimitivesToNodes(SvgNode root, SvgFilters filters) {
       }
     }
   }
+}
+
+/// Parse filter region attributes (x, y, width, height) from a `<filter>` element.
+///
+/// Supports both percentage and bare-number syntax.
+/// For `filterUnits="objectBoundingBox"` (default), values are fractions (0-1)
+/// or percentages. For `filterUnits="userSpaceOnUse"`, values are user coords.
+SvgFilterRegion _parseFilterRegion(XmlElement filterElement) {
+  final filterUnits = filterElement.getAttribute('filterUnits');
+  final isOBB = filterUnits == null || filterUnits == 'objectBoundingBox';
+
+  double parseRegionValue(String? attr, double defaultVal) {
+    if (attr == null || attr.trim().isEmpty) return defaultVal;
+    final trimmed = attr.trim();
+    if (trimmed.endsWith('%')) {
+      final v = double.tryParse(trimmed.substring(0, trimmed.length - 1));
+      return v != null ? v / 100.0 : defaultVal;
+    }
+    return double.tryParse(trimmed) ?? defaultVal;
+  }
+
+  final x = parseRegionValue(
+    filterElement.getAttribute('x'),
+    isOBB ? -0.10 : 0.0,
+  );
+  final y = parseRegionValue(
+    filterElement.getAttribute('y'),
+    isOBB ? -0.10 : 0.0,
+  );
+  final w = parseRegionValue(
+    filterElement.getAttribute('width'),
+    isOBB ? 1.20 : 0.0,
+  );
+  final h = parseRegionValue(
+    filterElement.getAttribute('height'),
+    isOBB ? 1.20 : 0.0,
+  );
+
+  return SvgFilterRegion(
+    x: x,
+    y: y,
+    width: w,
+    height: h,
+    isObjectBoundingBox: isOBB,
+  );
 }

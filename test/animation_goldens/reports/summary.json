@@ -1,11 +1,11 @@
 {
   "total_svgs": 10,
   "total_frames": 150,
-  "overall_average_similarity": 0.9826,
-  "svgs_above_95": 8,
+  "overall_average_similarity": 0.9968,
+  "svgs_above_95": 10,
   "svgs_below_90": 0,
-  "worst_svg": "animate_path_morph",
-  "worst_svg_similarity": 0.9356,
+  "worst_svg": "css_animation",
+  "worst_svg_similarity": 0.9785,
   "per_svg": [
     {
       "svg": "animate_color",
@@ -23,9 +23,9 @@
     },
     {
       "svg": "animate_filter",
-      "average_similarity": 0.9423,
-      "worst_frame": 7,
-      "worst_similarity": 0.8932,
+      "average_similarity": 0.9919,
+      "worst_frame": 4,
+      "worst_similarity": 0.9885,
       "frames": 15
     },
     {
@@ -37,16 +37,16 @@
     },
     {
       "svg": "animate_opacity",
-      "average_similarity": 0.9723,
-      "worst_frame": 4,
-      "worst_similarity": 0.9654,
+      "average_similarity": 1.0,
+      "worst_frame": 0,
+      "worst_similarity": 0.9998,
       "frames": 15
     },
     {
       "svg": "animate_path_morph",
-      "average_similarity": 0.9356,
-      "worst_frame": 5,
-      "worst_similarity": 0.863,
+      "average_similarity": 0.9995,
+      "worst_frame": 0,
+      "worst_similarity": 0.9991,
       "frames": 15
     },
     {
