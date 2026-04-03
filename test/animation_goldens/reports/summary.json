@@ -1,81 +1,88 @@
 {
-  "total_svgs": 10,
-  "total_frames": 150,
-  "overall_average_similarity": 0.9968,
-  "svgs_above_95": 10,
+  "total_svgs": 11,
+  "total_frames": 330,
+  "overall_average_similarity": 0.997,
+  "svgs_above_95": 11,
   "svgs_below_90": 0,
-  "worst_svg": "css_animation",
-  "worst_svg_similarity": 0.9785,
+  "worst_svg": "astronaut_helmet",
+  "worst_svg_similarity": 0.9736,
   "per_svg": [
     {
       "svg": "animate_color",
-      "average_similarity": 1.0,
-      "worst_frame": 0,
+      "average_similarity": 0.9999,
+      "worst_frame": 20,
       "worst_similarity": 0.9998,
-      "frames": 15
+      "frames": 30
     },
     {
       "svg": "animate_combined",
       "average_similarity": 0.9999,
       "worst_frame": 8,
       "worst_similarity": 0.9999,
-      "frames": 15
+      "frames": 30
     },
     {
       "svg": "animate_filter",
-      "average_similarity": 0.9919,
+      "average_similarity": 0.9953,
       "worst_frame": 4,
       "worst_similarity": 0.9885,
-      "frames": 15
+      "frames": 30
     },
     {
       "svg": "animate_motion_path",
-      "average_similarity": 0.9997,
+      "average_similarity": 0.9998,
       "worst_frame": 4,
       "worst_similarity": 0.9996,
-      "frames": 15
+      "frames": 30
     },
     {
       "svg": "animate_opacity",
-      "average_similarity": 1.0,
+      "average_similarity": 0.9999,
       "worst_frame": 0,
       "worst_similarity": 0.9998,
-      "frames": 15
+      "frames": 30
     },
     {
       "svg": "animate_path_morph",
-      "average_similarity": 0.9995,
+      "average_similarity": 0.9993,
       "worst_frame": 0,
       "worst_similarity": 0.9991,
-      "frames": 15
+      "frames": 30
     },
     {
       "svg": "animate_position",
       "average_similarity": 0.9999,
       "worst_frame": 2,
       "worst_similarity": 0.9998,
-      "frames": 15
+      "frames": 30
     },
     {
       "svg": "animate_transform_rotate",
-      "average_similarity": 0.9999,
+      "average_similarity": 0.9998,
       "worst_frame": 0,
       "worst_similarity": 0.9998,
-      "frames": 15
+      "frames": 30
     },
     {
       "svg": "animate_transform_scale",
-      "average_similarity": 0.9983,
+      "average_similarity": 0.9991,
       "worst_frame": 8,
       "worst_similarity": 0.9969,
-      "frames": 15
+      "frames": 30
+    },
+    {
+      "svg": "astronaut_helmet",
+      "average_similarity": 0.9736,
+      "worst_frame": 0,
+      "worst_similarity": 0.9735,
+      "frames": 30
     },
     {
       "svg": "css_animation",
-      "average_similarity": 0.9785,
-      "worst_frame": 5,
-      "worst_similarity": 0.9718,
-      "frames": 15
+      "average_similarity": 1.0,
+      "worst_frame": 1,
+      "worst_similarity": 0.9999,
+      "frames": 30
     }
   ]
 }

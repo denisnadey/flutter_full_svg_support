@@ -231,18 +231,25 @@ class SvgTimeline {
     }
 
     Duration max = Duration.zero;
+    bool hasInfinite = false;
 
     for (final anim in animations) {
       final end = anim.getEffectiveEndTime();
-      if (!end.isNegative && end != _kTimelineInfinity) {
-        // Игнорируем "бесконечные" анимации
-        if (end > max) {
-          max = end;
-        }
+      if (!end.isNegative && end == _kTimelineInfinity) {
+        // Track infinite animations so seek() is not clamped
+        hasInfinite = true;
+      } else if (!end.isNegative && end > max) {
+        max = end;
       }
     }
 
-    // Если все анимации бесконечные, вернём разумное значение по умолчанию
+    // If any animation is infinite, timeline extends indefinitely
+    // so that seek() can reach any time without clamping.
+    if (hasInfinite) {
+      return _kTimelineInfinity;
+    }
+
+    // Если все анимации конечные, вернём разумное значение по умолчанию
     return max == Duration.zero ? const Duration(seconds: 10) : max;
   }
 

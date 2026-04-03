@@ -1,6 +1,6 @@
 {
   "svg": "animate_transform_scale",
-  "frames": 15,
+  "frames": 30,
   "results": [
     {
       "frame": 0,
@@ -34,7 +34,7 @@
       "frame": 4,
       "time_s": 4.0,
       "similarity": 0.9982,
-      "different_pixels": 850,
+      "different_pixels": 848,
       "total_pixels": 480000
     },
     {
@@ -48,14 +48,14 @@
       "frame": 6,
       "time_s": 6.0,
       "similarity": 0.9973,
-      "different_pixels": 1277,
+      "different_pixels": 1278,
       "total_pixels": 480000
     },
     {
       "frame": 7,
       "time_s": 7.0,
       "similarity": 0.9969,
-      "different_pixels": 1494,
+      "different_pixels": 1495,
       "total_pixels": 480000
     },
     {
@@ -69,7 +69,7 @@
       "frame": 9,
       "time_s": 9.0,
       "similarity": 0.9974,
-      "different_pixels": 1258,
+      "different_pixels": 1254,
       "total_pixels": 480000
     },
     {
@@ -104,11 +104,116 @@
       "frame": 14,
       "time_s": 14.0,
       "similarity": 0.9994,
-      "different_pixels": 278,
+      "different_pixels": 280,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 15,
+      "time_s": 15.0,
+      "similarity": 1.0,
+      "different_pixels": 18,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 16,
+      "time_s": 16.0,
+      "similarity": 1.0,
+      "different_pixels": 18,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 17,
+      "time_s": 17.0,
+      "similarity": 1.0,
+      "different_pixels": 18,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 18,
+      "time_s": 18.0,
+      "similarity": 1.0,
+      "different_pixels": 18,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 19,
+      "time_s": 19.0,
+      "similarity": 1.0,
+      "different_pixels": 18,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 20,
+      "time_s": 20.0,
+      "similarity": 1.0,
+      "different_pixels": 18,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 21,
+      "time_s": 21.0,
+      "similarity": 1.0,
+      "different_pixels": 18,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 22,
+      "time_s": 22.0,
+      "similarity": 1.0,
+      "different_pixels": 18,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 23,
+      "time_s": 23.0,
+      "similarity": 1.0,
+      "different_pixels": 18,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 24,
+      "time_s": 24.0,
+      "similarity": 1.0,
+      "different_pixels": 18,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 25,
+      "time_s": 25.0,
+      "similarity": 1.0,
+      "different_pixels": 18,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 26,
+      "time_s": 26.0,
+      "similarity": 1.0,
+      "different_pixels": 18,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 27,
+      "time_s": 27.0,
+      "similarity": 1.0,
+      "different_pixels": 18,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 28,
+      "time_s": 28.0,
+      "similarity": 1.0,
+      "different_pixels": 18,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 29,
+      "time_s": 29.0,
+      "similarity": 1.0,
+      "different_pixels": 18,
       "total_pixels": 480000
     }
   ],
-  "average_similarity": 0.9983,
+  "average_similarity": 0.9991,
   "worst_frame": 8,
   "worst_similarity": 0.9969
 }

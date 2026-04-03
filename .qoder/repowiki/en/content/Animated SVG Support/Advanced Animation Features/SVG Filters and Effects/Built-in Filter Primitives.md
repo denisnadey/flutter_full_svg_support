@@ -22,15 +22,21 @@
 - [SVGFETurbulenceElement.h](file://blink-b87d44f-Source-core-svg/SVGFETurbulenceElement.h)
 - [SVGFEComponentTransferElement.cpp](file://blink-b87d44f-Source-core-svg/SVGFEComponentTransferElement.cpp)
 - [SVGFEComponentTransferElement.h](file://blink-b87d44f-Source-core-svg/SVGFEComponentTransferElement.h)
+- [svg_filters_primitives_blur.dart](file://lib/src/animation/svg_filters_primitives_blur.dart)
+- [svg_filters_types.dart](file://lib/src/animation/svg_filters_types.dart)
+- [svg_filters_primitives_convolve_matrix.dart](file://lib/src/animation/svg_filters_primitives_convolve_matrix.dart)
+- [filter_primitives_edge_cases_test.dart](file://test/filter_primitives_edge_cases_test.dart)
+- [css_compositing_properties_test.dart](file://test/animation/css_compositing_properties_test.dart)
+- [displacement_edge_cases_test.dart](file://test/animation/displacement_edge_cases_test.dart)
 </cite>
 
 ## Update Summary
 **Changes Made**
-- Enhanced documentation for component transfer, displacement map, and turbulence primitives with improved edge case handling and error recovery mechanisms
-- Updated primitive validation logic to reflect robust mathematical computations for parameter handling
-- Expanded troubleshooting guidance for enhanced error recovery scenarios
-- Added comprehensive coverage of animation support improvements across all primitive types
-- Updated performance considerations to address enhanced computational robustness
+- Updated blur primitive documentation to reflect improved edge mode handling with TileMode.decal for Chrome/Blink parity
+- Enhanced edge mode documentation covering duplicate, wrap, and none modes with specific behavioral differences
+- Updated blur implementation details to explain the TileMode.decal vs TileMode.clamp distinction for edge duplication
+- Added comprehensive edge mode handling documentation for all filter primitives
+- Updated performance considerations to include edge mode optimization strategies
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -38,11 +44,12 @@
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
 5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Enhanced Edge Case Handling](#enhanced-edge-case-handling)
-7. [Dependency Analysis](#dependency-analysis)
-8. [Performance Considerations](#performance-considerations)
-9. [Troubleshooting Guide](#troubleshooting-guide)
-10. [Conclusion](#conclusion)
+6. [Edge Mode Handling](#edge-mode-handling)
+7. [Enhanced Edge Case Handling](#enhanced-edge-case-handling)
+8. [Dependency Analysis](#dependency-analysis)
+9. [Performance Considerations](#performance-considerations)
+10. [Troubleshooting Guide](#troubleshooting-guide)
+11. [Conclusion](#conclusion)
 
 ## Introduction
 This document describes the built-in SVG filter primitives implemented in the Blink-based engine. It focuses on the core filter pipeline, primitive types, attributes, chaining semantics, and runtime behavior. The implementation now features substantial enhancements to edge case handling, better error recovery, and more robust mathematical computations for component transfer, displacement, and turbulence primitives. It covers blur, turbulence, displacement mapping, and image primitives, explaining how primitives connect via inputs and results, how units and scales are applied, and how animations are integrated. Practical combinations, performance considerations, and troubleshooting guidance are included.
@@ -142,11 +149,19 @@ Builder-->>DOM : Graph ready for rendering with enhanced validation
 - Parameters:
   - stdDeviation: number or pair of numbers; negative values are rejected.
   - x, y, width, height, result: standard primitive attributes.
+- Edge Mode Handling:
+  - **Updated**: Now uses TileMode.decal for edge duplication instead of TileMode.clamp to match Chrome/Blink behavior
+  - Duplicate mode: Clamps to edge pixels with transparent background for natural fade
+  - Wrap mode: Repeats edge pixels for seamless tiling
+  - None mode: Treats out-of-bounds as transparent black
 - Behavior:
   - Validates non-negative standard deviations with enhanced error recovery.
   - Creates a blur effect and attaches the named input.
+  - Uses TileMode.decal for edge duplication to achieve Chrome/Blink parity.
 - Animation:
   - Animated properties include stdDeviationX/Y and standard attributes.
+
+**Updated** Enhanced edge mode handling now matches Chrome/Blink behavior by using TileMode.decal for duplicate edge mode instead of TileMode.clamp, ensuring proper edge duplication with transparent backgrounds.
 
 ```mermaid
 flowchart TD
@@ -156,7 +171,8 @@ HasIn --> |No| Fail["Abort build with error"]
 HasIn --> |Yes| Validate["Validate stdDeviation >= 0"]
 Validate --> Valid{"Valid?"}
 Valid --> |No| Fail
-Valid --> |Yes| Create["Create FEGaussianBlur with inputs"]
+Valid --> |Yes| EdgeMode["Convert edgeMode to TileMode"]
+EdgeMode --> Create["Create FEGaussianBlur with inputs and TileMode.decal"]
 Create --> End(["Effect added to builder"])
 Fail --> End
 ```
@@ -164,12 +180,14 @@ Fail --> End
 **Diagram sources**
 - [SVGFEGaussianBlurElement.cpp:128-141](file://blink-b87d44f-Source-core-svg/SVGFEGaussianBlurElement.cpp#L128-L141)
 - [SVGFEGaussianBlurElement.cpp:135-137](file://blink-b87d44f-Source-core-svg/SVGFEGaussianBlurElement.cpp#L135-L137)
+- [svg_filters_primitives_blur.dart:79-103](file://lib/src/animation/svg_filters_primitives_blur.dart#L79-L103)
 
 **Section sources**
 - [SVGFEGaussianBlurElement.cpp:33-76](file://blink-b87d44f-Source-core-svg/SVGFEGaussianBlurElement.cpp#L33-L76)
 - [SVGFEGaussianBlurElement.cpp:77-126](file://blink-b87d44f-Source-core-svg/SVGFEGaussianBlurElement.cpp#L77-L126)
 - [SVGFEGaussianBlurElement.cpp:128-141](file://blink-b87d44f-Source-core-svg/SVGFEGaussianBlurElement.cpp#L128-L141)
 - [SVGFEGaussianBlurElement.h:30-52](file://blink-b87d44f-Source-core-svg/SVGFEGaussianBlurElement.h#L30-L52)
+- [svg_filters_primitives_blur.dart:79-103](file://lib/src/animation/svg_filters_primitives_blur.dart#L79-L103)
 
 ### Turbulence (feTurbulence)
 - Purpose: Generates fractal noise patterns for procedural textures and animations.
@@ -231,6 +249,7 @@ SVGFETurbulenceElement --> FETurbulence : "creates with validation"
 - Behavior:
   - Uses the selected channels to compute UV offsets and samples the main image accordingly.
   - Improved error recovery handles invalid channel combinations.
+  - Edge mode handling: out-of-bounds coordinates return transparent black per SVG spec.
 - Animation:
   - Animated properties include standard attributes and scale.
   - Enhanced stability for animated displacement sequences.
@@ -349,6 +368,62 @@ Practical note: Empty result names are allowed; they still participate in the gr
 - [SVGFilterPrimitiveStandardAttributes.cpp:50-156](file://blink-b87d44f-Source-core-svg/SVGFilterPrimitiveStandardAttributes.cpp#L50-L156)
 - [SVGFilterPrimitiveStandardAttributes.h:38-76](file://blink-b87d44f-Source-core-svg/SVGFilterPrimitiveStandardAttributes.h#L38-L76)
 
+## Edge Mode Handling
+
+### Overview
+Edge mode handling determines how filter primitives behave when sampling pixels outside the image boundaries. The implementation supports three modes that align with the SVG Filter specification:
+
+- **duplicate**: Clamp to edge pixels (default behavior)
+- **wrap**: Wrap around to opposite edge  
+- **none**: Use transparent black for out-of-bounds
+
+### Implementation Details
+
+#### Duplicate Mode (Clamp to Edge)
+- **Behavior**: Coordinates outside bounds are clamped to the nearest valid pixel
+- **Use Case**: Most common for blur and convolution operations
+- **Performance**: Minimal overhead, straightforward pixel access
+- **Visual Result**: Natural edge preservation with no repetition
+
+#### Wrap Mode (Tile)
+- **Behavior**: Coordinates wrap around using modulo arithmetic
+- **Use Case**: Seamless texture patterns and tiling effects
+- **Performance**: Slight overhead for modulo operations
+- **Visual Result**: Infinite repeating pattern at edges
+
+#### None Mode (Transparent Black)
+- **Behavior**: Out-of-bounds coordinates return transparent black (0,0,0,0)
+- **Use Case**: Displacement mapping and convolution with transparency
+- **Performance**: Additional conditional check for boundary testing
+- **Visual Result**: Edges fade to transparency
+
+### Blur-Specific Edge Mode Handling
+
+**Updated** The blur primitive now uses specialized edge mode handling to match Chrome/Blink behavior:
+
+- **Duplicate Mode**: Uses `TileMode.decal` instead of `TileMode.clamp` for proper edge duplication
+- **Wrap Mode**: Uses `TileMode.repeated` for seamless tiling
+- **None Mode**: Uses `TileMode.decal` treating out-of-bounds as transparent
+
+The rationale for using `TileMode.decal` for duplicate mode is that Chrome's feGaussianBlur operates on an intermediate image surface where the shape is rendered on a transparent background, causing edge duplication to naturally fade to transparent around the shape rather than creating rectangular halos.
+
+```mermaid
+flowchart TD
+Duplicate["Duplicate Mode"] --> Decal["TileMode.decal<br/>Transparent edges"]
+Wrap["Wrap Mode"] --> Repeated["TileMode.repeated<br/>Seamless tiling"]
+None["None Mode"] --> Decal2["TileMode.decal<br/>Transparent black"]
+Duplicate --> Clamp["TileMode.clamp<br/>RECTANGULAR HALOS"]
+```
+
+**Diagram sources**
+- [svg_filters_primitives_blur.dart:79-103](file://lib/src/animation/svg_filters_primitives_blur.dart#L79-L103)
+
+**Section sources**
+- [svg_filters_types.dart:81-91](file://lib/src/animation/svg_filters_types.dart#L81-L91)
+- [svg_filters_primitives_blur.dart:79-103](file://lib/src/animation/svg_filters_primitives_blur.dart#L79-L103)
+- [svg_filters_primitives_convolve_matrix.dart:124-173](file://lib/src/animation/svg_filters_primitives_convolve_matrix.dart#L124-L173)
+- [filter_primitives_edge_cases_test.dart:27-86](file://test/filter_primitives_edge_cases_test.dart#L27-L86)
+
 ## Enhanced Edge Case Handling
 The filter primitive implementations now feature substantial improvements in edge case handling and error recovery:
 
@@ -413,6 +488,10 @@ N2 -. "clearResultsRecursive with validation" .-> N1
   - External images and referenced SVG elements require additional drawing passes; cache where possible.
 - Scale and units:
   - effectBBoxMode scales numeric values by target bounding box; large targets increase pixel counts and memory pressure.
+- Edge mode optimization:
+  - **Updated**: Duplicate mode with TileMode.decal provides better visual results than TileMode.clamp for blur operations.
+  - Wrap mode has minimal performance impact for most use cases.
+  - None mode adds boundary checking overhead but essential for transparency effects.
 - Enhanced computational efficiency:
   - Improved mathematical algorithms reduce CPU overhead for complex filter chains.
   - Better memory management reduces garbage collection pressure during animation.
@@ -440,6 +519,11 @@ Common issues and remedies with enhanced error handling:
 - **Coordinate System Confusion**: filterUnits and primitiveUnits are validated and documented more clearly.
 - **Memory Leaks**: Enhanced cleanup prevents memory accumulation in long-running animations.
 
+### Edge Mode Issues
+- **Unexpected Halos**: Blur operations may show rectangular halos if using TileMode.clamp instead of TileMode.decal.
+- **Tiling Artifacts**: Wrap mode may cause visible seams if image doesn't tile seamlessly.
+- **Transparency Problems**: None mode may cause unexpected transparency if not handled properly in downstream operations.
+
 ### Mathematical Computation Issues
 - **Precision Loss**: Component transfer functions now use higher precision arithmetic.
 - **Overflow Prevention**: Turbulence generation includes overflow protection for extreme parameters.
@@ -450,6 +534,12 @@ Common issues and remedies with enhanced error handling:
 - [SVGFEDisplacementMapElement.cpp:114-126](file://blink-b87d44f-Source-core-svg/SVGFEDisplacementMapElement.cpp#L114-L126)
 - [SVGFETurbulenceElement.cpp:177-179](file://blink-b87d44f-Source-core-svg/SVGFETurbulenceElement.cpp#L177-L179)
 - [SVGFEComponentTransferElement.cpp:86-100](file://blink-b87d44f-Source-core-svg/SVGFEComponentTransferElement.cpp#L86-L100)
+- [css_compositing_properties_test.dart:193-238](file://test/animation/css_compositing_properties_test.dart#L193-L238)
+- [displacement_edge_cases_test.dart:120-153](file://test/animation/displacement_edge_cases_test.dart#L120-L153)
 
 ## Conclusion
-The Blink SVG filter implementation provides a robust, extensible pipeline for composing built-in primitives with substantial enhancements to edge case handling, error recovery, and mathematical precision. The recent improvements ensure more reliable rendering, better performance, and enhanced stability for complex filter animations. By understanding primitive inputs, standard attributes, and the builder's dependency model with its enhanced validation, developers can construct efficient and animated filter graphs. Use primitive subregions, appropriate units, and careful chaining to balance visual fidelity and performance while leveraging the improved error recovery mechanisms for production-ready applications.
+The Blink SVG filter implementation provides a robust, extensible pipeline for composing built-in primitives with substantial enhancements to edge case handling, error recovery, and mathematical precision. The recent improvements ensure more reliable rendering, better performance, and enhanced stability for complex filter animations. 
+
+**Updated Key Enhancement**: The blur primitive now uses TileMode.decal for duplicate edge mode handling, providing Chrome/Blink parity by treating out-of-bounds areas as transparent rather than stretching edge pixels. This change eliminates unwanted rectangular halos and produces more natural edge fading for blur operations.
+
+By understanding primitive inputs, standard attributes, edge mode behavior, and the builder's dependency model with its enhanced validation, developers can construct efficient and animated filter graphs. Use primitive subregions, appropriate units, and careful chaining to balance visual fidelity and performance while leveraging the improved error recovery mechanisms for production-ready applications. The enhanced edge mode handling ensures consistent visual results across different filter primitives and better compatibility with web standards.

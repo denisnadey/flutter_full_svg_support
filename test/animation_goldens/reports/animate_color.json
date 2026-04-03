@@ -1,6 +1,6 @@
 {
   "svg": "animate_color",
-  "frames": 15,
+  "frames": 30,
   "results": [
     {
       "frame": 0,
@@ -62,7 +62,7 @@
       "frame": 8,
       "time_s": 8.0,
       "similarity": 0.9999,
-      "different_pixels": 32,
+      "different_pixels": 34,
       "total_pixels": 480000
     },
     {
@@ -106,9 +106,114 @@
       "similarity": 1.0,
       "different_pixels": 20,
       "total_pixels": 480000
+    },
+    {
+      "frame": 15,
+      "time_s": 15.0,
+      "similarity": 0.9998,
+      "different_pixels": 86,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 16,
+      "time_s": 16.0,
+      "similarity": 0.9998,
+      "different_pixels": 86,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 17,
+      "time_s": 17.0,
+      "similarity": 0.9998,
+      "different_pixels": 86,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 18,
+      "time_s": 18.0,
+      "similarity": 0.9998,
+      "different_pixels": 86,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 19,
+      "time_s": 19.0,
+      "similarity": 0.9998,
+      "different_pixels": 86,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 20,
+      "time_s": 20.0,
+      "similarity": 0.9998,
+      "different_pixels": 88,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 21,
+      "time_s": 21.0,
+      "similarity": 0.9998,
+      "different_pixels": 88,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 22,
+      "time_s": 22.0,
+      "similarity": 0.9998,
+      "different_pixels": 86,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 23,
+      "time_s": 23.0,
+      "similarity": 0.9998,
+      "different_pixels": 86,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 24,
+      "time_s": 24.0,
+      "similarity": 0.9998,
+      "different_pixels": 88,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 25,
+      "time_s": 25.0,
+      "similarity": 0.9998,
+      "different_pixels": 86,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 26,
+      "time_s": 26.0,
+      "similarity": 0.9998,
+      "different_pixels": 86,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 27,
+      "time_s": 27.0,
+      "similarity": 0.9998,
+      "different_pixels": 86,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 28,
+      "time_s": 28.0,
+      "similarity": 0.9998,
+      "different_pixels": 88,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 29,
+      "time_s": 29.0,
+      "similarity": 0.9998,
+      "different_pixels": 86,
+      "total_pixels": 480000
     }
   ],
-  "average_similarity": 1.0,
-  "worst_frame": 0,
+  "average_similarity": 0.9999,
+  "worst_frame": 20,
   "worst_similarity": 0.9998
 }

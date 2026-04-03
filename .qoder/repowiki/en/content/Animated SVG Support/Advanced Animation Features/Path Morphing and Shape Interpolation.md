@@ -8,6 +8,8 @@
 - [path_normalizer.dart](file://lib/src/animation/path_normalizer.dart)
 - [path_normalizer_alignment.dart](file://lib/src/animation/path_normalizer_alignment.dart)
 - [path_normalizer_curves.dart](file://lib/src/animation/path_normalizer_curves.dart)
+- [path_normalizer_single.dart](file://lib/src/animation/path_normalizer_single.dart)
+- [path_normalizer_types.dart](file://lib/src/animation/path_normalizer_types.dart)
 - [path_data.dart](file://lib/src/animation/path_data.dart)
 - [path_data_base.dart](file://lib/src/animation/path_data_base.dart)
 - [path_data_curves.dart](file://lib/src/animation/path_data_curves.dart)
@@ -26,12 +28,12 @@
 
 ## Update Summary
 **Changes Made**
-- Enhanced Path Normalization section to document the new de Casteljau subdivision algorithm
-- Updated Path Normalization and Alignment section with detailed mathematical explanation
-- Added new subsection on de Casteljau Subdivision Algorithm Implementation
-- Updated Performance Considerations to reflect improved browser compatibility
-- Enhanced Troubleshooting Guide with subdivision algorithm specifics
-- Updated Mathematical Foundations section to include de Casteljau mathematics
+- Enhanced Path Normalization section to document the new de Casteljau subdivision algorithm implementation
+- Updated Path Normalization and Alignment section with detailed mathematical explanation of recursive linear interpolation
+- Added comprehensive subsection on de Casteljau Subdivision Algorithm Implementation with mathematical foundations
+- Updated Performance Considerations to reflect improved browser compatibility and elimination of 'bunching' artifacts
+- Enhanced Troubleshooting Guide with subdivision algorithm specifics and fallback mechanisms
+- Updated Mathematical Foundations section to include de Casteljau mathematics and arc subdivision techniques
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -46,13 +48,13 @@
 10. [Appendices](#appendices)
 
 ## Introduction
-This document explains the path morphing and shape interpolation capabilities implemented in the project. It covers the path data model, SVG path parsing pipeline, normalization and alignment strategies, curve interpolation techniques, and the animation pipeline that produces smooth transitions between arbitrary SVG shapes. The system now features an enhanced de Casteljau subdivision algorithm for improved browser compatibility and elimination of visible 'bunching' artifacts during morphing animations.
+This document explains the path morphing and shape interpolation capabilities implemented in the project. It covers the path data model, SVG path parsing pipeline, normalization and alignment strategies, curve interpolation techniques, and the animation pipeline that produces smooth transitions between arbitrary SVG shapes. The system now features a comprehensive de Casteljau subdivision implementation for enhanced path normalization, replacing degenerate cubic Bezier padding with mathematically precise recursive linear interpolation. This significantly improves path morphing animation quality and browser parity.
 
 ## Project Structure
 The path morphing system is primarily implemented under the animation module. Key areas include:
 - Path data representation and command abstractions
 - Path normalization and alignment with de Casteljau subdivision
-- Curve conversion utilities
+- Curve conversion utilities and arc subdivision
 - Interpolation engine and morpher helpers
 - Example widgets and tests demonstrating morphing
 
@@ -127,7 +129,7 @@ PAGE --> W2
 - [path_data_base.dart:1-281](file://lib/src/animation/path_data_base.dart#L1-L281)
 - [path_data_curves.dart:1-285](file://lib/src/animation/path_data_curves.dart#L1-L285)
 - [path_normalizer.dart:16-55](file://lib/src/animation/path_normalizer.dart#L16-L55)
-- [path_normalizer_alignment.dart:1-68](file://lib/src/animation/path_normalizer_alignment.dart#L1-L68)
+- [path_normalizer_alignment.dart:1-190](file://lib/src/animation/path_normalizer_alignment.dart#L1-L190)
 - [path_normalizer_curves.dart:1-156](file://lib/src/animation/path_normalizer_curves.dart#L1-L156)
 - [path_interpolation.dart:1-96](file://lib/src/animation/path_interpolation.dart#L1-L96)
 - [path_interpolation_morpher.dart:1-53](file://lib/src/animation/path_interpolation_morpher.dart#L1-L53)
@@ -306,6 +308,13 @@ The algorithm uses recursive linear interpolation to split cubic Bezier curves a
 
 This approach ensures geometrically accurate curve subdivision that maintains smoothness and eliminates the 'bunching' artifacts that would occur with simple degenerate curve insertion.
 
+The algorithm is implemented with the following mathematical foundation:
+- **Level 1 Interpolation**: P₀₁ = P₀ + (P₁ - P₀) × t, P₁₂ = P₁ + (P₂ - P₁) × t, P₂₃ = P₂ + (P₃ - P₂) × t
+- **Level 2 Interpolation**: P₀₁₂ = P₀₁ + (P₁₂ - P₀₁) × t, P₁₂₃ = P₁₂ + (P₂₃ - P₁₂) × t  
+- **Level 3 Interpolation**: P = P₀₁₂ + (P₁₂₃ - P₀₁₂) × t
+
+Where P₀, P₁, P₂, P₃ are the control points of the cubic Bezier curve.
+
 **Section sources**
 - [path_normalizer_alignment.dart:101-149](file://lib/src/animation/path_normalizer_alignment.dart#L101-L149)
 
@@ -434,6 +443,8 @@ graph LR
 PD["path_data_base.dart<br/>path_data_curves.dart"] --> PN["path_normalizer.dart"]
 PN --> PNC["path_normalizer_curves.dart"]
 PN --> PNA["path_normalizer_alignment.dart"]
+PN --> PNS["path_normalizer_single.dart"]
+PN --> PNT["path_normalizer_types.dart"]
 PN --> PI["path_interpolation.dart"]
 PI --> PM["path_interpolation_morpher.dart"]
 PPAR["animated_svg_picture_path_parser.dart"] --> PN
@@ -448,6 +459,8 @@ EX["examples & tests"] --> PM
 - [path_normalizer.dart:1-56](file://lib/src/animation/path_normalizer.dart#L1-L56)
 - [path_normalizer_curves.dart:1-156](file://lib/src/animation/path_normalizer_curves.dart#L1-L156)
 - [path_normalizer_alignment.dart:1-190](file://lib/src/animation/path_normalizer_alignment.dart#L1-L190)
+- [path_normalizer_single.dart:1-108](file://lib/src/animation/path_normalizer_single.dart#L1-L108)
+- [path_normalizer_types.dart:1-22](file://lib/src/animation/path_normalizer_types.dart#L1-L22)
 - [path_interpolation.dart:1-96](file://lib/src/animation/path_interpolation.dart#L1-L96)
 - [path_interpolation_morpher.dart:1-53](file://lib/src/animation/path_interpolation_morpher.dart#L1-L53)
 - [animated_svg_picture_path_parser.dart](file://lib/src/animation/animated_svg_picture_path_parser.dart)
@@ -481,6 +494,8 @@ EX["examples & tests"] --> PM
 - Avoid frequent re-parsing: Keep parsed PathCommand lists in memory during animations.
 - Limit expensive curve conversions: Arcs are subdivided into multiple cubic Beziers; fewer arcs yield better performance.
 - **Enhanced subdivision algorithm**: The de Casteljau algorithm provides superior distribution of subdivision points, reducing computational overhead while eliminating 'bunching' artifacts that would otherwise require additional processing.
+- **Mathematical precision**: Recursive linear interpolation ensures geometric accuracy without numerical instability.
+- **Fallback optimization**: Degenerate curve insertion is only used when no cubic segments are available, minimizing performance impact.
 
 ## Troubleshooting Guide
 **Updated** Common issues and resolutions with de Casteljau subdivision specifics:
@@ -489,7 +504,9 @@ EX["examples & tests"] --> PM
 - Relative vs absolute coordinates: All commands must be absolute post-normalization; relative commands are converted automatically.
 - **De Casteljau subdivision artifacts**: The algorithm automatically selects the longest cubic segments for subdivision, preventing uneven distribution that could cause visual artifacts.
 - **Degenerate curves fallback**: When no cubic segments are available, the system falls back to degenerate curve insertion while maintaining browser compatibility.
-- Edge cases in arcs: Very small or degenerate arcs are handled by fallback to straight-line interpolation.
+- **Edge cases in arcs**: Very small or degenerate arcs are handled by fallback to straight-line interpolation.
+- **Numerical stability**: The recursive linear interpolation approach ensures stable subdivision even for nearly degenerate curves.
+- **Performance monitoring**: Monitor subdivision depth to identify paths that require excessive subdivision.
 
 **Section sources**
 - [path_interpolation.dart:26-65](file://lib/src/animation/path_interpolation.dart#L26-L65)
@@ -506,8 +523,9 @@ The path morphing system provides a robust foundation for smooth SVG shape trans
 **Updated** Enhanced mathematical foundations with de Casteljau subdivision:
 - Linear interpolation: Used for MoveTo and CubicBezier control points/end points.
 - **De Casteljau subdivision**: Cubic Bezier curves are split using recursive linear interpolation at t=0.5, ensuring geometric accuracy and smooth distribution of subdivision points.
-- **Arc subdivision**: Elliptical arcs are approximated by up to 4 cubic Beziers using standard techniques.
+- **Arc subdivision**: Elliptical arcs are approximated by up to 4 cubic Beziers using standard techniques with mathematical precision.
 - **Coordinate transformations**: Absolute conversion ensures consistent interpolation across paths.
+- **Recursive linear interpolation**: Mathematical foundation for subdivision accuracy and numerical stability.
 
 **Section sources**
 - [path_interpolation.dart:26-65](file://lib/src/animation/path_interpolation.dart#L26-L65)
@@ -520,6 +538,8 @@ The path morphing system provides a robust foundation for smooth SVG shape trans
 - Profile and optimize: Measure frame times and reduce path complexity or interpolation frequency as needed.
 - Test edge cases: Validate with degenerate arcs, very short paths, and paths with different winding orders.
 - **Leverage subdivision benefits**: The de Casteljau algorithm automatically optimizes subdivision distribution, providing better visual results with minimal configuration.
+- **Monitor subdivision depth**: Track the number of subdivisions to identify performance bottlenecks.
+- **Test browser parity**: Validate morphing results against known browser behaviors for complex path transformations.
 
 **Section sources**
 - [path_morphing_example.dart](file://example/lib/path_morphing_example.dart)

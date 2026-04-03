@@ -11,6 +11,9 @@
 - [svg_dom.dart](file://lib/src/animation/svg_dom.dart)
 - [css_variables_calc.dart](file://lib/src/animation/css_variables_calc.dart)
 - [animated_svg_painter_values.dart](file://lib/src/animation/animated_svg_painter_values.dart)
+- [animated_svg_painter_use_constants.dart](file://lib/src/animation/animated_svg_painter_use_constants.dart)
+- [animated_svg_painter_shapes_image.dart](file://lib/src/animation/animated_svg_painter_shapes_image.dart)
+- [animated_svg_painter_geometry_foreign_object.dart](file://lib/src/animation/animated_svg_painter_geometry_foreign_object.dart)
 - [css_cascade_specificity_test.dart](file://test/animation/css_cascade_specificity_test.dart)
 - [use_css_cascade_test.dart](file://test/animation/use_css_cascade_test.dart)
 - [css_shorthand_expansion.dart](file://lib/src/animation/css_shorthand_expansion.dart)
@@ -24,11 +27,10 @@
 
 ## Update Summary
 **Changes Made**
-- **Enhanced Shorthand Expansion System**: Complete modularization of CSS shorthand expansion into specialized components for font, animation, box model, and SVG-specific properties
-- **Improved Specificity Handling**: Enhanced specificity calculation with better support for complex selectors and compound selectors
-- **Advanced Inheritance Resolution**: Enhanced UseCascadeContext with improved shadow DOM boundary handling for `<use>` and `<symbol>` elements
-- **Optimized Inline Style Processing**: Enhanced `_extractInlineStyleValue` method with comprehensive shorthand expansion support
-- **Better Complex Property Combinations**: Improved handling of complex property combinations through the expanded shorthand system
+- **Enhanced Property Inheritance System**: Added comprehensive handling of non-inherited SVG/CSS properties through the `_nonInheritedProperties` constant
+- **Improved Inheritance Logic**: Enhanced `_getInheritedAttributeValue` method with proper non-inherited property detection
+- **Expanded Foreign Object Support**: Enhanced foreign object boundary handling with comprehensive non-inheritable property sets
+- **Advanced Shadow DOM Boundary Handling**: Improved shadow DOM boundary awareness for `<use>` and `<symbol>` elements with better property inheritance control
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -37,7 +39,7 @@
 4. [CSS Cascade Engine](#css-cascade-engine)
 5. [Selector Matching System](#selector-matching-system)
 6. [Specificity Calculation](#specificity-calculation)
-7. [Inheritance and Shadow DOM](#inheritance-and-shadow-dom)
+7. [Enhanced Inheritance and Shadow DOM](#enhanced-inheritance-and-shadow-dom)
 8. [CSS Variables and Calculations](#css-variables-and-calculations)
 9. [Enhanced Shorthand Expansion System](#enhanced-shorthand-expansion-system)
 10. [Performance Optimizations](#performance-optimizations)
@@ -51,7 +53,7 @@ The CSS Cascade System in Flutter SVG Support provides a comprehensive implement
 
 The system implements a sophisticated cascade resolution engine that handles inline styles, CSS rules from `<style>` blocks, presentation attributes, and inheritance through SVG's `<use>` elements. It supports advanced CSS selectors including pseudo-classes, nth-child selectors, and complex combinators while maintaining optimal performance through intelligent caching mechanisms.
 
-**Updated** The system has been enhanced with a comprehensive shorthand expansion system that provides modularized support for CSS shorthand properties including font, animation, transition, margin/padding, border, background, and SVG-specific properties like marker and offset. The inheritance system now features improved shadow DOM boundary handling with better support for complex nested use element scenarios.
+**Updated** The system has been enhanced with comprehensive non-inherited property handling through the `_nonInheritedProperties` constant, which defines properties like `opacity`, `filter`, `mask`, `clip-path`, and `overflow` that should not be inherited from parent elements. The inheritance system now features improved shadow DOM boundary handling with better support for complex nested use element scenarios and enhanced foreign object boundary detection.
 
 ## System Architecture
 
@@ -75,21 +77,22 @@ J[_ResolutionMixin] --> K[Property Resolution]
 J --> L[Inheritance Logic]
 J --> M[!Important Handling]
 end
-subgraph "Inheritance System"
+subgraph "Enhanced Inheritance System"
 N[UseCascadeContext] --> O[Shadow DOM Boundary]
 N --> P[Circular Reference Detection]
 N --> Q[Nested Use Chain Support]
+N --> R[Non-Inherited Property Control]
 end
 subgraph "Shorthand Expansion"
-R[CssShorthandExpander] --> S[Font Expansion]
-R --> T[Animation Expansion]
-R --> U[Box Model Expansion]
-R --> V[SVG-Specific Expansion]
+S[CssShorthandExpander] --> T[Font Expansion]
+S --> U[Animation Expansion]
+S --> V[Box Model Expansion]
+S --> W[SVG-Specific Expansion]
 end
 subgraph "DOM Integration"
-W[SvgNode] --> X[SvgDocument]
-W --> Y[Cascade Variables Resolver]
-X --> Z[SvgPseudoClassState]
+X[SvgNode] --> Y[SvgDocument]
+X --> Z[Cascade Variables Resolver]
+Y --> AA[SvgPseudoClassState]
 end
 ```
 
@@ -135,7 +138,7 @@ Manages the core cascade resolution algorithm with proper precedence handling:
 - **Priority-Based Resolution**: Inline styles → CSS rules → Presentation attributes → Inherited values
 - **!Important Declaration Support**: Proper precedence rules for important declarations
 - **Source Order Fallback**: Later declarations win when specificity equals
-- **Inheritance Logic**: Only applies to inheritable properties
+- **Inheritance Logic**: Only applies to inheritable properties with enhanced non-inherited property detection
 - **Enhanced Inline Style Processing**: Comprehensive shorthand expansion support for inline styles
 
 ### UseCascadeContext
@@ -146,6 +149,7 @@ Dedicated inheritance system for `<use>` element scenarios:
 - **Nested Use Chain Support**: Manages complex nested `<use>` element chains with circular reference detection
 - **Inheritance Priority**: Implements correct cascade order for use-referenced elements
 - **!Important Override Logic**: Handles `!important` declarations from use elements
+- **Non-Inherited Property Control**: Enhanced control over property inheritance through shadow boundaries
 
 **Section sources**
 - [css_cascade.dart:227-259](file://lib/src/animation/css_cascade.dart#L227-L259)
@@ -181,7 +185,9 @@ UseImportant --> |No| ParentInherit[Parent Chain Inherit]
 NormalInheritance --> HasParent{Has Parent?}
 HasParent --> |Yes| ParentResolve[Resolve from Parent]
 HasParent --> |No| NoValue[Return Null]
-ParentResolve --> InheritCheck{Property Inheritable?}
+ParentResolve --> NonInheritedCheck{Non-Inherited Property?}
+NonInheritedCheck --> |Yes| NoValue
+NonInheritedCheck --> |No| InheritCheck{Property Inheritable?}
 InheritCheck --> |Yes| ReturnParent[Return Parent Value]
 InheritCheck --> |No| NoValue
 ReturnInline --> End([Resolution Complete])
@@ -195,19 +201,22 @@ NoValue --> End
 **Diagram sources**
 - [css_cascade_resolution.dart:13-107](file://lib/src/animation/css_cascade_resolution.dart#L13-L107)
 - [css_cascade_inheritance.dart:72-162](file://lib/src/animation/css_cascade_inheritance.dart#L72-L162)
+- [animated_svg_painter_values.dart:34-44](file://lib/src/animation/animated_svg_painter_values.dart#L34-L44)
 
 The engine handles several critical aspects:
 - **Enhanced Shadow DOM Support**: Proper boundary handling for `<use>` and `<symbol>` elements
 - **Nested Use Chain Processing**: Circular reference detection and proper inheritance through use chains
+- **Non-Inherited Property Control**: Proper handling of properties that should not be inherited from parents
 - **!Important Precedence**: Correct handling of `!important` declarations in complex scenarios
 - **Source Order Fallback**: Later declarations win when specificity equals
-- **Inheritance Logic**: Only applies to inheritable properties with proper shadow boundary awareness
+- **Inheritance Logic**: Only applies to inheritable properties with proper shadow boundary awareness and non-inherited property detection
 - **Shorthand Expansion Integration**: Seamless integration with the enhanced shorthand expansion system
 
 **Section sources**
 - [css_cascade_resolution.dart:13-107](file://lib/src/animation/css_cascade_resolution.dart#L13-L107)
 - [css_cascade_inheritance.dart:72-162](file://lib/src/animation/css_cascade_inheritance.dart#L72-L162)
 - [css_cascade_inheritance.dart:214-219](file://lib/src/animation/css_cascade_inheritance.dart#L214-L219)
+- [animated_svg_painter_values.dart:34-44](file://lib/src/animation/animated_svg_painter_values.dart#L34-L44)
 
 ## Selector Matching System
 
@@ -282,11 +291,11 @@ S[div ~ span] --> T[0,0,0,2]
 - [css_cascade_specificity.dart:18-62](file://lib/src/animation/css_cascade_specificity.dart#L18-L62)
 - [css_cascade_specificity_test.dart:47-112](file://test/animation/css_cascade_specificity_test.dart#L47-L112)
 
-## Inheritance and Shadow DOM
+## Enhanced Inheritance and Shadow DOM
 
-### Enhanced Inheritance Rules
+### Comprehensive Property Inheritance Rules
 
-The system implements comprehensive CSS inheritance for SVG elements with specialized shadow DOM boundary handling:
+The system implements comprehensive CSS inheritance for SVG elements with specialized shadow DOM boundary handling and enhanced non-inherited property control:
 
 **Inheritable Properties** include:
 - Color properties: `color`, `fill`, `stroke`
@@ -294,6 +303,15 @@ The system implements comprehensive CSS inheritance for SVG elements with specia
 - Text properties: `text-align`, `line-height`, `white-space`
 - SVG-specific properties: `stroke-width`, `stroke-linecap`, `paint-order`
 - Visibility properties: `visibility`, `display`
+
+**Enhanced Non-Inherited Properties** now include:
+- **Opacity**: `opacity` creates a stacking context and is NOT inherited
+- **Filter Effects**: `filter`, `backdrop-filter` establish new composition contexts
+- **Masking**: `mask`, `mask-image` create isolation boundaries
+- **Clipping**: `clip-path`, `clip` define new clipping contexts
+- **Overflow**: `overflow`, `overflow-x`, `overflow-y` control viewport boundaries
+- **Transform**: `transform`, `transform-origin` establish new transformation contexts
+- **Compositing**: `mix-blend-mode`, `isolation` create new stacking contexts
 
 ### Advanced Shadow DOM Boundary Handling
 
@@ -315,6 +333,9 @@ alt Property is Inheritable
 R->>U : Check Use Element Values
 U->>P : Check Parent Chain
 P->>P : Check Presentation Attributes
+else Property is Non-Inherited
+R->>R : Check if Property is in _nonInheritedProperties
+R->>R : Skip Parent Chain Inheritance
 end
 C->>C : Check Circular References
 C-->>U : Return Resolved Value
@@ -323,11 +344,28 @@ C-->>U : Return Resolved Value
 **Diagram sources**
 - [css_cascade_inheritance.dart:50-62](file://lib/src/animation/css_cascade_inheritance.dart#L50-L62)
 - [css_cascade_inheritance.dart:214-219](file://lib/src/animation/css_cascade_inheritance.dart#L214-L219)
+- [animated_svg_painter_values.dart:87-93](file://lib/src/animation/animated_svg_painter_values.dart#L87-L93)
+
+### Foreign Object Boundary Enhancement
+
+The system now includes comprehensive foreign object boundary handling with enhanced non-inheritable property detection:
+
+**Foreign Object Non-Inheritable Properties** include:
+- **Transform Properties**: `transform`, `transform-origin`, `transform-box`, `transform-style`
+- **Opacity and Compositing**: `opacity`, `mix-blend-mode`, `isolation`
+- **Display and Positioning**: `display`, `position`, `top`, `left`, `right`, `bottom`, `z-index`
+- **Clipping and Masking**: `clip-path`, `clip`, `mask`, `mask-image`, `overflow`, `overflow-x`, `overflow-y`
+- **Filter Effects**: `filter`, `backdrop-filter`
+- **Box Model**: `width`, `height`, `min-width`, `min-height`, `max-width`, `max-height`, `margin`, `padding`, `border`, `outline`
+- **Background**: `background`, `background-color`, `background-image`
 
 **Section sources**
 - [css_cascade_inheritance.dart:17-22](file://lib/src/animation/css_cascade_inheritance.dart#L17-L22)
 - [css_cascade_inheritance.dart:72-162](file://lib/src/animation/css_cascade_inheritance.dart#L72-L162)
 - [css_cascade_inheritance.dart:214-219](file://lib/src/animation/css_cascade_inheritance.dart#L214-L219)
+- [animated_svg_painter_values.dart:34-44](file://lib/src/animation/animated_svg_painter_values.dart#L34-L44)
+- [animated_svg_painter_shapes_image.dart:69-122](file://lib/src/animation/animated_svg_painter_shapes_image.dart#L69-L122)
+- [animated_svg_painter_use_constants.dart:14-91](file://lib/src/animation/animated_svg_painter_use_constants.dart#L14-L91)
 
 ## CSS Variables and Calculations
 
@@ -443,6 +481,7 @@ The system implements intelligent caching through specialized components:
 - **Shadow Boundary Cache**: Efficient boundary detection and caching
 - **Circular Reference Prevention**: Automatic detection and prevention of use chain loops
 - **Shorthand Expansion Caching**: Intelligent caching of expanded property sets
+- **Non-Inherited Property Caching**: Efficient detection and caching of non-inherited properties
 
 ### Selector Parsing Optimization
 
@@ -451,11 +490,13 @@ The system implements intelligent caching through specialized components:
 - **Memory Management**: Component-specific memory management for optimal performance
 - **Shadow Boundary Optimization**: Efficient boundary detection without repeated DOM traversal
 - **Inline Style Fast Path**: Direct property lookup for non-shorthand properties
+- **Non-Inherited Property Short-Circuit**: Immediate detection of non-inherited properties to prevent unnecessary parent traversal
 
 **Section sources**
 - [css_cascade_resolution.dart:24-41](file://lib/src/animation/css_cascade_resolution.dart#L24-L41)
 - [css_cascade_selector_matching.dart:21-54](file://lib/src/animation/css_cascade_selector_matching.dart#L21-L54)
 - [css_cascade_inheritance.dart:47-48](file://lib/src/animation/css_cascade_inheritance.dart#L47-L48)
+- [animated_svg_painter_values.dart:87-93](file://lib/src/animation/animated_svg_painter_values.dart#L87-L93)
 
 ## Testing Framework
 
@@ -470,6 +511,8 @@ The system includes comprehensive testing covering all aspects of CSS cascade be
 | Selector Tests | Complex selectors, pseudo-classes | Verifies selector matching accuracy |
 | Use Element Tests | Nested use chains, circular references | Tests complex inheritance scenarios |
 | Shorthand Expansion Tests | Font, animation, box model properties | Validates comprehensive shorthand expansion |
+| Non-Inherited Property Tests | Opacity, filter, mask, clip-path, overflow | Tests proper non-inherited property handling |
+| Foreign Object Tests | Boundary crossing, clipping behavior | Validates foreign object boundary handling |
 | Edge Cases | Empty selectors, multiple IDs, whitespace | Tests robustness and error handling |
 
 ### Key Test Scenarios
@@ -479,11 +522,13 @@ The test suite validates critical cascade behaviors:
 - **Specificity Comparison**: Proper handling of equal specificity with source order
 - **Inheritance Logic**: Correct inheritance for inheritable properties
 - **Shadow DOM**: Proper boundary handling for `<use>` and `<symbol>` elements
+- **Non-Inherited Properties**: Correct blocking of inheritance for opacity, filter, mask, clip-path, and overflow
 - **!Important Handling**: Correct precedence rules for `!important` declarations
 - **Nested Use Chains**: Proper handling of complex nested use element scenarios
 - **Circular Reference Detection**: Prevention of infinite loops in use chains
 - **Shorthand Expansion**: Accurate expansion of complex shorthand properties
 - **Cascade Interactions**: Proper interaction between shorthand and longhand properties
+- **Foreign Object Boundaries**: Proper handling of foreign object boundary crossing
 
 **Section sources**
 - [css_cascade_specificity_test.dart:1-679](file://test/animation/css_cascade_specificity_test.dart#L1-L679)
@@ -526,10 +571,15 @@ class SvgNode {
 +children SvgNode[]
 +parent SvgNode?
 }
+class NonInheritedPropertyDetector {
++_nonInheritedProperties Set
++_isNonInherited(property) bool
+}
 SvgPicture --> CssCascadeResolver : uses
 CssCascadeResolver --> SvgNode : resolves
 UseCascadeContext --> SvgNode : inherits from
 CssShorthandExpander --> CssCascadeResolver : expands
+NonInheritedPropertyDetector --> CssCascadeResolver : validates
 ```
 
 **Diagram sources**
@@ -537,6 +587,7 @@ CssShorthandExpander --> CssCascadeResolver : expands
 - [css_cascade.dart:227-259](file://lib/src/animation/css_cascade.dart#L227-L259)
 - [css_cascade_inheritance.dart:23-62](file://lib/src/animation/css_cascade_inheritance.dart#L23-L62)
 - [css_shorthand_expansion.dart:12-169](file://lib/src/animation/css_shorthand_expansion.dart#L12-L169)
+- [animated_svg_painter_values.dart:34-44](file://lib/src/animation/animated_svg_painter_values.dart#L34-L44)
 
 ### Animation Integration
 
@@ -546,6 +597,7 @@ The cascade system works in conjunction with the animation framework through com
 - **Inheritance Preservation**: Animated properties maintain inheritance relationships
 - **Performance Optimization**: Animation-aware caching for frequently changing properties
 - **Shadow DOM Animation**: Proper handling of animations through use element boundaries
+- **Non-Inherited Property Animation**: Proper handling of non-inherited properties during animations
 - **Shorthand Animation Support**: Full support for animation shorthand properties in keyframe animations
 
 **Section sources**
@@ -555,19 +607,21 @@ The cascade system works in conjunction with the animation framework through com
 
 ## Conclusion
 
-The CSS Cascade System provides a robust, standards-compliant implementation of CSS resolution for SVG documents within Flutter applications. The recent enhancements significantly improve functionality through comprehensive shorthand expansion, enhanced inheritance handling, and better specificity calculations.
+The CSS Cascade System provides a robust, standards-compliant implementation of CSS resolution for SVG documents within Flutter applications. The recent enhancements significantly improve functionality through comprehensive shorthand expansion, enhanced inheritance handling, better specificity calculations, and comprehensive non-inherited property control.
 
 The system's architecture emphasizes performance through intelligent caching, efficient selector parsing, and optimized memory usage. The extensive test coverage ensures reliability across complex CSS scenarios while maintaining compatibility with the broader Flutter ecosystem.
 
 Key strengths of the implementation include:
-- **Standards Compliance**: Full adherence to CSS cascade specification
-- **SVG-Specific Features**: Proper handling of SVG elements and `<use>` boundaries with enhanced shadow DOM awareness
+- **Standards Compliance**: Full adherence to CSS cascade specification with enhanced non-inherited property handling
+- **SVG-Specific Features**: Proper handling of SVG elements and `<use>` boundaries with enhanced shadow DOM awareness and comprehensive non-inherited property detection
 - **Comprehensive Shorthand Support**: Complete modularized system for font, animation, box model, and SVG-specific properties
 - **Performance Optimization**: Component-based architecture with intelligent caching and efficient selector matching
 - **Extensibility**: Modular design supporting future CSS features and complex inheritance scenarios
-- **Robust Testing**: Comprehensive test suite covering edge cases, shorthand expansion, and complex use element scenarios
+- **Robust Testing**: Comprehensive test suite covering edge cases, shorthand expansion, complex use element scenarios, and non-inherited property handling
 - **Nested Use Chain Support**: Advanced handling of complex nested use element chains with circular reference detection
+- **Foreign Object Boundary Control**: Enhanced foreign object boundary handling with comprehensive non-inheritable property sets
+- **Non-Inherited Property Management**: Precise control over property inheritance with the `_nonInheritedProperties` constant defining opacity, filter, mask, clip-path, and overflow as non-inheritable
 
 This system enables developers to create sophisticated SVG-based user interfaces with full CSS styling capabilities while maintaining optimal performance and reliability. The modular architecture ensures that the system can evolve and adapt to new CSS features while maintaining backward compatibility and performance standards.
 
-**Updated** The system now features a completely modularized CSS cascade and inheritance engine with dedicated components for inheritance handling, selector matching with shadow DOM boundary awareness, specificity calculations, cascade resolution, and a comprehensive shorthand expansion system that provides specialized handling for font, animation, box model, and SVG-specific properties, offering a fully standards-compliant and highly optimized solution for SVG CSS processing.
+**Updated** The system now features a completely modularized CSS cascade and inheritance engine with dedicated components for inheritance handling, selector matching with shadow DOM boundary awareness, specificity calculations, cascade resolution, comprehensive non-inherited property control, and a comprehensive shorthand expansion system that provides specialized handling for font, animation, box model, and SVG-specific properties, offering a fully standards-compliant and highly optimized solution for SVG CSS processing with enhanced property inheritance behavior.

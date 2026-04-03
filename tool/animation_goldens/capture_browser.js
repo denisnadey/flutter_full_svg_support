@@ -126,11 +126,21 @@ async function captureAnimationFrames(page, svgPath, outputDir, options) {
     }
   });
 
-  // Also pause CSS animations globally
-  await page.evaluate(() => {
+  // Pause CSS animations via Web Animations API for precise seeking.
+  // Using getAnimations() + currentTime instead of animation-delay hack
+  // avoids Chrome's imprecise behavior with animation-delay: -0s not
+  // properly computing stop-color values on gradient stops.
+  const hasWebAnimations = await page.evaluate(() => {
+    const allAnimations = document.getAnimations();
+    if (allAnimations.length > 0) {
+      allAnimations.forEach((anim) => anim.pause());
+      return true;
+    }
+    // Fallback: pause via style for SVGs without Web Animations support
     document.querySelectorAll('*').forEach((el) => {
       el.style.animationPlayState = 'paused';
     });
+    return false;
   });
 
   const capturedFrames = [];
@@ -148,15 +158,24 @@ async function captureAnimationFrames(page, svgPath, outputDir, options) {
       }
     }, timeSeconds);
 
-    // Seek CSS animations to the same point
-    await page.evaluate((t) => {
-      document.querySelectorAll('*').forEach((el) => {
-        if (el.style) {
-          el.style.animationDelay = `-${t}s`;
-          el.style.animationPlayState = 'paused';
-        }
-      });
-    }, timeSeconds);
+    // Seek CSS animations to the target time
+    if (hasWebAnimations) {
+      await page.evaluate((t) => {
+        const allAnimations = document.getAnimations();
+        allAnimations.forEach((anim) => {
+          anim.currentTime = t * 1000;
+        });
+      }, timeSeconds);
+    } else {
+      await page.evaluate((t) => {
+        document.querySelectorAll('*').forEach((el) => {
+          if (el.style) {
+            el.style.animationDelay = `-${t}s`;
+            el.style.animationPlayState = 'paused';
+          }
+        });
+      }, timeSeconds);
+    }
 
     // Small settle delay for rendering
     await new Promise((r) => setTimeout(r, 50));
