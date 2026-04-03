@@ -203,6 +203,12 @@ SmilAnimationType _parseAnimationType(String tagName) {
 
 /// Определить тип атрибута
 SvgAttributeType _inferAttributeType(String attributeName, SvgNode targetNode) {
+  // feColorMatrix animates its `values` list; this must be interpolated
+  // numerically instead of treated as a discrete string.
+  if (attributeName == 'values' && targetNode.tagName == 'feColorMatrix') {
+    return SvgAttributeType.list;
+  }
+
   // Check known attribute types first — these should always use their canonical
   // type for animation interpolation, regardless of how they're stored on the
   // node (e.g. filter primitive attributes may be stored as strings but need

@@ -499,6 +499,10 @@ void _syncFilterAnimatedValues(SvgFilters filters, String filterId) {
       _syncOffsetValues(primitive, sourceNode);
     } else if (primitive is SvgDropShadowFilter) {
       _syncDropShadowValues(primitive, sourceNode);
+    } else if (primitive is SvgColorMatrixFilter) {
+      _syncColorMatrixValues(primitive, sourceNode);
+    } else if (primitive is SvgComponentTransferFilter) {
+      _syncComponentTransferValues(primitive, sourceNode);
     }
   }
 }
@@ -582,6 +586,149 @@ void _syncDropShadowValues(SvgDropShadowFilter shadow, SvgNode node) {
       shadow.dy = double.tryParse(val) ?? shadow.dy;
     }
   }
+}
+
+void _syncColorMatrixValues(SvgColorMatrixFilter colorMatrix, SvgNode node) {
+  final valuesAttr = node.getAttribute('values');
+  if (valuesAttr == null || !valuesAttr.isAnimated) return;
+
+  final parsedValues = _parseNumberList(valuesAttr.effectiveValue);
+  if (parsedValues.isEmpty) return;
+  colorMatrix.values = parsedValues;
+}
+
+void _syncComponentTransferValues(
+  SvgComponentTransferFilter transfer,
+  SvgNode node,
+) {
+  SvgComponentTransferFunction? funcR = transfer.funcR;
+  SvgComponentTransferFunction? funcG = transfer.funcG;
+  SvgComponentTransferFunction? funcB = transfer.funcB;
+  SvgComponentTransferFunction? funcA = transfer.funcA;
+  var hasChannelNodes = false;
+
+  for (final child in node.children) {
+    switch (child.tagName) {
+      case 'feFuncR':
+        hasChannelNodes = true;
+        funcR = _parseComponentTransferFunctionFromNode(
+          child,
+          transfer.effectiveFuncR,
+        );
+      case 'feFuncG':
+        hasChannelNodes = true;
+        funcG = _parseComponentTransferFunctionFromNode(
+          child,
+          transfer.effectiveFuncG,
+        );
+      case 'feFuncB':
+        hasChannelNodes = true;
+        funcB = _parseComponentTransferFunctionFromNode(
+          child,
+          transfer.effectiveFuncB,
+        );
+      case 'feFuncA':
+        hasChannelNodes = true;
+        funcA = _parseComponentTransferFunctionFromNode(
+          child,
+          transfer.effectiveFuncA,
+        );
+    }
+  }
+
+  if (!hasChannelNodes) return;
+  transfer.updateFunctions(
+    funcR: funcR,
+    funcG: funcG,
+    funcB: funcB,
+    funcA: funcA,
+  );
+}
+
+SvgComponentTransferFunction _parseComponentTransferFunctionFromNode(
+  SvgNode node,
+  SvgComponentTransferFunction fallback,
+) {
+  final type = _parseComponentTransferType(
+    node.getAttributeValue('type')?.toString(),
+    fallback.type,
+  );
+
+  return SvgComponentTransferFunction(
+    type: type,
+    tableValues: _parseNumberList(node.getAttributeValue('tableValues')),
+    slope: _parseDouble(
+      node.getAttributeValue('slope'),
+      fallback: fallback.slope,
+    ),
+    intercept: _parseDouble(
+      node.getAttributeValue('intercept'),
+      fallback: fallback.intercept,
+    ),
+    amplitude: _parseDouble(
+      node.getAttributeValue('amplitude'),
+      fallback: fallback.amplitude,
+    ),
+    exponent: _parseDouble(
+      node.getAttributeValue('exponent'),
+      fallback: fallback.exponent,
+    ),
+    offset: _parseDouble(
+      node.getAttributeValue('offset'),
+      fallback: fallback.offset,
+    ),
+  );
+}
+
+SvgComponentTransferType _parseComponentTransferType(
+  String? value,
+  SvgComponentTransferType fallback,
+) {
+  switch (value?.trim().toLowerCase()) {
+    case 'identity':
+      return SvgComponentTransferType.identity;
+    case 'table':
+      return SvgComponentTransferType.table;
+    case 'discrete':
+      return SvgComponentTransferType.discrete;
+    case 'linear':
+      return SvgComponentTransferType.linear;
+    case 'gamma':
+      return SvgComponentTransferType.gamma;
+    default:
+      return fallback;
+  }
+}
+
+double _parseDouble(Object? value, {required double fallback}) {
+  if (value is num) return value.toDouble();
+  if (value is String) {
+    final parsed = double.tryParse(value.trim());
+    if (parsed != null) return parsed;
+    final unitless = value.trim().replaceAll(RegExp(r'[a-zA-Z%]+$'), '');
+    return double.tryParse(unitless) ?? fallback;
+  }
+  return fallback;
+}
+
+List<double> _parseNumberList(Object? value) {
+  if (value == null) return const <double>[];
+  if (value is num) return <double>[value.toDouble()];
+  if (value is List) {
+    return value
+        .map((item) => item is num ? item.toDouble() : double.tryParse('$item'))
+        .whereType<double>()
+        .toList(growable: false);
+  }
+  if (value is String) {
+    return value
+        .trim()
+        .split(RegExp(r'[\s,]+'))
+        .map((part) => double.tryParse(part))
+        .whereType<double>()
+        .toList(growable: false);
+  }
+  return const <double>[];
 }
 
 SvgFilterSourceContext _buildFilterSourceContextImpl(

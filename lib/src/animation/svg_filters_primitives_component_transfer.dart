@@ -163,10 +163,10 @@ class SvgComponentTransferFunction {
 /// Applies per-channel transfer functions to each pixel.
 /// Each channel (R, G, B, A) can have a different transfer function type.
 class SvgComponentTransferFilter extends SvgFilter {
-  final SvgComponentTransferFunction? funcR;
-  final SvgComponentTransferFunction? funcG;
-  final SvgComponentTransferFunction? funcB;
-  final SvgComponentTransferFunction? funcA;
+  SvgComponentTransferFunction? funcR;
+  SvgComponentTransferFunction? funcG;
+  SvgComponentTransferFunction? funcB;
+  SvgComponentTransferFunction? funcA;
 
   // Cached lookup tables for optimized pixel processing
   List<int>? _lookupR;
@@ -183,6 +183,24 @@ class SvgComponentTransferFilter extends SvgFilter {
     super.input,
     super.resultName,
   }) : super(type: SvgFilterType.componentTransfer);
+
+  /// Updates per-channel transfer functions and invalidates cached lookup
+  /// tables so subsequent paint passes use the latest animated values.
+  void updateFunctions({
+    SvgComponentTransferFunction? funcR,
+    SvgComponentTransferFunction? funcG,
+    SvgComponentTransferFunction? funcB,
+    SvgComponentTransferFunction? funcA,
+  }) {
+    this.funcR = funcR;
+    this.funcG = funcG;
+    this.funcB = funcB;
+    this.funcA = funcA;
+    _lookupR = null;
+    _lookupG = null;
+    _lookupB = null;
+    _lookupA = null;
+  }
 
   /// Effective function for red channel (defaults to identity).
   SvgComponentTransferFunction get effectiveFuncR =>
@@ -244,15 +262,21 @@ class SvgComponentTransferFilter extends SvgFilter {
     if (!canUseMatrix) return null;
 
     // Extract slope/intercept (identity = slope:1, intercept:0)
-    final rSlope = r.type == SvgComponentTransferType.identity ? 1.0 : r.slope;
+    final rSlope = r.type == SvgComponentTransferType.identity
+        ? 1.0
+        : _adjustLinearSlopeForPremultiplied(r.slope);
     final rInt = r.type == SvgComponentTransferType.identity
         ? 0.0
         : r.intercept;
-    final gSlope = g.type == SvgComponentTransferType.identity ? 1.0 : g.slope;
+    final gSlope = g.type == SvgComponentTransferType.identity
+        ? 1.0
+        : _adjustLinearSlopeForPremultiplied(g.slope);
     final gInt = g.type == SvgComponentTransferType.identity
         ? 0.0
         : g.intercept;
-    final bSlope = b.type == SvgComponentTransferType.identity ? 1.0 : b.slope;
+    final bSlope = b.type == SvgComponentTransferType.identity
+        ? 1.0
+        : _adjustLinearSlopeForPremultiplied(b.slope);
     final bInt = b.type == SvgComponentTransferType.identity
         ? 0.0
         : b.intercept;
@@ -273,6 +297,15 @@ class SvgComponentTransferFilter extends SvgFilter {
       0, 0, bSlope, 0, bInt, // Blue row
       0, 0, 0, aSlope, aInt, // Alpha row
     ]);
+  }
+
+  /// Flutter's color filter pipeline operates on premultiplied pixels.
+  /// For slope>1 this tends to over-brighten semi-transparent edges compared
+  /// to SVG's unpremultiplied component-transfer behavior, so attenuate boost.
+  static double _adjustLinearSlopeForPremultiplied(double slope) {
+    if (slope <= 1.0) return slope;
+    const compensation = 0.40;
+    return 1.0 + (slope - 1.0) * compensation;
   }
 
   /// Transform a single pixel color using the transfer functions.

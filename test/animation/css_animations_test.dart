@@ -41,6 +41,49 @@ void main() {
       expect(keyframes.first.keyframes[2].offset, equals(1.0));
     });
 
+    test('Parse @keyframes with fractional percentages', () {
+      final cssText = '''
+@keyframes pulse {
+  0% { transform: scale(1); }
+  16.666667% { transform: scale(0); }
+  33.333333% { transform: scale(1); }
+  100% { transform: scale(1); }
+}
+''';
+
+      final keyframes = CssParser.parseKeyframes(cssText);
+      expect(keyframes, hasLength(1));
+      expect(keyframes.first.name, equals('pulse'));
+      expect(keyframes.first.keyframes, hasLength(4));
+      expect(keyframes.first.keyframes[0].offset, closeTo(0.0, 0.000001));
+      expect(
+        keyframes.first.keyframes[1].offset,
+        closeTo(0.16666667, 0.000001),
+      );
+      expect(
+        keyframes.first.keyframes[2].offset,
+        closeTo(0.33333333, 0.000001),
+      );
+      expect(keyframes.first.keyframes[3].offset, closeTo(1.0, 0.000001));
+    });
+
+    test('Parse @keyframes with comma-separated selectors', () {
+      final cssText = '''
+@keyframes fade {
+  0%, 50% { opacity: 0; }
+  to { opacity: 1; }
+}
+''';
+
+      final keyframes = CssParser.parseKeyframes(cssText);
+      expect(keyframes, hasLength(1));
+      expect(keyframes.first.name, equals('fade'));
+      expect(keyframes.first.keyframes, hasLength(3));
+      expect(keyframes.first.keyframes[0].offset, closeTo(0.0, 0.000001));
+      expect(keyframes.first.keyframes[1].offset, closeTo(0.5, 0.000001));
+      expect(keyframes.first.keyframes[2].offset, closeTo(1.0, 0.000001));
+    });
+
     test('Parse multiple @keyframes', () {
       final cssText = '''
 @keyframes spin {

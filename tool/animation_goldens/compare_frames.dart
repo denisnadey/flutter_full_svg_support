@@ -37,6 +37,10 @@ const String kFlutterDir = 'test/animation_goldens/flutter';
 const String kDiffDir = 'test/animation_goldens/diff';
 const String kReportsDir = 'test/animation_goldens/reports';
 
+// Animation duration in seconds used to map frame index -> timeline position.
+final double _animDurationSeconds =
+    double.tryParse(Platform.environment['ANIM_DURATION'] ?? '') ?? 15.0;
+
 // ---------------------------------------------------------------------------
 // Per-pixel comparison threshold
 // ---------------------------------------------------------------------------
@@ -66,7 +70,7 @@ class FrameResult {
 
   Map<String, dynamic> toJson() => {
     'frame': frame,
-    'time_s': double.parse(timeSeconds.toStringAsFixed(1)),
+    'time_s': double.parse(timeSeconds.toStringAsFixed(3)),
     'similarity': double.parse(similarity.toStringAsFixed(4)),
     'different_pixels': differentPixels,
     'total_pixels': totalPixels,
@@ -227,19 +231,30 @@ void main() {
         }
 
         final frameResults = <FrameResult>[];
+        final parsedFrameNumbers = <int>[];
+        var maxFrameNumber = 0;
+
+        for (int i = 0; i < commonFrames.length; i++) {
+          final frameNum =
+              int.tryParse(
+                commonFrames[i].replaceAll('frame_', '').replaceAll('.png', ''),
+              ) ??
+              i;
+          parsedFrameNumbers.add(frameNum);
+          if (frameNum > maxFrameNumber) {
+            maxFrameNumber = frameNum;
+          }
+        }
 
         for (int i = 0; i < commonFrames.length; i++) {
           final frameName = commonFrames[i];
-          // Extract frame number from filename like "frame_00.png"
-          final frameNum =
-              int.tryParse(
-                frameName.replaceAll('frame_', '').replaceAll('.png', ''),
-              ) ??
-              i;
+          final frameNum = parsedFrameNumbers[i];
 
-          // Estimate time (assuming uniform distribution)
-          // We'll use frame index since we don't know exact duration
-          final timeSeconds = frameNum.toDouble();
+          // Convert frame index to seconds using the same normalized timeline
+          // as capture scripts (0..duration inclusive).
+          final timeSeconds = maxFrameNumber > 0
+              ? (_animDurationSeconds * frameNum / maxFrameNumber)
+              : 0.0;
 
           final browserPng = File('$browserFrameDir/$frameName');
           final flutterPng = File('$flutterFrameDir/$frameName');

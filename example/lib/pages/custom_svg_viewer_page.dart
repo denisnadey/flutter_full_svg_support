@@ -111,6 +111,22 @@ class _CustomSvgViewerPageState extends State<CustomSvgViewerPage>
     _runSvgFromCode(origin: 'template:$templateName');
   }
 
+  Future<void> _loadAssetTemplate(String templateName, String assetPath) async {
+    try {
+      final template = await rootBundle.loadString(assetPath);
+      _loadTemplate(templateName, template);
+    } catch (error, stackTrace) {
+      _appendLog(
+        level: SvgTraceLevel.error,
+        category: 'input',
+        message: 'Failed to load template asset',
+        data: <String, Object?>{'template': templateName, 'asset': assetPath},
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
   void _clearAll() {
     setState(() {
       _svgController.clear();
@@ -788,6 +804,22 @@ class _CustomSvgViewerPageState extends State<CustomSvgViewerPage>
                                 _loadTemplate('event-click', _eventTemplate),
                             icon: const Icon(Icons.ads_click),
                             label: const Text('Template: Event'),
+                          ),
+                          OutlinedButton.icon(
+                            onPressed: () => _loadAssetTemplate(
+                              'helmet',
+                              'assets/astronaut_helmet.svg',
+                            ),
+                            icon: const Icon(Icons.rocket_launch),
+                            label: const Text('Template: Helmet'),
+                          ),
+                          OutlinedButton.icon(
+                            onPressed: () => _loadAssetTemplate(
+                              'coins',
+                              'assets/helmet.svg',
+                            ),
+                            icon: const Icon(Icons.monetization_on),
+                            label: const Text('Template: Coins'),
                           ),
                         ],
                       ),

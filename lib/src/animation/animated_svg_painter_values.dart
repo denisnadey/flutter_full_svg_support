@@ -267,31 +267,241 @@ extension AnimatedSvgPainterValuesExtension on AnimatedSvgPainter {
   ui.Color? _parseColor(String colorStr) {
     final str = colorStr.trim().toLowerCase();
 
-    // none
-    if (str == 'none') return null;
+    if (str.isEmpty || str == 'none') return null;
+    if (str == 'transparent') return const ui.Color(0x00000000);
 
-    // Hex colors
     if (str.startsWith('#')) {
-      final hex = str.substring(1);
+      return _parseHexColor(str);
+    }
 
-      if (hex.length == 3) {
-        // #RGB -> #RRGGBB
-        final r = int.parse(hex[0] + hex[0], radix: 16);
-        final g = int.parse(hex[1] + hex[1], radix: 16);
-        final b = int.parse(hex[2] + hex[2], radix: 16);
-        return ui.Color.fromARGB(255, r, g, b);
-      } else if (hex.length == 6) {
-        // #RRGGBB
-        final value = int.parse(hex, radix: 16);
-        return ui.Color(0xFF000000 | value);
-      } else if (hex.length == 8) {
-        // #RRGGBBAA
-        final value = int.parse(hex, radix: 16);
-        return ui.Color(value);
-      }
+    final rgbColor = _parseRgbColor(str);
+    if (rgbColor != null) {
+      return rgbColor;
+    }
+
+    final hslColor = _parseHslColor(str);
+    if (hslColor != null) {
+      return hslColor;
     }
 
     return cssNamedColors[str];
+  }
+
+  ui.Color? _parseHexColor(String value) {
+    var hex = value.substring(1);
+
+    // #RGB -> #RRGGBB
+    if (hex.length == 3) {
+      hex = hex.split('').map((char) => '$char$char').join();
+    }
+
+    // #RGBA -> #RRGGBBAA
+    if (hex.length == 4) {
+      hex = hex.split('').map((char) => '$char$char').join();
+    }
+
+    if (hex.length == 6) {
+      final parsed = int.tryParse(hex, radix: 16);
+      if (parsed == null) return null;
+      return ui.Color(0xFF000000 | parsed);
+    }
+
+    if (hex.length == 8) {
+      // CSS/SVG 8-digit hex is #RRGGBBAA; Flutter expects AARRGGBB.
+      final parsed = int.tryParse(hex, radix: 16);
+      if (parsed == null) return null;
+      final r = (parsed >> 24) & 0xFF;
+      final g = (parsed >> 16) & 0xFF;
+      final b = (parsed >> 8) & 0xFF;
+      final a = parsed & 0xFF;
+      return ui.Color((a << 24) | (r << 16) | (g << 8) | b);
+    }
+
+    return null;
+  }
+
+  ui.Color? _parseRgbColor(String value) {
+    final match = RegExp(r'^rgba?\(\s*(.+)\s*\)$').firstMatch(value);
+    if (match == null) return null;
+
+    final args = _parseColorFunctionArgs(match.group(1)!);
+    if (args.length < 3) return null;
+
+    late final int r;
+    late final int g;
+    late final int b;
+    var alpha = 1.0;
+
+    if (args.contains('/')) {
+      final slashIndex = args.indexOf('/');
+      if (slashIndex != 3 || args.length != 5) {
+        return null;
+      }
+      r = _parseRgbChannel(args[0]);
+      g = _parseRgbChannel(args[1]);
+      b = _parseRgbChannel(args[2]);
+      alpha = _parseAlpha(args[4]);
+    } else {
+      r = _parseRgbChannel(args[0]);
+      g = _parseRgbChannel(args[1]);
+      b = _parseRgbChannel(args[2]);
+      if (args.length >= 4) {
+        alpha = _parseAlpha(args[3]);
+      }
+    }
+
+    return _colorFromRgba(r, g, b, alpha);
+  }
+
+  ui.Color? _parseHslColor(String value) {
+    final match = RegExp(r'^hsla?\(\s*(.+)\s*\)$').firstMatch(value);
+    if (match == null) return null;
+
+    final args = _parseColorFunctionArgs(match.group(1)!);
+    if (args.length < 3) return null;
+
+    late final double hue;
+    late final double saturation;
+    late final double lightness;
+    var alpha = 1.0;
+
+    if (args.contains('/')) {
+      final slashIndex = args.indexOf('/');
+      if (slashIndex != 3 || args.length != 5) {
+        return null;
+      }
+      hue = _parseHueDegrees(args[0]);
+      saturation = _parseFraction(args[1]);
+      lightness = _parseFraction(args[2]);
+      alpha = _parseAlpha(args[4]);
+    } else {
+      hue = _parseHueDegrees(args[0]);
+      saturation = _parseFraction(args[1]);
+      lightness = _parseFraction(args[2]);
+      if (args.length >= 4) {
+        alpha = _parseAlpha(args[3]);
+      }
+    }
+
+    return _hslToColor(hue, saturation, lightness, alpha);
+  }
+
+  List<String> _parseColorFunctionArgs(String input) {
+    if (input.contains(',')) {
+      return input
+          .split(',')
+          .map((part) => part.trim())
+          .where((part) => part.isNotEmpty)
+          .toList();
+    }
+
+    return input
+        .replaceAll('/', ' / ')
+        .split(RegExp(r'\s+'))
+        .map((part) => part.trim())
+        .where((part) => part.isNotEmpty)
+        .toList();
+  }
+
+  int _parseRgbChannel(String input) {
+    final value = input.trim();
+    if (value.endsWith('%')) {
+      final percent =
+          double.tryParse(value.substring(0, value.length - 1)) ?? 0.0;
+      final normalized = percent.clamp(0.0, 100.0) / 100.0;
+      return (normalized * 255).round().clamp(0, 255);
+    }
+
+    final number = double.tryParse(value) ?? 0.0;
+    return number.clamp(0.0, 255.0).round();
+  }
+
+  double _parseAlpha(String input) {
+    final value = input.trim();
+    if (value.endsWith('%')) {
+      final percent =
+          double.tryParse(value.substring(0, value.length - 1)) ?? 0.0;
+      return (percent.clamp(0.0, 100.0) / 100.0).toDouble();
+    }
+
+    final alpha = double.tryParse(value) ?? 1.0;
+    return alpha.clamp(0.0, 1.0).toDouble();
+  }
+
+  double _parseFraction(String input) {
+    final value = input.trim();
+    if (value.endsWith('%')) {
+      final percent =
+          double.tryParse(value.substring(0, value.length - 1)) ?? 0.0;
+      return (percent.clamp(0.0, 100.0) / 100.0).toDouble();
+    }
+
+    final number = double.tryParse(value) ?? 0.0;
+    return number.clamp(0.0, 1.0).toDouble();
+  }
+
+  double _parseHueDegrees(String input) {
+    final match = RegExp(
+      r'^([+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?)\s*(deg|rad|turn|grad)?$',
+      caseSensitive: false,
+    ).firstMatch(input.trim());
+    if (match == null) {
+      return 0.0;
+    }
+
+    final numericValue = double.tryParse(match.group(1) ?? '') ?? 0.0;
+    final unit = (match.group(2) ?? 'deg').toLowerCase();
+    return switch (unit) {
+      'deg' => numericValue,
+      'rad' => numericValue * 180.0 / math.pi,
+      'turn' => numericValue * 360.0,
+      'grad' => numericValue * 0.9,
+      _ => numericValue,
+    };
+  }
+
+  ui.Color _colorFromRgba(int r, int g, int b, double alpha) {
+    final a = (alpha.clamp(0.0, 1.0) * 255).round();
+    return ui.Color((a << 24) | (r << 16) | (g << 8) | b);
+  }
+
+  ui.Color _hslToColor(
+    double hueDegrees,
+    double saturation,
+    double lightness,
+    double alpha,
+  ) {
+    final h = ((hueDegrees % 360.0) + 360.0) % 360.0 / 360.0;
+    final s = saturation.clamp(0.0, 1.0).toDouble();
+    final l = lightness.clamp(0.0, 1.0).toDouble();
+
+    if (s == 0.0) {
+      final gray = (l * 255).round();
+      return _colorFromRgba(gray, gray, gray, alpha);
+    }
+
+    final q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    final p = 2 * l - q;
+
+    final r = _hueToRgb(p, q, h + (1 / 3));
+    final g = _hueToRgb(p, q, h);
+    final b = _hueToRgb(p, q, h - (1 / 3));
+    return _colorFromRgba(
+      (r * 255).round(),
+      (g * 255).round(),
+      (b * 255).round(),
+      alpha,
+    );
+  }
+
+  double _hueToRgb(double p, double q, double t) {
+    var normalizedT = t;
+    if (normalizedT < 0) normalizedT += 1;
+    if (normalizedT > 1) normalizedT -= 1;
+    if (normalizedT < 1 / 6) return p + (q - p) * 6 * normalizedT;
+    if (normalizedT < 1 / 2) return q;
+    if (normalizedT < 2 / 3) return p + (q - p) * (2 / 3 - normalizedT) * 6;
+    return p;
   }
 
   /// Resolves the textPath spacing attribute.

@@ -114,7 +114,8 @@ if [ "$SKIP_COMPARE" = false ]; then
   echo "Phase 3: Comparing frames and generating reports..."
   echo "------------------------------------------------------------"
 
-  $FLUTTER test \
+  ANIM_DURATION=$DURATION ANIM_FRAMES=$FRAMES \
+    $FLUTTER test \
     "$SCRIPT_DIR/compare_frames.dart" \
     --tags animation_compare \
     --reporter expanded

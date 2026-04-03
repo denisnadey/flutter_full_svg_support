@@ -251,6 +251,9 @@ SvgAttributeType _inferAttributeType(String attributeName, SvgNode node) {
     'font-size',
     'letter-spacing',
     'word-spacing',
+    // CSS motion-path progress. Treated as numeric so keyframes interpolate
+    // continuously (the parser strips '%' and runtime treats unitless as %).
+    'offset-distance',
   };
 
   if (numericAttributes.contains(attributeName)) {

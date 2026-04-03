@@ -146,7 +146,9 @@ async function captureAnimationFrames(page, svgPath, outputDir, options) {
   const capturedFrames = [];
 
   for (let i = 0; i < frames; i++) {
-    const timeSeconds = (duration / frames) * i;
+    // Include both loop endpoints: t=0 and t=duration.
+    const frameProgress = frames > 1 ? i / (frames - 1) : 0;
+    const timeSeconds = duration * frameProgress;
     const frameIndex = String(i).padStart(2, '0');
     const framePath = path.join(svgOutputDir, `frame_${frameIndex}.png`);
 

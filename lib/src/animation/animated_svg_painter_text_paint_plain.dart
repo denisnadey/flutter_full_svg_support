@@ -46,6 +46,7 @@ extension AnimatedSvgPainterTextPlainExtension on AnimatedSvgPainter {
     var paragraph = _buildTextParagraph(text, effectiveStyle);
     var width = paragraph.maxIntrinsicWidth;
     var scaleX = 1.0;
+    var usesParagraphWidthForAdvance = true;
     final targetLength = ignoreTextLength ? null : _resolveTextLength(node);
     if (targetLength != null && targetLength > 0 && width > 0) {
       final lengthAdjust = _resolveLengthAdjust(node);
@@ -60,8 +61,14 @@ extension AnimatedSvgPainterTextPlainExtension on AnimatedSvgPainter {
       } else {
         scaleX = targetLength / width;
         width = targetLength;
+        usesParagraphWidthForAdvance = false;
       }
     }
+    final hasLetterSpacingCompensation =
+        text.runes.isNotEmpty && effectiveStyle.letterSpacing != 0.0;
+    final anchorEdgeCompensation = hasLetterSpacingCompensation
+        ? (effectiveStyle.letterSpacing * scaleX) / 2.0
+        : 0.0;
     var drawX = effectiveX;
     var effectiveAnchor = effectiveStyle.textAnchor;
     if (effectiveStyle.textDirection == ui.TextDirection.rtl) {
@@ -86,6 +93,18 @@ extension AnimatedSvgPainterTextPlainExtension on AnimatedSvgPainter {
       case _SvgTextAnchor.end:
         drawX -= width;
         break;
+    }
+    if (anchorEdgeCompensation != 0.0) {
+      switch (effectiveAnchor) {
+        case _SvgTextAnchor.start:
+          drawX -= anchorEdgeCompensation;
+          break;
+        case _SvgTextAnchor.middle:
+          break;
+        case _SvgTextAnchor.end:
+          drawX += anchorEdgeCompensation;
+          break;
+      }
     }
     final drawY = _resolveTextTopFromBaseline(
       paragraph: paragraph,
@@ -156,6 +175,9 @@ extension AnimatedSvgPainterTextPlainExtension on AnimatedSvgPainter {
       drawFill();
       drawStroke();
     }
+    if (usesParagraphWidthForAdvance && hasLetterSpacingCompensation) {
+      width -= effectiveStyle.letterSpacing;
+    }
     return width;
   }
 
@@ -203,8 +225,9 @@ extension AnimatedSvgPainterTextPlainExtension on AnimatedSvgPainter {
         text: glyph,
       );
       canvas.restore();
-      cursorY += glyphHeight + style.letterSpacing;
-      totalHeight += glyphHeight + style.letterSpacing;
+      final spacing = i < glyphs.length - 1 ? style.letterSpacing : 0.0;
+      cursorY += glyphHeight + spacing;
+      totalHeight += glyphHeight + spacing;
     }
     return totalHeight;
   }

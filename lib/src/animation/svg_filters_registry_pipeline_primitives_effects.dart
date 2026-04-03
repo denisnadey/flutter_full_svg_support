@@ -1,5 +1,32 @@
 part of 'svg_filters.dart';
 
+SvgFilterPaintPass _appendColorFilterPass(
+  SvgFilterPaintPass pass,
+  ui.ColorFilter colorFilter,
+) {
+  // Fast path: no prior filters in the chain.
+  if (pass.imageFilter == null && pass.colorFilter == null) {
+    return pass.copyWith(colorFilter: colorFilter);
+  }
+
+  // Compose: previous chain -> new color filter.
+  ui.ImageFilter composed = colorFilter;
+  if (pass.colorFilter != null) {
+    composed = ui.ImageFilter.compose(
+      outer: composed,
+      inner: pass.colorFilter!,
+    );
+  }
+  if (pass.imageFilter != null) {
+    composed = ui.ImageFilter.compose(
+      outer: composed,
+      inner: pass.imageFilter!,
+    );
+  }
+
+  return pass.copyWith(imageFilter: composed, colorFilter: null);
+}
+
 extension SvgFiltersPipelinePrimitiveEffectsExtension on SvgFilters {
   List<SvgFilterPaintPass> _resolveGaussianBlurOutput({
     required SvgGaussianBlurFilter blur,
@@ -309,7 +336,7 @@ extension SvgFiltersPipelinePrimitiveEffectsExtension on SvgFilters {
     final linearFilter = transfer.linearColorFilter();
     if (linearFilter != null) {
       return input
-          .map((pass) => pass.copyWith(colorFilter: linearFilter))
+          .map((pass) => _appendColorFilterPass(pass, linearFilter))
           .toList(growable: false);
     }
 

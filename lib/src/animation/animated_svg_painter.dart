@@ -11,6 +11,7 @@ import 'css_variables_calc.dart';
 import 'path_data.dart';
 import 'path_parser.dart';
 import 'preserve_aspect_ratio.dart';
+import 'smil/motion_path.dart';
 import 'switch_processing.dart';
 import 'svg_dom.dart';
 import 'svg_filters.dart';
@@ -109,6 +110,7 @@ class AnimatedSvgPainter extends CustomPainter {
       <String, _ResolvedMarkerDefinition?>{};
   final Map<String, _ResolvedPatternDefinition?> _patternCache =
       <String, _ResolvedPatternDefinition?>{};
+  final Map<String, MotionPath> _motionPathCache = <String, MotionPath>{};
   bool _currentPassPaintFill = true;
   bool _currentPassPaintStroke = true;
 
@@ -128,11 +130,15 @@ class AnimatedSvgPainter extends CustomPainter {
     // Set up CSS rules from document for use-referenced content resolution
     _currentDocumentCssRules = document.cssSelectorRules;
 
-    // Применяем фон если указан
-    if (backgroundColor != null) {
+    // Применяем фон:
+    // 1) явный параметр виджета backgroundColor
+    // 2) fallback на корневой SVG style/background-color
+    final resolvedBackgroundColor =
+        backgroundColor ?? _resolveDocumentBackgroundColor();
+    if (resolvedBackgroundColor != null) {
       canvas.drawRect(
         ui.Rect.fromLTWH(0, 0, size.width, size.height),
-        ui.Paint()..color = backgroundColor!,
+        ui.Paint()..color = resolvedBackgroundColor,
       );
     }
 
@@ -161,20 +167,60 @@ class AnimatedSvgPainter extends CustomPainter {
       return Matrix4.identity();
     }
 
-    // Вычисляем scale для fit
-    final scaleX = size.width / viewBox.width;
-    final scaleY = size.height / viewBox.height;
-    final scale = scaleX < scaleY ? scaleX : scaleY;
-
-    // Центрируем
-    final translateX =
-        (size.width - viewBox.width * scale) / 2 - viewBox.left * scale;
-    final translateY =
-        (size.height - viewBox.height * scale) / 2 - viewBox.top * scale;
+    final layout = resolveSvgViewportLayout(
+      viewport: ui.Rect.fromLTWH(0, 0, size.width, size.height),
+      sourceSize: viewBox.size,
+      preserveAspectRatio: document.activePreserveAspectRatio,
+    );
+    final scaleX = layout.destinationRect.width / viewBox.width;
+    final scaleY = layout.destinationRect.height / viewBox.height;
+    final translateX = layout.destinationRect.left - viewBox.left * scaleX;
+    final translateY = layout.destinationRect.top - viewBox.top * scaleY;
 
     return Matrix4.identity()
       ..translateByDouble(translateX, translateY, 0, 1)
-      ..scaleByDouble(scale, scale, 1, 1);
+      ..scaleByDouble(scaleX, scaleY, 1, 1);
+  }
+
+  ui.Color? _resolveDocumentBackgroundColor() {
+    final root = document.root;
+
+    final backgroundAttr = _getString(root, 'background-color');
+    if (backgroundAttr != null && backgroundAttr.trim().isNotEmpty) {
+      final color = _parseColor(backgroundAttr);
+      if (color != null) {
+        return color;
+      }
+    }
+
+    final styleAttr = _getString(root, 'style');
+    if (styleAttr == null || styleAttr.trim().isEmpty) {
+      return null;
+    }
+
+    for (final declaration in styleAttr.split(';')) {
+      final colonIndex = declaration.indexOf(':');
+      if (colonIndex <= 0) {
+        continue;
+      }
+      final property = declaration
+          .substring(0, colonIndex)
+          .trim()
+          .toLowerCase();
+      if (property != 'background-color') {
+        continue;
+      }
+      final value = declaration.substring(colonIndex + 1).trim();
+      if (value.isEmpty) {
+        continue;
+      }
+      final color = _parseColor(value);
+      if (color != null) {
+        return color;
+      }
+    }
+
+    return null;
   }
 
   /// Рисует узел и его детей

@@ -288,7 +288,7 @@ extension SvgFiltersPipelinePrimitivePaintExtension on SvgFilters {
       return input;
     }
     return input
-        .map((pass) => pass.copyWith(colorFilter: colorFilter))
+        .map((pass) => _appendColorFilterPass(pass, colorFilter))
         .toList(growable: false);
   }
 

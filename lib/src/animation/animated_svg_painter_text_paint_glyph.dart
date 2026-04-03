@@ -225,8 +225,9 @@ extension AnimatedSvgPainterTextGlyphExtension on AnimatedSvgPainter {
       }
       if (needsCanvasSave) canvas.restore();
       final scaledWidth = glyphWidth * scaleFactor;
-      cursor.x += scaledWidth + style.letterSpacing;
-      totalWidth += scaledWidth + style.letterSpacing;
+      final spacing = i < glyphs.length - 1 ? style.letterSpacing : 0.0;
+      cursor.x += scaledWidth + spacing;
+      totalWidth += scaledWidth + spacing;
     }
     cursor.charIndex += glyphs.length;
     cursor.chunkCharIndex += glyphs.length;

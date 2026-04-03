@@ -190,10 +190,22 @@ void main() {
           // Initial pump to build widget tree
           await tester.pump();
           await tester.pump(const Duration(milliseconds: 200));
+          // Wait for async image decodes (e.g., large embedded WebP data URIs)
+          // so frame_00 reflects a fully-loaded scene.
+          await tester.pumpAndSettle(const Duration(milliseconds: 50));
+          // Some codecs complete on background threads without scheduling extra
+          // animation frames. Give them a short real-time window, then pump.
+          await tester.runAsync(() async {
+            await Future<void>.delayed(const Duration(milliseconds: 700));
+          });
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 16));
 
           // Capture frames at each time point
           for (int i = 0; i < _animFrames; i++) {
-            final timeSeconds = (_animDuration / _animFrames) * i;
+            // Include both loop endpoints: t=0 and t=duration.
+            final frameProgress = _animFrames > 1 ? i / (_animFrames - 1) : 0.0;
+            final timeSeconds = _animDuration * frameProgress;
             final timeDuration = Duration(
               milliseconds: (timeSeconds * 1000).round(),
             );

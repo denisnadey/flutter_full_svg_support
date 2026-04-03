@@ -127,28 +127,21 @@ String _stripAtRuleBlocks(String css) {
 List<CssKeyframe> _parseKeyframeBody(String body) {
   final keyframes = <CssKeyframe>[];
 
-  // Парсим keyframe правила: 0% { ... }, 50% { ... }, 100% { ... }
+  // Парсим keyframe правила:
+  //   0% { ... }, 16.666667% { ... }, from { ... }, to { ... }
+  // и списки селекторов:
+  //   0%, 50% { ... }
   final keyframeRegex = RegExp(
-    r'(\d+%|from|to)\s*\{([^}]+)\}',
+    r'((?:\d*\.?\d+%|from|to)(?:\s*,\s*(?:\d*\.?\d+%|from|to))*)\s*\{([^}]*)\}',
     multiLine: true,
+    caseSensitive: false,
   );
 
   final matches = keyframeRegex.allMatches(body);
 
   for (final match in matches) {
-    final offsetStr = match.group(1)!;
+    final selectorsStr = match.group(1)!;
     final propertiesStr = match.group(2)!;
-
-    // Конвертируем offset в число 0.0-1.0
-    double offset;
-    if (offsetStr == 'from') {
-      offset = 0.0;
-    } else if (offsetStr == 'to') {
-      offset = 1.0;
-    } else {
-      final percent = double.tryParse(offsetStr.replaceAll('%', '')) ?? 0.0;
-      offset = percent / 100.0;
-    }
 
     // Парсим CSS свойства
     final properties = _parseProperties(propertiesStr);
@@ -156,13 +149,27 @@ List<CssKeyframe> _parseKeyframeBody(String body) {
     // Извлекаем per-keyframe animation-timing-function (не анимируемое свойство)
     final perKeyframeTiming = properties.remove('animation-timing-function');
 
-    keyframes.add(
-      CssKeyframe(
-        offset: offset,
-        properties: properties,
-        timingFunction: perKeyframeTiming,
-      ),
-    );
+    final selectors = selectorsStr
+        .split(',')
+        .map((s) => s.trim().toLowerCase())
+        .where((s) => s.isNotEmpty);
+
+    for (final selector in selectors) {
+      // Конвертируем offset в число 0.0-1.0
+      final offset = switch (selector) {
+        'from' => 0.0,
+        'to' => 1.0,
+        _ => (double.tryParse(selector.replaceAll('%', '')) ?? 0.0) / 100.0,
+      };
+
+      keyframes.add(
+        CssKeyframe(
+          offset: offset,
+          properties: Map<String, String>.from(properties),
+          timingFunction: perKeyframeTiming,
+        ),
+      );
+    }
   }
 
   // Сортируем по offset

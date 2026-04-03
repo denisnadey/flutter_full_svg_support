@@ -101,7 +101,7 @@ class SvgColorMatrixFilter extends SvgFilter {
   final SvgColorMatrixType matrixType;
 
   /// Значения для матрицы (зависят от типа)
-  final List<double> values;
+  List<double> values;
 
   SvgColorMatrixFilter({
     required super.id,
@@ -112,35 +112,33 @@ class SvgColorMatrixFilter extends SvgFilter {
   }) : super(type: SvgFilterType.colorMatrix);
 
   @override
-  ui.ImageFilter? apply() {
+  ui.ColorFilter? colorFilter() {
     switch (matrixType) {
       case SvgColorMatrixType.matrix:
         if (values.length == 20) {
-          // Матрица 5x4 для RGBA
-          // Преобразуем в ColorFilter.matrix (4x5 матрица в Flutter)
           return ui.ColorFilter.matrix(_convertSvgMatrixToFlutter(values));
         }
         return null;
 
       case SvgColorMatrixType.saturate:
         if (values.isNotEmpty) {
-          // Насыщенность (0 = grayscale, 1 = normal)
           return ui.ColorFilter.matrix(_saturateMatrix(values[0]));
         }
         return null;
 
       case SvgColorMatrixType.hueRotate:
         if (values.isNotEmpty) {
-          // Hue rotation в градусах
           return ui.ColorFilter.matrix(_hueRotateMatrix(values[0]));
         }
         return null;
 
       case SvgColorMatrixType.luminanceToAlpha:
-        // Luminance to alpha - специальная матрица
         return ui.ColorFilter.matrix(_luminanceToAlphaMatrix());
     }
   }
+
+  @override
+  ui.ImageFilter? apply() => colorFilter();
 
   /// Конвертирует SVG матрицу 5x4 (20 значений) в Flutter матрицу 4x5 (20 значений)
   ///
@@ -187,16 +185,32 @@ class SvgColorMatrixFilter extends SvgFilter {
 
   /// Создает матрицу для насыщенности (saturate)
   List<double> _saturateMatrix(double s) {
-    // SVG saturate matrix formula
-    final r = 0.2126 + 0.7874 * s;
-    final g = 0.7152 + 0.2848 * s;
-    final b = 0.0722 + 0.9278 * s;
-
+    // SVG saturate matrix formula (feColorMatrix type="saturate"):
+    // [0.213+0.787s, 0.715-0.715s, 0.072-0.072s, 0, 0]
+    // [0.213-0.213s, 0.715+0.285s, 0.072-0.072s, 0, 0]
+    // [0.213-0.213s, 0.715-0.715s, 0.072+0.928s, 0, 0]
+    // [0,            0,            0,            1, 0]
     return [
-      r, 0, 0, 0, 0, // Red row
-      0, g, 0, 0, 0, // Green row
-      0, 0, b, 0, 0, // Blue row
-      0, 0, 0, 1, 0, // Alpha row
+      0.213 + 0.787 * s,
+      0.715 - 0.715 * s,
+      0.072 - 0.072 * s,
+      0,
+      0,
+      0.213 - 0.213 * s,
+      0.715 + 0.285 * s,
+      0.072 - 0.072 * s,
+      0,
+      0,
+      0.213 - 0.213 * s,
+      0.715 - 0.715 * s,
+      0.072 + 0.928 * s,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
     ];
   }
 
