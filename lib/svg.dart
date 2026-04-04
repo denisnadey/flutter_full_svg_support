@@ -1,10 +1,13 @@
 import 'dart:ui' as ui;
+import 'dart:convert' show utf8;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
 import 'package:vector_graphics/vector_graphics_compat.dart';
 
+import 'src/animation/animated_svg_picture.dart';
+import 'src/animation/animation_detector.dart';
 import 'src/cache.dart';
 import 'src/loaders.dart';
 import 'src/utilities/file.dart';
@@ -51,6 +54,496 @@ class PictureProvider {
   /// Deprecated, use [svg.cache] instead.
   @Deprecated('Use svg.cache instead.')
   static Cache get cache => svg.cache;
+}
+
+enum _FSvgSourceType { string, asset, network, file, memory }
+
+/// A unified SVG widget that auto-selects static or animated rendering.
+///
+/// If animation markers are detected (`<animate>`, CSS animation, etc.),
+/// this widget uses [AnimatedSvgPicture]. Otherwise it falls back to
+/// [SvgPicture].
+class FSvgPicture extends StatefulWidget {
+  /// Creates an auto-detected SVG from a raw SVG string.
+  const FSvgPicture.string(
+    String string, {
+    super.key,
+    this.width,
+    this.height,
+    this.fit = BoxFit.contain,
+    this.alignment = Alignment.center,
+    this.matchTextDirection = false,
+    this.allowDrawingOutsideViewBox = false,
+    this.placeholderBuilder,
+    this.colorFilter,
+    this.semanticsLabel,
+    this.excludeFromSemantics = false,
+    this.clipBehavior = Clip.hardEdge,
+    this.errorBuilder,
+    this.theme,
+    this.colorMapper,
+    this.renderingStrategy = RenderingStrategy.picture,
+    this.backgroundColor,
+    this.playbackRate = 1.0,
+    this.autoPlay = true,
+    this.initialTime,
+  }) : _sourceType = _FSvgSourceType.string,
+       _svgString = string,
+       _assetName = null,
+       _assetBundle = null,
+       _package = null,
+       _url = null,
+       _headers = null,
+       _httpClient = null,
+       _file = null,
+       _bytes = null;
+
+  /// Creates an auto-detected SVG from an asset.
+  const FSvgPicture.asset(
+    String assetName, {
+    super.key,
+    this.width,
+    this.height,
+    this.fit = BoxFit.contain,
+    this.alignment = Alignment.center,
+    this.matchTextDirection = false,
+    AssetBundle? bundle,
+    String? package,
+    this.allowDrawingOutsideViewBox = false,
+    this.placeholderBuilder,
+    this.colorFilter,
+    this.semanticsLabel,
+    this.excludeFromSemantics = false,
+    this.clipBehavior = Clip.hardEdge,
+    this.errorBuilder,
+    this.theme,
+    this.colorMapper,
+    this.renderingStrategy = RenderingStrategy.picture,
+    this.backgroundColor,
+    this.playbackRate = 1.0,
+    this.autoPlay = true,
+    this.initialTime,
+  }) : _sourceType = _FSvgSourceType.asset,
+       _svgString = null,
+       _assetName = assetName,
+       _assetBundle = bundle,
+       _package = package,
+       _url = null,
+       _headers = null,
+       _httpClient = null,
+       _file = null,
+       _bytes = null;
+
+  /// Creates an auto-detected SVG from the network.
+  const FSvgPicture.network(
+    String url, {
+    super.key,
+    Map<String, String>? headers,
+    http.Client? httpClient,
+    this.width,
+    this.height,
+    this.fit = BoxFit.contain,
+    this.alignment = Alignment.center,
+    this.matchTextDirection = false,
+    this.allowDrawingOutsideViewBox = false,
+    this.placeholderBuilder,
+    this.colorFilter,
+    this.semanticsLabel,
+    this.excludeFromSemantics = false,
+    this.clipBehavior = Clip.hardEdge,
+    this.errorBuilder,
+    this.theme,
+    this.colorMapper,
+    this.renderingStrategy = RenderingStrategy.picture,
+    this.backgroundColor,
+    this.playbackRate = 1.0,
+    this.autoPlay = true,
+    this.initialTime,
+  }) : _sourceType = _FSvgSourceType.network,
+       _svgString = null,
+       _assetName = null,
+       _assetBundle = null,
+       _package = null,
+       _url = url,
+       _headers = headers,
+       _httpClient = httpClient,
+       _file = null,
+       _bytes = null;
+
+  /// Creates an auto-detected SVG from a file.
+  const FSvgPicture.file(
+    File file, {
+    super.key,
+    this.width,
+    this.height,
+    this.fit = BoxFit.contain,
+    this.alignment = Alignment.center,
+    this.matchTextDirection = false,
+    this.allowDrawingOutsideViewBox = false,
+    this.placeholderBuilder,
+    this.colorFilter,
+    this.semanticsLabel,
+    this.excludeFromSemantics = false,
+    this.clipBehavior = Clip.hardEdge,
+    this.errorBuilder,
+    this.theme,
+    this.colorMapper,
+    this.renderingStrategy = RenderingStrategy.picture,
+    this.backgroundColor,
+    this.playbackRate = 1.0,
+    this.autoPlay = true,
+    this.initialTime,
+  }) : _sourceType = _FSvgSourceType.file,
+       _svgString = null,
+       _assetName = null,
+       _assetBundle = null,
+       _package = null,
+       _url = null,
+       _headers = null,
+       _httpClient = null,
+       _file = file,
+       _bytes = null;
+
+  /// Creates an auto-detected SVG from UTF-8 bytes.
+  const FSvgPicture.memory(
+    Uint8List bytes, {
+    super.key,
+    this.width,
+    this.height,
+    this.fit = BoxFit.contain,
+    this.alignment = Alignment.center,
+    this.matchTextDirection = false,
+    this.allowDrawingOutsideViewBox = false,
+    this.placeholderBuilder,
+    this.colorFilter,
+    this.semanticsLabel,
+    this.excludeFromSemantics = false,
+    this.clipBehavior = Clip.hardEdge,
+    this.errorBuilder,
+    this.theme,
+    this.colorMapper,
+    this.renderingStrategy = RenderingStrategy.picture,
+    this.backgroundColor,
+    this.playbackRate = 1.0,
+    this.autoPlay = true,
+    this.initialTime,
+  }) : _sourceType = _FSvgSourceType.memory,
+       _svgString = null,
+       _assetName = null,
+       _assetBundle = null,
+       _package = null,
+       _url = null,
+       _headers = null,
+       _httpClient = null,
+       _file = null,
+       _bytes = bytes;
+
+  /// The width of the rendered SVG.
+  final double? width;
+
+  /// The height of the rendered SVG.
+  final double? height;
+
+  /// How to inscribe the picture into the space allocated during layout.
+  final BoxFit fit;
+
+  /// How to align the picture within its parent widget.
+  final AlignmentGeometry alignment;
+
+  /// Flips picture horizontally in RTL contexts.
+  final bool matchTextDirection;
+
+  /// Whether to allow drawing outside the viewBox bounds.
+  final bool allowDrawingOutsideViewBox;
+
+  /// Placeholder while source is loading.
+  final WidgetBuilder? placeholderBuilder;
+
+  /// Color filter to apply to rendered output.
+  final ColorFilter? colorFilter;
+
+  /// Semantics label for accessibility.
+  final String? semanticsLabel;
+
+  /// Whether to exclude this picture from semantics.
+  final bool excludeFromSemantics;
+
+  /// Clip behavior for static rendering.
+  final Clip clipBehavior;
+
+  /// Error widget builder for source loading/parsing failures.
+  final SvgErrorWidgetBuilder? errorBuilder;
+
+  /// Theme used when parsing static SVG elements.
+  final SvgTheme? theme;
+
+  /// Color substitution mapper for static rendering.
+  final ColorMapper? colorMapper;
+
+  /// Static render strategy (`picture` or `raster`).
+  final RenderingStrategy renderingStrategy;
+
+  /// Background color for animated rendering.
+  final Color? backgroundColor;
+
+  /// Animated playback speed multiplier.
+  final double playbackRate;
+
+  /// Whether animation should start automatically.
+  final bool autoPlay;
+
+  /// Initial animation time for animated rendering.
+  final Duration? initialTime;
+
+  final _FSvgSourceType _sourceType;
+  final String? _svgString;
+  final String? _assetName;
+  final AssetBundle? _assetBundle;
+  final String? _package;
+  final String? _url;
+  final Map<String, String>? _headers;
+  final http.Client? _httpClient;
+  final File? _file;
+  final Uint8List? _bytes;
+
+  @override
+  State<FSvgPicture> createState() => _FSvgPictureState();
+}
+
+class _FSvgPictureState extends State<FSvgPicture> {
+  Future<String>? _svgFuture;
+  AssetBundle? _resolvedBundle;
+
+  @override
+  void didUpdateWidget(FSvgPicture oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_sourceCacheKey(oldWidget) != _sourceCacheKey(widget)) {
+      _svgFuture = null;
+      _resolvedBundle = null;
+    }
+  }
+
+  Widget _buildDefaultPlaceholder(BuildContext context) {
+    if (widget.width != null || widget.height != null) {
+      return SizedBox(width: widget.width, height: widget.height);
+    }
+    return SvgPicture.defaultPlaceholderBuilder(context);
+  }
+
+  Widget _buildLoadError(
+    BuildContext context,
+    Object error,
+    StackTrace stackTrace,
+  ) {
+    if (widget.errorBuilder != null) {
+      return widget.errorBuilder!(context, error, stackTrace);
+    }
+    return _buildDefaultPlaceholder(context);
+  }
+
+  int _headersHash(Map<String, String>? headers) {
+    if (headers == null || headers.isEmpty) {
+      return 0;
+    }
+    return Object.hashAllUnordered(
+      headers.entries.map((entry) => Object.hash(entry.key, entry.value)),
+    );
+  }
+
+  Object _sourceCacheKey(FSvgPicture picture) {
+    switch (picture._sourceType) {
+      case _FSvgSourceType.string:
+        return Object.hash(picture._sourceType, picture._svgString);
+      case _FSvgSourceType.asset:
+        return Object.hash(
+          picture._sourceType,
+          picture._assetName,
+          picture._package,
+          picture._assetBundle,
+        );
+      case _FSvgSourceType.network:
+        return Object.hash(
+          picture._sourceType,
+          picture._url,
+          _headersHash(picture._headers),
+          picture._httpClient,
+        );
+      case _FSvgSourceType.file:
+        return Object.hash(picture._sourceType, picture._file?.path);
+      case _FSvgSourceType.memory:
+        return Object.hash(
+          picture._sourceType,
+          picture._bytes == null ? 0 : Object.hashAll(picture._bytes),
+        );
+    }
+  }
+
+  Future<String> _loadSvgString(BuildContext context) {
+    switch (widget._sourceType) {
+      case _FSvgSourceType.string:
+        return SynchronousFuture<String>(widget._svgString!);
+      case _FSvgSourceType.memory:
+        return SynchronousFuture<String>(
+          utf8.decode(widget._bytes!, allowMalformed: true),
+        );
+      case _FSvgSourceType.asset:
+        final bundle = widget._assetBundle ?? DefaultAssetBundle.of(context);
+        final key = widget._package == null
+            ? widget._assetName!
+            : 'packages/${widget._package}/${widget._assetName}';
+        return bundle.loadString(key);
+      case _FSvgSourceType.network:
+        final client = widget._httpClient ?? http.Client();
+        return client
+            .get(Uri.parse(widget._url!), headers: widget._headers)
+            .then((response) {
+              return utf8.decode(response.bodyBytes, allowMalformed: true);
+            })
+            .whenComplete(() {
+              if (widget._httpClient == null) {
+                client.close();
+              }
+            });
+      case _FSvgSourceType.file:
+        return widget._file!.readAsBytes().then(
+          (bytes) => utf8.decode(bytes, allowMalformed: true),
+        );
+    }
+  }
+
+  Future<String> _ensureSvgFuture(BuildContext context) {
+    if (widget._sourceType == _FSvgSourceType.asset) {
+      final bundle = widget._assetBundle ?? DefaultAssetBundle.of(context);
+      if (_svgFuture == null || !identical(bundle, _resolvedBundle)) {
+        _resolvedBundle = bundle;
+        _svgFuture = _loadSvgString(context);
+      }
+      return _svgFuture!;
+    }
+
+    _svgFuture ??= _loadSvgString(context);
+    return _svgFuture!;
+  }
+
+  Alignment _resolveAnimatedAlignment(BuildContext context) {
+    final alignment = widget.alignment;
+    if (alignment is Alignment) {
+      return alignment;
+    }
+    if (alignment is AlignmentDirectional) {
+      return alignment.resolve(Directionality.maybeOf(context));
+    }
+    return Alignment.center;
+  }
+
+  Widget _buildAnimated(BuildContext context, String svgString) {
+    Widget animated = AnimatedSvgPicture.string(
+      svgString,
+      width: widget.width,
+      height: widget.height,
+      fit: widget.fit,
+      alignment: _resolveAnimatedAlignment(context),
+      backgroundColor: widget.backgroundColor,
+      playbackRate: widget.playbackRate,
+      autoPlay: widget.autoPlay,
+      initialTime: widget.initialTime,
+    );
+
+    if (widget.colorFilter != null) {
+      animated = ColorFiltered(
+        colorFilter: widget.colorFilter!,
+        child: animated,
+      );
+    }
+
+    final textDirection = Directionality.maybeOf(context);
+    final shouldFlip =
+        widget.matchTextDirection &&
+        textDirection != null &&
+        textDirection == TextDirection.rtl;
+    if (shouldFlip) {
+      animated = Transform(
+        alignment: Alignment.center,
+        transform: Matrix4.diagonal3Values(-1, 1, 1),
+        child: animated,
+      );
+    }
+
+    if (!widget.excludeFromSemantics && widget.semanticsLabel != null) {
+      animated = Semantics(
+        label: widget.semanticsLabel,
+        image: true,
+        child: animated,
+      );
+    }
+
+    if (!widget.allowDrawingOutsideViewBox &&
+        widget.clipBehavior != Clip.none) {
+      animated = ClipRect(clipBehavior: widget.clipBehavior, child: animated);
+    }
+
+    return animated;
+  }
+
+  Widget _buildResolvedSvg(BuildContext context, String svgString) {
+    if (AnimationDetector.hasAnimations(svgString)) {
+      return _buildAnimated(context, svgString);
+    }
+
+    return SvgPicture.string(
+      svgString,
+      width: widget.width,
+      height: widget.height,
+      fit: widget.fit,
+      alignment: widget.alignment,
+      matchTextDirection: widget.matchTextDirection,
+      allowDrawingOutsideViewBox: widget.allowDrawingOutsideViewBox,
+      placeholderBuilder: widget.placeholderBuilder,
+      colorFilter: widget.colorFilter,
+      semanticsLabel: widget.semanticsLabel,
+      excludeFromSemantics: widget.excludeFromSemantics,
+      clipBehavior: widget.clipBehavior,
+      errorBuilder: widget.errorBuilder,
+      theme: widget.theme,
+      colorMapper: widget.colorMapper,
+      renderingStrategy: widget.renderingStrategy,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isSyncSource =
+        widget._sourceType == _FSvgSourceType.string ||
+        widget._sourceType == _FSvgSourceType.memory;
+
+    if (isSyncSource) {
+      final svgString = widget._sourceType == _FSvgSourceType.string
+          ? widget._svgString!
+          : utf8.decode(widget._bytes!, allowMalformed: true);
+      return _buildResolvedSvg(context, svgString);
+    }
+
+    return FutureBuilder<String>(
+      future: _ensureSvgFuture(context),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return _buildLoadError(
+            context,
+            snapshot.error!,
+            snapshot.stackTrace ?? StackTrace.current,
+          );
+        }
+
+        final svgString = snapshot.data;
+        if (svgString == null) {
+          return widget.placeholderBuilder?.call(context) ??
+              _buildDefaultPlaceholder(context);
+        }
+
+        return _buildResolvedSvg(context, svgString);
+      },
+    );
+  }
 }
 
 /// A widget that will parse SVG data for rendering on screen.
