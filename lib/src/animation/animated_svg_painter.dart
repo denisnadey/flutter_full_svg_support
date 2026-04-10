@@ -129,6 +129,9 @@ class AnimatedSvgPainter extends CustomPainter {
 
     // Set up CSS rules from document for use-referenced content resolution
     _currentDocumentCssRules = document.cssSelectorRules;
+    _currentDocumentCssResolver = _currentDocumentCssRules == null
+        ? null
+        : CssCascadeResolver(cssRules: _currentDocumentCssRules!);
 
     // Применяем фон:
     // 1) явный параметр виджета backgroundColor
@@ -155,6 +158,7 @@ class AnimatedSvgPainter extends CustomPainter {
 
     // Clean up global CSS rules reference
     _currentDocumentCssRules = null;
+    _currentDocumentCssResolver = null;
   }
 
   /// Вычисляет матрицу трансформации для viewBox

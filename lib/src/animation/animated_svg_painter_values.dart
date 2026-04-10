@@ -1,6 +1,20 @@
 part of 'animated_svg_painter.dart';
 
 extension AnimatedSvgPainterValuesExtension on AnimatedSvgPainter {
+  String? _resolveCssRuleValue(SvgNode node, String property) {
+    final normalizedProperty = property.trim().toLowerCase();
+
+    if (_currentUseContext != null) {
+      return _currentUseContext!.resolveCssRuleValue(node, normalizedProperty);
+    }
+
+    final resolver = _currentDocumentCssResolver;
+    if (resolver == null) {
+      return null;
+    }
+    return resolver.resolveOwnProperty(node, normalizedProperty);
+  }
+
   /// Parses a space/comma-separated list of numbers from an attribute.
   /// Returns empty list if attribute is missing or empty.
   List<double> _getNumberList(SvgNode node, String attributeName) {
@@ -65,13 +79,7 @@ extension AnimatedSvgPainterValuesExtension on AnimatedSvgPainter {
     // Check CSS rules from document's <style> blocks for this node.
     // CSS rules have higher specificity than presentation attributes.
     // This allows CSS class/id rules to apply to use-referenced elements.
-    String? cssRuleValue;
-    if (_currentUseContext != null) {
-      cssRuleValue = _currentUseContext!.resolveCssRuleValue(
-        node,
-        normalizedName,
-      );
-    }
+    final cssRuleValue = _resolveCssRuleValue(node, normalizedName);
 
     // Check presentation attribute on the node itself
     final nodeAttrValue = node.getAttributeValue(attributeName);
@@ -102,14 +110,9 @@ extension AnimatedSvgPainterValuesExtension on AnimatedSvgPainter {
       }
 
       // Check CSS rules for this ancestor
-      if (_currentUseContext != null) {
-        final ancestorCssValue = _currentUseContext!.resolveCssRuleValue(
-          current,
-          normalizedName,
-        );
-        if (ancestorCssValue != null) {
-          return ancestorCssValue;
-        }
+      final ancestorCssValue = _resolveCssRuleValue(current, normalizedName);
+      if (ancestorCssValue != null) {
+        return ancestorCssValue;
       }
 
       // Check presentation attribute

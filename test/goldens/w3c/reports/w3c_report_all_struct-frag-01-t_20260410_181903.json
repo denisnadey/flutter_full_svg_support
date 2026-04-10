@@ -1,0 +1,49 @@
+{
+  "generatedAt": "2026-04-10T18:19:05.999270",
+  "manifestPath": "tool/w3c_goldens/w3c_manifest.json",
+  "filters": {
+    "tier": "all",
+    "case": "struct-frag-01-t",
+    "limit": null,
+    "includeSkipped": false,
+    "enableRender": true,
+    "enforceThreshold": false,
+    "useAnimatedRenderer": false
+  },
+  "counts": {
+    "manifestCases": 433,
+    "selectedCases": 1,
+    "recordedResults": 1,
+    "missingResults": 0
+  },
+  "statusCounts": {
+    "measured": 1
+  },
+  "missingResultIds": [],
+  "results": [
+    {
+      "id": "struct-frag-01-t",
+      "category": "struct",
+      "tier": "core",
+      "status": "measured",
+      "threshold": 0.08,
+      "perPixelThreshold": 0.2,
+      "animationTimeMs": 0,
+      "similarity": 0.0,
+      "totalPixels": 480000,
+      "differentPixels": 480000,
+      "message": null,
+      "note": "Below strict threshold.",
+      "elapsedMs": 319,
+      "svgPath": "W3C_SVG_11_TestSuite/svg/struct-frag-01-t.svg",
+      "flags": {
+        "hasAnimation": false,
+        "hasExternalImageRef": false,
+        "hasImageElement": false,
+        "hasResourceRef": true,
+        "hasScript": false,
+        "hasTextElement": true
+      }
+    }
+  ]
+}

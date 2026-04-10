@@ -4,8 +4,8 @@ part of 'svg_parser.dart';
 List<CssKeyframes> _parseStyleElements(XmlElement svgElement) {
   final keyframes = <CssKeyframes>[];
 
-  // Ищем все <style> элементы
-  final styleElements = svgElement.findElements('style');
+  // Ищем все <style> элементы во всем документе (включая <defs> и вложенные группы)
+  final styleElements = svgElement.findAllElements('style');
 
   for (final styleElement in styleElements) {
     final cssText = styleElement.innerText;
@@ -23,7 +23,7 @@ List<CssKeyframes> _parseStyleElements(XmlElement svgElement) {
 List<CssSelectorRule> _parseSelectorRulesElements(XmlElement svgElement) {
   final rules = <CssSelectorRule>[];
 
-  final styleElements = svgElement.findElements('style');
+  final styleElements = svgElement.findAllElements('style');
 
   for (final styleElement in styleElements) {
     final cssText = styleElement.innerText;
@@ -43,7 +43,7 @@ List<CssSelectorRule> _parseSelectorRulesElements(XmlElement svgElement) {
 List<CssFontFaceRule> _parseFontFaceRulesElements(XmlElement svgElement) {
   final rules = <CssFontFaceRule>[];
 
-  final styleElements = svgElement.findElements('style');
+  final styleElements = svgElement.findAllElements('style');
 
   for (final styleElement in styleElements) {
     final cssText = styleElement.innerText;

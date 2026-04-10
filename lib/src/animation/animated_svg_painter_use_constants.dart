@@ -8,6 +8,10 @@ const int _kMaxUseRecursionDepth = 10;
 /// Set by the painter when rendering begins.
 List<CssSelectorRule>? _currentDocumentCssRules;
 
+/// Cached CSS resolver for the currently painted document.
+/// Reused across node lookups to avoid rebuilding cascade state.
+CssCascadeResolver? _currentDocumentCssResolver;
+
 /// CSS properties that are inherited by default per CSS/SVG specification.
 /// Non-inherited properties (like opacity, transform, display) should NOT
 /// flow through <use> boundaries.

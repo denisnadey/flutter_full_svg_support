@@ -1,0 +1,119 @@
+name: W3C Goldens
+
+on:
+  pull_request:
+    paths:
+      - "lib/**"
+      - "test/**"
+      - "tool/w3c_goldens/**"
+      - "W3C_SVG_11_TestSuite/**"
+      - "pubspec.yaml"
+      - "pubspec.lock"
+      - "dart_test.yaml"
+      - ".github/workflows/w3c-goldens.yml"
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - "lib/**"
+      - "test/**"
+      - "tool/w3c_goldens/**"
+      - "W3C_SVG_11_TestSuite/**"
+      - "pubspec.yaml"
+      - "pubspec.lock"
+      - "dart_test.yaml"
+      - ".github/workflows/w3c-goldens.yml"
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+    inputs:
+      run_full:
+        description: "Run full strict W3C suite"
+        required: false
+        default: true
+        type: boolean
+
+concurrency:
+  group: w3c-goldens-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke_strict:
+    name: W3C Smoke Strict
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.38.1"
+          channel: "stable"
+          cache: true
+
+      - name: Flutter Version
+        run: flutter --version
+
+      - name: Run W3C smoke strict
+        run: |
+          chmod +x ./tool/w3c_goldens/run_w3c_comparison.sh
+          ./tool/w3c_goldens/run_w3c_comparison.sh --tier smoke --skip-browser --enable-render
+
+      - name: Upload smoke reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: w3c-smoke-reports
+          path: test/goldens/w3c/reports/w3c_report_smoke_*
+          if-no-files-found: ignore
+
+  full_strict:
+    name: W3C Full Strict
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    needs: smoke_strict
+    if: |
+      github.event_name == 'schedule' ||
+      (github.event_name == 'workflow_dispatch' && (inputs.run_full == true || inputs.run_full == 'true')) ||
+      (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'))
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.38.1"
+          channel: "stable"
+          cache: true
+
+      - name: Flutter Version
+        run: flutter --version
+
+      - name: Run W3C full strict
+        run: |
+          chmod +x ./tool/w3c_goldens/run_w3c_comparison.sh
+          ./tool/w3c_goldens/run_w3c_comparison.sh --tier all --skip-browser --enable-render
+
+      - name: Upload full reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: w3c-full-reports
+          path: test/goldens/w3c/reports/w3c_report_all_*
+          if-no-files-found: ignore
