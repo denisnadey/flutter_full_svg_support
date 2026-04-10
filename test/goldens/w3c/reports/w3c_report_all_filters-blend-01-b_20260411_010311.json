@@ -1,0 +1,49 @@
+{
+  "generatedAt": "2026-04-11T01:03:14.860511",
+  "manifestPath": "tool/w3c_goldens/w3c_manifest.json",
+  "filters": {
+    "tier": "all",
+    "case": "filters-blend-01-b",
+    "limit": null,
+    "includeSkipped": false,
+    "enableRender": true,
+    "enforceThreshold": false,
+    "useAnimatedRenderer": false
+  },
+  "counts": {
+    "manifestCases": 433,
+    "selectedCases": 1,
+    "recordedResults": 1,
+    "missingResults": 0
+  },
+  "statusCounts": {
+    "measured": 1
+  },
+  "missingResultIds": [],
+  "results": [
+    {
+      "id": "filters-blend-01-b",
+      "category": "filters",
+      "tier": "core",
+      "status": "measured",
+      "threshold": 0.08,
+      "perPixelThreshold": 0.2,
+      "animationTimeMs": 0,
+      "similarity": 0.37187916666666665,
+      "totalPixels": 480000,
+      "differentPixels": 301498,
+      "message": null,
+      "note": "Would pass strict threshold.",
+      "elapsedMs": 607,
+      "svgPath": "W3C_SVG_11_TestSuite/svg/filters-blend-01-b.svg",
+      "flags": {
+        "hasAnimation": false,
+        "hasExternalImageRef": false,
+        "hasImageElement": true,
+        "hasResourceRef": true,
+        "hasScript": false,
+        "hasTextElement": true
+      }
+    }
+  ]
+}

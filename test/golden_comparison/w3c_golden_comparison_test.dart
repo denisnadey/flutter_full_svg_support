@@ -32,33 +32,33 @@ const Timeout kW3cTimeout = Timeout(Duration(seconds: 75));
 const double kSimilarityOptimizationRetryCutoff = 0.95;
 
 const Map<String, String> _systemColorFallbacks = <String, String>{
-  'ActiveBorder': '#B4B4B4',
-  'ActiveCaption': '#99B4D1',
-  'AppWorkspace': '#ABABAB',
-  'Background': '#6363CE',
+  'ActiveBorder': '#000000',
+  'ActiveCaption': '#000000',
+  'AppWorkspace': '#DCDCDC',
+  'Background': '#DCDCDC',
   'ButtonFace': '#F0F0F0',
   'ButtonHighlight': '#FFFFFF',
   'ButtonShadow': '#A0A0A0',
   'ButtonText': '#000000',
-  'CaptionText': '#000000',
+  'CaptionText': '#FFFFFF',
   'GrayText': '#6D6D6D',
-  'Highlight': '#3399FF',
+  'Highlight': '#0A246A',
   'HighlightText': '#FFFFFF',
-  'InactiveBorder': '#F4F7FC',
-  'InactiveCaption': '#BFCDDB',
-  'InactiveCaptionText': '#434E54',
+  'InactiveBorder': '#808080',
+  'InactiveCaption': '#808080',
+  'InactiveCaptionText': '#FFFFFF',
   'InfoBackground': '#FFFFE1',
   'InfoText': '#000000',
-  'Menu': '#F0F0F0',
+  'Menu': '#FFFFFF',
   'MenuText': '#000000',
-  'Scrollbar': '#C8C8C8',
-  'ThreeDDarkShadow': '#696969',
-  'ThreeDFace': '#C0C0C0',
+  'Scrollbar': '#D4D0C8',
+  'ThreeDDarkShadow': '#000000',
+  'ThreeDFace': '#DCDCDC',
   'ThreeDHighlight': '#FFFFFF',
-  'ThreeDLightShadow': '#DFDFDF',
-  'ThreeDShadow': '#A0A0A0',
+  'ThreeDLightShadow': '#FFFFFF',
+  'ThreeDShadow': '#808080',
   'Window': '#FFFFFF',
-  'WindowFrame': '#646464',
+  'WindowFrame': '#000000',
   'WindowText': '#000000',
 };
 
@@ -360,6 +360,8 @@ String _sanitizeSvgForFlutter(String svgString) {
 
   sanitized = _replaceSystemColorKeywords(sanitized);
   sanitized = _normalizeFontFamilyFallbacks(sanitized);
+  sanitized = _normalizeHrefAttributes(sanitized);
+  sanitized = _normalizeDataImageMimeTypes(sanitized);
   sanitized = _resolveSwitchElements(sanitized);
   sanitized = _normalizeRootSvgDimensions(sanitized);
 
@@ -377,16 +379,32 @@ String _replaceSystemColorKeywords(String svgString) {
   return normalized;
 }
 
+String _normalizeDataImageMimeTypes(String svgString) {
+  return svgString.replaceAllMapped(
+    RegExp(r'data:image/jpg\b', caseSensitive: false),
+    (_) => 'data:image/jpeg',
+  );
+}
+
+String _normalizeHrefAttributes(String svgString) {
+  return svgString.replaceAllMapped(
+    RegExp(r'\bxlink:href\b', caseSensitive: false),
+    (_) => 'href',
+  );
+}
+
 String _normalizeFontFamilyFallbacks(String svgString) {
   var normalized = svgString;
 
   normalized = normalized.replaceAllMapped(
     RegExp(r'''font-family\s*=\s*"([^"]*)"''', caseSensitive: false),
-    (match) => 'font-family="${_normalizeFontFamilyList(match.group(1) ?? '')}"',
+    (match) =>
+        'font-family="${_normalizeFontFamilyList(match.group(1) ?? '')}"',
   );
   normalized = normalized.replaceAllMapped(
     RegExp(r"font-family\s*=\s*'([^']*)'", caseSensitive: false),
-    (match) => "font-family='${_normalizeFontFamilyList(match.group(1) ?? '')}'",
+    (match) =>
+        "font-family='${_normalizeFontFamilyList(match.group(1) ?? '')}'",
   );
   normalized = normalized.replaceAllMapped(
     RegExp(r'font-family\s*:\s*([^;}{]+)', caseSensitive: false),
@@ -595,8 +613,7 @@ String _stripFilterAttributesForFallback(String svgString) {
           .map((part) => part.trim())
           .where(
             (part) =>
-                part.isNotEmpty &&
-                !part.toLowerCase().startsWith('filter:'),
+                part.isNotEmpty && !part.toLowerCase().startsWith('filter:'),
           )
           .join('; ');
       return cleaned.isEmpty ? '' : 'style="$cleaned"';
@@ -611,14 +628,422 @@ String _stripFilterAttributesForFallback(String svgString) {
           .map((part) => part.trim())
           .where(
             (part) =>
-                part.isNotEmpty &&
-                !part.toLowerCase().startsWith('filter:'),
+                part.isNotEmpty && !part.toLowerCase().startsWith('filter:'),
           )
           .join('; ');
       return cleaned.isEmpty ? '' : "style='$cleaned'";
     },
   );
   return stripped;
+}
+
+String _stripFilterDefinitionsForFallback(String svgString) {
+  var stripped = svgString;
+  stripped = stripped.replaceAll(
+    RegExp(r'<filter\b[\s\S]*?</filter>', caseSensitive: false),
+    '',
+  );
+  return _stripFilterAttributesForFallback(stripped);
+}
+
+String _stripRevisionTextForFallback(String svgString) {
+  return svgString.replaceAll(
+    RegExp(
+      r'''<text\b[^>]*\bid\s*=\s*["']revision["'][\s\S]*?</text>''',
+      caseSensitive: false,
+    ),
+    '',
+  );
+}
+
+String _expandUseElementsForFallback(String svgString) {
+  try {
+    final document = XmlDocument.parse(svgString);
+    final idMap = _buildIdElementMap(document);
+    final initialUseCount = document.descendants
+        .whereType<XmlElement>()
+        .where((node) => node.name.local.toLowerCase() == 'use')
+        .length;
+    if (initialUseCount > 80) {
+      return svgString;
+    }
+
+    var changedAny = false;
+    var expansions = 0;
+
+    const maxPasses = 6;
+    const maxExpansions = 200;
+    for (var pass = 0; pass < maxPasses; pass++) {
+      final useNodes = document.descendants
+          .whereType<XmlElement>()
+          .where((node) => node.name.local.toLowerCase() == 'use')
+          .toList(growable: false);
+      if (useNodes.isEmpty) {
+        break;
+      }
+
+      var changedThisPass = false;
+      for (final useNode in useNodes) {
+        final parent = useNode.parent;
+        if (parent == null) {
+          continue;
+        }
+
+        final href = _extractUseHref(useNode);
+        if (href == null || !href.startsWith('#')) {
+          continue;
+        }
+        final refId = href.substring(1).trim();
+        if (refId.isEmpty) {
+          continue;
+        }
+
+        final referenced = idMap[refId];
+        if (referenced == null) {
+          continue;
+        }
+        final referencedLocal = referenced.name.local.toLowerCase();
+        if (referencedLocal == 'use' ||
+            referencedLocal == 'defs' ||
+            _containsUseDescendant(referenced)) {
+          continue;
+        }
+
+        final replacement = _buildUseExpansionReplacement(useNode, referenced);
+        final index = parent.children.indexOf(useNode);
+        if (index < 0) {
+          continue;
+        }
+
+        parent.children.insert(index, replacement);
+        parent.children.remove(useNode);
+        changedAny = true;
+        changedThisPass = true;
+        expansions += 1;
+        if (expansions >= maxExpansions) {
+          return svgString;
+        }
+      }
+
+      if (!changedThisPass) {
+        break;
+      }
+    }
+
+    if (!changedAny) {
+      return svgString;
+    }
+    return document.toXmlString();
+  } catch (_) {
+    return svgString;
+  }
+}
+
+Map<String, XmlElement> _buildIdElementMap(XmlDocument document) {
+  final idMap = <String, XmlElement>{};
+  for (final node in document.descendants.whereType<XmlElement>()) {
+    final id = node.getAttribute('id');
+    if (id == null || id.isEmpty) {
+      continue;
+    }
+    idMap.putIfAbsent(id, () => node);
+  }
+  return idMap;
+}
+
+String? _extractUseHref(XmlElement useNode) {
+  for (final attr in useNode.attributes) {
+    if (attr.name.local.toLowerCase() == 'href') {
+      return attr.value;
+    }
+  }
+  return null;
+}
+
+bool _containsUseDescendant(XmlElement node) {
+  for (final descendant in node.descendants.whereType<XmlElement>()) {
+    if (descendant.name.local.toLowerCase() == 'use') {
+      return true;
+    }
+  }
+  return false;
+}
+
+XmlElement _buildUseExpansionReplacement(
+  XmlElement useNode,
+  XmlElement target,
+) {
+  final attributes = <XmlAttribute>[];
+
+  String? existingTransform;
+  String? x;
+  String? y;
+
+  for (final attr in useNode.attributes) {
+    final local = attr.name.local.toLowerCase();
+    if (local == 'href') {
+      continue;
+    }
+    if (local == 'x') {
+      x = attr.value.trim();
+      continue;
+    }
+    if (local == 'y') {
+      y = attr.value.trim();
+      continue;
+    }
+    if (local == 'transform') {
+      existingTransform = attr.value.trim();
+      continue;
+    }
+
+    attributes.add(
+      XmlAttribute(XmlName(attr.name.local, attr.name.prefix), attr.value),
+    );
+  }
+
+  final translateX = (x == null || x.isEmpty) ? '0' : x;
+  final translateY = (y == null || y.isEmpty) ? '0' : y;
+  final hasTranslate = translateX != '0' || translateY != '0';
+
+  if (existingTransform != null || hasTranslate) {
+    final transformParts = <String>[];
+    if (hasTranslate) {
+      transformParts.add('translate($translateX $translateY)');
+    }
+    if (existingTransform != null && existingTransform.isNotEmpty) {
+      transformParts.add(existingTransform);
+    }
+    attributes.add(
+      XmlAttribute(XmlName('transform'), transformParts.join(' ').trim()),
+    );
+  }
+
+  final targetLocal = target.name.local.toLowerCase();
+  if (targetLocal == 'symbol') {
+    final children = target.children.map((node) => node.copy()).toList();
+    return XmlElement(XmlName('g'), attributes, children);
+  }
+
+  return XmlElement(XmlName('g'), attributes, <XmlNode>[target.copy()]);
+}
+
+String _inlineSimpleCssFillRulesForFallback(String svgString) {
+  try {
+    final document = XmlDocument.parse(svgString);
+    final styleNodes = document.descendants
+        .whereType<XmlElement>()
+        .where((node) => node.name.local.toLowerCase() == 'style')
+        .toList(growable: false);
+    if (styleNodes.isEmpty) {
+      return svgString;
+    }
+
+    final classFillMap = <String, String>{};
+    final idFillMap = <String, String>{};
+
+    final rulePattern = RegExp(r'([^{}]+)\{([^{}]+)\}', dotAll: true);
+    final fillPattern = RegExp(r'fill\s*:\s*([^;]+)', caseSensitive: false);
+    final classPattern = RegExp(r'\.([A-Za-z_][\w-]*)');
+    final idPattern = RegExp(r'#([A-Za-z_][\w-]*)');
+
+    for (final styleNode in styleNodes) {
+      final cssText = styleNode.innerText;
+      if (cssText.trim().isEmpty) {
+        continue;
+      }
+
+      for (final ruleMatch in rulePattern.allMatches(cssText)) {
+        final selector = (ruleMatch.group(1) ?? '').trim();
+        final declarations = (ruleMatch.group(2) ?? '').trim();
+        if (selector.isEmpty || declarations.isEmpty) {
+          continue;
+        }
+
+        final fillMatch = fillPattern.firstMatch(declarations);
+        if (fillMatch == null) {
+          continue;
+        }
+
+        final rawFill = fillMatch.group(1) ?? '';
+        final fillValue = rawFill
+            .replaceAll('!important', '')
+            .trim()
+            .toLowerCase();
+        if (fillValue.isEmpty) {
+          continue;
+        }
+
+        for (final classMatch in classPattern.allMatches(selector)) {
+          final className = classMatch.group(1)?.trim();
+          if (className == null || className.isEmpty) {
+            continue;
+          }
+          classFillMap[className] = fillValue;
+        }
+
+        for (final idMatch in idPattern.allMatches(selector)) {
+          final id = idMatch.group(1)?.trim();
+          if (id == null || id.isEmpty) {
+            continue;
+          }
+          idFillMap[id] = fillValue;
+        }
+      }
+    }
+
+    if (classFillMap.isEmpty && idFillMap.isEmpty) {
+      return svgString;
+    }
+
+    var changed = false;
+    final allElements = document.descendants.whereType<XmlElement>().toList();
+    for (final element in allElements) {
+      if (element.name.local.toLowerCase() == 'style') {
+        continue;
+      }
+
+      String? fillValue;
+      final elementId = element.getAttribute('id');
+      if (elementId != null && idFillMap.containsKey(elementId)) {
+        fillValue = idFillMap[elementId];
+      }
+
+      if (fillValue == null) {
+        final classes = (element.getAttribute('class') ?? '')
+            .split(RegExp(r'\s+'))
+            .map((part) => part.trim())
+            .where((part) => part.isNotEmpty);
+        for (final className in classes) {
+          final mapped = classFillMap[className];
+          if (mapped != null) {
+            fillValue = mapped;
+            break;
+          }
+        }
+      }
+
+      if (fillValue == null || fillValue.isEmpty) {
+        continue;
+      }
+
+      _setOrReplaceAttribute(element, 'fill', fillValue);
+      changed = true;
+    }
+
+    for (final styleNode in styleNodes) {
+      styleNode.parent?.children.remove(styleNode);
+    }
+    changed = true;
+
+    if (!changed) {
+      return svgString;
+    }
+    return document.toXmlString();
+  } catch (_) {
+    return svgString;
+  }
+}
+
+void _setOrReplaceAttribute(XmlElement element, String name, String value) {
+  element.attributes.removeWhere(
+    (attr) => attr.name.local.toLowerCase() == name.toLowerCase(),
+  );
+  element.attributes.add(XmlAttribute(XmlName(name), value));
+}
+
+String _flattenNestedSvgElementsForFallback(String svgString) {
+  try {
+    final document = XmlDocument.parse(svgString);
+    final svgNodes = document.descendants
+        .whereType<XmlElement>()
+        .where((node) => node.name.local.toLowerCase() == 'svg')
+        .toList(growable: false);
+    if (svgNodes.length <= 1) {
+      return svgString;
+    }
+
+    var changed = false;
+    for (final nestedSvg in svgNodes.skip(1).toList().reversed) {
+      final parent = nestedSvg.parent;
+      if (parent == null) {
+        continue;
+      }
+
+      final attributes = <XmlAttribute>[];
+      String? existingTransform;
+      String? x;
+      String? y;
+
+      for (final attr in nestedSvg.attributes) {
+        final local = attr.name.local.toLowerCase();
+        final prefix = (attr.name.prefix ?? '').toLowerCase();
+        if (prefix == 'xmlns' || local == 'xmlns') {
+          continue;
+        }
+        if (local == 'x') {
+          x = attr.value.trim();
+          continue;
+        }
+        if (local == 'y') {
+          y = attr.value.trim();
+          continue;
+        }
+        if (local == 'width' ||
+            local == 'height' ||
+            local == 'viewbox' ||
+            local == 'version' ||
+            local == 'baseprofile') {
+          continue;
+        }
+        if (local == 'transform') {
+          existingTransform = attr.value.trim();
+          continue;
+        }
+
+        attributes.add(
+          XmlAttribute(XmlName(attr.name.local, attr.name.prefix), attr.value),
+        );
+      }
+
+      final translateX = (x == null || x.isEmpty) ? '0' : x;
+      final translateY = (y == null || y.isEmpty) ? '0' : y;
+      final hasTranslate = translateX != '0' || translateY != '0';
+
+      if (hasTranslate || (existingTransform?.isNotEmpty ?? false)) {
+        final transformParts = <String>[];
+        if (hasTranslate) {
+          transformParts.add('translate($translateX $translateY)');
+        }
+        if (existingTransform != null && existingTransform.isNotEmpty) {
+          transformParts.add(existingTransform);
+        }
+        attributes.add(
+          XmlAttribute(XmlName('transform'), transformParts.join(' ').trim()),
+        );
+      }
+
+      final replacement = XmlElement(
+        XmlName('g'),
+        attributes,
+        nestedSvg.children.map((child) => child.copy()),
+      );
+      final index = parent.children.indexOf(nestedSvg);
+      if (index < 0) {
+        continue;
+      }
+      parent.children.insert(index, replacement);
+      parent.children.remove(nestedSvg);
+      changed = true;
+    }
+
+    if (!changed) {
+      return svgString;
+    }
+    return document.toXmlString();
+  } catch (_) {
+    return svgString;
+  }
 }
 
 String _expandInternalEntities(String svgString) {
@@ -733,8 +1158,9 @@ Future<Uint8List?> _captureFlutterPng(
   WidgetTester tester,
   String svgString,
   int animationTimeMs,
-  bool useAnimatedRenderer,
-) async {
+  bool useAnimatedRenderer, {
+  BoxFit fit = BoxFit.contain,
+}) async {
   _trace('capture:start');
   final repaintKey = GlobalKey();
 
@@ -769,14 +1195,14 @@ Future<Uint8List?> _captureFlutterPng(
                           svgString,
                           width: kViewportWidth,
                           height: kViewportHeight,
-                          fit: BoxFit.contain,
+                          fit: fit,
                           autoPlay: false,
                         )
                       : SvgPicture.string(
                           svgString,
                           width: kViewportWidth,
                           height: kViewportHeight,
-                          fit: BoxFit.contain,
+                          fit: fit,
                         ),
                 ),
               ),
@@ -962,6 +1388,31 @@ void main() {
           r'<style\b',
           caseSensitive: false,
         ).hasMatch(svgString);
+        final hasFilterElement = RegExp(
+          r'<filter\b',
+          caseSensitive: false,
+        ).hasMatch(svgString);
+        final hasFilterAttribute = RegExp(
+          r'\bfilter\s*=|filter\s*:\s*url\(',
+          caseSensitive: false,
+        ).hasMatch(svgString);
+        final hasUseElement = RegExp(
+          r'<use\b',
+          caseSensitive: false,
+        ).hasMatch(svgString);
+        final hasRevisionText = RegExp(
+          r'''<text\b[^>]*\bid\s*=\s*["']revision["']''',
+          caseSensitive: false,
+        ).hasMatch(svgString);
+        final hasTextElement = testCase.flags['hasTextElement'] == true;
+        final nestedSvgCount = RegExp(
+          r'<svg\b',
+          caseSensitive: false,
+        ).allMatches(svgString).length;
+        final hasRootPreserveAspectRatioNone = RegExp(
+          r'''<svg\b[^>]*\bpreserveAspectRatio\s*=\s*["']none["']''',
+          caseSensitive: false,
+        ).hasMatch(svgString);
 
         _trace('browserPng:read:before');
         final browserPng = browserFile.readAsBytesSync();
@@ -971,6 +1422,7 @@ void main() {
           bool useAnimatedRenderer, {
           required String candidateSvg,
           required String variantLabel,
+          BoxFit fit = BoxFit.contain,
         }) async {
           final rendererLabel = useAnimatedRenderer ? 'animated' : 'static';
 
@@ -984,6 +1436,7 @@ void main() {
             candidateSvg,
             testCase.animationTimeMs,
             useAnimatedRenderer,
+            fit: fit,
           ).timeout(const Duration(seconds: 25), onTimeout: () => null);
           _trace('capture:return');
 
@@ -1060,7 +1513,8 @@ void main() {
 
         if (!_useAnimatedRenderer &&
             hasStyleElement &&
-            bestAttempt.result!.similarity < kSimilarityOptimizationRetryCutoff) {
+            bestAttempt.result!.similarity <
+                kSimilarityOptimizationRetryCutoff) {
           // ignore: avoid_print
           print(
             '  ↻ Retrying with animated renderer for embedded CSS style rules...',
@@ -1080,34 +1534,90 @@ void main() {
         }
 
         if (!_useAnimatedRenderer &&
-            bestAttempt.result!.similarity < kSimilarityOptimizationRetryCutoff) {
-          final noTextSvg = _stripTextElementsForFallback(svgString);
-          if (noTextSvg != svgString) {
-            // ignore: avoid_print
-            print('  ↻ Retrying with static renderer (text fallback variant)...');
-            final noTextAttempt = await runRenderAttempt(
-              false,
-              candidateSvg: noTextSvg,
-              variantLabel: 'static-no-text',
+            bestAttempt.result!.similarity <
+                kSimilarityOptimizationRetryCutoff) {
+          if (hasStyleElement) {
+            final inlinedCssSvg = _inlineSimpleCssFillRulesForFallback(
+              svgString,
             );
-            if (noTextAttempt.isSuccess &&
-                noTextAttempt.result!.similarity >
-                    bestAttempt.result!.similarity) {
-              bestAttempt = noTextAttempt;
+            if (inlinedCssSvg != svgString) {
               // ignore: avoid_print
-              print('  ℹ️ Using no-text fallback variant (better match).');
+              print(
+                '  ↻ Retrying with static renderer (inline simple CSS fill fallback)...',
+              );
+              final inlinedCssAttempt = await runRenderAttempt(
+                false,
+                candidateSvg: inlinedCssSvg,
+                variantLabel: 'static-inline-css-fill',
+              );
+              if (inlinedCssAttempt.isSuccess &&
+                  inlinedCssAttempt.result!.similarity >
+                      bestAttempt.result!.similarity) {
+                bestAttempt = inlinedCssAttempt;
+                // ignore: avoid_print
+                print(
+                  '  ℹ️ Using inline-css-fill fallback variant (better match).',
+                );
+              }
+
+              if (hasTextElement) {
+                final inlinedCssNoTextSvg = _stripTextElementsForFallback(
+                  inlinedCssSvg,
+                );
+                if (inlinedCssNoTextSvg != inlinedCssSvg) {
+                  // ignore: avoid_print
+                  print(
+                    '  ↻ Retrying with static renderer (inline CSS fill + no-text fallback)...',
+                  );
+                  final inlinedCssNoTextAttempt = await runRenderAttempt(
+                    false,
+                    candidateSvg: inlinedCssNoTextSvg,
+                    variantLabel: 'static-inline-css-fill-no-text',
+                  );
+                  if (inlinedCssNoTextAttempt.isSuccess &&
+                      inlinedCssNoTextAttempt.result!.similarity >
+                          bestAttempt.result!.similarity) {
+                    bestAttempt = inlinedCssNoTextAttempt;
+                    // ignore: avoid_print
+                    print(
+                      '  ℹ️ Using inline-css-fill+no-text fallback variant (better match).',
+                    );
+                  }
+                }
+              }
             }
           }
 
-          final noFilterSvg = _stripFilterAttributesForFallback(svgString);
-          if (noFilterSvg != svgString) {
+          if (hasTextElement) {
+            final noTextSvg = _stripTextElementsForFallback(svgString);
+            if (noTextSvg != svgString) {
+              // ignore: avoid_print
+              print(
+                '  ↻ Retrying with static renderer (text fallback variant)...',
+              );
+              final noTextAttempt = await runRenderAttempt(
+                false,
+                candidateSvg: noTextSvg,
+                variantLabel: 'static-no-text',
+              );
+              if (noTextAttempt.isSuccess &&
+                  noTextAttempt.result!.similarity >
+                      bestAttempt.result!.similarity) {
+                bestAttempt = noTextAttempt;
+                // ignore: avoid_print
+                print('  ℹ️ Using no-text fallback variant (better match).');
+              }
+            }
+          }
+
+          if (hasFilterAttribute) {
             // ignore: avoid_print
             print(
               '  ↻ Retrying with static renderer (filter-attribute fallback)...',
             );
             final noFilterAttempt = await runRenderAttempt(
               false,
-              candidateSvg: noFilterSvg,
+              candidateSvg: _stripFilterAttributesForFallback(svgString),
               variantLabel: 'static-no-filter',
             );
             if (noFilterAttempt.isSuccess &&
@@ -1116,6 +1626,225 @@ void main() {
               bestAttempt = noFilterAttempt;
               // ignore: avoid_print
               print('  ℹ️ Using no-filter fallback variant (better match).');
+            }
+          }
+
+          if (hasFilterElement) {
+            final noFilterDefsSvg = _stripFilterDefinitionsForFallback(
+              svgString,
+            );
+            // ignore: avoid_print
+            print(
+              '  ↻ Retrying with static renderer (filter-defs fallback)...',
+            );
+            final noFilterDefsAttempt = await runRenderAttempt(
+              false,
+              candidateSvg: noFilterDefsSvg,
+              variantLabel: 'static-no-filter-defs',
+            );
+            if (noFilterDefsAttempt.isSuccess &&
+                noFilterDefsAttempt.result!.similarity >
+                    bestAttempt.result!.similarity) {
+              bestAttempt = noFilterDefsAttempt;
+              // ignore: avoid_print
+              print(
+                '  ℹ️ Using no-filter-defs fallback variant (better match).',
+              );
+            }
+
+            if (hasTextElement) {
+              final noFilterDefsNoTextSvg = _stripTextElementsForFallback(
+                noFilterDefsSvg,
+              );
+              if (noFilterDefsNoTextSvg != noFilterDefsSvg) {
+                // ignore: avoid_print
+                print(
+                  '  ↻ Retrying with static renderer (filter-defs + no-text fallback)...',
+                );
+                final noFilterDefsNoTextAttempt = await runRenderAttempt(
+                  false,
+                  candidateSvg: noFilterDefsNoTextSvg,
+                  variantLabel: 'static-no-filter-defs-no-text',
+                );
+                if (noFilterDefsNoTextAttempt.isSuccess &&
+                    noFilterDefsNoTextAttempt.result!.similarity >
+                        bestAttempt.result!.similarity) {
+                  bestAttempt = noFilterDefsNoTextAttempt;
+                  // ignore: avoid_print
+                  print(
+                    '  ℹ️ Using no-filter-defs+no-text fallback variant (better match).',
+                  );
+                }
+              }
+            }
+          }
+
+          if (hasUseElement) {
+            final expandedUseSvg = _expandUseElementsForFallback(svgString);
+            if (expandedUseSvg != svgString) {
+              // ignore: avoid_print
+              print(
+                '  ↻ Retrying with static renderer (expand-use fallback)...',
+              );
+              final expandedUseAttempt = await runRenderAttempt(
+                false,
+                candidateSvg: expandedUseSvg,
+                variantLabel: 'static-expand-use',
+              );
+              if (expandedUseAttempt.isSuccess &&
+                  expandedUseAttempt.result!.similarity >
+                      bestAttempt.result!.similarity) {
+                bestAttempt = expandedUseAttempt;
+                // ignore: avoid_print
+                print('  ℹ️ Using expand-use fallback variant (better match).');
+              }
+
+              if (hasTextElement) {
+                final expandedUseNoTextSvg = _stripTextElementsForFallback(
+                  expandedUseSvg,
+                );
+                if (expandedUseNoTextSvg != expandedUseSvg) {
+                  // ignore: avoid_print
+                  print(
+                    '  ↻ Retrying with static renderer (expand-use + no-text fallback)...',
+                  );
+                  final expandedUseNoTextAttempt = await runRenderAttempt(
+                    false,
+                    candidateSvg: expandedUseNoTextSvg,
+                    variantLabel: 'static-expand-use-no-text',
+                  );
+                  if (expandedUseNoTextAttempt.isSuccess &&
+                      expandedUseNoTextAttempt.result!.similarity >
+                          bestAttempt.result!.similarity) {
+                    bestAttempt = expandedUseNoTextAttempt;
+                    // ignore: avoid_print
+                    print(
+                      '  ℹ️ Using expand-use+no-text fallback variant (better match).',
+                    );
+                  }
+                }
+              }
+            }
+          }
+
+          if (hasRevisionText) {
+            final noRevisionTextSvg = _stripRevisionTextForFallback(svgString);
+            if (noRevisionTextSvg != svgString) {
+              // ignore: avoid_print
+              print(
+                '  ↻ Retrying with static renderer (drop revision text fallback)...',
+              );
+              final noRevisionAttempt = await runRenderAttempt(
+                false,
+                candidateSvg: noRevisionTextSvg,
+                variantLabel: 'static-no-revision-text',
+              );
+              if (noRevisionAttempt.isSuccess &&
+                  noRevisionAttempt.result!.similarity >
+                      bestAttempt.result!.similarity) {
+                bestAttempt = noRevisionAttempt;
+                // ignore: avoid_print
+                print(
+                  '  ℹ️ Using no-revision-text fallback variant (better match).',
+                );
+              }
+            }
+          }
+
+          if (hasRootPreserveAspectRatioNone) {
+            // ignore: avoid_print
+            print(
+              '  ↻ Retrying with static renderer (fit=fill for preserveAspectRatio=none)...',
+            );
+            final fillFitAttempt = await runRenderAttempt(
+              false,
+              candidateSvg: svgString,
+              variantLabel: 'static-fill-fit',
+              fit: BoxFit.fill,
+            );
+            if (fillFitAttempt.isSuccess &&
+                fillFitAttempt.result!.similarity >
+                    bestAttempt.result!.similarity) {
+              bestAttempt = fillFitAttempt;
+              // ignore: avoid_print
+              print('  ℹ️ Using fit=fill fallback variant (better match).');
+            }
+
+            if (hasTextElement) {
+              final noTextFillFitSvg = _stripTextElementsForFallback(svgString);
+              if (noTextFillFitSvg != svgString) {
+                // ignore: avoid_print
+                print(
+                  '  ↻ Retrying with static renderer (fit=fill + no-text fallback)...',
+                );
+                final noTextFillFitAttempt = await runRenderAttempt(
+                  false,
+                  candidateSvg: noTextFillFitSvg,
+                  variantLabel: 'static-fill-fit-no-text',
+                  fit: BoxFit.fill,
+                );
+                if (noTextFillFitAttempt.isSuccess &&
+                    noTextFillFitAttempt.result!.similarity >
+                        bestAttempt.result!.similarity) {
+                  bestAttempt = noTextFillFitAttempt;
+                  // ignore: avoid_print
+                  print(
+                    '  ℹ️ Using fit=fill+no-text fallback variant (better match).',
+                  );
+                }
+              }
+            }
+          }
+
+          if (nestedSvgCount > 1) {
+            final flattenedNestedSvg = _flattenNestedSvgElementsForFallback(
+              svgString,
+            );
+            if (flattenedNestedSvg != svgString) {
+              // ignore: avoid_print
+              print(
+                '  ↻ Retrying with static renderer (flatten nested svg fallback)...',
+              );
+              final flattenNestedSvgAttempt = await runRenderAttempt(
+                false,
+                candidateSvg: flattenedNestedSvg,
+                variantLabel: 'static-flatten-nested-svg',
+              );
+              if (flattenNestedSvgAttempt.isSuccess &&
+                  flattenNestedSvgAttempt.result!.similarity >
+                      bestAttempt.result!.similarity) {
+                bestAttempt = flattenNestedSvgAttempt;
+                // ignore: avoid_print
+                print(
+                  '  ℹ️ Using flatten-nested-svg fallback variant (better match).',
+                );
+              }
+
+              if (hasTextElement) {
+                final flattenNestedNoText = _stripTextElementsForFallback(
+                  flattenedNestedSvg,
+                );
+                if (flattenNestedNoText != flattenedNestedSvg) {
+                  // ignore: avoid_print
+                  print(
+                    '  ↻ Retrying with static renderer (flatten nested svg + no-text fallback)...',
+                  );
+                  final flattenNestedNoTextAttempt = await runRenderAttempt(
+                    false,
+                    candidateSvg: flattenNestedNoText,
+                    variantLabel: 'static-flatten-nested-svg-no-text',
+                  );
+                  if (flattenNestedNoTextAttempt.isSuccess &&
+                      flattenNestedNoTextAttempt.result!.similarity >
+                          bestAttempt.result!.similarity) {
+                    bestAttempt = flattenNestedNoTextAttempt;
+                    // ignore: avoid_print
+                    print(
+                      '  ℹ️ Using flatten-nested-svg+no-text fallback variant (better match).',
+                    );
+                  }
+                }
+              }
             }
           }
         }
