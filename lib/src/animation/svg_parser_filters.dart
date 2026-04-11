@@ -172,8 +172,8 @@ SvgFilterRegion _parseFilterRegion(XmlElement filterElement) {
   return SvgFilterRegion(
     x: x,
     y: y,
-    width: w,
-    height: h,
+    width: w.clamp(-1.0, 2.0),
+    height: h.clamp(-1.0, 2.0),
     isObjectBoundingBox: isOBB,
   );
 }

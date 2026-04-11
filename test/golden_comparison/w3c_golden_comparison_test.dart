@@ -1246,6 +1246,32 @@ Future<Uint8List?> _captureFlutterPng(
       return null;
     }
 
+    if (_svgLikelyNeedsAsyncImageWait(svgString)) {
+      _trace('imageWait:before');
+      await tester.runAsync(() async {
+        await Future<void>.delayed(const Duration(milliseconds: 350));
+      });
+      try {
+        await tester.pump();
+      } catch (error) {
+        _trace('imageWait:pump:error:$error');
+        return null;
+      }
+      try {
+        await tester.pumpAndSettle(
+          const Duration(milliseconds: 16),
+          EnginePhase.sendSemanticsUpdate,
+          const Duration(milliseconds: 350),
+        );
+      } catch (_) {
+        _trace('imageWait:pumpAndSettle:timeout');
+      }
+      _trace('imageWait:after');
+      if (consumePendingException('imageWait') != null) {
+        return null;
+      }
+    }
+
     if (animationTimeMs > 0) {
       _trace('pump:animationTime:before');
       try {
@@ -1295,6 +1321,11 @@ Future<Uint8List?> _captureFlutterPng(
     tester.view.resetPhysicalSize();
     tester.view.resetDevicePixelRatio();
   }
+}
+
+bool _svgLikelyNeedsAsyncImageWait(String svgString) {
+  return RegExp(r'<image\b', caseSensitive: false).hasMatch(svgString) ||
+      RegExp(r'data:image/', caseSensitive: false).hasMatch(svgString);
 }
 
 void main() {
