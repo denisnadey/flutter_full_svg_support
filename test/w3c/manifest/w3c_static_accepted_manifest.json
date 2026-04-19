@@ -1,0 +1,1503 @@
+{
+  "generatedAt": "2026-04-18T19:13:29.798350+00:00",
+  "suiteRoot": "W3C_SVG_11_TestSuite",
+  "criteria": {
+    "status": "accepted",
+    "operatorScriptContains": "no interaction required",
+    "excludeAnimationTags": true,
+    "excludeScriptTags": true,
+    "excludeSystemColors": true,
+    "excludeAmbiguousPassCriteria": true,
+    "viewBox": "0 0 480 360",
+    "extensions": [
+      ".svg"
+    ]
+  },
+  "selectedCount": 212,
+  "entries": [
+    {
+      "name": "color-prop-01-b",
+      "category": "color",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/color-prop-01-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/color-prop-01-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "color-prop-02-f",
+      "category": "color",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/color-prop-02-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/color-prop-02-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "color-prop-03-t",
+      "category": "color",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/color-prop-03-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/color-prop-03-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "color-prop-05-t",
+      "category": "color",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/color-prop-05-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/color-prop-05-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "coords-coord-01-t",
+      "category": "coords",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/coords-coord-01-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/coords-coord-01-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "coords-coord-02-t",
+      "category": "coords",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/coords-coord-02-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/coords-coord-02-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "coords-transformattr-03-f",
+      "category": "coords",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/coords-transformattr-03-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/coords-transformattr-03-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "coords-viewattr-03-b",
+      "category": "coords",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/coords-viewattr-03-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/coords-viewattr-03-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "filters-color-02-b",
+      "category": "filters",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/filters-color-02-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/filters-color-02-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "filters-composite-03-f",
+      "category": "filters",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/filters-composite-03-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/filters-composite-03-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "filters-conv-02-f",
+      "category": "filters",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/filters-conv-02-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/filters-conv-02-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "filters-diffuse-01-f",
+      "category": "filters",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/filters-diffuse-01-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/filters-diffuse-01-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "filters-displace-01-f",
+      "category": "filters",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/filters-displace-01-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/filters-displace-01-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "filters-displace-02-f",
+      "category": "filters",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/filters-displace-02-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/filters-displace-02-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "filters-felem-01-b",
+      "category": "filters",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/filters-felem-01-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/filters-felem-01-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "filters-gauss-02-f",
+      "category": "filters",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/filters-gauss-02-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/filters-gauss-02-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "filters-gauss-03-f",
+      "category": "filters",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/filters-gauss-03-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/filters-gauss-03-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "filters-image-01-b",
+      "category": "filters",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/filters-image-01-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/filters-image-01-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "filters-image-03-f",
+      "category": "filters",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/filters-image-03-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/filters-image-03-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "filters-image-04-f",
+      "category": "filters",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/filters-image-04-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/filters-image-04-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "filters-light-01-f",
+      "category": "filters",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/filters-light-01-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/filters-light-01-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "filters-light-02-f",
+      "category": "filters",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/filters-light-02-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/filters-light-02-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "filters-light-03-f",
+      "category": "filters",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/filters-light-03-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/filters-light-03-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "filters-offset-01-b",
+      "category": "filters",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/filters-offset-01-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/filters-offset-01-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "filters-specular-01-f",
+      "category": "filters",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/filters-specular-01-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/filters-specular-01-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "filters-turb-02-f",
+      "category": "filters",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/filters-turb-02-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/filters-turb-02-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "fonts-desc-02-t",
+      "category": "fonts",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/fonts-desc-02-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/fonts-desc-02-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "fonts-desc-03-t",
+      "category": "fonts",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/fonts-desc-03-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/fonts-desc-03-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "fonts-elem-01-t",
+      "category": "fonts",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/fonts-elem-01-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/fonts-elem-01-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "fonts-elem-02-t",
+      "category": "fonts",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/fonts-elem-02-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/fonts-elem-02-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "fonts-elem-03-b",
+      "category": "fonts",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/fonts-elem-03-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/fonts-elem-03-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "fonts-elem-04-b",
+      "category": "fonts",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/fonts-elem-04-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/fonts-elem-04-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "fonts-elem-05-t",
+      "category": "fonts",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/fonts-elem-05-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/fonts-elem-05-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "fonts-elem-06-t",
+      "category": "fonts",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/fonts-elem-06-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/fonts-elem-06-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "fonts-elem-07-b",
+      "category": "fonts",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/fonts-elem-07-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/fonts-elem-07-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "fonts-glyph-02-t",
+      "category": "fonts",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/fonts-glyph-02-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/fonts-glyph-02-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "fonts-glyph-04-t",
+      "category": "fonts",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/fonts-glyph-04-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/fonts-glyph-04-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "fonts-kern-01-t",
+      "category": "fonts",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/fonts-kern-01-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/fonts-kern-01-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "fonts-overview-201-t",
+      "category": "fonts",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/fonts-overview-201-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/fonts-overview-201-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "linking-a-10-f",
+      "category": "linking",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/linking-a-10-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/linking-a-10-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "masking-filter-01-f",
+      "category": "masking",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/masking-filter-01-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/masking-filter-01-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "masking-intro-01-f",
+      "category": "masking",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/masking-intro-01-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/masking-intro-01-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "masking-mask-02-f",
+      "category": "masking",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/masking-mask-02-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/masking-mask-02-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "masking-path-02-b",
+      "category": "masking",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/masking-path-02-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/masking-path-02-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "masking-path-03-b",
+      "category": "masking",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/masking-path-03-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/masking-path-03-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "masking-path-05-f",
+      "category": "masking",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/masking-path-05-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/masking-path-05-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "masking-path-07-b",
+      "category": "masking",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/masking-path-07-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/masking-path-07-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "masking-path-08-b",
+      "category": "masking",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/masking-path-08-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/masking-path-08-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "masking-path-10-b",
+      "category": "masking",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/masking-path-10-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/masking-path-10-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "masking-path-11-b",
+      "category": "masking",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/masking-path-11-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/masking-path-11-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "masking-path-14-f",
+      "category": "masking",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/masking-path-14-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/masking-path-14-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "metadata-example-01-t",
+      "category": "metadata",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/metadata-example-01-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/metadata-example-01-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "painting-control-01-f",
+      "category": "painting",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/painting-control-01-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/painting-control-01-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "painting-control-02-f",
+      "category": "painting",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/painting-control-02-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/painting-control-02-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "painting-control-03-f",
+      "category": "painting",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/painting-control-03-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/painting-control-03-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "painting-control-04-f",
+      "category": "painting",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/painting-control-04-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/painting-control-04-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "painting-control-05-f",
+      "category": "painting",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/painting-control-05-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/painting-control-05-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "painting-control-06-f",
+      "category": "painting",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/painting-control-06-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/painting-control-06-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "painting-fill-01-t",
+      "category": "painting",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/painting-fill-01-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/painting-fill-01-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "painting-fill-02-t",
+      "category": "painting",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/painting-fill-02-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/painting-fill-02-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "painting-fill-03-t",
+      "category": "painting",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/painting-fill-03-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/painting-fill-03-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "painting-fill-05-b",
+      "category": "painting",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/painting-fill-05-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/painting-fill-05-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "painting-marker-02-f",
+      "category": "painting",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/painting-marker-02-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/painting-marker-02-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "painting-marker-03-f",
+      "category": "painting",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/painting-marker-03-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/painting-marker-03-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "painting-marker-04-f",
+      "category": "painting",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/painting-marker-04-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/painting-marker-04-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "painting-marker-07-f",
+      "category": "painting",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/painting-marker-07-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/painting-marker-07-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "painting-render-02-b",
+      "category": "painting",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/painting-render-02-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/painting-render-02-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "painting-stroke-02-t",
+      "category": "painting",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/painting-stroke-02-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/painting-stroke-02-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "painting-stroke-03-t",
+      "category": "painting",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/painting-stroke-03-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/painting-stroke-03-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "painting-stroke-04-t",
+      "category": "painting",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/painting-stroke-04-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/painting-stroke-04-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "painting-stroke-05-t",
+      "category": "painting",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/painting-stroke-05-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/painting-stroke-05-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "painting-stroke-06-t",
+      "category": "painting",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/painting-stroke-06-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/painting-stroke-06-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "painting-stroke-07-t",
+      "category": "painting",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/painting-stroke-07-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/painting-stroke-07-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "painting-stroke-08-t",
+      "category": "painting",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/painting-stroke-08-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/painting-stroke-08-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "painting-stroke-09-t",
+      "category": "painting",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/painting-stroke-09-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/painting-stroke-09-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "painting-stroke-10-t",
+      "category": "painting",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/painting-stroke-10-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/painting-stroke-10-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "paths-data-01-t",
+      "category": "paths",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/paths-data-01-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/paths-data-01-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "paths-data-02-t",
+      "category": "paths",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/paths-data-02-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/paths-data-02-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "paths-data-03-f",
+      "category": "paths",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/paths-data-03-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/paths-data-03-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "paths-data-04-t",
+      "category": "paths",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/paths-data-04-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/paths-data-04-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "paths-data-05-t",
+      "category": "paths",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/paths-data-05-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/paths-data-05-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "paths-data-06-t",
+      "category": "paths",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/paths-data-06-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/paths-data-06-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "paths-data-07-t",
+      "category": "paths",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/paths-data-07-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/paths-data-07-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "paths-data-08-t",
+      "category": "paths",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/paths-data-08-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/paths-data-08-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "paths-data-09-t",
+      "category": "paths",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/paths-data-09-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/paths-data-09-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "paths-data-10-t",
+      "category": "paths",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/paths-data-10-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/paths-data-10-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "paths-data-13-t",
+      "category": "paths",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/paths-data-13-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/paths-data-13-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "paths-data-14-t",
+      "category": "paths",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/paths-data-14-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/paths-data-14-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "paths-data-15-t",
+      "category": "paths",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/paths-data-15-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/paths-data-15-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "paths-data-16-t",
+      "category": "paths",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/paths-data-16-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/paths-data-16-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "paths-data-17-f",
+      "category": "paths",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/paths-data-17-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/paths-data-17-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "paths-data-18-f",
+      "category": "paths",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/paths-data-18-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/paths-data-18-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "paths-data-19-f",
+      "category": "paths",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/paths-data-19-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/paths-data-19-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "paths-data-20-f",
+      "category": "paths",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/paths-data-20-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/paths-data-20-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "pservers-grad-01-b",
+      "category": "pservers",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/pservers-grad-01-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/pservers-grad-01-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "pservers-grad-02-b",
+      "category": "pservers",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/pservers-grad-02-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/pservers-grad-02-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "pservers-grad-03-b",
+      "category": "pservers",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/pservers-grad-03-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/pservers-grad-03-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "pservers-grad-04-b",
+      "category": "pservers",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/pservers-grad-04-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/pservers-grad-04-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "pservers-grad-06-b",
+      "category": "pservers",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/pservers-grad-06-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/pservers-grad-06-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "pservers-grad-07-b",
+      "category": "pservers",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/pservers-grad-07-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/pservers-grad-07-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "pservers-grad-08-b",
+      "category": "pservers",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/pservers-grad-08-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/pservers-grad-08-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "pservers-grad-09-b",
+      "category": "pservers",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/pservers-grad-09-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/pservers-grad-09-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "pservers-grad-10-b",
+      "category": "pservers",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/pservers-grad-10-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/pservers-grad-10-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "pservers-grad-11-b",
+      "category": "pservers",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/pservers-grad-11-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/pservers-grad-11-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "pservers-grad-12-b",
+      "category": "pservers",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/pservers-grad-12-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/pservers-grad-12-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "pservers-grad-13-b",
+      "category": "pservers",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/pservers-grad-13-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/pservers-grad-13-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "pservers-grad-14-b",
+      "category": "pservers",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/pservers-grad-14-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/pservers-grad-14-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "pservers-grad-15-b",
+      "category": "pservers",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/pservers-grad-15-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/pservers-grad-15-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "pservers-grad-21-b",
+      "category": "pservers",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/pservers-grad-21-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/pservers-grad-21-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "pservers-grad-22-b",
+      "category": "pservers",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/pservers-grad-22-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/pservers-grad-22-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "pservers-pattern-01-b",
+      "category": "pservers",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/pservers-pattern-01-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/pservers-pattern-01-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "pservers-pattern-02-f",
+      "category": "pservers",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/pservers-pattern-02-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/pservers-pattern-02-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "pservers-pattern-04-f",
+      "category": "pservers",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/pservers-pattern-04-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/pservers-pattern-04-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "render-elems-01-t",
+      "category": "render",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/render-elems-01-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/render-elems-01-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "render-elems-02-t",
+      "category": "render",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/render-elems-02-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/render-elems-02-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "render-elems-03-t",
+      "category": "render",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/render-elems-03-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/render-elems-03-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "render-elems-06-t",
+      "category": "render",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/render-elems-06-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/render-elems-06-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "render-elems-07-t",
+      "category": "render",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/render-elems-07-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/render-elems-07-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "render-elems-08-t",
+      "category": "render",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/render-elems-08-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/render-elems-08-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "shapes-circle-01-t",
+      "category": "shapes",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/shapes-circle-01-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/shapes-circle-01-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "shapes-circle-02-t",
+      "category": "shapes",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/shapes-circle-02-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/shapes-circle-02-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "shapes-ellipse-01-t",
+      "category": "shapes",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/shapes-ellipse-01-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/shapes-ellipse-01-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "shapes-ellipse-02-t",
+      "category": "shapes",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/shapes-ellipse-02-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/shapes-ellipse-02-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "shapes-ellipse-03-f",
+      "category": "shapes",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/shapes-ellipse-03-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/shapes-ellipse-03-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "shapes-grammar-01-f",
+      "category": "shapes",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/shapes-grammar-01-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/shapes-grammar-01-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "shapes-intro-01-t",
+      "category": "shapes",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/shapes-intro-01-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/shapes-intro-01-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "shapes-intro-02-f",
+      "category": "shapes",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/shapes-intro-02-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/shapes-intro-02-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "shapes-line-01-t",
+      "category": "shapes",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/shapes-line-01-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/shapes-line-01-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "shapes-polygon-01-t",
+      "category": "shapes",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/shapes-polygon-01-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/shapes-polygon-01-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "shapes-polygon-02-t",
+      "category": "shapes",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/shapes-polygon-02-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/shapes-polygon-02-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "shapes-polygon-03-t",
+      "category": "shapes",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/shapes-polygon-03-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/shapes-polygon-03-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "shapes-polyline-01-t",
+      "category": "shapes",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/shapes-polyline-01-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/shapes-polyline-01-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "shapes-polyline-02-t",
+      "category": "shapes",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/shapes-polyline-02-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/shapes-polyline-02-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "shapes-rect-01-t",
+      "category": "shapes",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/shapes-rect-01-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/shapes-rect-01-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "shapes-rect-02-t",
+      "category": "shapes",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/shapes-rect-02-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/shapes-rect-02-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "shapes-rect-03-t",
+      "category": "shapes",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/shapes-rect-03-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/shapes-rect-03-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "shapes-rect-04-f",
+      "category": "shapes",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/shapes-rect-04-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/shapes-rect-04-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "shapes-rect-05-f",
+      "category": "shapes",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/shapes-rect-05-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/shapes-rect-05-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "struct-cond-01-t",
+      "category": "struct",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/struct-cond-01-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/struct-cond-01-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "struct-cond-02-t",
+      "category": "struct",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/struct-cond-02-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/struct-cond-02-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "struct-cond-03-t",
+      "category": "struct",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/struct-cond-03-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/struct-cond-03-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "struct-frag-06-t",
+      "category": "struct",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/struct-frag-06-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/struct-frag-06-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "struct-group-02-b",
+      "category": "struct",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/struct-group-02-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/struct-group-02-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "struct-image-01-t",
+      "category": "struct",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/struct-image-01-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/struct-image-01-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "struct-image-02-b",
+      "category": "struct",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/struct-image-02-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/struct-image-02-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "struct-image-03-t",
+      "category": "struct",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/struct-image-03-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/struct-image-03-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "struct-image-04-t",
+      "category": "struct",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/struct-image-04-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/struct-image-04-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "struct-image-05-b",
+      "category": "struct",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/struct-image-05-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/struct-image-05-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "struct-image-06-t",
+      "category": "struct",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/struct-image-06-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/struct-image-06-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "struct-image-07-t",
+      "category": "struct",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/struct-image-07-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/struct-image-07-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "struct-image-08-t",
+      "category": "struct",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/struct-image-08-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/struct-image-08-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "struct-image-09-t",
+      "category": "struct",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/struct-image-09-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/struct-image-09-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "struct-image-10-t",
+      "category": "struct",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/struct-image-10-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/struct-image-10-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "struct-image-13-f",
+      "category": "struct",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/struct-image-13-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/struct-image-13-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "struct-image-14-f",
+      "category": "struct",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/struct-image-14-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/struct-image-14-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "struct-image-16-f",
+      "category": "struct",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/struct-image-16-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/struct-image-16-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "struct-symbol-01-b",
+      "category": "struct",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/struct-symbol-01-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/struct-symbol-01-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "struct-use-01-t",
+      "category": "struct",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/struct-use-01-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/struct-use-01-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "struct-use-03-t",
+      "category": "struct",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/struct-use-03-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/struct-use-03-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "struct-use-10-f",
+      "category": "struct",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/struct-use-10-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/struct-use-10-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "struct-use-11-f",
+      "category": "struct",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/struct-use-11-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/struct-use-11-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "struct-use-12-f",
+      "category": "struct",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/struct-use-12-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/struct-use-12-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "styling-class-01-f",
+      "category": "styling",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/styling-class-01-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/styling-class-01-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "styling-css-01-b",
+      "category": "styling",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/styling-css-01-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/styling-css-01-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "styling-css-02-b",
+      "category": "styling",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/styling-css-02-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/styling-css-02-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "styling-css-03-b",
+      "category": "styling",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/styling-css-03-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/styling-css-03-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "styling-css-05-b",
+      "category": "styling",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/styling-css-05-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/styling-css-05-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "styling-css-07-f",
+      "category": "styling",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/styling-css-07-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/styling-css-07-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "styling-css-08-f",
+      "category": "styling",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/styling-css-08-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/styling-css-08-f.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "styling-elem-01-b",
+      "category": "styling",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/styling-elem-01-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/styling-elem-01-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "styling-inherit-01-b",
+      "category": "styling",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/styling-inherit-01-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/styling-inherit-01-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "styling-pres-01-t",
+      "category": "styling",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/styling-pres-01-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/styling-pres-01-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "text-align-01-b",
+      "category": "text",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/text-align-01-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/text-align-01-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "text-align-02-b",
+      "category": "text",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/text-align-02-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/text-align-02-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "text-align-03-b",
+      "category": "text",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/text-align-03-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/text-align-03-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "text-align-04-b",
+      "category": "text",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/text-align-04-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/text-align-04-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "text-align-05-b",
+      "category": "text",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/text-align-05-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/text-align-05-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "text-align-06-b",
+      "category": "text",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/text-align-06-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/text-align-06-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "text-altglyph-01-b",
+      "category": "text",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/text-altglyph-01-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/text-altglyph-01-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "text-altglyph-02-b",
+      "category": "text",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/text-altglyph-02-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/text-altglyph-02-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "text-deco-01-b",
+      "category": "text",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/text-deco-01-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/text-deco-01-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "text-fonts-01-t",
+      "category": "text",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/text-fonts-01-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/text-fonts-01-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "text-fonts-02-t",
+      "category": "text",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/text-fonts-02-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/text-fonts-02-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "text-fonts-03-t",
+      "category": "text",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/text-fonts-03-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/text-fonts-03-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "text-fonts-04-t",
+      "category": "text",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/text-fonts-04-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/text-fonts-04-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "text-fonts-203-t",
+      "category": "text",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/text-fonts-203-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/text-fonts-203-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "text-intro-01-t",
+      "category": "text",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/text-intro-01-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/text-intro-01-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "text-intro-02-b",
+      "category": "text",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/text-intro-02-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/text-intro-02-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "text-intro-03-b",
+      "category": "text",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/text-intro-03-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/text-intro-03-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "text-intro-04-t",
+      "category": "text",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/text-intro-04-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/text-intro-04-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "text-intro-05-t",
+      "category": "text",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/text-intro-05-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/text-intro-05-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "text-intro-06-t",
+      "category": "text",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/text-intro-06-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/text-intro-06-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "text-intro-07-t",
+      "category": "text",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/text-intro-07-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/text-intro-07-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "text-intro-09-b",
+      "category": "text",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/text-intro-09-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/text-intro-09-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "text-path-01-b",
+      "category": "text",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/text-path-01-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/text-path-01-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "text-path-02-b",
+      "category": "text",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/text-path-02-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/text-path-02-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "text-text-03-b",
+      "category": "text",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/text-text-03-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/text-text-03-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "text-text-04-t",
+      "category": "text",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/text-text-04-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/text-text-04-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "text-text-05-t",
+      "category": "text",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/text-text-05-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/text-text-05-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "text-text-06-t",
+      "category": "text",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/text-text-06-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/text-text-06-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "text-text-07-t",
+      "category": "text",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/text-text-07-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/text-text-07-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "text-text-08-b",
+      "category": "text",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/text-text-08-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/text-text-08-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "text-text-09-t",
+      "category": "text",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/text-text-09-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/text-text-09-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "text-text-10-t",
+      "category": "text",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/text-text-10-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/text-text-10-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "text-text-11-t",
+      "category": "text",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/text-text-11-t.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/text-text-11-t.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "text-tref-01-b",
+      "category": "text",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/text-tref-01-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/text-tref-01-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "text-tref-02-b",
+      "category": "text",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/text-tref-02-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/text-tref-02-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "text-tref-03-b",
+      "category": "text",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/text-tref-03-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/text-tref-03-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "text-tselect-01-b",
+      "category": "text",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/text-tselect-01-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/text-tselect-01-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "text-tspan-01-b",
+      "category": "text",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/text-tspan-01-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/text-tspan-01-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "text-tspan-02-b",
+      "category": "text",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/text-tspan-02-b.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/text-tspan-02-b.png",
+      "viewBox": "0 0 480 360"
+    },
+    {
+      "name": "types-basic-01-f",
+      "category": "types",
+      "svgPath": "W3C_SVG_11_TestSuite/svg/types-basic-01-f.svg",
+      "pngPath": "W3C_SVG_11_TestSuite/png/types-basic-01-f.png",
+      "viewBox": "0 0 480 360"
+    }
+  ]
+}

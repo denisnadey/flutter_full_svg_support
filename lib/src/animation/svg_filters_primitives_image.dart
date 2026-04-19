@@ -20,10 +20,19 @@ class SvgFeImageFilter extends SvgFilter {
   final String? href;
 
   /// Geometry of the filter primitive subregion.
+  ///
+  /// Parsed numeric values are kept for backward compatibility, but painter
+  /// should prefer raw values to preserve percentage semantics.
   final double x;
   final double y;
   final double width;
   final double height;
+
+  /// Raw geometry attributes as written in SVG (`10`, `20%`, etc.).
+  final String? xRaw;
+  final String? yRaw;
+  final String? widthRaw;
+  final String? heightRaw;
 
   /// preserveAspectRatio attribute for image fitting.
   final String? preserveAspectRatio;
@@ -35,6 +44,10 @@ class SvgFeImageFilter extends SvgFilter {
     this.y = 0.0,
     this.width = 0.0,
     this.height = 0.0,
+    this.xRaw,
+    this.yRaw,
+    this.widthRaw,
+    this.heightRaw,
     this.preserveAspectRatio,
     super.input,
     super.resultName,

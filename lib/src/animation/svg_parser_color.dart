@@ -9,6 +9,11 @@ Object _parseColor(String value) {
     return value.trim();
   }
 
+  // Preserve keyword values that must be resolved later in context.
+  if (trimmed == 'currentcolor' || trimmed == 'inherit') {
+    return value.trim();
+  }
+
   // Пока возвращаем строку, позже добавим полный парсинг
   // #RGB, #RRGGBB, rgb(), rgba(), named colors, etc.
   if (trimmed == 'none' || trimmed == 'transparent') {
@@ -37,8 +42,9 @@ Object _parseColor(String value) {
     return hslColor;
   }
 
-  // Неподдерживаемый формат -> чёрный (baseline fallback)
-  return const ui.Color(0xFF000000);
+  // Unsupported token: preserve as string so later context-aware resolution
+  // can handle it (for example presentation attributes resolved during paint).
+  return value.trim();
 }
 
 /// Парсит hex цвет

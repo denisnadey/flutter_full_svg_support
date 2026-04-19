@@ -19,3 +19,6 @@ tags:
   animation_compare:
     # Animation frame comparison - compare Flutter vs browser frames
     # Run with: flutter test --tags=animation_compare
+  w3c:
+    # W3C SVG 1.1 regression tests
+    # Run with: RUN_W3C_STATIC=1 flutter test --tags=w3c

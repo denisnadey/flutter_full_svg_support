@@ -424,6 +424,7 @@ extension _AnimatedSvgPictureStateLifecycleExtension
         document: _document,
         backgroundColor: widget.backgroundColor,
         imagesByHref: _imagesByHref,
+        convolvedImagesByFilterKey: _convolvedImagesByFilterKey,
       ),
       size: Size.infinite,
     );

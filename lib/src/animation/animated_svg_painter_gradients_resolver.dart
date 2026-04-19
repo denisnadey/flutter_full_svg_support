@@ -81,7 +81,8 @@ extension AnimatedSvgPainterGradientResolverExtension on AnimatedSvgPainter {
       final stopColorValue =
           child.getAttributeValue('stop-color') ?? styleStopColor;
       final stopColor =
-          _resolveColorValue(stopColorValue) ?? const ui.Color(0xFF000000);
+          _resolveColorForNode(stopColorValue, child) ??
+          const ui.Color(0xFF000000);
 
       final stopOpacity =
           _parseOpacityValue(

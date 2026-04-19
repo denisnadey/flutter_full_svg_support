@@ -124,9 +124,34 @@ extension AnimatedSvgPainterGradientValuesExtension on AnimatedSvgPainter {
     final lowerValue = strValue.toLowerCase();
     if (lowerValue == 'currentcolor') {
       // Resolve the inherited 'color' property
-      final colorProperty = _getInheritedString(node, 'color');
+      String? colorProperty = _getInheritedString(node, 'color');
+
+      // Be defensive around explicit inherit tokens and walk up to find a
+      // concrete color value if needed.
+      if (colorProperty != null &&
+          colorProperty.trim().toLowerCase() == 'inherit') {
+        colorProperty = null;
+      }
+      if (colorProperty == null || colorProperty.isEmpty) {
+        SvgNode? ancestor = node.parent;
+        while (ancestor != null &&
+            (colorProperty == null || colorProperty.isEmpty)) {
+          final candidate = _getInheritedString(ancestor, 'color');
+          if (candidate != null &&
+              candidate.isNotEmpty &&
+              candidate.trim().toLowerCase() != 'inherit') {
+            colorProperty = candidate;
+            break;
+          }
+          ancestor = ancestor.parent;
+        }
+      }
+
       if (colorProperty != null && colorProperty.isNotEmpty) {
-        return _parseColor(colorProperty);
+        final parsed = _parseColor(colorProperty);
+        if (parsed != null) {
+          return parsed;
+        }
       }
       // Default to black if no color property is set
       return const ui.Color(0xFF000000);

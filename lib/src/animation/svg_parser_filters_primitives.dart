@@ -67,6 +67,10 @@ SvgDisplacementMapFilter _parseDisplacementMap(
 
 /// Парсит feImage элемент
 SvgFeImageFilter _parseFeImage(XmlElement element, String filterId) {
+  final rawX = element.getAttribute('x')?.trim();
+  final rawY = element.getAttribute('y')?.trim();
+  final rawWidth = element.getAttribute('width')?.trim();
+  final rawHeight = element.getAttribute('height')?.trim();
   final rawHref =
       element.getAttribute('href') ?? element.getAttribute('xlink:href');
   final href = rawHref?.trim();
@@ -74,10 +78,14 @@ SvgFeImageFilter _parseFeImage(XmlElement element, String filterId) {
   return SvgFeImageFilter(
     id: filterId,
     href: (href == null || href.isEmpty) ? null : href,
-    x: _parseNumber(element.getAttribute('x') ?? '0'),
-    y: _parseNumber(element.getAttribute('y') ?? '0'),
-    width: _parseNumber(element.getAttribute('width') ?? '0'),
-    height: _parseNumber(element.getAttribute('height') ?? '0'),
+    x: _parseNumber(rawX ?? '0'),
+    y: _parseNumber(rawY ?? '0'),
+    width: _parseNumber(rawWidth ?? '0'),
+    height: _parseNumber(rawHeight ?? '0'),
+    xRaw: (rawX == null || rawX.isEmpty) ? null : rawX,
+    yRaw: (rawY == null || rawY.isEmpty) ? null : rawY,
+    widthRaw: (rawWidth == null || rawWidth.isEmpty) ? null : rawWidth,
+    heightRaw: (rawHeight == null || rawHeight.isEmpty) ? null : rawHeight,
     preserveAspectRatio: _normalizeFilterResult(
       element.getAttribute('preserveAspectRatio'),
     ),

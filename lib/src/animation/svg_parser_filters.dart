@@ -4,31 +4,32 @@ part of 'svg_parser.dart';
 SvgFilters _parseFilters(XmlElement svgElement) {
   final filters = SvgFilters();
 
-  // Ищем <defs> элемент
-  final defsElements = svgElement.findElements('defs');
+  // Collect all <defs> blocks in the document, including nested ones.
+  // Some W3C fixtures define filters inside <g><defs>...</defs></g>.
+  final defsElements = svgElement.findAllElements('defs');
   if (defsElements.isEmpty) {
     return filters;
   }
 
-  final defs = defsElements.first;
+  for (final defs in defsElements) {
+    // Parse direct <filter> children of this defs block.
+    for (final filterElement in defs.findElements('filter')) {
+      final filterId = filterElement.getAttribute('id');
+      if (filterId == null || filterId.isEmpty) {
+        continue; // Фильтр без ID не может быть использован
+      }
 
-  // Ищем все <filter> элементы
-  for (final filterElement in defs.findElements('filter')) {
-    final filterId = filterElement.getAttribute('id');
-    if (filterId == null || filterId.isEmpty) {
-      continue; // Фильтр без ID не может быть использован
-    }
+      // Parse filter region (x, y, width, height) for output clipping.
+      // Per SVG spec, default is -10%, -10%, 120%, 120% (objectBoundingBox).
+      final filterRegion = _parseFilterRegion(filterElement);
+      filters.setFilterRegion(filterId, filterRegion);
 
-    // Parse filter region (x, y, width, height) for output clipping.
-    // Per SVG spec, default is -10%, -10%, 120%, 120% (objectBoundingBox).
-    final filterRegion = _parseFilterRegion(filterElement);
-    filters.setFilterRegion(filterId, filterRegion);
-
-    // Парсим примитивы фильтра (feGaussianBlur, feDropShadow, etc.)
-    for (final child in filterElement.childElements) {
-      final filter = _parseFilterPrimitive(child, filterId);
-      if (filter != null) {
-        filters.add(filter);
+      // Парсим примитивы фильтра (feGaussianBlur, feDropShadow, etc.)
+      for (final child in filterElement.childElements) {
+        final filter = _parseFilterPrimitive(child, filterId);
+        if (filter != null) {
+          filters.add(filter);
+        }
       }
     }
   }
@@ -109,28 +110,30 @@ const Set<String> _filterPrimitiveTags = {
 /// Walks the DOM tree to find <defs><filter><fe*> elements, then matches
 /// them positionally to the SvgFilter objects in the filter registry.
 void _linkFilterPrimitivesToNodes(SvgNode root, SvgFilters filters) {
-  for (final child in root.children) {
-    if (child.tagName == 'defs') {
-      for (final filterNode in child.children) {
-        if (filterNode.tagName != 'filter') continue;
-        final filterId = filterNode.id;
-        if (filterId == null || filterId.isEmpty) continue;
-
+  void visit(SvgNode node) {
+    if (node.tagName == 'filter') {
+      final filterId = node.id;
+      if (filterId != null && filterId.isNotEmpty) {
         final filterPrimitives = filters.getAllById(filterId);
-        if (filterPrimitives.isEmpty) continue;
-
-        // Match fe* children to SvgFilter objects by position
-        int primitiveIndex = 0;
-        for (final feNode in filterNode.children) {
-          if (!_filterPrimitiveTags.contains(feNode.tagName)) continue;
-          if (primitiveIndex < filterPrimitives.length) {
-            filterPrimitives[primitiveIndex].sourceElement = feNode;
+        if (filterPrimitives.isNotEmpty) {
+          // Match fe* children to SvgFilter objects by position.
+          var primitiveIndex = 0;
+          for (final feNode in node.children) {
+            if (!_filterPrimitiveTags.contains(feNode.tagName)) continue;
+            if (primitiveIndex < filterPrimitives.length) {
+              filterPrimitives[primitiveIndex].sourceElement = feNode;
+            }
+            primitiveIndex++;
           }
-          primitiveIndex++;
         }
       }
     }
+    for (final child in node.children) {
+      visit(child);
+    }
   }
+
+  visit(root);
 }
 
 /// Parse filter region attributes (x, y, width, height) from a `<filter>` element.

@@ -81,6 +81,7 @@ class AnimatedSvgPainter extends CustomPainter {
     required this.document,
     this.backgroundColor,
     this.imagesByHref = const <String, ui.Image>{},
+    this.convolvedImagesByFilterKey = const <String, ui.Image>{},
     this.animationTime,
     this.hasAnimations = false,
     _RenderCache? renderCache,
@@ -94,6 +95,9 @@ class AnimatedSvgPainter extends CustomPainter {
 
   /// Decoded raster images keyed by raw `href`/`xlink:href` value.
   final Map<String, ui.Image> imagesByHref;
+
+  /// Precomputed convolution outputs keyed by `<href>|<filterId>`.
+  final Map<String, ui.Image> convolvedImagesByFilterKey;
 
   /// Current animation time in seconds (for cache invalidation).
   final double? animationTime;
@@ -113,6 +117,9 @@ class AnimatedSvgPainter extends CustomPainter {
   final Map<String, MotionPath> _motionPathCache = <String, MotionPath>{};
   bool _currentPassPaintFill = true;
   bool _currentPassPaintStroke = true;
+  ui.Color? _currentPassFillColorOverride;
+  ui.Color? _currentPassStrokeColorOverride;
+  SvgFilterPaintPass? _currentFilterPass;
 
   @override
   void paint(ui.Canvas canvas, ui.Size size) {

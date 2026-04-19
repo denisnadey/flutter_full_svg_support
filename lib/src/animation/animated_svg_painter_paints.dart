@@ -29,9 +29,18 @@ extension AnimatedSvgPainterPaintsExtension on AnimatedSvgPainter {
         ..shader = shader
         ..color = const ui.Color(0xFFFFFFFF).withValues(alpha: finalOpacity);
     } else {
+      final fillSourceNode = _findInheritedAttributeSourceNode(node, 'fill');
       final color =
-          _resolveColorForNode(fillValue, node) ?? const ui.Color(0xFF000000);
+          _resolveColorForNode(fillValue, fillSourceNode ?? node) ??
+          const ui.Color(0xFF000000);
       paint.color = _applyOpacity(color, finalOpacity);
+    }
+
+    final fillColorOverride = _currentPassFillColorOverride;
+    if (fillColorOverride != null) {
+      paint
+        ..shader = null
+        ..color = fillColorOverride;
     }
 
     if (imageFilter != null) {
@@ -127,11 +136,25 @@ extension AnimatedSvgPainterPaintsExtension on AnimatedSvgPainter {
         ..shader = shader
         ..color = const ui.Color(0xFFFFFFFF).withValues(alpha: finalOpacity);
     } else {
-      final strokeColor = _resolveColorForNode(strokeValue, node);
+      final strokeSourceNode = _findInheritedAttributeSourceNode(
+        node,
+        'stroke',
+      );
+      final strokeColor = _resolveColorForNode(
+        strokeValue,
+        strokeSourceNode ?? node,
+      );
       if (strokeColor == null) {
         return null;
       }
       paint.color = _applyOpacity(strokeColor, finalOpacity);
+    }
+
+    final strokeColorOverride = _currentPassStrokeColorOverride;
+    if (strokeColorOverride != null) {
+      paint
+        ..shader = null
+        ..color = strokeColorOverride;
     }
 
     if (imageFilter != null) {

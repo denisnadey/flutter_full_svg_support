@@ -18,6 +18,7 @@ import 'switch_processing.dart';
 import 'smil/smil_parser.dart';
 import 'smil/smil_timeline.dart';
 import 'svg_dom.dart';
+import 'svg_filters.dart';
 import 'svg_parser.dart';
 import 'svg_transform.dart';
 import 'transform_3d.dart';
@@ -536,6 +537,8 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
   String? _hoveredElementId;
   SvgLinkInfo? _hoveredAnchorInfo;
   final Map<String, ui.Image> _imagesByHref = <String, ui.Image>{};
+  final Map<String, ui.Image> _convolvedImagesByFilterKey =
+      <String, ui.Image>{};
   final Set<String> _pendingImageHrefs = <String>{};
   int _imageLoadGeneration = 0;
 
