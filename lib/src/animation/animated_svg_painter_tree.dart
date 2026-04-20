@@ -20,6 +20,7 @@ void _paintNodeImpl(
     useContext: null,
   );
 }
+
 /// Paints a node with use inheritance context for proper CSS cascade.
 /// This is the core rendering function that handles CSS property inheritance
 /// from <use> elements to their referenced content.
@@ -1087,8 +1088,8 @@ void _paintWithFilterPassesImpl(
     }
     if ((pass is SvgDiffuseLightingPaintPass ||
             pass is SvgSpecularLightingPaintPass) &&
-      targetNodeBounds != null &&
-      !isImageNode) {
+        targetNodeBounds != null &&
+        !isImageNode) {
       final painted = _paintLightingPassImpl(
         painter,
         canvas,
@@ -1120,7 +1121,9 @@ bool _paintDisplacementPassImpl(
   ui.Rect? filterRegionClip,
 }) {
   final useFilterRegionRect =
-      filterRegionClip != null && pass.textureHref == null && pass.mapHref == null;
+      filterRegionClip != null &&
+      pass.textureHref == null &&
+      pass.mapHref == null;
   final outputRect = useFilterRegionRect ? filterRegionClip : targetNodeBounds;
   final width = outputRect.width.round();
   final height = outputRect.height.round();

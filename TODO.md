@@ -20,6 +20,7 @@ For factual project status, use `CURRENT_STATUS.md` only.
 - [ ] Keep `W3C_TRACE` forensic workflow as mandatory diagnostics for stubborn fixtures.
 
 Next sprint candidates (after functional closure):
+
 - [ ] Additional profiling - Ongoing identification of bottlenecks
 - [ ] Memory allocation monitoring - Monitor object creation in hot paths
 - [ ] CSS selector edge case refinement - Advanced structural pseudo-class combinations

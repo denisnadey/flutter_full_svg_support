@@ -5,12 +5,15 @@
 **Current Status:** historical ~97%+ parity baseline; active W3C functional recovery with first-40 green, `filters-light-03-f` and `filters-specular-01-f` closed, remaining functional debt centered on legacy font fixtures.
 
 Authoritative status is maintained in:
+
 - `/Users/denisnadey/apps/flutter_full_svg_support/CURRENT_STATUS.md`
 
 Closed issues / do-not-reopen registry:
+
 - `/Users/denisnadey/apps/flutter_full_svg_support/docs/RESOLVED_ISSUES.md`
 
 Detailed Blink gap matrix:
+
 - `/Users/denisnadey/apps/flutter_full_svg_support/docs/BLINK_PARITY_AUDIT.md`
 
 ## Active Feature Items (P0 Priorities)
@@ -82,6 +85,7 @@ _All P2 edge case items completed March 31, 2026. See Completed P0 Items below._
 ## Definition of Progress
 
 A task is complete only when:
+
 - behavior is covered by focused tests,
 - example/playground demonstrates the feature if UI-visible,
 - `CURRENT_STATUS.md` is updated if factual state changed,

@@ -539,9 +539,8 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
   final Map<String, ui.Image> _imagesByHref = <String, ui.Image>{};
   final Map<String, ui.Image> _convolvedImagesByFilterKey =
       <String, ui.Image>{};
-  final Map<String, ui.Image> _lightingImagesByFilterKey =
-      <String, ui.Image>{};
-    final Map<String, ui.Image> _displacementImagesByFilterKey =
+  final Map<String, ui.Image> _lightingImagesByFilterKey = <String, ui.Image>{};
+  final Map<String, ui.Image> _displacementImagesByFilterKey =
       <String, ui.Image>{};
   final Set<String> _pendingImageHrefs = <String>{};
   int _imageLoadGeneration = 0;

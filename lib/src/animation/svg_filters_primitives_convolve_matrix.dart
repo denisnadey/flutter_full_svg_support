@@ -110,15 +110,18 @@ class ConvolveMatrixProcessor {
 
         // Apply divisor and bias.
         final outR = useLinearRgb
-            ? (_linearToSrgb((sumR * invDivisor + bias).clamp(0.0, 1.0)) * 255.0)
+            ? (_linearToSrgb((sumR * invDivisor + bias).clamp(0.0, 1.0)) *
+                      255.0)
                   .round()
             : (sumR * invDivisor + bias255).clamp(0.0, 255.0).round();
         final outG = useLinearRgb
-            ? (_linearToSrgb((sumG * invDivisor + bias).clamp(0.0, 1.0)) * 255.0)
+            ? (_linearToSrgb((sumG * invDivisor + bias).clamp(0.0, 1.0)) *
+                      255.0)
                   .round()
             : (sumG * invDivisor + bias255).clamp(0.0, 255.0).round();
         final outB = useLinearRgb
-            ? (_linearToSrgb((sumB * invDivisor + bias).clamp(0.0, 1.0)) * 255.0)
+            ? (_linearToSrgb((sumB * invDivisor + bias).clamp(0.0, 1.0)) *
+                      255.0)
                   .round()
             : (sumB * invDivisor + bias255).clamp(0.0, 255.0).round();
 

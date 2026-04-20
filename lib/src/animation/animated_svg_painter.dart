@@ -270,11 +270,7 @@ class AnimatedSvgPainter extends CustomPainter {
       _paintNode(canvas, node);
     } finally {
       if (shouldDisableFilter) {
-        node.setAttribute(
-          'filter',
-          originalFilter,
-          rawValue: originalFilter,
-        );
+        node.setAttribute('filter', originalFilter, rawValue: originalFilter);
       }
     }
   }

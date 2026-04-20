@@ -130,7 +130,10 @@ extension SvgFiltersPipelinePrimitivePaintExtension on SvgFilters {
     return <SvgFilterPaintPass>[
       SvgSolidPaintSourcePass(
         paintColor: flood.effectiveColor,
-        colorFilter: ui.ColorFilter.mode(flood.effectiveColor, ui.BlendMode.src),
+        colorFilter: ui.ColorFilter.mode(
+          flood.effectiveColor,
+          ui.BlendMode.src,
+        ),
       ),
     ];
   }
