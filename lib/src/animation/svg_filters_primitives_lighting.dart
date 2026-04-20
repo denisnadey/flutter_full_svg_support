@@ -234,8 +234,23 @@ class SvgDiffuseLightingPaintPass extends SvgFilterPaintPass {
   /// Get kernel unit length Y.
   double? get kernelUnitLengthY => lightingFilter.kernelUnitLengthY;
 
+  bool get _usesObjectBoundingBoxPrimitiveUnits {
+    final dynamic source = lightingFilter.sourceElement;
+    final rawPrimitiveUnits = source?.parent
+        ?.getRawAttributeValue('primitiveUnits')
+        ?.toString()
+        .trim();
+    if (rawPrimitiveUnits == null || rawPrimitiveUnits.isEmpty) {
+      return false; // default: userSpaceOnUse
+    }
+    return rawPrimitiveUnits.toLowerCase() == 'objectboundingbox';
+  }
+
   /// Create a LightingProcessor for this filter.
-  LightingProcessor? createProcessor() {
+  LightingProcessor? createProcessor({
+    double? objectBoundingBoxWidth,
+    double? objectBoundingBoxHeight,
+  }) {
     final source = lightSource;
     if (source == null) return null;
 
@@ -245,6 +260,9 @@ class SvgDiffuseLightingPaintPass extends SvgFilterPaintPass {
       lightingColor: lightingColor,
       kernelUnitLengthX: kernelUnitLengthX,
       kernelUnitLengthY: kernelUnitLengthY,
+      primitiveUnitsObjectBoundingBox: _usesObjectBoundingBoxPrimitiveUnits,
+      objectBoundingBoxWidth: objectBoundingBoxWidth,
+      objectBoundingBoxHeight: objectBoundingBoxHeight,
     );
   }
 
@@ -311,8 +329,23 @@ class SvgSpecularLightingPaintPass extends SvgFilterPaintPass {
   /// Get kernel unit length Y.
   double? get kernelUnitLengthY => lightingFilter.kernelUnitLengthY;
 
+  bool get _usesObjectBoundingBoxPrimitiveUnits {
+    final dynamic source = lightingFilter.sourceElement;
+    final rawPrimitiveUnits = source?.parent
+        ?.getRawAttributeValue('primitiveUnits')
+        ?.toString()
+        .trim();
+    if (rawPrimitiveUnits == null || rawPrimitiveUnits.isEmpty) {
+      return false; // default: userSpaceOnUse
+    }
+    return rawPrimitiveUnits.toLowerCase() == 'objectboundingbox';
+  }
+
   /// Create a LightingProcessor for this filter.
-  LightingProcessor? createProcessor() {
+  LightingProcessor? createProcessor({
+    double? objectBoundingBoxWidth,
+    double? objectBoundingBoxHeight,
+  }) {
     final source = lightSource;
     if (source == null) return null;
 
@@ -322,6 +355,9 @@ class SvgSpecularLightingPaintPass extends SvgFilterPaintPass {
       lightingColor: lightingColor,
       kernelUnitLengthX: kernelUnitLengthX,
       kernelUnitLengthY: kernelUnitLengthY,
+      primitiveUnitsObjectBoundingBox: _usesObjectBoundingBoxPrimitiveUnits,
+      objectBoundingBoxWidth: objectBoundingBoxWidth,
+      objectBoundingBoxHeight: objectBoundingBoxHeight,
     );
   }
 

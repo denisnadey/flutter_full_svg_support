@@ -94,6 +94,32 @@ extension SvgFiltersPipelineCompositingExtension on SvgFilters {
     if (input2.isEmpty) {
       return const <SvgFilterPaintPass>[];
     }
+
+    // feComposite(in=flood, in2=shape, operator="in") is a very common
+    // recolor pattern in W3C filters. Applying srcIn via generic blend-pass
+    // approximation intersects with the source node geometry and can produce
+    // only a small overlap. When top input is a solid paint source, recolor
+    // in2 geometry directly to match expected flood-masked output.
+    if (composite.mode == ui.BlendMode.srcIn &&
+        input.length == 1 &&
+        input.first is SvgSolidPaintSourcePass) {
+      final floodColor = (input.first as SvgSolidPaintSourcePass).paintColor;
+      return input2
+          .map(
+            (pass) => SvgFilterPaintPass(
+              imageFilter: pass.imageFilter,
+              colorFilter: pass.colorFilter,
+              blendMode: pass.blendMode,
+              offset: pass.offset,
+              paintFill: pass.paintFill,
+              paintStroke: pass.paintStroke,
+              fillColorOverride: pass.paintFill ? floodColor : null,
+              strokeColorOverride: pass.paintStroke ? floodColor : null,
+            ),
+          )
+          .toList(growable: false);
+    }
+
     return <SvgFilterPaintPass>[...input2, ...compositedTop];
   }
 

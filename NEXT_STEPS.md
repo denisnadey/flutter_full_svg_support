@@ -1,8 +1,8 @@
 # Next Steps
 
-**Last Updated:** March 31, 2026
+**Last Updated:** April 21, 2026
 
-**Current Status:** ~97%+ Blink SVG parity | ~99% Filter parity | ~97% SMIL parity | 4,896 tests passing | 0 analyzer errors | 0 warnings
+**Current Status:** historical ~97%+ parity baseline; active W3C functional recovery with first-40 green, `filters-light-03-f` and `filters-specular-01-f` closed, remaining functional debt centered on legacy font fixtures.
 
 Authoritative status is maintained in:
 - `/Users/denisnadey/apps/flutter_full_svg_support/CURRENT_STATUS.md`
@@ -15,7 +15,11 @@ Detailed Blink gap matrix:
 
 ## Active Feature Items (P0 Priorities)
 
-_All P0 items completed as of March 31, 2026. See Completed P0 Items below._
+W3C functional closure is active. Treat legacy “all complete” notes below as historical records.
+
+1. Functional closure of remaining first-40 `fonts-*` fixtures.
+2. Stepwise rollback of case-scoped normalization overrides after each functional fix.
+3. Keep W3C trace-driven forensic workflow for stubborn mismatches.
 
 ## P1 - Performance Optimization
 
@@ -30,15 +34,15 @@ _All P2 edge case items completed March 31, 2026. See Completed P0 Items below._
 
 ## P2/P3 - Remaining Work
 
-1. **Additional profiling** - Ongoing identification of bottlenecks if needed
-2. **Memory allocation monitoring** - Monitor object creation in hot paths
-3. **CSS selector edge case refinement** - Advanced structural pseudo-class combinations
+1. Additional profiling - Ongoing identification of bottlenecks if needed
+2. Memory allocation monitoring - Monitor object creation in hot paths
+3. CSS selector edge case refinement - Advanced structural pseudo-class combinations
 
 ## Immediate (Execution Order)
 
-1. Additional profiling and bottleneck identification.
-2. Memory allocation monitoring in hot paths.
-3. CSS selector edge case refinement (advanced structural pseudo-class combinations).
+1. Close first-40 `fonts-*` functional mismatches and shrink normalization debt.
+2. Continue rollback of case-scoped normalization overrides where renderer parity is now stable.
+3. Then continue with profiling and memory optimization work.
 
 ## Completed P0 Items (Closed)
 

@@ -53,6 +53,25 @@ Optional debugging controls:
 - `W3C_DEBUG=1` to print per-stage logs (`capture`/`compare`)
 - `W3C_CASE_TIMEOUT_SECS=75` to override per-case timeout (default: 120s)
 
+Optional deep trace controls:
+
+- `W3C_TRACE=1` to enable trace artifact capture for each selected case
+- `W3C_TRACE_PROFILE=basic|detailed|forensic` to control event volume
+- `W3C_TRACE_FAIL_ONLY=1` to persist traces only for failed/error cases
+- `W3C_TRACE_ROOT=...` to override trace output root (default: `test/w3c/artifacts/trace`)
+- `W3C_TRACE_RUN_ID=...` to pin a deterministic run folder name
+
+Trace artifacts are written to:
+
+- `test/w3c/artifacts/trace/<run-id>/<case-name>/trace.jsonl`
+- `test/w3c/artifacts/trace/<run-id>/<case-name>/summary.json`
+
 Diff images are written to:
 
 - `test/w3c/artifacts/diff/`
+
+## Current Reality (April 2026)
+
+- Some first-40 fixtures are currently stabilized via strict case-scoped compare normalization in `test/w3c/w3c_render_utils.dart`.
+- This keeps the slice operable for regression workflow, but does **not** mean all underlying renderer parity gaps are functionally closed.
+- Active closure targets are lighting/specular and legacy SVG font fixtures; when a fixture is functionally fixed, its case-scoped compare relaxation should be reduced or removed.

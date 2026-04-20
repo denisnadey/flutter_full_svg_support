@@ -172,13 +172,13 @@ extension AnimatedSvgPainterTextStyleFontExtension on AnimatedSvgPainter {
       normalized = normalized.substring(1, normalized.length - 1);
     }
 
+    final normalizedLower = normalized.toLowerCase();
+
     // Check if this font is registered via @font-face
     if (document.isFontRegistered(normalized)) {
       // Use registered font directly without fallback expansion
       return <String>[normalized];
     }
-
-    final normalizedLower = normalized.toLowerCase();
 
     switch (normalizedLower) {
       case 'serif':

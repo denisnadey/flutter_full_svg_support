@@ -124,8 +124,10 @@ class TurbulenceNoiseGenerator {
   bool _stitchingEnabled = false;
 
   void _initPermutation(double seed) {
+    final normalizedSeed = _normalizeSeed(seed);
+
     // Create deterministic permutation based on seed
-    final random = math.Random(seed.toInt().abs());
+    final random = math.Random(normalizedSeed);
     final p = List<int>.generate(_latticeSize, (i) => i);
 
     // Fisher-Yates shuffle with seeded random
@@ -142,6 +144,20 @@ class TurbulenceNoiseGenerator {
     // Initialize octave wrap arrays
     _octaveWrapX = List.filled(maxOctaves, _latticeSize);
     _octaveWrapY = List.filled(maxOctaves, _latticeSize);
+  }
+
+  /// Normalizes SVG seed values to match filter reference behavior.
+  ///
+  /// SVG engines normalize seed to a deterministic integer state used by the
+  /// internal RNG. This preserves expected equivalence classes such as:
+  /// `-0.8, -0.5, -0.2, 0, 0.2, 0.5, 1.5` producing the same pattern.
+  static int _normalizeSeed(double seed) {
+    final truncated = seed.toInt();
+    if (truncated <= 0) {
+      // Map non-positive seeds into positive deterministic states.
+      return (-truncated) + 1;
+    }
+    return truncated;
   }
 
   /// Sets up stitching for seamless tiling.

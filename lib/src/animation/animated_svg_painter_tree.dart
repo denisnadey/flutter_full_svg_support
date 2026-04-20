@@ -20,7 +20,6 @@ void _paintNodeImpl(
     useContext: null,
   );
 }
-
 /// Paints a node with use inheritance context for proper CSS cascade.
 /// This is the core rendering function that handles CSS property inheritance
 /// from <use> elements to their referenced content.
@@ -245,6 +244,7 @@ void _paintNodeImplWithUseContext(
           ),
           targetNodeBounds: nodeBoundsForFilterPasses,
           filterRegionClip: filterRegionClip,
+          isImageNode: true,
         );
         break;
       case 'text':
@@ -467,6 +467,120 @@ bool _paintGroupWithOpacity(
   return true;
 }
 
+bool _paintLightingPassImpl(
+  AnimatedSvgPainter painter,
+  ui.Canvas canvas,
+  SvgFilterPaintPass pass, {
+  required ui.Rect targetNodeBounds,
+  ui.Rect? filterRegionClip,
+}) {
+  final kind = switch (pass) {
+    SvgDiffuseLightingPaintPass() => 'diffuse',
+    SvgSpecularLightingPaintPass() => 'specular',
+    _ => null,
+  };
+  if (kind == null) {
+    return false;
+  }
+
+  final outputRect = filterRegionClip ?? targetNodeBounds;
+  final width = outputRect.width.round();
+  final height = outputRect.height.round();
+  if (width <= 0 || height <= 0) {
+    return false;
+  }
+
+  final filterId = switch (pass) {
+    SvgDiffuseLightingPaintPass() => pass.lightingFilter.id,
+    SvgSpecularLightingPaintPass() => pass.lightingFilter.id,
+    _ => '',
+  };
+  if (filterId.isEmpty) {
+    return false;
+  }
+
+  final key = '$filterId|${width}x${height}|$kind';
+  final image = painter.lightingImagesByFilterKey[key];
+  if (image == null) {
+    return false;
+  }
+
+  final paint = ui.Paint()..isAntiAlias = true;
+  if (pass.imageFilter != null) {
+    paint.imageFilter = pass.imageFilter;
+  }
+  if (pass.colorFilter != null) {
+    paint.colorFilter = pass.colorFilter;
+  }
+  if (pass.blendMode != null) {
+    paint.blendMode = pass.blendMode!;
+  }
+  final srcRect = ui.Rect.fromLTWH(
+    0,
+    0,
+    image.width.toDouble(),
+    image.height.toDouble(),
+  );
+  canvas.drawImageRect(image, srcRect, outputRect, paint);
+  return true;
+}
+
+bool _paintTurbulencePassImpl(
+  ui.Canvas canvas,
+  SvgTurbulencePaintPass pass, {
+  required ui.Rect targetNodeBounds,
+  ui.Rect? filterRegionClip,
+}) {
+  final outputRect = filterRegionClip ?? targetNodeBounds;
+  final width = outputRect.width.round();
+  final height = outputRect.height.round();
+  if (width <= 0 || height <= 0) {
+    return false;
+  }
+
+  final pixels = TurbulenceTileRenderer.generateTiled(
+    width: width,
+    height: height,
+    turbulence: pass.turbulenceFilter,
+  );
+  if (pixels.isEmpty) {
+    return false;
+  }
+
+  final stepX = outputRect.width / width;
+  final stepY = outputRect.height / height;
+  final paint = ui.Paint()..isAntiAlias = false;
+
+  for (int y = 0; y < height; y++) {
+    final top = outputRect.top + y * stepY;
+    for (int x = 0; x < width; x++) {
+      final idx = (y * width + x) * 4;
+      final alpha = pixels[idx + 3];
+      if (alpha == 0) {
+        continue;
+      }
+
+      paint.color = ui.Color.fromARGB(
+        alpha,
+        pixels[idx],
+        pixels[idx + 1],
+        pixels[idx + 2],
+      );
+      canvas.drawRect(
+        ui.Rect.fromLTWH(
+          outputRect.left + x * stepX,
+          top,
+          stepX + 0.01,
+          stepY + 0.01,
+        ),
+        paint,
+      );
+    }
+  }
+
+  return true;
+}
+
 List<SvgFilterPaintPass> _resolveFilterPassesImpl(
   AnimatedSvgPainter painter,
   SvgNode node,
@@ -474,6 +588,12 @@ List<SvgFilterPaintPass> _resolveFilterPassesImpl(
   final filterId = painter._getFilterId(node);
   if (filterId == null || painter.document.filters == null) {
     return const <SvgFilterPaintPass>[SvgFilterPaintPass.identity];
+  }
+
+  // For unresolved/empty filter definitions (including existing <filter>
+  // elements with zero primitives), render transparent output.
+  if (!painter.document.filters!.hasFilter(filterId)) {
+    return const <SvgFilterPaintPass>[];
   }
 
   // Sync animated attribute values from DOM nodes to filter objects
@@ -486,10 +606,39 @@ List<SvgFilterPaintPass> _resolveFilterPassesImpl(
     filterId,
     sourceContext: _buildFilterSourceContextImpl(painter, node),
   );
+  if (_isIdentityOnlyFilterPasses(passes)) {
+    final primitives = painter.document.filters!.getAllById(filterId);
+    if (primitives.length == 1 &&
+        primitives.single is SvgDisplacementMapFilter) {
+      final displacement = primitives.single as SvgDisplacementMapFilter;
+      final input2Ref = displacement.input2?.trim();
+      final hasValidInput2 =
+          input2Ref != null &&
+          input2Ref.isNotEmpty &&
+          input2Ref.toLowerCase() != 'none';
+      if (displacement.scale.abs() > 0.000001 && hasValidInput2) {
+        return <SvgFilterPaintPass>[
+          SvgDisplacementMapPaintPass(displacementFilter: displacement),
+        ];
+      }
+    }
+  }
   if (passes.isEmpty) {
     return const <SvgFilterPaintPass>[SvgFilterPaintPass.identity];
   }
   return passes;
+}
+
+bool _isIdentityOnlyFilterPasses(List<SvgFilterPaintPass> passes) {
+  if (passes.length != 1) {
+    return false;
+  }
+  final pass = passes.single;
+  return pass.runtimeType == SvgFilterPaintPass &&
+      pass.imageFilter == null &&
+      pass.colorFilter == null &&
+      pass.blendMode == null &&
+      pass.offset == ui.Offset.zero;
 }
 
 /// Syncs animated attribute values from source SvgNodes to SvgFilter objects.
@@ -879,6 +1028,7 @@ void _paintWithFilterPassesImpl(
   paint, {
   ui.Rect? targetNodeBounds,
   ui.Rect? filterRegionClip,
+  bool isImageNode = false,
 }) {
   final previousFillFlag = painter._currentPassPaintFill;
   final previousStrokeFlag = painter._currentPassPaintStroke;
@@ -898,6 +1048,33 @@ void _paintWithFilterPassesImpl(
     if (pass.offset != ui.Offset.zero) {
       canvas.translate(pass.offset.dx, pass.offset.dy);
     }
+    if (pass is SvgDisplacementMapPaintPass && targetNodeBounds != null) {
+      final painted = _paintDisplacementPassImpl(
+        painter,
+        canvas,
+        pass,
+        targetNodeBounds: targetNodeBounds,
+        filterRegionClip: filterRegionClip,
+      );
+      if (!painted && pass.textureHref == null && pass.mapHref == null) {
+        paint(pass.imageFilter, pass.colorFilter, pass.blendMode);
+      }
+      canvas.restore();
+      continue;
+    }
+    if (pass is SvgTurbulencePaintPass && targetNodeBounds != null) {
+      final painted = _paintTurbulencePassImpl(
+        canvas,
+        pass,
+        targetNodeBounds: targetNodeBounds,
+        filterRegionClip: filterRegionClip,
+      );
+      if (!painted) {
+        paint(pass.imageFilter, pass.colorFilter, pass.blendMode);
+      }
+      canvas.restore();
+      continue;
+    }
     if (pass is SvgFeImagePaintPass) {
       _paintFeImagePassImpl(
         painter,
@@ -905,6 +1082,23 @@ void _paintWithFilterPassesImpl(
         pass,
         targetNodeBounds: targetNodeBounds,
       );
+      canvas.restore();
+      continue;
+    }
+    if ((pass is SvgDiffuseLightingPaintPass ||
+            pass is SvgSpecularLightingPaintPass) &&
+      targetNodeBounds != null &&
+      !isImageNode) {
+      final painted = _paintLightingPassImpl(
+        painter,
+        canvas,
+        pass,
+        targetNodeBounds: targetNodeBounds,
+        filterRegionClip: filterRegionClip,
+      );
+      if (!painted) {
+        paint(pass.imageFilter, pass.colorFilter, pass.blendMode);
+      }
       canvas.restore();
       continue;
     }
@@ -916,6 +1110,50 @@ void _paintWithFilterPassesImpl(
   painter._currentPassFillColorOverride = previousFillOverride;
   painter._currentPassStrokeColorOverride = previousStrokeOverride;
   painter._currentFilterPass = previousFilterPass;
+}
+
+bool _paintDisplacementPassImpl(
+  AnimatedSvgPainter painter,
+  ui.Canvas canvas,
+  SvgDisplacementMapPaintPass pass, {
+  required ui.Rect targetNodeBounds,
+  ui.Rect? filterRegionClip,
+}) {
+  final useFilterRegionRect =
+      filterRegionClip != null && pass.textureHref == null && pass.mapHref == null;
+  final outputRect = useFilterRegionRect ? filterRegionClip : targetNodeBounds;
+  final width = outputRect.width.round();
+  final height = outputRect.height.round();
+  if (width <= 0 || height <= 0) {
+    return false;
+  }
+
+  final key = '${pass.displacementFilter.id}|${width}x${height}';
+  final image = painter.displacementImagesByFilterKey[key];
+  if (image == null) {
+    return false;
+  }
+
+  final srcRect = ui.Rect.fromLTWH(
+    0,
+    0,
+    image.width.toDouble(),
+    image.height.toDouble(),
+  );
+
+  final paint = ui.Paint();
+  if (pass.imageFilter != null) {
+    paint.imageFilter = pass.imageFilter;
+  }
+  if (pass.colorFilter != null) {
+    paint.colorFilter = pass.colorFilter;
+  }
+  if (pass.blendMode != null) {
+    paint.blendMode = pass.blendMode!;
+  }
+
+  canvas.drawImageRect(image, srcRect, outputRect, paint);
+  return true;
 }
 
 void _paintFeImagePassImpl(
@@ -1215,6 +1453,7 @@ void _paintNodeContentWithinMask(
             blendMode: blendMode,
           ),
           targetNodeBounds: nodeBoundsForFilterPasses,
+          isImageNode: true,
         );
         break;
       case 'circle':

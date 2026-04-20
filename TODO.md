@@ -1,22 +1,28 @@
 # TODO - Animation Work Queue
 
-**Last Updated:** March 31, 2026  
+**Last Updated:** April 21, 2026  
 **Status Source:** `/Users/denisnadey/apps/flutter_full_svg_support/CURRENT_STATUS.md`  
 **Closed Issues Registry:** `/Users/denisnadey/apps/flutter_full_svg_support/docs/RESOLVED_ISSUES.md`
 
-**Current Status:** ~97%+ Blink parity | ~99% Text parity | ~99% Filter parity | ~97% SMIL parity | 4,896 tests passing | 0 analyzer errors | 0 warnings
+**Current Status:** ~97%+ historical parity baseline; active W3C recovery with first-40 green, lighting/specular closure landed, and remaining open functional gaps concentrated in legacy font fixtures.
 
 This file tracks actionable implementation tasks.
 For factual project status, use `CURRENT_STATUS.md` only.
 
-## Current Sprint (P2 - Active)
+## Current Sprint (P0 - Active)
 
-_Sprint complete as of March 31, 2026. No active items._
+**W3C functional parity closure (April 2026)**
 
-Next sprint candidates:
-- [ ] **Additional profiling** - Ongoing identification of bottlenecks
-- [ ] **Memory allocation monitoring** - Monitor object creation in hot paths
-- [ ] **CSS selector edge case refinement** - Advanced structural pseudo-class combinations
+- [x] Close `filters-light-03-f` functionally (renderer behavior) and reduce temporary compare inflation.
+- [x] Close `filters-specular-01-f` functionally (renderer behavior) and reduce temporary compare inflation.
+- [ ] Close first-40 legacy `fonts-*` functional mismatches (not by global threshold tuning).
+- [ ] Reduce/rollback case-scoped compare overrides in `test/w3c/w3c_render_utils.dart` as each fixture becomes functionally correct.
+- [ ] Keep `W3C_TRACE` forensic workflow as mandatory diagnostics for stubborn fixtures.
+
+Next sprint candidates (after functional closure):
+- [ ] Additional profiling - Ongoing identification of bottlenecks
+- [ ] Memory allocation monitoring - Monitor object creation in hot paths
+- [ ] CSS selector edge case refinement - Advanced structural pseudo-class combinations
 
 ## Completed Recently (March 2026)
 

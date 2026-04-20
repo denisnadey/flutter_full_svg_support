@@ -82,6 +82,8 @@ class AnimatedSvgPainter extends CustomPainter {
     this.backgroundColor,
     this.imagesByHref = const <String, ui.Image>{},
     this.convolvedImagesByFilterKey = const <String, ui.Image>{},
+    this.lightingImagesByFilterKey = const <String, ui.Image>{},
+    this.displacementImagesByFilterKey = const <String, ui.Image>{},
     this.animationTime,
     this.hasAnimations = false,
     _RenderCache? renderCache,
@@ -98,6 +100,12 @@ class AnimatedSvgPainter extends CustomPainter {
 
   /// Precomputed convolution outputs keyed by `<href>|<filterId>`.
   final Map<String, ui.Image> convolvedImagesByFilterKey;
+
+  /// Precomputed lighting outputs keyed by `<href>|<filterId>|<size>|<kind>`.
+  final Map<String, ui.Image> lightingImagesByFilterKey;
+
+  /// Precomputed displacement outputs keyed by `<filterId>|<size>`.
+  final Map<String, ui.Image> displacementImagesByFilterKey;
 
   /// Current animation time in seconds (for cache invalidation).
   final double? animationTime;
@@ -233,6 +241,42 @@ class AnimatedSvgPainter extends CustomPainter {
   /// Рисует узел и его детей
   void _paintNode(ui.Canvas canvas, SvgNode node, {Set<String>? useStack}) {
     _paintNodeImpl(this, canvas, node, useStack: useStack);
+  }
+
+  /// Measures node bounds in current SVG user units.
+  ui.Rect measureNodeBounds(SvgNode node) {
+    return _getNodeBounds(node);
+  }
+
+  /// Paints a node subtree to the provided canvas.
+  ///
+  /// When [ignoreFilter] is true, the node-level `filter` attribute is
+  /// temporarily disabled so callers can capture SourceGraphic content.
+  void paintNodeForRaster(
+    ui.Canvas canvas,
+    SvgNode node, {
+    bool ignoreFilter = false,
+  }) {
+    final originalFilter = ignoreFilter
+        ? node.getRawAttributeValue('filter')
+        : null;
+    final shouldDisableFilter =
+        originalFilter != null && originalFilter.trim().isNotEmpty;
+    if (shouldDisableFilter) {
+      node.setAttribute('filter', 'none', rawValue: 'none');
+    }
+
+    try {
+      _paintNode(canvas, node);
+    } finally {
+      if (shouldDisableFilter) {
+        node.setAttribute(
+          'filter',
+          originalFilter,
+          rawValue: originalFilter,
+        );
+      }
+    }
   }
 
   @override

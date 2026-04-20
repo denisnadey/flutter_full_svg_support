@@ -127,24 +127,56 @@ extension SvgFiltersPipelinePrimitiveEffectsExtension on SvgFilters {
     final zeroScale = displacement.scale.abs() <= 0.000001;
     final input2Ref = displacement.input2?.trim();
     final input2IsNone = _isNoneInputReference(input2Ref);
-    if (!zeroScale &&
-        input2Ref != null &&
-        input2Ref.isNotEmpty &&
-        !input2IsNone) {
-      final input2 = _resolvePrimitiveInput(
-        requestedInput: input2Ref,
-        previous: previous,
-        namedResults: namedResults,
-        sourceGraphic: sourceGraphic,
-        sourceAlpha: sourceAlpha,
-      );
-      // If explicit in2 cannot be resolved, this primitive produces no output
-      // instead of inheriting previous output.
-      return input2.isEmpty ? const <SvgFilterPaintPass>[] : input;
+    if (zeroScale) {
+      // scale=0 is identity displacement and does not require map input.
+      return input;
     }
 
-    // scale=0 is identity displacement and does not require map input.
-    return input;
+    if (input2Ref == null || input2Ref.isEmpty || input2IsNone) {
+      // Invalid/missing in2 for non-zero scale produces no output.
+      return const <SvgFilterPaintPass>[];
+    }
+
+    final input2 = _resolvePrimitiveInput(
+      requestedInput: input2Ref,
+      previous: previous,
+      namedResults: namedResults,
+      sourceGraphic: sourceGraphic,
+      sourceAlpha: sourceAlpha,
+    );
+    if (input2.isEmpty) {
+      // If explicit in2 cannot be resolved, this primitive produces no output.
+      return const <SvgFilterPaintPass>[];
+    }
+
+    String? mapHref;
+    for (final pass in input2) {
+      if (pass is SvgFeImagePaintPass) {
+        final href = pass.feImageFilter.href?.trim();
+        if (href != null && href.isNotEmpty) {
+          mapHref = href;
+          break;
+        }
+      }
+    }
+
+    return input
+        .map(
+          (pass) => SvgDisplacementMapPaintPass(
+            imageFilter: pass.imageFilter,
+            colorFilter: pass.colorFilter,
+            blendMode: pass.blendMode,
+            offset: pass.offset,
+            paintFill: pass.paintFill,
+            paintStroke: pass.paintStroke,
+            displacementFilter: displacement,
+            textureHref: pass is SvgFeImagePaintPass
+                ? pass.feImageFilter.href?.trim()
+                : null,
+            mapHref: mapHref,
+          ),
+        )
+        .toList(growable: false);
   }
 
   List<SvgFilterPaintPass> _resolveImagePrimitiveOutput({

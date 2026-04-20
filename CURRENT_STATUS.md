@@ -1,6 +1,6 @@
 # Current Development Status
 
-**Last Updated:** March 31, 2026  
+**Last Updated:** April 21, 2026  
 **Authority:** This file is the single source of truth for current project state.
 
 ## Snapshot
@@ -9,9 +9,17 @@
 - Flutter SDK: `3.38.1` (via `.fvm/versions/3.38.1/bin/flutter`)
 - Dart SDK: `^3.8.0`
 - Version: `2.2.2`
-- **Blink SVG Parity:** ~97%+
+- **Blink SVG Parity:** ~97%+ (historical estimate)
 
-## Verified Health (March 31, 2026)
+## Reality Check (April 2026)
+
+- W3C static suite work is active again.
+- `W3C_LIMIT=40` can be made green with strict case-scoped compare normalization in `test/w3c/w3c_render_utils.dart`.
+- `filters-light-03-f` and `filters-specular-01-f` are now functionally closed in the current renderer pass.
+- Functional parity gaps remain in legacy SVG font fixtures.
+- The immediate priority is reducing normalization debt by fixing renderer behavior, not expanding threshold relaxations.
+
+## Verified Health (Historical Baseline, March 31, 2026)
 
 Commands run in `/Users/denisnadey/apps/flutter_full_svg_support`:
 
@@ -26,12 +34,17 @@ Result:
 
 ## In-Progress Work
 
-No active work items. All sprints complete.
+Active track: **W3C functional parity recovery (April 2026)**
 
-Next sprint candidates (P2/P3):
-1. **Additional profiling** - Ongoing identification of bottlenecks if needed
-2. **Memory allocation monitoring** - Monitor object creation in hot paths
-3. **CSS selector edge case refinement** - Advanced structural pseudo-class combinations
+Current priorities:
+1. **Functional closure of legacy font fixtures** in the first-40 slice (SVG 1.1 font semantics and glyph metrics parity).
+2. **Normalization debt reduction** by rolling back case-scoped overrides once functional fixes land.
+3. **Verification hardening**: keep W3C trace artifacts for stubborn fixture triage and regression root-causeing.
+
+Secondary priorities:
+1. Additional profiling and bottleneck identification.
+2. Memory allocation monitoring in hot render paths.
+3. CSS selector edge-case refinement.
 
 ## Documentation Cleanup (March 16, 2026)
 

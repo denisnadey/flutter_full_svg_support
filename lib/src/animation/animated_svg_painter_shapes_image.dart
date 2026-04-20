@@ -170,11 +170,21 @@ extension AnimatedSvgPainterShapesImageExtension on AnimatedSvgPainter {
         image.height.toDouble();
 
     final activePass = _currentFilterPass;
-    if (filterId != null && activePass is SvgConvolveMatrixPaintPass) {
+    if (filterId != null) {
       final targetWidth = width.round();
       final targetHeight = height.round();
-      final convolvedKey = '$href|$filterId|${targetWidth}x${targetHeight}';
-      image = convolvedImagesByFilterKey[convolvedKey] ?? image;
+      if (activePass is SvgConvolveMatrixPaintPass) {
+        final convolvedKey = '$href|$filterId|${targetWidth}x${targetHeight}';
+        image = convolvedImagesByFilterKey[convolvedKey] ?? image;
+      } else if (activePass is SvgDiffuseLightingPaintPass ||
+          activePass is SvgSpecularLightingPaintPass) {
+        final variantKind = activePass is SvgDiffuseLightingPaintPass
+            ? 'diffuse'
+            : 'specular';
+        final lightingKey =
+            '$href|$filterId|${targetWidth}x${targetHeight}|$variantKind';
+        image = lightingImagesByFilterKey[lightingKey] ?? image;
+      }
     }
 
     // Edge case: zero-size image - per SVG spec, disable rendering
