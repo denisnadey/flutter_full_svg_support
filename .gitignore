@@ -19,7 +19,7 @@ pubspec.lock
 # === FVM ===
 .fvm/
 
-W3C_SVG_11_TestSuite/
+
 # === Example app ===
 example/.dart_tool/
 example/build/
