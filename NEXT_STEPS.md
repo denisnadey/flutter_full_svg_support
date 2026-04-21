@@ -20,6 +20,10 @@ Active W3C execution plan (Chromium-driven, diff-measured thresholds):
 
 - `/Users/denisnadey/apps/flutter_full_svg_support/docs/W3C_GAP_CLOSURE_PLAN.md`
 
+Release gate checklist:
+
+- `/Users/denisnadey/apps/flutter_full_svg_support/RELEASE_CHECKLIST.md`
+
 ## Active Feature Items (P0 Priorities)
 
 W3C functional closure is active. Treat legacy “all complete” notes below as historical records.

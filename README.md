@@ -301,6 +301,7 @@ See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for development guidelines, testi
 | [ROADMAP.md](ROADMAP.md) | Living roadmap with priorities and milestones |
 | [NEXT_STEPS.md](NEXT_STEPS.md) | P0/P1/P2 priorities and execution order |
 | [TODO.md](TODO.md) | Active work queue (P0-P4 items) |
+| [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md) | Release gate checklist with current baseline and blockers |
 | [ANIMATION.md](ANIMATION.md) | SMIL/CSS animation usage guide with examples |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Dual pipeline design rationale |
 | [docs/BLINK_PARITY_AUDIT.md](docs/BLINK_PARITY_AUDIT.md) | Gap matrix vs Blink SVG features |

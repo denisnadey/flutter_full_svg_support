@@ -31,6 +31,7 @@ For the full gap matrix see [BLINK_PARITY_AUDIT.md](BLINK_PARITY_AUDIT.md).
 - **[CURRENT_STATUS.md](../CURRENT_STATUS.md)** - Single source of truth for project state
 - **[BLINK_PARITY_AUDIT.md](BLINK_PARITY_AUDIT.md)** - Gap matrix vs Blink (81 tags baseline, 25 FE primitives)
 - **[W3C_GAP_CLOSURE_PLAN.md](W3C_GAP_CLOSURE_PLAN.md)** - Active Chromium-driven W3C closure plan with priority waves and threshold policy
+- **[RELEASE_CHECKLIST.md](../RELEASE_CHECKLIST.md)** - Release gates, baseline, and publication blockers
 - **[RESOLVED_ISSUES.md](RESOLVED_ISSUES.md)** - Closed bugs/milestones (do-not-reopen registry)
 - **[DOCUMENTATION_INDEX.md](../DOCUMENTATION_INDEX.md)** - Central navigation hub
 
@@ -87,6 +88,9 @@ Historical implementation documents (Stages 1-8):
 **Close W3C gaps fast**
 → [W3C_GAP_CLOSURE_PLAN.md](W3C_GAP_CLOSURE_PLAN.md) (Chromium-guided functional closure + measured threshold reduction)
 
+**Check release readiness**
+→ [RELEASE_CHECKLIST.md](../RELEASE_CHECKLIST.md)
+
 **Run the example app**
 ```bash
 cd example && ../.fvm/flutter_sdk/bin/flutter run
@@ -107,6 +111,7 @@ flutter_svg/
 ├── CURRENT_STATUS.md                  # Single source of truth for project state
 ├── TODO.md                            # Active work queue
 ├── NEXT_STEPS.md                      # Execution order (P0 priorities)
+├── RELEASE_CHECKLIST.md               # Release readiness gates
 ├── ROADMAP.md                         # Living roadmap with milestones
 ├── DOCUMENTATION_INDEX.md             # Central navigation hub
 ├── VISUAL_TESTING_GUIDELINES.md       # Testing patterns

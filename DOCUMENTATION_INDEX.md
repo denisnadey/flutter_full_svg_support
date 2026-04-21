@@ -10,6 +10,7 @@ This is the central navigation page for project docs.
 2. [TODO.md](TODO.md) - active work queue
 3. [NEXT_STEPS.md](NEXT_STEPS.md) - execution order
 4. [docs/RESOLVED_ISSUES.md](docs/RESOLVED_ISSUES.md) - closed bugs and closed milestones
+5. [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md) - release readiness gates and current blockers
 
 ## Developer Docs
 
@@ -24,6 +25,7 @@ This is the central navigation page for project docs.
 - [README.md](README.md) - package usage
 - [ANIMATION.md](ANIMATION.md) - animation usage guide
 - [CHANGELOG.md](CHANGELOG.md) - release history
+- [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md) - release gate checklist
 
 ## Planning Docs (Current)
 
@@ -32,6 +34,7 @@ This is the central navigation page for project docs.
 - [NEXT_STEPS.md](NEXT_STEPS.md)
 - [ROADMAP.md](ROADMAP.md)
 - [ROADMAP_VISUAL.md](ROADMAP_VISUAL.md)
+- [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md)
 - [docs/W3C_GAP_CLOSURE_PLAN.md](docs/W3C_GAP_CLOSURE_PLAN.md)
 - [docs/RESOLVED_ISSUES.md](docs/RESOLVED_ISSUES.md)
 

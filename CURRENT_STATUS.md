@@ -487,6 +487,7 @@ To avoid drift:
 - Current factual status lives only here.
 - Planning lives in `NEXT_STEPS.md` and `TODO.md`.
 - W3C tactical closure plan lives in `docs/W3C_GAP_CLOSURE_PLAN.md`.
+- Release readiness gate lives in `RELEASE_CHECKLIST.md`.
 - Closed bugs and closed milestones are tracked in `docs/RESOLVED_ISSUES.md`.
 
 ## Next Execution Plan
