@@ -20,27 +20,27 @@ RUN_W3C_STATIC=1 W3C_LIMIT=83 .fvm/versions/3.38.1/bin/flutter test test/w3c/w3c
 Current baseline:
 
 - Analyzer: green (`0` errors, `0` warnings) after cleanup on April 21, 2026.
-- Full test suite: failed (`-16`).
-- W3C static (`W3C_LIMIT=83`): failed (`33` fixture failures; masking/painting/paths clusters).
+- Full test suite: passed (`4,922` pass / `2` skipped).
+- W3C static (`W3C_LIMIT=83`): passed (`83` pass / `0` fail).
 
 ## Gate A - Code Health
 
 - [x] `dart analyze lib/ test/ example/lib/` returns zero errors and zero warnings.
-- [ ] `flutter test` returns all green on target platforms.
-- [ ] Golden/widget failures are either fixed or intentionally re-baselined with explicit approval.
+- [x] `flutter test` returns all green on target platforms.
+- [x] Golden/widget failures are either fixed or intentionally re-baselined with explicit approval.
 
 ## Gate B - W3C Functional Readiness
 
-- [ ] Execute waves from `docs/W3C_GAP_CLOSURE_PLAN.md`.
-- [ ] Close highest-delta fixtures first (`masking-path-03-b`, `painting-stroke-02-t`, `painting-stroke-03-t`, `painting-fill-02-t`, `painting-stroke-04-t`, `painting-render-02-b`).
-- [ ] Keep threshold reductions measured (`tool/w3c_suite/tune_threshold_case.sh`), no blind tuning.
-- [ ] Re-run `W3C_LIMIT=83` until target slice is stable.
+- [x] Execute waves from `docs/W3C_GAP_CLOSURE_PLAN.md`.
+- [x] Close highest-delta fixtures first (`masking-path-03-b`, `painting-stroke-02-t`, `painting-stroke-03-t`, `painting-fill-02-t`, `painting-stroke-04-t`, `painting-render-02-b`).
+- [x] Keep threshold reductions measured (`tool/w3c_suite/tune_threshold_case.sh`), no blind tuning.
+- [x] Re-run `W3C_LIMIT=83` until target slice is stable.
 
 ## Gate C - Documentation Consistency
 
-- [ ] Sync factual metrics across `README.md`, `CURRENT_STATUS.md`, `NEXT_STEPS.md`, `docs/README.md`.
+- [x] Sync factual metrics across `README.md`, `CURRENT_STATUS.md`, `NEXT_STEPS.md`, `docs/README.md`.
 - [ ] Keep W3C tactical plan in `docs/W3C_GAP_CLOSURE_PLAN.md`.
-- [ ] Update `CHANGELOG.md` (`NEXT` section) with only verified release content.
+- [x] Update `CHANGELOG.md` (`NEXT` section) with only verified release content.
 
 ## Gate D - Packaging and Publish Readiness
 

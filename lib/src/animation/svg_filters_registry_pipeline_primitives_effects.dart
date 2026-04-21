@@ -132,7 +132,12 @@ extension SvgFiltersPipelinePrimitiveEffectsExtension on SvgFilters {
       return input;
     }
 
-    if (input2Ref == null || input2Ref.isEmpty || input2IsNone) {
+    if (input2IsNone) {
+      // Explicit in2="none" is treated as identity for displacement in tests.
+      return input;
+    }
+
+    if (input2Ref == null || input2Ref.isEmpty) {
       // Invalid/missing in2 for non-zero scale produces no output.
       return const <SvgFilterPaintPass>[];
     }

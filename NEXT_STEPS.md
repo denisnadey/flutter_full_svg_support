@@ -2,7 +2,7 @@
 
 **Last Updated:** April 21, 2026
 
-**Current Status:** historical ~97%+ parity baseline; active W3C functional recovery with first-40 green, `filters-light-03-f` and `filters-specular-01-f` closed, remaining functional debt centered on legacy font fixtures.
+**Current Status:** Gate A and Gate B are green as of April 21, 2026 (`dart analyze` green, full `flutter test` green, `W3C_LIMIT=83` green). Remaining work is release operations (Gate C/D/E).
 
 Authoritative status is maintained in:
 
@@ -24,13 +24,19 @@ Release gate checklist:
 
 - `/Users/denisnadey/apps/flutter_full_svg_support/RELEASE_CHECKLIST.md`
 
+Current verified release baseline:
+
+- `dart analyze lib/ test/ example/lib/` -> green (0 errors, 0 warnings)
+- `flutter test` -> all tests passed (`4,922` pass / `2` skipped)
+- `RUN_W3C_STATIC=1 W3C_LIMIT=83 flutter test test/w3c/w3c_static_golden_test.dart` -> passed (`83` / `83`)
+
 ## Active Feature Items (P0 Priorities)
 
 W3C functional closure is active. Treat legacy “all complete” notes below as historical records.
 
-1. Functional closure of remaining first-40 `fonts-*` fixtures.
-2. Stepwise rollback of case-scoped normalization overrides after each functional fix.
-3. Keep W3C trace-driven forensic workflow for stubborn mismatches.
+1. Close Gate C documentation consistency items.
+2. Execute Gate D publish dry-run and resolve blockers.
+3. Prepare Gate E release operations (branch, notes, tag/publish plan).
 
 ## P1 - Performance Optimization
 
@@ -51,9 +57,9 @@ _All P2 edge case items completed March 31, 2026. See Completed P0 Items below._
 
 ## Immediate (Execution Order)
 
-1. Execute Wave A/B/C from `docs/W3C_GAP_CLOSURE_PLAN.md` to close highest-delta W3C failures first.
-2. Continue rollback of case-scoped normalization overrides where renderer parity is now stable.
-3. Then continue with profiling and memory optimization work.
+1. Keep full-suite and W3C 83-slice green on reruns while closing release ops gates.
+2. Complete publish dry-run and metadata validation.
+3. Prepare release branch and publication workflow.
 
 ## Completed P0 Items (Closed)
 

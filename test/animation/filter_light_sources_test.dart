@@ -322,8 +322,8 @@ void main() {
 
       expect(azimuthAnim, isNotEmpty);
       expect(elevAnim, isNotEmpty);
-      expect(azimuthAnim.first.from, '0');
-      expect(azimuthAnim.first.to, '360');
+      expect(azimuthAnim.first.from, 0.0);
+      expect(azimuthAnim.first.to, 360.0);
     });
 
     test('fePointLight x, y, z are animatable', () {

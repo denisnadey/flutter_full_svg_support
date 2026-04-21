@@ -693,8 +693,8 @@ void main() {
       // Should find the azimuth animation
       final azimuthAnim = animations.where((a) => a.attributeName == 'azimuth');
       expect(azimuthAnim, isNotEmpty);
-      expect(azimuthAnim.first.from, equals('0'));
-      expect(azimuthAnim.first.to, equals('360'));
+      expect(azimuthAnim.first.from, equals(0.0));
+      expect(azimuthAnim.first.to, equals(360.0));
     });
 
     test('parses elevation animation on feDistantLight', () {

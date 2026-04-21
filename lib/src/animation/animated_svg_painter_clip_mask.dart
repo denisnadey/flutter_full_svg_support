@@ -34,6 +34,8 @@ extension AnimatedSvgPainterClipMaskExtension on AnimatedSvgPainter {
       useStack: useStack,
     );
     if (clipPath == null || _isZeroAreaClipPath(clipPath)) {
+      // A valid clipPath reference with empty geometry clips out all content.
+      canvas.clipPath(ui.Path(), doAntiAlias: false);
       return;
     }
 
@@ -73,6 +75,9 @@ extension AnimatedSvgPainterClipMaskExtension on AnimatedSvgPainter {
       useStack: useStack,
     );
     if (maskPath == null) {
+      // A resolved mask with empty geometry makes the target fully transparent.
+      // Keep rendering semantics by clipping to an empty path.
+      canvas.clipPath(ui.Path(), doAntiAlias: false);
       return;
     }
 

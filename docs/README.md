@@ -2,18 +2,24 @@
 
 Organized documentation for package users and contributors.
 
-**Last Updated:** March 27, 2026
+**Last Updated:** April 21, 2026
 
-**Current State:** ~74% Blink SVG parity | 3099+ tests | 0 analyzer warnings | 115+ source files in animated pipeline
+**Current State:** Release gate baseline (April 21, 2026): analyzer green, full `flutter test` passing (`4,922` pass / `2` skipped), W3C 83-slice passing (`83/83`).
 
-## Parity Overview
+## Release Baseline (April 21, 2026)
+
+- `dart analyze lib/ test/ example/lib/` -> 0 errors, 0 warnings
+- `.fvm/versions/3.38.1/bin/flutter test` -> all tests passed (`4,922` pass / `2` skipped)
+- `RUN_W3C_STATIC=1 W3C_LIMIT=83 .fvm/versions/3.38.1/bin/flutter test test/w3c/w3c_static_golden_test.dart` -> 83 pass / 0 fail
+
+## Historical Parity Overview (March 2026 Snapshot)
 
 The animated pipeline (`AnimatedSvgPicture`) implements a custom DOM-based renderer with:
 - **Strongest areas** (~85-95%): Geometry (all 8 shapes + paint servers), SMIL animation (5 elements, full timing), CSS interop (selectors, cascade, variables, 3D transforms)
 - **Solid coverage** (~70-80%): Interaction/events, accessibility, structural elements, text/typography, clipping/masking
 - **Active gaps** (~60-68%): Filter effects (17/25 primitives, advanced graph semantics pending), external content
 
-**7 P0 priorities remain**: advanced filter graph, typography edge cases, complex clipping/masking, use/symbol inheritance, light sources, component transfer functions.
+Historical note (March 2026 snapshot): **7 P0 priorities remained** at that time (advanced filter graph, typography edge cases, complex clipping/masking, use/symbol inheritance, light sources, component transfer functions).
 
 For the full gap matrix see [BLINK_PARITY_AUDIT.md](BLINK_PARITY_AUDIT.md).
 
@@ -83,7 +89,7 @@ Historical implementation documents (Stages 1-8):
 → [BLINK_PARITY_AUDIT.md](BLINK_PARITY_AUDIT.md) (81 tags, 25 FE primitives baseline)
 
 **See what's next**
-→ [NEXT_STEPS.md](../NEXT_STEPS.md) (7 P0 priorities: filters, text, clipping, masking, use/symbol, lighting)
+→ [NEXT_STEPS.md](../NEXT_STEPS.md) (release-gate queue + Wave A/B/C execution order)
 
 **Close W3C gaps fast**
 → [W3C_GAP_CLOSURE_PLAN.md](W3C_GAP_CLOSURE_PLAN.md) (Chromium-guided functional closure + measured threshold reduction)
@@ -105,7 +111,7 @@ cd example && ../.fvm/flutter_sdk/bin/flutter run
 
 ```
 flutter_svg/
-├── README.md                          # Package overview (~74% Blink parity)
+├── README.md                          # Package overview + release baseline
 ├── ANIMATION.md                       # User guide (SMIL & CSS)
 ├── ARCHITECTURE.md                    # Dual pipeline design rationale
 ├── CURRENT_STATUS.md                  # Single source of truth for project state

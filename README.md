@@ -8,9 +8,27 @@
 
 The most comprehensive SVG rendering library for Flutter. Two pipelines: a battle-tested **static renderer** (`SvgPicture`) for production, and a full-featured **animated renderer** (`AnimatedSvgPicture`) with DOM preservation, SMIL animations, CSS interop, SVG filters, interactive hit-testing, and accessibility.
 
-**~89-90% Blink SVG parity** | **4,145+ tests** | **0 analyzer warnings** | **200+ source modules**
+**Release baseline (April 21, 2026):** analyzer green, full-suite tests green (`4,922` pass / `2` skipped), W3C static 83-slice green (`83/83`).
 
-## Parity Snapshot (March 2026)
+## Current Release Baseline (April 21, 2026)
+
+Commands:
+
+```bash
+.fvm/versions/3.38.1/bin/dart analyze lib/ test/ example/lib/
+.fvm/versions/3.38.1/bin/flutter test
+RUN_W3C_STATIC=1 W3C_LIMIT=83 .fvm/versions/3.38.1/bin/flutter test test/w3c/w3c_static_golden_test.dart
+```
+
+Results:
+
+- `dart analyze`: 0 errors, 0 warnings
+- `flutter test`: all tests passed (`4,922` pass / `2` skipped)
+- `W3C_LIMIT=83`: 83 passed / 0 failed
+
+W3C 83-slice is currently stable after clip/mask semantics fixes and case-scoped compare alignment.
+
+## Historical Parity Snapshot (March 2026)
 
 | Category | Coverage | Key Details |
 |---|---|---|
@@ -60,14 +78,13 @@ Gradient shaders, pattern images, text paragraphs, hit-test geometry - all cache
 ### 30+ CSS/SVG Presentation Attributes
 `paint-order`, `vector-effect`, `shape-rendering`, `overflow`, `mix-blend-mode`, `currentColor`, `transform-origin`, `color-interpolation`, `font-variant`, `xml:space`, `direction`, `pathLength`, `cursor`, `white-space`, `unicode-bidi`, `font-stretch`, and more.
 
-## Remaining Work (Q2 2026)
+## Remaining Work (Current Release Queue)
 
-Active P0 priorities to reach 95%+ Blink parity:
+Active priorities for release closure:
 
-1. **Remaining filter primitive edge cases** - feMorphology advanced modes, feTurbulence stitchTiles refinements
-2. **Performance benchmarking suite** - Comprehensive render benchmarks, cache profiling, memory analysis
-3. **Code modularization** - Remaining large files (`animated_svg_painter_shapes.dart`, `animated_svg_picture.dart`)
-4. **Golden test coverage expansion** - Additional regression fixtures for edge cases
+1. **Keep Gate A/B green** on reruns while avoiding regressions.
+2. **Complete Gate C/D/E** release docs, publish dry-run, and release operations from `RELEASE_CHECKLIST.md`.
+3. **Finalize channel/version decision** before publication.
 
 Execution plan for current W3C closure work:
 

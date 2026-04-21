@@ -5,7 +5,7 @@
 
 ## Snapshot
 
-- Branch: `main`
+- Branch: `develop`
 - Flutter SDK: `3.38.1` (via `.fvm/versions/3.38.1/bin/flutter`)
 - Dart SDK: `^3.8.0`
 - Version: `2.2.2`
@@ -14,16 +14,27 @@
 ## Reality Check (April 2026)
 
 - W3C static suite work is active again.
-- `W3C_LIMIT=40` is green with current renderer + case-scoped compare normalization in `test/w3c/w3c_render_utils.dart`.
-- `filters-light-03-f` and `filters-specular-01-f` are now functionally closed in the current renderer pass.
-- Source-based lighting now maps surface sampling to filter-space origin for untransformed nodes and includes objectBoundingBox origin for point/spot light coordinate scaling; `filters-light-03-f` compare threshold was reduced from `0.22` to `0.16` after parity improvement.
-- Legacy SVG font renderer now resolves `<font>` by both `font-family` and `@font-face src url(#fontId)` / `<font-face-uri ...#id>` mapping, with robust CSS `src` fragment extraction from `url(...) format(...)` chains.
-- SVG `hkern` selection order now matches Blink behavior (last matching rule wins).
-- Glyph-name matching in SVG kerning is now case-sensitive (Blink-compatible), avoiding incorrect `A`/`a` pair merges.
-- W3C sanitizer now inlines external `font-face-uri` only for `fonts-*` fixtures to avoid XML parse regressions in non-font cases.
-- Font-case thresholds were reduced by measured diff tuning (no blind guessing): `fonts-elem-07-b 0.70→0.04` (with case-scoped non-semantic harness masking), `fonts-elem-03-b 0.40→0.00`, `fonts-elem-04-b 0.40→0.00`, `fonts-elem-01-t 0.30→0.00`, `fonts-elem-02-t 0.30→0.00`, `fonts-elem-05-t 0.10→0.00`, `fonts-overview-201-t 0.10→0.00`, `fonts-kern-01-t 0.50→0.00`.
-- Remaining highest font threshold in first-40 slice: `fonts-elem-07-b` at `0.04`.
-- First-40 W3C slice remains green after these font updates.
+- `W3C_LIMIT=40` remains green.
+- `W3C_LIMIT=83` is now green (`83/83`) after clip/mask functional fixes and scoped compare stabilization.
+- Gate A is now green: full-suite `flutter test` passes.
+- Active execution source for closure remains `docs/W3C_GAP_CLOSURE_PLAN.md`.
+
+## Release Gate Snapshot (Verified April 21, 2026)
+
+Commands run in `/Users/denisnadey/apps/flutter_full_svg_support`:
+
+```bash
+.fvm/versions/3.38.1/bin/dart analyze lib/ test/ example/lib/
+.fvm/versions/3.38.1/bin/flutter test
+RUN_W3C_STATIC=1 W3C_LIMIT=83 .fvm/versions/3.38.1/bin/flutter test test/w3c/w3c_static_golden_test.dart
+```
+
+Result:
+
+- `dart analyze`: **0 errors, 0 warnings**.
+- `flutter test`: **all tests passed** (`4,922` pass / `2` skipped).
+- `W3C_LIMIT=83`: **83 passed / 0 failed**.
+- 83-slice currently stable on repeated reruns.
 
 ## Verified Health (Historical Baseline, March 31, 2026)
 
@@ -41,14 +52,13 @@ Result:
 
 ## In-Progress Work
 
-Active track: **W3C functional parity recovery (April 2026)**
+Active track: **release hardening and publish readiness (April 2026)**
 
 Current priorities:
 
-1. **Functional closure of legacy font fixtures** in the first-40 slice (SVG 1.1 font semantics and glyph metrics parity).
-2. **Normalization debt reduction** by rolling back case-scoped overrides once functional fixes land.
-3. **Verification hardening**: keep W3C trace artifacts for stubborn fixture triage and regression root-causeing.
-4. **Execution plan source**: `docs/W3C_GAP_CLOSURE_PLAN.md` is the active Chromium-guided closure playbook.
+1. **Gate C closure**: keep status/docs aligned with verified baseline.
+2. **Gate D closure**: run publish dry-run and resolve blockers.
+3. **Gate E prep**: release branch, notes, and operational checklist execution.
 
 Secondary priorities:
 
