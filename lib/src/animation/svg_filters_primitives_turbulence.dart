@@ -93,18 +93,6 @@ class TurbulenceNoiseGenerator {
   late final List<int> _latticeSelector;
   late final List<List<List<double>>> _gradientsByChannel;
 
-  // Gradient vectors for 2D Perlin noise (8 directions for better distribution)
-  static const List<List<double>> _gradients = [
-    [1.0, 1.0],
-    [1.0, -1.0],
-    [-1.0, 1.0],
-    [-1.0, -1.0],
-    [1.0, 0.0],
-    [-1.0, 0.0],
-    [0.0, 1.0],
-    [0.0, -1.0],
-  ];
-
   // Lattice size for standard Perlin noise (matches Skia implementation)
   static const int _latticeSize = 256;
   static const int _latticeMask = _latticeSize - 1;
@@ -141,10 +129,8 @@ class TurbulenceNoiseGenerator {
     _latticeSelector = List<int>.generate(_latticeSize, (i) => i);
     final noise = List<List<List<int>>>.generate(
       _noiseChannelCount,
-      (_) => List<List<int>>.generate(
-        _latticeSize,
-        (_) => List<int>.filled(2, 0),
-      ),
+      (_) =>
+          List<List<int>>.generate(_latticeSize, (_) => List<int>.filled(2, 0)),
     );
 
     // Populate random gradient seed data.
@@ -167,10 +153,8 @@ class TurbulenceNoiseGenerator {
     // Permute per-channel noise by selector.
     final permuted = List<List<List<int>>>.generate(
       _noiseChannelCount,
-      (_) => List<List<int>>.generate(
-        _latticeSize,
-        (_) => List<int>.filled(2, 0),
-      ),
+      (_) =>
+          List<List<int>>.generate(_latticeSize, (_) => List<int>.filled(2, 0)),
     );
     for (var channel = 0; channel < _noiseChannelCount; channel++) {
       for (var i = 0; i < _latticeSize; i++) {
@@ -480,12 +464,8 @@ class TurbulenceNoiseGenerator {
     );
   }
 
-  // Fade function: 6t^5 - 15t^4 + 10t^3
-  double _fade(double t) => t * t * t * (t * (t * 6 - 15) + 10);
-
   // Linear interpolation
   double _lerp(double t, double a, double b) => a + t * (b - a);
-
 }
 
 /// Tile-based turbulence renderer for performance optimization.

@@ -19,19 +19,13 @@ RUN_W3C_STATIC=1 W3C_LIMIT=83 .fvm/versions/3.38.1/bin/flutter test test/w3c/w3c
 
 Current baseline:
 
-- Analyzer: `3` warnings (not release-ready).
+- Analyzer: green (`0` errors, `0` warnings) after cleanup on April 21, 2026.
 - Full test suite: failed (`-16`).
 - W3C static (`W3C_LIMIT=83`): failed (`33` fixture failures; masking/painting/paths clusters).
 
-Open analyzer warnings:
-
-1. `lib/src/animation/animated_svg_painter_gradients_values.dart:95` - `_resolveColorValue` unused.
-2. `lib/src/animation/svg_filters_primitives_turbulence.dart:97` - `_gradients` field unused.
-3. `lib/src/animation/svg_filters_primitives_turbulence.dart:484` - `_fade` unused.
-
 ## Gate A - Code Health
 
-- [ ] `dart analyze lib/ test/ example/lib/` returns zero errors and zero warnings.
+- [x] `dart analyze lib/ test/ example/lib/` returns zero errors and zero warnings.
 - [ ] `flutter test` returns all green on target platforms.
 - [ ] Golden/widget failures are either fixed or intentionally re-baselined with explicit approval.
 

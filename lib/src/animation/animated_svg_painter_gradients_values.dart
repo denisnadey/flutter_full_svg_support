@@ -92,16 +92,6 @@ extension AnimatedSvgPainterGradientValuesExtension on AnimatedSvgPainter {
     }
   }
 
-  ui.Color? _resolveColorValue(Object? value) {
-    if (value == null) {
-      return null;
-    }
-    if (value is ui.Color) {
-      return value;
-    }
-    return _parseColor(value.toString());
-  }
-
   /// Resolves a color value for a node, supporting the 'currentColor' keyword
   /// and CSS variable references (var(--name, fallback)).
   /// currentColor refers to the inherited 'color' CSS property value.
