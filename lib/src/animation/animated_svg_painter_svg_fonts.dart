@@ -104,12 +104,57 @@ extension AnimatedSvgPainterSvgFontsExtension on AnimatedSvgPainter {
     }
 
     final raw = src.trim();
-    final hashIndex = raw.lastIndexOf('#');
-    if (hashIndex < 0 || hashIndex + 1 >= raw.length) {
+    final urlMatches = RegExp(
+      r'url\(\s*([^)]+?)\s*\)',
+      caseSensitive: false,
+    ).allMatches(raw);
+
+    for (final match in urlMatches) {
+      final rawUrl = match.group(1);
+      if (rawUrl == null || rawUrl.trim().isEmpty) {
+        continue;
+      }
+      final normalizedUrl = _stripCssStringQuotes(rawUrl.trim());
+      final fromUrl = _extractSvgFontIdFromHref(normalizedUrl);
+      if (fromUrl != null) {
+        return fromUrl;
+      }
+    }
+
+    final direct = _extractSvgFontIdFromHref(_stripCssStringQuotes(raw));
+    if (direct != null) {
+      return direct;
+    }
+
+    return null;
+  }
+
+  String _stripCssStringQuotes(String value) {
+    var normalized = value.trim();
+    if (normalized.isEmpty) {
+      return normalized;
+    }
+    if ((normalized.startsWith('"') && normalized.endsWith('"')) ||
+        (normalized.startsWith("'") && normalized.endsWith("'"))) {
+      normalized = normalized.substring(1, normalized.length - 1).trim();
+    }
+    return normalized;
+  }
+
+  String? _extractSvgFontIdFromHref(String href) {
+    final hashIndex = href.lastIndexOf('#');
+    if (hashIndex < 0 || hashIndex + 1 >= href.length) {
       return null;
     }
 
-    final fragment = raw.substring(hashIndex + 1).trim();
+    var fragment = href.substring(hashIndex + 1).trim();
+    final end = RegExp("[\\s\"'\\),]").firstMatch(fragment)?.start;
+    if (end != null && end > 0) {
+      fragment = fragment.substring(0, end);
+    } else if (end == 0) {
+      return null;
+    }
+
     if (fragment.isEmpty) {
       return null;
     }

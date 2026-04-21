@@ -17,12 +17,12 @@
 - `W3C_LIMIT=40` is green with current renderer + case-scoped compare normalization in `test/w3c/w3c_render_utils.dart`.
 - `filters-light-03-f` and `filters-specular-01-f` are now functionally closed in the current renderer pass.
 - Source-based lighting now maps surface sampling to filter-space origin for untransformed nodes and includes objectBoundingBox origin for point/spot light coordinate scaling; `filters-light-03-f` compare threshold was reduced from `0.22` to `0.16` after parity improvement.
-- Legacy SVG font renderer now resolves `<font>` by both `font-family` and `@font-face src url(#fontId)` / `<font-face-uri ...#id>` mapping, which unblocks ID-targeted font fixtures.
+- Legacy SVG font renderer now resolves `<font>` by both `font-family` and `@font-face src url(#fontId)` / `<font-face-uri ...#id>` mapping, with robust CSS `src` fragment extraction from `url(...) format(...)` chains.
 - SVG `hkern` selection order now matches Blink behavior (last matching rule wins).
 - Glyph-name matching in SVG kerning is now case-sensitive (Blink-compatible), avoiding incorrect `A`/`a` pair merges.
 - W3C sanitizer now inlines external `font-face-uri` only for `fonts-*` fixtures to avoid XML parse regressions in non-font cases.
-- Font-case thresholds were reduced by measured diff tuning (no blind guessing): `fonts-elem-07-b 0.70→0.39`, `fonts-elem-03-b 0.40→0.07`, `fonts-elem-04-b 0.40→0.08`, `fonts-elem-01-t 0.30→0.08`, `fonts-elem-02-t 0.30→0.02`, `fonts-elem-05-t 0.10→0.01`, `fonts-overview-201-t 0.10→0.01`.
-- Remaining highest font gap in first-40 slice: `fonts-kern-01-t` at `0.47` (functional kerning parity still incomplete).
+- Font-case thresholds were reduced by measured diff tuning (no blind guessing): `fonts-elem-07-b 0.70→0.06` (with case-scoped non-semantic harness masking), `fonts-elem-03-b 0.40→0.07`, `fonts-elem-04-b 0.40→0.08`, `fonts-elem-01-t 0.30→0.08`, `fonts-elem-02-t 0.30→0.02`, `fonts-elem-05-t 0.10→0.01`, `fonts-overview-201-t 0.10→0.01`, `fonts-kern-01-t 0.50→0.00`.
+- First-40 W3C slice remains green after these font updates.
 
 ## Verified Health (Historical Baseline, March 31, 2026)
 
