@@ -17,6 +17,7 @@ This is the central navigation page for project docs.
 - [ARCHITECTURE.md](ARCHITECTURE.md) - architecture and pipeline rationale
 - [VISUAL_TESTING_GUIDELINES.md](VISUAL_TESTING_GUIDELINES.md) - testing patterns for animation behavior
 - [docs/BLINK_PARITY_AUDIT.md](docs/BLINK_PARITY_AUDIT.md) - gap matrix vs Blink
+- [docs/W3C_GAP_CLOSURE_PLAN.md](docs/W3C_GAP_CLOSURE_PLAN.md) - active W3C closure execution plan
 
 ## User Docs
 
@@ -31,6 +32,7 @@ This is the central navigation page for project docs.
 - [NEXT_STEPS.md](NEXT_STEPS.md)
 - [ROADMAP.md](ROADMAP.md)
 - [ROADMAP_VISUAL.md](ROADMAP_VISUAL.md)
+- [docs/W3C_GAP_CLOSURE_PLAN.md](docs/W3C_GAP_CLOSURE_PLAN.md)
 - [docs/RESOLVED_ISSUES.md](docs/RESOLVED_ISSUES.md)
 
 ## Historical / Archived

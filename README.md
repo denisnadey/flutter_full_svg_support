@@ -69,7 +69,11 @@ Active P0 priorities to reach 95%+ Blink parity:
 3. **Code modularization** - Remaining large files (`animated_svg_painter_shapes.dart`, `animated_svg_picture.dart`)
 4. **Golden test coverage expansion** - Additional regression fixtures for edge cases
 
-See [CURRENT_STATUS.md](CURRENT_STATUS.md) for details and [docs/BLINK_PARITY_AUDIT.md](docs/BLINK_PARITY_AUDIT.md) for the gap matrix.
+Execution plan for current W3C closure work:
+
+- [docs/W3C_GAP_CLOSURE_PLAN.md](docs/W3C_GAP_CLOSURE_PLAN.md) - Chromium-driven case-by-case closure algorithm, priority waves, and threshold policy
+
+See [CURRENT_STATUS.md](CURRENT_STATUS.md) for factual status and [docs/BLINK_PARITY_AUDIT.md](docs/BLINK_PARITY_AUDIT.md) for the Blink gap matrix.
 
 ## Chromium/Blink Source Notes (Local Dev)
 
@@ -300,6 +304,7 @@ See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for development guidelines, testi
 | [ANIMATION.md](ANIMATION.md) | SMIL/CSS animation usage guide with examples |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Dual pipeline design rationale |
 | [docs/BLINK_PARITY_AUDIT.md](docs/BLINK_PARITY_AUDIT.md) | Gap matrix vs Blink SVG features |
+| [docs/W3C_GAP_CLOSURE_PLAN.md](docs/W3C_GAP_CLOSURE_PLAN.md) | Active W3C closure plan (Chromium-guided + diff-measured thresholds) |
 | [DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md) | Full documentation navigation |
 
 ## SVG sample attribution

@@ -48,6 +48,7 @@ Current priorities:
 1. **Functional closure of legacy font fixtures** in the first-40 slice (SVG 1.1 font semantics and glyph metrics parity).
 2. **Normalization debt reduction** by rolling back case-scoped overrides once functional fixes land.
 3. **Verification hardening**: keep W3C trace artifacts for stubborn fixture triage and regression root-causeing.
+4. **Execution plan source**: `docs/W3C_GAP_CLOSURE_PLAN.md` is the active Chromium-guided closure playbook.
 
 Secondary priorities:
 
@@ -485,11 +486,13 @@ To avoid drift:
 
 - Current factual status lives only here.
 - Planning lives in `NEXT_STEPS.md` and `TODO.md`.
+- W3C tactical closure plan lives in `docs/W3C_GAP_CLOSURE_PLAN.md`.
 - Closed bugs and closed milestones are tracked in `docs/RESOLVED_ISSUES.md`.
 
 ## Next Execution Plan
 
-1. **P2**: Additional profiling and bottleneck identification.
-2. **P2**: Memory allocation monitoring in hot paths.
-3. **P3**: CSS selector edge case refinement (advanced structural pseudo-class combinations).
-4. Target: Maintain 97%+ Blink parity, optimize performance.
+1. **P0**: Execute `docs/W3C_GAP_CLOSURE_PLAN.md` Wave A/B/C and close highest-delta W3C failures by functional fixes.
+2. **P1**: Continue rollback of case-scoped normalization overrides as functional parity lands.
+3. **P2**: Additional profiling and bottleneck identification.
+4. **P2**: Memory allocation monitoring in hot paths.
+5. **P3**: CSS selector edge case refinement (advanced structural pseudo-class combinations).

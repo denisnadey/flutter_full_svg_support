@@ -30,6 +30,7 @@ For the full gap matrix see [BLINK_PARITY_AUDIT.md](BLINK_PARITY_AUDIT.md).
 - **[VISUAL_TESTING_GUIDELINES.md](../VISUAL_TESTING_GUIDELINES.md)** - Visual testing patterns
 - **[CURRENT_STATUS.md](../CURRENT_STATUS.md)** - Single source of truth for project state
 - **[BLINK_PARITY_AUDIT.md](BLINK_PARITY_AUDIT.md)** - Gap matrix vs Blink (81 tags baseline, 25 FE primitives)
+- **[W3C_GAP_CLOSURE_PLAN.md](W3C_GAP_CLOSURE_PLAN.md)** - Active Chromium-driven W3C closure plan with priority waves and threshold policy
 - **[RESOLVED_ISSUES.md](RESOLVED_ISSUES.md)** - Closed bugs/milestones (do-not-reopen registry)
 - **[DOCUMENTATION_INDEX.md](../DOCUMENTATION_INDEX.md)** - Central navigation hub
 
@@ -83,6 +84,9 @@ Historical implementation documents (Stages 1-8):
 **See what's next**
 → [NEXT_STEPS.md](../NEXT_STEPS.md) (7 P0 priorities: filters, text, clipping, masking, use/symbol, lighting)
 
+**Close W3C gaps fast**
+→ [W3C_GAP_CLOSURE_PLAN.md](W3C_GAP_CLOSURE_PLAN.md) (Chromium-guided functional closure + measured threshold reduction)
+
 **Run the example app**
 ```bash
 cd example && ../.fvm/flutter_sdk/bin/flutter run
@@ -115,6 +119,7 @@ flutter_svg/
     ├── README.md                      # This file
     ├── DEVELOPMENT.md                 # Complete dev guide
     ├── BLINK_PARITY_AUDIT.md          # Blink gap matrix
+    ├── W3C_GAP_CLOSURE_PLAN.md        # Active W3C closure execution plan
     ├── RESOLVED_ISSUES.md             # Closed issues / do-not-reopen registry
     └── archive/                       # Historical docs (Stages 1-8)
 ```

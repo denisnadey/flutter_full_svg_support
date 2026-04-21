@@ -16,6 +16,10 @@ Detailed Blink gap matrix:
 
 - `/Users/denisnadey/apps/flutter_full_svg_support/docs/BLINK_PARITY_AUDIT.md`
 
+Active W3C execution plan (Chromium-driven, diff-measured thresholds):
+
+- `/Users/denisnadey/apps/flutter_full_svg_support/docs/W3C_GAP_CLOSURE_PLAN.md`
+
 ## Active Feature Items (P0 Priorities)
 
 W3C functional closure is active. Treat legacy “all complete” notes below as historical records.
@@ -43,7 +47,7 @@ _All P2 edge case items completed March 31, 2026. See Completed P0 Items below._
 
 ## Immediate (Execution Order)
 
-1. Close first-40 `fonts-*` functional mismatches and shrink normalization debt.
+1. Execute Wave A/B/C from `docs/W3C_GAP_CLOSURE_PLAN.md` to close highest-delta W3C failures first.
 2. Continue rollback of case-scoped normalization overrides where renderer parity is now stable.
 3. Then continue with profiling and memory optimization work.
 
