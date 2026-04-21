@@ -250,6 +250,10 @@ class SvgDiffuseLightingPaintPass extends SvgFilterPaintPass {
   LightingProcessor? createProcessor({
     double? objectBoundingBoxWidth,
     double? objectBoundingBoxHeight,
+    double? objectBoundingBoxX,
+    double? objectBoundingBoxY,
+    double surfaceOriginX = 0.0,
+    double surfaceOriginY = 0.0,
   }) {
     final source = lightSource;
     if (source == null) return null;
@@ -263,6 +267,10 @@ class SvgDiffuseLightingPaintPass extends SvgFilterPaintPass {
       primitiveUnitsObjectBoundingBox: _usesObjectBoundingBoxPrimitiveUnits,
       objectBoundingBoxWidth: objectBoundingBoxWidth,
       objectBoundingBoxHeight: objectBoundingBoxHeight,
+      objectBoundingBoxX: objectBoundingBoxX,
+      objectBoundingBoxY: objectBoundingBoxY,
+      surfaceOriginX: surfaceOriginX,
+      surfaceOriginY: surfaceOriginY,
     );
   }
 
@@ -345,6 +353,10 @@ class SvgSpecularLightingPaintPass extends SvgFilterPaintPass {
   LightingProcessor? createProcessor({
     double? objectBoundingBoxWidth,
     double? objectBoundingBoxHeight,
+    double? objectBoundingBoxX,
+    double? objectBoundingBoxY,
+    double surfaceOriginX = 0.0,
+    double surfaceOriginY = 0.0,
   }) {
     final source = lightSource;
     if (source == null) return null;
@@ -358,6 +370,10 @@ class SvgSpecularLightingPaintPass extends SvgFilterPaintPass {
       primitiveUnitsObjectBoundingBox: _usesObjectBoundingBoxPrimitiveUnits,
       objectBoundingBoxWidth: objectBoundingBoxWidth,
       objectBoundingBoxHeight: objectBoundingBoxHeight,
+      objectBoundingBoxX: objectBoundingBoxX,
+      objectBoundingBoxY: objectBoundingBoxY,
+      surfaceOriginX: surfaceOriginX,
+      surfaceOriginY: surfaceOriginY,
     );
   }
 

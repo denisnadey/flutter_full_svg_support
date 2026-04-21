@@ -87,6 +87,15 @@ part of 'svg_filters.dart';
   double specularExponent = 1.0,
   double limitingConeAngleDegrees = 0.0,
 }) {
+  const double kConeAaThreshold = 0.016;
+
+  double normalizeLimitingConeAngle(double angleDegrees) {
+    if (angleDegrees == 0.0 || angleDegrees > 90.0 || angleDegrees < -90.0) {
+      return 90.0;
+    }
+    return angleDegrees;
+  }
+
   // Spot direction (from light toward pointsAt)
   final spotDx = pointsAtX - lightX;
   final spotDy = pointsAtY - lightY;
@@ -126,21 +135,23 @@ part of 'svg_filters.dart';
       toSurfaceDirY * spotDirY +
       toSurfaceDirZ * spotDirZ;
 
-  // Cone cutoff check
-  double cosConeAngle = -1.0;
-  if (limitingConeAngleDegrees > 0) {
-    cosConeAngle = math.cos(limitingConeAngleDegrees * math.pi / 180.0);
-  }
+  final normalizedConeAngle = normalizeLimitingConeAngle(
+    limitingConeAngleDegrees,
+  );
+  final cosConeAngle = math.cos(normalizedConeAngle * math.pi / 180.0);
 
   // If outside the cone, intensity is 0
   if (spotDot < cosConeAngle) {
     return ((lightDirX, lightDirY, lightDirZ), 0.0);
   }
 
-  // Compute attenuation: (spotDot)^specularExponent
-  final attenuation = math
-      .pow(spotDot.clamp(0.0, 1.0), specularExponent)
-      .toDouble();
+  // Match Skia spotlight cone-edge softening:
+  // if close to cutoff, fade in linearly within a small angular band.
+  final clampedDot = spotDot.clamp(0.0, 1.0);
+  final baseScale = math.pow(clampedDot, specularExponent).toDouble();
+  final attenuation = clampedDot < cosConeAngle + kConeAaThreshold
+      ? baseScale * (clampedDot - cosConeAngle) / kConeAaThreshold
+      : baseScale;
   return ((lightDirX, lightDirY, lightDirZ), attenuation);
 }
 
@@ -275,6 +286,17 @@ class _SpotLightCalculator {
   final double specularExponent;
   final double limitingConeAngleDegrees;
 
+  static const double _coneAaThreshold = 0.016;
+
+  double get _normalizedLimitingConeAngle {
+    if (limitingConeAngleDegrees == 0.0 ||
+        limitingConeAngleDegrees > 90.0 ||
+        limitingConeAngleDegrees < -90.0) {
+      return 90.0;
+    }
+    return limitingConeAngleDegrees;
+  }
+
   /// Spot direction (from light toward pointsAt).
   _LightingVector3 get spotDirection {
     return _LightingVector3(
@@ -286,11 +308,7 @@ class _SpotLightCalculator {
 
   /// Cosine of the limiting cone angle.
   double get cosConeAngle {
-    // If limitingConeAngle is 0, no angular cutoff (180 degree cone)
-    if (limitingConeAngleDegrees <= 0) {
-      return -1.0;
-    }
-    return math.cos(limitingConeAngleDegrees * math.pi / 180.0);
+    return math.cos(_normalizedLimitingConeAngle * math.pi / 180.0);
   }
 
   /// Get light direction and intensity at a surface point.
@@ -324,10 +342,11 @@ class _SpotLightCalculator {
       return (lightDir, 0.0);
     }
 
-    // Compute attenuation
-    final attenuation = math
-        .pow(spotDot.clamp(0.0, 1.0), specularExponent)
-        .toDouble();
+    final clampedDot = spotDot.clamp(0.0, 1.0);
+    final baseScale = math.pow(clampedDot, specularExponent).toDouble();
+    final attenuation = clampedDot < cosConeAngle + _coneAaThreshold
+        ? baseScale * (clampedDot - cosConeAngle) / _coneAaThreshold
+        : baseScale;
     return (lightDir, attenuation);
   }
 }

@@ -726,6 +726,11 @@ extension _AnimatedSvgPictureStateImagesExtension on _AnimatedSvgPictureState {
       if (sourceNode == null) {
         continue;
       }
+      final rawNodeTransform = sourceNode
+          .getAttributeValue('transform')
+          ?.toString();
+      final hasNodeLocalTransform =
+          rawNodeTransform != null && rawNodeTransform.trim().isNotEmpty;
 
       final boundsPainter = AnimatedSvgPainter(
         document: _document,
@@ -789,6 +794,10 @@ extension _AnimatedSvgPictureStateImagesExtension on _AnimatedSvgPictureState {
       final processor = request.createProcessor(
         objectBoundingBoxWidth: nodeBounds.width,
         objectBoundingBoxHeight: nodeBounds.height,
+        objectBoundingBoxX: hasNodeLocalTransform ? null : nodeBounds.left,
+        objectBoundingBoxY: hasNodeLocalTransform ? null : nodeBounds.top,
+        surfaceOriginX: hasNodeLocalTransform ? 0.0 : captureRect.left,
+        surfaceOriginY: hasNodeLocalTransform ? 0.0 : captureRect.top,
       );
       if (processor == null) {
         sourceImage.dispose();
@@ -1531,39 +1540,30 @@ class _LightingImageRequest {
   LightingProcessor? createProcessor({
     double? objectBoundingBoxWidth,
     double? objectBoundingBoxHeight,
+    double? objectBoundingBoxX,
+    double? objectBoundingBoxY,
+    double surfaceOriginX = 0.0,
+    double surfaceOriginY = 0.0,
   }) {
     if (kind == _LightingVariantKind.diffuse) {
       return diffusePass?.createProcessor(
         objectBoundingBoxWidth: objectBoundingBoxWidth,
         objectBoundingBoxHeight: objectBoundingBoxHeight,
+        objectBoundingBoxX: objectBoundingBoxX,
+        objectBoundingBoxY: objectBoundingBoxY,
+        surfaceOriginX: surfaceOriginX,
+        surfaceOriginY: surfaceOriginY,
       );
     }
     final base = specularPass?.createProcessor(
       objectBoundingBoxWidth: objectBoundingBoxWidth,
       objectBoundingBoxHeight: objectBoundingBoxHeight,
+      objectBoundingBoxX: objectBoundingBoxX,
+      objectBoundingBoxY: objectBoundingBoxY,
+      surfaceOriginX: surfaceOriginX,
+      surfaceOriginY: surfaceOriginY,
     );
-    if (base == null || sourceNode == null) {
-      return base;
-    }
-
-    final useDistantSpecularTuning = base.lightSource is SvgDistantLightSource;
-    if (!useDistantSpecularTuning) {
-      return base;
-    }
-
-    return LightingProcessor(
-      surfaceScale: base.surfaceScale,
-      lightSource: base.lightSource,
-      lightingColor: base.lightingColor,
-      kernelUnitLengthX: base.kernelUnitLengthX,
-      kernelUnitLengthY: base.kernelUnitLengthY,
-      edgeMode: base.edgeMode,
-      primitiveUnitsObjectBoundingBox: base.primitiveUnitsObjectBoundingBox,
-      objectBoundingBoxWidth: base.objectBoundingBoxWidth,
-      objectBoundingBoxHeight: base.objectBoundingBoxHeight,
-      specularUseInputAlphaMask: true,
-      specularFlipLightZForHalfVector: true,
-    );
+    return base;
   }
 }
 

@@ -71,6 +71,43 @@ Active P0 priorities to reach 95%+ Blink parity:
 
 See [CURRENT_STATUS.md](CURRENT_STATUS.md) for details and [docs/BLINK_PARITY_AUDIT.md](docs/BLINK_PARITY_AUDIT.md) for the gap matrix.
 
+## Chromium/Blink Source Notes (Local Dev)
+
+Reference locations used for parity debugging in this workspace:
+
+- Active Chromium tree (downloaded snapshot): `/Users/denisnadey/Downloads/chromium-main/third_party/blink`
+- Historical pinned Blink snapshot in repo: `/Users/denisnadey/apps/flutter_full_svg_support/blink-b87d44f-Source-core-svg`
+- Skia location expected by Blink lighting/filter paths: `/Users/denisnadey/Downloads/chromium-main/third_party/skia`
+
+Important: if Chromium was downloaded from `https://github.com/chromium/chromium/tree/main` as a zip, it is not a git repo, so `git submodule update --init --recursive` will not work there.
+
+### How To "Hydrate" Missing Submodules In Zip Snapshot
+
+If a submodule path is empty (for example `third_party/skia`), clone it directly using URL from `.gitmodules`:
+
+```bash
+cd /Users/denisnadey/Downloads/chromium-main
+
+# Example: hydrate one missing submodule
+SUB=third_party/skia
+URL=$(awk -v p="$SUB" '$1=="path" && $3==p {f=1;next} f&&$1=="url"{print $3;exit}' .gitmodules)
+rm -rf "$SUB"
+git clone --depth 1 --filter=blob:none "$URL" "$SUB"
+```
+
+Repeat with another `SUB=...` path as needed.
+
+### Full Git Checkout Option (If Needed Later)
+
+If you want native submodule commands, use a real git checkout instead of zip snapshot:
+
+```bash
+git clone --depth 1 --filter=blob:none https://github.com/chromium/chromium.git /Users/denisnadey/Downloads/chromium-main-git
+cd /Users/denisnadey/Downloads/chromium-main-git
+git submodule sync --recursive
+git submodule update --init --recursive --depth 1 --jobs 8
+```
+
 ## Getting Started
 
 ### Installation

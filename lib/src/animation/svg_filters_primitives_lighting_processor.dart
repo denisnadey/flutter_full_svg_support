@@ -108,6 +108,10 @@ class LightingProcessor {
     this.primitiveUnitsObjectBoundingBox = false,
     this.objectBoundingBoxWidth,
     this.objectBoundingBoxHeight,
+    this.objectBoundingBoxX,
+    this.objectBoundingBoxY,
+    this.surfaceOriginX = 0.0,
+    this.surfaceOriginY = 0.0,
     this.specularUseInputAlphaMask = false,
     this.specularFlipLightZForHalfVector = false,
   });
@@ -121,6 +125,10 @@ class LightingProcessor {
   final bool primitiveUnitsObjectBoundingBox;
   final double? objectBoundingBoxWidth;
   final double? objectBoundingBoxHeight;
+  final double? objectBoundingBoxX;
+  final double? objectBoundingBoxY;
+  final double surfaceOriginX;
+  final double surfaceOriginY;
   final bool specularUseInputAlphaMask;
   final bool specularFlipLightZForHalfVector;
 
@@ -140,6 +148,8 @@ class LightingProcessor {
     if (bboxWidth <= 0 || bboxHeight <= 0) {
       return lightSource;
     }
+    final bboxX = objectBoundingBoxX ?? 0.0;
+    final bboxY = objectBoundingBoxY ?? 0.0;
 
     final zScale = math.sqrt(
       (bboxWidth * bboxWidth + bboxHeight * bboxHeight) / 2.0,
@@ -148,18 +158,18 @@ class LightingProcessor {
     final source = lightSource;
     if (source is SvgPointLightSource) {
       return SvgPointLightSource(
-        x: source.x * bboxWidth,
-        y: source.y * bboxHeight,
+        x: bboxX + source.x * bboxWidth,
+        y: bboxY + source.y * bboxHeight,
         z: source.z * zScale,
       );
     }
     if (source is SvgSpotLightSource) {
       return SvgSpotLightSource(
-        x: source.x * bboxWidth,
-        y: source.y * bboxHeight,
+        x: bboxX + source.x * bboxWidth,
+        y: bboxY + source.y * bboxHeight,
         z: source.z * zScale,
-        pointsAtX: source.pointsAtX * bboxWidth,
-        pointsAtY: source.pointsAtY * bboxHeight,
+        pointsAtX: bboxX + source.pointsAtX * bboxWidth,
+        pointsAtY: bboxY + source.pointsAtY * bboxHeight,
         pointsAtZ: source.pointsAtZ * zScale,
         specularExponent: source.specularExponent,
         limitingConeAngle: source.limitingConeAngle,
@@ -217,10 +227,12 @@ class LightingProcessor {
 
         // Compute surface height
         final surfaceZ = alphaData[y * width + x] / 255.0 * surfaceScale;
+        final surfaceX = surfaceOriginX + x.toDouble();
+        final surfaceY = surfaceOriginY + y.toDouble();
 
         // Get light direction and intensity
         final (lightDir, lightIntensity) = effectiveLightSource
-            .getDirectionAndIntensityAt(x.toDouble(), y.toDouble(), surfaceZ);
+            .getDirectionAndIntensityAt(surfaceX, surfaceY, surfaceZ);
 
         // Compute diffuse: kd * max(0, N·L) * lightIntensity
         final nDotL = normal.dot(lightDir).clamp(0.0, 1.0);
@@ -299,10 +311,12 @@ class LightingProcessor {
 
         // Compute surface height
         final surfaceZ = alphaData[y * width + x] / 255.0 * surfaceScale;
+        final surfaceX = surfaceOriginX + x.toDouble();
+        final surfaceY = surfaceOriginY + y.toDouble();
 
         // Get light direction and intensity
         final (lightDir, lightIntensity) = effectiveLightSource
-            .getDirectionAndIntensityAt(x.toDouble(), y.toDouble(), surfaceZ);
+            .getDirectionAndIntensityAt(surfaceX, surfaceY, surfaceZ);
 
         final halfVectorLightDir = specularFlipLightZForHalfVector
             ? _LightingVector3(lightDir.x, lightDir.y, -lightDir.z)

@@ -70,6 +70,23 @@ Diff images are written to:
 
 - `test/w3c/artifacts/diff/`
 
+## Auto-tune per-case threshold
+
+To avoid manual guessing, use the threshold tuner script. It decreases
+`pixelPerfectPrecision` for one case step-by-step, runs the case, reads
+`summary.json`, and keeps the last passing value.
+
+```bash
+tool/w3c_suite/tune_threshold_case.sh filters-light-02-f 0.10 0.01 2
+```
+
+Arguments:
+
+- `<case-name>` W3C case key from `_comparisonPerPixelThresholdByCase`
+- `<min-threshold>` lower search bound (e.g. `0.10`)
+- `[step]` optional decrement step (default: `0.01`)
+- `[repeats]` optional runs per candidate for stability check (default: `1`)
+
 ## Current Reality (April 2026)
 
 - Some first-40 fixtures are currently stabilized via strict case-scoped compare normalization in `test/w3c/w3c_render_utils.dart`.

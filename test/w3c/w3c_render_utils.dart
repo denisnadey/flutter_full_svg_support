@@ -221,10 +221,102 @@ String _sanitizeW3cSvg(String svg, String svgPath) {
   );
 
   sanitized = _inlineRelativeRasterHrefs(sanitized, svgPath);
+  sanitized = _inlineRelativeSvgFontFaceUris(sanitized, svgPath);
   sanitized = _injectHarnessBackgroundIfNeeded(sanitized, svgPath);
   sanitized = _normalizeCaseSpecificMarkup(sanitized, svgPath);
 
   return sanitized;
+}
+
+String _inlineRelativeSvgFontFaceUris(String svg, String svgPath) {
+  final fileName = svgPath.split(Platform.pathSeparator).last.toLowerCase();
+  if (!fileName.startsWith('fonts-')) {
+    return svg;
+  }
+
+  final svgDirUri = File(svgPath).parent.uri;
+  final uriPattern = RegExp(
+    r'<font-face-uri[^>]*(?:xlink:)?href\s*=\s*"([^"]+)"[^>]*/?>',
+    caseSensitive: false,
+  );
+
+  final extractedFonts = <String>[];
+  for (final match in uriPattern.allMatches(svg)) {
+    final rawHref = match.group(1)?.trim();
+    if (rawHref == null || rawHref.isEmpty) {
+      continue;
+    }
+    if (rawHref.startsWith('#') ||
+        rawHref.startsWith('data:') ||
+        rawHref.startsWith('http://') ||
+        rawHref.startsWith('https://')) {
+      continue;
+    }
+
+    final hashIndex = rawHref.indexOf('#');
+    final relativePath = hashIndex >= 0
+        ? rawHref.substring(0, hashIndex)
+        : rawHref;
+    final fragmentId = hashIndex >= 0 ? rawHref.substring(hashIndex + 1) : null;
+    if (!relativePath.toLowerCase().endsWith('.svg')) {
+      continue;
+    }
+
+    final resolvedUri = svgDirUri.resolve(relativePath);
+    final resolvedFile = File.fromUri(resolvedUri);
+    if (!resolvedFile.existsSync()) {
+      continue;
+    }
+
+    final externalSvg = resolvedFile.readAsStringSync();
+    final fontBlock = _extractExternalSvgFontBlock(externalSvg, fragmentId);
+    if (fontBlock == null || fontBlock.isEmpty) {
+      continue;
+    }
+    if (!svg.contains(fontBlock)) {
+      extractedFonts.add(fontBlock);
+    }
+  }
+
+  if (extractedFonts.isEmpty) {
+    return svg;
+  }
+
+  final insertion = extractedFonts.join('\n');
+  final defsPattern = RegExp(r'<defs\b[^>]*>', caseSensitive: false);
+  final defsMatch = defsPattern.firstMatch(svg);
+  if (defsMatch != null) {
+    final insertAt = defsMatch.end;
+    return '${svg.substring(0, insertAt)}\n$insertion${svg.substring(insertAt)}';
+  }
+
+  final svgOpenPattern = RegExp(r'<svg\b[^>]*>', caseSensitive: false);
+  final svgOpenMatch = svgOpenPattern.firstMatch(svg);
+  if (svgOpenMatch != null) {
+    final insertAt = svgOpenMatch.end;
+    return '${svg.substring(0, insertAt)}\n<defs>\n$insertion\n</defs>${svg.substring(insertAt)}';
+  }
+
+  return svg;
+}
+
+String? _extractExternalSvgFontBlock(String externalSvg, String? fragmentId) {
+  if (fragmentId != null && fragmentId.isNotEmpty) {
+    final byIdPattern = RegExp(
+      '<font\\b[^>]*\\bid="${RegExp.escape(fragmentId)}"[^>]*>[\\s\\S]*?<\\/font>',
+      caseSensitive: false,
+    );
+    final byIdMatch = byIdPattern.firstMatch(externalSvg);
+    if (byIdMatch != null) {
+      return byIdMatch.group(0);
+    }
+  }
+
+  final firstFontPattern = RegExp(
+    r'<font\b[^>]*>[\s\S]*?</font>',
+    caseSensitive: false,
+  );
+  return firstFontPattern.firstMatch(externalSvg)?.group(0);
 }
 
 String _injectHarnessBackgroundIfNeeded(String svg, String svgPath) {
@@ -621,55 +713,55 @@ const Map<String, double> _comparisonPerPixelThresholdByCase = {
   'filters-image-01-b': 0.12,
   // This fixture compares anti-aliased vector edges across engines.
   // A slightly higher channel threshold reduces rasterizer-only deltas.
-  'coords-viewattr-03-b': 0.20,
+  'coords-viewattr-03-b': 0.19,
   // This fixture convolves a JPEG source image; small decoder/channel
   // differences are amplified by feConvolveMatrix edge enhancement.
   'filters-conv-02-f': 0.14,
   // This fixture uses per-pixel lighting on a raster bump-map source.
   // Small interpolation/rasterization differences remain after masking.
-  'filters-diffuse-01-f': 0.16,
+  'filters-diffuse-01-f': 0.15,
   // This fixture combines displacement sampling and overlay geometry.
   // Small edge/interpolation differences remain after label/frame masking.
   'filters-displace-01-f': 0.16,
   // Directional Gaussian blur edges can differ slightly across engines
   // despite matching blur direction and containment in the guide boxes.
-  'filters-gauss-02-f': 0.20,
+  'filters-gauss-02-f': 0.19,
   // Circle edge antialiasing can vary slightly between rasterizers.
-  'filters-felem-01-b': 0.16,
+  'filters-felem-01-b': 0.10,
   // W3C notes this reference is not pixel-accurate; allow small lighting
   // deltas after masking non-semantic text/frame overlays.
-  'filters-light-01-f': 0.20,
+  'filters-light-01-f': 0.19,
   // This fixture checks azimuth-direction placement of arcs. Allow modest
   // anti-aliasing variance after masking harness-only overlays.
-  'filters-light-02-f': 0.22,
+  'filters-light-02-f': 0.18,
   // This fixture compares qualitative gradient fills across three groups.
   // Keep a modest tolerance for edge AA only.
-  'filters-light-03-f': 0.22,
+  'filters-light-03-f': 0.10,
   // Swatch-only comparison with modest AA tolerance.
-  'filters-specular-01-f': 0.16,
+  'filters-specular-01-f': 0.10,
   // This fixture combines many primitive types under <a>. Slight
   // rasterization/font-edge variance remains even with matching geometry.
-  'linking-a-10-f': 0.20,
+  'linking-a-10-f': 0.10,
   // This fixture compares procedural turbulence outputs across seed values.
   // Minor engine differences in Perlin implementation/channel correlation
   // remain after masking harness text/frame overlays.
-  'filters-turb-02-f': 0.34,
+  'filters-turb-02-f': 0.27,
   // The following font fixtures depend on legacy SVG 1.1 font semantics and
   // exact glyph metrics that vary strongly across rasterizers/environments.
   // Keep these relaxations strictly case-scoped to avoid global compare drift.
-  'fonts-desc-02-t': 1.00,
-  'fonts-desc-03-t': 1.00,
-  'fonts-elem-01-t': 1.00,
-  'fonts-elem-02-t': 1.00,
-  'fonts-elem-03-b': 1.00,
-  'fonts-elem-04-b': 1.00,
-  'fonts-elem-05-t': 1.00,
-  'fonts-elem-06-t': 1.00,
-  'fonts-elem-07-b': 1.00,
-  'fonts-glyph-02-t': 1.00,
-  'fonts-glyph-04-t': 1.00,
-  'fonts-kern-01-t': 1.00,
-  'fonts-overview-201-t': 1.00,
+  'fonts-desc-02-t': 0.00,
+  'fonts-desc-03-t': 0.00,
+  'fonts-elem-01-t': 0.08,
+  'fonts-elem-02-t': 0.02,
+  'fonts-elem-03-b': 0.07,
+  'fonts-elem-04-b': 0.08,
+  'fonts-elem-05-t': 0.01,
+  'fonts-elem-06-t': 0.00,
+  'fonts-elem-07-b': 0.39,
+  'fonts-glyph-02-t': 0.00,
+  'fonts-glyph-04-t': 0.00,
+  'fonts-kern-01-t': 0.47,
+  'fonts-overview-201-t': 0.01,
 };
 
 List<ui.Rect> _comparisonIgnoreRegionsForCase(String caseName) {

@@ -54,6 +54,7 @@ part 'animated_svg_painter_text_decoration.dart';
 part 'animated_svg_painter_text_layout_measurement.dart';
 part 'animated_svg_painter_text_layout_render.dart';
 part 'animated_svg_painter_text_measurement.dart';
+part 'animated_svg_painter_svg_fonts.dart';
 part 'animated_svg_painter_geometry.dart';
 part 'animated_svg_painter_geometry_foreign_object.dart';
 part 'animated_svg_painter_geometry_path.dart';
@@ -123,6 +124,9 @@ class AnimatedSvgPainter extends CustomPainter {
   final Map<String, _ResolvedPatternDefinition?> _patternCache =
       <String, _ResolvedPatternDefinition?>{};
   final Map<String, MotionPath> _motionPathCache = <String, MotionPath>{};
+  Map<String, _SvgFontDefinition>? _svgFontsByFamilyCache;
+  Map<String, _SvgFontDefinition>? _svgFontsByIdCache;
+  Map<String, String>? _svgFontFamilyToFontIdCache;
   bool _currentPassPaintFill = true;
   bool _currentPassPaintStroke = true;
   ui.Color? _currentPassFillColorOverride;
