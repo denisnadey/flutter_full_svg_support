@@ -705,6 +705,56 @@ const Map<String, List<ui.Rect>> _comparisonIgnoreRegionsByCase = {
   // On environments without SVG 1.1 font-face URI support, this glyph can
   // render as a fallback box while the other 13 shapes remain accurate.
   'linking-a-10-f': <ui.Rect>[ui.Rect.fromLTWH(0, 236, 112, 112)],
+  // These fixtures compare equivalence between manually placed glyph geometry
+  // and text rendered via embedded SVG font definitions. Ignore W3C harness
+  // frame/title/labels/revision overlays and keep central glyph rows.
+  'fonts-elem-01-t': <ui.Rect>[
+    ui.Rect.fromLTWH(0, 0, 480, 4),
+    ui.Rect.fromLTWH(0, 356, 480, 4),
+    ui.Rect.fromLTWH(0, 0, 4, 360),
+    ui.Rect.fromLTWH(476, 0, 4, 360),
+    ui.Rect.fromLTWH(0, 0, 480, 70),
+    ui.Rect.fromLTWH(0, 96, 160, 150),
+    ui.Rect.fromLTWH(0, 316, 220, 44),
+  ],
+  'fonts-elem-02-t': <ui.Rect>[
+    ui.Rect.fromLTWH(0, 0, 480, 4),
+    ui.Rect.fromLTWH(0, 356, 480, 4),
+    ui.Rect.fromLTWH(0, 0, 4, 360),
+    ui.Rect.fromLTWH(476, 0, 4, 360),
+    ui.Rect.fromLTWH(0, 0, 480, 70),
+    ui.Rect.fromLTWH(0, 96, 180, 150),
+    ui.Rect.fromLTWH(0, 316, 220, 44),
+  ],
+  'fonts-elem-03-b': <ui.Rect>[
+    ui.Rect.fromLTWH(0, 0, 480, 4),
+    ui.Rect.fromLTWH(0, 356, 480, 4),
+    ui.Rect.fromLTWH(0, 0, 4, 360),
+    ui.Rect.fromLTWH(476, 0, 4, 360),
+    ui.Rect.fromLTWH(0, 0, 480, 70),
+    ui.Rect.fromLTWH(0, 96, 160, 150),
+    ui.Rect.fromLTWH(0, 316, 220, 44),
+  ],
+  'fonts-elem-04-b': <ui.Rect>[
+    ui.Rect.fromLTWH(0, 0, 480, 4),
+    ui.Rect.fromLTWH(0, 356, 480, 4),
+    ui.Rect.fromLTWH(0, 0, 4, 360),
+    ui.Rect.fromLTWH(476, 0, 4, 360),
+    ui.Rect.fromLTWH(0, 0, 480, 70),
+    ui.Rect.fromLTWH(0, 96, 160, 150),
+    ui.Rect.fromLTWH(0, 316, 220, 44),
+  ],
+  // This fixture validates marker/square alignment for three horiz-origin-x
+  // variants. Ignore harness/title/left labels and keep marker geometry rows.
+  'fonts-elem-05-t': <ui.Rect>[
+    ui.Rect.fromLTWH(0, 0, 480, 4),
+    ui.Rect.fromLTWH(0, 356, 480, 4),
+    ui.Rect.fromLTWH(0, 0, 4, 360),
+    ui.Rect.fromLTWH(476, 0, 4, 360),
+    ui.Rect.fromLTWH(0, 316, 380, 44),
+    ui.Rect.fromLTWH(0, 0, 480, 76),
+    ui.Rect.fromLTWH(0, 92, 220, 170),
+  ],
   // This fixture validates hkern glyph positioning in sample cells.
   // Ignore suite harness border/revision overlays that are sanitized out
   // from the source SVG before rendering.
@@ -723,6 +773,16 @@ const Map<String, List<ui.Rect>> _comparisonIgnoreRegionsByCase = {
     // Vertical row labels ("font A"..."font G") are non-semantic for kerning.
     ui.Rect.fromLTWH(8, 58, 26, 222),
   ],
+  // This fixture validates equal-sized beta glyph rendering across different
+  // units-per-em values. Ignore harness frame/revision and helper bottom labels.
+  'fonts-overview-201-t': <ui.Rect>[
+    ui.Rect.fromLTWH(0, 0, 480, 4),
+    ui.Rect.fromLTWH(0, 356, 480, 4),
+    ui.Rect.fromLTWH(0, 0, 4, 360),
+    ui.Rect.fromLTWH(476, 0, 4, 360),
+    ui.Rect.fromLTWH(0, 316, 380, 44),
+    ui.Rect.fromLTWH(0, 248, 480, 52),
+  ],
   // This fixture compares the two central "AyÖ@ç" lines (placed glyphs vs SVG
   // font text). Title/labels/frame/revision are harness metadata and not part
   // of the pass criteria for glyph baseline/advance equality.
@@ -734,7 +794,7 @@ const Map<String, List<ui.Rect>> _comparisonIgnoreRegionsByCase = {
     ui.Rect.fromLTWH(0, 0, 480, 70),
     ui.Rect.fromLTWH(0, 100, 170, 50),
     ui.Rect.fromLTWH(0, 185, 170, 45),
-    ui.Rect.fromLTWH(0, 316, 220, 44),
+    ui.Rect.fromLTWH(0, 316, 380, 44),
   ],
 };
 
@@ -782,17 +842,17 @@ const Map<String, double> _comparisonPerPixelThresholdByCase = {
   // Keep these relaxations strictly case-scoped to avoid global compare drift.
   'fonts-desc-02-t': 0.00,
   'fonts-desc-03-t': 0.00,
-  'fonts-elem-01-t': 0.08,
-  'fonts-elem-02-t': 0.02,
-  'fonts-elem-03-b': 0.07,
-  'fonts-elem-04-b': 0.08,
-  'fonts-elem-05-t': 0.01,
+  'fonts-elem-01-t': 0.00,
+  'fonts-elem-02-t': 0.00,
+  'fonts-elem-03-b': 0.00,
+  'fonts-elem-04-b': 0.00,
+  'fonts-elem-05-t': 0.00,
   'fonts-elem-06-t': 0.00,
-  'fonts-elem-07-b': 0.06,
+  'fonts-elem-07-b': 0.04,
   'fonts-glyph-02-t': 0.00,
   'fonts-glyph-04-t': 0.00,
   'fonts-kern-01-t': 0.00,
-  'fonts-overview-201-t': 0.01,
+  'fonts-overview-201-t': 0.00,
 };
 
 List<ui.Rect> _comparisonIgnoreRegionsForCase(String caseName) {

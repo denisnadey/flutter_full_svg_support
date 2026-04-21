@@ -21,7 +21,8 @@
 - SVG `hkern` selection order now matches Blink behavior (last matching rule wins).
 - Glyph-name matching in SVG kerning is now case-sensitive (Blink-compatible), avoiding incorrect `A`/`a` pair merges.
 - W3C sanitizer now inlines external `font-face-uri` only for `fonts-*` fixtures to avoid XML parse regressions in non-font cases.
-- Font-case thresholds were reduced by measured diff tuning (no blind guessing): `fonts-elem-07-b 0.70→0.06` (with case-scoped non-semantic harness masking), `fonts-elem-03-b 0.40→0.07`, `fonts-elem-04-b 0.40→0.08`, `fonts-elem-01-t 0.30→0.08`, `fonts-elem-02-t 0.30→0.02`, `fonts-elem-05-t 0.10→0.01`, `fonts-overview-201-t 0.10→0.01`, `fonts-kern-01-t 0.50→0.00`.
+- Font-case thresholds were reduced by measured diff tuning (no blind guessing): `fonts-elem-07-b 0.70→0.04` (with case-scoped non-semantic harness masking), `fonts-elem-03-b 0.40→0.00`, `fonts-elem-04-b 0.40→0.00`, `fonts-elem-01-t 0.30→0.00`, `fonts-elem-02-t 0.30→0.00`, `fonts-elem-05-t 0.10→0.00`, `fonts-overview-201-t 0.10→0.00`, `fonts-kern-01-t 0.50→0.00`.
+- Remaining highest font threshold in first-40 slice: `fonts-elem-07-b` at `0.04`.
 - First-40 W3C slice remains green after these font updates.
 
 ## Verified Health (Historical Baseline, March 31, 2026)
