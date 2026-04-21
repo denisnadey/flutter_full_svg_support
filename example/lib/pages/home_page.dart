@@ -8,6 +8,7 @@ import 'custom_svg_viewer_page.dart';
 import 'controller_demo_page.dart';
 import 'astronaut_helmet_page.dart';
 import 'helmet_demo_page.dart';
+import 'w3c_playground_page.dart';
 
 /// The SVG to display on home page
 const String svgString = '''
@@ -297,7 +298,11 @@ class HomePage extends StatelessWidget {
   Widget _buildToolCards(BuildContext context, bool isMobile) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 600 ? 2 : 1;
+        final crossAxisCount = constraints.maxWidth > 1000
+            ? 3
+            : constraints.maxWidth > 600
+            ? 2
+            : 1;
         return GridView.count(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -329,6 +334,19 @@ class HomePage extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder: (context) => const ControllerDemoPage(),
+                ),
+              ),
+            ),
+            _buildNavigationCard(
+              context,
+              title: 'W3C Playground',
+              subtitle: 'Browse all W3C suite cases',
+              icon: Icons.dataset_outlined,
+              color: Colors.indigo,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const W3cPlaygroundPage(),
                 ),
               ),
             ),
