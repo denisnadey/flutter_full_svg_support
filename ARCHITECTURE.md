@@ -292,6 +292,6 @@ lib/src/animation/
 
 ## References
 
-- Original plan: `docs/archive/ANIMATION_ARCHITECTURE.md`
-- Implementation stages: `docs/archive/STAGE_*_SUMMARY.md`
-- Development guide: `docs/DEVELOPMENT.md`
+- Original plan: `doc/archive/ANIMATION_ARCHITECTURE.md`
+- Implementation stages: `doc/archive/STAGE_*_SUMMARY.md`
+- Development guide: `doc/DEVELOPMENT.md`

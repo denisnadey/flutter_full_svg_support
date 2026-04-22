@@ -1,7 +1,7 @@
-import 'package:flutter_svg/src/animation/animated_svg_picture.dart';
-import 'package:flutter_svg/src/animation/path_data.dart';
-import 'package:flutter_svg/src/animation/path_parser.dart';
-import 'package:flutter_svg/src/animation/svg_transform.dart';
+import 'package:full_svg_flutter/src/animation/animated_svg_picture.dart';
+import 'package:full_svg_flutter/src/animation/path_data.dart';
+import 'package:full_svg_flutter/src/animation/path_parser.dart';
+import 'package:full_svg_flutter/src/animation/svg_transform.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

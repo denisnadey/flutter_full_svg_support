@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:flutter_svg/src/animation/smil/motion_path.dart';
+import 'package:full_svg_flutter/src/animation/smil/motion_path.dart';
 
 void main() {
   group('MotionPath', () {

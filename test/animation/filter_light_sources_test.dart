@@ -2,9 +2,9 @@ import 'dart:ui' as ui;
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:flutter_svg/src/animation/svg_parser.dart';
-import 'package:flutter_svg/src/animation/svg_filters.dart';
-import 'package:flutter_svg/src/animation/smil/smil_parser.dart';
+import 'package:full_svg_flutter/src/animation/svg_parser.dart';
+import 'package:full_svg_flutter/src/animation/svg_filters.dart';
+import 'package:full_svg_flutter/src/animation/smil/smil_parser.dart';
 
 /// Focused tests for filter light source elements (feDistantLight, fePointLight, feSpotLight).
 /// These tests cover the specific requirements for light source parsing, computation, and animation.

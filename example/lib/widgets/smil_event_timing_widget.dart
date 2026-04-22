@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/src/animation/animated_svg_picture.dart';
+import 'package:full_svg_flutter/src/animation/animated_svg_picture.dart';
 
 /// Виджет с примерами SMIL event-based timing
 ///

@@ -6,9 +6,9 @@ import '../svg_render_benchmark.dart';
 import '../svg_content.dart';
 
 // ignore: implementation_imports
-import 'package:flutter_svg/src/animation/svg_parser.dart';
+import 'package:full_svg_flutter/src/animation/svg_parser.dart';
 // ignore: implementation_imports
-import 'package:flutter_svg/src/animation/svg_dom.dart';
+import 'package:full_svg_flutter/src/animation/svg_dom.dart';
 
 /// Runs filter chain benchmarks.
 ///

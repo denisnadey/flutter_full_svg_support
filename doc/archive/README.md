@@ -34,8 +34,8 @@ For up-to-date information, see:
 | `CURRENT_STATUS.md` | Single source of truth |
 | `TODO.md` | Active work queue |
 | `NEXT_STEPS.md` | Execution order |
-| `docs/RESOLVED_ISSUES.md` | Closed bugs registry |
-| `docs/DEVELOPMENT.md` | Development workflow |
+| `doc/RESOLVED_ISSUES.md` | Closed bugs registry |
+| `doc/DEVELOPMENT.md` | Development workflow |
 | `ARCHITECTURE.md` | Architecture overview |
 
 ## Note

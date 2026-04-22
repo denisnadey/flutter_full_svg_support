@@ -1,6 +1,6 @@
-# flutter_svg
+# full_svg_flutter
 
-[![Pub](https://img.shields.io/pub/v/flutter_svg.svg)](https://pub.dartlang.org/packages/flutter_svg)
+[![Pub](https://img.shields.io/pub/v/full_svg_flutter.svg)](https://pub.dev/packages/full_svg_flutter)
 
 <!-- markdownlint-disable MD033 -->
 <img src="https://raw.githubusercontent.com/dnfield/flutter_svg/7d374d7107561cbd906d7c0ca26fef02cc01e7c8/example/assets/flutter_logo.svg?sanitize=true" width="200px" alt="Flutter Logo which can be rendered by this package!">
@@ -8,7 +8,7 @@
 
 The most comprehensive SVG rendering library for Flutter. Two pipelines: a battle-tested **static renderer** (`SvgPicture`) for production, and a full-featured **animated renderer** (`AnimatedSvgPicture`) with DOM preservation, SMIL animations, CSS interop, SVG filters, interactive hit-testing, and accessibility.
 
-**Release baseline (April 21, 2026):** analyzer green, full-suite tests green (`4,922` pass / `2` skipped), W3C static 83-slice green (`83/83`).
+**Release baseline (April 21, 2026; W3C re-verified April 22, 2026):** analyzer green, full-suite tests green (`4,922` pass / `2` skipped), W3C static 83-slice green (`83/83`).
 
 ## Current Release Baseline (April 21, 2026)
 
@@ -83,14 +83,14 @@ Gradient shaders, pattern images, text paragraphs, hit-test geometry - all cache
 Active priorities for release closure:
 
 1. **Keep Gate A/B green** on reruns while avoiding regressions.
-2. **Complete Gate C/D/E** release docs, publish dry-run, and release operations from `RELEASE_CHECKLIST.md`.
+2. **Complete Gate D/E** publish dry-run and release operations from `RELEASE_CHECKLIST.md`.
 3. **Finalize channel/version decision** before publication.
 
 Execution plan for current W3C closure work:
 
-- [docs/W3C_GAP_CLOSURE_PLAN.md](docs/W3C_GAP_CLOSURE_PLAN.md) - Chromium-driven case-by-case closure algorithm, priority waves, and threshold policy
+- [doc/W3C_GAP_CLOSURE_PLAN.md](doc/W3C_GAP_CLOSURE_PLAN.md) - Chromium-driven case-by-case closure algorithm, priority waves, and threshold policy
 
-See [CURRENT_STATUS.md](CURRENT_STATUS.md) for factual status and [docs/BLINK_PARITY_AUDIT.md](docs/BLINK_PARITY_AUDIT.md) for the Blink gap matrix.
+See [CURRENT_STATUS.md](CURRENT_STATUS.md) for factual status and [doc/BLINK_PARITY_AUDIT.md](doc/BLINK_PARITY_AUDIT.md) for the Blink gap matrix.
 
 ## Chromium/Blink Source Notes (Local Dev)
 
@@ -137,7 +137,7 @@ Add to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  flutter_svg: ^2.2.2
+  full_svg_flutter: ^1.0.0
 ```
 
 ### Basic Usage
@@ -308,7 +308,7 @@ dart run vector_graphics_compiler -i $SVG_FILE -o $TEMPORARY_OUTPUT_TO_BE_DELETE
 
 ## Contributing
 
-See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for development guidelines, testing workflows, and architecture details.
+See [doc/DEVELOPMENT.md](doc/DEVELOPMENT.md) for development guidelines, testing workflows, and architecture details.
 
 ### Project Navigation
 
@@ -321,8 +321,8 @@ See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for development guidelines, testi
 | [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md) | Release gate checklist with current baseline and blockers |
 | [ANIMATION.md](ANIMATION.md) | SMIL/CSS animation usage guide with examples |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Dual pipeline design rationale |
-| [docs/BLINK_PARITY_AUDIT.md](docs/BLINK_PARITY_AUDIT.md) | Gap matrix vs Blink SVG features |
-| [docs/W3C_GAP_CLOSURE_PLAN.md](docs/W3C_GAP_CLOSURE_PLAN.md) | Active W3C closure plan (Chromium-guided + diff-measured thresholds) |
+| [doc/BLINK_PARITY_AUDIT.md](doc/BLINK_PARITY_AUDIT.md) | Gap matrix vs Blink SVG features |
+| [doc/W3C_GAP_CLOSURE_PLAN.md](doc/W3C_GAP_CLOSURE_PLAN.md) | Active W3C closure plan (Chromium-guided + diff-measured thresholds) |
 | [DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md) | Full documentation navigation |
 
 ## SVG sample attribution

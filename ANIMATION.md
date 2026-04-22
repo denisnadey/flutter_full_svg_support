@@ -232,7 +232,7 @@ This package uses **two separate pipelines**:
 
 ## Development
 
-See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for:
+See [doc/DEVELOPMENT.md](doc/DEVELOPMENT.md) for:
 - Development workflow
 - Testing guidelines
 - Architecture details
@@ -241,6 +241,6 @@ See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for:
 ## Resources
 
 - [VISUAL_TESTING_GUIDELINES.md](VISUAL_TESTING_GUIDELINES.md) - Visual testing patterns
-- [docs/archive/ANIMATION_ARCHITECTURE.md](docs/archive/ANIMATION_ARCHITECTURE.md) - Original architectural plan
+- [doc/archive/ANIMATION_ARCHITECTURE.md](doc/archive/ANIMATION_ARCHITECTURE.md) - Original architectural plan
 - [Example App](example/) - Interactive demos
 - [Tests](test/animation/) - Animation test suite

@@ -1,10 +1,10 @@
 # W3C Gap Closure Plan (Chromium-Driven)
 
-**Last Updated:** April 21, 2026
+**Last Updated:** April 22, 2026
 
 ## Goal
 
-Close remaining W3C static-suite gaps by functional renderer fixes first, then reduce per-case thresholds using measured diffs (no blind tuning).
+Keep the W3C static-suite closure durable: preserve functional renderer parity, prevent regressions, and keep case-scoped thresholds measured (no blind tuning).
 
 ## Where To Read Reference Behavior
 
@@ -31,44 +31,28 @@ git submodule sync --recursive
 git submodule update --init --recursive --depth 1 --jobs 8
 ```
 
-## Current Baseline (April 21, 2026)
+## Current Baseline (April 22, 2026)
 
 - First 40 static accepted cases: green.
-- `W3C_LIMIT=83`: 50 pass, 33 fail.
-- Fail clusters:
-  - `masking-*`: 9 fails
-  - `painting-*`: 17 fails
-  - `paths-data-*`: 7 fails
+- `W3C_LIMIT=83`: passed (`83` pass / `0` fail), re-verified on April 22, 2026.
+- No active fail clusters in the tracked 83-slice.
 
-Lowest-similarity cases in the 83-slice:
+## Execution Algorithm (Regression Guard)
 
-1. `masking-path-03-b` - 0.7087
-2. `painting-stroke-02-t` - 0.7299
-3. `painting-stroke-03-t` - 0.7383
-4. `painting-fill-02-t` - 0.7572
-5. `painting-stroke-04-t` - 0.7579
-6. `painting-render-02-b` - 0.7676
-7. `painting-marker-04-f` - 0.7972
-8. `painting-marker-03-f` - 0.8023
-9. `painting-fill-01-t` - 0.8171
-10. `masking-path-02-b` - 0.8393
-
-## Execution Algorithm (Fast Functional Closure)
-
-For each case, run this loop:
+For each regressed case, run this loop:
 
 1. Capture artifacts and traces:
    - `RUN_W3C_STATIC=1 W3C_LIMIT=1 W3C_NAME_FILTER=<case> W3C_TRACE=1 W3C_TRACE_PROFILE=forensic ./.fvm/flutter_sdk/bin/flutter test test/w3c/w3c_static_golden_test.dart`
 2. Map mismatch to Blink behavior in Chromium source before editing.
 3. Implement renderer fix in pipeline code.
-4. Re-run targeted case, then the local slice (`W3C_LIMIT=83`) to confirm no regression.
+4. Re-run targeted case, then the local slice (`W3C_LIMIT=83`) to confirm closure and no collateral regressions.
 5. Only then squeeze threshold with measured runs (no guessing):
    - `tool/w3c_suite/tune_threshold_case.sh <case> <min-threshold> 0.01 3`
 6. If stable at lower threshold, keep it; if unstable, keep temporary threshold and open a functional follow-up item.
 
-## Priority Waves
+## Priority Waves (Completed)
 
-### Wave A (largest visual deltas first)
+### Wave A (largest visual deltas first) - completed
 
 - `masking-path-03-b`
 - `painting-stroke-02-t`
@@ -77,14 +61,16 @@ For each case, run this loop:
 - `painting-stroke-04-t`
 - `painting-render-02-b`
 
-### Wave B (cluster follow-through)
+### Wave B (cluster follow-through) - completed
 
 - Remaining `painting-*` fails in 41-83
 - Remaining `masking-*` fails in 41-83
 
-### Wave C (path parser/render consistency)
+### Wave C (path parser/render consistency) - completed
 
 - `paths-data-*` set (`01..07`) as one batch to avoid piecemeal parser drift
+
+If regressions reappear, re-open waves in A -> B -> C order.
 
 ## Definition Of Done
 

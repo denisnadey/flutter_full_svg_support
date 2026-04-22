@@ -9,7 +9,7 @@ Before ANY work, check these authoritative files:
 | File | Purpose | Check When |
 |------|---------|------------|
 | `CURRENT_STATUS.md` | **Single source of truth** for project state | ALWAYS first |
-| `docs/RESOLVED_ISSUES.md` | Closed bugs - DO NOT reopen | Before fixing any bug |
+| `doc/RESOLVED_ISSUES.md` | Closed bugs - DO NOT reopen | Before fixing any bug |
 | `TODO.md` | Active work queue with priorities | Before starting new work |
 | `NEXT_STEPS.md` | Execution order | For task prioritization |
 
@@ -97,7 +97,7 @@ lib/src/animation/
 
 ### Before Starting Any Task
 
-1. **Check `docs/RESOLVED_ISSUES.md`** - Is this already fixed?
+1. **Check `doc/RESOLVED_ISSUES.md`** - Is this already fixed?
 2. **Check `CURRENT_STATUS.md`** - Current implementation state
 3. **Check `TODO.md`** - Is this in the queue? What priority?
 
@@ -114,7 +114,7 @@ lib/src/animation/
 Update these files:
 - `CURRENT_STATUS.md` - If factual state changed
 - `TODO.md` - Mark tasks complete
-- `docs/RESOLVED_ISSUES.md` - If closing a bug class
+- `doc/RESOLVED_ISSUES.md` - If closing a bug class
 
 ## Testing Patterns
 
@@ -185,7 +185,7 @@ part of 'animated_svg_painter.dart';
 When splitting files:
 1. Keep public API stable
 2. Run full regression after each split
-3. Update `docs/RESOLVED_ISSUES.md` with closed milestone
+3. Update `doc/RESOLVED_ISSUES.md` with closed milestone
 
 ## Reference Implementation
 
@@ -194,7 +194,7 @@ When splitting files:
 - Debugging complex SMIL features
 - Reference when implementing Blink parity
 
-See `docs/BLINK_PARITY_AUDIT.md` for gap analysis.
+See `doc/BLINK_PARITY_AUDIT.md` for gap analysis.
 
 ## Documentation Map
 
@@ -203,15 +203,15 @@ Essential (check frequently):
 ├── CURRENT_STATUS.md          # Single source of truth
 ├── TODO.md                    # Work queue
 ├── NEXT_STEPS.md              # Execution order
-└── docs/RESOLVED_ISSUES.md    # Closed issues registry
+└── doc/RESOLVED_ISSUES.md    # Closed issues registry
 
 Reference:
 ├── ARCHITECTURE.md            # Design rationale
 ├── ANIMATION.md               # User guide
 ├── VISUAL_TESTING_GUIDELINES.md
-├── docs/DEVELOPMENT.md        # Dev workflow
-├── docs/BLINK_PARITY_AUDIT.md # Blink gap matrix
-└── docs/archive/              # Historical docs
+├── doc/DEVELOPMENT.md        # Dev workflow
+├── doc/BLINK_PARITY_AUDIT.md # Blink gap matrix
+└── doc/archive/              # Historical docs
 ```
 
 ## Critical Don'ts
@@ -228,8 +228,8 @@ Reference:
 |------|------|
 | Current state | `CURRENT_STATUS.md` |
 | What to work on | `TODO.md` → `NEXT_STEPS.md` |
-| Is this fixed? | `docs/RESOLVED_ISSUES.md` |
+| Is this fixed? | `doc/RESOLVED_ISSUES.md` |
 | How does X work? | `ARCHITECTURE.md` |
-| Blink gaps | `docs/BLINK_PARITY_AUDIT.md` |
+| Blink gaps | `doc/BLINK_PARITY_AUDIT.md` |
 | Testing patterns | `VISUAL_TESTING_GUIDELINES.md` |
-| Dev workflow | `docs/DEVELOPMENT.md` |
+| Dev workflow | `doc/DEVELOPMENT.md` |

@@ -4,7 +4,7 @@
 ///
 /// Example:
 /// ```dart
-/// import 'package:flutter_svg/src/animation.dart';
+/// import 'package:full_svg_flutter/src/animation.dart';
 ///
 /// AnimatedSvgPicture.string(
 ///   '''<svg viewBox="0 0 100 100">

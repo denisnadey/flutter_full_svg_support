@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:flutter_svg/src/animation.dart';
+import 'package:full_svg_flutter/src/animation.dart';
 
 /// Severity for playground diagnostics.
 enum PlaygroundIssueSeverity {

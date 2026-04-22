@@ -11,7 +11,7 @@ import 'dart:ui' as ui;
 // #enddocregion OutputConversion
 
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'package:full_svg_flutter/full_svg_flutter.dart';
 // #docregion PrecompiledAsset
 import 'package:vector_graphics/vector_graphics.dart';
 // #enddocregion PrecompiledAsset

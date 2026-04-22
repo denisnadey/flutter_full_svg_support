@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:flutter_svg/src/animation/css_animations.dart';
-import 'package:flutter_svg/src/animation/svg_parser.dart';
+import 'package:full_svg_flutter/src/animation/css_animations.dart';
+import 'package:full_svg_flutter/src/animation/svg_parser.dart';
 
 void main() {
   group('@font-face CSS Parsing', () {

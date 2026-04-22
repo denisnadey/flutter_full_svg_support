@@ -1,6 +1,6 @@
 # Current Development Status
 
-**Last Updated:** April 21, 2026  
+**Last Updated:** April 22, 2026  
 **Authority:** This file is the single source of truth for current project state.
 
 ## Snapshot
@@ -8,16 +8,16 @@
 - Branch: `develop`
 - Flutter SDK: `3.38.1` (via `.fvm/versions/3.38.1/bin/flutter`)
 - Dart SDK: `^3.8.0`
-- Version: `2.2.2`
+- Version: `1.0.0` (`full_svg_flutter`)
 - **Blink SVG Parity:** ~97%+ (historical estimate)
 
 ## Reality Check (April 2026)
 
-- W3C static suite work is active again.
+- W3C static suite closure is complete; regression guard workflow remains active.
 - `W3C_LIMIT=40` remains green.
 - `W3C_LIMIT=83` is now green (`83/83`) after clip/mask functional fixes and scoped compare stabilization.
 - Gate A is now green: full-suite `flutter test` passes.
-- Active execution source for closure remains `docs/W3C_GAP_CLOSURE_PLAN.md`.
+- Active execution source for closure remains `doc/W3C_GAP_CLOSURE_PLAN.md`.
 
 ## Release Gate Snapshot (Verified April 21, 2026)
 
@@ -56,9 +56,8 @@ Active track: **release hardening and publish readiness (April 2026)**
 
 Current priorities:
 
-1. **Gate C closure**: keep status/docs aligned with verified baseline.
-2. **Gate D closure**: run publish dry-run and resolve blockers.
-3. **Gate E prep**: release branch, notes, and operational checklist execution.
+1. **Publish execution**: tag `v1.0.0` and run `dart pub publish`.
+2. **Post-release validation**: complete smoke checks on supported platforms and finalize status docs.
 
 Secondary priorities:
 
@@ -79,9 +78,9 @@ Removed redundant documentation files:
 
 Moved to archive:
 
-- `docs/SESSION_2026_01_09.md`
-- `docs/STAGE_7_SUMMARY.md`
-- `docs/STAGE_8_PLAN.md`
+- `doc/archive/SESSION_2026_01_09.md`
+- `doc/archive/STAGE_7_SUMMARY.md`
+- `doc/archive/STAGE_8_PLAN.md`
 
 ## Recently Closed (March 2026)
 
@@ -284,7 +283,7 @@ Moved to archive:
 - ✅ `css_to_smil_converter_transforms.dart` further split into focused part files.
 - ✅ Full regression runs completed after refactors.
 
-See: `/Users/denisnadey/apps/flutter_full_svg_support/docs/RESOLVED_ISSUES.md`
+See: `/Users/denisnadey/apps/flutter_full_svg_support/doc/RESOLVED_ISSUES.md`
 
 ## What Is Implemented
 
@@ -480,7 +479,7 @@ Implemented primitives / baseline semantics:
 
 ## Known Gaps (Blink Parity, Animated Pipeline)
 
-Detailed audit: `/Users/denisnadey/apps/flutter_full_svg_support/docs/BLINK_PARITY_AUDIT.md`
+Detailed audit: `/Users/denisnadey/apps/flutter_full_svg_support/doc/BLINK_PARITY_AUDIT.md`
 
 High-impact gaps:
 
@@ -496,13 +495,13 @@ To avoid drift:
 
 - Current factual status lives only here.
 - Planning lives in `NEXT_STEPS.md` and `TODO.md`.
-- W3C tactical closure plan lives in `docs/W3C_GAP_CLOSURE_PLAN.md`.
+- W3C tactical closure plan lives in `doc/W3C_GAP_CLOSURE_PLAN.md`.
 - Release readiness gate lives in `RELEASE_CHECKLIST.md`.
-- Closed bugs and closed milestones are tracked in `docs/RESOLVED_ISSUES.md`.
+- Closed bugs and closed milestones are tracked in `doc/RESOLVED_ISSUES.md`.
 
 ## Next Execution Plan
 
-1. **P0**: Execute `docs/W3C_GAP_CLOSURE_PLAN.md` Wave A/B/C and close highest-delta W3C failures by functional fixes.
+1. **P0**: Execute `doc/W3C_GAP_CLOSURE_PLAN.md` Wave A/B/C and close highest-delta W3C failures by functional fixes.
 2. **P1**: Continue rollback of case-scoped normalization overrides as functional parity lands.
 3. **P2**: Additional profiling and bottleneck identification.
 4. **P2**: Memory allocation monitoring in hot paths.

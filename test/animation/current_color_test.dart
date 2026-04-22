@@ -3,7 +3,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_svg/src/animation/animated_svg_picture.dart';
+import 'package:full_svg_flutter/src/animation/animated_svg_picture.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 ({int r, int g, int b, int a}) _sampleRgba(

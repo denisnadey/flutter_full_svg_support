@@ -58,7 +58,7 @@ test/animation/
 example/
 └── lib/animated_svg_demo.dart        - 7 демо примеров
 
-docs/
+doc/
 ├── ANIMATION_ARCHITECTURE.md         - Полная архитектура
 ├── ANIMATION_README.md               - Документация API
 └── PROGRESS.md                       - Прогресс трекинг

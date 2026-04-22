@@ -9,16 +9,16 @@ This is the central navigation page for project docs.
 1. [CURRENT_STATUS.md](CURRENT_STATUS.md) - authoritative current state
 2. [TODO.md](TODO.md) - active work queue
 3. [NEXT_STEPS.md](NEXT_STEPS.md) - execution order
-4. [docs/RESOLVED_ISSUES.md](docs/RESOLVED_ISSUES.md) - closed bugs and closed milestones
+4. [doc/RESOLVED_ISSUES.md](doc/RESOLVED_ISSUES.md) - closed bugs and closed milestones
 5. [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md) - release readiness gates and current blockers
 
 ## Developer Docs
 
-- [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) - workflow, commands, conventions
+- [doc/DEVELOPMENT.md](doc/DEVELOPMENT.md) - workflow, commands, conventions
 - [ARCHITECTURE.md](ARCHITECTURE.md) - architecture and pipeline rationale
 - [VISUAL_TESTING_GUIDELINES.md](VISUAL_TESTING_GUIDELINES.md) - testing patterns for animation behavior
-- [docs/BLINK_PARITY_AUDIT.md](docs/BLINK_PARITY_AUDIT.md) - gap matrix vs Blink
-- [docs/W3C_GAP_CLOSURE_PLAN.md](docs/W3C_GAP_CLOSURE_PLAN.md) - active W3C closure execution plan
+- [doc/BLINK_PARITY_AUDIT.md](doc/BLINK_PARITY_AUDIT.md) - gap matrix vs Blink
+- [doc/W3C_GAP_CLOSURE_PLAN.md](doc/W3C_GAP_CLOSURE_PLAN.md) - active W3C closure execution plan
 
 ## User Docs
 
@@ -35,12 +35,12 @@ This is the central navigation page for project docs.
 - [ROADMAP.md](ROADMAP.md)
 - [ROADMAP_VISUAL.md](ROADMAP_VISUAL.md)
 - [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md)
-- [docs/W3C_GAP_CLOSURE_PLAN.md](docs/W3C_GAP_CLOSURE_PLAN.md)
-- [docs/RESOLVED_ISSUES.md](docs/RESOLVED_ISSUES.md)
+- [doc/W3C_GAP_CLOSURE_PLAN.md](doc/W3C_GAP_CLOSURE_PLAN.md)
+- [doc/RESOLVED_ISSUES.md](doc/RESOLVED_ISSUES.md)
 
 ## Historical / Archived
 
-- [docs/archive/](docs/archive/)
+- [doc/archive/](doc/archive/)
 
 ## Quick Commands
 
@@ -54,4 +54,4 @@ cd example && ../.fvm/versions/3.38.1/bin/flutter run
 
 - Factual project state: `CURRENT_STATUS.md`
 - Active backlog: `TODO.md`
-- Closed issues and anti-regression memory: `docs/RESOLVED_ISSUES.md`
+- Closed issues and anti-regression memory: `doc/RESOLVED_ISSUES.md`

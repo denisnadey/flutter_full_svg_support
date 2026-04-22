@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_svg/src/animation/smil/timing_condition.dart';
-import 'package:flutter_svg/src/animation/smil/timing_parser.dart';
+import 'package:full_svg_flutter/src/animation/smil/timing_condition.dart';
+import 'package:full_svg_flutter/src/animation/smil/timing_parser.dart';
 
 void main() {
   group('TimingParser', () {
