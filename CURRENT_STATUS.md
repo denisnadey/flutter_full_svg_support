@@ -56,8 +56,8 @@ Active track: **release hardening and publish readiness (April 2026)**
 
 Current priorities:
 
-1. **Gate D closure**: resolve remaining publish blockers after dry-run (`full_svg_flutter` `1.0.0`) - clean git state and policy on gitignored-but-checked-in files warning.
-2. **Gate E prep**: release branch, notes, and operational checklist execution.
+1. **Publish execution**: tag `v1.0.0` and run `dart pub publish`.
+2. **Post-release validation**: complete smoke checks on supported platforms and finalize status docs.
 
 Secondary priorities:
 

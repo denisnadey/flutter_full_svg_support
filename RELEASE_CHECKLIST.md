@@ -45,7 +45,7 @@ Current baseline:
 ## Gate D - Packaging and Publish Readiness
 
 - [x] Decide release channel (`beta` vs `stable`) and target version (`stable 1.0.0`).
-- [ ] Remove `publish_to: 'none'` in `pubspec.yaml` when publishing is approved.
+- [x] Remove `publish_to: 'none'` in `pubspec.yaml` when publishing is approved.
 - [x] Run publish dry-run:
 
 ```bash
@@ -53,15 +53,14 @@ Current baseline:
 ```
 
 - Dry-run executed on April 22, 2026 for `full_svg_flutter` `1.0.0`; `meta` dependency blocker is fixed.
-- [ ] Resolve all dry-run blockers (if any).
-  - Remaining blocker decisions:
-    - Publish should run from a clean git state.
-    - Decide policy for gitignored-but-checked-in files warning (`.dart_tool/*`, `.vscode/settings.json`, lockfiles) via `.pubignore`/git hygiene.
+- [x] Resolve all dry-run blockers (if any).
+  - Dry-run re-run on clean git state with `0` warnings (April 22, 2026).
+  - Gitignored-but-checked-in warning removed by untracking `.dart_tool/*`, `.vscode/settings.json`, and lockfiles; publish payload constrained via `.pubignore`.
 
 ## Gate E - Release Operations
 
-- [ ] Create release branch and freeze scope.
-- [ ] Cut release notes from validated changes only.
+- [x] Create release branch and freeze scope (`codex/release-full-svg-flutter-1-0-0`).
+- [x] Cut release notes from validated changes only (`RELEASE_NOTES_1.0.0.md`).
 - [ ] Tag release and publish.
 - [ ] Post-release smoke test on supported platforms.
 
