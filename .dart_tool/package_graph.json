@@ -1,14 +1,15 @@
 {
   "roots": [
-    "flutter_svg"
+    "full_svg_flutter"
   ],
   "packages": [
     {
-      "name": "flutter_svg",
-      "version": "2.2.2",
+      "name": "full_svg_flutter",
+      "version": "1.0.0",
       "dependencies": [
         "flutter",
         "http",
+        "meta",
         "vector_graphics",
         "vector_graphics_codec",
         "vector_graphics_compiler",
@@ -72,6 +73,11 @@
       ]
     },
     {
+      "name": "meta",
+      "version": "1.17.0",
+      "dependencies": []
+    },
+    {
       "name": "http",
       "version": "1.6.0",
       "dependencies": [
@@ -99,11 +105,6 @@
       "dependencies": [
         "async"
       ]
-    },
-    {
-      "name": "meta",
-      "version": "1.17.0",
-      "dependencies": []
     },
     {
       "name": "collection",

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_svg/src/animation/svg_transform.dart';
-import 'package:flutter_svg/src/animation/animated_svg_picture.dart';
+import 'package:full_svg_flutter/src/animation/svg_transform.dart';
+import 'package:full_svg_flutter/src/animation/animated_svg_picture.dart';
 
 void main() {
   group('Matrix adjacent negative number parsing', () {

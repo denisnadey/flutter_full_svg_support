@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_svg/src/animation.dart';
+import 'package:full_svg_flutter/src/animation.dart';
 
 /// Demo page for the helmet fixture SVG.
 /// Mirrors Astronaut Helmet controls for quick visual parity checks.

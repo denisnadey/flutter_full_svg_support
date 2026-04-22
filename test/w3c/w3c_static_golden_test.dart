@@ -6,7 +6,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_svg/src/animation/animated_svg_picture.dart';
+import 'package:full_svg_flutter/src/animation/animated_svg_picture.dart';
 
 import 'w3c_manifest.dart';
 import 'w3c_render_utils.dart';

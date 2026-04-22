@@ -6,15 +6,15 @@ import '../svg_render_benchmark.dart';
 import '../svg_content.dart';
 
 // ignore: implementation_imports
-import 'package:flutter_svg/src/animation/svg_parser.dart';
+import 'package:full_svg_flutter/src/animation/svg_parser.dart';
 // ignore: implementation_imports
-import 'package:flutter_svg/src/animation/svg_dom.dart';
+import 'package:full_svg_flutter/src/animation/svg_dom.dart';
 // ignore: implementation_imports
-import 'package:flutter_svg/src/animation/smil/smil_parser.dart';
+import 'package:full_svg_flutter/src/animation/smil/smil_parser.dart';
 // ignore: implementation_imports
-import 'package:flutter_svg/src/animation/smil/smil_animation.dart';
+import 'package:full_svg_flutter/src/animation/smil/smil_animation.dart';
 // ignore: implementation_imports
-import 'package:flutter_svg/src/animation/smil/smil_timeline.dart';
+import 'package:full_svg_flutter/src/animation/smil/smil_timeline.dart';
 
 /// Runs animation processing benchmarks.
 ///

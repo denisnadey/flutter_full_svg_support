@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:flutter_svg/src/animation/smil/motion_path.dart';
-import 'package:flutter_svg/src/animation/smil/smil_animation.dart';
-import 'package:flutter_svg/src/animation/smil/smil_parser.dart';
-import 'package:flutter_svg/src/animation/svg_parser.dart';
+import 'package:full_svg_flutter/src/animation/smil/motion_path.dart';
+import 'package:full_svg_flutter/src/animation/smil/smil_animation.dart';
+import 'package:full_svg_flutter/src/animation/smil/smil_parser.dart';
+import 'package:full_svg_flutter/src/animation/svg_parser.dart';
 
 void main() {
   group('AnimateMotion Advanced Tests', () {

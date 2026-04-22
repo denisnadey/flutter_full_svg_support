@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'package:full_svg_flutter/full_svg_flutter.dart';
 
 import '../main.dart';
 import 'unified_examples_page.dart';

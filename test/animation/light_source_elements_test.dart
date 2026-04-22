@@ -1,9 +1,9 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:flutter_svg/src/animation/svg_filters.dart';
-import 'package:flutter_svg/src/animation/svg_parser.dart';
+import 'package:full_svg_flutter/full_svg_flutter.dart';
+import 'package:full_svg_flutter/src/animation/svg_filters.dart';
+import 'package:full_svg_flutter/src/animation/svg_parser.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

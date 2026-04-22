@@ -212,7 +212,7 @@
       "languageVersion": "3.8"
     },
     {
-      "name": "flutter_svg",
+      "name": "full_svg_flutter",
       "rootUri": "../",
       "packageUri": "lib/",
       "languageVersion": "3.8"

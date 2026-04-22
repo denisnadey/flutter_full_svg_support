@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/src/animation/path_parser.dart';
-import 'package:flutter_svg/src/animation/path_normalizer.dart';
-import 'package:flutter_svg/src/animation/path_interpolation.dart';
+import 'package:full_svg_flutter/src/animation/path_parser.dart';
+import 'package:full_svg_flutter/src/animation/path_normalizer.dart';
+import 'package:full_svg_flutter/src/animation/path_interpolation.dart';
 import 'dart:ui' as ui;
 
 /// Example demonstrating SVG path morphing.

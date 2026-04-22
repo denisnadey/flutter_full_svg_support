@@ -1,8 +1,8 @@
 # Next Steps
 
-**Last Updated:** April 21, 2026
+**Last Updated:** April 22, 2026
 
-**Current Status:** Gate A and Gate B are green as of April 21, 2026 (`dart analyze` green, full `flutter test` green, `W3C_LIMIT=83` green). Remaining work is release operations (Gate C/D/E).
+**Current Status:** Gate A, Gate B, and Gate C are green as of April 22, 2026 (`dart analyze` green, full `flutter test` green, `W3C_LIMIT=83` green, W3C tactical plan synced). Remaining work is release operations (Gate D/E).
 
 Authoritative status is maintained in:
 
@@ -32,11 +32,16 @@ Current verified release baseline:
 
 ## Active Feature Items (P0 Priorities)
 
-W3C functional closure is active. Treat legacy “all complete” notes below as historical records.
+W3C functional closure is complete; keep regression guard workflow active. Treat legacy “all complete” notes below as historical records.
 
-1. Close Gate C documentation consistency items.
-2. Execute Gate D publish dry-run and resolve blockers.
-3. Prepare Gate E release operations (branch, notes, tag/publish plan).
+1. Execute Gate D publish dry-run and resolve blockers.
+2. Prepare Gate E release operations (branch, notes, tag/publish plan).
+
+Gate D note (April 22, 2026):
+- `dart pub publish --dry-run` was executed for `full_svg_flutter` `1.0.0`.
+- `meta` publish validation blocker is fixed.
+- Release track is now reset for new package identity: `full_svg_flutter` `1.0.0` (stable).
+- Remaining publish blockers: clean git state, policy on gitignored-but-checked-in files warning, and decision on `docs/` layout warning.
 
 ## P1 - Performance Optimization
 

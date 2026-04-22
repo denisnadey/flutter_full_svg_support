@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_svg/src/animation.dart';
+import 'package:full_svg_flutter/src/animation.dart';
 
 /// Page for visual verification of astronaut helmet SVG animation.
 /// Demonstrates:

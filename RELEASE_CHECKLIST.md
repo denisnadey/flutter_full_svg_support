@@ -1,7 +1,7 @@
 # Release Checklist
 
-**Last Updated:** April 21, 2026  
-**Scope:** Public release readiness for `flutter_svg`
+**Last Updated:** April 22, 2026  
+**Scope:** Public release readiness for `full_svg_flutter`
 
 ## Release Gate Rule
 
@@ -21,7 +21,7 @@ Current baseline:
 
 - Analyzer: green (`0` errors, `0` warnings) after cleanup on April 21, 2026.
 - Full test suite: passed (`4,922` pass / `2` skipped).
-- W3C static (`W3C_LIMIT=83`): passed (`83` pass / `0` fail).
+- W3C static (`W3C_LIMIT=83`): passed (`83` pass / `0` fail), re-verified on April 22, 2026.
 
 ## Gate A - Code Health
 
@@ -39,20 +39,25 @@ Current baseline:
 ## Gate C - Documentation Consistency
 
 - [x] Sync factual metrics across `README.md`, `CURRENT_STATUS.md`, `NEXT_STEPS.md`, `docs/README.md`.
-- [ ] Keep W3C tactical plan in `docs/W3C_GAP_CLOSURE_PLAN.md`.
+- [x] Keep W3C tactical plan in `docs/W3C_GAP_CLOSURE_PLAN.md`.
 - [x] Update `CHANGELOG.md` (`NEXT` section) with only verified release content.
 
 ## Gate D - Packaging and Publish Readiness
 
-- [ ] Decide release channel (`beta` vs `stable`) and target version.
+- [x] Decide release channel (`beta` vs `stable`) and target version (`stable 1.0.0`).
 - [ ] Remove `publish_to: 'none'` in `pubspec.yaml` when publishing is approved.
-- [ ] Run publish dry-run:
+- [x] Run publish dry-run:
 
 ```bash
 .fvm/versions/3.38.1/bin/dart pub publish --dry-run
 ```
 
+- Dry-run executed on April 22, 2026 for `full_svg_flutter` `1.0.0`; `meta` dependency blocker is fixed.
 - [ ] Resolve all dry-run blockers (if any).
+  - Remaining blocker decisions:
+    - Publish should run from a clean git state.
+    - Decide policy for gitignored-but-checked-in files warning (`.dart_tool/*`, `.vscode/settings.json`, lockfiles) via `.pubignore`/git hygiene.
+    - Decide whether to address pub layout warning (`docs/` vs `doc/`) before publish.
 
 ## Gate E - Release Operations
 

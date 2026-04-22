@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:flutter_svg/src/animation/animated_svg_picture.dart';
-import 'package:flutter_svg/src/animation/svg_parser.dart';
+import 'package:full_svg_flutter/src/animation/animated_svg_picture.dart';
+import 'package:full_svg_flutter/src/animation/svg_parser.dart';
 
 void main() {
   group('Font Registration Lifecycle', () {

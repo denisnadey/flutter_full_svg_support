@@ -1,6 +1,6 @@
 # Current Development Status
 
-**Last Updated:** April 21, 2026  
+**Last Updated:** April 22, 2026  
 **Authority:** This file is the single source of truth for current project state.
 
 ## Snapshot
@@ -8,12 +8,12 @@
 - Branch: `develop`
 - Flutter SDK: `3.38.1` (via `.fvm/versions/3.38.1/bin/flutter`)
 - Dart SDK: `^3.8.0`
-- Version: `2.2.2`
+- Version: `1.0.0` (`full_svg_flutter`)
 - **Blink SVG Parity:** ~97%+ (historical estimate)
 
 ## Reality Check (April 2026)
 
-- W3C static suite work is active again.
+- W3C static suite closure is complete; regression guard workflow remains active.
 - `W3C_LIMIT=40` remains green.
 - `W3C_LIMIT=83` is now green (`83/83`) after clip/mask functional fixes and scoped compare stabilization.
 - Gate A is now green: full-suite `flutter test` passes.
@@ -56,9 +56,8 @@ Active track: **release hardening and publish readiness (April 2026)**
 
 Current priorities:
 
-1. **Gate C closure**: keep status/docs aligned with verified baseline.
-2. **Gate D closure**: run publish dry-run and resolve blockers.
-3. **Gate E prep**: release branch, notes, and operational checklist execution.
+1. **Gate D closure**: resolve remaining publish blockers after dry-run (`full_svg_flutter` `1.0.0`) - clean git state, policy on gitignored-but-checked-in files warning, decision on `docs/` layout warning.
+2. **Gate E prep**: release branch, notes, and operational checklist execution.
 
 Secondary priorities:
 

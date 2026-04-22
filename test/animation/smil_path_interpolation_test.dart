@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_svg/src/animation/smil/interpolators.dart';
-import 'package:flutter_svg/src/animation/svg_dom.dart';
+import 'package:full_svg_flutter/src/animation/smil/interpolators.dart';
+import 'package:full_svg_flutter/src/animation/svg_dom.dart';
 
 void main() {
   group('Path Interpolation Tests', () {

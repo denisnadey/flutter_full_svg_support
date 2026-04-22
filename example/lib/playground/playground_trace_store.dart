@@ -1,6 +1,6 @@
 import 'dart:collection';
 
-import 'package:flutter_svg/src/animation.dart';
+import 'package:full_svg_flutter/src/animation.dart';
 
 import 'playground_models.dart';
 

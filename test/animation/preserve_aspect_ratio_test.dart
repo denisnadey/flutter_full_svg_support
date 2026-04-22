@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/src/animation/animated_svg_picture.dart';
-import 'package:flutter_svg/src/animation/preserve_aspect_ratio.dart';
+import 'package:full_svg_flutter/src/animation/animated_svg_picture.dart';
+import 'package:full_svg_flutter/src/animation/preserve_aspect_ratio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'dart:ui' as ui;
 

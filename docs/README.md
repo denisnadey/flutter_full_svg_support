@@ -1,10 +1,10 @@
-# flutter_svg Documentation
+# full_svg_flutter Documentation
 
 Organized documentation for package users and contributors.
 
-**Last Updated:** April 21, 2026
+**Last Updated:** April 22, 2026
 
-**Current State:** Release gate baseline (April 21, 2026): analyzer green, full `flutter test` passing (`4,922` pass / `2` skipped), W3C 83-slice passing (`83/83`).
+**Current State:** Release gate baseline (April 21, 2026; W3C re-verified April 22, 2026): analyzer green, full `flutter test` passing (`4,922` pass / `2` skipped), W3C 83-slice passing (`83/83`).
 
 ## Release Baseline (April 21, 2026)
 
@@ -110,7 +110,7 @@ cd example && ../.fvm/flutter_sdk/bin/flutter run
 ## Documentation Structure
 
 ```
-flutter_svg/
+full_svg_flutter/
 ├── README.md                          # Package overview + release baseline
 ├── ANIMATION.md                       # User guide (SMIL & CSS)
 ├── ARCHITECTURE.md                    # Dual pipeline design rationale

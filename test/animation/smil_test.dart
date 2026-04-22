@@ -1,12 +1,12 @@
 import 'dart:ui' as ui;
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_svg/src/animation/smil/interpolators.dart';
-import 'package:flutter_svg/src/animation/smil/smil_animation.dart';
-import 'package:flutter_svg/src/animation/smil/smil_parser.dart';
-import 'package:flutter_svg/src/animation/smil/smil_timeline.dart';
-import 'package:flutter_svg/src/animation/svg_dom.dart';
-import 'package:flutter_svg/src/animation/svg_parser.dart';
+import 'package:full_svg_flutter/src/animation/smil/interpolators.dart';
+import 'package:full_svg_flutter/src/animation/smil/smil_animation.dart';
+import 'package:full_svg_flutter/src/animation/smil/smil_parser.dart';
+import 'package:full_svg_flutter/src/animation/smil/smil_timeline.dart';
+import 'package:full_svg_flutter/src/animation/svg_dom.dart';
+import 'package:full_svg_flutter/src/animation/svg_parser.dart';
 
 int _colorChannelToInt(double channel) {
   return (channel * 255.0).round().clamp(0, 255);

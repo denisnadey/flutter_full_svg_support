@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 
-import 'package:flutter_svg/src/animation/svg_transform.dart';
-import 'package:flutter_svg/src/animation/transform_3d.dart';
+import 'package:full_svg_flutter/src/animation/svg_transform.dart';
+import 'package:full_svg_flutter/src/animation/transform_3d.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

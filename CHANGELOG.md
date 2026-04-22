@@ -1,5 +1,9 @@
 ## NEXT
 
+* Package identity is reset for a new publication line:
+  * `name: full_svg_flutter`
+  * target release: `1.0.0` (stable)
+  * canonical import path: `package:full_svg_flutter/full_svg_flutter.dart`
 * Release gate baseline re-validated on April 21, 2026:
   * `dart analyze lib/ test/ example/lib/` -> 0 errors, 0 warnings
   * `flutter test` -> all tests passed (`4,922` pass / `2` skipped)
@@ -12,6 +16,7 @@
   * `painting-fill-02-t`
   * `painting-stroke-04-t`
   * `painting-render-02-b`
+* Declare direct `meta` dependency in `pubspec.yaml` to satisfy `dart pub publish --dry-run` validation.
 * Package metadata remains on publish hold until gates are green:
   * `publish_to: 'none'` still present in `pubspec.yaml`
 

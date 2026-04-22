@@ -2,10 +2,10 @@
 // Tests complex animation scenarios that have historically caused issues
 
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/src/animation/animated_svg_picture.dart';
-import 'package:flutter_svg/src/animation/smil/smil_animation.dart';
-import 'package:flutter_svg/src/animation/smil/smil_parser.dart';
-import 'package:flutter_svg/src/animation/svg_parser.dart';
+import 'package:full_svg_flutter/src/animation/animated_svg_picture.dart';
+import 'package:full_svg_flutter/src/animation/smil/smil_animation.dart';
+import 'package:full_svg_flutter/src/animation/smil/smil_parser.dart';
+import 'package:full_svg_flutter/src/animation/svg_parser.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

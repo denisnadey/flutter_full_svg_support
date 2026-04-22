@@ -5,11 +5,11 @@
 import '../svg_render_benchmark.dart';
 
 // ignore: implementation_imports
-import 'package:flutter_svg/src/animation/svg_parser.dart';
+import 'package:full_svg_flutter/src/animation/svg_parser.dart';
 // ignore: implementation_imports
-import 'package:flutter_svg/src/animation/smil/smil_parser.dart';
+import 'package:full_svg_flutter/src/animation/smil/smil_parser.dart';
 // ignore: implementation_imports
-import 'package:flutter_svg/src/animation/smil/smil_timeline.dart';
+import 'package:full_svg_flutter/src/animation/smil/smil_timeline.dart';
 
 /// Combined worst-case SVG content combining all complex features.
 class CombinedWorstCaseContent {
