@@ -12,5 +12,6 @@ W3C_SVG_11_TestSuite/
 blink-b87d44f-Source-core-svg/
 
 # Local artifacts and logs
+build/
 test_output.log
 .aider*
