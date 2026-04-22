@@ -1,0 +1,16 @@
+# Tooling and local environment
+.dart_tool/
+.vscode/
+.fvm/
+
+# Development-only content
+benchmark/
+tool/
+example/
+test/
+W3C_SVG_11_TestSuite/
+blink-b87d44f-Source-core-svg/
+
+# Local artifacts and logs
+test_output.log
+.aider*

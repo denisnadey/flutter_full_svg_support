@@ -11,7 +11,7 @@ Complete guide for developing animated SVG features in flutter_svg.
 | File | Purpose |
 |------|---------|
 | `CURRENT_STATUS.md` | Single source of truth for project state |
-| `docs/RESOLVED_ISSUES.md` | Closed bugs - do not reopen |
+| `doc/RESOLVED_ISSUES.md` | Closed bugs - do not reopen |
 | `TODO.md` | Active work queue with priorities |
 | `NEXT_STEPS.md` | Execution order |
 
@@ -209,5 +209,5 @@ From production testing:
 - `.github/copilot-instructions.md` - AI agent optimized guide
 - `VISUAL_TESTING_GUIDELINES.md` - Testing details
 - `ARCHITECTURE.md` - Design rationale
-- `docs/BLINK_PARITY_AUDIT.md` - Blink gap analysis
-- `docs/archive/` - Historical stage reports
+- `doc/BLINK_PARITY_AUDIT.md` - Blink gap analysis
+- `doc/archive/` - Historical stage reports

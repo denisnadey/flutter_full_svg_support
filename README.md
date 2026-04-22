@@ -88,9 +88,9 @@ Active priorities for release closure:
 
 Execution plan for current W3C closure work:
 
-- [docs/W3C_GAP_CLOSURE_PLAN.md](docs/W3C_GAP_CLOSURE_PLAN.md) - Chromium-driven case-by-case closure algorithm, priority waves, and threshold policy
+- [doc/W3C_GAP_CLOSURE_PLAN.md](doc/W3C_GAP_CLOSURE_PLAN.md) - Chromium-driven case-by-case closure algorithm, priority waves, and threshold policy
 
-See [CURRENT_STATUS.md](CURRENT_STATUS.md) for factual status and [docs/BLINK_PARITY_AUDIT.md](docs/BLINK_PARITY_AUDIT.md) for the Blink gap matrix.
+See [CURRENT_STATUS.md](CURRENT_STATUS.md) for factual status and [doc/BLINK_PARITY_AUDIT.md](doc/BLINK_PARITY_AUDIT.md) for the Blink gap matrix.
 
 ## Chromium/Blink Source Notes (Local Dev)
 
@@ -308,7 +308,7 @@ dart run vector_graphics_compiler -i $SVG_FILE -o $TEMPORARY_OUTPUT_TO_BE_DELETE
 
 ## Contributing
 
-See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for development guidelines, testing workflows, and architecture details.
+See [doc/DEVELOPMENT.md](doc/DEVELOPMENT.md) for development guidelines, testing workflows, and architecture details.
 
 ### Project Navigation
 
@@ -321,8 +321,8 @@ See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for development guidelines, testi
 | [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md) | Release gate checklist with current baseline and blockers |
 | [ANIMATION.md](ANIMATION.md) | SMIL/CSS animation usage guide with examples |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Dual pipeline design rationale |
-| [docs/BLINK_PARITY_AUDIT.md](docs/BLINK_PARITY_AUDIT.md) | Gap matrix vs Blink SVG features |
-| [docs/W3C_GAP_CLOSURE_PLAN.md](docs/W3C_GAP_CLOSURE_PLAN.md) | Active W3C closure plan (Chromium-guided + diff-measured thresholds) |
+| [doc/BLINK_PARITY_AUDIT.md](doc/BLINK_PARITY_AUDIT.md) | Gap matrix vs Blink SVG features |
+| [doc/W3C_GAP_CLOSURE_PLAN.md](doc/W3C_GAP_CLOSURE_PLAN.md) | Active W3C closure plan (Chromium-guided + diff-measured thresholds) |
 | [DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md) | Full documentation navigation |
 
 ## SVG sample attribution

@@ -3,7 +3,6 @@ description: An SVG rendering and widget library for Flutter, which allows paint
 repository: https://github.com/denisnadey/flutter_full_svg_support
 issue_tracker: https://github.com/denisnadey/flutter_full_svg_support/issues
 version: 1.0.0
-publish_to: 'none'
 
 environment:
   sdk: ^3.8.0

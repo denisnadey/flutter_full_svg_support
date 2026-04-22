@@ -126,7 +126,7 @@ full_svg_flutter/
 ├── .github/
 │   └── copilot-instructions.md        # AI agent guide
 │
-└── docs/
+└── doc/
     ├── README.md                      # This file
     ├── DEVELOPMENT.md                 # Complete dev guide
     ├── BLINK_PARITY_AUDIT.md          # Blink gap matrix

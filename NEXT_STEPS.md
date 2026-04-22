@@ -10,15 +10,15 @@ Authoritative status is maintained in:
 
 Closed issues / do-not-reopen registry:
 
-- `/Users/denisnadey/apps/flutter_full_svg_support/docs/RESOLVED_ISSUES.md`
+- `/Users/denisnadey/apps/flutter_full_svg_support/doc/RESOLVED_ISSUES.md`
 
 Detailed Blink gap matrix:
 
-- `/Users/denisnadey/apps/flutter_full_svg_support/docs/BLINK_PARITY_AUDIT.md`
+- `/Users/denisnadey/apps/flutter_full_svg_support/doc/BLINK_PARITY_AUDIT.md`
 
 Active W3C execution plan (Chromium-driven, diff-measured thresholds):
 
-- `/Users/denisnadey/apps/flutter_full_svg_support/docs/W3C_GAP_CLOSURE_PLAN.md`
+- `/Users/denisnadey/apps/flutter_full_svg_support/doc/W3C_GAP_CLOSURE_PLAN.md`
 
 Release gate checklist:
 
@@ -41,7 +41,7 @@ Gate D note (April 22, 2026):
 - `dart pub publish --dry-run` was executed for `full_svg_flutter` `1.0.0`.
 - `meta` publish validation blocker is fixed.
 - Release track is now reset for new package identity: `full_svg_flutter` `1.0.0` (stable).
-- Remaining publish blockers: clean git state, policy on gitignored-but-checked-in files warning, and decision on `docs/` layout warning.
+- Remaining publish blockers: clean git state and policy on gitignored-but-checked-in files warning.
 
 ## P1 - Performance Optimization
 
@@ -108,4 +108,4 @@ A task is complete only when:
 - behavior is covered by focused tests,
 - example/playground demonstrates the feature if UI-visible,
 - `CURRENT_STATUS.md` is updated if factual state changed,
-- `docs/RESOLVED_ISSUES.md` is updated for closed bug classes.
+- `doc/RESOLVED_ISSUES.md` is updated for closed bug classes.

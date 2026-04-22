@@ -31,15 +31,15 @@ Current baseline:
 
 ## Gate B - W3C Functional Readiness
 
-- [x] Execute waves from `docs/W3C_GAP_CLOSURE_PLAN.md`.
+- [x] Execute waves from `doc/W3C_GAP_CLOSURE_PLAN.md`.
 - [x] Close highest-delta fixtures first (`masking-path-03-b`, `painting-stroke-02-t`, `painting-stroke-03-t`, `painting-fill-02-t`, `painting-stroke-04-t`, `painting-render-02-b`).
 - [x] Keep threshold reductions measured (`tool/w3c_suite/tune_threshold_case.sh`), no blind tuning.
 - [x] Re-run `W3C_LIMIT=83` until target slice is stable.
 
 ## Gate C - Documentation Consistency
 
-- [x] Sync factual metrics across `README.md`, `CURRENT_STATUS.md`, `NEXT_STEPS.md`, `docs/README.md`.
-- [x] Keep W3C tactical plan in `docs/W3C_GAP_CLOSURE_PLAN.md`.
+- [x] Sync factual metrics across `README.md`, `CURRENT_STATUS.md`, `NEXT_STEPS.md`, `doc/README.md`.
+- [x] Keep W3C tactical plan in `doc/W3C_GAP_CLOSURE_PLAN.md`.
 - [x] Update `CHANGELOG.md` (`NEXT` section) with only verified release content.
 
 ## Gate D - Packaging and Publish Readiness
@@ -57,7 +57,6 @@ Current baseline:
   - Remaining blocker decisions:
     - Publish should run from a clean git state.
     - Decide policy for gitignored-but-checked-in files warning (`.dart_tool/*`, `.vscode/settings.json`, lockfiles) via `.pubignore`/git hygiene.
-    - Decide whether to address pub layout warning (`docs/` vs `doc/`) before publish.
 
 ## Gate E - Release Operations
 

@@ -2,7 +2,7 @@
 
 **Last Updated:** April 21, 2026  
 **Status Source:** `/Users/denisnadey/apps/flutter_full_svg_support/CURRENT_STATUS.md`  
-**Closed Issues Registry:** `/Users/denisnadey/apps/flutter_full_svg_support/docs/RESOLVED_ISSUES.md`
+**Closed Issues Registry:** `/Users/denisnadey/apps/flutter_full_svg_support/doc/RESOLVED_ISSUES.md`
 
 **Current Status:** ~97%+ historical parity baseline; active W3C recovery with first-40 green, lighting/specular closure landed, and remaining open functional gaps concentrated in legacy font fixtures.
 
@@ -93,6 +93,6 @@ All P3 items have been completed. See CURRENT_STATUS.md for details.
 ## Notes
 
 - Full Blink parity reference and scope are documented in:  
-  `/Users/denisnadey/apps/flutter_full_svg_support/docs/BLINK_PARITY_AUDIT.md`
+  `/Users/denisnadey/apps/flutter_full_svg_support/doc/BLINK_PARITY_AUDIT.md`
 - Closed bugs and closed milestones must be recorded in:
-  `/Users/denisnadey/apps/flutter_full_svg_support/docs/RESOLVED_ISSUES.md`
+  `/Users/denisnadey/apps/flutter_full_svg_support/doc/RESOLVED_ISSUES.md`
