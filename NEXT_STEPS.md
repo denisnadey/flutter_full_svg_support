@@ -38,6 +38,7 @@ W3C functional closure is complete; keep regression guard workflow active. Treat
 1. Complete Gate E release operations (tag/publish and post-release smoke).
 
 Gate D note (April 22, 2026):
+
 - `dart pub publish --dry-run` was executed for `full_svg_flutter` `1.0.0`.
 - `meta` publish validation blocker is fixed.
 - Release track is now reset for new package identity: `full_svg_flutter` `1.0.0` (stable).
