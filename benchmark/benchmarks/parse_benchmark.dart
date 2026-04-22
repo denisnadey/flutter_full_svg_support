@@ -7,7 +7,7 @@ import '../svg_content.dart';
 
 // Import SVG parser for parsing benchmarks
 // ignore: implementation_imports
-import 'package:flutter_svg/src/animation/svg_parser.dart';
+import 'package:full_svg_flutter/src/animation/svg_parser.dart';
 
 /// Runs SVG parsing benchmarks.
 List<BenchmarkResult> runParseBenchmarks() {

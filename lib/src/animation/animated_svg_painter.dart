@@ -54,6 +54,7 @@ part 'animated_svg_painter_text_decoration.dart';
 part 'animated_svg_painter_text_layout_measurement.dart';
 part 'animated_svg_painter_text_layout_render.dart';
 part 'animated_svg_painter_text_measurement.dart';
+part 'animated_svg_painter_svg_fonts.dart';
 part 'animated_svg_painter_geometry.dart';
 part 'animated_svg_painter_geometry_foreign_object.dart';
 part 'animated_svg_painter_geometry_path.dart';
@@ -81,6 +82,9 @@ class AnimatedSvgPainter extends CustomPainter {
     required this.document,
     this.backgroundColor,
     this.imagesByHref = const <String, ui.Image>{},
+    this.convolvedImagesByFilterKey = const <String, ui.Image>{},
+    this.lightingImagesByFilterKey = const <String, ui.Image>{},
+    this.displacementImagesByFilterKey = const <String, ui.Image>{},
     this.animationTime,
     this.hasAnimations = false,
     _RenderCache? renderCache,
@@ -94,6 +98,15 @@ class AnimatedSvgPainter extends CustomPainter {
 
   /// Decoded raster images keyed by raw `href`/`xlink:href` value.
   final Map<String, ui.Image> imagesByHref;
+
+  /// Precomputed convolution outputs keyed by `<href>|<filterId>`.
+  final Map<String, ui.Image> convolvedImagesByFilterKey;
+
+  /// Precomputed lighting outputs keyed by `<href>|<filterId>|<size>|<kind>`.
+  final Map<String, ui.Image> lightingImagesByFilterKey;
+
+  /// Precomputed displacement outputs keyed by `<filterId>|<size>`.
+  final Map<String, ui.Image> displacementImagesByFilterKey;
 
   /// Current animation time in seconds (for cache invalidation).
   final double? animationTime;
@@ -111,8 +124,14 @@ class AnimatedSvgPainter extends CustomPainter {
   final Map<String, _ResolvedPatternDefinition?> _patternCache =
       <String, _ResolvedPatternDefinition?>{};
   final Map<String, MotionPath> _motionPathCache = <String, MotionPath>{};
+  Map<String, _SvgFontDefinition>? _svgFontsByFamilyCache;
+  Map<String, _SvgFontDefinition>? _svgFontsByIdCache;
+  Map<String, String>? _svgFontFamilyToFontIdCache;
   bool _currentPassPaintFill = true;
   bool _currentPassPaintStroke = true;
+  ui.Color? _currentPassFillColorOverride;
+  ui.Color? _currentPassStrokeColorOverride;
+  SvgFilterPaintPass? _currentFilterPass;
 
   @override
   void paint(ui.Canvas canvas, ui.Size size) {
@@ -230,6 +249,38 @@ class AnimatedSvgPainter extends CustomPainter {
   /// Рисует узел и его детей
   void _paintNode(ui.Canvas canvas, SvgNode node, {Set<String>? useStack}) {
     _paintNodeImpl(this, canvas, node, useStack: useStack);
+  }
+
+  /// Measures node bounds in current SVG user units.
+  ui.Rect measureNodeBounds(SvgNode node) {
+    return _getNodeBounds(node);
+  }
+
+  /// Paints a node subtree to the provided canvas.
+  ///
+  /// When [ignoreFilter] is true, the node-level `filter` attribute is
+  /// temporarily disabled so callers can capture SourceGraphic content.
+  void paintNodeForRaster(
+    ui.Canvas canvas,
+    SvgNode node, {
+    bool ignoreFilter = false,
+  }) {
+    final originalFilter = ignoreFilter
+        ? node.getRawAttributeValue('filter')
+        : null;
+    final shouldDisableFilter =
+        originalFilter != null && originalFilter.trim().isNotEmpty;
+    if (shouldDisableFilter) {
+      node.setAttribute('filter', 'none', rawValue: 'none');
+    }
+
+    try {
+      _paintNode(canvas, node);
+    } finally {
+      if (shouldDisableFilter) {
+        node.setAttribute('filter', originalFilter, rawValue: originalFilter);
+      }
+    }
   }
 
   @override

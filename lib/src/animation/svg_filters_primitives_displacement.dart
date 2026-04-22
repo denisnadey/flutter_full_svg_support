@@ -364,10 +364,18 @@ class SvgDisplacementMapPaintPass extends SvgFilterPaintPass {
     super.paintFill,
     super.paintStroke,
     required this.displacementFilter,
+    this.textureHref,
+    this.mapHref,
   });
 
   /// The displacement filter parameters to apply.
   final SvgDisplacementMapFilter displacementFilter;
+
+  /// Resolved texture source href for displacement input (`in`).
+  final String? textureHref;
+
+  /// Resolved displacement-map source href for displacement input (`in2`).
+  final String? mapHref;
 
   @override
   SvgFilterPaintPass copyWith({
@@ -386,6 +394,8 @@ class SvgDisplacementMapPaintPass extends SvgFilterPaintPass {
       paintFill: paintFill ?? this.paintFill,
       paintStroke: paintStroke ?? this.paintStroke,
       displacementFilter: displacementFilter,
+      textureHref: textureHref,
+      mapHref: mapHref,
     );
   }
 }

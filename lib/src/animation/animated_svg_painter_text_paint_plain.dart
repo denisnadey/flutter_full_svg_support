@@ -32,6 +32,24 @@ extension AnimatedSvgPainterTextPlainExtension on AnimatedSvgPainter {
         blendMode: blendMode,
       );
     }
+
+    final svgFont = _resolveSvgFontDefinition(style);
+    if (svgFont != null) {
+      return _paintSvgFontText(
+        canvas,
+        node: node,
+        text: text,
+        style: style,
+        font: svgFont,
+        x: x,
+        baselineY: baselineY,
+        isFirstLine: isFirstLine,
+        imageFilter: imageFilter,
+        colorFilter: colorFilter,
+        blendMode: blendMode,
+      );
+    }
+
     var effectiveX = x;
     if (isFirstLine && style.textIndent != 0.0) effectiveX += style.textIndent;
     final hangingInfo = _calculateHangingPunctuation(

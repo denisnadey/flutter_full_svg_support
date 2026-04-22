@@ -3,9 +3,9 @@ import 'dart:ui' as ui;
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:flutter_svg/src/animation/svg_parser.dart';
-import 'package:flutter_svg/src/animation/svg_filters.dart';
-import 'package:flutter_svg/src/animation/smil/smil_parser.dart';
+import 'package:full_svg_flutter/src/animation/svg_parser.dart';
+import 'package:full_svg_flutter/src/animation/svg_filters.dart';
+import 'package:full_svg_flutter/src/animation/smil/smil_parser.dart';
 
 void main() {
   group('feDiffuseLighting Filter', () {
@@ -693,8 +693,8 @@ void main() {
       // Should find the azimuth animation
       final azimuthAnim = animations.where((a) => a.attributeName == 'azimuth');
       expect(azimuthAnim, isNotEmpty);
-      expect(azimuthAnim.first.from, equals('0'));
-      expect(azimuthAnim.first.to, equals('360'));
+      expect(azimuthAnim.first.from, equals(0.0));
+      expect(azimuthAnim.first.to, equals(360.0));
     });
 
     test('parses elevation animation on feDistantLight', () {
@@ -1287,6 +1287,60 @@ void main() {
       // Should complete without error
       expect(result.length, equals(400));
     });
+
+    test('LightingProcessor applies surface origin to user-space sampling', () {
+      final imageData = Uint8List(3 * 3 * 4);
+      for (int i = 0; i < 9; i++) {
+        imageData[i * 4] = 255;
+        imageData[i * 4 + 1] = 255;
+        imageData[i * 4 + 2] = 255;
+        imageData[i * 4 + 3] = 255;
+      }
+
+      final baseProcessor = LightingProcessor(
+        surfaceScale: 0.0,
+        lightSource: const SvgPointLightSource(x: 10, y: 10, z: 10),
+        lightingColor: const ui.Color(0xFFFFFFFF),
+      );
+      final shiftedProcessor = LightingProcessor(
+        surfaceScale: 0.0,
+        lightSource: const SvgPointLightSource(x: 10, y: 10, z: 10),
+        lightingColor: const ui.Color(0xFFFFFFFF),
+        surfaceOriginX: 10.0,
+        surfaceOriginY: 10.0,
+      );
+
+      final base = baseProcessor.processDiffuse(imageData, 3, 3, 1.0);
+      final shifted = shiftedProcessor.processDiffuse(imageData, 3, 3, 1.0);
+
+      final center = (1 * 3 + 1) * 4;
+      expect(shifted[center], greaterThan(base[center]));
+    });
+
+    test(
+      'LightingProcessor applies objectBoundingBox light coordinates with bbox origin',
+      () {
+        final imageData = Uint8List.fromList([255, 255, 255, 255]);
+
+        final processor = LightingProcessor(
+          surfaceScale: 0.0,
+          lightSource: const SvgPointLightSource(x: 0.5, y: 1.0, z: 0.5),
+          lightingColor: const ui.Color(0xFFFFFFFF),
+          primitiveUnitsObjectBoundingBox: true,
+          objectBoundingBoxWidth: 4.0,
+          objectBoundingBoxHeight: 2.0,
+          objectBoundingBoxX: 10.0,
+          objectBoundingBoxY: 20.0,
+          surfaceOriginX: 12.0,
+          surfaceOriginY: 22.0,
+        );
+
+        final result = processor.processDiffuse(imageData, 1, 1, 1.0);
+        expect(result[0], greaterThan(240));
+        expect(result[1], greaterThan(240));
+        expect(result[2], greaterThan(240));
+      },
+    );
   });
 
   group('Surface Normal Computation', () {

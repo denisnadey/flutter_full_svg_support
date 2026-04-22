@@ -67,7 +67,8 @@ extension SvgLightSourceExtension on SvgLightSource {
         lightX: point.x,
         lightY: point.y,
         lightZ: point.z,
-        useDistanceAttenuation: true,
+        // SVG fePointLight does not define distance falloff attenuation.
+        useDistanceAttenuation: false,
       );
       return calc.directionAndIntensityAt(surfaceX, surfaceY, surfaceZ);
     } else if (this is SvgSpotLightSource) {
@@ -104,6 +105,15 @@ class LightingProcessor {
     this.kernelUnitLengthX,
     this.kernelUnitLengthY,
     this.edgeMode = LightingEdgeMode.duplicate,
+    this.primitiveUnitsObjectBoundingBox = false,
+    this.objectBoundingBoxWidth,
+    this.objectBoundingBoxHeight,
+    this.objectBoundingBoxX,
+    this.objectBoundingBoxY,
+    this.surfaceOriginX = 0.0,
+    this.surfaceOriginY = 0.0,
+    this.specularUseInputAlphaMask = false,
+    this.specularFlipLightZForHalfVector = false,
   });
 
   final double surfaceScale;
@@ -112,6 +122,62 @@ class LightingProcessor {
   final double? kernelUnitLengthX;
   final double? kernelUnitLengthY;
   final LightingEdgeMode edgeMode;
+  final bool primitiveUnitsObjectBoundingBox;
+  final double? objectBoundingBoxWidth;
+  final double? objectBoundingBoxHeight;
+  final double? objectBoundingBoxX;
+  final double? objectBoundingBoxY;
+  final double surfaceOriginX;
+  final double surfaceOriginY;
+  final bool specularUseInputAlphaMask;
+  final bool specularFlipLightZForHalfVector;
+
+  SvgLightSource _effectiveLightSourceForImageSize(int width, int height) {
+    if (!primitiveUnitsObjectBoundingBox) {
+      return lightSource;
+    }
+
+    final bboxWidth = (objectBoundingBoxWidth ?? width.toDouble()).clamp(
+      0.0,
+      double.infinity,
+    );
+    final bboxHeight = (objectBoundingBoxHeight ?? height.toDouble()).clamp(
+      0.0,
+      double.infinity,
+    );
+    if (bboxWidth <= 0 || bboxHeight <= 0) {
+      return lightSource;
+    }
+    final bboxX = objectBoundingBoxX ?? 0.0;
+    final bboxY = objectBoundingBoxY ?? 0.0;
+
+    final zScale = math.sqrt(
+      (bboxWidth * bboxWidth + bboxHeight * bboxHeight) / 2.0,
+    );
+
+    final source = lightSource;
+    if (source is SvgPointLightSource) {
+      return SvgPointLightSource(
+        x: bboxX + source.x * bboxWidth,
+        y: bboxY + source.y * bboxHeight,
+        z: source.z * zScale,
+      );
+    }
+    if (source is SvgSpotLightSource) {
+      return SvgSpotLightSource(
+        x: bboxX + source.x * bboxWidth,
+        y: bboxY + source.y * bboxHeight,
+        z: source.z * zScale,
+        pointsAtX: bboxX + source.pointsAtX * bboxWidth,
+        pointsAtY: bboxY + source.pointsAtY * bboxHeight,
+        pointsAtZ: source.pointsAtZ * zScale,
+        specularExponent: source.specularExponent,
+        limitingConeAngle: source.limitingConeAngle,
+      );
+    }
+
+    return source;
+  }
 
   /// Process diffuse lighting on image data.
   ///
@@ -140,6 +206,11 @@ class LightingProcessor {
     // Create output buffer
     final output = Uint8List(width * height * 4);
 
+    final effectiveLightSource = _effectiveLightSourceForImageSize(
+      width,
+      height,
+    );
+
     // Process each pixel
     for (int y = 0; y < height; y++) {
       for (int x = 0; x < width; x++) {
@@ -156,10 +227,12 @@ class LightingProcessor {
 
         // Compute surface height
         final surfaceZ = alphaData[y * width + x] / 255.0 * surfaceScale;
+        final surfaceX = surfaceOriginX + x.toDouble();
+        final surfaceY = surfaceOriginY + y.toDouble();
 
         // Get light direction and intensity
-        final (lightDir, lightIntensity) = lightSource
-            .getDirectionAndIntensityAt(x.toDouble(), y.toDouble(), surfaceZ);
+        final (lightDir, lightIntensity) = effectiveLightSource
+            .getDirectionAndIntensityAt(surfaceX, surfaceY, surfaceZ);
 
         // Compute diffuse: kd * max(0, N·L) * lightIntensity
         final nDotL = normal.dot(lightDir).clamp(0.0, 1.0);
@@ -217,6 +290,11 @@ class LightingProcessor {
     // Create output buffer
     final output = Uint8List(width * height * 4);
 
+    final effectiveLightSource = _effectiveLightSourceForImageSize(
+      width,
+      height,
+    );
+
     // Process each pixel
     for (int y = 0; y < height; y++) {
       for (int x = 0; x < width; x++) {
@@ -233,21 +311,29 @@ class LightingProcessor {
 
         // Compute surface height
         final surfaceZ = alphaData[y * width + x] / 255.0 * surfaceScale;
+        final surfaceX = surfaceOriginX + x.toDouble();
+        final surfaceY = surfaceOriginY + y.toDouble();
 
         // Get light direction and intensity
-        final (lightDir, lightIntensity) = lightSource
-            .getDirectionAndIntensityAt(x.toDouble(), y.toDouble(), surfaceZ);
+        final (lightDir, lightIntensity) = effectiveLightSource
+            .getDirectionAndIntensityAt(surfaceX, surfaceY, surfaceZ);
 
-        // Compute half vector: H = normalize(L + Eye)
-        final halfVector = (lightDir + eyeDir).normalize();
+        final halfVectorLightDir = specularFlipLightZForHalfVector
+            ? _LightingVector3(lightDir.x, lightDir.y, -lightDir.z)
+            : lightDir;
+        final halfVector = (halfVectorLightDir + eyeDir).normalize();
 
         // Compute specular: ks * (N·H)^exp * lightIntensity
         final nDotH = normal.dot(halfVector).clamp(0.0, 1.0);
         final specular = math.pow(nDotH, specularExponent).toDouble();
-        final factor = (specularConstant * specular * lightIntensity).clamp(
-          0.0,
-          1.0,
-        );
+        final alphaFactor = specularUseInputAlphaMask
+            ? alphaData[y * width + x] / 255.0
+            : 1.0;
+        final factor =
+            (specularConstant * specular * lightIntensity * alphaFactor).clamp(
+              0.0,
+              1.0,
+            );
 
         // Apply to lighting color
         final r = (lightingColor.r * 255 * factor).round().clamp(0, 255);

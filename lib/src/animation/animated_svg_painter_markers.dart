@@ -277,6 +277,18 @@ extension AnimatedSvgPainterMarkersExtension on AnimatedSvgPainter {
     // Translate by -refX, -refY
     canvas.translate(-marker.refX, -marker.refY);
 
+    // Marker viewport is clipped by default in SVG unless overflow is visible.
+    // Marker viewport is clipped by default in SVG unless overflow is visible.
+    final overflow = _getString(marker.node, 'overflow')?.toLowerCase().trim();
+    final shouldClipToViewport = overflow == null || overflow != 'visible';
+    if (shouldClipToViewport &&
+        marker.markerWidth > 0 &&
+        marker.markerHeight > 0) {
+      canvas.clipRect(
+        ui.Rect.fromLTWH(0, 0, marker.markerWidth, marker.markerHeight),
+      );
+    }
+
     // Paint marker contents
     for (final child in marker.node.children) {
       _paintNode(canvas, child);
@@ -325,68 +337,10 @@ extension AnimatedSvgPainterMarkersExtension on AnimatedSvgPainter {
   double _angleBetweenPoints(ui.Offset p1, ui.Offset p2) {
     final dx = p2.dx - p1.dx;
     final dy = p2.dy - p1.dy;
-    return (dy == 0 && dx == 0) ? 0.0 : _atan2Degrees(dy, dx);
-  }
-
-  double _atan2Degrees(double y, double x) {
-    return (x == 0 && y == 0)
-        ? 0.0
-        : (180.0 / 3.14159265358979) *
-              (y < 0
-                  ? -_acos(x / _sqrt(x * x + y * y))
-                  : _acos(x / _sqrt(x * x + y * y)));
-  }
-
-  double _acos(double x) {
-    // Clamp to valid range
-    if (x >= 1.0) return 0.0;
-    if (x <= -1.0) return 3.14159265358979;
-    // Taylor series approximation
-    return 3.14159265358979 / 2.0 - _asin(x);
-  }
-
-  double _asin(double x) {
-    // Clamp to valid range
-    if (x >= 1.0) return 3.14159265358979 / 2.0;
-    if (x <= -1.0) return -3.14159265358979 / 2.0;
-    // Use dart:math through ui library
-    return x.isNaN ? 0.0 : _atan2(x, _sqrt(1 - x * x));
-  }
-
-  double _sqrt(double x) => x <= 0 ? 0.0 : x * 0.5 + 0.5 * x / (x * 0.5 + 1);
-
-  double _atan2(double y, double x) {
-    // Simple atan2 using dart:math
-    if (x > 0) {
-      return _atan(y / x);
-    } else if (x < 0 && y >= 0) {
-      return _atan(y / x) + 3.14159265358979;
-    } else if (x < 0 && y < 0) {
-      return _atan(y / x) - 3.14159265358979;
-    } else if (x == 0 && y > 0) {
-      return 3.14159265358979 / 2.0;
-    } else if (x == 0 && y < 0) {
-      return -3.14159265358979 / 2.0;
+    if (dy == 0 && dx == 0) {
+      return 0.0;
     }
-    return 0.0;
-  }
-
-  double _atan(double x) {
-    // Taylor series for small values, otherwise use identity
-    if (x.abs() <= 1) {
-      // Taylor series
-      double result = x;
-      double term = x;
-      for (int i = 1; i < 10; i++) {
-        term *= -x * x;
-        result += term / (2 * i + 1);
-      }
-      return result;
-    } else if (x > 0) {
-      return 3.14159265358979 / 2.0 - _atan(1 / x);
-    } else {
-      return -3.14159265358979 / 2.0 - _atan(1 / x);
-    }
+    return math.atan2(dy, dx) * 180.0 / math.pi;
   }
 }
 

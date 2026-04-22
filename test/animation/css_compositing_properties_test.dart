@@ -1,9 +1,9 @@
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
-import 'package:flutter_svg/src/animation/animated_svg_picture.dart';
-import 'package:flutter_svg/src/animation/svg_filters.dart';
-import 'package:flutter_svg/src/animation/svg_parser.dart';
+import 'package:full_svg_flutter/src/animation/animated_svg_picture.dart';
+import 'package:full_svg_flutter/src/animation/svg_filters.dart';
+import 'package:full_svg_flutter/src/animation/svg_parser.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

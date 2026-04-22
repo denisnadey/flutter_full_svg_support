@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:flutter_svg/src/animation/animated_svg_picture.dart';
+import 'package:full_svg_flutter/src/animation/animated_svg_picture.dart';
 
 import '../l10n/app_localizations.dart';
 import '../widgets/performance_metrics.dart';

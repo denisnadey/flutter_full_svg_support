@@ -1,86 +1,27 @@
 ## NEXT
 
-* Updates minimum supported SDK version to Flutter 3.32/Dart 3.8.
-* **Advanced animateMotion semantics** (NEW):
-  * to-only animation mode: animate from base value to specified 'to' value with proper distance calculation.
-  * by-only animation mode: animate from base value by specified 'by' delta offset.
-  * from-only animation mode: animate from specified 'from' value to base value (reverse semantic).
-  * keyTimes→keyPoints implicit generation with proper pacing semantics when keyTimes specified without keyPoints.
-  * Discrete calcMode + keyPoints waypoint jumping at exact keyTime boundaries without interpolation.
-  * Closed path detection with float epsilon comparison (1e-6) for path closure detection.
-  * Zero-length path segment handling for graceful handling of degenerate path segments.
-  * 60 comprehensive animateMotion tests covering all animation modes, keyPoints semantics, calcMode edge cases, path closure detection, and error handling.
-* **SVG `<a>` anchor element support** (NEW):
-  * Parse `<a>` element as container (renders children like `<g>`).
-  * Support `href`, `xlink:href`, and `target` attributes.
-  * New `onLinkTap` callback on `AnimatedSvgPicture` receives `SvgLinkInfo` with href and target.
-  * Pointer cursor automatically shown for elements inside `<a>`.
-  * Nested `<a>` support: inner anchor takes precedence over outer.
-* **CSS pseudo-class selectors** (NEW):
-  * `:hover` - styles applied when element is hovered by pointer.
-  * `:active` - styles applied when element is pressed.
-  * `:focus` - styles applied when element has focus (via tap).
-  * `:not(selector)` - negation pseudo-class for excluding matching elements.
-  * Structural pseudo-classes: `:first-child`, `:last-child`, `:only-child`, `:empty`, `:root`.
-  * Dynamic CSS rule re-evaluation when pseudo-class state changes.
-* **SVG `<view>` element support** (NEW):
-  * Parse `<view>` elements with `viewBox` and `preserveAspectRatio` attributes.
-  * Fragment identifier support for switching to named views.
-  * Programmatic view switching via `AnimatedSvgController.switchToView(viewId)`.
-  * `document.activeViewBox` returns the currently active view's viewBox.
-  * `document.viewIds` lists all available view IDs.
-* **Performance caching**: Critical render-time optimizations for better frame rates:
-  * Gradient shader caching: Reuses shader objects when gradient parameters haven't changed.
-  * Pattern image caching: Caches generated pattern tile images to avoid repeated `toImageSync()` calls.
-  * Text paragraph caching: Reuses text layout/measurement results when text content and style match.
-  * Hit-test path geometry caching: Caches path objects for efficient pointer event handling.
-  * Smart cache invalidation: Automatically clears caches when animation time changes for animated SVGs.
-* SVG accessibility support:
-  * `<title>` element text content exposed as accessible name (Semantics label).
-  * `<desc>` element text content exposed as accessible description (Semantics hint).
-  * ARIA attributes: `aria-label`, `aria-describedby`, `role` parsed and integrated with Flutter Semantics.
-  * AnimatedSvgPicture automatically wraps with Semantics widget when title/desc/ARIA info is present.
-  * Role-based Semantics flags: `role="img"` sets image flag, `role="button"` sets button flag.
-* `feConvolveMatrix` actual kernel convolution: pixel-level NxN matrix convolution with `duplicate`, `wrap`, `none` edge modes, `preserveAlpha` support, configurable `divisor`/`bias`/`targetX`/`targetY`, and identity kernel optimization.
-* `feDiffuseLighting` actual Lambertian lighting calculation: surface normal computation, feDistantLight/fePointLight/feSpotLight direction calculations, diffuseConstant * N·L * lightColor formula, surfaceScale attribute support.
-* `feSpecularLighting` actual Blinn-Phong specular calculation: half-vector computation H=normalize(L+eye), specularConstant * (N·H)^specularExponent * lightColor formula, alpha = max(r,g,b), all three light source types supported.
-* Gradient/pattern coordinate units support:
-  * `gradientUnits="objectBoundingBox"`: gradient coordinates (0-1) scaled relative to element bounding box.
-  * `gradientUnits="userSpaceOnUse"`: coordinates in current user coordinate system.
-  * `patternContentUnits="objectBoundingBox"`: pattern content scaled relative to element bounds.
-  * Radial gradient focal point: proper handling when `fx`/`fy` differ from `cx`/`cy`.
-  * Gradient stop offset animation: support animating `offset` on `<stop>` elements via SMIL `<animate>`.
-  * Pattern edge cases: width=0 or height=0 gracefully returns no render, negative values treated as 0.
-* CSS combinator selectors: descendant (space), child (`>`), adjacent sibling (`+`), general sibling (`~`) for advanced style rule matching.
-* CSS attribute selectors: `[attr]`, `[attr=value]`, `[attr~=value]`, `[attr|=value]`, `[attr^=value]`, `[attr$=value]`, `[attr*=value]` with case-insensitive flag support.
-* Compound selectors with combinators: `g.container > rect[fill=red].item` and similar complex patterns.
-* Advanced hit-testing for complex geometry: clip-path geometric intersection, mask alpha-based visibility, stroke-width expansion with linecap/linejoin support, per-character text hit-testing.
-* **Text & Typography (~99% Blink parity)**:
-  * Full `<text>`/`<tspan>`/`<textPath>` rendering and per-character hit-testing.
-  * Multi-position attributes: `x`/`y`/`dx`/`dy` as space/comma-separated lists for per-character positioning.
-  * Per-character `rotate` attribute (single value or list).
-  * `textLength` + `lengthAdjust` (`spacing`, `spacingAndGlyphs`), ignored when explicit per-character positions exist.
-  * `textPath`: `href`/`xlink:href`, `startOffset`, `spacing` (`exact`/`auto`).
-  * tspan absolute positioning creates new text chunks with proper cursor reset; `text-anchor` applies per-chunk.
-  * Font properties: `font-family` (fallback chain), `font-weight`, `font-style`, `font-size`, `font-stretch`, `font-variant` (OpenType), `font-size-adjust`, `font-feature-settings`, `font-variation-settings`, `font-optical-sizing`.
-  * Decorations: `text-decoration` (underline/overline/line-through), `text-decoration-color`/`-style`/`-thickness`/`-skip`/`-skip-ink`, `text-emphasis` (filled/open/dot/circle/double-circle), `text-emphasis-position`, `text-shadow`.
-  * Layout: `dominant-baseline`/`alignment-baseline`, `baseline-shift`, `letter-spacing`, `word-spacing`, `line-height`, `white-space`, `text-indent`, `tab-size`, `text-transform`, `text-overflow`, `word-break`, `overflow-wrap`.
-  * Writing modes: `writing-mode` (horizontal-tb/vertical-rl/vertical-lr + legacy), `direction` (ltr/rtl), `unicode-bidi`, `text-orientation`, `glyph-orientation-vertical`.
-  * Text stroke rendering with `paint-order` control.
-  * NFC normalization, grapheme cluster segmentation, combining marks/diacritics.
-  * Text paragraph caching by content + style with smart invalidation.
-* Advanced `<foreignObject>` semantics: requiredExtensions fallback for switch patterns, nested SVG context switching with viewBox/preserveAspectRatio, overflow handling, transform propagation, hit-testing through foreignObject children.
-* CSS cascade and specificity resolution: proper specificity calculation (inline > ID > class > element), cascade order (later wins), !important handling, and inheritable property support (fill, stroke, font-*, color, visibility, etc.).
-* CSS shorthand property expansion: font shorthand (font-style/variant/weight/size/line-height/family), animation shorthand with multiple comma-separated animations, transition shorthand, margin/padding shorthand (1-4 value expansion), marker shorthand (SVG-specific), border shorthand.
-* CSS custom properties (variables) and calc() support: `var(--name)` resolution by walking up element tree, `var(--name, fallback)` with fallback values, calc() expression parser with arithmetic (+, -, *, /) and unit support (px, em, %, pt, rem), nested calc(), var() inside calc().
-* CSS animation edge cases:
-  * Multiple animations per element: comma-separated `animation` shorthand parsing generates multiple SMIL animations.
-  * `animation-play-state`: `paused`/`running` support integrated with SmilAnimation runtime.
-  * Negative `animation-delay`: Start animations partway through (e.g., `-0.5s` on 2s animation starts at 25%).
-  * `animation-fill-mode` edge cases: `backwards` applies first keyframe during delay, `both` combines forwards+backwards.
-* CSS transitions support: Parse `transition` shorthand and individual `transition-*` properties (property, duration, timing-function, delay).
-* @media queries in SVG style blocks: Parse `@media` rules, support `prefers-color-scheme` (dark/light) and viewport queries (`min-width`, `max-width`, `min-height`, `max-height`).
-* CSS 3D transforms: `translate3d`, `translateZ`, `rotateX`, `rotateY`, `rotateZ`, `rotate3d`, `scale3d`, `scaleZ`, `perspective`, `matrix3d` with proper 3D→2D projection using homogeneous coordinates and `backface-visibility` support.
+* Package identity is reset for a new publication line:
+  * `name: full_svg_flutter`
+  * target release: `1.0.0` (stable)
+  * canonical import path: `package:full_svg_flutter/full_svg_flutter.dart`
+* Release gate baseline re-validated on April 21, 2026:
+  * `dart analyze lib/ test/ example/lib/` -> 0 errors, 0 warnings
+  * `flutter test` -> all tests passed (`4,922` pass / `2` skipped)
+  * `RUN_W3C_STATIC=1 W3C_LIMIT=83 flutter test test/w3c/w3c_static_golden_test.dart` -> 83 pass / 0 fail
+* W3C 83-slice is now green after clip/mask functional fixes and case-scoped compare hardening.
+* Wave-A closure queue confirmed:
+  * `masking-path-03-b`
+  * `painting-stroke-02-t`
+  * `painting-stroke-03-t`
+  * `painting-fill-02-t`
+  * `painting-stroke-04-t`
+  * `painting-render-02-b`
+* Declare direct `meta` dependency in `pubspec.yaml` to satisfy `dart pub publish --dry-run` validation.
+* Finalize publish readiness for `full_svg_flutter` `1.0.0`:
+  * remove `publish_to: 'none'`
+  * pass `dart pub publish --dry-run` with `0` warnings on clean git state
+  * add `.pubignore` to keep release payload lean
+  * normalize documentation path from `docs/` to `doc/`
 
 ## 2.2.2
 

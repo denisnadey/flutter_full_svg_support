@@ -1,17 +1,42 @@
 # Current Development Status
 
-**Last Updated:** March 31, 2026  
+**Last Updated:** April 22, 2026  
 **Authority:** This file is the single source of truth for current project state.
 
 ## Snapshot
 
-- Branch: `main`
+- Branch: `develop`
 - Flutter SDK: `3.38.1` (via `.fvm/versions/3.38.1/bin/flutter`)
 - Dart SDK: `^3.8.0`
-- Version: `2.2.2`
-- **Blink SVG Parity:** ~97%+
+- Version: `1.0.0` (`full_svg_flutter`)
+- **Blink SVG Parity:** ~97%+ (historical estimate)
 
-## Verified Health (March 31, 2026)
+## Reality Check (April 2026)
+
+- W3C static suite closure is complete; regression guard workflow remains active.
+- `W3C_LIMIT=40` remains green.
+- `W3C_LIMIT=83` is now green (`83/83`) after clip/mask functional fixes and scoped compare stabilization.
+- Gate A is now green: full-suite `flutter test` passes.
+- Active execution source for closure remains `doc/W3C_GAP_CLOSURE_PLAN.md`.
+
+## Release Gate Snapshot (Verified April 21, 2026)
+
+Commands run in `/Users/denisnadey/apps/flutter_full_svg_support`:
+
+```bash
+.fvm/versions/3.38.1/bin/dart analyze lib/ test/ example/lib/
+.fvm/versions/3.38.1/bin/flutter test
+RUN_W3C_STATIC=1 W3C_LIMIT=83 .fvm/versions/3.38.1/bin/flutter test test/w3c/w3c_static_golden_test.dart
+```
+
+Result:
+
+- `dart analyze`: **0 errors, 0 warnings**.
+- `flutter test`: **all tests passed** (`4,922` pass / `2` skipped).
+- `W3C_LIMIT=83`: **83 passed / 0 failed**.
+- 83-slice currently stable on repeated reruns.
+
+## Verified Health (Historical Baseline, March 31, 2026)
 
 Commands run in `/Users/denisnadey/apps/flutter_full_svg_support`:
 
@@ -21,21 +46,29 @@ Commands run in `/Users/denisnadey/apps/flutter_full_svg_support`:
 ```
 
 Result:
+
 - `flutter test`: **4,896 tests passed**, 2 skipped
 - `dart analyze`: **0 errors**, **0 warnings**
 
 ## In-Progress Work
 
-No active work items. All sprints complete.
+Active track: **release hardening and publish readiness (April 2026)**
 
-Next sprint candidates (P2/P3):
-1. **Additional profiling** - Ongoing identification of bottlenecks if needed
-2. **Memory allocation monitoring** - Monitor object creation in hot paths
-3. **CSS selector edge case refinement** - Advanced structural pseudo-class combinations
+Current priorities:
+
+1. **Publish execution**: tag `v1.0.0` and run `dart pub publish`.
+2. **Post-release validation**: complete smoke checks on supported platforms and finalize status docs.
+
+Secondary priorities:
+
+1. Additional profiling and bottleneck identification.
+2. Memory allocation monitoring in hot render paths.
+3. CSS selector edge-case refinement.
 
 ## Documentation Cleanup (March 16, 2026)
 
 Removed redundant documentation files:
+
 - `DOCS.md` (duplicate of DOCUMENTATION_INDEX.md)
 - `FVM_SETUP.md` (local dev notes)
 - `CSS_ANIMATIONS_FILTERS.md` (info exists in CURRENT_STATUS.md and BLINK_PARITY_AUDIT.md)
@@ -44,13 +77,15 @@ Removed redundant documentation files:
 - `docs/REORGANIZATION.md` (historical)
 
 Moved to archive:
-- `docs/SESSION_2026_01_09.md`
-- `docs/STAGE_7_SUMMARY.md`
-- `docs/STAGE_8_PLAN.md`
+
+- `doc/archive/SESSION_2026_01_09.md`
+- `doc/archive/STAGE_7_SUMMARY.md`
+- `doc/archive/STAGE_8_PLAN.md`
 
 ## Recently Closed (March 2026)
 
 ### Final CSS Compositing Properties Sprint (March 31, 2026)
+
 - ✅ **Fixed all analyzer warnings (10→0)**: Removed dead code from clip/mask pipeline (6 orphaned methods in advanced extension, 2 in units extension), removed 6 orphaned bidi text methods + 3 unused class parameters, fixed unused test variable
 - ✅ **Implemented `enable-background: new` CSS property**: Container elements with `enable-background: new` create compositing boundary via saveLayer, push/pop background context for child filter primitives referencing BackgroundImage/BackgroundAlpha
 - ✅ **Implemented `color-interpolation-filters` visual behavior**: Property resolved from CSS cascade, pixel-level processors (GaussianBlurProcessor) support sRGB↔linearRGB conversion with precomputed LUT tables, SvgFilterSourceContext carries `useLinearRGB` flag
@@ -59,6 +94,7 @@ Moved to archive:
 - **Total: 4,896 tests passing, 0 analyzer warnings**
 
 ### Advanced Parity Sprint Complete (March 31, 2026)
+
 - ✅ **Unicode normalization and complex script text**: NFC normalization, complex script detection (Arabic, Thai, Devanagari, CJK), grapheme cluster hit-testing. 25 new tests.
 - ✅ **Advanced bi-directional text edge cases**: BDO element, unicode-bidi interaction, mixed RTL/LTR reordering, visual position mapping. 18 new tests.
 - ✅ **CSS cascade through use/symbol shadow boundary**: Shadow boundary selector matching, nested use inheritance, transform stacking, event retargeting. 20 new tests.
@@ -70,6 +106,7 @@ Moved to archive:
 - **Total: ~548 new tests**, parity ~95-96% → ~96-97%, 4,882 tests passing
 
 ### Wire Edge Case Methods & Optimization Sprint Complete (March 31, 2026)
+
 - ✅ **Wired all 12 edge case methods into active render pipeline**:
   - Mask pipeline: `_generateMaskCacheKey` (animated mask cache invalidation), `_applyNestedMaskWithIntersection` (nested mask intersection)
   - ForeignObject: `_computeForeignObjectNestedSvgTransform`, `_parsePreserveAspectRatioForNested` (nested SVG transforms)
@@ -82,6 +119,7 @@ Moved to archive:
 - All 4,496 tests passed at sprint completion, parity ~94-95% → ~95-96%
 
 ### Render Pipeline & Golden Test Sprint Complete (March 30, 2026)
+
 - ✅ **Integrated edge case methods into render pipeline**: Data URI validation, mask animation tracking, gradient-aware luminance masking, alpha threshold hit testing wired into active render paths
 - ✅ **Fixed all golden test failures**: 25 golden tests passing with adjusted thresholds for Ahem font environment
 - ✅ **Expanded golden test coverage**: 19 new SVG fixtures across filters, animation, text, clipping/masking, and gradients (44 total golden tests)
@@ -92,22 +130,26 @@ Moved to archive:
 - All 4,403 tests passed at sprint completion
 
 ### Code Modularization Complete (March 29, 2026)
+
 - ✅ **animated_svg_painter.dart**: Split from 941 → 190 lines into 3 new part files (cache, types, text_types)
 - ✅ **animated_svg_picture.dart**: Split from 627 → 194 lines into 3 new + 2 modified part files (diagnostics, foreign_object, types, events, lifecycle)
 - All 4,310 tests pass, 0 analyzer errors
 
 ### Performance Benchmarking Suite Complete (March 29, 2026)
+
 - ✅ **5 new benchmark files**: filter_chain, text_render, animation_render, combined_worst_case, memory
 - ✅ **Cache profiling**: CacheStats class with hit rate, eviction count, peak size tracking
 - ✅ **Benchmark runner**: Updated with sections 6-10
 
 ### Text/Mask/Image Edge Cases Complete (March 29, 2026)
+
 - ✅ **Text edge cases**: Deeply nested tspan transforms, bidi in complex hierarchies, textLength distribution across nested tspan
 - ✅ **Mask edge cases**: Radial gradient luminance, filter chains on mask content, mask-to-mask intersection
 - ✅ **Image edge cases**: Error state fallback (verified working), nested SVG in foreignObject with all preserveAspectRatio variants
 - 21 new edge case tests added
 
 ### Filter & Clipping Edge Cases Complete (Blink Parity ~89-90% → ~91-92%)
+
 - ✅ **feMorphology edge modes**: Verified full implementation; added 7 new tests covering edge modes (duplicate/wrap/none), zero radius handling, fractional radius values
 - ✅ **feTurbulence stitchTiles**: Implemented proper seamless tiling algorithm with adjusted frequencies at tile boundaries; added 12 new tests
 - ✅ **Advanced filter input-graph semantics**: Enhanced FillPaint/StrokePaint handling, recursive composition chains, feMerge with unresolved inputs, feDropShadow with non-source chains; comprehensive test coverage
@@ -116,6 +158,7 @@ Moved to archive:
 - **Total: ~105+ new tests added in this sprint**
 
 ### Edge Case Sprint Complete (Blink Parity ~82% → ~89-90%)
+
 - ✅ **CSS Shorthand Resolution Edge Cases**: Fixed font shorthand (full CSS2.1), margin/padding shorthand interactions, animation shorthand coexistence with individual properties, border shorthand + side overrides, cascade ordering respects declaration order (36 new tests)
 - ✅ **CSS Unit Handling Precision**: Fixed em unit compounding in deeply nested contexts, rem resolution against root font-size (never compounds), ch/ex approximation (0.5em), calc() with mixed units including min/max/clamp (52 new tests)
 - ✅ **SMIL Timing Precision**: Fixed floating-point drift in fractional repeatCount, very small durations, end+repeatDur interactions per SMIL spec, min/max timing constraints with proper clamping (33 new tests)
@@ -126,6 +169,7 @@ Moved to archive:
 - **Total: ~206 new tests added in this sprint**
 
 ### Advanced animateMotion Complete (Blink Parity)
+
 - ✅ **to-only animation mode**: Animate from base value to specified 'to' value with proper distance calculation
 - ✅ **by-only animation mode**: Animate from base value by specified 'by' delta offset
 - ✅ **from-only animation mode**: Animate from specified 'from' value to base value (reverse semantic)
@@ -137,6 +181,7 @@ Moved to archive:
 - SMIL Animation parity: ~88% → ~95%
 
 ### Advanced Light Sources Complete (Blink Parity)
+
 - ✅ **Per-pixel lighting computation**: `SvgDiffuseLightingPaintPass` and `SvgSpecularLightingPaintPass` classes for full Blink-style pixel-level lighting
 - ✅ **feDistantLight**: Full azimuth/elevation direction calculation with proper vector normalization
 - ✅ **fePointLight**: Per-pixel light direction computation with distance-based attenuation support
@@ -149,6 +194,7 @@ Moved to archive:
 - ✅ **91+ comprehensive tests** covering all light sources, edge cases (light behind surface, z=0, narrow cones), filter chains, and pipeline integration
 
 ### Advanced Masking Complete (Blink Parity)
+
 - ✅ **maskUnits attribute**: Full support for `objectBoundingBox` (default) and `userSpaceOnUse` coordinate systems
 - ✅ **maskContentUnits attribute**: Full support for `userSpaceOnUse` (default) and `objectBoundingBox` coordinate systems
 - ✅ **Luminance masks (default per SVG 2)**: Proper luminance formula (0.2126*R + 0.7152*G + 0.0722*B) * A with white=visible, black=hidden, gray=partial
@@ -165,6 +211,7 @@ Moved to archive:
 - ✅ **26+ comprehensive tests** covering maskUnits, maskContentUnits, luminance/alpha modes, gradients, transforms, nested masks, combinations, and edge cases
 
 ### Advanced Clipping Complete (Blink Parity)
+
 - ✅ **clipPathUnits attribute**: Full support for `userSpaceOnUse` (default) and `objectBoundingBox` coordinate systems with proper transform mapping
 - ✅ **Nested clip-paths**: Cascading clip-paths with intersection computation, 3+ levels deep, mixed clipPathUnits across nesting levels
 - ✅ **Complex clip-path compositions**: Multiple shapes (union), `<use>` element references, `<text>` element clipping (bounding box), transforms on child elements
@@ -173,6 +220,7 @@ Moved to archive:
 - ✅ **29 comprehensive tests** covering clipPathUnits, clip-rule, nested clip-paths, compositions, edge cases (empty clip, no geometry, circular refs), transform compositions, and hit-testing
 
 ### SVG Filter Graph Complete (100% FE Primitive Coverage)
+
 - ✅ **All 17 FE primitives implemented**: feGaussianBlur, feMorphology, feDisplacementMap, feImage, feConvolveMatrix, feTurbulence, feComponentTransfer, feDiffuseLighting, feSpecularLighting, feOffset, feFlood, feBlend, feComposite, feMerge/feMergeNode, feTile, feDropShadow, feColorMatrix
 - ✅ **All 3 light source elements**: feDistantLight, fePointLight, feSpotLight
 - ✅ **Complete input chain semantics**: SourceGraphic, SourceAlpha, BackgroundImage, BackgroundAlpha, FillPaint, StrokePaint
@@ -182,6 +230,7 @@ Moved to archive:
 - ✅ **Advanced feMerge composition**: Multiple input layers in declaration order
 
 ### Extended Component Transfer (Full Blink Parity)
+
 - ✅ **All 5 transfer function types**: `identity`, `table`, `discrete`, `linear`, `gamma`
 - ✅ **Full attribute parsing**: `tableValues`, `slope`, `intercept`, `amplitude`, `exponent`, `offset`
 - ✅ **Per-channel functions**: `<feFuncR>`, `<feFuncG>`, `<feFuncB>`, `<feFuncA>` elements
@@ -192,13 +241,15 @@ Moved to archive:
 - ✅ **78 comprehensive tests** covering all function types, mixed channels, edge cases, and pipeline integration
 
 ### Text Typography Completion (~99% Blink Parity)
+
 - ✅ **Hanging punctuation rendering**: CSS `hanging-punctuation` property fully renders (`first`, `last`, `allow-end`, `force-end` values with CJK and Latin punctuation, vertical text, and text-anchor integration)
 - ✅ **Baseline alignment in deeply nested contexts**: Recursive baseline offset accumulation through 3+ nesting levels, vertical-in-horizontal writing mode transitions, mixed dominant-baseline/alignment-baseline/baseline-shift propagation
 - ✅ **Complex ligature shaping edge cases**: Contextual ligatures preserved across tspan boundaries, font-feature-settings correctly scoped per run, metric recalculation for feature-induced width changes, graceful fallback for unsupported features, cache keys include font features
 
 ### Use/Symbol Inheritance Complete (Blink Parity)
+
 - ✅ **CSS cascade through use shadow boundary**: `UseCascadeContext` properly resolves CSS specificity across shadow DOM boundary
-- ✅ **CSS property inheritance**: `_UseInheritanceContext` inherits CSS properties (fill, stroke, font-*, visibility, etc.) from use element into shadow content
+- ✅ **CSS property inheritance**: `_UseInheritanceContext` inherits CSS properties (fill, stroke, font-\*, visibility, etc.) from use element into shadow content
 - ✅ **Symbol viewBox/preserveAspectRatio**: Proper viewport creation with all preserveAspectRatio values (xMinYMin, xMidYMid, xMaxYMax, meet/slice/none)
 - ✅ **Nested use/symbol transform composition**: Transforms compose correctly through deeply nested use→symbol→use→symbol chains
 - ✅ **Circular reference protection**: Max recursion depth of 10, graceful handling of direct and indirect circular references
@@ -206,10 +257,12 @@ Moved to archive:
 - ✅ **27 comprehensive edge case tests** covering viewBox edge cases, transform composition, preserveAspectRatio variants, invalid references, circular references, CSS inheritance, and hit-testing
 
 ### Functional Closures (March 12-13, 2026)
+
 - ✅ `calcMode="paced"` distance support for `path` and `transform` is implemented and covered by tests.
 - ✅ `autoPlay: false` rendering issue remains closed and regression-covered.
 
 ### Refactor Closures (API preserved)
+
 - ✅ `smil_animation.dart` split into focused part files.
 - ✅ `smil_parser.dart` split into focused part files.
 - ✅ `smil_timeline.dart` split into focused part files.
@@ -230,11 +283,12 @@ Moved to archive:
 - ✅ `css_to_smil_converter_transforms.dart` further split into focused part files.
 - ✅ Full regression runs completed after refactors.
 
-See: `/Users/denisnadey/apps/flutter_full_svg_support/docs/RESOLVED_ISSUES.md`
+See: `/Users/denisnadey/apps/flutter_full_svg_support/doc/RESOLVED_ISSUES.md`
 
 ## What Is Implemented
 
 ### Performance Optimizations
+
 - **Render-time caching**: Critical performance caching to match Blink optimization behavior
   - Gradient shader caching: Shader objects cached by gradient ID + paint bounds + attributes
   - Pattern image caching: Pattern tile images cached and reused across frames
@@ -243,6 +297,7 @@ See: `/Users/denisnadey/apps/flutter_full_svg_support/docs/RESOLVED_ISSUES.md`
   - Smart cache invalidation: Caches cleared when animation time changes for animated SVGs
 
 ### SMIL Engine
+
 - `<animate>`, `<animateTransform>`, `<animateMotion>`, `<set>`, `<animateColor>` parsing
 - `animateMotion`: inline `path` and `<mpath href="#...">` / `<mpath xlink:href="#...">` references
 - Timing conditions: offset, syncbase, event-based
@@ -252,6 +307,7 @@ See: `/Users/denisnadey/apps/flutter_full_svg_support/docs/RESOLVED_ISSUES.md`
 - `AnimatedSvgController`: pause/resume/seek/playbackRate/restart/reverse
 
 ### CSS Animation Interop
+
 - `@keyframes` extraction and `animation` / `animation-*` parsing
 - CSS->SMIL timing conversion with `cubic-bezier(...)` and `ease*` mapped to SMIL `keySplines`
 - CSS `animation-direction`: `reverse`, `alternate`, `alternate-reverse` runtime behavior
@@ -311,7 +367,7 @@ See: `/Users/denisnadey/apps/flutter_full_svg_support/docs/RESOLVED_ISSUES.md`
   - Proper specificity calculation: inline (1,0,0,0) > ID (0,1,0,0) > class/attribute/pseudo-class (0,0,1,0) > element/pseudo-element (0,0,0,1)
   - Cascade order: later declarations win when specificity is equal
   - `!important` handling: overrides normal specificity rules
-  - Style inheritance: inheritable CSS properties (fill, stroke, font-*, color, visibility, etc.) cascade from parent to child
+  - Style inheritance: inheritable CSS properties (fill, stroke, font-\*, color, visibility, etc.) cascade from parent to child
 - **CSS Shorthand Property Expansion** (NEW):
   - `font` shorthand → font-style, font-variant, font-weight, font-size, line-height, font-family
   - `animation` shorthand with multiple comma-separated animations support
@@ -324,16 +380,18 @@ See: `/Users/denisnadey/apps/flutter_full_svg_support/docs/RESOLVED_ISSUES.md`
   - `var()` resolution: `var(--name)` references resolved by walking up the element tree
   - `var()` with fallback: `var(--name, fallback-value)` when variable not defined
   - Variable inheritance: custom properties inherit through the element tree (parent → child)
-  - `calc()` expression parser: arithmetic operations (+, -, *, /), unit support (px, em, %, pt, rem)
+  - `calc()` expression parser: arithmetic operations (+, -, \*, /), unit support (px, em, %, pt, rem)
   - Nested calc(): `calc(100% - calc(20px + 5px))`
   - `var()` inside `calc()`: `calc(var(--size) * 2)`
 
 ### Color Parsing (Parser Path)
+
 - `#RGB`, `#RGBA`, `#RRGGBB`, `#RRGGBBAA`
 - `rgb(...)` / `rgba(...)` (comma and CSS Color 4 space/slash variants)
 - `hsl(...)` / `hsla(...)` with angle units (`deg/rad/turn/grad`)
 
 ### Interaction & Events
+
 - Document-level events: click/mouseover/mouseout dispatch
 - Element-level hit-testing and dispatch for `rect/circle/ellipse/line/path/polygon/polyline/image/foreignObject/text/tspan/textPath`
 - **SVG `<a>` anchor element** (NEW):
@@ -350,6 +408,7 @@ See: `/Users/denisnadey/apps/flutter_full_svg_support/docs/RESOLVED_ISSUES.md`
 - Inline `style` with trailing `!important` normalization in visibility/hit-testing paths
 
 ### Accessibility
+
 - `<title>` element: text content exposed as accessible name via `Semantics.label`
 - `<desc>` element: text content exposed as accessible description via `Semantics.hint`
 - ARIA attributes: `aria-label`, `aria-describedby`, `role` parsed and integrated with Flutter Semantics
@@ -357,12 +416,15 @@ See: `/Users/denisnadey/apps/flutter_full_svg_support/docs/RESOLVED_ISSUES.md`
 - Role-based Semantics flags: `role="img"` sets image flag, `role="button"` sets button flag, `role="link"` sets link flag
 
 ### Runtime Diagnostics / Playground
+
 - Structured trace API in `AnimatedSvgPicture`: `SvgTraceEvent`, `SvgTraceLevel`, `onTrace`
 - Optional per-frame tick tracing (`traceFrameTicks`)
 - Example viewer page includes trace logs, diagnostics, import/export JSON reports, filtering, grouping, and widget-test coverage
 
 ### SVG Filters (Animated Pipeline)
+
 Implemented primitives / baseline semantics:
+
 - `feGaussianBlur`
 - `feMorphology` (baseline)
 - `feDisplacementMap` (baseline + `scale=0` and `in2="none"` handling)
@@ -382,6 +444,7 @@ Implemented primitives / baseline semantics:
 - `feColorMatrix`
 
 ### Geometry / Text / Reuse / External Content
+
 - Painted: `rect`, `circle`, `ellipse`, `line`, `path`, `polygon`, `polyline`, `image`, `text`, `tspan`, `textPath`
 - **Text & Typography (~99% Blink parity)**:
   - **Elements**: `<text>`, `<tspan>`, `<textPath>` with full rendering and hit-testing
@@ -416,9 +479,10 @@ Implemented primitives / baseline semantics:
 
 ## Known Gaps (Blink Parity, Animated Pipeline)
 
-Detailed audit: `/Users/denisnadey/apps/flutter_full_svg_support/docs/BLINK_PARITY_AUDIT.md`
+Detailed audit: `/Users/denisnadey/apps/flutter_full_svg_support/doc/BLINK_PARITY_AUDIT.md`
 
 High-impact gaps:
+
 1. Text typography is ~99% complete; remaining gaps are only deprecated SVG 1.1 features (SVG fonts, altGlyph — not worth implementing) and DOM text query methods (architectural difference — Flutter is immediate-mode, not DOM-based).
 2. Filter parity is ~99% complete: All 17/17 FE primitives implemented with full edge case coverage. `color-interpolation-filters` linearRGB support added for pixel-level processors.
 3. CSS shorthand/unit handling now has comprehensive edge case coverage (font shorthand full CSS2.1, em/rem/ch/ex/calc precision).
@@ -428,13 +492,17 @@ High-impact gaps:
 ## Documentation Policy
 
 To avoid drift:
+
 - Current factual status lives only here.
 - Planning lives in `NEXT_STEPS.md` and `TODO.md`.
-- Closed bugs and closed milestones are tracked in `docs/RESOLVED_ISSUES.md`.
+- W3C tactical closure plan lives in `doc/W3C_GAP_CLOSURE_PLAN.md`.
+- Release readiness gate lives in `RELEASE_CHECKLIST.md`.
+- Closed bugs and closed milestones are tracked in `doc/RESOLVED_ISSUES.md`.
 
 ## Next Execution Plan
 
-1. **P2**: Additional profiling and bottleneck identification.
-2. **P2**: Memory allocation monitoring in hot paths.
-3. **P3**: CSS selector edge case refinement (advanced structural pseudo-class combinations).
-4. Target: Maintain 97%+ Blink parity, optimize performance.
+1. **P0**: Execute `doc/W3C_GAP_CLOSURE_PLAN.md` Wave A/B/C and close highest-delta W3C failures by functional fixes.
+2. **P1**: Continue rollback of case-scoped normalization overrides as functional parity lands.
+3. **P2**: Additional profiling and bottleneck identification.
+4. **P2**: Memory allocation monitoring in hot paths.
+5. **P3**: CSS selector edge case refinement (advanced structural pseudo-class combinations).

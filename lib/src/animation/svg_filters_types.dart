@@ -138,6 +138,8 @@ class SvgFilterPaintPass {
     this.offset = ui.Offset.zero,
     this.paintFill = true,
     this.paintStroke = true,
+    this.fillColorOverride,
+    this.strokeColorOverride,
   });
 
   static const SvgFilterPaintPass identity = SvgFilterPaintPass();
@@ -148,6 +150,8 @@ class SvgFilterPaintPass {
   final ui.Offset offset;
   final bool paintFill;
   final bool paintStroke;
+  final ui.Color? fillColorOverride;
+  final ui.Color? strokeColorOverride;
 
   SvgFilterPaintPass copyWith({
     ui.ImageFilter? imageFilter,
@@ -164,6 +168,47 @@ class SvgFilterPaintPass {
       offset: offset ?? this.offset,
       paintFill: paintFill ?? this.paintFill,
       paintStroke: paintStroke ?? this.paintStroke,
+      fillColorOverride: this.fillColorOverride,
+      strokeColorOverride: this.strokeColorOverride,
+    );
+  }
+}
+
+/// Paint pass representing a solid FillPaint/StrokePaint source color.
+class SvgSolidPaintSourcePass extends SvgFilterPaintPass {
+  const SvgSolidPaintSourcePass({
+    required this.paintColor,
+    super.imageFilter,
+    super.colorFilter,
+    super.blendMode,
+    super.offset,
+    super.paintFill,
+    super.paintStroke,
+    super.fillColorOverride,
+    super.strokeColorOverride,
+  });
+
+  final ui.Color paintColor;
+
+  @override
+  SvgFilterPaintPass copyWith({
+    ui.ImageFilter? imageFilter,
+    ui.ColorFilter? colorFilter,
+    ui.BlendMode? blendMode,
+    ui.Offset? offset,
+    bool? paintFill,
+    bool? paintStroke,
+  }) {
+    return SvgSolidPaintSourcePass(
+      paintColor: paintColor,
+      imageFilter: imageFilter ?? this.imageFilter,
+      colorFilter: colorFilter ?? this.colorFilter,
+      blendMode: blendMode ?? this.blendMode,
+      offset: offset ?? this.offset,
+      paintFill: paintFill ?? this.paintFill,
+      paintStroke: paintStroke ?? this.paintStroke,
+      fillColorOverride: this.fillColorOverride,
+      strokeColorOverride: this.strokeColorOverride,
     );
   }
 }
@@ -239,6 +284,8 @@ class SvgFilterSourceContext {
   const SvgFilterSourceContext({
     this.fillPaint,
     this.strokePaint,
+    this.fillPaintColor,
+    this.strokePaintColor,
     this.backgroundImage,
     this.backgroundAlpha,
     this.useLinearRGB = false,
@@ -246,6 +293,8 @@ class SvgFilterSourceContext {
 
   final List<SvgFilterPaintPass>? fillPaint;
   final List<SvgFilterPaintPass>? strokePaint;
+  final ui.Color? fillPaintColor;
+  final ui.Color? strokePaintColor;
   final List<SvgFilterPaintPass>? backgroundImage;
   final List<SvgFilterPaintPass>? backgroundAlpha;
 

@@ -157,37 +157,88 @@ extension AnimatedSvgPainterUseExtension on AnimatedSvgPainter {
         ..color = ui.Color.fromARGB((opacity * 255).round(), 255, 255, 255);
       canvas.saveLayer(null, layerPaint);
     }
-    final previousParent = referenced.parent;
-    referenced.parent = node;
-    try {
-      final nextUseStack = <String>{...useStack, hrefId};
-      if (referenced.tagName == 'symbol') {
-        _paintSymbolReference(
-          canvas,
-          useNode: node,
-          symbolNode: referenced,
-          useStack: nextUseStack,
-          useContext: currentUseContext,
-        );
-      } else if (referenced.tagName == 'svg') {
-        _paintSvgUseReference(
-          canvas,
-          useNode: node,
-          svgNode: referenced,
-          useStack: nextUseStack,
-          useContext: currentUseContext,
-        );
-      } else {
-        _paintNodeWithUseContext(
-          canvas,
-          referenced,
-          useStack: nextUseStack,
-          useContext: currentUseContext,
-        );
+    final filterPasses = _resolveFilterPassesImpl(this, node);
+    final nodeBoundsForFilterPasses = _getNodeBounds(node);
+
+    ui.Rect? filterRegionClip;
+    final filterId = _getFilterId(node);
+    if (filterId != null && document.filters != null) {
+      final region = document.filters!.getFilterRegion(filterId);
+      if (nodeBoundsForFilterPasses.width > 0 &&
+          nodeBoundsForFilterPasses.height > 0) {
+        filterRegionClip = region.computeRect(nodeBoundsForFilterPasses);
       }
-    } finally {
-      referenced.parent = previousParent;
     }
+
+    void paintReferencedContent(
+      ui.ImageFilter? imageFilter,
+      ui.ColorFilter? colorFilter,
+      ui.BlendMode? blendMode,
+    ) {
+      if (imageFilter != null || colorFilter != null || blendMode != null) {
+        final layerPaint = ui.Paint();
+        if (imageFilter != null) {
+          layerPaint.imageFilter = imageFilter;
+        }
+        if (colorFilter != null) {
+          layerPaint.colorFilter = colorFilter;
+        }
+        if (blendMode != null) {
+          layerPaint.blendMode = blendMode;
+        }
+        canvas.saveLayer(null, layerPaint);
+      }
+
+      final previousParent = referenced.parent;
+      referenced.parent = node;
+      try {
+        final nextUseStack = <String>{...useStack, hrefId};
+        if (referenced.tagName == 'symbol') {
+          _paintSymbolReference(
+            canvas,
+            useNode: node,
+            symbolNode: referenced,
+            useStack: nextUseStack,
+            useContext: currentUseContext,
+          );
+        } else if (referenced.tagName == 'svg') {
+          _paintSvgUseReference(
+            canvas,
+            useNode: node,
+            svgNode: referenced,
+            useStack: nextUseStack,
+            useContext: currentUseContext,
+          );
+        } else {
+          _paintNodeWithUseContext(
+            canvas,
+            referenced,
+            useStack: nextUseStack,
+            useContext: currentUseContext,
+          );
+        }
+      } finally {
+        referenced.parent = previousParent;
+      }
+
+      if (imageFilter != null || colorFilter != null || blendMode != null) {
+        canvas.restore();
+      }
+    }
+
+    if (_isIdentityOnlyFilterPasses(filterPasses)) {
+      paintReferencedContent(null, null, null);
+    } else {
+      _paintWithFilterPassesImpl(
+        this,
+        canvas,
+        filterPasses,
+        paintReferencedContent,
+        targetNodeBounds: nodeBoundsForFilterPasses,
+        filterRegionClip: filterRegionClip,
+      );
+    }
+
     if (opacity < 1.0) {
       canvas.restore();
     }

@@ -2,8 +2,8 @@ import 'dart:ui';
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:flutter_svg/src/animation/css_variables_calc.dart';
-import 'package:flutter_svg/src/animation/svg_dom.dart';
+import 'package:full_svg_flutter/src/animation/css_variables_calc.dart';
+import 'package:full_svg_flutter/src/animation/svg_dom.dart';
 
 void main() {
   group('Viewport Unit Resolution', () {

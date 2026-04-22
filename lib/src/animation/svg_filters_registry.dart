@@ -42,6 +42,8 @@ class SvgFilters {
   final Map<String, SvgFilterRegion> _filterRegions = {};
   List<SvgFilterPaintPass>? _activeFillPaint;
   List<SvgFilterPaintPass>? _activeStrokePaint;
+  ui.Color? _activeFillPaintColor;
+  ui.Color? _activeStrokePaintColor;
   List<SvgFilterPaintPass>? _activeBackgroundImage;
   List<SvgFilterPaintPass>? _activeBackgroundAlpha;
 

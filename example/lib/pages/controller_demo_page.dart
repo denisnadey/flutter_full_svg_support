@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/src/animation.dart';
+import 'package:full_svg_flutter/src/animation.dart';
 
 /// Demo страница для AnimatedSvgController
 ///

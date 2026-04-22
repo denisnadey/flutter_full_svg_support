@@ -146,7 +146,9 @@ extension AnimatedSvgPainterShapesImageExtension on AnimatedSvgPainter {
     // Resolve width/height with percentage support
     final viewportSize = _getImageViewportSize(node);
 
-    final image = imagesByHref[href];
+    final filterId = _getFilterId(node);
+    ui.Image? image = imagesByHref[href];
+
     // If image failed to load, render a transparent fallback rect
     // This provides graceful degradation without throwing exceptions
     if (image == null) {
@@ -166,6 +168,24 @@ extension AnimatedSvgPainterShapesImageExtension on AnimatedSvgPainter {
     final height =
         _resolveImageLength(node, 'height', viewportSize.height) ??
         image.height.toDouble();
+
+    final activePass = _currentFilterPass;
+    if (filterId != null) {
+      final targetWidth = width.round();
+      final targetHeight = height.round();
+      if (activePass is SvgConvolveMatrixPaintPass) {
+        final convolvedKey = '$href|$filterId|${targetWidth}x${targetHeight}';
+        image = convolvedImagesByFilterKey[convolvedKey] ?? image;
+      } else if (activePass is SvgDiffuseLightingPaintPass ||
+          activePass is SvgSpecularLightingPaintPass) {
+        final variantKind = activePass is SvgDiffuseLightingPaintPass
+            ? 'diffuse'
+            : 'specular';
+        final lightingKey =
+            '$href|$filterId|${targetWidth}x${targetHeight}|$variantKind';
+        image = lightingImagesByFilterKey[lightingKey] ?? image;
+      }
+    }
 
     // Edge case: zero-size image - per SVG spec, disable rendering
     if (width <= 0 || height <= 0) {

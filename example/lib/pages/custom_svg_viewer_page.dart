@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_svg/src/animation.dart';
+import 'package:full_svg_flutter/src/animation.dart';
 
 import '../playground/playground_analyzer.dart';
 import '../playground/playground_models.dart';
@@ -16,7 +16,14 @@ enum _ProblemsGrouping { none, code, category }
 /// Allows loading custom SVG, validating structure, rendering animation,
 /// collecting runtime trace logs and reviewing a system checklist.
 class CustomSvgViewerPage extends StatefulWidget {
-  const CustomSvgViewerPage({super.key});
+  const CustomSvgViewerPage({
+    super.key,
+    this.initialSvgSource,
+    this.initialCaseName,
+  });
+
+  final String? initialSvgSource;
+  final String? initialCaseName;
 
   @override
   State<CustomSvgViewerPage> createState() => _CustomSvgViewerPageState();
@@ -78,6 +85,15 @@ class _CustomSvgViewerPageState extends State<CustomSvgViewerPage>
     super.initState();
     _inputTabController = TabController(length: 2, vsync: this);
     _diagnosticsTabController = TabController(length: 3, vsync: this);
+
+    final initialSvgSource = widget.initialSvgSource;
+    if (initialSvgSource != null && initialSvgSource.trim().isNotEmpty) {
+      _svgController.text = initialSvgSource;
+      final caseName = widget.initialCaseName;
+      final origin = caseName == null ? 'init:external' : 'init:w3c:$caseName';
+      _runSvgFromCode(origin: origin);
+      return;
+    }
 
     _svgController.text = _eventTemplate;
     _runSvgFromCode(origin: 'init');
@@ -693,7 +709,12 @@ class _CustomSvgViewerPageState extends State<CustomSvgViewerPage>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('SVG Playground'),
+        title: Text(
+          widget.initialCaseName == null
+              ? 'SVG Playground'
+              : 'SVG Playground - ${widget.initialCaseName}',
+          overflow: TextOverflow.ellipsis,
+        ),
         actions: [
           IconButton(
             tooltip: 'Clear all',

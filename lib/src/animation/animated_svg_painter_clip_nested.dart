@@ -234,7 +234,11 @@ extension AnimatedSvgPainterClipNestedExtension on AnimatedSvgPainter {
       clipPathNode: cascadeClipNode,
       useStack: {...useStack, cascadeClipId},
       depth: depth + 1,
-      accumulatedTransform: rootMatrix, // Pass current transform to next level
+      // Each nested clipPath resolves in its own units/transform space
+      // relative to the original clipped node. Carrying parent rootMatrix here
+      // breaks mixed userSpaceOnUse/objectBoundingBox cascades by double
+      // applying unit transforms.
+      accumulatedTransform: null,
     );
 
     if (cascadePath == null) {

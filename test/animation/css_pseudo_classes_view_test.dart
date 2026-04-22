@@ -1,10 +1,10 @@
 import 'dart:ui' as ui;
 
-import 'package:flutter_svg/src/animation/animated_svg_controller.dart';
-import 'package:flutter_svg/src/animation/css_animations.dart';
-import 'package:flutter_svg/src/animation/css_cascade.dart';
-import 'package:flutter_svg/src/animation/svg_dom.dart';
-import 'package:flutter_svg/src/animation/svg_parser.dart';
+import 'package:full_svg_flutter/src/animation/animated_svg_controller.dart';
+import 'package:full_svg_flutter/src/animation/css_animations.dart';
+import 'package:full_svg_flutter/src/animation/css_cascade.dart';
+import 'package:full_svg_flutter/src/animation/svg_dom.dart';
+import 'package:full_svg_flutter/src/animation/svg_parser.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

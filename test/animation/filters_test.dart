@@ -2,8 +2,8 @@ import 'dart:ui' as ui;
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:flutter_svg/src/animation/svg_parser.dart';
-import 'package:flutter_svg/src/animation/svg_filters.dart';
+import 'package:full_svg_flutter/src/animation/svg_parser.dart';
+import 'package:full_svg_flutter/src/animation/svg_filters.dart';
 
 void main() {
   group('SVG Filters Parsing', () {
@@ -124,8 +124,36 @@ void main() {
       expect(image.y, 5.0);
       expect(image.width, 16.0);
       expect(image.height, 18.0);
+      expect(image.xRaw, '4');
+      expect(image.yRaw, '5');
+      expect(image.widthRaw, '16');
+      expect(image.heightRaw, '18');
       expect(image.preserveAspectRatio, 'none');
       expect(image.resultName, 'imgOut');
+    });
+
+    test('Parse feImage preserves percentage raw geometry', () {
+      final svgString = '''
+<svg viewBox="0 0 100 100" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <defs>
+    <filter id="imgPctFx">
+      <feImage xlink:href="../images/smiley.png" x="20.8%" width="10.4%"/>
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="50" height="50" fill="blue" filter="url(#imgPctFx)"/>
+</svg>
+''';
+
+      final document = SvgParser.parse(svgString);
+      final filter = document.filters!.getById('imgPctFx') as SvgFeImageFilter;
+
+      // Numeric fields remain legacy-compatible, raw fields preserve unit semantics.
+      expect(filter.x, 20.8);
+      expect(filter.width, 10.4);
+      expect(filter.xRaw, '20.8%');
+      expect(filter.widthRaw, '10.4%');
+      expect(filter.yRaw, isNull);
+      expect(filter.heightRaw, isNull);
     });
 
     test('Parse feConvolveMatrix filter', () {
@@ -2047,6 +2075,55 @@ void main() {
         expect(passes.single.blendMode, isNull);
         expect(passes.single.imageFilter, isNull);
         expect(passes.single.colorFilter, isNull);
+      },
+    );
+
+    test(
+      'Resolve feComposite arithmetic FillPaint minus StrokePaint applies exact color transform',
+      () {
+        final svgString = '''
+<svg viewBox="0 0 100 100">
+  <defs>
+    <filter id="compArithmeticPaintDiffFx">
+      <feComposite
+        operator="arithmetic"
+        in="FillPaint"
+        in2="StrokePaint"
+        k1="0"
+        k2="1"
+        k3="-1"
+        k4="0"/>
+    </filter>
+  </defs>
+  <rect
+    x="10"
+    y="10"
+    width="50"
+    height="50"
+    fill="rgb(0,255,0)"
+    stroke="rgb(255,0,0)"
+    filter="url(#compArithmeticPaintDiffFx)"/>
+</svg>
+''';
+
+        final document = SvgParser.parse(svgString);
+        final passes = document.filters!.resolvePaintPasses(
+          'compArithmeticPaintDiffFx',
+          sourceContext: const SvgFilterSourceContext(
+            fillPaint: <SvgFilterPaintPass>[
+              SvgFilterPaintPass(paintFill: true, paintStroke: false),
+            ],
+            strokePaint: <SvgFilterPaintPass>[
+              SvgFilterPaintPass(paintFill: false, paintStroke: true),
+            ],
+            fillPaintColor: ui.Color(0xFF00FF00),
+            strokePaintColor: ui.Color(0xFFFF0000),
+          ),
+        );
+
+        expect(passes, hasLength(1));
+        expect(passes.single.blendMode, isNull);
+        expect(passes.single.fillColorOverride, isNotNull);
       },
     );
 

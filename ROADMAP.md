@@ -10,7 +10,7 @@ Authoritative references:
 - [CURRENT_STATUS.md](CURRENT_STATUS.md)
 - [TODO.md](TODO.md)
 - [NEXT_STEPS.md](NEXT_STEPS.md)
-- [docs/RESOLVED_ISSUES.md](docs/RESOLVED_ISSUES.md)
+- [doc/RESOLVED_ISSUES.md](doc/RESOLVED_ISSUES.md)
 
 ## Closed Milestones (Do Not Reopen)
 

@@ -1,4 +1,4 @@
-import 'package:flutter_svg/src/animation.dart';
+import 'package:full_svg_flutter/src/animation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../example/lib/playground/playground_models.dart';

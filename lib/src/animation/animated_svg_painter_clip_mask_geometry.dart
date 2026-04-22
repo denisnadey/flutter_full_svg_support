@@ -1,6 +1,58 @@
 part of 'animated_svg_painter.dart';
 
 extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
+  bool _isDisplayNoneInClipMaskChain(SvgNode node) {
+    SvgNode? current = node;
+    while (current != null) {
+      final display = _getStyleOrAttributeValue(current, 'display');
+      if (display != null &&
+          display.toString().trim().toLowerCase() == 'none') {
+        return true;
+      }
+      final tag = current.tagName;
+      if (tag == 'clipPath' || tag == 'mask') {
+        break;
+      }
+      current = current.parent;
+    }
+    return false;
+  }
+
+  ui.Path _applyClipPathToGeometryPath({
+    required SvgNode node,
+    required ui.Path geometryPathInTargetSpace,
+    required Matrix4 currentTransform,
+    required Set<String> useStack,
+  }) {
+    final clipId = _extractPaintServerId(
+      _getStyleOrAttributeValue(node, 'clip-path'),
+    );
+    if (clipId == null || clipId.isEmpty || useStack.contains(clipId)) {
+      return geometryPathInTargetSpace;
+    }
+
+    final clipNode = document.root.findById(clipId);
+    if (clipNode == null || clipNode.tagName != 'clipPath') {
+      return geometryPathInTargetSpace;
+    }
+
+    final clipPath = _buildCascadingClipPathWithUnits(
+      clippedNode: node,
+      clipPathNode: clipNode,
+      useStack: {...useStack, clipId},
+    );
+    if (clipPath == null) {
+      return geometryPathInTargetSpace;
+    }
+
+    final clipPathInTargetSpace = clipPath.transform(currentTransform.storage);
+    return ui.Path.combine(
+      ui.PathOperation.intersect,
+      geometryPathInTargetSpace,
+      clipPathInTargetSpace,
+    );
+  }
+
   /// Appends clip geometry from a node to the target path.
   ///
   /// Handles various SVG elements inside clipPath:
@@ -19,6 +71,10 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
     required Matrix4 currentTransform,
     required Set<String> useStack,
   }) {
+    if (_isDisplayNoneInClipMaskChain(node)) {
+      return;
+    }
+
     final matrix = Matrix4.copy(currentTransform);
     final nodeTransform = _buildTransformMatrixFromValue(
       node.getAttributeValue('transform'),
@@ -90,7 +146,16 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
         if (textPath != null) {
           // Apply clip-rule to text path
           _applyClipRuleToPath(textPath, node);
-          target.addPath(textPath.transform(matrix.storage), ui.Offset.zero);
+          final transformed = textPath.transform(matrix.storage);
+          target.addPath(
+            _applyClipPathToGeometryPath(
+              node: node,
+              geometryPathInTargetSpace: transformed,
+              currentTransform: matrix,
+              useStack: useStack,
+            ),
+            ui.Offset.zero,
+          );
         }
         return;
       case 'line':
@@ -99,7 +164,16 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
         final linePath = _buildGeometryPath(node);
         if (linePath != null) {
           _applyClipRuleToPath(linePath, node);
-          target.addPath(linePath.transform(matrix.storage), ui.Offset.zero);
+          final transformed = linePath.transform(matrix.storage);
+          target.addPath(
+            _applyClipPathToGeometryPath(
+              node: node,
+              geometryPathInTargetSpace: transformed,
+              currentTransform: matrix,
+              useStack: useStack,
+            ),
+            ui.Offset.zero,
+          );
         }
         return;
       case 'image':
@@ -108,7 +182,16 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
         final imagePath = _buildImageClipPath(node);
         if (imagePath != null) {
           _applyClipRuleToPath(imagePath, node);
-          target.addPath(imagePath.transform(matrix.storage), ui.Offset.zero);
+          final transformed = imagePath.transform(matrix.storage);
+          target.addPath(
+            _applyClipPathToGeometryPath(
+              node: node,
+              geometryPathInTargetSpace: transformed,
+              currentTransform: matrix,
+              useStack: useStack,
+            ),
+            ui.Offset.zero,
+          );
         }
         return;
       default:
@@ -118,7 +201,16 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
         }
         // Apply clip-rule to shape paths
         _applyClipRuleToPath(path, node);
-        target.addPath(path.transform(matrix.storage), ui.Offset.zero);
+        final transformed = path.transform(matrix.storage);
+        target.addPath(
+          _applyClipPathToGeometryPath(
+            node: node,
+            geometryPathInTargetSpace: transformed,
+            currentTransform: matrix,
+            useStack: useStack,
+          ),
+          ui.Offset.zero,
+        );
     }
   }
 
@@ -228,6 +320,8 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
       }
     }
 
+    final useGeometryPath = ui.Path();
+
     // Temporarily set parent for proper CSS cascade resolution
     final previousParent = referenced.parent;
     referenced.parent = useNode;
@@ -239,7 +333,7 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
       if (_isUseViewportReferenceTag(referenced.tagName)) {
         for (final child in referenced.children) {
           _appendClipGeometry(
-            target: target,
+            target: useGeometryPath,
             node: child,
             currentTransform: translated,
             useStack: nextUseStack,
@@ -247,7 +341,7 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
         }
       } else {
         _appendClipGeometry(
-          target: target,
+          target: useGeometryPath,
           node: referenced,
           currentTransform: translated,
           useStack: nextUseStack,
@@ -256,6 +350,14 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
     } finally {
       referenced.parent = previousParent;
     }
+
+    final clippedUseGeometry = _applyClipPathToGeometryPath(
+      node: useNode,
+      geometryPathInTargetSpace: useGeometryPath,
+      currentTransform: translated,
+      useStack: useStack,
+    );
+    target.addPath(clippedUseGeometry, ui.Offset.zero);
   }
 
   /// Resolves viewport transform for use element in clip-path/mask context.

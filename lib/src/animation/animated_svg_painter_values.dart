@@ -57,23 +57,39 @@ extension AnimatedSvgPainterValuesExtension on AnimatedSvgPainter {
     'overflow',
   };
 
+  bool _isInheritKeyword(Object? value) {
+    if (value == null) {
+      return false;
+    }
+    return value.toString().trim().toLowerCase() == 'inherit';
+  }
+
   Object? _getInheritedAttributeValue(SvgNode node, String attributeName) {
     final normalizedName = attributeName.trim().toLowerCase();
     SvgNode? current = node;
+    bool explicitInheritRequested = false;
 
     // First check the node itself for inline style or explicit attribute
     final nodeStyleValue = _extractStyleValue(node, normalizedName);
     if (nodeStyleValue != null) {
       // Check for !important - it wins over everything else
       if (nodeStyleValue.contains('!important')) {
-        return nodeStyleValue
+        final cleaned = nodeStyleValue
             .replaceFirst(
               RegExp(r'\s*!important\s*$', caseSensitive: false),
               '',
             )
             .trim();
+        if (_isInheritKeyword(cleaned)) {
+          explicitInheritRequested = true;
+        } else {
+          return cleaned;
+        }
+      } else if (_isInheritKeyword(nodeStyleValue)) {
+        explicitInheritRequested = true;
+      } else {
+        return nodeStyleValue;
       }
-      return nodeStyleValue;
     }
 
     // Check CSS rules from document's <style> blocks for this node.
@@ -86,17 +102,26 @@ extension AnimatedSvgPainterValuesExtension on AnimatedSvgPainter {
 
     // CSS rule > presentation attribute (per CSS cascade spec)
     if (cssRuleValue != null) {
-      return cssRuleValue;
+      if (_isInheritKeyword(cssRuleValue)) {
+        explicitInheritRequested = true;
+      } else {
+        return cssRuleValue;
+      }
     }
     if (nodeAttrValue != null) {
-      return nodeAttrValue;
+      if (_isInheritKeyword(nodeAttrValue)) {
+        explicitInheritRequested = true;
+      } else {
+        return nodeAttrValue;
+      }
     }
 
     // Non-inherited properties: only check the node itself, never walk up
     // the parent chain. Per CSS spec, opacity creates a stacking context and
     // is NOT inherited. Group opacity is applied via saveLayer in
     // _paintGroupWithOpacity; child paints must NOT re-apply it.
-    if (_nonInheritedProperties.contains(normalizedName)) {
+    if (_nonInheritedProperties.contains(normalizedName) &&
+        !explicitInheritRequested) {
       return null;
     }
 
@@ -106,18 +131,30 @@ extension AnimatedSvgPainterValuesExtension on AnimatedSvgPainter {
       // Check inline style first
       final styleValue = _extractStyleValue(current, normalizedName);
       if (styleValue != null) {
+        if (_isInheritKeyword(styleValue)) {
+          current = current.parent;
+          continue;
+        }
         return styleValue;
       }
 
-      // Check CSS rules for this ancestor
+      // Check CSS rules for this ancestor.
       final ancestorCssValue = _resolveCssRuleValue(current, normalizedName);
       if (ancestorCssValue != null) {
+        if (_isInheritKeyword(ancestorCssValue)) {
+          current = current.parent;
+          continue;
+        }
         return ancestorCssValue;
       }
 
       // Check presentation attribute
       final value = current.getAttributeValue(attributeName);
       if (value != null) {
+        if (_isInheritKeyword(value)) {
+          current = current.parent;
+          continue;
+        }
         return value;
       }
       current = current.parent;
@@ -127,9 +164,100 @@ extension AnimatedSvgPainterValuesExtension on AnimatedSvgPainter {
     // boundaries. This implements the shadow DOM inheritance semantics.
     if (_currentUseContext != null) {
       final useValue = _currentUseContext!.getInheritedValue(attributeName);
-      if (useValue != null) {
+      if (useValue != null && !_isInheritKeyword(useValue)) {
         return useValue;
       }
+    }
+
+    return null;
+  }
+
+  /// Returns the node where an inherited property value is defined.
+  ///
+  /// This is used for context-sensitive values like `currentColor` so that the
+  /// value is resolved in the scope where the property was declared.
+  SvgNode? _findInheritedAttributeSourceNode(
+    SvgNode node,
+    String attributeName,
+  ) {
+    final normalizedName = attributeName.trim().toLowerCase();
+    bool explicitInheritRequested = false;
+
+    final nodeStyleValue = _extractStyleValue(node, normalizedName);
+    if (nodeStyleValue != null) {
+      final cleaned = nodeStyleValue
+          .replaceFirst(RegExp(r'\s*!important\s*$', caseSensitive: false), '')
+          .trim();
+      if (_isInheritKeyword(cleaned)) {
+        explicitInheritRequested = true;
+      } else {
+        return node;
+      }
+    }
+
+    if (_currentUseContext != null) {
+      final cssRuleValue = _currentUseContext!.resolveCssRuleValue(
+        node,
+        normalizedName,
+      );
+      if (cssRuleValue != null) {
+        if (_isInheritKeyword(cssRuleValue)) {
+          explicitInheritRequested = true;
+        } else {
+          return node;
+        }
+      }
+    }
+
+    final nodeAttrValue = node.getAttributeValue(attributeName);
+    if (nodeAttrValue != null) {
+      if (_isInheritKeyword(nodeAttrValue)) {
+        explicitInheritRequested = true;
+      } else {
+        return node;
+      }
+    }
+
+    if (_nonInheritedProperties.contains(normalizedName) &&
+        !explicitInheritRequested) {
+      return null;
+    }
+
+    SvgNode? current = node.parent;
+    while (current != null) {
+      final styleValue = _extractStyleValue(current, normalizedName);
+      if (styleValue != null) {
+        if (_isInheritKeyword(styleValue)) {
+          current = current.parent;
+          continue;
+        }
+        return current;
+      }
+
+      if (_currentUseContext != null) {
+        final ancestorCssValue = _currentUseContext!.resolveCssRuleValue(
+          current,
+          normalizedName,
+        );
+        if (ancestorCssValue != null) {
+          if (_isInheritKeyword(ancestorCssValue)) {
+            current = current.parent;
+            continue;
+          }
+          return current;
+        }
+      }
+
+      final value = current.getAttributeValue(attributeName);
+      if (value != null) {
+        if (_isInheritKeyword(value)) {
+          current = current.parent;
+          continue;
+        }
+        return current;
+      }
+
+      current = current.parent;
     }
 
     return null;

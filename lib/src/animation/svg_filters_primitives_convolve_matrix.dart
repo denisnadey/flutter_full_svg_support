@@ -40,6 +40,7 @@ class ConvolveMatrixProcessor {
     required bool preserveAlpha,
     double? kernelUnitLengthX,
     double? kernelUnitLengthY,
+    bool useLinearRgb = false,
   }) {
     if (width <= 0 || height <= 0) {
       return pixels;
@@ -91,17 +92,38 @@ class ConvolveMatrixProcessor {
             );
 
             final kernelValue = kernel[ky * orderX + kx];
-            sumR += pixelValues[0] * kernelValue;
-            sumG += pixelValues[1] * kernelValue;
-            sumB += pixelValues[2] * kernelValue;
+            if (useLinearRgb) {
+              final rLinear = _srgbToLinear(pixelValues[0] / 255.0);
+              final gLinear = _srgbToLinear(pixelValues[1] / 255.0);
+              final bLinear = _srgbToLinear(pixelValues[2] / 255.0);
+              sumR += rLinear * kernelValue;
+              sumG += gLinear * kernelValue;
+              sumB += bLinear * kernelValue;
+            } else {
+              sumR += pixelValues[0] * kernelValue;
+              sumG += pixelValues[1] * kernelValue;
+              sumB += pixelValues[2] * kernelValue;
+            }
             sumA += pixelValues[3] * kernelValue;
           }
         }
 
-        // Apply divisor and bias
-        final outR = (sumR * invDivisor + bias255).clamp(0.0, 255.0).round();
-        final outG = (sumG * invDivisor + bias255).clamp(0.0, 255.0).round();
-        final outB = (sumB * invDivisor + bias255).clamp(0.0, 255.0).round();
+        // Apply divisor and bias.
+        final outR = useLinearRgb
+            ? (_linearToSrgb((sumR * invDivisor + bias).clamp(0.0, 1.0)) *
+                      255.0)
+                  .round()
+            : (sumR * invDivisor + bias255).clamp(0.0, 255.0).round();
+        final outG = useLinearRgb
+            ? (_linearToSrgb((sumG * invDivisor + bias).clamp(0.0, 1.0)) *
+                      255.0)
+                  .round()
+            : (sumG * invDivisor + bias255).clamp(0.0, 255.0).round();
+        final outB = useLinearRgb
+            ? (_linearToSrgb((sumB * invDivisor + bias).clamp(0.0, 1.0)) *
+                      255.0)
+                  .round()
+            : (sumB * invDivisor + bias255).clamp(0.0, 255.0).round();
 
         final dstIndex = (y * width + x) * 4;
         result[dstIndex] = outR;
@@ -119,6 +141,20 @@ class ConvolveMatrixProcessor {
     }
 
     return result;
+  }
+
+  static double _srgbToLinear(double value) {
+    if (value <= 0.04045) {
+      return value / 12.92;
+    }
+    return math.pow((value + 0.055) / 1.055, 2.4).toDouble();
+  }
+
+  static double _linearToSrgb(double value) {
+    if (value <= 0.0031308) {
+      return value * 12.92;
+    }
+    return 1.055 * math.pow(value, 1.0 / 2.4).toDouble() - 0.055;
   }
 
   /// Gets pixel RGBA values with edge mode handling.

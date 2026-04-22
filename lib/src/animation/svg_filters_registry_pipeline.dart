@@ -82,6 +82,8 @@ extension SvgFiltersPipelineExtension on SvgFilters {
 
     final previousFillPaint = _activeFillPaint;
     final previousStrokePaint = _activeStrokePaint;
+    final previousFillPaintColor = _activeFillPaintColor;
+    final previousStrokePaintColor = _activeStrokePaintColor;
     final previousBackgroundImage = _activeBackgroundImage;
     final previousBackgroundAlpha = _activeBackgroundAlpha;
     _activeFillPaint = sourceContext?.fillPaint == null
@@ -90,6 +92,8 @@ extension SvgFiltersPipelineExtension on SvgFilters {
     _activeStrokePaint = sourceContext?.strokePaint == null
         ? null
         : <SvgFilterPaintPass>[...sourceContext!.strokePaint!];
+    _activeFillPaintColor = sourceContext?.fillPaintColor;
+    _activeStrokePaintColor = sourceContext?.strokePaintColor;
     _activeBackgroundImage = sourceContext?.backgroundImage == null
         ? null
         : <SvgFilterPaintPass>[...sourceContext!.backgroundImage!];
@@ -170,6 +174,8 @@ extension SvgFiltersPipelineExtension on SvgFilters {
     } finally {
       _activeFillPaint = previousFillPaint;
       _activeStrokePaint = previousStrokePaint;
+      _activeFillPaintColor = previousFillPaintColor;
+      _activeStrokePaintColor = previousStrokePaintColor;
       _activeBackgroundImage = previousBackgroundImage;
       _activeBackgroundAlpha = previousBackgroundAlpha;
     }

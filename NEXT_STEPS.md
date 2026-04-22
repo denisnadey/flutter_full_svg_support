@@ -1,21 +1,46 @@
 # Next Steps
 
-**Last Updated:** March 31, 2026
+**Last Updated:** April 22, 2026
 
-**Current Status:** ~97%+ Blink SVG parity | ~99% Filter parity | ~97% SMIL parity | 4,896 tests passing | 0 analyzer errors | 0 warnings
+**Current Status:** Gate A, Gate B, Gate C, and Gate D are green as of April 22, 2026 (`dart analyze` green, full `flutter test` green, `W3C_LIMIT=83` green, publish dry-run green with `0` warnings). Remaining work is release operations (Gate E).
 
 Authoritative status is maintained in:
+
 - `/Users/denisnadey/apps/flutter_full_svg_support/CURRENT_STATUS.md`
 
 Closed issues / do-not-reopen registry:
-- `/Users/denisnadey/apps/flutter_full_svg_support/docs/RESOLVED_ISSUES.md`
+
+- `/Users/denisnadey/apps/flutter_full_svg_support/doc/RESOLVED_ISSUES.md`
 
 Detailed Blink gap matrix:
-- `/Users/denisnadey/apps/flutter_full_svg_support/docs/BLINK_PARITY_AUDIT.md`
+
+- `/Users/denisnadey/apps/flutter_full_svg_support/doc/BLINK_PARITY_AUDIT.md`
+
+Active W3C execution plan (Chromium-driven, diff-measured thresholds):
+
+- `/Users/denisnadey/apps/flutter_full_svg_support/doc/W3C_GAP_CLOSURE_PLAN.md`
+
+Release gate checklist:
+
+- `/Users/denisnadey/apps/flutter_full_svg_support/RELEASE_CHECKLIST.md`
+
+Current verified release baseline:
+
+- `dart analyze lib/ test/ example/lib/` -> green (0 errors, 0 warnings)
+- `flutter test` -> all tests passed (`4,922` pass / `2` skipped)
+- `RUN_W3C_STATIC=1 W3C_LIMIT=83 flutter test test/w3c/w3c_static_golden_test.dart` -> passed (`83` / `83`)
 
 ## Active Feature Items (P0 Priorities)
 
-_All P0 items completed as of March 31, 2026. See Completed P0 Items below._
+W3C functional closure is complete; keep regression guard workflow active. Treat legacy “all complete” notes below as historical records.
+
+1. Complete Gate E release operations (tag/publish and post-release smoke).
+
+Gate D note (April 22, 2026):
+- `dart pub publish --dry-run` was executed for `full_svg_flutter` `1.0.0`.
+- `meta` publish validation blocker is fixed.
+- Release track is now reset for new package identity: `full_svg_flutter` `1.0.0` (stable).
+- Dry-run now passes on clean git state with `0` warnings.
 
 ## P1 - Performance Optimization
 
@@ -30,15 +55,15 @@ _All P2 edge case items completed March 31, 2026. See Completed P0 Items below._
 
 ## P2/P3 - Remaining Work
 
-1. **Additional profiling** - Ongoing identification of bottlenecks if needed
-2. **Memory allocation monitoring** - Monitor object creation in hot paths
-3. **CSS selector edge case refinement** - Advanced structural pseudo-class combinations
+1. Additional profiling - Ongoing identification of bottlenecks if needed
+2. Memory allocation monitoring - Monitor object creation in hot paths
+3. CSS selector edge case refinement - Advanced structural pseudo-class combinations
 
 ## Immediate (Execution Order)
 
-1. Additional profiling and bottleneck identification.
-2. Memory allocation monitoring in hot paths.
-3. CSS selector edge case refinement (advanced structural pseudo-class combinations).
+1. Keep full-suite and W3C 83-slice green on reruns while closing release ops gates.
+2. Complete publish dry-run and metadata validation.
+3. Prepare release branch and publication workflow.
 
 ## Completed P0 Items (Closed)
 
@@ -78,7 +103,8 @@ _All P2 edge case items completed March 31, 2026. See Completed P0 Items below._
 ## Definition of Progress
 
 A task is complete only when:
+
 - behavior is covered by focused tests,
 - example/playground demonstrates the feature if UI-visible,
 - `CURRENT_STATUS.md` is updated if factual state changed,
-- `docs/RESOLVED_ISSUES.md` is updated for closed bug classes.
+- `doc/RESOLVED_ISSUES.md` is updated for closed bug classes.

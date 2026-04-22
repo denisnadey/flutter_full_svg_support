@@ -1,8 +1,8 @@
-import 'package:flutter_svg/src/animation/smil/smil_animation.dart';
-import 'package:flutter_svg/src/animation/smil/smil_parser.dart';
-import 'package:flutter_svg/src/animation/smil/smil_timeline.dart';
-import 'package:flutter_svg/src/animation/svg_dom.dart';
-import 'package:flutter_svg/src/animation/svg_parser.dart';
+import 'package:full_svg_flutter/src/animation/smil/smil_animation.dart';
+import 'package:full_svg_flutter/src/animation/smil/smil_parser.dart';
+import 'package:full_svg_flutter/src/animation/smil/smil_timeline.dart';
+import 'package:full_svg_flutter/src/animation/svg_dom.dart';
+import 'package:full_svg_flutter/src/animation/svg_parser.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

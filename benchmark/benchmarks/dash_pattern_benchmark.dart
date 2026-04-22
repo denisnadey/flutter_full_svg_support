@@ -6,7 +6,7 @@ import '../svg_render_benchmark.dart';
 import '../svg_content.dart';
 
 // ignore: implementation_imports
-import 'package:flutter_svg/src/animation/svg_parser.dart';
+import 'package:full_svg_flutter/src/animation/svg_parser.dart';
 
 /// Runs dash pattern benchmarks.
 ///

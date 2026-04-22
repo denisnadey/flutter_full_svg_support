@@ -2,11 +2,11 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_svg/src/animation/animated_svg_painter.dart';
-import 'package:flutter_svg/src/animation/animated_svg_picture.dart';
-import 'package:flutter_svg/src/animation/svg_dom.dart';
-import 'package:flutter_svg/src/animation/svg_parser.dart';
-import 'package:flutter_svg/src/animation/smil/smil_parser.dart';
+import 'package:full_svg_flutter/src/animation/animated_svg_painter.dart';
+import 'package:full_svg_flutter/src/animation/animated_svg_picture.dart';
+import 'package:full_svg_flutter/src/animation/svg_dom.dart';
+import 'package:full_svg_flutter/src/animation/svg_parser.dart';
+import 'package:full_svg_flutter/src/animation/smil/smil_parser.dart';
 
 void main() {
   group('Gradient stop-color animation via CSS selectors', () {

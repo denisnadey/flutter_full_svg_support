@@ -1,5 +1,5 @@
-import 'package:flutter_svg/src/animation.dart';
-import 'package:flutter_svg/src/animation/smil/smil_parser.dart';
+import 'package:full_svg_flutter/src/animation.dart';
+import 'package:full_svg_flutter/src/animation/smil/smil_parser.dart';
 
 import 'playground_models.dart';
 

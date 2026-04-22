@@ -92,16 +92,6 @@ extension AnimatedSvgPainterGradientValuesExtension on AnimatedSvgPainter {
     }
   }
 
-  ui.Color? _resolveColorValue(Object? value) {
-    if (value == null) {
-      return null;
-    }
-    if (value is ui.Color) {
-      return value;
-    }
-    return _parseColor(value.toString());
-  }
-
   /// Resolves a color value for a node, supporting the 'currentColor' keyword
   /// and CSS variable references (var(--name, fallback)).
   /// currentColor refers to the inherited 'color' CSS property value.
@@ -124,9 +114,34 @@ extension AnimatedSvgPainterGradientValuesExtension on AnimatedSvgPainter {
     final lowerValue = strValue.toLowerCase();
     if (lowerValue == 'currentcolor') {
       // Resolve the inherited 'color' property
-      final colorProperty = _getInheritedString(node, 'color');
+      String? colorProperty = _getInheritedString(node, 'color');
+
+      // Be defensive around explicit inherit tokens and walk up to find a
+      // concrete color value if needed.
+      if (colorProperty != null &&
+          colorProperty.trim().toLowerCase() == 'inherit') {
+        colorProperty = null;
+      }
+      if (colorProperty == null || colorProperty.isEmpty) {
+        SvgNode? ancestor = node.parent;
+        while (ancestor != null &&
+            (colorProperty == null || colorProperty.isEmpty)) {
+          final candidate = _getInheritedString(ancestor, 'color');
+          if (candidate != null &&
+              candidate.isNotEmpty &&
+              candidate.trim().toLowerCase() != 'inherit') {
+            colorProperty = candidate;
+            break;
+          }
+          ancestor = ancestor.parent;
+        }
+      }
+
       if (colorProperty != null && colorProperty.isNotEmpty) {
-        return _parseColor(colorProperty);
+        final parsed = _parseColor(colorProperty);
+        if (parsed != null) {
+          return parsed;
+        }
       }
       // Default to black if no color property is set
       return const ui.Color(0xFF000000);

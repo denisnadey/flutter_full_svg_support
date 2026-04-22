@@ -134,6 +134,63 @@ extension AnimatedSvgPainterUseForeignObjectExtension on AnimatedSvgPainter {
     }
   }
 
+  /// Applies nested SVG viewport transform for regular SVG-in-SVG nesting.
+  ///
+  /// Root `<svg>` viewport transform is handled by the painter's top-level
+  /// document transform, so this method only applies to nested `<svg>` nodes.
+  void _applyNestedSvgViewport(
+    ui.Canvas canvas,
+    SvgNode svgNode,
+    SvgNode? foreignObjectParent,
+  ) {
+    if (svgNode.tagName != 'svg') {
+      return;
+    }
+
+    // Root document viewport is handled globally in AnimatedSvgPainter.paint.
+    if (identical(svgNode, document.root)) {
+      return;
+    }
+
+    // Nested SVG inside foreignObject has dedicated handling above.
+    if (foreignObjectParent?.tagName == 'foreignObject') {
+      return;
+    }
+
+    final svgX = _getNumber(svgNode, 'x') ?? 0.0;
+    final svgY = _getNumber(svgNode, 'y') ?? 0.0;
+    if (svgX != 0 || svgY != 0) {
+      canvas.translate(svgX, svgY);
+    }
+
+    final viewBox = _parseViewBox(_getString(svgNode, 'viewBox'));
+    final viewBoxTransform = _computeSingleViewportTransform(svgNode);
+    if (viewBoxTransform != null) {
+      canvas.transform(viewBoxTransform.storage);
+    }
+
+    final overflow = _getInheritedString(
+      svgNode,
+      'overflow',
+    )?.trim().toLowerCase();
+    if (overflow == 'visible') {
+      return;
+    }
+
+    if (viewBox != null && viewBox.width > 0 && viewBox.height > 0) {
+      // With a viewBox transform applied, clipping in viewBox-space preserves
+      // the viewport bounds in device space.
+      canvas.clipRect(viewBox, doAntiAlias: true);
+      return;
+    }
+
+    final width = _getNumber(svgNode, 'width') ?? 0.0;
+    final height = _getNumber(svgNode, 'height') ?? 0.0;
+    if (width > 0 && height > 0) {
+      canvas.clipRect(ui.Rect.fromLTWH(0, 0, width, height), doAntiAlias: true);
+    }
+  }
+
   /// Resolves a dimension value for nested SVG within foreignObject.
   /// Supports percentage values relative to the foreignObject viewport.
   double? _resolveForeignObjectNestedDimension(

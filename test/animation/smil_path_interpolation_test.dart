@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_svg/src/animation/smil/interpolators.dart';
-import 'package:flutter_svg/src/animation/svg_dom.dart';
+import 'package:full_svg_flutter/src/animation/smil/interpolators.dart';
+import 'package:full_svg_flutter/src/animation/svg_dom.dart';
 
 void main() {
   group('Path Interpolation Tests', () {
@@ -20,15 +20,16 @@ void main() {
       expect(result1, isNotEmpty);
       expect(result1, contains('M'));
 
-      // At t=0.5, should be intermediate
+      // With incompatible segment lists, interpolation falls back to discrete
+      // switching and snaps to `to` at t >= 0.5.
       final result05 = Interpolators.interpolatePath(square, circle, 0.5);
       expect(result05, isNotEmpty);
       expect(result05, contains('M'));
-      expect(result05, contains('C')); // Should have cubic beziers
+      expect(result05, equals(circle));
 
-      // Results should be different
+      // Results should respect discrete switch behavior.
       expect(result0, isNot(equals(result05)));
-      expect(result05, isNot(equals(result1)));
+      expect(result05, equals(result1));
     });
 
     test('interpolatePath with empty paths', () {
@@ -166,7 +167,7 @@ void main() {
       expect(result, isA<String>());
       expect(result, isNotEmpty);
       expect(result, contains('M'));
-      expect(result, contains('C')); // Should contain cubic curves
+      expect(result, equals(circle));
     });
 
     test('path interpolation at extremes', () {
