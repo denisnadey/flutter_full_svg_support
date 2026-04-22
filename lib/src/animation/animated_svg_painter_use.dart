@@ -9,6 +9,30 @@ part of 'animated_svg_painter.dart';
 /// - CSS cascade through use shadow boundaries
 /// - Nested use element chains (up to _kMaxUseRecursionDepth levels)
 extension AnimatedSvgPainterUseExtension on AnimatedSvgPainter {
+  bool _wouldCreateParentCycle({
+    required SvgNode parentCandidate,
+    required SvgNode childCandidate,
+  }) {
+    if (identical(parentCandidate, childCandidate)) {
+      return true;
+    }
+
+    final visited = <SvgNode>{};
+    SvgNode? current = parentCandidate;
+    var depth = 0;
+    while (current != null && depth < _kMaxUseRecursionDepth * 4) {
+      if (!visited.add(current)) {
+        return true;
+      }
+      if (identical(current, childCandidate)) {
+        return true;
+      }
+      current = current.parent;
+      depth++;
+    }
+    return false;
+  }
+
   /// Checks if the current rendering context is within a clip-path definition.
   ///
   /// This affects how coordinates are interpreted when clipPathUnits="objectBoundingBox".
@@ -190,6 +214,12 @@ extension AnimatedSvgPainterUseExtension on AnimatedSvgPainter {
       }
 
       final previousParent = referenced.parent;
+      if (_wouldCreateParentCycle(
+        parentCandidate: node,
+        childCandidate: referenced,
+      )) {
+        return;
+      }
       referenced.parent = node;
       try {
         final nextUseStack = <String>{...useStack, hrefId};

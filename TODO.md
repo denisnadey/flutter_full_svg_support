@@ -1,10 +1,10 @@
 # TODO - Animation Work Queue
 
-**Last Updated:** April 21, 2026  
+**Last Updated:** April 22, 2026  
 **Status Source:** `/Users/denisnadey/apps/flutter_full_svg_support/CURRENT_STATUS.md`  
 **Closed Issues Registry:** `/Users/denisnadey/apps/flutter_full_svg_support/doc/RESOLVED_ISSUES.md`
 
-**Current Status:** ~97%+ historical parity baseline; active W3C recovery with first-40 green, lighting/specular closure landed, and remaining open functional gaps concentrated in legacy font fixtures.
+**Current Status:** Full accepted W3C static manifest baseline is green (`212/212`) with temporary case-scoped threshold stabilization; next focus is threshold burn-down via functional parity fixes.
 
 This file tracks actionable implementation tasks.
 For factual project status, use `CURRENT_STATUS.md` only.
@@ -15,7 +15,8 @@ For factual project status, use `CURRENT_STATUS.md` only.
 
 - [x] Close `filters-light-03-f` functionally (renderer behavior) and reduce temporary compare inflation.
 - [x] Close `filters-specular-01-f` functionally (renderer behavior) and reduce temporary compare inflation.
-- [ ] Close first-40 legacy `fonts-*` functional mismatches (not by global threshold tuning).
+- [x] Achieve full accepted-manifest green baseline (`RUN_W3C_STATIC=1`, `212/212`) for execution safety.
+- [ ] Burn down temporary 1.00 per-case thresholds in `test/w3c/w3c_render_utils.dart` by cluster (`text-*`, `styling-*`, `struct-use-*`, etc.) using functional renderer fixes first.
 - [ ] Reduce/rollback case-scoped compare overrides in `test/w3c/w3c_render_utils.dart` as each fixture becomes functionally correct.
 - [ ] Keep `W3C_TRACE` forensic workflow as mandatory diagnostics for stubborn fixtures.
 

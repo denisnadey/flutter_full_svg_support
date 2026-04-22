@@ -47,7 +47,11 @@ void _paintNodeImplWithUseContext(
       ._getStyleOrAttributeValue(node, 'display')
       ?.toString()
       .trim();
-  if (display?.toLowerCase() == 'none') return;
+  if (display?.toLowerCase() == 'none') {
+    _currentUseContext = previousUseContext;
+    useContextCustomPropertyLookup = previousUseContextLookup;
+    return;
+  }
 
   final visibility = painter._getInheritedString(node, 'visibility');
   final normalizedVisibility = visibility?.toLowerCase();
@@ -285,6 +289,8 @@ void _paintNodeImplWithUseContext(
         // Check requiredExtensions for foreignObject - skip if not supported
         if (node.tagName == 'foreignObject' &&
             !painter._shouldRenderForeignObject(node)) {
+          _currentUseContext = previousUseContext;
+          useContextCustomPropertyLookup = previousUseContextLookup;
           canvas.restore();
           return;
         }

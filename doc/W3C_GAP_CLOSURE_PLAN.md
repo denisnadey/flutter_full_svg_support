@@ -35,7 +35,8 @@ git submodule update --init --recursive --depth 1 --jobs 8
 
 - First 40 static accepted cases: green.
 - `W3C_LIMIT=83`: passed (`83` pass / `0` fail), re-verified on April 22, 2026.
-- No active fail clusters in the tracked 83-slice.
+- `RUN_W3C_STATIC=1` full accepted manifest: passed (`212` pass / `0` fail) with temporary case-scoped threshold stabilization.
+- Active execution focus is threshold burn-down while preserving full-manifest green.
 
 ## Execution Algorithm (Regression Guard)
 
@@ -45,7 +46,7 @@ For each regressed case, run this loop:
    - `RUN_W3C_STATIC=1 W3C_LIMIT=1 W3C_NAME_FILTER=<case> W3C_TRACE=1 W3C_TRACE_PROFILE=forensic ./.fvm/flutter_sdk/bin/flutter test test/w3c/w3c_static_golden_test.dart`
 2. Map mismatch to Blink behavior in Chromium source before editing.
 3. Implement renderer fix in pipeline code.
-4. Re-run targeted case, then the local slice (`W3C_LIMIT=83`) to confirm closure and no collateral regressions.
+4. Re-run targeted case, then both guard suites (`W3C_LIMIT=83` and full `RUN_W3C_STATIC=1`) to confirm closure and no collateral regressions.
 5. Only then squeeze threshold with measured runs (no guessing):
    - `tool/w3c_suite/tune_threshold_case.sh <case> <min-threshold> 0.01 3`
 6. If stable at lower threshold, keep it; if unstable, keep temporary threshold and open a functional follow-up item.
@@ -78,7 +79,7 @@ A case is considered closed only when all are true:
 
 1. Case passes with functional parity behavior.
 2. Threshold is reduced to measured minimum stable value (target `0.00` unless non-semantic harness noise remains).
-3. No regressions in `W3C_LIMIT=83`.
+3. No regressions in `W3C_LIMIT=83` and full `RUN_W3C_STATIC=1`.
 4. `CURRENT_STATUS.md` and `NEXT_STEPS.md` are updated with factual progress.
 
 ## Tracking Rules

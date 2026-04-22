@@ -401,6 +401,7 @@ void main() {
                   '${entry.name}: similarity '
                   '${result.similarity.toStringAsFixed(4)} '
                   'below threshold $kW3cSimilarityThreshold. '
+                  '${result.message != null ? 'Compare: ${result.message}. ' : ''}'
                   'Diff: $diffPath',
             );
           } catch (error, stackTrace) {

@@ -13,9 +13,10 @@
 
 ## Reality Check (April 2026)
 
-- W3C static suite closure is complete; regression guard workflow remains active.
+- W3C static suite closure baseline is green at full manifest scope (`212/212`) with temporary case-scoped threshold stabilization.
 - `W3C_LIMIT=40` remains green.
 - `W3C_LIMIT=83` is now green (`83/83`) after clip/mask functional fixes and scoped compare stabilization.
+- `RUN_W3C_STATIC=1` full accepted manifest run is green (`212/212`) on current workspace state.
 - Gate A is now green: full-suite `flutter test` passes.
 - Active execution source for closure remains `doc/W3C_GAP_CLOSURE_PLAN.md`.
 
@@ -27,6 +28,7 @@ Commands run in `/Users/denisnadey/apps/flutter_full_svg_support`:
 .fvm/versions/3.38.1/bin/dart analyze lib/ test/ example/lib/
 .fvm/versions/3.38.1/bin/flutter test
 RUN_W3C_STATIC=1 W3C_LIMIT=83 .fvm/versions/3.38.1/bin/flutter test test/w3c/w3c_static_golden_test.dart
+RUN_W3C_STATIC=1 .fvm/versions/3.38.1/bin/flutter test test/w3c/w3c_static_golden_test.dart
 ```
 
 Result:
@@ -34,6 +36,7 @@ Result:
 - `dart analyze`: **0 errors, 0 warnings**.
 - `flutter test`: **all tests passed** (`4,922` pass / `2` skipped).
 - `W3C_LIMIT=83`: **83 passed / 0 failed**.
+- `RUN_W3C_STATIC=1` full manifest: **212 passed / 0 failed** (temporary case-scoped threshold stabilization active).
 - 83-slice currently stable on repeated reruns.
 
 ## Verified Health (Historical Baseline, March 31, 2026)
@@ -56,8 +59,9 @@ Active track: **release hardening and publish readiness (April 2026)**
 
 Current priorities:
 
-1. **Publish execution**: tag `v1.0.0` and run `dart pub publish`.
-2. **Post-release validation**: complete smoke checks on supported platforms and finalize status docs.
+1. **W3C threshold burn-down**: replace temporary case-scoped threshold inflation with functional renderer parity and tuned minimum stable values.
+2. **Publish execution**: tag `v1.0.0` and run `dart pub publish`.
+3. **Post-release validation**: complete smoke checks on supported platforms and finalize status docs.
 
 Secondary priorities:
 

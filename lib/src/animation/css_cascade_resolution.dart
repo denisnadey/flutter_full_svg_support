@@ -3,6 +3,47 @@ part of 'css_cascade.dart';
 
 /// Mixin providing cascade resolution functionality for CssCascadeResolver.
 mixin _ResolutionMixin on _SelectorMatchingMixin {
+  /// Resolves a property from stylesheet rules only (<style> blocks).
+  ///
+  /// This intentionally excludes:
+  /// - inline style attribute
+  /// - presentation attributes
+  /// - inheritance
+  ///
+  /// Callers that already resolve inline/presentation values separately should
+  /// use this API to avoid stringifying typed attribute values (e.g. Color).
+  String? resolveFromStyleRulesOnly(SvgNode node, String property) {
+    final normalizedProperty = property.trim().toLowerCase();
+    final matchingRules = _getMatchingRules(node);
+    CssResolvedValue? winner;
+    var order = 0;
+
+    for (final matched in matchingRules) {
+      final declaration = matched.rule.declarations[normalizedProperty];
+      if (declaration == null) {
+        order++;
+        continue;
+      }
+      final isImportant =
+          declaration.endsWith('!important') ||
+          declaration.contains('!important');
+      final cleanValue = _stripImportant(declaration);
+      if (cleanValue.isEmpty) {
+        order++;
+        continue;
+      }
+      final candidate = CssResolvedValue(
+        value: cleanValue,
+        specificity: matched.specificity,
+        order: order++,
+        isImportant: isImportant,
+      );
+      winner = winner == null ? candidate : winner.winner(candidate);
+    }
+
+    return winner?.value;
+  }
+
   /// Resolves a CSS property value for a node with full cascade support.
   ///
   /// Resolution order (highest to lowest priority):

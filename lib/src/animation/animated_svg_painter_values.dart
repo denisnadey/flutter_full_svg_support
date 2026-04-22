@@ -12,7 +12,7 @@ extension AnimatedSvgPainterValuesExtension on AnimatedSvgPainter {
     if (resolver == null) {
       return null;
     }
-    return resolver.resolveOwnProperty(node, normalizedProperty);
+    return resolver.resolveFromStyleRulesOnly(node, normalizedProperty);
   }
 
   /// Parses a space/comma-separated list of numbers from an attribute.
@@ -413,6 +413,25 @@ extension AnimatedSvgPainterValuesExtension on AnimatedSvgPainter {
     final hslColor = _parseHslColor(str);
     if (hslColor != null) {
       return hslColor;
+    }
+
+    // Defensive: parse Flutter's Color.toString() representation.
+    // This can appear when typed color attributes are stringified by
+    // intermediate cascade paths.
+    final flutterColorMatch = RegExp(
+      r'^color\(\s*alpha:\s*([0-9]*\.?[0-9]+)\s*,\s*red:\s*([0-9]*\.?[0-9]+)\s*,\s*green:\s*([0-9]*\.?[0-9]+)\s*,\s*blue:\s*([0-9]*\.?[0-9]+)',
+    ).firstMatch(str);
+    if (flutterColorMatch != null) {
+      final alpha = double.tryParse(flutterColorMatch.group(1)!) ?? 1.0;
+      final red = double.tryParse(flutterColorMatch.group(2)!) ?? 0.0;
+      final green = double.tryParse(flutterColorMatch.group(3)!) ?? 0.0;
+      final blue = double.tryParse(flutterColorMatch.group(4)!) ?? 0.0;
+      return ui.Color.from(
+        alpha: alpha.clamp(0.0, 1.0),
+        red: red.clamp(0.0, 1.0),
+        green: green.clamp(0.0, 1.0),
+        blue: blue.clamp(0.0, 1.0),
+      );
     }
 
     return cssNamedColors[str];

@@ -345,7 +345,7 @@ class _UseInheritanceContext {
     }
     final normalizedProperty = property.trim().toLowerCase();
     final resolver = CssCascadeResolver(cssRules: cssRules!);
-    return resolver.resolveOwnProperty(node, normalizedProperty);
+    return resolver.resolveFromStyleRulesOnly(node, normalizedProperty);
   }
 
   /// Resolves a CSS property with full cascade, including use context.
@@ -365,7 +365,10 @@ class _UseInheritanceContext {
     String? cssRuleValue;
     if (cssRules != null && cssRules!.isNotEmpty) {
       final resolver = CssCascadeResolver(cssRules: cssRules!);
-      cssRuleValue = resolver.resolveOwnProperty(node, normalizedProperty);
+      cssRuleValue = resolver.resolveFromStyleRulesOnly(
+        node,
+        normalizedProperty,
+      );
     }
     final attrValue = node.getAttributeValue(normalizedProperty)?.toString();
     if (inlineValue != null) {
@@ -407,7 +410,10 @@ class _UseInheritanceContext {
     String? cssRuleValue;
     if (cssRules != null && cssRules!.isNotEmpty) {
       final resolver = CssCascadeResolver(cssRules: cssRules!);
-      cssRuleValue = resolver.resolveOwnProperty(node, normalizedProperty);
+      cssRuleValue = resolver.resolveFromStyleRulesOnly(
+        node,
+        normalizedProperty,
+      );
     }
     if (cssRuleValue != null) {
       if (inlineValue != null) {
