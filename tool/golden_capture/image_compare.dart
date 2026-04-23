@@ -11,6 +11,8 @@ library image_compare;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+const int _kNearTransparentAlpha = 8;
+
 /// Result of comparing two images pixel-by-pixel.
 class ImageCompareResult {
   /// Creates an image comparison result.
@@ -87,6 +89,43 @@ class ImageCompareResult {
 
   @override
   String toString() => 'ImageCompareResult($toSummary())';
+}
+
+@pragma('vm:prefer-inline')
+int _premultiply8(int channel, int alpha) => (channel * alpha + 127) ~/ 255;
+
+@pragma('vm:prefer-inline')
+bool _pixelChannelsMatchAlphaAware({
+  required int rA,
+  required int gA,
+  required int bA,
+  required int aA,
+  required int rB,
+  required int gB,
+  required int bB,
+  required int aB,
+  required int threshold,
+}) {
+  final aDiff = (aA - aB).abs();
+
+  // Transparent RGB payload is encoder-dependent and not visible.
+  if (aA <= _kNearTransparentAlpha && aB <= _kNearTransparentAlpha) {
+    return aDiff <= threshold;
+  }
+
+  // Compare in premultiplied color space so semi-transparent anti-aliased
+  // edges are judged by visible color contribution.
+  final pRA = _premultiply8(rA, aA);
+  final pGA = _premultiply8(gA, aA);
+  final pBA = _premultiply8(bA, aA);
+  final pRB = _premultiply8(rB, aB);
+  final pGB = _premultiply8(gB, aB);
+  final pBB = _premultiply8(bB, aB);
+
+  return (pRA - pRB).abs() <= threshold &&
+      (pGA - pGB).abs() <= threshold &&
+      (pBA - pBB).abs() <= threshold &&
+      aDiff <= threshold;
 }
 
 /// Compares two PNG images pixel-by-pixel.
@@ -180,17 +219,17 @@ Future<ImageCompareResult> compareImages({
       final bB = pixelsB[i + 2];
       final aB = pixelsB[i + 3];
 
-      // Check if all channels are within threshold
-      final rDiff = (rA - rB).abs();
-      final gDiff = (gA - gB).abs();
-      final bDiff = (bA - bB).abs();
-      final aDiff = (aA - aB).abs();
-
-      final isMatch =
-          rDiff <= threshold &&
-          gDiff <= threshold &&
-          bDiff <= threshold &&
-          aDiff <= threshold;
+      final isMatch = _pixelChannelsMatchAlphaAware(
+        rA: rA,
+        gA: gA,
+        bA: bA,
+        aA: aA,
+        rB: rB,
+        gB: gB,
+        bB: bB,
+        aB: aB,
+        threshold: threshold,
+      );
 
       if (isMatch) {
         matchingPixels++;
@@ -370,17 +409,17 @@ ImageCompareResult compareRawPixels({
     final bB = pixelsB[i + 2];
     final aB = pixelsB[i + 3];
 
-    // Check if all channels are within threshold
-    final rDiff = (rA - rB).abs();
-    final gDiff = (gA - gB).abs();
-    final bDiff = (bA - bB).abs();
-    final aDiff = (aA - aB).abs();
-
-    final isMatch =
-        rDiff <= threshold &&
-        gDiff <= threshold &&
-        bDiff <= threshold &&
-        aDiff <= threshold;
+    final isMatch = _pixelChannelsMatchAlphaAware(
+      rA: rA,
+      gA: gA,
+      bA: bA,
+      aA: aA,
+      rB: rB,
+      gB: gB,
+      bB: bB,
+      aB: aB,
+      threshold: threshold,
+    );
 
     if (isMatch) {
       matchingPixels++;

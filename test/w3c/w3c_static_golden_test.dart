@@ -5,6 +5,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:full_svg_flutter/src/animation/animated_svg_picture.dart';
 
@@ -342,12 +343,20 @@ void main() {
 
           try {
             traceCollector.stageStart('capture');
+            final captureBackgroundColor =
+                await tester.runAsync(
+                  () => resolveW3cCaptureBackgroundColor(
+                    referencePngPath: entry.pngPath,
+                  ),
+                ) ??
+                Colors.transparent;
             final renderedPng = await _withStageTimeout(
               'capture',
               const Duration(seconds: 90),
               () => captureSvgFromFile(
                 tester,
                 entry.svgPath,
+                canvasBackgroundColor: captureBackgroundColor,
                 onTraceEvent: traceCollector.onTraceEvent,
                 traceFrameTicks: traceCollector.traceFrameTicks,
               ),

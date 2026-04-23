@@ -55,6 +55,7 @@ W3cCompareConfig resolveW3cCompareConfig({
 Future<Uint8List> captureSvgFromFile(
   WidgetTester tester,
   String svgPath, {
+  Color canvasBackgroundColor = Colors.transparent,
   void Function(SvgTraceEvent event)? onTraceEvent,
   bool traceFrameTicks = false,
 }) async {
@@ -78,11 +79,11 @@ Future<Uint8List> captureSvgFromFile(
         MaterialApp(
           debugShowCheckedModeBanner: false,
           home: Scaffold(
-            backgroundColor: Colors.white,
+            backgroundColor: canvasBackgroundColor,
             body: RepaintBoundary(
               key: repaintKey,
               child: ColoredBox(
-                color: Colors.white,
+                color: canvasBackgroundColor,
                 child: SizedBox(
                   width: kW3cViewportWidth,
                   height: kW3cViewportHeight,
@@ -173,6 +174,121 @@ Future<Uint8List> captureSvgFromFile(
   }
 }
 
+Future<Color> resolveW3cCaptureBackgroundColor({
+  required String referencePngPath,
+}) async {
+  final referenceFile = File(referencePngPath);
+  if (!referenceFile.existsSync()) {
+    return Colors.transparent;
+  }
+
+  final decoded = await _decodePngToRawRgba(referenceFile.readAsBytesSync());
+  if (decoded == null || decoded.width <= 0 || decoded.height <= 0) {
+    return Colors.transparent;
+  }
+
+  final width = decoded.width;
+  final height = decoded.height;
+  final rgba = decoded.rgba;
+  final sampleInset = _resolveW3cBackgroundSampleInset(
+    width: width,
+    height: height,
+  );
+  final colorCounts = _collectPerimeterColorCounts(
+    rgba,
+    width: width,
+    height: height,
+    inset: sampleInset,
+  );
+  final sampleCount = colorCounts.values.fold<int>(0, (sum, count) {
+    return sum + count;
+  });
+
+  if (sampleCount == 0 || colorCounts.isEmpty) {
+    return Colors.transparent;
+  }
+
+  var dominantKey = 0;
+  var dominantCount = 0;
+  colorCounts.forEach((key, count) {
+    if (count > dominantCount) {
+      dominantKey = key;
+      dominantCount = count;
+    }
+  });
+
+  final dominanceRatio = dominantCount / sampleCount;
+  if (dominanceRatio < 0.90) {
+    return Colors.transparent;
+  }
+
+  final a = (dominantKey >> 24) & 0xFF;
+  final r = (dominantKey >> 16) & 0xFF;
+  final g = (dominantKey >> 8) & 0xFF;
+  final b = dominantKey & 0xFF;
+
+  // Keep transparent backgrounds transparent; transparent RGB payload in PNGs
+  // is encoder-dependent and should not force an opaque matte.
+  if (a <= 5) {
+    return Colors.transparent;
+  }
+  return Color.fromARGB(a, r, g, b);
+}
+
+int _resolveW3cBackgroundSampleInset({
+  required int width,
+  required int height,
+}) {
+  final minSide = math.min(width, height);
+  if (minSide <= 2) {
+    return 0;
+  }
+  final maxInset = math.max(0, (minSide ~/ 2) - 1);
+  return _clampInt(3, 0, maxInset);
+}
+
+Map<int, int> _collectPerimeterColorCounts(
+  Uint8List rgba, {
+  required int width,
+  required int height,
+  required int inset,
+}) {
+  final x0 = _clampInt(inset, 0, width - 1);
+  final y0 = _clampInt(inset, 0, height - 1);
+  final x1 = _clampInt(width - 1 - inset, 0, width - 1);
+  final y1 = _clampInt(height - 1 - inset, 0, height - 1);
+  if (x1 < x0 || y1 < y0) {
+    return const <int, int>{};
+  }
+
+  final counts = <int, int>{};
+
+  void samplePixel(int x, int y) {
+    final i = (y * width + x) * 4;
+    final key =
+        (rgba[i + 3] << 24) |
+        (rgba[i] << 16) |
+        (rgba[i + 1] << 8) |
+        rgba[i + 2];
+    counts[key] = (counts[key] ?? 0) + 1;
+  }
+
+  for (var x = x0; x <= x1; x++) {
+    samplePixel(x, y0);
+    if (y1 != y0) {
+      samplePixel(x, y1);
+    }
+  }
+  for (var y = y0 + 1; y < y1; y++) {
+    samplePixel(x0, y);
+    if (x1 != x0) {
+      samplePixel(x1, y);
+    }
+  }
+
+  return counts;
+}
+
 Future<void> _awaitAsyncImageDecodes(
   WidgetTester tester, {
   required bool Function() hasPendingImageLoads,
@@ -210,17 +326,6 @@ String _sanitizeW3cSvg(String svg, String svgPath) {
   // include foreign-namespace markup unsupported by parsers.
   sanitized = sanitized.replaceAll(
     RegExp(r'<d:SVGTestCase[\s\S]*?</d:SVGTestCase>', caseSensitive: false),
-    '',
-  );
-
-  // Strip suite overlay elements that are not part of shape-accuracy checks
-  // and are known to differ from W3C PNG references.
-  sanitized = sanitized.replaceAll(
-    RegExp(r'<text[^>]*id="revision"[\s\S]*?</text>', caseSensitive: false),
-    '',
-  );
-  sanitized = sanitized.replaceAll(
-    RegExp(r'<rect[^>]*id="test-frame"[^>]*/>', caseSensitive: false),
     '',
   );
 
@@ -320,11 +425,12 @@ String? _extractExternalSvgFontBlock(String externalSvg, String? fragmentId) {
 
 String _injectHarnessBackgroundIfNeeded(String svg, String svgPath) {
   final fileName = svgPath.split(Platform.pathSeparator).last;
-  const harnessLightGrayCases = <String>{
-    'filters-light-02-f.svg',
-    'filters-turb-02-f.svg',
+  const harnessBackgroundByCase = <String, String>{
+    'filters-light-02-f.svg': '#d3d3d3',
+    'filters-turb-02-f.svg': '#d3d3d3',
   };
-  if (!harnessLightGrayCases.contains(fileName)) {
+  final backgroundColor = harnessBackgroundByCase[fileName];
+  if (backgroundColor == null) {
     return svg;
   }
   if (svg.contains('id="__w3c_harness_bg"')) {
@@ -334,7 +440,7 @@ String _injectHarnessBackgroundIfNeeded(String svg, String svgPath) {
   return svg.replaceFirstMapped(RegExp(r'<svg\b[^>]*>'), (match) {
     return '${match.group(0)}\n'
         '<rect id="__w3c_harness_bg" x="0" y="0" width="480" '
-        'height="360" fill="#d3d3d3" />';
+        'height="360" fill="$backgroundColor" />';
   });
 }
 
@@ -370,38 +476,16 @@ String _normalizeCaseSpecificMarkup(String svg, String svgPath) {
     );
   }
 
-  if (fileName != 'filters-turb-02-f.svg') {
-    return svg;
+  if (fileName == 'filters-turb-02-f.svg') {
+    // Our current CSS selector support misses '#subtests text { fill: black }'.
+    // Inline black fill on the subtests group to match reference labeling.
+    return svg.replaceAll(
+      'id="subtests" transform="translate(65 80)" text-anchor="middle" fill="red"',
+      'id="subtests" transform="translate(65 80)" text-anchor="middle" fill="black"',
+    );
   }
 
-  var normalized = svg;
-
-  // Remove unsupported SVG font-face declarations so text falls back to
-  // platform fonts instead of tofu placeholders.
-  normalized = normalized.replaceAll(
-    RegExp(r'<font-face\b[^>]*/>', caseSensitive: false),
-    '',
-  );
-  normalized = normalized.replaceAll(
-    RegExp(r'<font-face\b[^>]*>[\s\S]*?</font-face>', caseSensitive: false),
-    '',
-  );
-  normalized = normalized.replaceAll(
-    RegExp(r'font-family="SVGFreeSansASCII,sans-serif"', caseSensitive: false),
-    'font-family="sans-serif"',
-  );
-
-  normalized = normalized.replaceAllMapped(
-    RegExp(r'<text(?![^>]*\bfill=)(\s|>)', caseSensitive: false),
-    (match) {
-      final token = match.group(0)!;
-      return token.endsWith('>')
-          ? '<text fill="black">'
-          : '<text fill="black" ';
-    },
-  );
-
-  return normalized;
+  return svg;
 }
 
 String _inlineRelativeRasterHrefs(String svg, String svgPath) {
@@ -515,7 +599,10 @@ Future<ImageCompareResult> compareWithReferencePng({
     // Some W3C browser captures include a 1px harness strip difference.
     // Compare the common overlapping viewport when mismatch is tiny.
     if (widthDelta <= 1 && heightDelta <= 1) {
-      final overlapWidth = math.min(decodedRendered.width, decodedReference.width);
+      final overlapWidth = math.min(
+        decodedRendered.width,
+        decodedReference.width,
+      );
       final overlapHeight = math.min(
         decodedRendered.height,
         decodedReference.height,
@@ -624,6 +711,16 @@ void writeDiffIfAvailable({
 }
 
 const Map<String, List<ui.Rect>> _comparisonIgnoreRegionsByCase = {
+  // This fixture pass criteria is the centered JPEG rendered via feImage.
+  // Browser references encode outside area with transparent-black pixels,
+  // while Flutter capture background alpha can differ by environment.
+  // Compare only the feImage viewport and ignore outer background area.
+  'filters-image-01-b': <ui.Rect>[
+    ui.Rect.fromLTWH(0, 0, 480, 50),
+    ui.Rect.fromLTWH(0, 240, 480, 120),
+    ui.Rect.fromLTWH(0, 50, 145, 190),
+    ui.Rect.fromLTWH(335, 50, 145, 190),
+  ],
   // These regions contain W3C harness labels/frame text that are not part of
   // this fixture's pass/fail criteria (which checks smiley clipping behavior).
   'filters-image-04-f': <ui.Rect>[
@@ -656,15 +753,16 @@ const Map<String, List<ui.Rect>> _comparisonIgnoreRegionsByCase = {
     ui.Rect.fromLTWH(0, 316, 210, 44),
   ],
   // Pass criteria for this fixture validates six identical light-blue shapes.
-  // Titles/labels/frame are auxiliary harness text and not render-target data.
+  // Keep only the six shape panels; ignore background and textual harness rows
+  // that vary by alpha/background composition across render environments.
   'coords-viewattr-03-b': <ui.Rect>[
-    ui.Rect.fromLTWH(0, 0, 480, 4),
-    ui.Rect.fromLTWH(0, 356, 480, 4),
-    ui.Rect.fromLTWH(0, 0, 4, 360),
-    ui.Rect.fromLTWH(476, 0, 4, 360),
-    ui.Rect.fromLTWH(0, 0, 480, 50),
-    ui.Rect.fromLTWH(0, 150, 480, 30),
-    ui.Rect.fromLTWH(0, 280, 480, 80),
+    ui.Rect.fromLTWH(0, 0, 480, 58),
+    ui.Rect.fromLTWH(0, 272, 480, 88),
+    ui.Rect.fromLTWH(0, 58, 40, 214),
+    ui.Rect.fromLTWH(440, 58, 40, 214),
+    ui.Rect.fromLTWH(130, 58, 60, 214),
+    ui.Rect.fromLTWH(286, 58, 60, 214),
+    ui.Rect.fromLTWH(0, 140, 480, 48),
   ],
   // This fixture validates feConvolveMatrix output on the source image.
   // Restrict comparison to the central convolved-image strip; surrounding
@@ -1021,47 +1119,47 @@ const Map<String, List<ui.Rect>> _comparisonIgnoreRegionsByCase = {
 const Map<String, double> _comparisonPerPixelThresholdByCase = {
   // This fixture uses JPEG input; browser and Flutter decoders can differ
   // slightly per channel while still producing visually identical output.
-  'filters-image-01-b': 1.00,
+  'filters-image-01-b': 0.02,
   // This fixture compares anti-aliased vector edges across engines.
   // A slightly higher channel threshold reduces rasterizer-only deltas.
-  'coords-viewattr-03-b': 1.00,
+  'coords-viewattr-03-b': 0.01,
   // This fixture convolves a JPEG source image; small decoder/channel
   // differences are amplified by feConvolveMatrix edge enhancement.
-  'filters-conv-02-f': 1.00,
+  'filters-conv-02-f': 0.07,
   // This fixture uses per-pixel lighting on a raster bump-map source.
   // Small interpolation/rasterization differences remain after masking.
   'filters-diffuse-01-f': 0.15,
   // This fixture combines displacement sampling and overlay geometry.
   // Small edge/interpolation differences remain after label/frame masking.
-  'filters-displace-01-f': 1.00,
+  'filters-displace-01-f': 0.16,
   // Directional Gaussian blur edges can differ slightly across engines
   // despite matching blur direction and containment in the guide boxes.
-  'filters-gauss-02-f': 1.00,
+  'filters-gauss-02-f': 0.18,
   // Circle edge antialiasing can vary slightly between rasterizers.
-  'filters-felem-01-b': 1.00,
+  'filters-felem-01-b': 0.00,
   // W3C notes this reference is not pixel-accurate; allow small lighting
   // deltas after masking non-semantic text/frame overlays.
-  'filters-light-01-f': 1.00,
+  'filters-light-01-f': 0.16,
   // This fixture checks azimuth-direction placement of arcs. Allow modest
   // anti-aliasing variance after masking harness-only overlays.
   'filters-light-02-f': 0.18,
   // This fixture compares qualitative gradient fills across three groups.
   // Keep a modest tolerance for edge AA only.
-  'filters-light-03-f': 1.00,
+  'filters-light-03-f': 0.01,
   // Swatch-only comparison with modest AA tolerance.
-  'filters-specular-01-f': 1.00,
+  'filters-specular-01-f': 0.00,
   // This fixture combines many primitive types under <a>. Slight
   // rasterization/font-edge variance remains even with matching geometry.
-  'linking-a-10-f': 1.00,
+  'linking-a-10-f': 0.03,
   // These fixtures contain dense bitmap test strips where tiny channel deltas
   // between rasterizers persist after masking frame/revision overlays.
   'struct-image-13-f': 0.09,
   'struct-image-14-f': 0.08,
   // Right subtest remains geometry-accurate; keep a modest threshold for
   // anti-aliased edge differences in nested clip compositing.
-  'masking-path-07-b': 1.00,
+  'masking-path-07-b': 0.00,
   // Nested mask edges vary slightly after path/clip intersection.
-  'masking-path-11-b': 1.00,
+  'masking-path-11-b': 0.00,
   // This fixture compares procedural turbulence outputs across seed values.
   // Minor engine differences in Perlin implementation/channel correlation
   // remain after masking harness text/frame overlays.
@@ -1069,207 +1167,207 @@ const Map<String, double> _comparisonPerPixelThresholdByCase = {
   // The following font fixtures depend on legacy SVG 1.1 font semantics and
   // exact glyph metrics that vary strongly across rasterizers/environments.
   // Keep these relaxations strictly case-scoped to avoid global compare drift.
-  'fonts-desc-02-t': 1.00,
-  'fonts-desc-03-t': 1.00,
-  'fonts-elem-01-t': 1.00,
-  'fonts-elem-02-t': 1.00,
-  'fonts-elem-03-b': 1.00,
-  'fonts-elem-04-b': 1.00,
-  'fonts-elem-05-t': 1.00,
-  'fonts-elem-06-t': 1.00,
-  'fonts-elem-07-b': 1.00,
-  'fonts-glyph-02-t': 1.00,
-  'fonts-glyph-04-t': 1.00,
-  'fonts-kern-01-t': 1.00,
-  'fonts-overview-201-t': 1.00,
+  'fonts-desc-02-t': 0.00,
+  'fonts-desc-03-t': 0.00,
+  'fonts-elem-01-t': 0.00,
+  'fonts-elem-02-t': 0.00,
+  'fonts-elem-03-b': 0.00,
+  'fonts-elem-04-b': 0.00,
+  'fonts-elem-05-t': 0.00,
+  'fonts-elem-06-t': 0.00,
+  'fonts-elem-07-b': 0.00,
+  'fonts-glyph-02-t': 0.00,
+  'fonts-glyph-04-t': 0.00,
+  'fonts-kern-01-t': 0.00,
+  'fonts-overview-201-t': 0.00,
   // Marker fixtures have geometry parity but sizable rasterizer differences
   // in tiny marker squares and stroke joins.
-  'painting-marker-03-f': 1.00,
-  'painting-marker-04-f': 1.00,
+  'painting-marker-03-f': 0.00,
+  'painting-marker-04-f': 0.00,
   // Pass criteria explicitly allows font differences and one region may match
   // either dark or light reference; keep tolerance focused on panel tones.
-  'painting-render-02-b': 1.00,
+  'painting-render-02-b': 0.23,
   // Dense stroke-grid anti-aliasing differs across engines.
-  'painting-stroke-06-t': 1.00,
+  'painting-stroke-06-t': 0.00,
   // Temporary stabilization wave for remaining text/types fixtures.
   // These are intentionally case-scoped and will be reduced per-case as
   // renderer parity closes and thresholds are tuned down.
   'text-fonts-203-t': 1.00,
-  'text-intro-01-t': 1.00,
-  'text-intro-02-b': 1.00,
+  'text-intro-01-t': 0.63,
+  'text-intro-02-b': 0.69,
   'text-intro-03-b': 1.00,
   'text-intro-04-t': 1.00,
-  'text-intro-05-t': 1.00,
+  'text-intro-05-t': 0.86,
   'text-intro-06-t': 1.00,
-  'text-intro-07-t': 1.00,
-  'text-intro-09-b': 1.00,
+  'text-intro-07-t': 0.98,
+  'text-intro-09-b': 0.63,
   'text-path-01-b': 1.00,
   'text-path-02-b': 1.00,
-  'text-text-03-b': 1.00,
+  'text-text-03-b': 0.56,
   'text-text-04-t': 1.00,
-  'text-text-05-t': 1.00,
-  'text-text-06-t': 1.00,
+  'text-text-05-t': 0.04,
+  'text-text-06-t': 0.00,
   'text-text-07-t': 1.00,
   'text-text-08-b': 1.00,
   'text-text-09-t': 1.00,
-  'text-text-10-t': 1.00,
+  'text-text-10-t': 0.08,
   'text-text-11-t': 1.00,
-  'text-tref-01-b': 1.00,
-  'text-tref-02-b': 1.00,
-  'text-tref-03-b': 1.00,
-  'text-tselect-01-b': 1.00,
-  'text-tspan-01-b': 1.00,
+  'text-tref-01-b': 0.00,
+  'text-tref-02-b': 0.00,
+  'text-tref-03-b': 0.00,
+  'text-tselect-01-b': 0.06,
+  'text-tspan-01-b': 0.62,
   'text-tspan-02-b': 1.00,
-  'types-basic-01-f': 1.00,
-  'color-prop-01-b': 1.00,
-  'color-prop-02-f': 1.00,
-  'color-prop-03-t': 1.00,
-  'color-prop-05-t': 1.00,
-  'coords-coord-01-t': 1.00,
-  'coords-coord-02-t': 1.00,
-  'coords-transformattr-03-f': 1.00,
-  'filters-color-02-b': 1.00,
-  'filters-composite-03-f': 1.00,
-  'filters-displace-02-f': 1.00,
-  'filters-gauss-03-f': 1.00,
-  'filters-image-03-f': 1.00,
-  'filters-image-04-f': 1.00,
-  'filters-offset-01-b': 1.00,
-  'masking-filter-01-f': 1.00,
-  'masking-intro-01-f': 1.00,
-  'masking-mask-02-f': 1.00,
-  'masking-path-02-b': 1.00,
-  'masking-path-03-b': 1.00,
-  'masking-path-05-f': 1.00,
-  'masking-path-08-b': 1.00,
-  'masking-path-10-b': 1.00,
-  'masking-path-14-f': 1.00,
-  'metadata-example-01-t': 1.00,
-  'painting-control-01-f': 1.00,
-  'painting-control-02-f': 1.00,
-  'painting-control-03-f': 1.00,
-  'painting-control-04-f': 1.00,
-  'painting-control-05-f': 1.00,
-  'painting-control-06-f': 1.00,
-  'painting-fill-01-t': 1.00,
-  'painting-fill-02-t': 1.00,
-  'painting-fill-03-t': 1.00,
-  'painting-fill-05-b': 1.00,
-  'painting-marker-02-f': 1.00,
-  'painting-marker-07-f': 1.00,
-  'painting-stroke-02-t': 1.00,
-  'painting-stroke-03-t': 1.00,
-  'painting-stroke-04-t': 1.00,
-  'painting-stroke-05-t': 1.00,
-  'painting-stroke-07-t': 1.00,
-  'painting-stroke-08-t': 1.00,
-  'painting-stroke-09-t': 1.00,
-  'painting-stroke-10-t': 1.00,
-  'paths-data-01-t': 1.00,
-  'paths-data-02-t': 1.00,
-  'paths-data-03-f': 1.00,
-  'paths-data-04-t': 1.00,
-  'paths-data-05-t': 1.00,
-  'paths-data-06-t': 1.00,
-  'paths-data-07-t': 1.00,
-  'paths-data-08-t': 1.00,
-  'paths-data-09-t': 1.00,
-  'paths-data-10-t': 1.00,
-  'paths-data-13-t': 1.00,
-  'paths-data-14-t': 1.00,
-  'paths-data-15-t': 1.00,
-  'paths-data-16-t': 1.00,
-  'paths-data-17-f': 1.00,
-  'paths-data-18-f': 1.00,
-  'paths-data-19-f': 1.00,
+  'types-basic-01-f': 0.00,
+  'color-prop-01-b': 0.01,
+  'color-prop-02-f': 0.01,
+  'color-prop-03-t': 0.00,
+  'color-prop-05-t': 0.00,
+  'coords-coord-01-t': 0.00,
+  'coords-coord-02-t': 0.00,
+  'coords-transformattr-03-f': 0.00,
+  'filters-color-02-b': 0.01,
+  'filters-composite-03-f': 0.01,
+  'filters-displace-02-f': 0.04,
+  'filters-gauss-03-f': 0.00,
+  'filters-image-03-f': 0.00,
+  'filters-image-04-f': 0.00,
+  'filters-offset-01-b': 0.01,
+  'masking-filter-01-f': 0.01,
+  'masking-intro-01-f': 0.02,
+  'masking-mask-02-f': 0.00,
+  'masking-path-02-b': 0.01,
+  'masking-path-03-b': 0.01,
+  'masking-path-05-f': 0.01,
+  'masking-path-08-b': 0.00,
+  'masking-path-10-b': 0.00,
+  'masking-path-14-f': 0.00,
+  'metadata-example-01-t': 0.04,
+  'painting-control-01-f': 0.00,
+  'painting-control-02-f': 0.00,
+  'painting-control-03-f': 0.00,
+  'painting-control-04-f': 0.00,
+  'painting-control-05-f': 0.00,
+  'painting-control-06-f': 0.00,
+  'painting-fill-01-t': 0.01,
+  'painting-fill-02-t': 0.00,
+  'painting-fill-03-t': 0.00,
+  'painting-fill-05-b': 0.00,
+  'painting-marker-02-f': 0.04,
+  'painting-marker-07-f': 0.00,
+  'painting-stroke-02-t': 0.05,
+  'painting-stroke-03-t': 0.04,
+  'painting-stroke-04-t': 0.05,
+  'painting-stroke-05-t': 0.05,
+  'painting-stroke-07-t': 0.00,
+  'painting-stroke-08-t': 0.02,
+  'painting-stroke-09-t': 0.00,
+  'painting-stroke-10-t': 0.00,
+  'paths-data-01-t': 0.03,
+  'paths-data-02-t': 0.00,
+  'paths-data-03-f': 0.03,
+  'paths-data-04-t': 0.01,
+  'paths-data-05-t': 0.00,
+  'paths-data-06-t': 0.00,
+  'paths-data-07-t': 0.00,
+  'paths-data-08-t': 0.02,
+  'paths-data-09-t': 0.01,
+  'paths-data-10-t': 0.10,
+  'paths-data-13-t': 0.00,
+  'paths-data-14-t': 0.00,
+  'paths-data-15-t': 0.00,
+  'paths-data-16-t': 0.00,
+  'paths-data-17-f': 0.00,
+  'paths-data-18-f': 0.00,
+  'paths-data-19-f': 0.20,
   'paths-data-20-f': 1.00,
-  'pservers-grad-01-b': 1.00,
-  'pservers-grad-02-b': 1.00,
-  'pservers-grad-03-b': 1.00,
-  'pservers-grad-04-b': 1.00,
-  'pservers-grad-06-b': 1.00,
-  'pservers-grad-07-b': 1.00,
-  'pservers-grad-08-b': 1.00,
-  'pservers-grad-09-b': 1.00,
-  'pservers-grad-10-b': 1.00,
+  'pservers-grad-01-b': 0.01,
+  'pservers-grad-02-b': 0.46,
+  'pservers-grad-03-b': 0.00,
+  'pservers-grad-04-b': 0.83,
+  'pservers-grad-06-b': 0.02,
+  'pservers-grad-07-b': 0.03,
+  'pservers-grad-08-b': 0.30,
+  'pservers-grad-09-b': 0.01,
+  'pservers-grad-10-b': 0.01,
   'pservers-grad-11-b': 1.00,
-  'pservers-grad-12-b': 1.00,
-  'pservers-grad-13-b': 1.00,
-  'pservers-grad-14-b': 1.00,
-  'pservers-grad-15-b': 1.00,
-  'pservers-grad-21-b': 1.00,
-  'pservers-grad-22-b': 1.00,
+  'pservers-grad-12-b': 0.59,
+  'pservers-grad-13-b': 0.71,
+  'pservers-grad-14-b': 0.51,
+  'pservers-grad-15-b': 0.46,
+  'pservers-grad-21-b': 0.47,
+  'pservers-grad-22-b': 0.01,
   'pservers-pattern-01-b': 1.00,
-  'pservers-pattern-02-f': 1.00,
-  'pservers-pattern-04-f': 1.00,
-  'render-elems-01-t': 1.00,
-  'render-elems-02-t': 1.00,
+  'pservers-pattern-02-f': 0.47,
+  'pservers-pattern-04-f': 0.00,
+  'render-elems-01-t': 0.00,
+  'render-elems-02-t': 0.00,
   'render-elems-03-t': 1.00,
-  'render-elems-06-t': 1.00,
-  'render-elems-07-t': 1.00,
-  'render-elems-08-t': 1.00,
-  'shapes-circle-01-t': 1.00,
-  'shapes-circle-02-t': 1.00,
-  'shapes-ellipse-01-t': 1.00,
-  'shapes-ellipse-02-t': 1.00,
-  'shapes-ellipse-03-f': 1.00,
-  'shapes-grammar-01-f': 1.00,
-  'shapes-intro-01-t': 1.00,
-  'shapes-intro-02-f': 1.00,
-  'shapes-line-01-t': 1.00,
-  'shapes-polygon-01-t': 1.00,
-  'shapes-polygon-02-t': 1.00,
-  'shapes-polygon-03-t': 1.00,
-  'shapes-polyline-01-t': 1.00,
-  'shapes-polyline-02-t': 1.00,
-  'shapes-rect-01-t': 1.00,
-  'shapes-rect-02-t': 1.00,
-  'shapes-rect-03-t': 1.00,
-  'shapes-rect-04-f': 1.00,
-  'shapes-rect-05-f': 1.00,
-  'struct-cond-01-t': 1.00,
+  'render-elems-06-t': 0.00,
+  'render-elems-07-t': 0.23,
+  'render-elems-08-t': 0.03,
+  'shapes-circle-01-t': 0.00,
+  'shapes-circle-02-t': 0.00,
+  'shapes-ellipse-01-t': 0.00,
+  'shapes-ellipse-02-t': 0.00,
+  'shapes-ellipse-03-f': 0.00,
+  'shapes-grammar-01-f': 0.03,
+  'shapes-intro-01-t': 0.50,
+  'shapes-intro-02-f': 0.00,
+  'shapes-line-01-t': 0.00,
+  'shapes-polygon-01-t': 0.03,
+  'shapes-polygon-02-t': 0.18,
+  'shapes-polygon-03-t': 0.00,
+  'shapes-polyline-01-t': 0.04,
+  'shapes-polyline-02-t': 0.20,
+  'shapes-rect-01-t': 0.00,
+  'shapes-rect-02-t': 0.00,
+  'shapes-rect-03-t': 0.50,
+  'shapes-rect-04-f': 0.00,
+  'shapes-rect-05-f': 0.00,
+  'struct-cond-01-t': 0.00,
   'struct-cond-02-t': 1.00,
-  'struct-cond-03-t': 1.00,
-  'struct-frag-06-t': 1.00,
-  'struct-group-02-b': 1.00,
-  'struct-image-01-t': 1.00,
+  'struct-cond-03-t': 0.00,
+  'struct-frag-06-t': 0.02,
+  'struct-group-02-b': 0.00,
+  'struct-image-01-t': 0.03,
   'struct-image-02-b': 1.00,
-  'struct-image-03-t': 1.00,
-  'struct-image-04-t': 1.00,
+  'struct-image-03-t': 0.03,
+  'struct-image-04-t': 0.00,
   'struct-image-05-b': 1.00,
-  'struct-image-06-t': 1.00,
+  'struct-image-06-t': 0.00,
   'struct-image-07-t': 1.00,
-  'struct-image-08-t': 1.00,
-  'struct-image-09-t': 1.00,
-  'struct-image-10-t': 1.00,
-  'struct-symbol-01-b': 1.00,
-  'struct-use-01-t': 1.00,
+  'struct-image-08-t': 0.01,
+  'struct-image-09-t': 0.03,
+  'struct-image-10-t': 0.01,
+  'struct-symbol-01-b': 0.02,
+  'struct-use-01-t': 0.09,
   'struct-use-03-t': 1.00,
-  'struct-use-10-f': 1.00,
+  'struct-use-10-f': 0.50,
   'struct-use-11-f': 1.00,
-  'struct-use-12-f': 1.00,
-  'styling-class-01-f': 1.00,
-  'styling-css-01-b': 1.00,
-  'styling-css-02-b': 1.00,
-  'styling-css-03-b': 1.00,
-  'styling-css-05-b': 1.00,
-  'styling-css-07-f': 1.00,
-  'styling-css-08-f': 1.00,
-  'styling-elem-01-b': 1.00,
-  'styling-inherit-01-b': 1.00,
-  'styling-pres-01-t': 1.00,
-  'text-align-01-b': 1.00,
+  'struct-use-12-f': 0.00,
+  'styling-class-01-f': 0.00,
+  'styling-css-01-b': 0.00,
+  'styling-css-02-b': 0.38,
+  'styling-css-03-b': 0.25,
+  'styling-css-05-b': 0.05,
+  'styling-css-07-f': 0.00,
+  'styling-css-08-f': 0.00,
+  'styling-elem-01-b': 0.02,
+  'styling-inherit-01-b': 0.54,
+  'styling-pres-01-t': 0.00,
+  'text-align-01-b': 0.07,
   'text-align-02-b': 1.00,
-  'text-align-03-b': 1.00,
-  'text-align-04-b': 1.00,
+  'text-align-03-b': 0.25,
+  'text-align-04-b': 0.90,
   'text-align-05-b': 1.00,
   'text-align-06-b': 1.00,
   'text-altglyph-01-b': 1.00,
-  'text-altglyph-02-b': 1.00,
-  'text-deco-01-b': 1.00,
+  'text-altglyph-02-b': 0.39,
+  'text-deco-01-b': 0.26,
   'text-fonts-01-t': 1.00,
   'text-fonts-02-t': 1.00,
-  'text-fonts-03-t': 1.00,
+  'text-fonts-03-t': 0.75,
   'text-fonts-04-t': 1.00,
 };
 
@@ -1332,12 +1430,7 @@ Uint8List _cropRawRgba(
     final srcRowStart = y * srcWidth * 4;
     final dstRowStart = y * clampedWidth * 4;
     final bytesPerRow = clampedWidth * 4;
-    out.setRange(
-      dstRowStart,
-      dstRowStart + bytesPerRow,
-      rgba,
-      srcRowStart,
-    );
+    out.setRange(dstRowStart, dstRowStart + bytesPerRow, rgba, srcRowStart);
   }
 
   return out;
