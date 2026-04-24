@@ -1265,17 +1265,6 @@ extension _AnimatedSvgPictureStateImagesExtension on _AnimatedSvgPictureState {
 
   Future<void> _resolveImageByHref(String href, int generation) async {
     try {
-      // Detect SVG-as-image references before attempting to decode
-      if (_isSvgImageHref(href)) {
-        _trace(
-          category: 'image',
-          level: SvgTraceLevel.warning,
-          message: 'Recursive SVG rendering is not yet supported',
-          data: <String, Object?>{'href': href},
-        );
-        return;
-      }
-
       final bytes = await _loadImageBytes(href);
       if (bytes == null || bytes.isEmpty) {
         _trace(
@@ -1287,55 +1276,71 @@ extension _AnimatedSvgPictureStateImagesExtension on _AnimatedSvgPictureState {
         return;
       }
 
-      final codec = await ui.instantiateImageCodec(bytes);
-      try {
-        final frame = await codec.getNextFrame();
-        final image = frame.image;
-        if (!mounted || generation != _imageLoadGeneration) {
-          image.dispose();
-          return;
+      ui.Image? image;
+      if (_isSvgImageHref(href)) {
+        image = await _decodeSvgImageAsRaster(bytes);
+      } else {
+        final codec = await ui.instantiateImageCodec(bytes);
+        try {
+          final frame = await codec.getNextFrame();
+          image = frame.image;
+        } finally {
+          codec.dispose();
         }
+      }
 
-        // Guard against invalid image dimensions
-        if (image.width <= 0 || image.height <= 0) {
-          image.dispose();
-          _trace(
-            category: 'image',
-            level: SvgTraceLevel.warning,
-            message: 'Image has invalid dimensions',
-            data: <String, Object?>{
-              'href': href,
-              'width': image.width,
-              'height': image.height,
-            },
-          );
-          return;
-        }
-
-        final previous = _imagesByHref[href];
-        if (!identical(previous, image)) {
-          previous?.dispose();
-        }
-        _imagesByHref[href] = image;
-
-        await _precomputeConvolveVariantsForHref(href, image, generation);
-        await _precomputeLightingVariantsForHref(href, image, generation);
-        await _precomputeDisplacementVariants(generation);
-
+      if (image == null) {
         _trace(
           category: 'image',
-          message: 'Image decoded',
+          level: SvgTraceLevel.warning,
+          message: 'Image source is not supported or failed to load',
+          data: <String, Object?>{'href': href},
+        );
+        return;
+      }
+
+      if (!mounted || generation != _imageLoadGeneration) {
+        image.dispose();
+        return;
+      }
+
+      // Guard against invalid image dimensions
+      if (image.width <= 0 || image.height <= 0) {
+        image.dispose();
+        _trace(
+          category: 'image',
+          level: SvgTraceLevel.warning,
+          message: 'Image has invalid dimensions',
           data: <String, Object?>{
             'href': href,
             'width': image.width,
             'height': image.height,
           },
         );
-
-        _markNeedsRepaint();
-      } finally {
-        codec.dispose();
+        return;
       }
+
+      final previous = _imagesByHref[href];
+      if (!identical(previous, image)) {
+        previous?.dispose();
+      }
+      _imagesByHref[href] = image;
+
+      await _precomputeConvolveVariantsForHref(href, image, generation);
+      await _precomputeLightingVariantsForHref(href, image, generation);
+      await _precomputeDisplacementVariants(generation);
+
+      _trace(
+        category: 'image',
+        message: 'Image decoded',
+        data: <String, Object?>{
+          'href': href,
+          'width': image.width,
+          'height': image.height,
+        },
+      );
+
+      _markNeedsRepaint();
     } catch (error, stackTrace) {
       _trace(
         category: 'image',
@@ -1352,7 +1357,88 @@ extension _AnimatedSvgPictureStateImagesExtension on _AnimatedSvgPictureState {
     }
   }
 
+  Future<ui.Image?> _decodeSvgImageAsRaster(Uint8List bytes) async {
+    String svgSource;
+    try {
+      svgSource = utf8.decode(bytes, allowMalformed: true);
+    } catch (_) {
+      return null;
+    }
+
+    final nestedDocument = SvgParser.parse(svgSource);
+    if (nestedDocument.root.tagName != 'svg') {
+      return null;
+    }
+
+    final rasterSize = _resolveNestedSvgRasterSize(nestedDocument.root);
+    final targetWidth = rasterSize.width.round().clamp(1, 4096);
+    final targetHeight = rasterSize.height.round().clamp(1, 4096);
+
+    final recorder = ui.PictureRecorder();
+    final canvas = ui.Canvas(recorder);
+    final painter = AnimatedSvgPainter(
+      document: nestedDocument,
+      backgroundColor: null,
+      imagesByHref: _imagesByHref,
+      convolvedImagesByFilterKey: const <String, ui.Image>{},
+      lightingImagesByFilterKey: const <String, ui.Image>{},
+      displacementImagesByFilterKey: const <String, ui.Image>{},
+      animationTime: null,
+      hasAnimations: false,
+    );
+    painter.paint(
+      canvas,
+      ui.Size(targetWidth.toDouble(), targetHeight.toDouble()),
+    );
+
+    final picture = recorder.endRecording();
+    try {
+      return await picture.toImage(targetWidth, targetHeight);
+    } catch (_) {
+      return null;
+    } finally {
+      picture.dispose();
+    }
+  }
+
+  ui.Size _resolveNestedSvgRasterSize(SvgNode rootSvgNode) {
+    final widthAttr = rootSvgNode.getAttributeValue('width')?.toString();
+    final heightAttr = rootSvgNode.getAttributeValue('height')?.toString();
+    final parsedWidth = _parsePositivePixelLength(widthAttr)?.toDouble();
+    final parsedHeight = _parsePositivePixelLength(heightAttr)?.toDouble();
+    final viewBoxAttr = rootSvgNode.getAttributeValue('viewBox')?.toString();
+    final viewBox = viewBoxAttr == null ? null : _parseViewBoxRect(viewBoxAttr);
+
+    final width = (parsedWidth ?? viewBox?.width ?? 300.0)
+        .clamp(1.0, 4096.0)
+        .toDouble();
+    final height = (parsedHeight ?? viewBox?.height ?? 150.0)
+        .clamp(1.0, 4096.0)
+        .toDouble();
+
+    return ui.Size(width, height);
+  }
+
   Future<Uint8List?> _loadImageBytes(String href) async {
+    final imageLoader = widget.imageLoader;
+    if (imageLoader != null) {
+      try {
+        final customBytes = await imageLoader(href);
+        if (customBytes != null && customBytes.isNotEmpty) {
+          return customBytes;
+        }
+      } catch (error, stackTrace) {
+        _trace(
+          category: 'image',
+          level: SvgTraceLevel.warning,
+          message: 'Custom image loader failed',
+          data: <String, Object?>{'href': href},
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
+    }
+
     if (href.startsWith('data:')) {
       return _decodeDataUriBytes(href);
     }

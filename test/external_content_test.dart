@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:full_svg_flutter/src/animation/animated_svg_picture.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -391,6 +394,61 @@ void main() {
   });
 
   group('External Content - Image Error Fallback', () {
+    testWidgets('renders SVG image via custom loader callback', (tester) async {
+      const nestedSvg =
+          '''<svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+        <rect x="0" y="0" width="20" height="20" fill="lime"/>
+      </svg>''';
+      const svg =
+          '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <image x="10" y="10" width="80" height="80" href="nested.svg"/>
+      </svg>''';
+
+      final traces = <SvgTraceEvent>[];
+
+      Future<Uint8List?> imageLoader(String href) async {
+        if (href == 'nested.svg') {
+          return Uint8List.fromList(utf8.encode(nestedSvg));
+        }
+        return null;
+      }
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(
+              svg,
+              width: 200,
+              height: 200,
+              onTrace: traces.add,
+              imageLoader: imageLoader,
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.byType(AnimatedSvgPicture), findsOneWidget);
+      expect(
+        traces.any(
+          (entry) =>
+              entry.category == 'image' &&
+              entry.message == 'Recursive SVG rendering is not yet supported',
+        ),
+        isFalse,
+      );
+      expect(
+        traces.any(
+          (entry) =>
+              entry.category == 'image' &&
+              entry.message == 'Image decoded' &&
+              entry.data['href'] == 'nested.svg',
+        ),
+        isTrue,
+      );
+    });
+
     testWidgets('handles invalid data URI gracefully', (tester) async {
       const svg =
           '''<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">

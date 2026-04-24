@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 String? _resolvedRootPath;
 
@@ -30,6 +31,76 @@ Future<String> loadW3cSvgSource(String suiteRelativePath) async {
     'Sample: $preview',
     normalizedPath,
   );
+}
+
+Future<Uint8List?> loadW3cResourceBytes({
+  required String baseSvgPath,
+  required String href,
+}) async {
+  final normalizedHref = _normalizeHrefPath(href);
+  if (normalizedHref == null || normalizedHref.isEmpty) {
+    return null;
+  }
+
+  final hrefUri = Uri.tryParse(normalizedHref);
+  if (hrefUri != null && hrefUri.hasScheme) {
+    return null;
+  }
+
+  final baseNormalized = baseSvgPath.replaceAll('\\', '/');
+  final resolvedRelativePath = _resolveRelativePath(
+    baseNormalized,
+    normalizedHref,
+  );
+
+  final candidates = <String>{resolvedRelativePath, normalizedHref};
+
+  if (_resolvedRootPath != null) {
+    for (final candidate in candidates) {
+      final fastPath = _resolveWithinRoot(_resolvedRootPath!, candidate);
+      if (fastPath != null) {
+        return File(fastPath).readAsBytes();
+      }
+    }
+  }
+
+  final candidateRoots = _candidateRoots();
+  for (final root in candidateRoots) {
+    for (final candidate in candidates) {
+      final resolved = _resolveWithinRoot(root, candidate);
+      if (resolved != null) {
+        _resolvedRootPath = root;
+        return File(resolved).readAsBytes();
+      }
+    }
+  }
+
+  return null;
+}
+
+String? _normalizeHrefPath(String href) {
+  final trimmed = href.trim();
+  if (trimmed.isEmpty || trimmed.startsWith('#')) {
+    return null;
+  }
+
+  final withoutFragment = trimmed.split('#').first;
+  final withoutQuery = withoutFragment.split('?').first;
+  final normalized = withoutQuery.replaceAll('\\', '/').trim();
+  if (normalized.isEmpty) {
+    return null;
+  }
+  return normalized;
+}
+
+String _resolveRelativePath(String baseSvgPath, String href) {
+  final slashIndex = baseSvgPath.lastIndexOf('/');
+  final baseDir = slashIndex >= 0 ? baseSvgPath.substring(0, slashIndex) : '';
+  final baseUri = Uri.parse('https://w3c.local/$baseDir/');
+  final resolvedPath = baseUri.resolve(href).path;
+  return resolvedPath.startsWith('/')
+      ? resolvedPath.substring(1)
+      : resolvedPath;
 }
 
 String? _resolveWithinRoot(String rootPath, String normalizedPath) {

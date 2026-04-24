@@ -8,6 +8,7 @@ import 'package:full_svg_flutter/src/animation.dart';
 import '../playground/playground_analyzer.dart';
 import '../playground/playground_models.dart';
 import '../playground/playground_trace_store.dart';
+import '../w3c/w3c_source_loader.dart';
 
 enum _ProblemsGrouping { none, code, category }
 
@@ -20,10 +21,12 @@ class CustomSvgViewerPage extends StatefulWidget {
     super.key,
     this.initialSvgSource,
     this.initialCaseName,
+    this.initialCaseSvgPath,
   });
 
   final String? initialSvgSource;
   final String? initialCaseName;
+  final String? initialCaseSvgPath;
 
   @override
   State<CustomSvgViewerPage> createState() => _CustomSvgViewerPageState();
@@ -703,6 +706,14 @@ class _CustomSvgViewerPageState extends State<CustomSvgViewerPage>
     return 0;
   }
 
+  Future<Uint8List?> _resolvePlaygroundImageBytes(String href) {
+    final caseSvgPath = widget.initialCaseSvgPath;
+    if (caseSvgPath == null || caseSvgPath.trim().isEmpty) {
+      return Future<Uint8List?>.value(null);
+    }
+    return loadW3cResourceBytes(baseSvgPath: caseSvgPath, href: href);
+  }
+
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 900;
@@ -1062,6 +1073,7 @@ class _CustomSvgViewerPageState extends State<CustomSvgViewerPage>
                           controller: _animationController,
                           onTrace: _handleTraceEvent,
                           traceFrameTicks: _traceFrameTicks,
+                          imageLoader: _resolvePlaygroundImageBytes,
                         ),
                 ),
               ),

@@ -51,6 +51,11 @@ part 'animated_svg_picture_hit_test_advanced.dart';
 typedef AnimatedSvgErrorWidgetBuilder =
     Widget Function(BuildContext context, Object error, StackTrace stackTrace);
 
+/// Optional callback for loading external image bytes referenced by <image> href.
+///
+/// Returning null delegates loading to default bundle/network/data-uri logic.
+typedef SvgImageLoader = Future<Uint8List?> Function(String href);
+
 /// Виджет для отображения анимированного SVG
 ///
 /// API схож с SvgPicture, но поддерживает SMIL анимации.
@@ -86,6 +91,7 @@ class AnimatedSvgPicture extends StatefulWidget {
     this.traceFrameTicks = false,
     this.onLinkTap,
     this.foreignObjectBuilder,
+    this.imageLoader,
   }) : _svgString = svgString;
 
   /// Creates an animated SVG from an asset.
@@ -107,6 +113,7 @@ class AnimatedSvgPicture extends StatefulWidget {
     bool traceFrameTicks = false,
     SvgLinkTapCallback? onLinkTap,
     SvgForeignObjectBuilder? foreignObjectBuilder,
+    SvgImageLoader? imageLoader,
     WidgetBuilder? placeholderBuilder,
     AnimatedSvgErrorWidgetBuilder? errorBuilder,
   }) {
@@ -128,6 +135,7 @@ class AnimatedSvgPicture extends StatefulWidget {
       traceFrameTicks: traceFrameTicks,
       onLinkTap: onLinkTap,
       foreignObjectBuilder: foreignObjectBuilder,
+      imageLoader: imageLoader,
       placeholderBuilder: placeholderBuilder,
       errorBuilder: errorBuilder,
     );
@@ -152,6 +160,7 @@ class AnimatedSvgPicture extends StatefulWidget {
     bool traceFrameTicks = false,
     SvgLinkTapCallback? onLinkTap,
     SvgForeignObjectBuilder? foreignObjectBuilder,
+    SvgImageLoader? imageLoader,
     WidgetBuilder? placeholderBuilder,
     AnimatedSvgErrorWidgetBuilder? errorBuilder,
   }) {
@@ -173,6 +182,7 @@ class AnimatedSvgPicture extends StatefulWidget {
       traceFrameTicks: traceFrameTicks,
       onLinkTap: onLinkTap,
       foreignObjectBuilder: foreignObjectBuilder,
+      imageLoader: imageLoader,
       placeholderBuilder: placeholderBuilder,
       errorBuilder: errorBuilder,
     );
@@ -195,6 +205,7 @@ class AnimatedSvgPicture extends StatefulWidget {
     bool traceFrameTicks = false,
     SvgLinkTapCallback? onLinkTap,
     SvgForeignObjectBuilder? foreignObjectBuilder,
+    SvgImageLoader? imageLoader,
     WidgetBuilder? placeholderBuilder,
     AnimatedSvgErrorWidgetBuilder? errorBuilder,
   }) {
@@ -214,6 +225,7 @@ class AnimatedSvgPicture extends StatefulWidget {
       traceFrameTicks: traceFrameTicks,
       onLinkTap: onLinkTap,
       foreignObjectBuilder: foreignObjectBuilder,
+      imageLoader: imageLoader,
       placeholderBuilder: placeholderBuilder,
       errorBuilder: errorBuilder,
     );
@@ -236,6 +248,7 @@ class AnimatedSvgPicture extends StatefulWidget {
     bool traceFrameTicks = false,
     SvgLinkTapCallback? onLinkTap,
     SvgForeignObjectBuilder? foreignObjectBuilder,
+    SvgImageLoader? imageLoader,
     WidgetBuilder? placeholderBuilder,
     AnimatedSvgErrorWidgetBuilder? errorBuilder,
   }) {
@@ -255,6 +268,7 @@ class AnimatedSvgPicture extends StatefulWidget {
       traceFrameTicks: traceFrameTicks,
       onLinkTap: onLinkTap,
       foreignObjectBuilder: foreignObjectBuilder,
+      imageLoader: imageLoader,
       placeholderBuilder: placeholderBuilder,
       errorBuilder: errorBuilder,
     );
@@ -306,6 +320,9 @@ class AnimatedSvgPicture extends StatefulWidget {
   /// This is useful for embedding Flutter widgets in place of HTML content.
   final SvgForeignObjectBuilder? foreignObjectBuilder;
 
+  /// Optional callback to resolve external image bytes for <image> href values.
+  final SvgImageLoader? imageLoader;
+
   @override
   State<AnimatedSvgPicture> createState() => _AnimatedSvgPictureState();
 }
@@ -329,6 +346,7 @@ class _DeferredAnimatedSvgPicture extends AnimatedSvgPicture {
     super.traceFrameTicks,
     super.onLinkTap,
     super.foreignObjectBuilder,
+    super.imageLoader,
     this.placeholderBuilder,
     this.errorBuilder,
   }) : _loadSvg = ((BuildContext context) {
@@ -360,6 +378,7 @@ class _DeferredAnimatedSvgPicture extends AnimatedSvgPicture {
     super.traceFrameTicks,
     super.onLinkTap,
     super.foreignObjectBuilder,
+    super.imageLoader,
     this.placeholderBuilder,
     this.errorBuilder,
   }) : _loadSvg = ((BuildContext context) async {
@@ -393,6 +412,7 @@ class _DeferredAnimatedSvgPicture extends AnimatedSvgPicture {
     super.traceFrameTicks,
     super.onLinkTap,
     super.foreignObjectBuilder,
+    super.imageLoader,
     this.placeholderBuilder,
     this.errorBuilder,
   }) : _loadSvg = ((BuildContext context) async {
@@ -419,6 +439,7 @@ class _DeferredAnimatedSvgPicture extends AnimatedSvgPicture {
     super.traceFrameTicks,
     super.onLinkTap,
     super.foreignObjectBuilder,
+    super.imageLoader,
     this.placeholderBuilder,
     this.errorBuilder,
   }) : _loadSvg = ((BuildContext context) {
@@ -521,6 +542,7 @@ class _DeferredAnimatedSvgPictureState
           traceFrameTicks: widget.traceFrameTicks,
           onLinkTap: widget.onLinkTap,
           foreignObjectBuilder: widget.foreignObjectBuilder,
+          imageLoader: widget.imageLoader,
         );
       },
     );

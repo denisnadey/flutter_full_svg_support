@@ -76,6 +76,7 @@ class _W3cPlaygroundPageState extends State<W3cPlaygroundPage> {
           builder: (context) => CustomSvgViewerPage(
             initialSvgSource: source,
             initialCaseName: item.name,
+            initialCaseSvgPath: item.svgPath,
           ),
         ),
       );
