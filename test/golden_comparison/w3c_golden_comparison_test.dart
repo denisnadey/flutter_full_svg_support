@@ -13,8 +13,8 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:flutter_svg/src/animation/animated_svg_picture.dart';
+import 'package:full_svg_flutter/flutter_svg.dart';
+import 'package:full_svg_flutter/src/animation/animated_svg_picture.dart';
 import 'package:xml/xml.dart';
 
 import '../../tool/golden_capture/image_compare.dart';
@@ -896,7 +896,6 @@ String _inlineSimpleCssFillRulesForFallback(String svgString) {
       return svgString;
     }
 
-    var changed = false;
     final allElements = document.descendants.whereType<XmlElement>().toList();
     for (final element in allElements) {
       if (element.name.local.toLowerCase() == 'style') {
@@ -928,17 +927,12 @@ String _inlineSimpleCssFillRulesForFallback(String svgString) {
       }
 
       _setOrReplaceAttribute(element, 'fill', fillValue);
-      changed = true;
     }
 
     for (final styleNode in styleNodes) {
       styleNode.parent?.children.remove(styleNode);
     }
-    changed = true;
 
-    if (!changed) {
-      return svgString;
-    }
     return document.toXmlString();
   } catch (_) {
     return svgString;

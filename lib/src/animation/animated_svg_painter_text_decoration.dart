@@ -13,6 +13,7 @@ extension AnimatedSvgPainterTextDecorationExtension on AnimatedSvgPainter {
   ///
   /// The paragraph acts as an alpha mask; the shader is composited with `srcIn`
   /// so gradients/patterns can be used for text fill/stroke.
+  // ignore: unused_element
   void _drawParagraphWithPaintServerShader(
     ui.Canvas canvas, {
     required ui.Paragraph paragraph,

@@ -427,6 +427,10 @@ extension _AnimatedSvgPictureStateLifecycleExtension
         convolvedImagesByFilterKey: _convolvedImagesByFilterKey,
         lightingImagesByFilterKey: _lightingImagesByFilterKey,
         displacementImagesByFilterKey: _displacementImagesByFilterKey,
+        animationTime: _timeline == null
+            ? null
+            : _timeline!.currentTime.inMicroseconds / 1000000.0,
+        hasAnimations: _hasAnimations,
       ),
       size: Size.infinite,
     );

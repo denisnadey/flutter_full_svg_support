@@ -53,6 +53,14 @@ extension AnimatedSvgPainterValuesExtension on AnimatedSvgPainter {
   }) {
     final raw = node.getRawAttributeValue(attributeName)?.trim();
     final fallback = _getNumber(node, attributeName);
+
+    // Raw attribute values are parse-time snapshots and don't reflect SMIL/CSS
+    // animated updates. When an attribute is currently animated, resolve from
+    // effective value to avoid freezing geometry at the base value.
+    if (node.getAttribute(attributeName)?.isAnimated ?? false) {
+      return fallback;
+    }
+
     if (raw == null || raw.isEmpty) {
       return fallback;
     }
