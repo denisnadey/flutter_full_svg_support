@@ -9,6 +9,50 @@ part of 'animated_svg_painter.dart';
 /// - Text transform (capitalize, uppercase, lowercase)
 /// - Color resolution for text effects
 extension AnimatedSvgPainterTextDecorationExtension on AnimatedSvgPainter {
+  /// Draws a paragraph and colorizes it with a paint-server shader.
+  ///
+  /// The paragraph acts as an alpha mask; the shader is composited with `srcIn`
+  /// so gradients/patterns can be used for text fill/stroke.
+  void _drawParagraphWithPaintServerShader(
+    ui.Canvas canvas, {
+    required ui.Paragraph paragraph,
+    required double x,
+    required double y,
+    required ui.Shader shader,
+    ui.ImageFilter? imageFilter,
+    ui.ColorFilter? colorFilter,
+    ui.BlendMode? blendMode,
+    _ResolvedTextStyle? style,
+    String? text,
+  }) {
+    final bounds = ui.Rect.fromLTWH(
+      x,
+      y,
+      paragraph.maxIntrinsicWidth,
+      paragraph.height,
+    ).inflate(1.0);
+    final layerPaint = ui.Paint();
+    if (imageFilter != null) layerPaint.imageFilter = imageFilter;
+    if (colorFilter != null) layerPaint.colorFilter = colorFilter;
+    if (blendMode != null) layerPaint.blendMode = blendMode;
+
+    canvas.saveLayer(bounds, layerPaint);
+    // saveLayer starts with backdrop content; clear it so srcIn masks only by
+    // the paragraph alpha, not by previously drawn pixels under the bounds.
+    canvas.drawRect(bounds, ui.Paint()..blendMode = ui.BlendMode.clear);
+    canvas.drawParagraph(paragraph, ui.Offset(x, y));
+    canvas.drawRect(
+      bounds,
+      ui.Paint()
+        ..shader = shader
+        ..blendMode = ui.BlendMode.srcIn,
+    );
+    if (style != null && text != null && style.textEmphasisStyle != null) {
+      _drawTextEmphasisMarks(canvas, paragraph, x, y, text, style);
+    }
+    canvas.restore();
+  }
+
   /// Draws a paragraph with optional effects (filter, color filter, blend mode).
   void _drawParagraphWithEffects(
     ui.Canvas canvas, {

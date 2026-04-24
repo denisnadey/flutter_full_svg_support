@@ -129,6 +129,8 @@ extension AnimatedSvgPainterTextPlainExtension on AnimatedSvgPainter {
       style: effectiveStyle,
       baselineY: baselineY,
     );
+    final fillValue = _getInheritedAttributeValue(node, 'fill');
+    final strokeValue = _getInheritedAttributeValue(node, 'stroke');
     final strokeParagraph = _buildStrokeTextParagraph(
       text,
       effectiveStyle,
@@ -141,48 +143,132 @@ extension AnimatedSvgPainterTextPlainExtension on AnimatedSvgPainter {
         strokeParagraph != null &&
         paintOrder.isNotEmpty &&
         paintOrder.startsWith('stroke');
+
+    ui.Rect paragraphBoundsAt(double x) => ui.Rect.fromLTWH(
+      x,
+      drawY,
+      paragraph.maxIntrinsicWidth,
+      paragraph.height,
+    );
+
+    ui.Rect strokeParagraphBoundsAt(double x) => ui.Rect.fromLTWH(
+      x,
+      drawY,
+      strokeParagraph?.maxIntrinsicWidth ?? paragraph.maxIntrinsicWidth,
+      strokeParagraph?.height ?? paragraph.height,
+    );
+
     void drawFill() {
+      if (_isPaintNone(fillValue)) {
+        return;
+      }
+
+      final drawWithShader = (double x) {
+        if (fillValue == null) {
+          return false;
+        }
+        final shader = _resolvePaintServerShader(
+          fillValue,
+          paragraphBoundsAt(x),
+        );
+        if (shader == null) {
+          return false;
+        }
+        final shaderPaint = ui.Paint()
+          ..style = ui.PaintingStyle.fill
+          ..shader = shader
+          ..color = const ui.Color(
+            0xFFFFFFFF,
+          ).withValues(alpha: effectiveStyle.color.a);
+        final shaderParagraph = _buildTextParagraph(
+          text,
+          effectiveStyle,
+          foregroundPaint: shaderPaint,
+        );
+        _drawParagraphWithEffects(
+          canvas,
+          paragraph: shaderParagraph,
+          x: x,
+          y: drawY,
+          imageFilter: imageFilter,
+          colorFilter: colorFilter,
+          blendMode: blendMode,
+          style: effectiveStyle,
+          text: text,
+        );
+        return true;
+      };
+
       if ((scaleX - 1.0).abs() > 1e-6) {
         canvas.save();
         canvas.translate(drawX, 0.0);
         canvas.scale(scaleX, 1.0);
-        _drawParagraphWithEffects(
-          canvas,
-          paragraph: paragraph,
-          x: 0.0,
-          y: drawY,
-          imageFilter: imageFilter,
-          colorFilter: colorFilter,
-          blendMode: blendMode,
-          style: effectiveStyle,
-          text: text,
-        );
+        if (!drawWithShader(0.0)) {
+          _drawParagraphWithEffects(
+            canvas,
+            paragraph: paragraph,
+            x: 0.0,
+            y: drawY,
+            imageFilter: imageFilter,
+            colorFilter: colorFilter,
+            blendMode: blendMode,
+            style: effectiveStyle,
+            text: text,
+          );
+        }
         canvas.restore();
       } else {
-        _drawParagraphWithEffects(
-          canvas,
-          paragraph: paragraph,
-          x: drawX,
-          y: drawY,
-          imageFilter: imageFilter,
-          colorFilter: colorFilter,
-          blendMode: blendMode,
-          style: effectiveStyle,
-          text: text,
-        );
+        if (!drawWithShader(drawX)) {
+          _drawParagraphWithEffects(
+            canvas,
+            paragraph: paragraph,
+            x: drawX,
+            y: drawY,
+            imageFilter: imageFilter,
+            colorFilter: colorFilter,
+            blendMode: blendMode,
+            style: effectiveStyle,
+            text: text,
+          );
+        }
       }
     }
 
     void drawStroke() {
       if (strokeParagraph == null) return;
+      final drawWithShader = (double x) {
+        if (strokeValue == null) {
+          return false;
+        }
+        final shader = _resolvePaintServerShader(
+          strokeValue,
+          strokeParagraphBoundsAt(x),
+        );
+        if (shader == null) {
+          return false;
+        }
+        final shaderStrokeParagraph = _buildStrokeTextParagraph(
+          text,
+          effectiveStyle,
+          node,
+          strokeShader: shader,
+        );
+        if (shaderStrokeParagraph == null) return false;
+        canvas.drawParagraph(shaderStrokeParagraph, ui.Offset(x, drawY));
+        return true;
+      };
       if ((scaleX - 1.0).abs() > 1e-6) {
         canvas.save();
         canvas.translate(drawX, 0.0);
         canvas.scale(scaleX, 1.0);
-        canvas.drawParagraph(strokeParagraph, ui.Offset(0.0, drawY));
+        if (!drawWithShader(0.0)) {
+          canvas.drawParagraph(strokeParagraph, ui.Offset(0.0, drawY));
+        }
         canvas.restore();
       } else {
-        canvas.drawParagraph(strokeParagraph, ui.Offset(drawX, drawY));
+        if (!drawWithShader(drawX)) {
+          canvas.drawParagraph(strokeParagraph, ui.Offset(drawX, drawY));
+        }
       }
     }
 

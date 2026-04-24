@@ -9,10 +9,15 @@ extension AnimatedSvgPainterShapesRectExtension on AnimatedSvgPainter {
     ui.ColorFilter? colorFilter,
     ui.BlendMode? blendMode,
   }) {
-    final x = _getNumber(node, 'x') ?? 0.0;
-    final y = _getNumber(node, 'y') ?? 0.0;
-    final width = _getNumber(node, 'width') ?? 0.0;
-    final height = _getNumber(node, 'height') ?? 0.0;
+    final x =
+        _getLengthWithViewportSupport(node, 'x', isHorizontal: true) ?? 0.0;
+    final y =
+        _getLengthWithViewportSupport(node, 'y', isHorizontal: false) ?? 0.0;
+    final width =
+        _getLengthWithViewportSupport(node, 'width', isHorizontal: true) ?? 0.0;
+    final height =
+        _getLengthWithViewportSupport(node, 'height', isHorizontal: false) ??
+        0.0;
 
     // SVG spec: rx/ry handling
     // - If neither rx nor ry are specified, both default to 0

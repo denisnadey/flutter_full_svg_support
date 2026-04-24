@@ -78,8 +78,12 @@ extension AnimatedSvgPainterGradientResolverExtension on AnimatedSvgPainter {
       final offset = _parseStopOffset(child.getAttributeValue('offset'));
       final styleStopColor = _extractStyleValue(child, 'stop-color');
       final styleStopOpacity = _extractStyleValue(child, 'stop-opacity');
-      final stopColorValue =
+      var stopColorValue =
           child.getAttributeValue('stop-color') ?? styleStopColor;
+      final stopColorRaw = stopColorValue?.toString().trim().toLowerCase();
+      if (stopColorRaw == 'inherit') {
+        stopColorValue = _getInheritedAttributeValue(child, 'stop-color');
+      }
       final stopColor =
           _resolveColorForNode(stopColorValue, child) ??
           const ui.Color(0xFF000000);

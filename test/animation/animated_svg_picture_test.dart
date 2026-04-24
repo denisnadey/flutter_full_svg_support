@@ -653,6 +653,41 @@ void main() {
       );
     });
 
+    testWidgets('nested svg rect percentages resolve against nested viewport', (
+      WidgetTester tester,
+    ) async {
+      const svgXml = '''
+        <svg viewBox="0 0 300 200">
+          <defs>
+            <svg id="badgeSvg" width="200" height="120">
+              <rect x="0" y="0" width="100%" height="100%" fill="blue"/>
+            </svg>
+          </defs>
+          <use href="#badgeSvg" x="20" y="30"/>
+        </svg>
+      ''';
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 300, height: 200),
+          ),
+        ),
+      );
+
+      await tester.pump();
+
+      final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final bluePixels = _countPixels(
+        pixels,
+        (r, g, b, a) => b > 200 && r < 80 && g < 80 && a > 0,
+      );
+
+      // 200x120 viewport should render substantially more than the broken
+      // fallback 100x100 block.
+      expect(bluePixels, greaterThan(13000));
+    });
+
     testWidgets('use inherits fill from use element into symbol subtree', (
       WidgetTester tester,
     ) async {
@@ -825,10 +860,59 @@ void main() {
       },
     );
 
-    testWidgets(
-      'switch skips child with requiredExtensions',
-      (WidgetTester tester) async {
-        const svgXml = '''
+    testWidgets('switch skips child with empty systemLanguage value', (
+      WidgetTester tester,
+    ) async {
+      const svgXml = '''
+        <svg viewBox="0 0 100 100">
+          <switch>
+            <rect
+              x="10"
+              y="10"
+              width="20"
+              height="20"
+              fill="blue"
+              requiredFeatures="http://www.w3.org/TR/SVG11/feature#BasicStructure"
+              systemLanguage=""/>
+            <rect
+              x="60"
+              y="10"
+              width="20"
+              height="20"
+              fill="red"
+              requiredFeatures="http://www.w3.org/TR/SVG11/feature#BasicStructure"/>
+          </switch>
+        </svg>
+      ''';
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
+          ),
+        ),
+      );
+
+      await tester.pump();
+
+      final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final redPixels = _countPixels(
+        pixels,
+        (r, g, b, a) => r > 200 && g < 80 && b < 80 && a > 0,
+      );
+      final bluePixels = _countPixels(
+        pixels,
+        (r, g, b, a) => b > 200 && r < 80 && g < 80 && a > 0,
+      );
+
+      expect(redPixels, greaterThan(1200));
+      expect(bluePixels, lessThan(100));
+    });
+
+    testWidgets('switch skips child with requiredExtensions', (
+      WidgetTester tester,
+    ) async {
+      const svgXml = '''
         <svg viewBox="0 0 100 100">
           <switch>
             <rect
@@ -848,36 +932,35 @@ void main() {
         </svg>
       ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-            ),
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
           ),
-        );
+        ),
+      );
 
-        await tester.pump();
+      await tester.pump();
 
-        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
-        final bluePixels = _countPixels(
-          pixels,
-          (r, g, b, a) => b > 200 && r < 80 && g < 80 && a > 0,
-        );
-        final redPixels = _countPixels(
-          pixels,
-          (r, g, b, a) => r > 200 && g < 80 && b < 80 && a > 0,
-        );
+      final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final bluePixels = _countPixels(
+        pixels,
+        (r, g, b, a) => b > 200 && r < 80 && g < 80 && a > 0,
+      );
+      final redPixels = _countPixels(
+        pixels,
+        (r, g, b, a) => r > 200 && g < 80 && b < 80 && a > 0,
+      );
 
-        // requiredExtensions always fails, so fallback red rect renders
-        expect(redPixels, greaterThan(1200));
-        expect(bluePixels, lessThan(100));
-      },
-    );
+      // requiredExtensions always fails, so fallback red rect renders
+      expect(redPixels, greaterThan(1200));
+      expect(bluePixels, lessThan(100));
+    });
 
-    testWidgets(
-      'switch renders nothing when no children match',
-      (WidgetTester tester) async {
-        const svgXml = '''
+    testWidgets('switch renders nothing when no children match', (
+      WidgetTester tester,
+    ) async {
+      const svgXml = '''
         <svg viewBox="0 0 100 100">
           <switch>
             <rect
@@ -898,36 +981,35 @@ void main() {
         </svg>
       ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-            ),
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
           ),
-        );
+        ),
+      );
 
-        await tester.pump();
+      await tester.pump();
 
-        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
-        final bluePixels = _countPixels(
-          pixels,
-          (r, g, b, a) => b > 200 && r < 80 && g < 80 && a > 0,
-        );
-        final redPixels = _countPixels(
-          pixels,
-          (r, g, b, a) => r > 200 && g < 80 && b < 80 && a > 0,
-        );
+      final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final bluePixels = _countPixels(
+        pixels,
+        (r, g, b, a) => b > 200 && r < 80 && g < 80 && a > 0,
+      );
+      final redPixels = _countPixels(
+        pixels,
+        (r, g, b, a) => r > 200 && g < 80 && b < 80 && a > 0,
+      );
 
-        // Neither child matches, nothing rendered
-        expect(bluePixels, lessThan(100));
-        expect(redPixels, lessThan(100));
-      },
-    );
+      // Neither child matches, nothing rendered
+      expect(bluePixels, lessThan(100));
+      expect(redPixels, lessThan(100));
+    });
 
-    testWidgets(
-      'switch child without conditions always matches',
-      (WidgetTester tester) async {
-        const svgXml = '''
+    testWidgets('switch child without conditions always matches', (
+      WidgetTester tester,
+    ) async {
+      const svgXml = '''
         <svg viewBox="0 0 100 100">
           <switch>
             <rect
@@ -946,31 +1028,30 @@ void main() {
         </svg>
       ''';
 
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
-            ),
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnimatedSvgPicture.string(svgXml, width: 200, height: 200),
           ),
-        );
+        ),
+      );
 
-        await tester.pump();
+      await tester.pump();
 
-        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
-        final bluePixels = _countPixels(
-          pixels,
-          (r, g, b, a) => b > 200 && r < 80 && g < 80 && a > 0,
-        );
-        final redPixels = _countPixels(
-          pixels,
-          (r, g, b, a) => r > 200 && g < 80 && b < 80 && a > 0,
-        );
+      final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+      final bluePixels = _countPixels(
+        pixels,
+        (r, g, b, a) => b > 200 && r < 80 && g < 80 && a > 0,
+      );
+      final redPixels = _countPixels(
+        pixels,
+        (r, g, b, a) => r > 200 && g < 80 && b < 80 && a > 0,
+      );
 
-        // First child has no conditions, so it matches
-        expect(bluePixels, greaterThan(1200));
-        expect(redPixels, lessThan(100));
-      },
-    );
+      // First child has no conditions, so it matches
+      expect(bluePixels, greaterThan(1200));
+      expect(redPixels, lessThan(100));
+    });
 
     testWidgets('use does not render disallowed foreignObject reference', (
       WidgetTester tester,

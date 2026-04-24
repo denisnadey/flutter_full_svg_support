@@ -101,34 +101,60 @@ extension AnimatedSvgPainterGradientsExtension on AnimatedSvgPainter {
     }
 
     if (gradient.type == 'linearGradient') {
-      final x1 = _resolveGradientCoordinate(
-        gradient.attributes['x1'],
-        defaultValue: 0.0,
-        axis: _GradientAxis.x,
-        bounds: bounds,
-        isUserSpaceOnUse: isUserSpaceOnUse,
-      );
-      final y1 = _resolveGradientCoordinate(
-        gradient.attributes['y1'],
-        defaultValue: 0.0,
-        axis: _GradientAxis.y,
-        bounds: bounds,
-        isUserSpaceOnUse: isUserSpaceOnUse,
-      );
-      final x2 = _resolveGradientCoordinate(
-        gradient.attributes['x2'],
-        defaultValue: 100.0,
-        axis: _GradientAxis.x,
-        bounds: bounds,
-        isUserSpaceOnUse: isUserSpaceOnUse,
-      );
-      final y2 = _resolveGradientCoordinate(
-        gradient.attributes['y2'],
-        defaultValue: 0.0,
-        axis: _GradientAxis.y,
-        bounds: bounds,
-        isUserSpaceOnUse: isUserSpaceOnUse,
-      );
+      final x1 = isUserSpaceOnUse
+          ? _resolveGradientCoordinate(
+              gradient.attributes['x1'],
+              defaultValue: 0.0,
+              axis: _GradientAxis.x,
+              bounds: bounds,
+              isUserSpaceOnUse: true,
+            )
+          : _resolveObjectBoundingBoxCoordinate(
+              gradient.attributes['x1'],
+              defaultValue: 0.0,
+            );
+      final y1 = isUserSpaceOnUse
+          ? _resolveGradientCoordinate(
+              gradient.attributes['y1'],
+              defaultValue: 0.0,
+              axis: _GradientAxis.y,
+              bounds: bounds,
+              isUserSpaceOnUse: true,
+            )
+          : _resolveObjectBoundingBoxCoordinate(
+              gradient.attributes['y1'],
+              defaultValue: 0.0,
+            );
+      final x2 = isUserSpaceOnUse
+          ? _resolveGradientCoordinate(
+              gradient.attributes['x2'],
+              defaultValue: 100.0,
+              axis: _GradientAxis.x,
+              bounds: bounds,
+              isUserSpaceOnUse: true,
+            )
+          : _resolveObjectBoundingBoxCoordinate(
+              gradient.attributes['x2'],
+              defaultValue: 100.0,
+            );
+      final y2 = isUserSpaceOnUse
+          ? _resolveGradientCoordinate(
+              gradient.attributes['y2'],
+              defaultValue: 0.0,
+              axis: _GradientAxis.y,
+              bounds: bounds,
+              isUserSpaceOnUse: true,
+            )
+          : _resolveObjectBoundingBoxCoordinate(
+              gradient.attributes['y2'],
+              defaultValue: 0.0,
+            );
+      final linearMatrix4 = isUserSpaceOnUse
+          ? matrix4
+          : _composeObjectBoundingBoxGradientMatrix(
+              bounds: bounds,
+              existingMatrix4: matrix4,
+            );
 
       return ui.Gradient.linear(
         ui.Offset(x1, y1),
@@ -136,7 +162,7 @@ extension AnimatedSvgPainterGradientsExtension on AnimatedSvgPainter {
         colors,
         offsets,
         tileMode,
-        matrix4,
+        linearMatrix4,
       );
     }
 
@@ -153,27 +179,42 @@ extension AnimatedSvgPainterGradientsExtension on AnimatedSvgPainter {
       );
     }
 
-    final cx = _resolveGradientCoordinate(
-      gradient.attributes['cx'],
-      defaultValue: 50.0,
-      axis: _GradientAxis.x,
-      bounds: bounds,
-      isUserSpaceOnUse: isUserSpaceOnUse,
-    );
-    final cy = _resolveGradientCoordinate(
-      gradient.attributes['cy'],
-      defaultValue: 50.0,
-      axis: _GradientAxis.y,
-      bounds: bounds,
-      isUserSpaceOnUse: isUserSpaceOnUse,
-    );
-    final radius = _resolveGradientCoordinate(
-      gradient.attributes['r'],
-      defaultValue: 50.0,
-      axis: _GradientAxis.radius,
-      bounds: bounds,
-      isUserSpaceOnUse: isUserSpaceOnUse,
-    );
+    final cx = isUserSpaceOnUse
+        ? _resolveGradientCoordinate(
+            gradient.attributes['cx'],
+            defaultValue: 50.0,
+            axis: _GradientAxis.x,
+            bounds: bounds,
+            isUserSpaceOnUse: true,
+          )
+        : _resolveObjectBoundingBoxCoordinate(
+            gradient.attributes['cx'],
+            defaultValue: 50.0,
+          );
+    final cy = isUserSpaceOnUse
+        ? _resolveGradientCoordinate(
+            gradient.attributes['cy'],
+            defaultValue: 50.0,
+            axis: _GradientAxis.y,
+            bounds: bounds,
+            isUserSpaceOnUse: true,
+          )
+        : _resolveObjectBoundingBoxCoordinate(
+            gradient.attributes['cy'],
+            defaultValue: 50.0,
+          );
+    final radius = isUserSpaceOnUse
+        ? _resolveGradientCoordinate(
+            gradient.attributes['r'],
+            defaultValue: 50.0,
+            axis: _GradientAxis.radius,
+            bounds: bounds,
+            isUserSpaceOnUse: true,
+          )
+        : _resolveObjectBoundingBoxCoordinate(
+            gradient.attributes['r'],
+            defaultValue: 50.0,
+          );
     if (radius <= 0) {
       return null;
     }
@@ -181,27 +222,59 @@ extension AnimatedSvgPainterGradientsExtension on AnimatedSvgPainter {
     final hasFocal =
         gradient.attributes.containsKey('fx') ||
         gradient.attributes.containsKey('fy');
-    final focalX = _resolveGradientCoordinate(
-      gradient.attributes['fx'] ?? gradient.attributes['cx'],
-      defaultValue: 50.0,
-      axis: _GradientAxis.x,
-      bounds: bounds,
-      isUserSpaceOnUse: isUserSpaceOnUse,
-    );
-    final focalY = _resolveGradientCoordinate(
-      gradient.attributes['fy'] ?? gradient.attributes['cy'],
-      defaultValue: 50.0,
-      axis: _GradientAxis.y,
-      bounds: bounds,
-      isUserSpaceOnUse: isUserSpaceOnUse,
-    );
-    final focalRadius = _resolveGradientCoordinate(
-      gradient.attributes['fr'],
-      defaultValue: 0.0,
-      axis: _GradientAxis.radius,
-      bounds: bounds,
-      isUserSpaceOnUse: isUserSpaceOnUse,
-    ).clamp(0.0, radius);
+    final focalX = isUserSpaceOnUse
+        ? _resolveGradientCoordinate(
+            gradient.attributes['fx'] ?? gradient.attributes['cx'],
+            defaultValue: 50.0,
+            axis: _GradientAxis.x,
+            bounds: bounds,
+            isUserSpaceOnUse: true,
+          )
+        : _resolveObjectBoundingBoxCoordinate(
+            gradient.attributes['fx'] ?? gradient.attributes['cx'],
+            defaultValue: 50.0,
+          );
+    final focalY = isUserSpaceOnUse
+        ? _resolveGradientCoordinate(
+            gradient.attributes['fy'] ?? gradient.attributes['cy'],
+            defaultValue: 50.0,
+            axis: _GradientAxis.y,
+            bounds: bounds,
+            isUserSpaceOnUse: true,
+          )
+        : _resolveObjectBoundingBoxCoordinate(
+            gradient.attributes['fy'] ?? gradient.attributes['cy'],
+            defaultValue: 50.0,
+          );
+    final focalRadius =
+        (isUserSpaceOnUse
+                ? _resolveGradientCoordinate(
+                    gradient.attributes['fr'],
+                    defaultValue: 0.0,
+                    axis: _GradientAxis.radius,
+                    bounds: bounds,
+                    isUserSpaceOnUse: true,
+                  )
+                : _resolveObjectBoundingBoxCoordinate(
+                    gradient.attributes['fr'],
+                    defaultValue: 0.0,
+                  ))
+            .clamp(0.0, radius);
+    final radialMatrix4 = isUserSpaceOnUse
+        ? matrix4
+        : _composeObjectBoundingBoxGradientMatrix(
+            bounds: bounds,
+            existingMatrix4: matrix4,
+          );
+    ui.Offset? focalPoint;
+    if (hasFocal) {
+      focalPoint = _clampRadialFocalPoint(
+        center: ui.Offset(cx, cy),
+        focal: ui.Offset(focalX, focalY),
+        radius: radius,
+        focalRadius: focalRadius,
+      );
+    }
 
     return ui.Gradient.radial(
       ui.Offset(cx, cy),
@@ -209,10 +282,44 @@ extension AnimatedSvgPainterGradientsExtension on AnimatedSvgPainter {
       colors,
       offsets,
       tileMode,
-      matrix4,
-      hasFocal ? ui.Offset(focalX, focalY) : null,
+      radialMatrix4,
+      focalPoint,
       focalRadius,
     );
+  }
+
+  ui.Offset _clampRadialFocalPoint({
+    required ui.Offset center,
+    required ui.Offset focal,
+    required double radius,
+    required double focalRadius,
+  }) {
+    final dx = focal.dx - center.dx;
+    final dy = focal.dy - center.dy;
+    final distance = math.sqrt(dx * dx + dy * dy);
+    final maxDistance = math.max(0.0, radius - focalRadius - 1e-6);
+    if (distance <= maxDistance || distance == 0.0) {
+      return focal;
+    }
+    final scale = maxDistance / distance;
+    return ui.Offset(center.dx + dx * scale, center.dy + dy * scale);
+  }
+
+  Float64List _composeObjectBoundingBoxGradientMatrix({
+    required ui.Rect bounds,
+    required Float64List? existingMatrix4,
+  }) {
+    final objectBBoxMatrix = Matrix4.identity()
+      ..translateByDouble(bounds.left, bounds.top, 0.0, 1.0)
+      ..scaleByDouble(bounds.width, bounds.height, 1.0, 1.0);
+
+    if (existingMatrix4 == null) {
+      return objectBBoxMatrix.storage;
+    }
+
+    return (objectBBoxMatrix
+          ..multiply(Matrix4.fromFloat64List(existingMatrix4)))
+        .storage;
   }
 
   /// Creates a conic (sweep) gradient shader.

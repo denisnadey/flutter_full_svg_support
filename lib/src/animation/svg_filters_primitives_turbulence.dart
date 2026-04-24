@@ -195,7 +195,9 @@ class TurbulenceNoiseGenerator {
   static int _normalizeSeed(double seed) {
     var value = seed.truncate();
     if (value <= 0) {
-      value = -(value % (_randMaximum - 1)) + 1;
+      // Use C-like remainder semantics for negative seeds to match
+      // Skia/Blink seed normalization behavior.
+      value = -value.remainder(_randMaximum - 1) + 1;
     }
     if (value > _randMaximum - 1) {
       value = _randMaximum - 1;
@@ -450,11 +452,12 @@ class TurbulenceNoiseGenerator {
       channel: 3,
     );
 
-    // Match Skia turbulence output: clamp and premultiply RGB by alpha.
+    // Keep channels in straight RGBA space; the raster pipeline handles
+    // premultiplication during image decode/composition.
     final clampedA = a.clamp(0.0, 1.0);
-    final clampedR = r.clamp(0.0, 1.0) * clampedA;
-    final clampedG = g.clamp(0.0, 1.0) * clampedA;
-    final clampedB = b.clamp(0.0, 1.0) * clampedA;
+    final clampedR = r.clamp(0.0, 1.0);
+    final clampedG = g.clamp(0.0, 1.0);
+    final clampedB = b.clamp(0.0, 1.0);
 
     return ui.Color.from(
       alpha: clampedA,

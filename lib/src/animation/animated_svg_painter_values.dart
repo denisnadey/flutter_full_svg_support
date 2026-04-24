@@ -39,10 +39,84 @@ extension AnimatedSvgPainterValuesExtension on AnimatedSvgPainter {
     }
 
     if (value is String) {
-      return double.tryParse(value);
+      final cleaned = value.trim().replaceAll(RegExp(r'[a-zA-Z%]+$'), '');
+      return double.tryParse(cleaned);
     }
 
     return null;
+  }
+
+  double? _getLengthWithViewportSupport(
+    SvgNode node,
+    String attributeName, {
+    required bool isHorizontal,
+  }) {
+    final raw = node.getRawAttributeValue(attributeName)?.trim();
+    final fallback = _getNumber(node, attributeName);
+    if (raw == null || raw.isEmpty) {
+      return fallback;
+    }
+
+    if (raw.endsWith('%')) {
+      final percent = double.tryParse(raw.substring(0, raw.length - 1));
+      if (percent == null) {
+        return fallback;
+      }
+      final viewportSize = _resolveNearestViewportSize(node);
+      final viewportDimension = isHorizontal
+          ? viewportSize.width
+          : viewportSize.height;
+      return (percent / 100.0) * viewportDimension;
+    }
+
+    final cleaned = raw.replaceAll(RegExp(r'[a-zA-Z]+$'), '');
+    return double.tryParse(cleaned) ?? fallback;
+  }
+
+  ui.Size _resolveNearestViewportSize(SvgNode node) {
+    SvgNode? current = node.parent;
+    while (current != null) {
+      if (current.tagName == 'svg' || current.tagName == 'symbol') {
+        final viewBox = _parseViewBox(_getString(current, 'viewBox'));
+        if (viewBox != null && viewBox.width > 0 && viewBox.height > 0) {
+          return ui.Size(viewBox.width, viewBox.height);
+        }
+
+        final width = _getNumber(current, 'width');
+        final height = _getNumber(current, 'height');
+        if (width != null && height != null && width > 0 && height > 0) {
+          return ui.Size(width, height);
+        }
+      }
+
+      if (current.tagName == 'foreignObject') {
+        final width = _getNumber(current, 'width') ?? 0.0;
+        final height = _getNumber(current, 'height') ?? 0.0;
+        if (width > 0 && height > 0) {
+          return ui.Size(width, height);
+        }
+      }
+
+      current = current.parent;
+    }
+
+    final rootViewBox = document.activeViewBox;
+    if (rootViewBox != null &&
+        rootViewBox.width > 0 &&
+        rootViewBox.height > 0) {
+      return ui.Size(rootViewBox.width, rootViewBox.height);
+    }
+
+    final docWidth = document.width;
+    final docHeight = document.height;
+    if (docWidth != null &&
+        docHeight != null &&
+        docWidth > 0 &&
+        docHeight > 0) {
+      return ui.Size(docWidth, docHeight);
+    }
+
+    return const ui.Size(100, 100);
   }
 
   /// SVG/CSS properties that are NOT inherited per spec.

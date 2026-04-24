@@ -181,6 +181,23 @@ void main() {
         expect(cmd.x, 30);
         expect(cmd.y, 40);
       });
+
+      test('parses packed arc flags without delimiters', () {
+        final commands = parser.parse('M120,120 h25 a25,25 0 10 -25,25 z');
+        expect(commands, hasLength(4));
+        final arc = commands[2] as ArcCommand;
+        expect(arc.largeArc, true);
+        expect(arc.sweep, false);
+        expect(arc.x, -25);
+        expect(arc.y, 25);
+      });
+
+      test('throws on invalid arc flag value', () {
+        expect(
+          () => parser.parse('M280,120 h25 a25,25 0 6 0 -25,25 z'),
+          throwsA(isA<PathParseException>()),
+        );
+      });
     });
 
     group('Multiple Coordinates', () {

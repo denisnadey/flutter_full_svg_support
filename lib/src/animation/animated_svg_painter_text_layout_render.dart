@@ -9,7 +9,11 @@ part of 'animated_svg_painter.dart';
 /// - Style resolution for text rendering
 extension AnimatedSvgPainterTextLayoutRenderExtension on AnimatedSvgPainter {
   /// Builds a Flutter Paragraph with the resolved text style.
-  ui.Paragraph _buildTextParagraph(String text, _ResolvedTextStyle style) {
+  ui.Paragraph _buildTextParagraph(
+    String text,
+    _ResolvedTextStyle style, {
+    ui.Paint? foregroundPaint,
+  }) {
     final normalizedText = _normalizeTextNfc(text);
     var transformedText = _applyTextTransform(
       normalizedText,
@@ -57,6 +61,7 @@ extension AnimatedSvgPainterTextLayoutRenderExtension on AnimatedSvgPainter {
     }
 
     final fontFeaturesKey = _fontFeaturesHashKey(allFontFeatures);
+    final useCache = foregroundPaint == null;
     final cacheKey =
         _RenderCache.textKey(
           processedText,
@@ -69,8 +74,10 @@ extension AnimatedSvgPainterTextLayoutRenderExtension on AnimatedSvgPainter {
         ) +
         '|$fontFeaturesKey';
 
-    final cached = _renderCache.textParagraphs[cacheKey];
-    if (cached != null) return cached;
+    if (useCache) {
+      final cached = _renderCache.textParagraphs[cacheKey];
+      if (cached != null) return cached;
+    }
 
     List<String>? fontFamilyFallback;
     String? primaryFontFamily = style.fontFamily;
@@ -98,10 +105,15 @@ extension AnimatedSvgPainterTextLayoutRenderExtension on AnimatedSvgPainter {
             : null,
       ),
     );
+    final fillPaint =
+        foregroundPaint ??
+        (ui.Paint()
+          ..style = ui.PaintingStyle.fill
+          ..color = style.color);
     final decoration = _buildTextDecoration(style.decorations);
     paragraphBuilder.pushStyle(
       ui.TextStyle(
-        color: style.color,
+        foreground: fillPaint,
         fontSize: effectiveFontSize,
         fontFamily: primaryFontFamily,
         fontFamilyFallback: fontFamilyFallback,
@@ -126,7 +138,9 @@ extension AnimatedSvgPainterTextLayoutRenderExtension on AnimatedSvgPainter {
     paragraphBuilder.addText(processedText);
     final paragraph = paragraphBuilder.build();
     paragraph.layout(const ui.ParagraphConstraints(width: 1000000));
-    _renderCache.textParagraphs[cacheKey] = paragraph;
+    if (useCache) {
+      _renderCache.textParagraphs[cacheKey] = paragraph;
+    }
     return paragraph;
   }
 
@@ -219,9 +233,12 @@ extension AnimatedSvgPainterTextLayoutRenderExtension on AnimatedSvgPainter {
         );
 
       final decoration = _buildTextDecoration(style.decorations);
+      final runFillPaint = ui.Paint()
+        ..style = ui.PaintingStyle.fill
+        ..color = style.color;
       paragraphBuilder.pushStyle(
         ui.TextStyle(
-          color: style.color,
+          foreground: runFillPaint,
           fontSize: style.fontSize,
           fontFamily: style.fontFamily?.split(',').first.trim(),
           fontFamilyFallback: fontFamilyFallback,
@@ -283,8 +300,9 @@ extension AnimatedSvgPainterTextLayoutRenderExtension on AnimatedSvgPainter {
   ui.Paragraph? _buildStrokeTextParagraph(
     String text,
     _ResolvedTextStyle style,
-    SvgNode node,
-  ) {
+    SvgNode node, {
+    ui.Shader? strokeShader,
+  }) {
     final strokeValue = _getInheritedAttributeValue(node, 'stroke');
     if (strokeValue == null ||
         strokeValue.toString().trim() == 'none' ||
@@ -292,7 +310,8 @@ extension AnimatedSvgPainterTextLayoutRenderExtension on AnimatedSvgPainter {
       return null;
 
     final strokeColor = _resolveColorForNode(strokeValue, node);
-    if (strokeColor == null) return null;
+    final strokeUsesPaintServer = _extractPaintServerId(strokeValue) != null;
+    if (strokeColor == null && !strokeUsesPaintServer) return null;
 
     final strokeWidth = (_getInheritedNumber(node, 'stroke-width') ?? 1.0)
         .clamp(0.0, 100.0);
@@ -304,7 +323,10 @@ extension AnimatedSvgPainterTextLayoutRenderExtension on AnimatedSvgPainter {
     );
     final strokeOpacity = (_getInheritedNumber(node, 'stroke-opacity') ?? 1.0)
         .clamp(0.0, 1.0);
-    final effectiveColor = _applyOpacity(strokeColor, opacity * strokeOpacity);
+    final effectiveOpacity = (opacity * strokeOpacity).clamp(0.0, 1.0);
+    final effectiveColor = strokeColor != null
+        ? _applyOpacity(strokeColor, effectiveOpacity)
+        : const ui.Color(0xFFFFFFFF).withValues(alpha: effectiveOpacity);
 
     final normalizedText = _normalizeTextNfc(text);
     var transformedText = _applyTextTransform(
@@ -342,6 +364,13 @@ extension AnimatedSvgPainterTextLayoutRenderExtension on AnimatedSvgPainter {
       ..style = ui.PaintingStyle.stroke
       ..strokeWidth = strokeWidth
       ..color = effectiveColor;
+    if (strokeShader != null) {
+      strokePaint
+        ..shader = strokeShader
+        ..color = const ui.Color(
+          0xFFFFFFFF,
+        ).withValues(alpha: effectiveOpacity);
+    }
 
     final lineCap = _getInheritedString(node, 'stroke-linecap');
     if (lineCap != null) {

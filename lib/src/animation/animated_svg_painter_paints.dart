@@ -1,6 +1,26 @@
 part of 'animated_svg_painter.dart';
 
 extension AnimatedSvgPainterPaintsExtension on AnimatedSvgPainter {
+  double _resolvePaintOpacityForColorInterpolation(
+    SvgNode node,
+    double opacity,
+  ) {
+    final rawMode = _getInheritedString(node, 'color-interpolation');
+    final mode = rawMode?.trim().toLowerCase() ?? 'srgb';
+    if (mode != 'linearrgb') {
+      return opacity;
+    }
+    return _linearToSrgbOpacity(opacity);
+  }
+
+  double _linearToSrgbOpacity(double linearOpacity) {
+    final value = linearOpacity.clamp(0.0, 1.0);
+    if (value <= 0.0031308) {
+      return (12.92 * value).clamp(0.0, 1.0);
+    }
+    return (1.055 * math.pow(value, 1.0 / 2.4) - 0.055).clamp(0.0, 1.0);
+  }
+
   ui.Paint? _createFillPaint(
     SvgNode node, {
     required ui.Rect paintBounds,
@@ -19,6 +39,10 @@ extension AnimatedSvgPainterPaintsExtension on AnimatedSvgPainter {
     final opacity = _getInheritedNumber(node, 'opacity') ?? 1.0;
     final fillOpacity = _getInheritedNumber(node, 'fill-opacity') ?? 1.0;
     final finalOpacity = (opacity * fillOpacity).clamp(0.0, 1.0);
+    final effectiveOpacity = _resolvePaintOpacityForColorInterpolation(
+      node,
+      finalOpacity,
+    );
 
     final paint = ui.Paint()
       ..style = ui.PaintingStyle.fill
@@ -27,13 +51,15 @@ extension AnimatedSvgPainterPaintsExtension on AnimatedSvgPainter {
     if (shader != null) {
       paint
         ..shader = shader
-        ..color = const ui.Color(0xFFFFFFFF).withValues(alpha: finalOpacity);
+        ..color = const ui.Color(
+          0xFFFFFFFF,
+        ).withValues(alpha: effectiveOpacity);
     } else {
       final fillSourceNode = _findInheritedAttributeSourceNode(node, 'fill');
       final color =
           _resolveColorForNode(fillValue, fillSourceNode ?? node) ??
           const ui.Color(0xFF000000);
-      paint.color = _applyOpacity(color, finalOpacity);
+      paint.color = _applyOpacity(color, effectiveOpacity);
     }
 
     final fillColorOverride = _currentPassFillColorOverride;
@@ -111,6 +137,10 @@ extension AnimatedSvgPainterPaintsExtension on AnimatedSvgPainter {
     final opacity = _getInheritedNumber(node, 'opacity') ?? 1.0;
     final strokeOpacity = _getInheritedNumber(node, 'stroke-opacity') ?? 1.0;
     final finalOpacity = (opacity * strokeOpacity).clamp(0.0, 1.0);
+    final effectiveOpacity = _resolvePaintOpacityForColorInterpolation(
+      node,
+      finalOpacity,
+    );
 
     // Check for vector-effect: non-scaling-stroke
     final vectorEffect = _getInheritedString(node, 'vector-effect');
@@ -134,7 +164,9 @@ extension AnimatedSvgPainterPaintsExtension on AnimatedSvgPainter {
     if (shader != null) {
       paint
         ..shader = shader
-        ..color = const ui.Color(0xFFFFFFFF).withValues(alpha: finalOpacity);
+        ..color = const ui.Color(
+          0xFFFFFFFF,
+        ).withValues(alpha: effectiveOpacity);
     } else {
       final strokeSourceNode = _findInheritedAttributeSourceNode(
         node,
@@ -147,7 +179,7 @@ extension AnimatedSvgPainterPaintsExtension on AnimatedSvgPainter {
       if (strokeColor == null) {
         return null;
       }
-      paint.color = _applyOpacity(strokeColor, finalOpacity);
+      paint.color = _applyOpacity(strokeColor, effectiveOpacity);
     }
 
     final strokeColorOverride = _currentPassStrokeColorOverride;

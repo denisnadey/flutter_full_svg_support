@@ -193,6 +193,17 @@ extension AnimatedSvgPainterGradientValuesExtension on AnimatedSvgPainter {
     return value;
   }
 
+  double _resolveObjectBoundingBoxCoordinate(
+    Object? rawValue, {
+    required double defaultValue,
+  }) {
+    final parsed = _parseGradientLength(rawValue, defaultValue: defaultValue);
+    if (parsed.isPercent) {
+      return parsed.value / 100.0;
+    }
+    return _normalizeObjectBoundingBoxValue(parsed.value, rawValue);
+  }
+
   double _normalizeObjectBoundingBoxValue(double value, Object? rawValue) {
     if (rawValue is num && value.abs() > 1.0 && value.abs() <= 100.0) {
       // Parser converts "50%" into 50, restore the expected ratio.

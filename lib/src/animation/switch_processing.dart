@@ -65,8 +65,17 @@ bool _matchesSwitchConditions(SvgNode node, Set<String> localeCandidates) {
     return false;
   }
 
+  final rawSystemLanguage =
+      node.getRawAttributeValue('systemLanguage') ??
+      node.getAttributeValue('systemLanguage')?.toString();
+  // Per SVG switch semantics, explicitly empty systemLanguage means
+  // "no language matches", so this branch must not be selected.
+  if (rawSystemLanguage != null && rawSystemLanguage.trim().isEmpty) {
+    return false;
+  }
+
   final systemLanguages = _parseTokenList(
-    node.getAttributeValue('systemLanguage'),
+    rawSystemLanguage,
     separator: RegExp(r'[\s,]+'),
   );
   if (systemLanguages.isEmpty) {

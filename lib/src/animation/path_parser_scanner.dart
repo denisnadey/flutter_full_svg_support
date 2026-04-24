@@ -110,4 +110,32 @@ class _PathScanner {
 
     return number;
   }
+
+  /// Read an SVG elliptical-arc flag token (`0` or `1`).
+  ///
+  /// Flags can be adjacent to each other and/or to following numbers
+  /// (for example: `... 10-25,25`), so this must consume exactly one digit.
+  int readArcFlag() {
+    skipWhitespace();
+
+    if (isDone) {
+      throw PathParseException(
+        'Expected arc flag but reached end of path data at position $position',
+      );
+    }
+
+    final char = data[position];
+    if (char == '0') {
+      position++;
+      return 0;
+    }
+    if (char == '1') {
+      position++;
+      return 1;
+    }
+
+    throw PathParseException(
+      'Invalid arc flag at position $position: $char (expected 0 or 1)',
+    );
+  }
 }

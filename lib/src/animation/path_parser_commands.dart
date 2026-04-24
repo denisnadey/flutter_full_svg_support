@@ -136,8 +136,8 @@ List<PathCommand> _parseArc(_PathScanner scanner, bool isRelative) {
     final rx = scanner.readNumber();
     final ry = scanner.readNumber();
     final rotation = scanner.readNumber();
-    final largeArc = scanner.readNumber() != 0;
-    final sweep = scanner.readNumber() != 0;
+    final largeArc = scanner.readArcFlag() == 1;
+    final sweep = scanner.readArcFlag() == 1;
     final x = scanner.readNumber();
     final y = scanner.readNumber();
     commands.add(

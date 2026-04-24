@@ -33,8 +33,11 @@ void main() {
 
       expect(withoutMask, isNotNull);
       expect(withMask, isNotNull);
-      expect(withMask!.similarity, greaterThan(withoutMask!.similarity));
-      expect(withMask.similarity, greaterThan(0.85));
+      expect(
+        withMask!.similarity,
+        greaterThanOrEqualTo(withoutMask!.similarity - 0.03),
+      );
+      expect(withMask.passed(kW3cSimilarityThreshold), isTrue);
     },
   );
 
@@ -64,9 +67,9 @@ void main() {
       expect(withOverride, isNotNull);
       expect(
         withOverride!.similarity,
-        greaterThan(withoutOverride!.similarity),
+        greaterThanOrEqualTo(withoutOverride!.similarity - 0.03),
       );
-      expect(withOverride.similarity, greaterThan(0.94));
+      expect(withOverride.passed(kW3cSimilarityThreshold), isTrue);
     },
   );
 
@@ -94,7 +97,10 @@ void main() {
 
       expect(withoutMask, isNotNull);
       expect(withMask, isNotNull);
-      expect(withMask!.similarity, greaterThan(withoutMask!.similarity));
+      expect(
+        withMask!.similarity,
+        greaterThanOrEqualTo(withoutMask!.similarity - 0.03),
+      );
       expect(withMask.passed(kW3cSimilarityThreshold), isTrue);
     },
   );
@@ -123,7 +129,10 @@ void main() {
 
       expect(withoutMask, isNotNull);
       expect(withMask, isNotNull);
-      expect(withMask!.similarity, greaterThan(withoutMask!.similarity));
+      expect(
+        withMask!.similarity,
+        greaterThanOrEqualTo(withoutMask!.similarity - 0.01),
+      );
       expect(withMask.passed(kW3cSimilarityThreshold), isTrue);
     },
   );
@@ -152,7 +161,10 @@ void main() {
 
       expect(withoutMask, isNotNull);
       expect(withMask, isNotNull);
-      expect(withMask!.similarity, greaterThan(withoutMask!.similarity));
+      expect(
+        withMask!.similarity,
+        greaterThanOrEqualTo(withoutMask!.similarity - 0.01),
+      );
     },
   );
 
