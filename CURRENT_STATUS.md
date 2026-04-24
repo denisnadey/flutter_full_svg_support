@@ -1,6 +1,6 @@
 # Current Development Status
 
-**Last Updated:** April 22, 2026  
+**Last Updated:** April 24, 2026  
 **Authority:** This file is the single source of truth for current project state.
 
 ## Snapshot
@@ -17,6 +17,7 @@
 - `W3C_LIMIT=40` remains green.
 - `W3C_LIMIT=83` is now green (`83/83`) after clip/mask functional fixes and scoped compare stabilization.
 - `RUN_W3C_STATIC=1` full accepted manifest run is green (`212/212`) on current workspace state.
+- Text threshold burn-down progressed: `text-text-05-t`, `text-text-10-t`, and `text-tselect-01-b` were reduced from temporary non-zero per-case thresholds to `0.00` and re-verified with repeated single-case runs.
 - Gate A is now green: full-suite `flutter test` passes.
 - Active execution source for closure remains `doc/W3C_GAP_CLOSURE_PLAN.md`.
 

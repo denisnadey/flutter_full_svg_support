@@ -203,6 +203,7 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
     List<double> parentDxList = const <double>[],
     List<double> parentDyList = const <double>[],
     List<double> parentRotateList = const <double>[],
+    int parentRotateStartIndex = 0,
     bool isRootText = false,
     _WritingMode writingMode = _WritingMode.horizontalTb,
     bool forceCharacterPrecise = false,
@@ -223,9 +224,11 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
     final yList = nodeYList.isNotEmpty ? nodeYList : parentYList;
     final dxList = nodeDxList.isNotEmpty ? nodeDxList : parentDxList;
     final dyList = nodeDyList.isNotEmpty ? nodeDyList : parentDyList;
-    final rotateList = nodeRotateList.isNotEmpty
-        ? nodeRotateList
-        : parentRotateList;
+    final hasOwnRotateList = nodeRotateList.isNotEmpty;
+    final rotateList = hasOwnRotateList ? nodeRotateList : parentRotateList;
+    final rotateListStartIndex = hasOwnRotateList
+        ? cursor.charIndex
+        : parentRotateStartIndex;
 
     // Apply first values - reset cursor position for absolute positioning
     if (hasAbsoluteX && nodeXList.isNotEmpty) {
@@ -274,6 +277,7 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
           dxList: dxList,
           dyList: dyList,
           rotateList: rotateList,
+          rotateListStartIndex: rotateListStartIndex,
           writingMode: writingMode,
         );
       } else {
@@ -284,6 +288,7 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
           cursor: cursor,
           runs: runs,
           rotateList: rotateList,
+          rotateListStartIndex: rotateListStartIndex,
           writingMode: writingMode,
         );
       }
@@ -300,6 +305,7 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
           parentDxList: dxList,
           parentDyList: dyList,
           parentRotateList: rotateList,
+          parentRotateStartIndex: rotateListStartIndex,
           writingMode: writingMode,
           forceCharacterPrecise: forceCharacterPrecise,
         );
@@ -572,6 +578,7 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
     required List<double> dxList,
     required List<double> dyList,
     required List<double> rotateList,
+    required int rotateListStartIndex,
     _WritingMode writingMode = _WritingMode.horizontalTb,
   }) {
     final textAnchor = _resolveTextAnchor(node);
@@ -634,9 +641,14 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
       // Get rotation for this character
       double rotation = 0.0;
       if (rotateList.isNotEmpty) {
-        rotation = listIdx < rotateList.length
-            ? rotateList[listIdx]
-            : rotateList.last;
+        var rotateIdx = listIdx - rotateListStartIndex;
+        if (rotateIdx < 0) {
+          rotateIdx = 0;
+        }
+        if (rotateIdx >= rotateList.length) {
+          rotateIdx = rotateList.length - 1;
+        }
+        rotation = rotateList[rotateIdx];
       }
 
       final charMetrics = _measureText(cluster, node);
@@ -724,6 +736,7 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
     required _HitTextCursor cursor,
     required List<_TextHitRun> runs,
     required List<double> rotateList,
+    required int rotateListStartIndex,
     _WritingMode writingMode = _WritingMode.horizontalTb,
   }) {
     var metrics = _measureText(text, node);
@@ -783,7 +796,17 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
     }
 
     // Get rotation for hit region (use first value for entire run)
-    final rotation = rotateList.isNotEmpty ? rotateList[0] : 0.0;
+    double rotation = 0.0;
+    if (rotateList.isNotEmpty) {
+      var rotateIdx = cursor.charIndex - rotateListStartIndex;
+      if (rotateIdx < 0) {
+        rotateIdx = 0;
+      }
+      if (rotateIdx >= rotateList.length) {
+        rotateIdx = rotateList.length - 1;
+      }
+      rotation = rotateList[rotateIdx];
+    }
 
     // Create bounds with proper dimensions for writing mode
     Rect bounds;

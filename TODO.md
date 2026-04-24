@@ -1,6 +1,6 @@
 # TODO - Animation Work Queue
 
-**Last Updated:** April 22, 2026  
+**Last Updated:** April 24, 2026  
 **Status Source:** `/Users/denisnadey/apps/flutter_full_svg_support/CURRENT_STATUS.md`  
 **Closed Issues Registry:** `/Users/denisnadey/apps/flutter_full_svg_support/doc/RESOLVED_ISSUES.md`
 
@@ -16,6 +16,7 @@ For factual project status, use `CURRENT_STATUS.md` only.
 - [x] Close `filters-light-03-f` functionally (renderer behavior) and reduce temporary compare inflation.
 - [x] Close `filters-specular-01-f` functionally (renderer behavior) and reduce temporary compare inflation.
 - [x] Achieve full accepted-manifest green baseline (`RUN_W3C_STATIC=1`, `212/212`) for execution safety.
+- [x] Burn down temporary text-cluster thresholds: reduced `text-text-05-t`, `text-text-10-t`, and `text-tselect-01-b` to `0.00` with repeated targeted reruns.
 - [ ] Burn down temporary 1.00 per-case thresholds in `test/w3c/w3c_render_utils.dart` by cluster (`text-*`, `styling-*`, `struct-use-*`, etc.) using functional renderer fixes first.
 - [ ] Reduce/rollback case-scoped compare overrides in `test/w3c/w3c_render_utils.dart` as each fixture becomes functionally correct.
 - [ ] Keep `W3C_TRACE` forensic workflow as mandatory diagnostics for stubborn fixtures.

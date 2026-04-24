@@ -140,12 +140,23 @@ extension AnimatedSvgPainterTextLayoutMeasurementExtension
       final preserved = raw.replaceAll('\n', ' ').replaceAll('\r', ' ');
       return preserved.isEmpty ? null : preserved;
     }
+    final hasTextLikeChildren = node.children.any(
+      (child) =>
+          child.tagName == 'tspan' ||
+          child.tagName == 'tref' ||
+          child.tagName == 'textPath' ||
+          child.tagName == 'bdo',
+    );
     var normalized = raw.replaceAll(RegExp(r'\s+'), ' ');
-    if (parentStyle != null) {
-      normalized = normalized.trimRight();
-      if (normalized.isEmpty && raw.contains(RegExp(r'\s'))) return ' ';
+    if (parentStyle == null) {
+      normalized = hasTextLikeChildren
+          ? normalized.replaceFirst(RegExp(r'^ +'), '')
+          : normalized.trim();
     } else {
-      normalized = normalized.trim();
+      if (normalized.trim().isEmpty && raw.contains(RegExp(r'\s'))) return ' ';
+      if (!hasTextLikeChildren) {
+        normalized = normalized.trimRight();
+      }
     }
     return normalized.isEmpty ? null : normalized;
   }

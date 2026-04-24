@@ -18,6 +18,7 @@ extension AnimatedSvgPainterTextGlyphExtension on AnimatedSvgPainter {
     required List<double> dxList,
     required List<double> dyList,
     List<double> rotateList = const <double>[],
+    int rotateListStartIndex = 0,
     bool startsNewChunk = false,
     ui.ImageFilter? imageFilter,
     ui.ColorFilter? colorFilter,
@@ -80,7 +81,7 @@ extension AnimatedSvgPainterTextGlyphExtension on AnimatedSvgPainter {
         blendMode: blendMode,
       );
     }
-    var totalWidth = 0.0;
+    final startCursorX = cursor.x;
     double anchorOffset = 0.0;
     if (startsNewChunk || cursor.chunkCharIndex == 0) {
       final chunkParagraph = _buildTextParagraph(text, style);
@@ -152,9 +153,13 @@ extension AnimatedSvgPainterTextGlyphExtension on AnimatedSvgPainter {
       if (charIdx < yList.length) cursor.y = yList[charIdx];
       if (charIdx < dxList.length) cursor.x += dxList[charIdx];
       if (charIdx < dyList.length) cursor.y += dyList[charIdx];
-      final rotation = rotateList.isNotEmpty
-          ? rotateList[charIdx.clamp(0, rotateList.length - 1)]
-          : 0.0;
+      double rotation = 0.0;
+      if (rotateList.isNotEmpty) {
+        var rotateIdx = charIdx - rotateListStartIndex;
+        if (rotateIdx < 0) rotateIdx = 0;
+        if (rotateIdx >= rotateList.length) rotateIdx = rotateList.length - 1;
+        rotation = rotateList[rotateIdx];
+      }
       final glyph = glyphs[i];
       final paragraph = _buildTextParagraph(glyph, style);
       final glyphWidth = paragraph.maxIntrinsicWidth;
@@ -227,11 +232,13 @@ extension AnimatedSvgPainterTextGlyphExtension on AnimatedSvgPainter {
       final scaledWidth = glyphWidth * scaleFactor;
       final spacing = i < glyphs.length - 1 ? style.letterSpacing : 0.0;
       cursor.x += scaledWidth + spacing;
-      totalWidth += scaledWidth + spacing;
     }
+    final consumedWidth = cursor.x - startCursorX;
     cursor.charIndex += glyphs.length;
     cursor.chunkCharIndex += glyphs.length;
-    return totalWidth;
+    // Caller advances cursor by returned width; restore local cursor state.
+    cursor.x = startCursorX;
+    return consumedWidth;
   }
 
   /// Renders complex script text as a single unit for proper shaping.

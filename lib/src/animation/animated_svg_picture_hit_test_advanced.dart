@@ -479,6 +479,7 @@ extension _AnimatedSvgPictureStateHitTestAdvancedExtension
     required List<double> dxList,
     required List<double> dyList,
     required List<double> rotateList,
+    int rotateListStartIndex = 0,
   }) {
     // Parse position lists from this node
     final nodeXList = _getNumberList(node, 'x');
@@ -492,9 +493,11 @@ extension _AnimatedSvgPictureStateHitTestAdvancedExtension
     final effectiveYList = nodeYList.isNotEmpty ? nodeYList : yList;
     final effectiveDxList = nodeDxList.isNotEmpty ? nodeDxList : dxList;
     final effectiveDyList = nodeDyList.isNotEmpty ? nodeDyList : dyList;
-    final effectiveRotateList = nodeRotateList.isNotEmpty
-        ? nodeRotateList
-        : rotateList;
+    final hasOwnRotateList = nodeRotateList.isNotEmpty;
+    final effectiveRotateList = hasOwnRotateList ? nodeRotateList : rotateList;
+    final effectiveRotateStartIndex = hasOwnRotateList
+        ? cursor.charIndex
+        : rotateListStartIndex;
 
     // Reset position if has absolute positioning
     if (nodeXList.isNotEmpty) cursor.x = nodeXList[0];
@@ -546,9 +549,14 @@ extension _AnimatedSvgPictureStateHitTestAdvancedExtension
 
         double rotation = 0.0;
         if (effectiveRotateList.isNotEmpty) {
-          rotation = listIdx < effectiveRotateList.length
-              ? effectiveRotateList[listIdx]
-              : effectiveRotateList.last;
+          var rotateIdx = listIdx - effectiveRotateStartIndex;
+          if (rotateIdx < 0) {
+            rotateIdx = 0;
+          }
+          if (rotateIdx >= effectiveRotateList.length) {
+            rotateIdx = effectiveRotateList.length - 1;
+          }
+          rotation = effectiveRotateList[rotateIdx];
         }
 
         final charMetrics = _measureText(char, node);
@@ -599,6 +607,7 @@ extension _AnimatedSvgPictureStateHitTestAdvancedExtension
           dxList: effectiveDxList,
           dyList: effectiveDyList,
           rotateList: effectiveRotateList,
+          rotateListStartIndex: effectiveRotateStartIndex,
         );
       }
     }

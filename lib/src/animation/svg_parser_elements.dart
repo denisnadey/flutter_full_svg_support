@@ -41,56 +41,156 @@ SvgNode _parseElement(XmlElement element) {
     );
   }
 
-  // Сохраняем прямой текстовый контент для текстовых узлов.
-  if (tagName == 'text' || tagName == 'tspan' || tagName == 'textPath') {
-    final directText = _extractDirectText(element);
-    if (directText != null) {
-      node.setAttribute('__text', directText, type: SvgAttributeType.string);
-    }
-  }
+  final isTextContainer =
+      tagName == 'text' || tagName == 'tspan' || tagName == 'textPath';
+  final hasElementChildren = element.childElements.isNotEmpty;
 
-  // Рекурсивно парсим дочерние элементы
-  for (final child in element.childElements) {
-    final childTagName = child.name.local;
-
-    // Пропускаем <style> элементы - они обрабатываются отдельно
-    if (childTagName == 'style') {
-      continue; // CSS parsing будет позже
-    }
-
-    // Extract <title> text content and store on parent (use first only)
-    if (childTagName == 'title') {
-      if (node.titleText == null) {
-        final titleText = _extractElementText(child);
-        if (titleText != null && titleText.isNotEmpty) {
-          node.titleText = titleText;
-        }
+  if (isTextContainer && hasElementChildren) {
+    _parseTextContainerChildren(element, node);
+  } else {
+    // Сохраняем прямой текстовый контент для простых текстовых узлов.
+    if (isTextContainer) {
+      final directText = _extractDirectText(element);
+      if (directText != null) {
+        node.setAttribute('__text', directText, type: SvgAttributeType.string);
       }
-      // Still add title as child node for DOM completeness
-      final childNode = _parseElement(child);
-      node.addChild(childNode);
-      continue;
     }
 
-    // Extract <desc> text content and store on parent (use first only)
-    if (childTagName == 'desc') {
-      if (node.descText == null) {
-        final descText = _extractElementText(child);
-        if (descText != null && descText.isNotEmpty) {
-          node.descText = descText;
-        }
-      }
-      // Still add desc as child node for DOM completeness
-      final childNode = _parseElement(child);
-      node.addChild(childNode);
-      continue;
+    // Рекурсивно парсим дочерние элементы
+    for (final child in element.childElements) {
+      _parseAndAddChildElement(node, child);
     }
-
-    final childNode = _parseElement(child);
-    node.addChild(childNode);
   }
 
   return node;
+}
+
+void _parseTextContainerChildren(XmlElement element, SvgNode node) {
+  final children = element.children.toList(growable: false);
+  var hasSeenStructuredChild = false;
+  var hasLeadingDirectText = false;
+
+  for (var index = 0; index < children.length; index++) {
+    final child = children[index];
+    if (child is XmlElement) {
+      final added = _parseAndAddChildElement(node, child);
+      if (added) {
+        hasSeenStructuredChild = true;
+      }
+      continue;
+    }
+
+    if (child is! XmlText && child is! XmlCDATA) {
+      continue;
+    }
+
+    final rawSegment = child.value ?? '';
+    if (rawSegment.isEmpty) {
+      continue;
+    }
+
+    final hasFutureStructuredChild = _hasRenderableElementChildAfter(
+      children,
+      index,
+    );
+    final normalizedSegment = _normalizeMixedTextSegment(
+      rawSegment,
+      trimLeft: !hasSeenStructuredChild,
+      trimRight: !hasFutureStructuredChild,
+    );
+    if (normalizedSegment == null) {
+      continue;
+    }
+
+    if (!hasSeenStructuredChild && !hasLeadingDirectText) {
+      node.setAttribute(
+        '__text',
+        normalizedSegment,
+        type: SvgAttributeType.string,
+      );
+      hasLeadingDirectText = true;
+      continue;
+    }
+
+    final syntheticTextNode = SvgNode(tagName: 'tspan');
+    syntheticTextNode.setAttribute(
+      '__text',
+      normalizedSegment,
+      type: SvgAttributeType.string,
+    );
+    node.addChild(syntheticTextNode);
+    hasSeenStructuredChild = true;
+  }
+}
+
+bool _parseAndAddChildElement(SvgNode node, XmlElement child) {
+  final childTagName = child.name.local;
+
+  // Пропускаем <style> элементы - они обрабатываются отдельно
+  if (childTagName == 'style') {
+    return false; // CSS parsing будет позже
+  }
+
+  // Extract <title> text content and store on parent (use first only)
+  if (childTagName == 'title') {
+    if (node.titleText == null) {
+      final titleText = _extractElementText(child);
+      if (titleText != null && titleText.isNotEmpty) {
+        node.titleText = titleText;
+      }
+    }
+    // Still add title as child node for DOM completeness
+    final childNode = _parseElement(child);
+    node.addChild(childNode);
+    return true;
+  }
+
+  // Extract <desc> text content and store on parent (use first only)
+  if (childTagName == 'desc') {
+    if (node.descText == null) {
+      final descText = _extractElementText(child);
+      if (descText != null && descText.isNotEmpty) {
+        node.descText = descText;
+      }
+    }
+    // Still add desc as child node for DOM completeness
+    final childNode = _parseElement(child);
+    node.addChild(childNode);
+    return true;
+  }
+
+  final childNode = _parseElement(child);
+  node.addChild(childNode);
+  return true;
+}
+
+bool _hasRenderableElementChildAfter(List<XmlNode> children, int index) {
+  for (var i = index + 1; i < children.length; i++) {
+    final child = children[i];
+    if (child is XmlElement && child.name.local != 'style') {
+      return true;
+    }
+  }
+  return false;
+}
+
+String? _normalizeMixedTextSegment(
+  String raw, {
+  required bool trimLeft,
+  required bool trimRight,
+}) {
+  final collapsed = raw.replaceAll(RegExp(r'\s+'), ' ');
+  var normalized = collapsed;
+  if (trimLeft) {
+    normalized = normalized.replaceFirst(RegExp(r'^ +'), '');
+  }
+  if (trimRight) {
+    normalized = normalized.replaceFirst(RegExp(r' +$'), '');
+  }
+  if (normalized.isEmpty) {
+    return null;
+  }
+  return normalized;
 }
 
 /// Extracts all text content from an element (for title/desc)

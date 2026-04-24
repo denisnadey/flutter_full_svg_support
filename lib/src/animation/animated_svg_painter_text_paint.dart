@@ -36,6 +36,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
     List<double> parentDxList = const <double>[],
     List<double> parentDyList = const <double>[],
     List<double> parentRotateList = const <double>[],
+    int parentRotateStartIndex = 0,
     bool isRootText = false,
     _ResolvedTextStyle? parentStyle,
     _TextLengthDistribution? inheritedDistribution,
@@ -53,9 +54,11 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
     final yList = nodeYList.isNotEmpty ? nodeYList : parentYList;
     final dxList = nodeDxList.isNotEmpty ? nodeDxList : parentDxList;
     final dyList = nodeDyList.isNotEmpty ? nodeDyList : parentDyList;
-    final rotateList = nodeRotateList.isNotEmpty
-        ? nodeRotateList
-        : parentRotateList;
+    final hasOwnRotateList = nodeRotateList.isNotEmpty;
+    final rotateList = hasOwnRotateList ? nodeRotateList : parentRotateList;
+    final rotateListStartIndex = hasOwnRotateList
+        ? cursor.charIndex
+        : parentRotateStartIndex;
     if (hasAbsoluteX && nodeXList.isNotEmpty) cursor.x = nodeXList[0];
     if (hasAbsoluteY && nodeYList.isNotEmpty) cursor.y = nodeYList[0];
     if (dxList.isNotEmpty && cursor.charIndex < dxList.length)
@@ -120,6 +123,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
         dxList: dxList,
         dyList: dyList,
         rotateList: rotateList,
+        rotateListStartIndex: rotateListStartIndex,
         startsNewChunk: startsNewChunk || isRootText,
         imageFilter: imageFilter,
         colorFilter: colorFilter,
@@ -152,6 +156,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
           parentDxList: dxList,
           parentDyList: dyList,
           parentRotateList: rotateList,
+          parentRotateStartIndex: rotateListStartIndex,
           parentStyle: effectiveStyle,
           inheritedDistribution: effectiveDistribution,
         );
@@ -168,6 +173,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
           parentDxList: dxList,
           parentDyList: dyList,
           parentRotateList: rotateList,
+          parentRotateStartIndex: rotateListStartIndex,
           parentStyle: style,
         );
         cursor.x += consumed;
@@ -194,6 +200,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
           parentDxList: dxList,
           parentDyList: dyList,
           parentRotateList: rotateList,
+          parentRotateStartIndex: rotateListStartIndex,
           parentStyle: effectiveStyle,
           inheritedDistribution: effectiveDistribution,
         );
@@ -213,6 +220,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
     List<double> parentDxList = const <double>[],
     List<double> parentDyList = const <double>[],
     List<double> parentRotateList = const <double>[],
+    int parentRotateStartIndex = 0,
     _ResolvedTextStyle? parentStyle,
   }) {
     final referencedText = _resolveTrefText(trefNode);
@@ -230,9 +238,11 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
     final yList = nodeYList.isNotEmpty ? nodeYList : parentYList;
     final dxList = nodeDxList.isNotEmpty ? nodeDxList : parentDxList;
     final dyList = nodeDyList.isNotEmpty ? nodeDyList : parentDyList;
-    final rotateList = nodeRotateList.isNotEmpty
-        ? nodeRotateList
-        : parentRotateList;
+    final hasOwnRotateList = nodeRotateList.isNotEmpty;
+    final rotateList = hasOwnRotateList ? nodeRotateList : parentRotateList;
+    final rotateListStartIndex = hasOwnRotateList
+        ? cursor.charIndex
+        : parentRotateStartIndex;
     if (hasAbsoluteX && nodeXList.isNotEmpty) cursor.x = nodeXList[0];
     if (hasAbsoluteY && nodeYList.isNotEmpty) cursor.y = nodeYList[0];
     if (dxList.isNotEmpty && cursor.charIndex < dxList.length)
@@ -251,6 +261,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
       dxList: dxList,
       dyList: dyList,
       rotateList: rotateList,
+      rotateListStartIndex: rotateListStartIndex,
       startsNewChunk: startsNewChunk,
       imageFilter: imageFilter,
       colorFilter: colorFilter,
@@ -297,6 +308,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
     List<double> parentDxList = const <double>[],
     List<double> parentDyList = const <double>[],
     List<double> parentRotateList = const <double>[],
+    int parentRotateStartIndex = 0,
     _ResolvedTextStyle? parentStyle,
     _TextLengthDistribution? inheritedDistribution,
   }) {
@@ -322,9 +334,11 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
     final yList = nodeYList.isNotEmpty ? nodeYList : parentYList;
     final dxList = nodeDxList.isNotEmpty ? nodeDxList : parentDxList;
     final dyList = nodeDyList.isNotEmpty ? nodeDyList : parentDyList;
-    final rotateList = nodeRotateList.isNotEmpty
-        ? nodeRotateList
-        : parentRotateList;
+    final hasOwnRotateList = nodeRotateList.isNotEmpty;
+    final rotateList = hasOwnRotateList ? nodeRotateList : parentRotateList;
+    final rotateListStartIndex = hasOwnRotateList
+        ? cursor.charIndex
+        : parentRotateStartIndex;
 
     if (hasAbsoluteX && nodeXList.isNotEmpty) cursor.x = nodeXList[0];
     if (hasAbsoluteY && nodeYList.isNotEmpty) cursor.y = nodeYList[0];
@@ -353,6 +367,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
         dxList: dxList,
         dyList: dyList,
         rotateList: rotateList,
+        rotateListStartIndex: rotateListStartIndex,
         startsNewChunk: startsNewChunk,
         imageFilter: imageFilter,
         colorFilter: colorFilter,
@@ -379,6 +394,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
             parentDxList: dxList,
             parentDyList: dyList,
             parentRotateList: rotateList,
+            parentRotateStartIndex: rotateListStartIndex,
             parentStyle: style,
             inheritedDistribution: inheritedDistribution,
           );
@@ -395,6 +411,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
             parentDxList: dxList,
             parentDyList: dyList,
             parentRotateList: rotateList,
+            parentRotateStartIndex: rotateListStartIndex,
             parentStyle: style,
             inheritedDistribution: inheritedDistribution,
           );
