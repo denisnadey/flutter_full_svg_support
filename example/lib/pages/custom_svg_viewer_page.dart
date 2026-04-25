@@ -845,14 +845,6 @@ class _CustomSvgViewerPageState extends State<CustomSvgViewerPage>
                             icon: const Icon(Icons.rocket_launch),
                             label: const Text('Template: Helmet'),
                           ),
-                          OutlinedButton.icon(
-                            onPressed: () => _loadAssetTemplate(
-                              'coins',
-                              'assets/helmet.svg',
-                            ),
-                            icon: const Icon(Icons.monetization_on),
-                            label: const Text('Template: Coins'),
-                          ),
                         ],
                       ),
                     ],

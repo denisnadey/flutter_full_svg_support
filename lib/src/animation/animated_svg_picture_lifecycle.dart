@@ -17,7 +17,18 @@ extension _AnimatedSvgPictureStateLifecycleExtension
     } else if (widget.playbackRate != oldWidget.playbackRate &&
         _timeline != null) {
       // Только скорость изменилась
+      final currentProgress = _controller?.value ?? 0.0;
       _timeline!.playbackRate = widget.playbackRate;
+      if (_controller != null) {
+        final newMicros =
+            (_timeline!.totalDuration.inMicroseconds / widget.playbackRate)
+                .round()
+                .clamp(1, 0x7fffffffffffffff);
+        _controller!.stop();
+        _controller!.duration = Duration(microseconds: newMicros);
+        _controller!.value = currentProgress;
+        _startPlayback();
+      }
     } else if (widget.autoPlay != oldWidget.autoPlay) {
       // AutoPlay изменился
       if (widget.autoPlay && _controller == null && _timeline != null) {
@@ -235,8 +246,14 @@ extension _AnimatedSvgPictureStateLifecycleExtension
   void _onAnimationTick() {
     if (_controller == null || _timeline == null) return;
 
-    // Конвертируем progress контроллера в время
-    final elapsed = _controller!.duration! * _controller!.value;
+    // Map normalized controller value [0,1] to SVG time using totalDuration.
+    // controller.duration may be shortened for faster playback, so we always
+    // use totalDuration here to get the correct absolute SVG timestamp.
+    final elapsed = Duration(
+      microseconds:
+          (_controller!.value * _timeline!.totalDuration.inMicroseconds)
+              .round(),
+    );
 
     // Обновляем timeline
     _timeline!.seek(elapsed);
@@ -288,7 +305,20 @@ extension _AnimatedSvgPictureStateLifecycleExtension
 
     // Обработка playbackRate
     if (controller.playbackRate != _timeline!.playbackRate) {
+      final currentProgress = _controller?.value ?? 0.0;
       _timeline!.playbackRate = controller.playbackRate;
+      if (_controller != null) {
+        final newMicros =
+            (_timeline!.totalDuration.inMicroseconds / controller.playbackRate)
+                .round()
+                .clamp(1, 0x7fffffffffffffff);
+        _controller!.stop();
+        _controller!.duration = Duration(microseconds: newMicros);
+        _controller!.value = currentProgress;
+        if (!controller.isPaused) {
+          _startPlayback();
+        }
+      }
       _trace(
         category: 'controller',
         message: 'Playback rate updated',
@@ -301,11 +331,12 @@ extension _AnimatedSvgPictureStateLifecycleExtension
       final targetTime = controller.pendingSeek!;
       _timeline!.seek(targetTime);
 
-      // Обновляем значение контроллера для синхронизации
+      // Sync controller value using totalDuration (not controller.duration which
+      // may be shortened for playback rate).
       if (_controller != null) {
-        final duration = _controller!.duration!;
-        if (duration.inMicroseconds > 0) {
-          final progress = targetTime.inMicroseconds / duration.inMicroseconds;
+        final totalMicros = _timeline!.totalDuration.inMicroseconds;
+        if (totalMicros > 0) {
+          final progress = targetTime.inMicroseconds / totalMicros;
           _controller!.value = progress.clamp(0.0, 1.0);
         }
       }

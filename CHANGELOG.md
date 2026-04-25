@@ -1,27 +1,15 @@
-## NEXT
+## 1.0.0
 
-* Package identity is reset for a new publication line:
-  * `name: full_svg_flutter`
-  * target release: `1.0.0` (stable)
-  * canonical import path: `package:full_svg_flutter/full_svg_flutter.dart`
-* Release gate baseline re-validated on April 21, 2026:
-  * `dart analyze lib/ test/ example/lib/` -> 0 errors, 0 warnings
-  * `flutter test` -> all tests passed (`4,922` pass / `2` skipped)
-  * `RUN_W3C_STATIC=1 W3C_LIMIT=83 flutter test test/w3c/w3c_static_golden_test.dart` -> 83 pass / 0 fail
-* W3C 83-slice is now green after clip/mask functional fixes and case-scoped compare hardening.
-* Wave-A closure queue confirmed:
-  * `masking-path-03-b`
-  * `painting-stroke-02-t`
-  * `painting-stroke-03-t`
-  * `painting-fill-02-t`
-  * `painting-stroke-04-t`
-  * `painting-render-02-b`
-* Declare direct `meta` dependency in `pubspec.yaml` to satisfy `dart pub publish --dry-run` validation.
-* Finalize publish readiness for `full_svg_flutter` `1.0.0`:
-  * remove `publish_to: 'none'`
-  * pass `dart pub publish --dry-run` with `0` warnings on clean git state
-  * add `.pubignore` to keep release payload lean
-  * normalize documentation path from `docs/` to `doc/`
+* Initial release of `full_svg_flutter` — a comprehensive SVG rendering library for Flutter.
+* Dual pipeline: battle-tested static renderer (`SvgPicture`) backed by `vector_graphics_compiler`, and a full-featured animated renderer (`AnimatedSvgPicture` / `FSvgPicture`) with SMIL animations, CSS animations, SVG filters, interactive hit-testing, and accessibility.
+* `FSvgPicture` auto-detects animated SVGs and routes to the appropriate pipeline.
+* 17/17 SVG filter primitives supported (feGaussianBlur, feColorMatrix, feDiffuseLighting, feSpecularLighting, feTurbulence, feDisplacementMap, feConvolveMatrix, and more).
+* Full clipping and masking with Blink parity: `clipPathUnits`, nested clip-paths, luminance/alpha mask modes.
+* Complete text support: multi-position `x`/`y`/`dx`/`dy`, `writing-mode`, `textPath`, `text-anchor`, bidi, `font-variant`, per-character hit-testing.
+* CSS selectors, cascade, pseudo-classes, `calc()`, CSS custom properties (`var()`), `@media` queries.
+* Interactive hit-testing with `pointer-events`, `<a>` anchor links, `<view>` fragment identifiers.
+* Accessibility: `<title>`/`<desc>` mapped to Flutter Semantics, ARIA attributes.
+* W3C SVG test suite (83 cases): all passing.
 
 ## 2.2.2
 

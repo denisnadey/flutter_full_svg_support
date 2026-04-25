@@ -57,12 +57,12 @@ typedef AnimatedSvgErrorWidgetBuilder =
 /// Returning null delegates loading to default bundle/network/data-uri logic.
 typedef SvgImageLoader = Future<Uint8List?> Function(String href);
 
-/// Виджет для отображения анимированного SVG
+/// A widget that renders an animated SVG using the SMIL/CSS animation engine.
 ///
-/// API схож с SvgPicture, но поддерживает SMIL анимации.
-/// Автоматически определяет наличие анимаций и создаёт AnimationController.
+/// Similar API to [SvgPicture], but supports SMIL animations, CSS animations,
+/// SVG filters, interactive hit-testing, and accessibility.
 ///
-/// Пример:
+/// Example:
 /// ```dart
 /// AnimatedSvgPicture.string(
 ///   '''<svg viewBox="0 0 100 100">
@@ -75,7 +75,7 @@ typedef SvgImageLoader = Future<Uint8List?> Function(String href);
 /// )
 /// ```
 class AnimatedSvgPicture extends StatefulWidget {
-  /// Создаёт анимированный SVG из строки
+  /// Creates an animated SVG from a raw SVG string.
   const AnimatedSvgPicture.string(
     String svgString, {
     super.key,
@@ -284,34 +284,34 @@ class AnimatedSvgPicture extends StatefulWidget {
     );
   }
 
-  /// XML строка SVG
+  /// The raw SVG string to render.
   final String _svgString;
 
-  /// Ширина виджета
+  /// The width of the rendered widget.
   final double? width;
 
-  /// Высота виджета
+  /// The height of the rendered widget.
   final double? height;
 
-  /// Как вписать SVG в размеры виджета
+  /// How to inscribe the SVG into the space allocated during layout.
   final BoxFit fit;
 
-  /// Выравнивание SVG внутри виджета
+  /// How to align the SVG within its parent widget.
   final Alignment alignment;
 
-  /// Фоновый цвет
+  /// Background color painted behind the SVG.
   final Color? backgroundColor;
 
-  /// Скорость воспроизведения (1.0 = нормальная, 2.0 = x2)
+  /// Playback speed multiplier (1.0 = normal speed, 2.0 = double speed).
   final double playbackRate;
 
-  /// Автоматически начинать воспроизведение
+  /// Whether to start playback automatically when the widget is mounted.
   final bool autoPlay;
 
-  /// Начальное время анимации (для тестирования или предварительного просмотра)
+  /// Initial animation time offset, useful for testing or previewing a frame.
   final Duration? initialTime;
 
-  /// Контроллер для программного управления анимацией
+  /// Controller for programmatic playback control.
   final AnimatedSvgController? controller;
 
   /// Optional callback for runtime diagnostics and tracing.
@@ -621,15 +621,15 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
   @override
   Widget build(BuildContext context) => _buildWidget(context);
 
-  /// Запустить анимацию
+  /// Starts or resumes playback.
   void play() => _play();
 
-  /// Остановить анимацию
+  /// Pauses playback.
   void pause() => _pause();
 
-  /// Перейти к началу
+  /// Resets playback to the beginning.
   void reset() => _reset();
 
-  /// Перейти к конкретному времени
+  /// Seeks to the given animation time.
   void seekTo(Duration time) => _seekTo(time);
 }
