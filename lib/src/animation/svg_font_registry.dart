@@ -8,6 +8,8 @@ import 'dart:convert';
 
 import 'package:flutter/services.dart';
 
+import 'svg_woff_decoder.dart';
+
 /// Callback to resolve external font bytes for a @font-face src URL.
 ///
 /// Receives the raw src URL (e.g. a relative path like `fonts/MyFont.ttf`)
@@ -156,60 +158,58 @@ class SvgFontRegistry {
     var hasValidFonts = false;
 
     for (final rule in rules) {
+      Uint8List? rawBytes;
+
       if (!rule.isEmbeddedFont) {
-        if (fontLoader != null && rule.src != null) {
-          final src = rule.src!;
-          if (_isWoffByExtensionOrFormat(rule)) {
+        if (fontLoader == null || rule.src == null) {
+          _errors.add('Font "$fontFamily": External URLs not supported');
+          continue;
+        }
+        try {
+          rawBytes = await fontLoader(rule.src!);
+          if (rawBytes == null) {
             _errors.add(
-              'Font "$fontFamily": WOFF format not natively supported by Flutter',
+              'Font "$fontFamily": fontLoader returned null for "${rule.src}"',
             );
             continue;
           }
-          try {
-            final bytes = await fontLoader(src);
-            if (bytes != null) {
-              loader.addFont(Future.value(ByteData.sublistView(bytes)));
-              hasValidFonts = true;
-            } else {
-              _errors.add(
-                'Font "$fontFamily": fontLoader returned null for "$src"',
-              );
-            }
-          } catch (e) {
-            _errors.add(
-              'Font "$fontFamily": Error loading font via fontLoader: $e',
-            );
-          }
-        } else {
-          _errors.add('Font "$fontFamily": External URLs not supported');
+        } catch (e) {
+          _errors.add(
+            'Font "$fontFamily": Error loading font via fontLoader: $e',
+          );
+          continue;
         }
-        continue;
+      } else {
+        if (!rule.isSupportedFormat && !rule.isWoffFormat) {
+          _errors.add(
+            'Font "$fontFamily": Unsupported format ${rule.format ?? "unknown"}',
+          );
+          continue;
+        }
+        rawBytes = _decodeDataUrl(rule.src!);
+        if (rawBytes == null) {
+          _errors.add('Font "$fontFamily": Failed to decode data URL');
+          continue;
+        }
       }
 
-      if (rule.isWoffFormat) {
-        _errors.add(
-          'Font "$fontFamily": WOFF format not natively supported by Flutter',
-        );
-        continue;
-      }
-
-      if (!rule.isSupportedFormat) {
-        _errors.add(
-          'Font "$fontFamily": Unsupported format ${rule.format ?? "unknown"}',
-        );
-        continue;
-      }
-
-      try {
-        final fontData = _decodeDataUrl(rule.src!);
-        if (fontData != null) {
-          loader.addFont(Future.value(ByteData.sublistView(fontData)));
+      // Detect and convert WOFF/WOFF2 by magic bytes.
+      final (decodeResult, sfntBytes) = decodeFontIfWoff(rawBytes);
+      switch (decodeResult) {
+        case WoffDecodeResult.notWoff:
+          // Plain TTF/OTF — use as-is.
+          loader.addFont(Future.value(ByteData.sublistView(rawBytes)));
           hasValidFonts = true;
-        } else {
-          _errors.add('Font "$fontFamily": Failed to decode font data');
-        }
-      } catch (e) {
-        _errors.add('Font "$fontFamily": Error decoding font: $e');
+        case WoffDecodeResult.ok:
+          loader.addFont(Future.value(ByteData.sublistView(sfntBytes!)));
+          hasValidFonts = true;
+        case WoffDecodeResult.woff2Unsupported:
+          _errors.add(
+            'Font "$fontFamily": WOFF2 format not yet supported '
+            '(requires native Brotli decompression)',
+          );
+        case WoffDecodeResult.malformed:
+          _errors.add('Font "$fontFamily": Malformed WOFF data');
       }
     }
 
@@ -221,17 +221,6 @@ class SvgFontRegistry {
         _errors.add('Font "$fontFamily": Error loading font: $e');
       }
     }
-  }
-
-  bool _isWoffByExtensionOrFormat(CssFontFaceRule rule) {
-    if (rule.format != null) {
-      final fmt = rule.format!.toLowerCase();
-      return fmt == 'woff' || fmt == 'woff2';
-    }
-    final src = rule.src;
-    if (src == null) return false;
-    final lower = src.toLowerCase();
-    return lower.endsWith('.woff') || lower.endsWith('.woff2');
   }
 
   /// Decodes a data: URL to bytes.
