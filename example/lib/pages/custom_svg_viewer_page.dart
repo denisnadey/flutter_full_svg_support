@@ -1074,6 +1074,7 @@ class _CustomSvgViewerPageState extends State<CustomSvgViewerPage>
                           onTrace: _handleTraceEvent,
                           traceFrameTicks: _traceFrameTicks,
                           imageLoader: _resolvePlaygroundImageBytes,
+                          fontLoader: _resolvePlaygroundImageBytes,
                         ),
                 ),
               ),

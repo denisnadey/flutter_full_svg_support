@@ -379,7 +379,9 @@ extension _AnimatedSvgPictureStateLifecycleExtension
   /// Registers embedded fonts and triggers repaint on success.
   Future<void> _registerFontsAndRepaint(int generation) async {
     try {
-      final success = await _document.registerEmbeddedFonts();
+      final success = await _document.registerEmbeddedFonts(
+        fontLoader: widget.fontLoader,
+      );
       if (!mounted || generation != _imageLoadGeneration) {
         return;
       }

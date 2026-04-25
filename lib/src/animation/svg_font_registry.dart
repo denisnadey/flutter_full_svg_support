@@ -8,6 +8,12 @@ import 'dart:convert';
 
 import 'package:flutter/services.dart';
 
+/// Callback to resolve external font bytes for a @font-face src URL.
+///
+/// Receives the raw src URL (e.g. a relative path like `fonts/MyFont.ttf`)
+/// and should return the font bytes, or null if the URL cannot be resolved.
+typedef SvgFontLoader = Future<Uint8List?> Function(String href);
+
 /// Parsed @font-face rule containing font metadata and source.
 class CssFontFaceRule {
   /// Creates a font-face rule.
@@ -107,7 +113,14 @@ class SvgFontRegistry {
   ///
   /// Returns a [Future] that completes when all fonts are registered.
   /// This should be called during SVG initialization, before rendering.
-  Future<void> registerFonts(List<CssFontFaceRule> fontFaceRules) async {
+  ///
+  /// [fontLoader] is an optional callback for resolving external font URLs
+  /// (e.g. relative paths like `fonts/MyFont.ttf`). Without it, only
+  /// embedded data: URLs are supported.
+  Future<void> registerFonts(
+    List<CssFontFaceRule> fontFaceRules, {
+    SvgFontLoader? fontLoader,
+  }) async {
     // Group rules by font family for batch registration
     final groupedRules = <String, List<CssFontFaceRule>>{};
     for (final rule in fontFaceRules) {
@@ -129,21 +142,47 @@ class SvgFontRegistry {
       _fontFaceRules[fontFamily] = rules;
 
       // Register with Flutter
-      await _registerFontFamily(fontFamily, rules);
+      await _registerFontFamily(fontFamily, rules, fontLoader: fontLoader);
     }
   }
 
   /// Registers a font family with all its variants (weights/styles).
   Future<void> _registerFontFamily(
     String fontFamily,
-    List<CssFontFaceRule> rules,
-  ) async {
+    List<CssFontFaceRule> rules, {
+    SvgFontLoader? fontLoader,
+  }) async {
     final loader = FontLoader(fontFamily);
     var hasValidFonts = false;
 
     for (final rule in rules) {
       if (!rule.isEmbeddedFont) {
-        _errors.add('Font "$fontFamily": External URLs not supported');
+        if (fontLoader != null && rule.src != null) {
+          final src = rule.src!;
+          if (_isWoffByExtensionOrFormat(rule)) {
+            _errors.add(
+              'Font "$fontFamily": WOFF format not natively supported by Flutter',
+            );
+            continue;
+          }
+          try {
+            final bytes = await fontLoader(src);
+            if (bytes != null) {
+              loader.addFont(Future.value(ByteData.sublistView(bytes)));
+              hasValidFonts = true;
+            } else {
+              _errors.add(
+                'Font "$fontFamily": fontLoader returned null for "$src"',
+              );
+            }
+          } catch (e) {
+            _errors.add(
+              'Font "$fontFamily": Error loading font via fontLoader: $e',
+            );
+          }
+        } else {
+          _errors.add('Font "$fontFamily": External URLs not supported');
+        }
         continue;
       }
 
@@ -182,6 +221,17 @@ class SvgFontRegistry {
         _errors.add('Font "$fontFamily": Error loading font: $e');
       }
     }
+  }
+
+  bool _isWoffByExtensionOrFormat(CssFontFaceRule rule) {
+    if (rule.format != null) {
+      final fmt = rule.format!.toLowerCase();
+      return fmt == 'woff' || fmt == 'woff2';
+    }
+    final src = rule.src;
+    if (src == null) return false;
+    final lower = src.toLowerCase();
+    return lower.endsWith('.woff') || lower.endsWith('.woff2');
   }
 
   /// Decodes a data: URL to bytes.

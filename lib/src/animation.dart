@@ -27,4 +27,5 @@ export 'animation/smil/smil_timeline.dart';
 export 'animation/smil/timing_condition.dart';
 export 'animation/smil/timing_parser.dart';
 export 'animation/svg_dom.dart';
+export 'animation/svg_font_registry.dart' show SvgFontLoader;
 export 'animation/svg_parser.dart';
