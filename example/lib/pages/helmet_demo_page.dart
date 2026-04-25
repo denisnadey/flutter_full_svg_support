@@ -2,16 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:full_svg_flutter/src/animation.dart';
 
-/// Demo page for the helmet fixture SVG.
-/// Mirrors Astronaut Helmet controls for quick visual parity checks.
-class HelmetDemoPage extends StatefulWidget {
-  const HelmetDemoPage({super.key});
+/// Demo page for the coins/game animation SVG.
+class CoinsDemoPage extends StatefulWidget {
+  const CoinsDemoPage({super.key});
 
   @override
-  State<HelmetDemoPage> createState() => _HelmetDemoPageState();
+  State<CoinsDemoPage> createState() => _CoinsDemoPageState();
 }
 
-class _HelmetDemoPageState extends State<HelmetDemoPage> {
+class _CoinsDemoPageState extends State<CoinsDemoPage> {
   double _playbackRate = 1.0;
   bool _isPlaying = true;
   String? _svgString;
@@ -66,11 +65,11 @@ class _HelmetDemoPageState extends State<HelmetDemoPage> {
         Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: Colors.lightGreenAccent.withValues(alpha: 0.1),
+            color: const Color(0xFFFFD700).withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: const CircularProgressIndicator(
-            color: Colors.lightGreenAccent,
+            color: Color(0xFFFFD700),
             strokeWidth: 3,
           ),
         ),
@@ -130,7 +129,7 @@ class _HelmetDemoPageState extends State<HelmetDemoPage> {
             icon: const Icon(Icons.refresh),
             label: const Text('Retry'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.lightGreenAccent.shade700,
+              backgroundColor: const Color(0xFFFFD700),
               foregroundColor: Colors.black,
             ),
           ),
@@ -157,18 +156,18 @@ class _HelmetDemoPageState extends State<HelmetDemoPage> {
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: Colors.lightGreenAccent.withValues(alpha: 0.2),
+                color: const Color(0xFFFFD700).withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(
-                Icons.shield_outlined,
+                Icons.monetization_on_outlined,
                 size: 18,
-                color: Colors.lightGreenAccent,
+                color: Color(0xFFFFD700),
               ),
             ),
             const SizedBox(width: 10),
             const Text(
-              'Helmet Demo',
+              'Coins Demo',
               style: TextStyle(fontWeight: FontWeight.w600),
             ),
           ],
@@ -183,7 +182,7 @@ class _HelmetDemoPageState extends State<HelmetDemoPage> {
                 gradient: RadialGradient(
                   center: Alignment.center,
                   radius: 1.2,
-                  colors: [Color(0xFF1A2B22), Color(0xFF0A0E1A)],
+                  colors: [Color(0xFF1A1A0A), Color(0xFF0A0E1A)],
                 ),
               ),
               child: Center(
@@ -250,13 +249,10 @@ class _HelmetDemoPageState extends State<HelmetDemoPage> {
                     runSpacing: 8,
                     alignment: WrapAlignment.center,
                     children: [
-                      _HelmetFeatureBadge('feColorMatrix', Colors.greenAccent),
-                      _HelmetFeatureBadge(
-                        'feComponentTransfer',
-                        Colors.lightBlueAccent,
-                      ),
-                      _HelmetFeatureBadge('opacity', Colors.orangeAccent),
-                      _HelmetFeatureBadge('timing', Colors.pinkAccent),
+                      _CoinsFeatureBadge('feColorMatrix', Color(0xFFFFD700)),
+                      _CoinsFeatureBadge('feGaussianBlur', Colors.amberAccent),
+                      _CoinsFeatureBadge('linearGradient', Colors.orangeAccent),
+                      _CoinsFeatureBadge('SMIL animate', Colors.deepOrangeAccent),
                     ],
                   ),
                 ],
@@ -315,14 +311,14 @@ class _HelmetDemoPageState extends State<HelmetDemoPage> {
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: Colors.lightGreenAccent.withValues(alpha: 0.35),
+            color: const Color(0xFFFFD700).withValues(alpha: 0.35),
             blurRadius: 20,
             spreadRadius: 2,
           ),
         ],
       ),
       child: Material(
-        color: Colors.lightGreenAccent.shade400,
+        color: const Color(0xFFFFD700),
         shape: const CircleBorder(),
         child: InkWell(
           onTap: () {
@@ -386,7 +382,7 @@ class _HelmetDemoPageState extends State<HelmetDemoPage> {
                   margin: const EdgeInsets.symmetric(horizontal: 2),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? Colors.lightGreenAccent.shade700
+                        ? const Color(0xFFFFD700)
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(6),
                   ),
@@ -410,11 +406,11 @@ class _HelmetDemoPageState extends State<HelmetDemoPage> {
   }
 }
 
-class _HelmetFeatureBadge extends StatelessWidget {
+class _CoinsFeatureBadge extends StatelessWidget {
   final String label;
   final Color color;
 
-  const _HelmetFeatureBadge(this.label, this.color);
+  const _CoinsFeatureBadge(this.label, this.color);
 
   @override
   Widget build(BuildContext context) {

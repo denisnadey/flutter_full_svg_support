@@ -8,27 +8,7 @@
 
 The most comprehensive SVG rendering library for Flutter. Two pipelines: a battle-tested **static renderer** (`SvgPicture`) for production, and a full-featured **animated renderer** (`AnimatedSvgPicture`) with DOM preservation, SMIL animations, CSS interop, SVG filters, interactive hit-testing, and accessibility.
 
-**Release baseline (April 21, 2026; W3C re-verified April 22, 2026):** analyzer green, full-suite tests green (`4,922` pass / `2` skipped), W3C static 83-slice green (`83/83`).
-
-## Current Release Baseline (April 21, 2026)
-
-Commands:
-
-```bash
-.fvm/versions/3.38.1/bin/dart analyze lib/ test/ example/lib/
-.fvm/versions/3.38.1/bin/flutter test
-RUN_W3C_STATIC=1 W3C_LIMIT=83 .fvm/versions/3.38.1/bin/flutter test test/w3c/w3c_static_golden_test.dart
-```
-
-Results:
-
-- `dart analyze`: 0 errors, 0 warnings
-- `flutter test`: all tests passed (`4,922` pass / `2` skipped)
-- `W3C_LIMIT=83`: 83 passed / 0 failed
-
-W3C 83-slice is currently stable after clip/mask semantics fixes and case-scoped compare alignment.
-
-## Historical Parity Snapshot (March 2026)
+## Parity Snapshot
 
 | Category | Coverage | Key Details |
 |---|---|---|
@@ -77,57 +57,6 @@ Gradient shaders, pattern images, text paragraphs, hit-test geometry - all cache
 
 ### 30+ CSS/SVG Presentation Attributes
 `paint-order`, `vector-effect`, `shape-rendering`, `overflow`, `mix-blend-mode`, `currentColor`, `transform-origin`, `color-interpolation`, `font-variant`, `xml:space`, `direction`, `pathLength`, `cursor`, `white-space`, `unicode-bidi`, `font-stretch`, and more.
-
-## Remaining Work (Current Release Queue)
-
-Active priorities for release closure:
-
-1. **Keep Gate A/B green** on reruns while avoiding regressions.
-2. **Complete Gate D/E** publish dry-run and release operations from `RELEASE_CHECKLIST.md`.
-3. **Finalize channel/version decision** before publication.
-
-Execution plan for current W3C closure work:
-
-- [doc/W3C_GAP_CLOSURE_PLAN.md](doc/W3C_GAP_CLOSURE_PLAN.md) - Chromium-driven case-by-case closure algorithm, priority waves, and threshold policy
-
-See [CURRENT_STATUS.md](CURRENT_STATUS.md) for factual status and [doc/BLINK_PARITY_AUDIT.md](doc/BLINK_PARITY_AUDIT.md) for the Blink gap matrix.
-
-## Chromium/Blink Source Notes (Local Dev)
-
-Reference locations used for parity debugging in this workspace:
-
-- Active Chromium tree (downloaded snapshot): `/Users/denisnadey/Downloads/chromium-main/third_party/blink`
-- Historical pinned Blink snapshot in repo: `/Users/denisnadey/apps/flutter_full_svg_support/blink-b87d44f-Source-core-svg`
-- Skia location expected by Blink lighting/filter paths: `/Users/denisnadey/Downloads/chromium-main/third_party/skia`
-
-Important: if Chromium was downloaded from `https://github.com/chromium/chromium/tree/main` as a zip, it is not a git repo, so `git submodule update --init --recursive` will not work there.
-
-### How To "Hydrate" Missing Submodules In Zip Snapshot
-
-If a submodule path is empty (for example `third_party/skia`), clone it directly using URL from `.gitmodules`:
-
-```bash
-cd /Users/denisnadey/Downloads/chromium-main
-
-# Example: hydrate one missing submodule
-SUB=third_party/skia
-URL=$(awk -v p="$SUB" '$1=="path" && $3==p {f=1;next} f&&$1=="url"{print $3;exit}' .gitmodules)
-rm -rf "$SUB"
-git clone --depth 1 --filter=blob:none "$URL" "$SUB"
-```
-
-Repeat with another `SUB=...` path as needed.
-
-### Full Git Checkout Option (If Needed Later)
-
-If you want native submodule commands, use a real git checkout instead of zip snapshot:
-
-```bash
-git clone --depth 1 --filter=blob:none https://github.com/chromium/chromium.git /Users/denisnadey/Downloads/chromium-main-git
-cd /Users/denisnadey/Downloads/chromium-main-git
-git submodule sync --recursive
-git submodule update --init --recursive --depth 1 --jobs 8
-```
 
 ## Getting Started
 
@@ -309,21 +238,6 @@ dart run vector_graphics_compiler -i $SVG_FILE -o $TEMPORARY_OUTPUT_TO_BE_DELETE
 ## Contributing
 
 See [doc/DEVELOPMENT.md](doc/DEVELOPMENT.md) for development guidelines, testing workflows, and architecture details.
-
-### Project Navigation
-
-| Document | Purpose |
-|---|---|
-| [CURRENT_STATUS.md](CURRENT_STATUS.md) | Single source of truth for project state |
-| [ROADMAP.md](ROADMAP.md) | Living roadmap with priorities and milestones |
-| [NEXT_STEPS.md](NEXT_STEPS.md) | P0/P1/P2 priorities and execution order |
-| [TODO.md](TODO.md) | Active work queue (P0-P4 items) |
-| [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md) | Release gate checklist with current baseline and blockers |
-| [ANIMATION.md](ANIMATION.md) | SMIL/CSS animation usage guide with examples |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | Dual pipeline design rationale |
-| [doc/BLINK_PARITY_AUDIT.md](doc/BLINK_PARITY_AUDIT.md) | Gap matrix vs Blink SVG features |
-| [doc/W3C_GAP_CLOSURE_PLAN.md](doc/W3C_GAP_CLOSURE_PLAN.md) | Active W3C closure plan (Chromium-guided + diff-measured thresholds) |
-| [DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md) | Full documentation navigation |
 
 ## SVG sample attribution
 
