@@ -221,6 +221,7 @@ void _writeTraceArtifacts({
   required double? similarity,
   required String diffPath,
   required W3cCompareConfig compareConfig,
+  W3cPixelDiagnostic? diagnostic,
   Object? failureError,
   StackTrace? failureStack,
 }) {
@@ -265,6 +266,7 @@ void _writeTraceArtifacts({
     'stageDurationsMs': collector.stageDurationsMs,
     'eventCount': collector.events.length,
     'eventCountByCategory': eventCountByCategory,
+    'pixelDiagnostic': diagnostic?.toJson(),
     'failureError': failureError?.toString(),
     'failureStack': collector.profile == 'forensic'
         ? failureStack?.toString()
@@ -337,9 +339,14 @@ void main() {
           final compareConfig = resolveW3cCompareConfig(caseName: entry.name);
 
           dynamic result;
+          W3cPixelDiagnostic? diagnostic;
           Object? failureError;
           StackTrace? failureStack;
           final diffPath = '$_diffRoot/${entry.name}.png';
+
+          // Run diagnostics when trace is enabled or debug is on, so the
+          // shift-profile and row-band breakdown appear in the summary artifact.
+          final runDiagnostics = _isTraceEnabled || _isDebug;
 
           try {
             traceCollector.stageStart('capture');
@@ -385,6 +392,9 @@ void main() {
                   renderedPng: renderedPng,
                   referencePngPath: entry.pngPath,
                   caseName: entry.name,
+                  onDiagnostic: runDiagnostics
+                      ? (diag) => diagnostic = diag
+                      : null,
                 ),
               ),
             );
@@ -393,6 +403,23 @@ void main() {
               throw StateError('Compare stage returned null for ${entry.name}');
             }
             result = resultOrNull;
+
+            // Also run diagnostics on failure even when trace wasn't enabled.
+            if (diagnostic == null) {
+              final effectiveSimilarityThresholdForDiag =
+                  compareConfig.effectiveSimilarityThreshold ??
+                  kW3cSimilarityThreshold;
+              if (!result.passed(effectiveSimilarityThresholdForDiag)) {
+                await tester.runAsync(
+                  () async => compareWithReferencePng(
+                    renderedPng: renderedPng,
+                    referencePngPath: entry.pngPath,
+                    caseName: entry.name,
+                    onDiagnostic: (diag) => diagnostic = diag,
+                  ),
+                );
+              }
+            }
 
             final diffFile = File(diffPath);
             if (diffFile.existsSync()) {
@@ -403,14 +430,18 @@ void main() {
               diffPath: diffPath,
             );
 
+            final effectiveSimilarityThreshold =
+                compareConfig.effectiveSimilarityThreshold ??
+                kW3cSimilarityThreshold;
             expect(
-              result.passed(kW3cSimilarityThreshold),
+              result.passed(effectiveSimilarityThreshold),
               isTrue,
               reason:
                   '${entry.name}: similarity '
                   '${result.similarity.toStringAsFixed(4)} '
-                  'below threshold $kW3cSimilarityThreshold. '
+                  'below threshold $effectiveSimilarityThreshold. '
                   '${result.message != null ? 'Compare: ${result.message}. ' : ''}'
+                  '${diagnostic != null ? 'Diagnostic: ${diagnostic!.diagnosis} ' : ''}'
                   'Diff: $diffPath',
             );
           } catch (error, stackTrace) {
@@ -418,13 +449,17 @@ void main() {
             failureStack = stackTrace;
             rethrow;
           } finally {
+            final effectiveSimilarityThreshold =
+                compareConfig.effectiveSimilarityThreshold ??
+                kW3cSimilarityThreshold;
             _writeTraceArtifacts(
               entry: entry,
               collector: traceCollector,
-              passed: result?.passed(kW3cSimilarityThreshold) ?? false,
+              passed: result?.passed(effectiveSimilarityThreshold) ?? false,
               similarity: result?.similarity,
               diffPath: diffPath,
               compareConfig: compareConfig,
+              diagnostic: diagnostic,
               failureError: failureError,
               failureStack: failureStack,
             );

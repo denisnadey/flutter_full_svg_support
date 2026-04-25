@@ -99,7 +99,6 @@ extension AnimatedSvgPainterTextLayoutRenderExtension on AnimatedSvgPainter {
         fontFamily: primaryFontFamily,
         fontWeight: style.fontWeight,
         fontStyle: style.fontStyle,
-        textDirection: style.textDirection,
         height: style.lineHeight != null
             ? style.lineHeight! / effectiveFontSize
             : null,
@@ -195,7 +194,6 @@ extension AnimatedSvgPainterTextLayoutRenderExtension on AnimatedSvgPainter {
         fontFamily: primaryFontFamily,
         fontWeight: firstStyle.fontWeight,
         fontStyle: firstStyle.fontStyle,
-        textDirection: firstStyle.textDirection,
         height: firstStyle.lineHeight != null
             ? firstStyle.lineHeight! / effectiveFontSize
             : null,
@@ -406,7 +404,6 @@ extension AnimatedSvgPainterTextLayoutRenderExtension on AnimatedSvgPainter {
         fontFamily: primaryFontFamily,
         fontWeight: style.fontWeight,
         fontStyle: style.fontStyle,
-        textDirection: style.textDirection,
       ),
     );
     paragraphBuilder.pushStyle(
