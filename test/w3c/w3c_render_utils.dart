@@ -193,7 +193,7 @@ Future<void> _ensureW3cTestFontAliasesRegistered() {
     return existing;
   }
 
-  final initFuture = _registerW3cTestFontAliases();
+  final initFuture = _registerW3cTestFontAliases().then((_) => _registerW3cCjkFont());
   _w3cFontAliasesInitFuture = initFuture;
   return initFuture;
 }
@@ -250,6 +250,41 @@ Future<void> _registerW3cTestFontAliases() async {
     } catch (_) {
       // Ignore duplicate/invalid alias registration in repeated test runs.
     }
+  }
+}
+
+// System paths where Arial Unicode (full Unicode coverage incl. CJK) is found.
+const _kArialUnicodePaths = [
+  '/Library/Fonts/Arial Unicode.ttf',
+  '/System/Library/Fonts/Supplemental/Arial Unicode.ttf',
+];
+
+// CJK family aliases used by W3C vertical-text tests (text-intro-03-b et al.).
+const _kCjkFamilyAliases = <String>[
+  'Arial Unicode MS',
+  'LucidaSansUnicode',
+  'Lucida Sans Unicode',
+  'MS-Gothic',
+  'MS Gothic',
+  'MS Mincho',
+  'MS PGothic',
+  'MS PMincho',
+];
+
+Future<void> _registerW3cCjkFont() async {
+  for (final path in _kArialUnicodePaths) {
+    final file = File(path);
+    if (!file.existsSync()) continue;
+    final bytes = file.readAsBytesSync();
+    if (bytes.isEmpty) continue;
+    for (final family in _kCjkFamilyAliases) {
+      final loader = FontLoader(family);
+      loader.addFont(Future<ByteData>.value(ByteData.sublistView(bytes)));
+      try {
+        await loader.load();
+      } catch (_) {}
+    }
+    return;
   }
 }
 
@@ -1525,7 +1560,11 @@ const Map<String, double> _comparisonPerPixelThresholdByCase = {
   'text-fonts-203-t': 0.00,
   'text-intro-01-t': 0.00,
   'text-intro-02-b': 0.00,
-  'text-intro-03-b': 1.00,
+  // Vertical writing-mode (tb) with CJK and glyph-orientation-vertical.
+  // Similarity ~88% at 0.05 after fixing CJK font loading and glyph-orientation-vertical
+  // auto behavior. Remaining mismatch is font-metric-based (Arial Unicode vs browser CJK font).
+  // Paired with similarity threshold of 0.85 in _comparisonSimilarityThresholdByCase.
+  'text-intro-03-b': 0.05,
   'text-intro-04-t': 0.00,
   'text-intro-05-t': 0.00,
   // Arabic text renders correctly but the reference PNG was captured from
@@ -1730,6 +1769,11 @@ const Map<String, double> _comparisonSimilarityThresholdByCase = {
   // (proprietary Windows fonts with different glyph designs). Mismatch is
   // font-design-based; similarity ~88% at 0.05 per-pixel.
   'text-intro-07-t': 0.85,
+  // Vertical writing-mode (tb) with CJK text and glyph-orientation-vertical.
+  // CJK characters now render correctly (Arial Unicode) and orientation fixed.
+  // Remaining ~12% gap is font-metric difference (Arial Unicode vs browser CJK
+  // reference font). Similarity ~88% at 0.05 per-pixel.
+  'text-intro-03-b': 0.85,
 };
 
 List<ui.Rect> _comparisonIgnoreRegionsForCase(String caseName) {

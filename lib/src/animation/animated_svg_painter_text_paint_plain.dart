@@ -314,25 +314,71 @@ extension AnimatedSvgPainterTextPlainExtension on AnimatedSvgPainter {
       final paragraph = _buildTextParagraph(glyph, style);
       final glyphWidth = paragraph.maxIntrinsicWidth;
       final glyphHeight = style.fontSize;
+      final isUpright = _isGlyphUprightInVertical(glyph, style.glyphOrientationVertical);
       canvas.save();
       canvas.translate(x, cursorY);
-      canvas.rotate(math.pi / 2);
-      _drawParagraphWithEffects(
-        canvas,
-        paragraph: paragraph,
-        x: 0.0,
-        y: -glyphWidth / 2,
-        imageFilter: imageFilter,
-        colorFilter: colorFilter,
-        blendMode: blendMode,
-        style: style,
-        text: glyph,
-      );
+      if (isUpright) {
+        // Upright (CJK or explicit glyph-orientation-vertical=0): center on column axis.
+        _drawParagraphWithEffects(
+          canvas,
+          paragraph: paragraph,
+          x: -glyphWidth / 2,
+          y: 0.0,
+          imageFilter: imageFilter,
+          colorFilter: colorFilter,
+          blendMode: blendMode,
+          style: style,
+          text: glyph,
+        );
+      } else {
+        // Rotated 90° clockwise (default for Latin/non-CJK in vertical text).
+        canvas.rotate(math.pi / 2);
+        _drawParagraphWithEffects(
+          canvas,
+          paragraph: paragraph,
+          x: 0.0,
+          y: -glyphWidth / 2,
+          imageFilter: imageFilter,
+          colorFilter: colorFilter,
+          blendMode: blendMode,
+          style: style,
+          text: glyph,
+        );
+      }
       canvas.restore();
       final spacing = i < glyphs.length - 1 ? style.letterSpacing : 0.0;
       cursorY += glyphHeight + spacing;
       totalHeight += glyphHeight + spacing;
     }
     return totalHeight;
+  }
+
+  /// Returns true if the glyph should be drawn upright in vertical text.
+  ///
+  /// Per SVG 1.1 / CSS Writing Modes:
+  /// - glyph-orientation-vertical="0"  → upright for all glyphs.
+  /// - glyph-orientation-vertical="90" → rotated for all glyphs.
+  /// - auto (null / default)            → CJK and fullwidth chars upright,
+  ///                                      others rotated 90°.
+  bool _isGlyphUprightInVertical(String glyph, double? glyphOrientationVertical) {
+    if (glyphOrientationVertical != null) {
+      return glyphOrientationVertical.abs() < 1.0;
+    }
+    if (glyph.isEmpty) return false;
+    return _isCjkOrFullwidthRune(glyph.runes.first);
+  }
+
+  /// True for code points that are naturally upright in vertical text (CJK,
+  /// fullwidth, Hangul, and related blocks per Unicode vertical orientation).
+  bool _isCjkOrFullwidthRune(int cp) {
+    return (cp >= 0x1100 && cp <= 0x11FF) ||   // Hangul Jamo
+        (cp >= 0x2E80 && cp <= 0x2FFF) ||       // CJK Radicals / KangXi
+        (cp >= 0x3000 && cp <= 0x9FFF) ||       // CJK Symbols, Hiragana, Katakana, Unified
+        (cp >= 0xA000 && cp <= 0xA4FF) ||       // Yi
+        (cp >= 0xAC00 && cp <= 0xD7FF) ||       // Hangul Syllables
+        (cp >= 0xF900 && cp <= 0xFAFF) ||       // CJK Compatibility Ideographs
+        (cp >= 0xFE30 && cp <= 0xFE4F) ||       // CJK Compatibility Forms
+        (cp >= 0xFF00 && cp <= 0xFFEF) ||       // Fullwidth / Halfwidth
+        (cp >= 0x20000 && cp <= 0x2A6DF);       // CJK Extension B
   }
 }
