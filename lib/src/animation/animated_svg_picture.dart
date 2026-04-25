@@ -14,6 +14,7 @@ import 'css_variables_calc.dart';
 import 'path_data.dart';
 import 'path_parser.dart';
 import 'preserve_aspect_ratio.dart';
+import 'svg_font_registry.dart' show SvgFontLoader;
 import 'switch_processing.dart';
 import 'smil/smil_parser.dart';
 import 'smil/smil_timeline.dart';
@@ -92,6 +93,7 @@ class AnimatedSvgPicture extends StatefulWidget {
     this.onLinkTap,
     this.foreignObjectBuilder,
     this.imageLoader,
+    this.fontLoader,
   }) : _svgString = svgString;
 
   /// Creates an animated SVG from an asset.
@@ -114,6 +116,7 @@ class AnimatedSvgPicture extends StatefulWidget {
     SvgLinkTapCallback? onLinkTap,
     SvgForeignObjectBuilder? foreignObjectBuilder,
     SvgImageLoader? imageLoader,
+    SvgFontLoader? fontLoader,
     WidgetBuilder? placeholderBuilder,
     AnimatedSvgErrorWidgetBuilder? errorBuilder,
   }) {
@@ -136,6 +139,7 @@ class AnimatedSvgPicture extends StatefulWidget {
       onLinkTap: onLinkTap,
       foreignObjectBuilder: foreignObjectBuilder,
       imageLoader: imageLoader,
+      fontLoader: fontLoader,
       placeholderBuilder: placeholderBuilder,
       errorBuilder: errorBuilder,
     );
@@ -161,6 +165,7 @@ class AnimatedSvgPicture extends StatefulWidget {
     SvgLinkTapCallback? onLinkTap,
     SvgForeignObjectBuilder? foreignObjectBuilder,
     SvgImageLoader? imageLoader,
+    SvgFontLoader? fontLoader,
     WidgetBuilder? placeholderBuilder,
     AnimatedSvgErrorWidgetBuilder? errorBuilder,
   }) {
@@ -183,6 +188,7 @@ class AnimatedSvgPicture extends StatefulWidget {
       onLinkTap: onLinkTap,
       foreignObjectBuilder: foreignObjectBuilder,
       imageLoader: imageLoader,
+      fontLoader: fontLoader,
       placeholderBuilder: placeholderBuilder,
       errorBuilder: errorBuilder,
     );
@@ -206,6 +212,7 @@ class AnimatedSvgPicture extends StatefulWidget {
     SvgLinkTapCallback? onLinkTap,
     SvgForeignObjectBuilder? foreignObjectBuilder,
     SvgImageLoader? imageLoader,
+    SvgFontLoader? fontLoader,
     WidgetBuilder? placeholderBuilder,
     AnimatedSvgErrorWidgetBuilder? errorBuilder,
   }) {
@@ -226,6 +233,7 @@ class AnimatedSvgPicture extends StatefulWidget {
       onLinkTap: onLinkTap,
       foreignObjectBuilder: foreignObjectBuilder,
       imageLoader: imageLoader,
+      fontLoader: fontLoader,
       placeholderBuilder: placeholderBuilder,
       errorBuilder: errorBuilder,
     );
@@ -249,6 +257,7 @@ class AnimatedSvgPicture extends StatefulWidget {
     SvgLinkTapCallback? onLinkTap,
     SvgForeignObjectBuilder? foreignObjectBuilder,
     SvgImageLoader? imageLoader,
+    SvgFontLoader? fontLoader,
     WidgetBuilder? placeholderBuilder,
     AnimatedSvgErrorWidgetBuilder? errorBuilder,
   }) {
@@ -269,6 +278,7 @@ class AnimatedSvgPicture extends StatefulWidget {
       onLinkTap: onLinkTap,
       foreignObjectBuilder: foreignObjectBuilder,
       imageLoader: imageLoader,
+      fontLoader: fontLoader,
       placeholderBuilder: placeholderBuilder,
       errorBuilder: errorBuilder,
     );
@@ -323,6 +333,9 @@ class AnimatedSvgPicture extends StatefulWidget {
   /// Optional callback to resolve external image bytes for <image> href values.
   final SvgImageLoader? imageLoader;
 
+  /// Optional callback to resolve external font bytes for @font-face src URLs.
+  final SvgFontLoader? fontLoader;
+
   @override
   State<AnimatedSvgPicture> createState() => _AnimatedSvgPictureState();
 }
@@ -347,6 +360,7 @@ class _DeferredAnimatedSvgPicture extends AnimatedSvgPicture {
     super.onLinkTap,
     super.foreignObjectBuilder,
     super.imageLoader,
+    super.fontLoader,
     this.placeholderBuilder,
     this.errorBuilder,
   }) : _loadSvg = ((BuildContext context) {
@@ -379,6 +393,7 @@ class _DeferredAnimatedSvgPicture extends AnimatedSvgPicture {
     super.onLinkTap,
     super.foreignObjectBuilder,
     super.imageLoader,
+    super.fontLoader,
     this.placeholderBuilder,
     this.errorBuilder,
   }) : _loadSvg = ((BuildContext context) async {
@@ -413,6 +428,7 @@ class _DeferredAnimatedSvgPicture extends AnimatedSvgPicture {
     super.onLinkTap,
     super.foreignObjectBuilder,
     super.imageLoader,
+    super.fontLoader,
     this.placeholderBuilder,
     this.errorBuilder,
   }) : _loadSvg = ((BuildContext context) async {
@@ -440,6 +456,7 @@ class _DeferredAnimatedSvgPicture extends AnimatedSvgPicture {
     super.onLinkTap,
     super.foreignObjectBuilder,
     super.imageLoader,
+    super.fontLoader,
     this.placeholderBuilder,
     this.errorBuilder,
   }) : _loadSvg = ((BuildContext context) {
@@ -543,6 +560,7 @@ class _DeferredAnimatedSvgPictureState
           onLinkTap: widget.onLinkTap,
           foreignObjectBuilder: widget.foreignObjectBuilder,
           imageLoader: widget.imageLoader,
+          fontLoader: widget.fontLoader,
         );
       },
     );

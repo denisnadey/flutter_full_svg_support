@@ -589,14 +589,19 @@ class SvgDocument {
   /// embedded fonts are available. The method is async because font
   /// loading with Flutter's FontLoader requires awaiting the load.
   ///
+  /// [fontLoader] is an optional callback for resolving external font URLs.
+  ///
   /// Returns true if fonts were registered successfully (or no fonts
   /// needed to be registered), false if there were errors.
-  Future<bool> registerEmbeddedFonts() async {
+  Future<bool> registerEmbeddedFonts({SvgFontLoader? fontLoader}) async {
     if (cssFontFaceRules == null || cssFontFaceRules!.isEmpty) {
       return true;
     }
 
-    await _fontRegistry.registerFonts(cssFontFaceRules!);
+    await _fontRegistry.registerFonts(
+      cssFontFaceRules!,
+      fontLoader: fontLoader,
+    );
     return _fontRegistry.errors.isEmpty;
   }
 
