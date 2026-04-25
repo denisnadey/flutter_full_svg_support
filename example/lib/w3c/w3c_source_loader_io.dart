@@ -75,6 +75,29 @@ Future<Uint8List?> loadW3cResourceBytes({
     }
   }
 
+  // Fallback: search resources/ directory by filename alone, and try
+  // alternate font extensions when a .woff/.woff2 isn't found locally.
+  final filename = normalizedHref.split('/').last;
+  final fallbackCandidates = <String>[
+    'W3C_SVG_11_TestSuite/resources/$filename',
+  ];
+  if (filename.endsWith('.woff') || filename.endsWith('.woff2')) {
+    final base = filename.substring(0, filename.lastIndexOf('.'));
+    fallbackCandidates
+      ..add('W3C_SVG_11_TestSuite/resources/$base.ttf')
+      ..add('W3C_SVG_11_TestSuite/resources/$base.otf');
+  }
+
+  for (final root in candidateRoots) {
+    for (final candidate in fallbackCandidates) {
+      final resolved = _resolveWithinRoot(root, candidate);
+      if (resolved != null) {
+        _resolvedRootPath = root;
+        return File(resolved).readAsBytes();
+      }
+    }
+  }
+
   return null;
 }
 
