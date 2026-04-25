@@ -11,6 +11,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  es_compression: ^2.0.0
   http: ^1.0.0
   meta: ^1.17.0
   vector_graphics: ^1.1.13

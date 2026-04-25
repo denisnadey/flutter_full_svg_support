@@ -205,8 +205,8 @@ class SvgFontRegistry {
           hasValidFonts = true;
         case WoffDecodeResult.woff2Unsupported:
           _errors.add(
-            'Font "$fontFamily": WOFF2 format not yet supported '
-            '(requires native Brotli decompression)',
+            'Font "$fontFamily": WOFF2 font is a TTC collection '
+            '(not supported)',
           );
         case WoffDecodeResult.malformed:
           _errors.add('Font "$fontFamily": Malformed WOFF data');
