@@ -1,277 +1,222 @@
 # full_svg_flutter
 
 [![Pub](https://img.shields.io/pub/v/full_svg_flutter.svg)](https://pub.dev/packages/full_svg_flutter)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Flutter](https://img.shields.io/badge/Flutter-%3E%3D3.32-blue.svg)](https://flutter.dev)
 
-<!-- markdownlint-disable MD033 -->
-<img src="https://raw.githubusercontent.com/dnfield/flutter_svg/7d374d7107561cbd906d7c0ca26fef02cc01e7c8/example/assets/flutter_logo.svg?sanitize=true" width="200px" alt="Flutter Logo which can be rendered by this package!">
-<!-- markdownlint-enable MD033 -->
+**The most complete SVG renderer for Flutter.** Not a subset. Not an approximation.
 
-The most comprehensive SVG rendering library for Flutter. Two pipelines: a battle-tested **static renderer** (`SvgPicture`) for production, and a full-featured **animated renderer** (`AnimatedSvgPicture`) with DOM preservation, SMIL animations, CSS interop, SVG filters, interactive hit-testing, and accessibility.
+Static rendering with `SvgPicture`, animated rendering with `AnimatedSvgPicture` — two pipelines, one package, one import.
 
-## Parity Snapshot
+---
 
-| Category | Coverage | Key Details |
-|---|---|---|
-| Geometry Rendering | ~95% | All 8 shapes + markers + patterns + gradients |
-| Text & Typography | **~99%** | Full positioning, textPath, writing-mode, decorations, bidi, emphasis, shadow, font-variant, paint-order stroke, hanging punctuation, deep baseline alignment, ligature shaping, per-character hit-testing |
-| SMIL Animation | ~95% | 5 elements, full timing/interpolation, paced/spline/event-based, advanced animateMotion |
-| CSS Animation Interop | ~90% | Selectors, cascade, structural pseudo-classes, variables, calc(), 3D transforms, @media |
-| SVG Filters | **~97%** | 17/17 FE primitives with actual math (lighting, convolution, displacement, turbulence) |
-| Clipping & Masking | **~100%** | Full Blink parity: clipPathUnits, nested clip-paths, maskUnits, luminance/alpha modes |
-| Interaction & Events | ~85% | Hit-testing (12 element types), pointer-events, `<a>`, `<view>` |
-| Accessibility | ~80% | title/desc, ARIA attributes, Flutter Semantics integration |
-| Structural Elements | ~85% | use/symbol/defs/view/a/switch/foreignObject with full CSS cascade |
-| External Content | ~70% | image (data/network/bundle), foreignObject viewport |
+<div align="center">
 
-## Feature Highlights
+| Spinner (SMIL) | Heartbeat (dash animation) | Path morphing (SMIL) | Filter stack |
+|:-:|:-:|:-:|:-:|
+| <img src="assets/demo_spinner.svg" width="80" alt="Spinner"/> | <img src="assets/demo_pulse.svg" width="160" alt="Pulse"/> | <img src="assets/demo_morph.svg" width="80" alt="Morph"/> | <img src="assets/demo_filters.svg" width="200" alt="Filters"/> |
 
-### SMIL Animation Engine
-`<animate>`, `<animateTransform>`, `<animateMotion>`, `<set>`, `<animateColor>` with offset/syncbase/event timing (`id.click`, `id.mouseover+200ms`), `calcMode` (linear/discrete/spline/paced), additive/accumulate, `keyPoints`/`rotate`, `<mpath>` references.
+*All four are SVG files rendered by `AnimatedSvgPicture` — no GIFs, no Lottie, no third-party runtimes.*
 
-### CSS Animation & Keyframes
-`@keyframes`, `animation-*` properties, CSS transitions, 3D transforms (`translate3d`, `rotate3d`, `matrix3d`, `perspective`), `calc()`, CSS custom properties (`var()`), `@media` queries (prefers-color-scheme, viewport).
+</div>
 
-### CSS Selectors & Cascade
-Combinators (descendant/child/sibling), attribute selectors, pseudo-classes (`:hover`, `:active`, `:focus`, `:not()`, `:first-child`, `:last-child`, `:only-child`, `:nth-child`, `:nth-of-type`, `:empty`, `:root`), full specificity resolution, `!important`, shorthand expansion.
+---
 
-### 17/17 SVG Filter Primitives (~97% Parity)
-feGaussianBlur, feColorMatrix, feBlend (SVG2 modes), feComposite (arithmetic), feMorphology, feDisplacementMap (bilinear interpolation), feDiffuseLighting (Lambertian per-pixel), feSpecularLighting (Blinn-Phong per-pixel), feConvolveMatrix (actual kernel), feTurbulence, feComponentTransfer (all 5 function types), feOffset, feFlood, feMerge, feTile, feDropShadow, feImage.
+## Drop-in replacement for `flutter_svg`
 
-### Clipping & Masking (Full Blink Parity)
-clipPathUnits (objectBoundingBox, userSpaceOnUse), nested clip-paths, clip-rule (nonzero, evenodd), maskUnits, maskContentUnits, luminance/alpha modes, layer compositing, hit-testing through clip/mask regions.
+The API surface is intentionally identical. Migrating is a one-line change:
 
-### Geometry & Paint Servers
-All 8 SVG shapes. Linear/radial gradients (`gradientUnits`, focal point, stop animation), patterns (`patternUnits`/`patternContentUnits`/`patternTransform`), markers (`orient`/`markerUnits`/`viewBox`).
+```dart
+// Before
+import 'package:flutter_svg/flutter_svg.dart';
 
-### Text & Typography (~99% Blink Parity)
-Multi-position `x`/`y`/`dx`/`dy` lists, per-character `rotate`, `textLength`/`lengthAdjust`, `writing-mode`, `text-decoration`/`text-emphasis`/`text-shadow`, `textPath`, per-chunk `text-anchor`, `font-variant`/`font-feature-settings`/`font-variation-settings`, `unicode-bidi`, `font-stretch`, `paint-order` stroke, NFC normalization, grapheme cluster segmentation, hanging punctuation, deep baseline alignment, complex ligature shaping.
+// After — same widget, same parameters
+import 'package:full_svg_flutter/full_svg_flutter.dart';
+```
 
-### Interactive Hit-Testing
-`pointer-events` attribute (fill/stroke/painted/all/bounding-box/none), `<a>` anchor links with `onLinkTap`, `<view>` element with fragment identifiers, per-character text hit regions, stroke-width expansion.
+`SvgPicture.asset()`, `SvgPicture.network()`, `SvgPicture.string()`, `SvgPicture.memory()`, `ColorMapper`, loaders — all signatures match. Swap the import, get the rest for free.
 
-### Accessibility
-`<title>`/`<desc>` mapped to Semantics label/hint, ARIA (`aria-label`, `aria-describedby`, `role`) integrated with Flutter Semantics flags.
+---
 
-### Performance Caching
-Gradient shaders, pattern images, text paragraphs, hit-test geometry - all cached with smart invalidation on animation time change.
-
-### 30+ CSS/SVG Presentation Attributes
-`paint-order`, `vector-effect`, `shape-rendering`, `overflow`, `mix-blend-mode`, `currentColor`, `transform-origin`, `color-interpolation`, `font-variant`, `xml:space`, `direction`, `pathLength`, `cursor`, `white-space`, `unicode-bidi`, `font-stretch`, and more.
-
-## Getting Started
-
-### Installation
-
-Add to your `pubspec.yaml`:
+## Installation
 
 ```yaml
 dependencies:
   full_svg_flutter: ^1.0.0
 ```
 
-### Basic Usage
+---
 
-Create an SVG rendering widget from an asset:
+## Basic usage
 
-<?code-excerpt "example/lib/readme_excerpts.dart (SimpleAsset)"?>
 ```dart
-const String assetName = 'assets/dart.svg';
-final Widget svg = SvgPicture.asset(assetName, semanticsLabel: 'Dart Logo');
+// Static SVG — identical to flutter_svg
+SvgPicture.asset('assets/logo.svg')
+SvgPicture.network('https://example.com/icon.svg', semanticsLabel: 'icon')
+SvgPicture.string('<svg>...</svg>', width: 200)
+
+// Tinting
+SvgPicture.asset(
+  'assets/icon.svg',
+  colorFilter: const ColorFilter.mode(Colors.blue, BlendMode.srcIn),
+)
+
+// Custom color mapping
+SvgPicture.asset('assets/branded.svg', colorMapper: const MyColorMapper())
 ```
 
-You can color/tint the image like so:
+## Animated SVG
 
-<?code-excerpt "example/lib/readme_excerpts.dart (ColorizedAsset)"?>
 ```dart
-const String assetName = 'assets/simple/dash_path.svg';
-final Widget svgIcon = SvgPicture.asset(
-  assetName,
-  colorFilter: const ColorFilter.mode(Colors.red, BlendMode.srcIn),
-  semanticsLabel: 'Red dash paths',
-);
+// Plays SMIL/CSS animations automatically
+AnimatedSvgPicture.asset('assets/spinner.svg')
+AnimatedSvgPicture.network('https://example.com/chart.svg')
+
+// Manual playback control
+final controller = SvgAnimationController();
+
+AnimatedSvgPicture.asset(
+  'assets/logo.svg',
+  controller: controller,
+  autoplay: false,
+)
+
+controller.play();
+controller.pause();
+controller.seek(const Duration(milliseconds: 500));
 ```
 
-For more advanced color manipulation, you can use the `colorMapper` property.
-This allows you to define a custom mapping function that will be called for
-every color encountered during SVG parsing, enabling you to substitute colors
-based on various criteria like the color value itself, the element name, or the
-attribute name.
+## Render to canvas / image
 
-To use this feature, you need to create a class that extends `ColorMapper` and
-override the `substitute` method.
-
-Here's an example of how to implement a `ColorMapper` to replace specific colors in an SVG:
-
-<?code-excerpt "example/lib/readme_excerpts.dart (ColorMapper)"?>
-```dart
-class _MyColorMapper extends ColorMapper {
-  const _MyColorMapper();
-
-  @override
-  Color substitute(
-    String? id,
-    String elementName,
-    String attributeName,
-    Color color,
-  ) {
-    if (color == const Color(0xFFFF0000)) {
-      return Colors.blue;
-    }
-    if (color == const Color(0xFF00FF00)) {
-      return Colors.yellow;
-    }
-    return color;
-  }
-}
-// ···
-  const String svgString = '''
-<svg viewBox="0 0 100 100">
-  <rect width="50" height="50" fill="#FF0000" />
-  <circle cx="75" cy="75" r="25" fill="#00FF00" />
-</svg>
-''';
-  final Widget svgIcon = SvgPicture.string(
-    svgString,
-    colorMapper: const _MyColorMapper(),
-  );
-```
-
-In this example, all red colors in the SVG will be rendered as blue, and all green colors will be rendered as yellow. You can customize the `substitute` method to implement more complex color mapping logic based on your requirements.
-
-The default placeholder is an empty box (`LimitedBox`) - although if a `height`
-or `width` is specified on the `SvgPicture`, a `SizedBox` will be used instead
-(which ensures better layout experience). There is currently no way to show an
-Error visually, however errors will get properly logged to the console in debug
-mode.
-
-You can also specify a placeholder widget. The placeholder will display during
-parsing/loading (normally only relevant for network access).
-
-<?code-excerpt "example/lib/readme_excerpts.dart (MissingAsset)"?>
-```dart
-// Will print error messages to the console.
-const String assetName = 'assets/image_that_does_not_exist.svg';
-final Widget svg = SvgPicture.asset(assetName);
-```
-
-<?code-excerpt "example/lib/readme_excerpts.dart (AssetWithPlaceholder)"?>
-```dart
-final Widget networkSvg = SvgPicture.network(
-  'https://site-that-takes-a-while.com/image.svg',
-  semanticsLabel: 'A shark?!',
-  placeholderBuilder: (BuildContext context) => Container(
-    padding: const EdgeInsets.all(30.0),
-    child: const CircularProgressIndicator(),
-  ),
-);
-```
-
-If you'd like to render the SVG to some other canvas, you can do something like:
-
-<?code-excerpt "example/lib/readme_excerpts.dart (OutputConversion)"?>
 ```dart
 import 'dart:ui' as ui;
 
-// ···
-  const String rawSvg = '''<svg ...>...</svg>''';
-  final PictureInfo pictureInfo = await vg.loadPicture(
-    const SvgStringLoader(rawSvg),
-    null,
-  );
+final PictureInfo info = await vg.loadPicture(
+  const SvgStringLoader('<svg>...</svg>'),
+  null,
+);
 
-  // You can draw the picture to a canvas:
-  canvas.drawPicture(pictureInfo.picture);
+canvas.drawPicture(info.picture);
 
-  // Or convert the picture to an image:
-  final ui.Image image = await pictureInfo.picture.toImage(width, height);
-
-  pictureInfo.picture.dispose();
+// Or export as image
+final ui.Image image = await info.picture.toImage(width, height);
+info.picture.dispose();
 ```
 
-The `SvgPicture` helps to automate this logic, and it provides some convenience
-wrappers for getting assets from multiple sources.
+---
 
-This package now supports a render strategy setting, allowing certain
-applications to achieve better performance when needed. By default, the
-rendering uses the original `picture` mode, which retains full flexibility in
-scaling. Alternatively, when using the `raster` strategy, the SVG data is
-rendered into an `Image`, which is then drawn using drawImage. This approach may
-sacrifice some flexibility—especially around resolution scaling—but can
-significantly improve rendering performance in specific use cases.
+## Coverage
 
-## Precompiling and Optimizing SVGs
+| Category | Parity | What's covered |
+|---|---|---|
+| Geometry | ~95% | All 8 shapes, markers, patterns, gradients (linear/radial, focal point) |
+| Text & Typography | **~99%** | Multi-position x/y/dx/dy, per-char rotate, textPath, writing-mode, decorations, bidi, emphasis, shadow, font-variant, paint-order stroke, NFC, grapheme clusters, hanging punctuation, baseline alignment, ligature shaping |
+| SMIL Animation | ~95% | `<animate>` `<animateTransform>` `<animateMotion>` `<set>` `<animateColor>`, full timing/interpolation, event-based sync, calcMode (linear/discrete/spline/paced), additive/accumulate, `<mpath>` |
+| CSS Animation | ~90% | `@keyframes`, `animation-*`, transitions, 3D transforms (`translate3d`, `rotate3d`, `matrix3d`, `perspective`), `calc()`, `var()`, `@media` |
+| CSS Selectors | ~90% | Combinators, attribute selectors, `:hover :active :not() :nth-child() :nth-of-type() :empty :root`, specificity, `!important`, shorthand expansion |
+| SVG Filters | **~97%** | All 17/17 FE primitives with actual math — Lambertian lighting, Blinn-Phong specular, bilinear displacement, full convolution kernel, turbulence noise |
+| Clipping & Masking | **~100%** | Full Blink parity: clipPathUnits, nested clip-paths, clip-rule, maskUnits, maskContentUnits, luminance/alpha, layer compositing |
+| Interaction | ~85% | Hit-testing across 12 element types, pointer-events, `<a>` with onLinkTap, `<view>` fragment identifiers, per-character text hit regions |
+| Accessibility | ~80% | `<title>`/`<desc>` → Semantics label/hint, ARIA attributes, Flutter Semantics flags |
+| Structural | ~85% | `use`/`symbol`/`defs`/`view`/`a`/`switch`/`foreignObject` with full CSS cascade |
 
-The vector_graphics backend supports SVG compilation which produces a binary
-format that is faster to parse and can optimize SVGs to reduce the amount of
-clipping, masking, and overdraw. The SVG compilation is provided by
-[`package:vector_graphics_compiler`](https://pub.dev/packages/vector_graphics_compiler).
+### 17/17 SVG filter primitives
+
+`feGaussianBlur` · `feColorMatrix` · `feBlend` (all SVG2 modes) · `feComposite` (arithmetic) · `feMorphology` · `feDisplacementMap` (bilinear) · `feDiffuseLighting` (Lambertian per-pixel) · `feSpecularLighting` (Blinn-Phong per-pixel) · `feConvolveMatrix` (actual kernel math) · `feTurbulence` · `feComponentTransfer` (5 function types) · `feOffset` · `feFlood` · `feMerge` · `feTile` · `feDropShadow` · `feImage`
+
+---
+
+## Test suite
+
+> **250+ unit test files. W3C SVG 1.1 conformance suite. Visual golden regression. Animation integration tests.**
+
+The test suite is organized into four layers:
+
+| Layer | What it covers |
+|---|---|
+| **Unit** | Every parser, interpolator, filter primitive, CSS property, text layout algorithm, hit-test geometry — individually |
+| **W3C conformance** | Official W3C SVG 1.1 test suite golden comparisons — the same tests browsers run |
+| **Visual goldens** | Pixel-level regression for complex renders: filters, blend modes, clipping, text on path |
+| **Animation integration** | Full SMIL timing engine: syncbase, event offsets, calcMode, accumulate, `<mpath>` path follow |
+
+Selected test coverage (from `test/unit/`):
+
+- **SMIL**: `smil_test.dart`, `smil_edge_cases_test.dart`, `smil_timing_precision_test.dart`, `smil_keypoints_timing_test.dart`, `smil_path_morphing_integration_test.dart`, `animate_motion_advanced_test.dart`
+- **CSS**: `css_animations_test.dart`, `css_3d_transforms_test.dart`, `css_variables_calc_test.dart`, `css_cascade_specificity_test.dart`, `css_nth_selectors_test.dart`, `css_selectors_combinators_test.dart`
+- **Filters**: `filters_test.dart`, `fe_lighting_test.dart`, `fe_convolve_matrix_test.dart`, `filter_displacement_tile_test.dart`, `filter_input_graph_advanced_test.dart`, `turbulence_edge_cases_test.dart`
+- **Text**: `text_typography_parity_test.dart`, `text_bidi_complex_scripts_test.dart`, `text_ligature_shaping_test.dart`, `text_path_precision_test.dart`, `text_advanced_typography_features_test.dart`
+- **Clipping/Masking**: `advanced_clip_mask_composition_test.dart`, `mask_pipeline_test.dart`, `clip_path_advanced_test.dart`
+- **Geometry**: `path_morphing_correctness_test.dart`, `geometry_edge_cases_test.dart`, `gradient_pattern_units_test.dart`, `marker_test.dart`
+- **Hit-testing**: `hit_test_advanced_features_test.dart`, `hit_test_precision_test.dart`, `hit_test_deep_nesting_test.dart`
+- **Regression**: `regression_animation_edge_cases_test.dart`, `regression_filter_edge_cases_test.dart`, `regression_text_edge_cases_test.dart`
+
+---
+
+## Performance
+
+Gradient shaders, pattern images, text paragraphs, and hit-test geometry are all cached with smart invalidation tied to animation frame change.
+
+Optional `raster` render strategy for `drawImage` performance:
+
+```dart
+SvgPicture.asset('assets/icon.svg', renderStrategy: RenderStrategy.raster)
+```
+
+---
+
+## Precompiled SVGs (optional)
+
+The `vector_graphics` backend supports binary compilation for faster parsing and overdraw optimization:
 
 ```sh
 dart run vector_graphics_compiler -i assets/foo.svg -o assets/foo.svg.vec
 ```
 
-The output `foo.svg.vec` can be loaded using the default constructor of
-`SvgPicture`.
-
-<?code-excerpt "example/lib/readme_excerpts.dart (PrecompiledAsset)"?>
 ```dart
 import 'package:vector_graphics/vector_graphics.dart';
-// ···
-  const Widget svg = SvgPicture(AssetBytesLoader('assets/foo.svg.vec'));
+
+const Widget svg = SvgPicture(AssetBytesLoader('assets/foo.svg.vec'));
 ```
 
-### Check SVG compatibility
+---
 
-An SVG can be tested for compatibility with the vector graphics backend by
-running the compiler locally to see if any errors are thrown.
+## ColorMapper
 
-```sh
-dart run vector_graphics_compiler -i $SVG_FILE -o $TEMPORARY_OUTPUT_TO_BE_DELETED --no-optimize-masks --no-optimize-clips --no-optimize-overdraw --no-tessellate
+Fine-grained color substitution for theming and dynamic branding:
+
+```dart
+class ThemeColorMapper extends ColorMapper {
+  const ThemeColorMapper(this.primary);
+  final Color primary;
+
+  @override
+  Color substitute(String? id, String elementName, String attributeName, Color color) {
+    if (color == const Color(0xFF0057FF)) return primary;
+    return color;
+  }
+}
+
+SvgPicture.asset('assets/logo.svg', colorMapper: ThemeColorMapper(Theme.of(context).primaryColor))
 ```
 
-## Recommended Adobe Illustrator SVG Configuration
-- In Styling: choose Presentation Attributes instead of Inline CSS because CSS is not fully supported.
-- In Images: choose Embded not Linked to other file to get a single svg with no dependency to other files.
-- In Objects IDs: choose layer names to add every layer name to svg tags or you can use minimal,it is optional.
-![Export configuration](https://user-images.githubusercontent.com/2842459/62599914-91de9c00-b8fe-11e9-8fb7-4af57d5100f7.png)
+---
 
-## Contributing
+## SVG attribution
 
-See [doc/DEVELOPMENT.md](doc/DEVELOPMENT.md) for development guidelines, testing workflows, and architecture details.
+SVGs in `/assets/w3samples` — [W3 sample files](https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/)
 
-## SVG sample attribution
+SVGs in `/assets/wikimedia` — [Wikimedia Commons](https://commons.wikimedia.org/wiki/Main_Page)
 
-SVGs in `/assets/w3samples` pulled from [W3 sample files](https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/)
+Android Drawables in `/assets/android_vd` — Android Documentation
 
-SVGs in `/assets/deborah_ufw` provided by @deborah-ufw
+The Flutter Logo is based on the Flutter Logo Widget © Google.
 
-SVGs in `/assets/simple` are pulled from trivial examples or generated to test
-basic functionality - some of them come directly from the SVG 1.1 spec. Some
-have also come or been adapted from issues raised in this repository.
+The Dart logo — [dartlang.org](https://github.com/dart-lang/site-shared/blob/master/src/_assets/images/dart/logo%2Btext/horizontal/original.svg) © Google
 
-SVGs in `/assets/wikimedia` are pulled from [Wikimedia Commons](https://commons.wikimedia.org/wiki/Main_Page)
+SVGs in `/assets/noto-emoji` — [Google i18n noto-emoji](https://github.com/googlei18n/noto-emoji), Apache license.
 
-Android Drawables in `/assets/android_vd` are pulled from Android Documentation
-and examples.
-
-The Flutter Logo created based on the Flutter Logo Widget © Google.
-
-The Dart logo is from
-[dartlang.org](https://github.com/dart-lang/site-shared/blob/master/src/_assets/images/dart/logo%2Btext/horizontal/original.svg)
-© Google
-
-SVGs in `/assets/noto-emoji` are from [Google i18n noto-emoji](https://github.com/googlei18n/noto-emoji),
-licensed under the Apache license.
-
-Please submit SVGs that can't render properly (e.g. that don't render here the
-way they do in chrome), as long as they're not using anything "probably out of
-scope" (above).
+---
 
 ## Commemoration
 
-This package was originally authored by
-[Dan Field](https://github.com/dnfield) and has been forked here
-from [dnfield/flutter_svg](https://github.com/dnfield/flutter_svg).
-Dan was a member of the Flutter team at Google from 2018 until his death
-in 2024. Dan’s impact and contributions to Flutter were immeasurable, and we
-honor his memory by continuing to publish and maintain this package.
+This package was originally authored by [Dan Field](https://github.com/dnfield) and forked from [dnfield/flutter_svg](https://github.com/dnfield/flutter_svg). Dan was a member of the Flutter team at Google from 2018 until his death in 2024. His impact on Flutter was immeasurable. We honor his memory by continuing to develop and publish this package.

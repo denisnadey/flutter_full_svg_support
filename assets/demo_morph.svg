@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="160" height="160">
+  <defs>
+    <linearGradient id="morphGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6C63FF"/>
+      <stop offset="50%" stop-color="#3EC6E0"/>
+      <stop offset="100%" stop-color="#FF6B9D"/>
+      <animateTransform attributeName="gradientTransform" type="rotate"
+        from="0 80 80" to="360 80 80" dur="4s" repeatCount="indefinite"/>
+    </linearGradient>
+  </defs>
+  <!-- morphing path: circle → star → square → circle -->
+  <path fill="url(#morphGrad)" opacity="0.9">
+    <animate attributeName="d" dur="4s" repeatCount="indefinite" calcMode="spline"
+      keySplines="0.4 0 0.6 1; 0.4 0 0.6 1; 0.4 0 0.6 1"
+      values="
+        M80,20 C120,20 140,40 140,80 C140,120 120,140 80,140 C40,140 20,120 20,80 C20,40 40,20 80,20 Z;
+        M80,15 L95,55 L135,55 L103,78 L115,118 L80,95 L45,118 L57,78 L25,55 L65,55 Z;
+        M30,30 L130,30 L130,130 L30,130 Z;
+        M80,20 C120,20 140,40 140,80 C140,120 120,140 80,140 C40,140 20,120 20,80 C20,40 40,20 80,20 Z
+      "/>
+  </path>
+</svg>

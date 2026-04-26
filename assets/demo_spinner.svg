@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6C63FF"/>
+      <stop offset="100%" stop-color="#3EC6E0"/>
+    </linearGradient>
+  </defs>
+  <circle cx="60" cy="60" r="50" fill="none" stroke="#f0f0f0" stroke-width="8"/>
+  <circle cx="60" cy="60" r="50" fill="none" stroke="url(#grad)" stroke-width="8"
+    stroke-linecap="round" stroke-dasharray="80 235">
+    <animateTransform attributeName="transform" type="rotate"
+      from="0 60 60" to="360 60 60" dur="1.2s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="60" cy="60" r="8" fill="url(#grad)">
+    <animate attributeName="r" values="8;5;8" dur="1.2s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="1;0.4;1" dur="1.2s" repeatCount="indefinite"/>
+  </circle>
+</svg>
