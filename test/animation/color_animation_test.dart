@@ -63,7 +63,7 @@ void main() {
         dur: const Duration(seconds: 1),
       );
 
-      // At t=0.5, should be purple-ish (#800080 или около того)
+      // At t=0.5, should be purple-ish (#800080 or thereabouts)
       final value = anim.computeValue(0.5);
 
       expect(value, isA<painting.Color>());

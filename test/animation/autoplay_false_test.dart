@@ -32,7 +32,7 @@ void main() {
                 svgData,
                 width: 100,
                 height: 100,
-                autoPlay: false, // ← Ключевой параметр!
+                autoPlay: false, // ← Key parameter!
               ),
             ),
           ),
@@ -139,7 +139,7 @@ void main() {
                 svgData,
                 width: 100,
                 height: 100,
-                autoPlay: true, // Для сравнения
+                autoPlay: true, // For comparison
               ),
             ),
           ),

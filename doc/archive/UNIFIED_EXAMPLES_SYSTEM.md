@@ -1,60 +1,60 @@
 # Unified Examples System
 
-## Обзор
+## Overview
 
-Создана единая система примеров с вкладками, FPS-мониторингом и унифицированным дизайном.
+A unified examples system with tabs, FPS monitoring, and a consistent design has been created.
 
-## Архитектура
+## Architecture
 
-### 1. Главная Страница (`UnifiedExamplesPage`)
+### 1. Main Page (`UnifiedExamplesPage`)
 
-**Файл**: `example/lib/pages/unified_examples_page.dart`
+**File**: `example/lib/pages/unified_examples_page.dart`
 
-#### Функции:
-- **Вкладки (TabBar)**: 4 категории примеров
-  1. SMIL Animations - базовые SMIL анимации
-  2. Path Morphing - морфинг путей
-  3. Metrics - демо с метриками
-  4. Custom - пользовательские примеры
+#### Features:
+- **Tabs (TabBar)**: 4 example categories
+  1. SMIL Animations - basic SMIL animations
+  2. Path Morphing - path morphing
+  3. Metrics - metrics demo
+  4. Custom - custom examples
 
-- **FPS Monitor**: Встроенный монитор производительности
-  - Показывает текущий FPS
-  - График FPS за последние 60 кадров
-  - Цветовая индикация (зеленый ≥55, оранжевый ≥30, красный <30)
-  - Счетчик кадров
-  - Переключается кнопкой в AppBar
+- **FPS Monitor**: Built-in performance monitor
+  - Shows current FPS
+  - FPS graph for the last 60 frames
+  - Color indicator (green ≥55, orange ≥30, red <30)
+  - Frame counter
+  - Toggled via a button in AppBar
 
-- **Плавающий FPS виджет**: Позиционируется поверх контента
+- **Floating FPS widget**: Positioned above content
 
-### 2. Переиспользуемые Виджеты
+### 2. Reusable Widgets
 
 #### PathMorphingWidget
-**Файл**: `example/lib/widgets/path_morphing_widget.dart`
+**File**: `example/lib/widgets/path_morphing_widget.dart`
 
-**Примеры:**
+**Examples:**
 - Square ↔ Circle
 - Star ↔ Heart  
 - Triangle ↔ Hexagon
 
-**Функции:**
-- Segmented button для выбора примера
-- Интерполяция цвета
-- AnimationController с воспроизведением/паузой
-- Использует AnimationControlPanel
+**Features:**
+- Segmented button for example selection
+- Color interpolation
+- AnimationController with play/pause
+- Uses AnimationControlPanel
 
 #### MetricsWidget
-**Файл**: `example/lib/widgets/metrics_widget.dart`
+**File**: `example/lib/widgets/metrics_widget.dart`
 
-**Функции:**
-- Отображение SVG анимации
-- Панель с метриками (элементы, анимации, длительность)
-- Подсказка об использовании FPS monitor
+**Features:**
+- SVG animation display
+- Panel with metrics (elements, animations, duration)
+- Hint about using FPS monitor
 
-### 3. Унифицированная Тема
+### 3. Unified Theme
 
 **AnimationTheme** (`example/lib/widgets/animation_theme.dart`)
 
-#### Константы:
+#### Constants:
 ```dart
 // Colors
 primaryColor = Color(0xFF2196F5)
@@ -77,85 +77,85 @@ animationDisplayMaxWidth = 600.0
 controlPanelMinHeight = 180.0
 ```
 
-#### Компоненты:
-- **AnimationControlPanel**: Панель управления с progress slider, кнопками play/pause/reset
-- **AnimationExampleLayout**: Обертка для страниц примеров
-- **getLightTheme()**: Светлая тема
-- **getDarkTheme()**: Темная тема
+#### Components:
+- **AnimationControlPanel**: Control panel with progress slider, play/pause/reset buttons
+- **AnimationExampleLayout**: Wrapper for example pages
+- **getLightTheme()**: Light theme
+- **getDarkTheme()**: Dark theme
 
 ### 4. FPS Monitor
 
-**Компоненты:**
-- `FPSMonitor` widget - основной виджет
-- `_FPSMonitorState` - состояние с расчетом FPS
-- `_FPSGraphPainter` - рисование графика
+**Components:**
+- `FPSMonitor` widget - main widget
+- `_FPSMonitorState` - state with FPS calculation
+- `_FPSGraphPainter` - graph rendering
 
-**Метрики:**
-- Текущий FPS (среднее за 60 кадров)
-- График истории FPS
-- Счетчик кадров
-- Цветовая индикация производительности
+**Metrics:**
+- Current FPS (average over 60 frames)
+- FPS history graph
+- Frame counter
+- Color-coded performance indicator
 
-**Технические детали:**
+**Technical details:**
 ```dart
-// Расчет FPS
+// FPS calculation
 fps = 1000000 / deltaTime.inMicroseconds
 
-// Хранение истории
-_fpsHistory (max 60 значений)
+// History storage
+_fpsHistory (max 60 values)
 
-// Цвета
+// Colors
 green: fps >= 55
 orange: fps >= 30 && fps < 55
 red: fps < 30
 ```
 
-## Структура Файлов
+## File Structure
 
 ```
 example/lib/
-├── main.dart (обновлен - использует AnimationTheme)
+├── main.dart (updated - uses AnimationTheme)
 ├── pages/
-│   ├── home_page.dart (обновлен - один путь к UnifiedExamplesPage)
-│   └── unified_examples_page.dart (НОВЫЙ - главная страница с вкладками)
+│   ├── home_page.dart (updated - single path to UnifiedExamplesPage)
+│   └── unified_examples_page.dart (NEW - main tabbed page)
 ├── widgets/
-│   ├── animation_theme.dart (существующий - унифицированная тема)
-│   ├── path_morphing_widget.dart (НОВЫЙ - виджет морфинга)
-│   └── metrics_widget.dart (НОВЫЙ - виджет метрик)
+│   ├── animation_theme.dart (existing - unified theme)
+│   ├── path_morphing_widget.dart (NEW - morphing widget)
+│   └── metrics_widget.dart (NEW - metrics widget)
 └── l10n/
-    └── app_localizations.dart (обновлен - добавлены строки)
+    └── app_localizations.dart (updated - new strings added)
 ```
 
-## Использование
+## Usage
 
-### Запуск приложения:
+### Running the app:
 
 ```bash
 cd example
 flutter run
 ```
 
-### Навигация:
+### Navigation:
 
-1. Главная страница → кнопка "View Examples"
-2. Откроется UnifiedExamplesPage с вкладками
-3. Нажмите иконку скорости (справа вверху) для FPS monitor
-4. Переключайтесь между вкладками для разных примеров
+1. Home page → "View Examples" button
+2. UnifiedExamplesPage with tabs opens
+3. Press the speed icon (top-right) for FPS monitor
+4. Switch between tabs for different examples
 
-### Добавление нового примера:
+### Adding a new example:
 
-**Вариант 1: Новая вкладка**
+**Option 1: New tab**
 
 ```dart
-// В UnifiedExamplesPage добавить:
-TabController(length: 5, vsync: this) // увеличить count
+// In UnifiedExamplesPage add:
+TabController(length: 5, vsync: this) // increase count
 
 Tab(
   icon: const Icon(Icons.your_icon),
   text: 'Your Tab',
 )
 
-// Создать новый Tab виджет
+// Create a new Tab widget
 class _YourTab extends StatelessWidget {
   const _YourTab({required this.showFPS});
   final bool showFPS;
@@ -167,10 +167,10 @@ class _YourTab extends StatelessWidget {
 }
 ```
 
-**Вариант 2: Добавить в существующий виджет**
+**Option 2: Add to an existing widget**
 
 ```dart
-// Например, в PathMorphingWidget добавить новый пример:
+// For example, add a new example to PathMorphingWidget:
 _MorphingExample(
   name: 'Your Shape',
   path1: 'M...',
@@ -180,36 +180,36 @@ _MorphingExample(
 )
 ```
 
-## Преимущества
+## Advantages
 
-### 1. Единый стиль
-- Все примеры используют AnimationTheme
-- Консистентные цвета, отступы, радиусы
+### 1. Consistent Style
+- All examples use AnimationTheme
+- Consistent colors, spacing, radii
 - Light/Dark mode support
 
 ### 2. FPS Monitoring
-- Встроен во все вкладки
-- Не требует отдельной страницы
-- Реальное время, визуальный график
+- Built into all tabs
+- No separate page needed
+- Real-time, visual graph
 
-### 3. Организация
-- Вкладки вместо множества страниц
-- Легко добавлять новые примеры
-- Переиспользуемые компоненты
+### 3. Organization
+- Tabs instead of multiple pages
+- Easy to add new examples
+- Reusable components
 
 ### 4. UX
-- Быстрое переключение между примерами
-- Одна точка входа
-- Понятная навигация
+- Quick switching between examples
+- Single entry point
+- Clear navigation
 
-### 5. Производительность
-- FPS graph показывает плавность
-- Легко тестировать разные примеры
-- Визуальная обратная связь
+### 5. Performance
+- FPS graph shows smoothness
+- Easy to test different examples
+- Visual feedback
 
-## Локализация
+## Localization
 
-Добавлены новые строки в `app_localizations.dart`:
+New strings added to `app_localizations.dart`:
 
 **English:**
 - `smil_animations`: "SMIL Animations"
@@ -219,7 +219,7 @@ _MorphingExample(
 - `smil_animations`: "SMIL Анимации"
 - `metrics`: "Метрики"
 
-## Технические Детали
+## Technical Details
 
 ### FPS Calculation
 
@@ -271,28 +271,28 @@ MaterialApp(
 )
 ```
 
-## Следующие Шаги
+## Next Steps
 
-### Возможные улучшения:
+### Possible Improvements:
 
-1. **Больше примеров**
+1. **More examples**
    - AnimateMotion examples
    - Complex path morphing
    - Color animations showcase
 
-2. **Расширенные метрики**
+2. **Extended metrics**
    - Memory usage
    - Paint time
    - Build time
 
-3. **Сохранение настроек**
+3. **Save settings**
    - FPS monitor on/off state
-   - Последняя выбранная вкладка
+   - Last selected tab
    - Theme preference
 
 4. **Export/Share**
-   - Screenshot текущей анимации
-   - Экспорт SVG кода
+   - Screenshot of current animation
+   - Export SVG code
    - Share examples
 
 5. **Performance Profiling**
@@ -300,17 +300,17 @@ MaterialApp(
    - Jank detection
    - Optimization suggestions
 
-## Статус
+## Status
 
-- ✅ Создана UnifiedExamplesPage с вкладками
-- ✅ Интегрирован FPS Monitor
-- ✅ Созданы переиспользуемые виджеты
-- ✅ Применена единая тема
-- ✅ Обновлена локализация
-- ✅ Подключены все примеры
-- ✅ Все файлы компилируются без ошибок
+- ✅ UnifiedExamplesPage with tabs created
+- ✅ FPS Monitor integrated
+- ✅ Reusable widgets created
+- ✅ Unified theme applied
+- ✅ Localization updated
+- ✅ All examples connected
+- ✅ All files compile without errors
 
-## Тестирование
+## Testing
 
 ```bash
 # Analyze
@@ -321,17 +321,17 @@ flutter analyze
 flutter run -d macos
 
 # Test FPS Monitor
-# 1. Открыть примеры
-# 2. Нажать иконку speed
-# 3. Проверить отображение FPS
-# 4. Переключить вкладки
-# 5. Проверить что FPS обновляется
+# 1. Open examples
+# 2. Press the speed icon
+# 3. Check FPS display
+# 4. Switch tabs
+# 5. Verify FPS updates
 ```
 
 ---
 
-**Дата**: 21 ноября 2025  
-**Статус**: ✅ Завершено  
-**Файлов создано**: 3  
-**Файлов обновлено**: 3  
-**Строк кода**: ~700
+**Date**: November 21, 2025  
+**Status**: ✅ Completed  
+**Files created**: 3  
+**Files updated**: 3  
+**Lines of code**: ~700

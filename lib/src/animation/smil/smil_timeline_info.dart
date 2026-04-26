@@ -1,9 +1,9 @@
 part of 'smil_timeline.dart';
 
-/// Информация о состоянии таймлайна
+/// Information about the timeline state
 @immutable
 class TimelineInfo {
-  /// Создаёт информацию о таймлайне
+  /// Creates timeline information
   const TimelineInfo({
     required this.currentTime,
     required this.totalDuration,
@@ -12,22 +12,22 @@ class TimelineInfo {
     required this.playbackRate,
   });
 
-  /// Текущее время
+  /// Current time
   final Duration currentTime;
 
-  /// Общая длительность
+  /// Total duration
   final Duration totalDuration;
 
-  /// Общее количество анимаций
+  /// Total number of animations
   final int totalAnimations;
 
-  /// Количество активных анимаций
+  /// Number of active animations
   final int activeAnimations;
 
-  /// Скорость воспроизведения
+  /// Playback rate
   final double playbackRate;
 
-  /// Прогресс воспроизведения (0.0 - 1.0)
+  /// Playback progress (0.0 - 1.0)
   double get progress {
     if (totalDuration == Duration.zero) {
       return 0.0;

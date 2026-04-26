@@ -447,7 +447,7 @@ extension AnimatedSvgPainterValuesExtension on AnimatedSvgPainter {
     return ui.Rect.fromLTWH(values[0], values[1], values[2], values[3]);
   }
 
-  /// Получает строковое значение атрибута
+  /// Gets the string value of an attribute
   String? _getString(SvgNode node, String attributeName) {
     final value = node.getAttributeValue(attributeName);
     return value?.toString();
@@ -476,7 +476,7 @@ extension AnimatedSvgPainterValuesExtension on AnimatedSvgPainter {
     return points;
   }
 
-  /// Парсит цвет из строки
+  /// Parses a color from a string
   ui.Color? _parseColor(String colorStr) {
     final str = colorStr.trim().toLowerCase();
 

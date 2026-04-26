@@ -34,7 +34,7 @@ void main() {
       final path = MotionPath('M0,0 L100,0');
       final point = path.getPointAtTime(0.5);
 
-      // Горизонтальная линия вправо должна иметь угол 0 радиан
+      // A horizontal line to the right should have an angle of 0 radians
       expect(point.angle, closeTo(0, 0.01));
     });
 
@@ -42,7 +42,7 @@ void main() {
       final path = MotionPath('M0,0 L0,100');
       final point = path.getPointAtTime(0.5);
 
-      // Вертикальная линия вниз в системе координат Flutter имеет угол -π/2
+      // A vertical line downward in Flutter's coordinate system has an angle of -π/2
       expect(point.angle, closeTo(-math.pi / 2, 0.01));
     });
 
@@ -50,16 +50,16 @@ void main() {
       final path = MotionPath('M0,0 L100,100');
       final point = path.getPointAtTime(0.5);
 
-      // Диагональная линия вправо-вниз имеет отрицательный угол
+      // A diagonal line going right-down has a negative angle
       expect(point.angle.abs(), greaterThan(0));
     });
 
     test('curved path interpolation', () {
-      // Кубическая кривая Безье
+      // Cubic Bezier curve
       final path = MotionPath('M0,0 C50,0 50,100 100,100');
       final point = path.getPointAtTime(0.5);
 
-      // Проверяем, что точка находится где-то в середине кривой
+      // Verify that the point is somewhere in the middle of the curve
       expect(point.position.dx, greaterThan(20));
       expect(point.position.dx, lessThan(80));
       expect(point.position.dy, greaterThan(20));
@@ -88,10 +88,10 @@ void main() {
       final path = MotionPath('M0,0 L50,0 L50,50 L0,50 Z');
       final totalLength = path.totalLength;
 
-      // Квадрат периметром 200
+      // Square with perimeter 200
       expect(totalLength, closeTo(200, 1));
 
-      // Точка в середине должна быть на правой стороне квадрата
+      // The midpoint should be on the right side of the square
       final midPoint = path.getPointAtTime(0.5);
       expect(midPoint.position.dx, closeTo(50, 5));
       expect(midPoint.position.dy, greaterThan(0));
@@ -112,33 +112,33 @@ void main() {
     group('keyPoints', () {
       test('basic keyPoints usage', () {
         final path = MotionPath('M0,0 L100,0');
-        // keyPoints указывают позиции на пути: начало и конец
+        // keyPoints specify positions on the path: start and end
         final keyPoints = [0.0, 1.0];
 
         final point = path.getPointWithKeyPoints(0.5, keyPoints, null);
-        // При t=0.5 между keyPoints[0]=0.0 и keyPoints[1]=1.0
-        // должны быть на середине пути
+        // At t=0.5 between keyPoints[0]=0.0 and keyPoints[1]=1.0
+        // should be at the midpoint of the path
         expect(point.position.dx, closeTo(50, 1));
       });
 
       test('keyPoints with non-linear distribution', () {
         final path = MotionPath('M0,0 L100,0');
-        // Объект быстро движется в первой половине (0→0.8),
-        // затем медленно во второй (0.8→1.0)
+        // Object moves quickly in the first half (0→0.8),
+        // then slowly in the second half (0.8→1.0)
         final keyPoints = [0.0, 0.8, 1.0];
 
-        // При t=0.5 (середина времени) интерполируем между
-        // keyPoints[1]=0.8 и keyPoints[2]=1.0
+        // At t=0.5 (midpoint in time) we interpolate between
+        // keyPoints[1]=0.8 and keyPoints[2]=1.0
         final point = path.getPointWithKeyPoints(0.5, keyPoints, null);
-        expect(point.position.dx, greaterThan(70)); // За 80% пути
+        expect(point.position.dx, greaterThan(70)); // Past 80% of the path
       });
 
       test('keyPoints with keyTimes', () {
         final path = MotionPath('M0,0 L100,0');
         final keyPoints = [0.0, 0.5, 1.0];
-        final keyTimes = [0.0, 0.3, 1.0]; // Неравномерное время
+        final keyTimes = [0.0, 0.3, 1.0]; // Non-uniform timing
 
-        // При t=0.3 находимся на keyPoints[1]=0.5 (50% пути)
+        // At t=0.3 we are at keyPoints[1]=0.5 (50% of the path)
         final point = path.getPointWithKeyPoints(0.3, keyPoints, keyTimes);
         expect(point.position.dx, closeTo(50, 5));
       });
@@ -147,7 +147,7 @@ void main() {
         final path = MotionPath('M0,0 L100,0');
         final keyPoints = [0.5];
 
-        // С одним keyPoint должны использовать обычный getPointAtTime
+        // With a single keyPoint should fall back to normal getPointAtTime
         final point = path.getPointWithKeyPoints(0.5, keyPoints, null);
         expect(point.position.dx, closeTo(50, 1));
       });
@@ -156,11 +156,11 @@ void main() {
         final path = MotionPath('M0,0 L100,0');
         final keyPoints = [0.0, 0.5, 1.0];
 
-        // При t=0 должны быть в начале
+        // At t=0 should be at the start
         final startPoint = path.getPointWithKeyPoints(0.0, keyPoints, null);
         expect(startPoint.position.dx, closeTo(0, 0.1));
 
-        // При t=1 должны быть в конце
+        // At t=1 should be at the end
         final endPoint = path.getPointWithKeyPoints(1.0, keyPoints, null);
         expect(endPoint.position.dx, closeTo(100, 0.1));
       });
@@ -170,17 +170,17 @@ void main() {
       final path = MotionPath('invalid path data');
       final point = path.getPointAtTime(0.5);
 
-      // Должен вернуть безопасное значение (нулевую позицию)
+      // Should return a safe value (zero position)
       expect(point.position, equals(Offset.zero));
       expect(path.totalLength, equals(0));
     });
 
     test('path with moveTo commands', () {
-      // Путь с несколькими disconnected сегментами
+      // Path with multiple disconnected segments
       final path = MotionPath('M0,0 L50,0 M100,0 L150,0');
       final totalLength = path.totalLength;
 
-      // Два сегмента длиной 50 каждый
+      // Two segments of length 50 each
       expect(totalLength, closeTo(100, 1));
     });
   });

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-/// Простой state manager для примеров AnimatedSvgPicture
+/// Simple state manager for AnimatedSvgPicture examples
 class AppState extends ChangeNotifier {
-  // Параметры AnimatedSvgPicture
+  // AnimatedSvgPicture parameters
   double _width = 300;
   double _height = 300;
   BoxFit _fit = BoxFit.contain;
@@ -12,7 +12,7 @@ class AppState extends ChangeNotifier {
   bool _autoPlay = true;
   Duration? _initialTime;
 
-  // UI параметры
+  // UI parameters
   bool _showFPS = false;
   bool _showParameters = true;
   int _selectedExampleIndex = 0;

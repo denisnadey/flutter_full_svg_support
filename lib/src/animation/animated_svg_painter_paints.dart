@@ -87,8 +87,8 @@ extension AnimatedSvgPainterPaintsExtension on AnimatedSvgPainter {
     return paint;
   }
 
-  /// Получить ID фильтра из атрибута filter
-  /// Поддерживает формат url(#filterId) или просто filterId
+  /// Get the filter ID from the filter attribute
+  /// Supports the format url(#filterId) or just filterId
   String? _getFilterId(SvgNode node) {
     final filterAttr = _getStyleOrAttributeValue(node, 'filter')?.toString();
     if (filterAttr == null || filterAttr.trim().isEmpty) {
@@ -105,7 +105,7 @@ extension AnimatedSvgPainterPaintsExtension on AnimatedSvgPainter {
       return null;
     }
 
-    // Или просто ID если нет url()
+    // Or just an ID if there is no url()
     return normalized;
   }
 
@@ -117,7 +117,7 @@ extension AnimatedSvgPainterPaintsExtension on AnimatedSvgPainter {
     return node.getAttributeValue(attributeName);
   }
 
-  /// Создаёт Paint для stroke (или null если нет stroke).
+  /// Creates a Paint for stroke (or null if there is no stroke).
   ui.Paint? _createStrokePaint(
     SvgNode node, {
     required ui.Rect paintBounds,

@@ -1,69 +1,69 @@
 part of 'svg_filters.dart';
 
-/// Тип SVG фильтра
+/// SVG filter type
 enum SvgFilterType {
-  /// Gaussian blur - размытие
+  /// Gaussian blur - blur
   gaussianBlur,
 
-  /// Morphology - дилатация/эрозия альфа-маски
+  /// Morphology - dilation/erosion of the alpha mask
   morphology,
 
-  /// Displacement map - смещение по карте каналов (baseline pass-through)
+  /// Displacement map - pixel displacement via channel map (baseline pass-through)
   displacementMap,
 
-  /// Image - внешний источник изображения (baseline graph pass-through)
+  /// Image - external image source (baseline graph pass-through)
   image,
 
-  /// Convolve matrix - свертка ядром (baseline graph pass-through)
+  /// Convolve matrix - kernel convolution (baseline graph pass-through)
   convolveMatrix,
 
-  /// Turbulence - процедурный шум (baseline graph pass-through)
+  /// Turbulence - procedural noise (baseline graph pass-through)
   turbulence,
 
-  /// Component transfer - поканальная функция цвета (baseline graph pass-through)
+  /// Component transfer - per-channel color function (baseline graph pass-through)
   componentTransfer,
 
-  /// Diffuse lighting - диффузное освещение (baseline graph pass-through)
+  /// Diffuse lighting - diffuse shading (baseline graph pass-through)
   diffuseLighting,
 
-  /// Specular lighting - зеркальное освещение (baseline graph pass-through)
+  /// Specular lighting - specular shading (baseline graph pass-through)
   specularLighting,
 
-  /// Offset - смещение результата
+  /// Offset - shift the result
   offset,
 
-  /// Flood - заливка сплошным цветом
+  /// Flood - fill with a solid color
   flood,
 
-  /// Blend - смешивание с подложкой
+  /// Blend - blend with the backdrop
   blend,
 
-  /// Composite - композиция с подложкой
+  /// Composite - composite with the backdrop
   composite,
 
-  /// Merge - объединение нескольких входов (feMerge/feMergeNode)
+  /// Merge - combine multiple inputs (feMerge/feMergeNode)
   merge,
 
-  /// Tile - повторение входного изображения (baseline pass-through)
+  /// Tile - repeat the input image (baseline pass-through)
   tile,
 
-  /// Drop shadow - тень
+  /// Drop shadow - shadow
   dropShadow,
 
-  /// Color matrix - цветовые трансформации
+  /// Color matrix - color transformations
   colorMatrix,
 }
 
-/// Оператор feMorphology
+/// feMorphology operator
 enum SvgMorphologyOperator {
-  /// Эрозия (сужение)
+  /// Erosion (shrink)
   erode,
 
-  /// Дилатация (расширение)
+  /// Dilation (expand)
   dilate,
 }
 
-/// Селектор канала для filter primitives с channel selector.
+/// Channel selector for filter primitives with a channel selector.
 enum SvgChannelSelector {
   /// Red channel
   r,
@@ -78,7 +78,7 @@ enum SvgChannelSelector {
   a,
 }
 
-/// Режим обработки краев для feConvolveMatrix.
+/// Edge handling mode for feConvolveMatrix.
 enum SvgConvolveEdgeMode {
   /// duplicate
   duplicate,
@@ -90,7 +90,7 @@ enum SvgConvolveEdgeMode {
   none,
 }
 
-/// Тип генерации шума для feTurbulence.
+/// Noise generation type for feTurbulence.
 enum SvgTurbulenceType {
   /// turbulence
   turbulence,
@@ -99,7 +99,7 @@ enum SvgTurbulenceType {
   fractalNoise,
 }
 
-/// Режим тайлинга шума для feTurbulence.
+/// Noise tiling mode for feTurbulence.
 enum SvgTurbulenceStitchTiles {
   /// noStitch
   noStitch,
@@ -108,7 +108,7 @@ enum SvgTurbulenceStitchTiles {
   stitch,
 }
 
-/// Тип функции канала для feComponentTransfer.
+/// Channel function type for feComponentTransfer.
 enum SvgComponentTransferType {
   /// identity
   identity,
@@ -126,10 +126,10 @@ enum SvgComponentTransferType {
   gamma,
 }
 
-/// Один проход отрисовки фильтра для source-графики.
+/// A single filter paint pass for source graphics.
 ///
-/// Animated painter может рендерить элемент в несколько проходов
-/// (например для `feDropShadow` и `feMerge`).
+/// The animated painter can render an element in multiple passes
+/// (e.g. for `feDropShadow` and `feMerge`).
 class SvgFilterPaintPass {
   const SvgFilterPaintPass({
     this.imageFilter,
@@ -305,14 +305,14 @@ class SvgFilterSourceContext {
   final bool useLinearRGB;
 }
 
-/// Offset фильтр
+/// Offset filter
 ///
-/// Смещает входное изображение на dx/dy.
+/// Shifts the input image by dx/dy.
 class SvgOffsetFilter extends SvgFilter {
-  /// Смещение по X
+  /// X offset
   double dx;
 
-  /// Смещение по Y
+  /// Y offset
   double dy;
 
   SvgOffsetFilter({
@@ -325,7 +325,7 @@ class SvgOffsetFilter extends SvgFilter {
 
   @override
   ui.ImageFilter? apply() {
-    // Matrix4 в column-major формате: translation в ячейках [12], [13].
+    // Matrix4 in column-major format: translation in cells [12], [13].
     final matrix = Float64List.fromList(<double>[
       1,
       0,
@@ -348,17 +348,17 @@ class SvgOffsetFilter extends SvgFilter {
   }
 }
 
-/// Тип цветовой матрицы для feColorMatrix
+/// Color matrix type for feColorMatrix
 enum SvgColorMatrixType {
-  /// Матрица 5x4 (20 значений)
+  /// 5x4 matrix (20 values)
   matrix,
 
-  /// Насыщенность (1 значение: 0-1)
+  /// Saturation (1 value: 0-1)
   saturate,
 
-  /// Hue rotate (1 значение: градусы)
+  /// Hue rotate (1 value: degrees)
   hueRotate,
 
-  /// Luminance to alpha (нет значений)
+  /// Luminance to alpha (no values)
   luminanceToAlpha,
 }

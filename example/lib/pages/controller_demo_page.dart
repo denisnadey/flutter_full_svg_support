@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:full_svg_flutter/src/animation.dart';
 
-/// Demo страница для AnimatedSvgController
+/// Demo page for AnimatedSvgController
 ///
-/// Демонстрирует программное управление анимацией:
+/// Demonstrates programmatic animation control:
 /// - Play/Pause
 /// - Seek slider
 /// - Playback rate control

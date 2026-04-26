@@ -10,9 +10,9 @@ part 'css_to_smil_converter_timing.dart';
 part 'css_to_smil_converter_transforms.dart';
 part 'css_to_smil_converter_transforms_values.dart';
 
-/// Конвертер CSS анимаций в SMIL структуру
+/// Converter of CSS animations to SMIL structure
 class CssToSmilConverter {
-  /// Конвертирует CSS keyframes и animation в список SMIL анимаций
+  /// Converts CSS keyframes and animation into a list of SMIL animations
   static List<SmilAnimation> convert(
     CssKeyframes keyframes,
     CssAnimation animation,
@@ -21,14 +21,14 @@ class CssToSmilConverter {
   ) {
     final smilAnimations = <SmilAnimation>[];
 
-    // Для каждого свойства в keyframes создаём отдельную SMIL анимацию
+    // For each property in the keyframes, create a separate SMIL animation
     final animatedProperties = _extractAnimatedProperties(keyframes);
 
     for (final property in animatedProperties.entries) {
       final propertyName = property.key;
       final values = property.value;
 
-      // Определяем тип атрибута
+      // Determine the attribute type
       final attributeType = _inferAttributeType(propertyName, targetNode);
 
       // CSS transform animations use REPLACE semantics - each keyframe value
@@ -38,7 +38,7 @@ class CssToSmilConverter {
       // internally, and _createSmilAnimation uses additive=replace which matches
       // CSS semantics. So we let transforms go through the normal path below.
 
-      // Создаём SMIL анимацию
+      // Create a SMIL animation
       final smilAnim = _createSmilAnimation(
         keyframes: keyframes,
         animation: animation,

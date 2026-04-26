@@ -24,21 +24,21 @@ void main() {
                 width: 200,
                 height: 200,
                 autoPlay:
-                    false, // ❌ Баг: должно рендерить t=0, но рендерит 0 пикселей
+                    false, // ❌ Bug: should render t=0, but renders 0 pixels
               ),
             ),
           ),
         ),
       );
 
-      // Даём виджету время на инициализацию
+      // Give the widget time to initialize
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
 
-      // Захватываем пиксели
+      // Capture pixels
       final pixels = await VisualTestUtils.captureWidgetPixels(tester);
 
-      // Проверяем что есть пиксели (красный прямоугольник)
+      // Verify that pixels are present (red rectangle)
       final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
 
       print('autoPlay: false test:');
@@ -47,14 +47,14 @@ void main() {
         '  Coverage: ${(analysis.pixelCount / (800 * 600) * 100).toStringAsFixed(2)}%',
       );
 
-      // ДОЛЖНО пройти после фикса
+      // SHOULD pass after the fix
       expect(
         analysis.pixelCount,
         greaterThan(0),
         reason: 'autoPlay: false should render initial frame at t=0',
       );
 
-      // Дополнительная проверка: должно быть достаточно пикселей для прямоугольника 30x30
+      // Additional check: should have enough pixels for a 30x30 rectangle
       expect(
         analysis.pixelCount,
         greaterThan(50),
@@ -76,7 +76,7 @@ void main() {
                 autoPlay: false,
                 initialTime: const Duration(
                   seconds: 1,
-                ), // t=1s (середина анимации)
+                ), // t=1s (midpoint of animation)
               ),
             ),
           ),
@@ -99,13 +99,13 @@ void main() {
         reason: 'autoPlay: false with initialTime should render frame at t=1s',
       );
 
-      // При t=1s прямоугольник должен быть посередине пути (x ~35)
-      // Проверяем что центроид сместился вправо от начальной позиции
+      // At t=1s the rectangle should be at the midpoint of the path (x ~35)
+      // Verify that the centroid has shifted right from the initial position
       if (analysis.pixelCount > 0) {
         print('  Centroid: ${analysis.centroid}');
         expect(
           analysis.centroid.dx,
-          greaterThan(50), // Должен быть правее начальной позиции
+          greaterThan(50), // Should be to the right of the initial position
           reason: 'Rectangle should be moved to the right at t=1s',
         );
       }
@@ -114,7 +114,7 @@ void main() {
     testWidgets('switching from autoPlay: false to true starts animation', (
       tester,
     ) async {
-      // Создаём StatefulWidget для переключения autoPlay
+      // Create a StatefulWidget for toggling autoPlay
       bool autoPlayEnabled = false;
 
       await tester.pumpWidget(
@@ -148,7 +148,7 @@ void main() {
 
       await tester.pump();
 
-      // Проверяем начальное состояние (autoPlay: false)
+      // Check initial state (autoPlay: false)
       final pixelsBefore = await VisualTestUtils.captureWidgetPixels(tester);
       final analysisBefore = VisualTestUtils.analyzeRedPixels(
         pixelsBefore,
@@ -164,14 +164,14 @@ void main() {
 
       final centroidBefore = analysisBefore.centroid;
 
-      // Включаем autoPlay
+      // Enable autoPlay
       await tester.tap(find.text('Start'));
       await tester.pump();
 
-      // Ждём немного времени для анимации
+      // Wait a bit for the animation
       await tester.pump(const Duration(milliseconds: 500));
 
-      // Проверяем что анимация запустилась (прямоугольник сдвинулся)
+      // Verify that the animation started (rectangle moved)
       final pixelsAfter = await VisualTestUtils.captureWidgetPixels(tester);
       final analysisAfter = VisualTestUtils.analyzeRedPixels(
         pixelsAfter,
@@ -188,10 +188,10 @@ void main() {
         '  Delta X: ${(centroidAfter.dx - centroidBefore.dx).toStringAsFixed(1)}',
       );
 
-      // Прямоугольник должен сдвинуться вправо
+      // Rectangle should move to the right
       expect(
         centroidAfter.dx,
-        greaterThan(centroidBefore.dx + 5), // Минимум 5 пикселей вправо
+        greaterThan(centroidBefore.dx + 5), // At least 5 pixels to the right
         reason: 'Rectangle should move right when animation starts',
       );
     });

@@ -1,203 +1,203 @@
 # Blink SVG Core Module
 
-## Описание проекта
+## Project Description
 
-Это модуль **SVG (Scalable Vector Graphics)** из движка рендеринга **Blink** - открытого браузерного движка, используемого в Google Chrome, Chromium, Opera и других браузерах на основе Chromium.
+This is the **SVG (Scalable Vector Graphics)** module from the **Blink** rendering engine — the open-source browser engine used in Google Chrome, Chromium, Opera, and other Chromium-based browsers.
 
-Данная директория содержит исходный код ядра (core) для обработки и рендеринга SVG-контента в веб-браузере. Код является частью проекта WebKit/Blink и написан на C++.
+This directory contains the core source code for processing and rendering SVG content in a web browser. The code is part of the WebKit/Blink project and is written in C++.
 
-## Что такое Blink?
+## What Is Blink?
 
-**Blink** - это форк браузерного движка WebKit, разработанный Google. Он отвечает за:
-- Парсинг HTML/SVG/XML
-- Применение CSS стилей
-- Отрисовку веб-страниц
-- Выполнение JavaScript через V8
+**Blink** is a fork of the WebKit browser engine developed by Google. It is responsible for:
+- Parsing HTML/SVG/XML
+- Applying CSS styles
+- Rendering web pages
+- Executing JavaScript via V8
 
-## Структура проекта
+## Project Structure
 
-### Основные компоненты
+### Main Components
 
-#### 1. **SVG Elements (Элементы SVG)** (~165 .cpp файлов)
-Реализация всех SVG элементов согласно спецификации W3C:
+#### 1. **SVG Elements** (~165 .cpp files)
+Implementation of all SVG elements according to the W3C specification:
 
-**Базовые формы:**
-- `SVGCircleElement` - круги
-- `SVGRectElement` - прямоугольники
-- `SVGEllipseElement` - эллипсы
-- `SVGLineElement` - линии
-- `SVGPolygonElement`, `SVGPolylineElement` - многоугольники
-- `SVGPathElement` - пути (самый сложный элемент)
+**Basic Shapes:**
+- `SVGCircleElement` - circles
+- `SVGRectElement` - rectangles
+- `SVGEllipseElement` - ellipses
+- `SVGLineElement` - lines
+- `SVGPolygonElement`, `SVGPolylineElement` - polygons
+- `SVGPathElement` - paths (the most complex element)
 
-**Контейнеры и группировка:**
-- `SVGSVGElement` - корневой элемент SVG документа
-- `SVGGElement` - группы элементов
-- `SVGDefsElement` - определения для повторного использования
-- `SVGSymbolElement` - символы
-- `SVGUseElement` - использование определенных элементов
+**Containers and Grouping:**
+- `SVGSVGElement` - root element of an SVG document
+- `SVGGElement` - element groups
+- `SVGDefsElement` - definitions for reuse
+- `SVGSymbolElement` - symbols
+- `SVGUseElement` - use of defined elements
 
-**Текстовые элементы:**
-- `SVGTextElement` - текст
-- `SVGTSpanElement` - диапазоны текста
-- `SVGTextPathElement` - текст вдоль пути
+**Text Elements:**
+- `SVGTextElement` - text
+- `SVGTSpanElement` - text spans
+- `SVGTextPathElement` - text along a path
 
-**Градиенты и паттерны:**
-- `SVGLinearGradientElement` - линейные градиенты
-- `SVGRadialGradientElement` - радиальные градиенты
-- `SVGPatternElement` - паттерны заливки
+**Gradients and Patterns:**
+- `SVGLinearGradientElement` - linear gradients
+- `SVGRadialGradientElement` - radial gradients
+- `SVGPatternElement` - fill patterns
 
-**Фильтры (SVGFExxxElement):**
-Более 20 элементов фильтров для графических эффектов:
-- `SVGFEGaussianBlurElement` - размытие
-- `SVGFEBlendElement` - смешивание
-- `SVGFEColorMatrixElement` - цветовые преобразования
-- `SVGFEDropShadowElement` - тени
-- И множество других эффектов
+**Filters (SVGFExxxElement):**
+Over 20 filter elements for graphical effects:
+- `SVGFEGaussianBlurElement` - blur
+- `SVGFEBlendElement` - blending
+- `SVGFEColorMatrixElement` - color transformations
+- `SVGFEDropShadowElement` - drop shadows
+- And many other effects
 
 **SVG Fonts:**
-- `SVGFontElement`, `SVGGlyphElement` - поддержка SVG-шрифтов
-- `SVGFontFaceElement` - метаданные шрифтов
+- `SVGFontElement`, `SVGGlyphElement` - SVG font support
+- `SVGFontFaceElement` - font metadata
 
-#### 2. **Animation (Анимация)**
-Директория `animation/`:
-- `SVGSMILElement` - базовый класс для SMIL-анимаций
-- `SMILTimeContainer` - контейнер временной шкалы
-- `SVGAnimateElement` - анимация атрибутов
-- `SVGAnimateTransformElement` - анимация трансформаций
-- `SVGAnimateMotionElement` - анимация движения по пути
-- `SVGAnimateColorElement` - анимация цвета
+#### 2. **Animation**
+Directory `animation/`:
+- `SVGSMILElement` - base class for SMIL animations
+- `SMILTimeContainer` - timeline container
+- `SVGAnimateElement` - attribute animation
+- `SVGAnimateTransformElement` - transform animation
+- `SVGAnimateMotionElement` - motion along a path
+- `SVGAnimateColorElement` - color animation
 
-#### 3. **Animated Properties (Анимируемые свойства)**
-Директория `properties/`:
-- Система для работы с анимируемыми SVG-атрибутами
-- `SVGAnimatedProperty` - базовый класс
-- Различные типы свойств: Length, Number, String, Transform, Path и др.
+#### 3. **Animated Properties**
+Directory `properties/`:
+- System for working with animatable SVG attributes
+- `SVGAnimatedProperty` - base class
+- Various property types: Length, Number, String, Transform, Path, etc.
 
-#### 4. **Graphics (Графика)**
-Директория `graphics/`:
-- `SVGImageChromeClient` - интеграция SVG изображений с браузером
+#### 4. **Graphics**
+Directory `graphics/`:
+- `SVGImageChromeClient` - integration of SVG images with the browser
 
-#### 5. **Data Types (Типы данных)**
-Типы данных SVG:
-- `SVGLength` - длины (px, em, %, и др.)
-- `SVGAngle` - углы
-- `SVGNumber` - числа
-- `SVGTransform` - трансформации
-- `SVGColor`, `SVGPaint` - цвета и заливки
-- `SVGPreserveAspectRatio` - сохранение пропорций
+#### 5. **Data Types**
+SVG data types:
+- `SVGLength` - lengths (px, em, %, etc.)
+- `SVGAngle` - angles
+- `SVGNumber` - numbers
+- `SVGTransform` - transforms
+- `SVGColor`, `SVGPaint` - colors and fills
+- `SVGPreserveAspectRatio` - aspect ratio preservation
 
-#### 6. **Path Processing (Обработка путей)**
-Мощная система для работы с SVG путями:
-- `SVGPathParser` - парсинг path команд
-- `SVGPathBuilder` - построение путей
-- `SVGPathBlender` - смешивание путей (для анимации)
-- `SVGPathByteStream` - оптимизированное представление
-- `SVGPathUtilities` - утилиты для работы с путями
+#### 6. **Path Processing**
+A powerful system for working with SVG paths:
+- `SVGPathParser` - parsing path commands
+- `SVGPathBuilder` - building paths
+- `SVGPathBlender` - blending paths (for animation)
+- `SVGPathByteStream` - optimized representation
+- `SVGPathUtilities` - path utility functions
 
-#### 7. **Attribute Processing (Обработка атрибутов)**
-- `svgtags.in` - определения всех SVG тегов (99+ элементов)
-- `svgattrs.in` - определения всех SVG атрибутов (252+ атрибута)
-- `xlinkattrs.in` - XLink атрибуты
+#### 7. **Attribute Processing**
+- `svgtags.in` - definitions of all SVG tags (99+ elements)
+- `svgattrs.in` - definitions of all SVG attributes (252+ attributes)
+- `xlinkattrs.in` - XLink attributes
 
-## Технические детали
+## Technical Details
 
-### Языки программирования
-- **C++** - основной язык реализации
-- **IDL (Web IDL)** - описание JavaScript API для SVG элементов
-- **Build Scripts** - конфигурационные файлы (.in)
+### Programming Languages
+- **C++** - primary implementation language
+- **IDL (Web IDL)** - JavaScript API descriptions for SVG elements
+- **Build Scripts** - configuration files (.in)
 
-### Статистика кода
-- **~165** файлов реализации (.cpp)
-- **~376** заголовочных файлов и IDL файлов (.h, .idl)
-- Тысячи строк кода
+### Code Statistics
+- **~165** implementation files (.cpp)
+- **~376** header and IDL files (.h, .idl)
+- Thousands of lines of code
 
 ### Namespace
-Весь код находится в namespace `WebCore`.
+All code resides in the `WebCore` namespace.
 
-### Лицензии
-Проект содержит код под двумя лицензиями:
-1. **BSD License** (3-clause) - код от Apple, Google
-2. **GNU LGPL v2+** - код от KDE contributors (Nikolas Zimmermann, Rob Buis)
+### Licenses
+The project contains code under two licenses:
+1. **BSD License** (3-clause) - code from Apple, Google
+2. **GNU LGPL v2+** - code from KDE contributors (Nikolas Zimmermann, Rob Buis)
 
-### Основные copyright holders:
+### Main copyright holders:
 - Apple Inc.
 - Google Inc.
 - Nikolas Zimmermann (KDE)
 - Rob Buis (KDE)
-- И другие контрибьюторы
+- And other contributors
 
-## Архитектурные особенности
+## Architectural Notes
 
-### 1. Интеграция с браузерным движком
-- Использует систему DOM (Document Object Model)
-- Интеграция с CSS для стилизации
-- Поддержка JavaScript через V8 bindings
-- Рендеринг через систему RenderObject
+### 1. Integration with the Browser Engine
+- Uses the DOM (Document Object Model) system
+- CSS integration for styling
+- JavaScript support via V8 bindings
+- Rendering via the RenderObject system
 
 ### 2. Animated Properties System
-Продвинутая система для анимации любых SVG атрибутов:
+An advanced system for animating any SVG attributes:
 ```cpp
 DEFINE_ANIMATED_LENGTH(SVGSVGElement, SVGNames::widthAttr, Width, width)
 ```
 
-### 3. Оптимизация производительности
-- Byte stream для путей (компактное представление)
-- Ленивые вычисления
-- Кэширование трансформаций
+### 3. Performance Optimizations
+- Byte stream for paths (compact representation)
+- Lazy evaluation
+- Transform caching
 
-## Применение
+## Usage
 
-Этот код используется в:
+This code is used in:
 - **Google Chrome** / Chromium
-- **Opera** (версии на Chromium)
-- **Microsoft Edge** (новые версии на Chromium)
+- **Opera** (Chromium-based versions)
+- **Microsoft Edge** (new Chromium-based versions)
 - **Brave Browser**
-- И других браузерах на основе Blink
+- And other Blink-based browsers
 
-## SVG возможности
+## SVG Capabilities
 
-Модуль поддерживает полную спецификацию SVG 1.1 и частично SVG 2.0:
-- ✅ Базовые формы и пути
-- ✅ Текст и шрифты
-- ✅ Градиенты и паттерны
-- ✅ Фильтры и эффекты
-- ✅ Клиппинг и маскирование
-- ✅ SMIL анимации
-- ✅ Трансформации
-- ✅ Интерактивность (события)
+The module supports the full SVG 1.1 specification and partially SVG 2.0:
+- ✅ Basic shapes and paths
+- ✅ Text and fonts
+- ✅ Gradients and patterns
+- ✅ Filters and effects
+- ✅ Clipping and masking
+- ✅ SMIL animations
+- ✅ Transforms
+- ✅ Interactivity (events)
 
-## Разработка
+## Development
 
-### Требования для сборки
-Для компиляции этого модуля требуется полная сборочная среда Chromium/Blink:
-- Компилятор C++ (Clang предпочтителен)
-- Python (для build scripts)
-- depot_tools от Google
-- Все зависимости Chromium
+### Build Requirements
+Compiling this module requires a full Chromium/Blink build environment:
+- C++ compiler (Clang preferred)
+- Python (for build scripts)
+- Google's depot_tools
+- All Chromium dependencies
 
-### Важные файлы
-- `SVGElement.cpp/h` - базовый класс для всех SVG элементов
-- `SVGSVGElement.cpp/h` - корневой `<svg>` элемент
-- `SVGDocument.cpp/h` - SVG документ
-- `SVGDocumentExtensions.cpp/h` - расширения для работы с SVG
+### Key Files
+- `SVGElement.cpp/h` - base class for all SVG elements
+- `SVGSVGElement.cpp/h` - root `<svg>` element
+- `SVGDocument.cpp/h` - SVG document
+- `SVGDocumentExtensions.cpp/h` - extensions for SVG support
 
-## Историческая справка
+## Historical Note
 
-Код изначально был частью WebKit (движок Safari), затем был форкнут Google в 2013 году для создания Blink. Видны следы истории в copyright notices - код от Apple, KDE (KHTML), и более поздние изменения от Google.
+The code was originally part of WebKit (the Safari engine), then forked by Google in 2013 to create Blink. Traces of history are visible in the copyright notices — code from Apple, KDE (KHTML), and later changes from Google.
 
-## Связанные технологии
+## Related Technologies
 
-- **WebKit** - оригинальный проект
-- **V8** - JavaScript движок
-- **Skia** - 2D графическая библиотека для рендеринга
-- **CSS** - стилизация SVG элементов
+- **WebKit** - the original project
+- **V8** - JavaScript engine
+- **Skia** - 2D graphics library for rendering
+- **CSS** - SVG element styling
 
-## Примечание
+## Note
 
-Это не standalone проект - он является частью огромной кодовой базы Chromium и не может быть скомпилирован отдельно без соответствующей инфраструктуры сборки.
+This is not a standalone project — it is part of the enormous Chromium codebase and cannot be compiled separately without the corresponding build infrastructure.
 
 ---
 
-**Версия:** Snapshot из исходников Blink (build b87d44f)  
-**Дата:** 2026  
-**Лицензия:** BSD & LGPL (см. заголовки файлов)
+**Version:** Snapshot from Blink source (build b87d44f)  
+**Date:** 2026  
+**License:** BSD & LGPL (see file headers)

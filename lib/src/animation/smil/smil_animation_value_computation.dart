@@ -4,41 +4,41 @@ extension SmilAnimationValueComputationExtension on SmilAnimation {
   Object? _computeDiscreteValue(double t) {
     if (values != null && values!.isNotEmpty) {
       if (keyTimes != null) {
-        // Найти соответствующий keyframe
+        // Find the corresponding keyframe
         for (int i = 0; i < keyTimes!.length - 1; i++) {
           if (t >= keyTimes![i] && t < keyTimes![i + 1]) {
             return values![i];
           }
         }
-        // Последнее значение
+        // Last value
         return values!.last;
       }
-      // Без keyTimes - равномерное распределение
+      // Without keyTimes - uniform distribution
       final segmentCount = values!.length;
       final index = (t * segmentCount).floor().clamp(0, values!.length - 1);
       return values![index];
     }
 
-    // from/to - возвращаем from до t=1.0, потом to
+    // from/to - return from until t=1.0, then to
     return t >= 1.0 ? (to ?? from) : from;
   }
 
-  /// Вычислить значение для values-based анимации
+  /// Compute value for values-based animation
   Object? _computeValuesBasedValue(double t) {
     if (values!.length == 1) {
       return values![0];
     }
 
-    // Определяем между какими keyframes мы находимся
+    // Determine which keyframe interval we are in
     int fromIndex = 0;
     int toIndex = 1;
     double segmentProgress = t;
 
-    // Используем paced keyTimes если они есть, иначе обычные keyTimes
+    // Use paced keyTimes if available, otherwise use regular keyTimes
     final effectiveKeyTimes = _pacedKeyTimes ?? keyTimes;
 
     if (effectiveKeyTimes != null) {
-      // С явными keyTimes (или сгенерированными для paced)
+      // With explicit keyTimes (or generated ones for paced)
       for (int i = 0; i < effectiveKeyTimes.length - 1; i++) {
         if (t >= effectiveKeyTimes[i] && t <= effectiveKeyTimes[i + 1]) {
           fromIndex = i;
@@ -52,7 +52,7 @@ extension SmilAnimationValueComputationExtension on SmilAnimation {
         }
       }
     } else {
-      // Без keyTimes - равномерное распределение
+      // Without keyTimes - uniform distribution
       final segmentCount = values!.length - 1;
       final segmentIndex = (t * segmentCount).floor().clamp(
         0,
@@ -63,7 +63,7 @@ extension SmilAnimationValueComputationExtension on SmilAnimation {
       segmentProgress = (t * segmentCount) - segmentIndex;
     }
 
-    // Применяем easing если есть keySplines или keySteps
+    // Apply easing if keySplines or keySteps are present
     if (calcMode == SmilCalcMode.spline && keySplines != null) {
       final spline = keySplines![fromIndex];
       segmentProgress = spline.transform(segmentProgress);
@@ -72,22 +72,22 @@ extension SmilAnimationValueComputationExtension on SmilAnimation {
       segmentProgress = step.transform(segmentProgress);
     }
 
-    // Интерполируем между значениями
+    // Interpolate between values
     return _interpolate(values![fromIndex], values![toIndex], segmentProgress);
   }
 
-  /// Вычислить значение для простой from/to/by анимации
+  /// Compute value for simple from/to/by animation
   Object? _computeSimpleValue(double t) {
     Object? fromValue = from;
     Object? toValue = to;
 
-    // Если нет from, используем базовое значение атрибута
+    // If from is absent, use the base attribute value
     if (fromValue == null) {
       final attr = targetNode.getAttribute(attributeName);
       fromValue = attr?.baseValue;
     }
 
-    // Если есть by вместо to, вычисляем to
+    // If by is present instead of to, compute to
     if (toValue == null && by != null && fromValue != null) {
       toValue = _addValues(fromValue, by!);
     }
@@ -99,20 +99,20 @@ extension SmilAnimationValueComputationExtension on SmilAnimation {
     return _interpolate(fromValue, toValue, t);
   }
 
-  /// Вычислить значение для animateMotion
+  /// Compute value for animateMotion.
   /// [completedRepeats] is used for accumulate="sum" support
   Object? _computeMotionValue(double t, {int completedRepeats = 0}) {
-    // from содержит path data, to содержит rotate mode
+    // from contains path data, to contains rotate mode
     final pathData = from as String?;
     if (pathData == null || pathData.trim().isEmpty) {
       return null;
     }
 
     try {
-      // Создаём MotionPath (можно кешировать в будущем)
+      // Create a MotionPath (can be cached in the future)
       final motionPath = MotionPath(pathData);
 
-      // values содержит keyPoints если они есть
+      // values contains keyPoints if they are present
       final keyPoints = values?.map((v) => v as double).toList();
 
       // Handle discrete calcMode with keyPoints - waypoint jumping
@@ -144,7 +144,7 @@ extension SmilAnimationValueComputationExtension on SmilAnimation {
         }
       }
 
-      // Получаем точку на пути
+      // Get the point on the path
       final point = keyPoints != null && keyPoints.isNotEmpty
           ? motionPath.getPointWithKeyPoints(easedT, keyPoints, keyTimes)
           : motionPath.getPointAtTime(easedT);
@@ -160,7 +160,7 @@ extension SmilAnimationValueComputationExtension on SmilAnimation {
         posY += endPos.dy * completedRepeats;
       }
 
-      // Формируем transform строку
+      // Build the transform string
       final rotateMode = to as String?;
       final translatePart = 'translate($posX, $posY)';
 
@@ -169,18 +169,18 @@ extension SmilAnimationValueComputationExtension on SmilAnimation {
       }
 
       if (rotateMode == 'auto') {
-        // Поворачиваем по касательной к пути
+        // Rotate along the path tangent
         final angleDegrees = MotionPath.radiansToDegrees(point.angle);
         return '$translatePart rotate($angleDegrees)';
       }
 
       if (rotateMode == 'auto-reverse') {
-        // Поворачиваем по касательной + 180°
+        // Rotate along the tangent + 180°
         final angleDegrees = MotionPath.radiansToDegrees(point.angle) + 180;
         return '$translatePart rotate($angleDegrees)';
       }
 
-      // Фиксированный угол в градусах
+      // Fixed angle in degrees
       return '$translatePart rotate($rotateMode)';
     } catch (e) {
       return null;
@@ -223,7 +223,7 @@ extension SmilAnimationValueComputationExtension on SmilAnimation {
       posY += endPos.dy * completedRepeats;
     }
 
-    // Формируем transform строку
+    // Build the transform string
     final rotateMode = to as String?;
     final translatePart = 'translate($posX, $posY)';
 
@@ -275,21 +275,21 @@ extension SmilAnimationValueComputationExtension on SmilAnimation {
     return t;
   }
 
-  /// Интерполировать между двумя значениями
+  /// Interpolate between two values.
   ///
-  /// Использует Interpolators для типизированной интерполяции
+  /// Uses Interpolators for typed interpolation
   @protected
   Object? _interpolate(Object from, Object to, double t) {
     return Interpolators.interpolate(from, to, t, attributeType);
   }
 
-  /// Сложить два значения (для by)
+  /// Add two values together (for by)
   @protected
   Object? _addValues(Object base, Object delta) {
     return Interpolators.add(base, delta, attributeType);
   }
 
-  /// Применить accumulate="sum" - добавить финальное значение * количество повторений
+  /// Apply accumulate="sum" — add the final value * number of completed repeats
   /// Per SMIL spec: accumulate="sum" means that each repeat cycle adds to the
   /// result of the previous cycle. The accumulated value is:
   /// accumulatedValue = animValue + (finalValue * completedRepeats)
@@ -305,7 +305,7 @@ extension SmilAnimationValueComputationExtension on SmilAnimation {
       return animValue;
     }
 
-    // Получаем финальное значение анимации (в конце одной итерации, t=1.0)
+    // Get the final animation value (at the end of one iteration, t=1.0)
     final finalValue = _computeFinalValue();
 
     if (finalValue == null) {
@@ -328,20 +328,20 @@ extension SmilAnimationValueComputationExtension on SmilAnimation {
     return accumulated;
   }
 
-  /// Вычислить финальное значение анимации (t=1.0) для accumulate support
+  /// Compute the final animation value (t=1.0) for accumulate support
   /// This returns the "to" value or last values entry - the final value
   /// that gets accumulated on each repeat cycle.
   @protected
   Object? _computeFinalValue() {
-    // Для values-based: последнее значение
+    // For values-based: the last value
     if (values != null && values!.isNotEmpty) {
       return values!.last;
     }
-    // Для from/to: значение to
+    // For from/to: the to value
     return to ?? from;
   }
 
-  /// Применить additive="sum" - добавить к базовому значению элемента
+  /// Apply additive="sum" — add to the base value of the element
   /// Per SMIL spec: additive="sum" means the animation value is added to
   /// the underlying value of the target attribute.
   ///
@@ -356,30 +356,30 @@ extension SmilAnimationValueComputationExtension on SmilAnimation {
   Object? _applyAdditive(Object? animValue) {
     if (animValue == null) return null;
 
-    // animValue уже не null здесь
+    // animValue is already non-null here
     final animValueNonNull = animValue;
 
-    // Если additive="replace" или это ToAnimation, просто возвращаем значение
-    // В нашей реализации пока нет явного ToAnimation, но можно проверить
+    // If additive="replace" or this is a ToAnimation, simply return the value.
+    // Our implementation does not yet have an explicit ToAnimation, but it can be checked
     if (additive == SmilAdditiveMode.replace) {
       return animValueNonNull;
     }
 
-    // additive="sum" - добавляем к базовому значению
-    // Получаем базовое значение из targetNode
+    // additive="sum" - add to the base value.
+    // Get the base value from targetNode
     final baseAttr = targetNode.getAttribute(attributeName);
     final baseValue = baseAttr?.baseValue;
 
     if (baseValue == null) {
-      // Если базового значения нет, возвращаем animValue
+      // If there is no base value, return animValue
       return animValueNonNull;
     }
 
-    // Добавляем animValue к baseValue
+    // Add animValue to baseValue
     // For nested additive animations, this will be called multiple times
     // with the accumulated result being stored in the attribute
     return Interpolators.add(baseValue, animValueNonNull, attributeType);
   }
 
-  /// Обновить состояние анимации для заданного глобального времени
+  /// Update the animation state for the given global time
 }

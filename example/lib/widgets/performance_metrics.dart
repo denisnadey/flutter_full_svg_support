@@ -4,7 +4,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
-/// Виджет для отображения метрик производительности в реальном времени
+/// Widget for displaying real-time performance metrics
 class PerformanceMetrics extends StatefulWidget {
   const PerformanceMetrics({
     super.key,
@@ -53,16 +53,16 @@ class _PerformanceMetricsState extends State<PerformanceMetrics> {
     if (elapsed.inMilliseconds > 0) {
       _frameCount++;
 
-      // Вычисляем время одного кадра
-      final frameTime = elapsed.inMicroseconds / 1000.0; // в миллисекундах
+      // Compute time for a single frame
+      final frameTime = elapsed.inMicroseconds / 1000.0; // in milliseconds
       _frameTimes.add(frameTime);
 
-      // Ограничиваем количество сэмплов
+      // Limit the number of samples
       if (_frameTimes.length > _maxSamples) {
         _frameTimes.removeAt(0);
       }
 
-      // Вычисляем средний FPS по последним кадрам
+      // Compute average FPS over the last frames
       if (_frameTimes.isNotEmpty) {
         final avgFrameTime =
             _frameTimes.reduce((a, b) => a + b) / _frameTimes.length;
@@ -73,7 +73,7 @@ class _PerformanceMetricsState extends State<PerformanceMetrics> {
       _lastTime = now;
     }
 
-    // Продолжаем отслеживание
+    // Continue tracking
     SchedulerBinding.instance.addPostFrameCallback(_onFrame);
   }
 
@@ -160,7 +160,7 @@ class _PerformanceMetricsState extends State<PerformanceMetrics> {
   }
 }
 
-/// Детальная панель метрик
+/// Detailed metrics panel
 class DetailedMetricsPanel extends StatelessWidget {
   const DetailedMetricsPanel({
     super.key,

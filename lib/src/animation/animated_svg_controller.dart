@@ -1,14 +1,14 @@
 import 'package:flutter/foundation.dart';
 
-/// Контроллер для управления AnimatedSvgPicture
+/// Controller for managing AnimatedSvgPicture
 ///
-/// Позволяет программно контролировать воспроизведение анимации:
+/// Allows programmatic control of animation playback:
 /// - pause/resume
-/// - seek к конкретному времени
-/// - изменение скорости воспроизведения
-/// - реверс направления
+/// - seek to a specific time
+/// - changing playback speed
+/// - reversing direction
 ///
-/// Пример:
+/// Example:
 /// ```dart
 /// final controller = AnimatedSvgController();
 ///
@@ -17,7 +17,7 @@ import 'package:flutter/foundation.dart';
 ///   controller: controller,
 /// );
 ///
-/// // Позже:
+/// // Later:
 /// controller.pause();
 /// controller.seek(Duration(seconds: 2));
 /// controller.resume();
@@ -30,16 +30,16 @@ class AnimatedSvgController extends ChangeNotifier {
   String? _viewId;
   bool _viewChangeRequested = false;
 
-  /// Анимация на паузе?
+  /// Is the animation paused?
   bool get isPaused => _isPaused;
 
-  /// Скорость воспроизведения (1.0 = normal, 2.0 = 2x speed)
+  /// Playback speed (1.0 = normal, 2.0 = 2x speed)
   double get playbackRate => _playbackRate;
 
-  /// Воспроизведение в обратном направлении?
+  /// Is playback in reverse direction?
   bool get isReversed => _isReversed;
 
-  /// Есть ли pending seek operation?
+  /// Is there a pending seek operation?
   Duration? get pendingSeek => _seekTarget;
 
   /// Get the pending view ID to switch to.
@@ -48,7 +48,7 @@ class AnimatedSvgController extends ChangeNotifier {
   /// Current requested view ID (null for default view).
   String? get currentViewId => _viewId;
 
-  /// Поставить анимацию на паузу
+  /// Pause the animation
   void pause() {
     if (!_isPaused) {
       _isPaused = true;
@@ -56,7 +56,7 @@ class AnimatedSvgController extends ChangeNotifier {
     }
   }
 
-  /// Возобновить воспроизведение
+  /// Resume playback
   void resume() {
     if (_isPaused) {
       _isPaused = false;
@@ -73,21 +73,21 @@ class AnimatedSvgController extends ChangeNotifier {
     }
   }
 
-  /// Перейти к конкретному времени
+  /// Seek to a specific time
   ///
-  /// [time] - целевое время в анимации
+  /// [time] - target time in the animation
   void seek(Duration time) {
     _seekTarget = time;
     notifyListeners();
   }
 
-  /// Установить скорость воспроизведения
+  /// Set the playback speed
   ///
-  /// [rate] - скорость воспроизведения
-  /// - 1.0 = нормальная скорость
-  /// - 2.0 = удвоенная скорость
-  /// - 0.5 = замедленная скорость
-  /// - Должна быть положительной
+  /// [rate] - playback speed
+  /// - 1.0 = normal speed
+  /// - 2.0 = double speed
+  /// - 0.5 = half speed
+  /// - Must be positive
   void setPlaybackRate(double rate) {
     if (rate <= 0) {
       throw ArgumentError('Playback rate must be positive, got: $rate');
@@ -98,7 +98,7 @@ class AnimatedSvgController extends ChangeNotifier {
     }
   }
 
-  /// Воспроизводить в обратном направлении
+  /// Play in reverse direction
   void reverse() {
     if (!_isReversed) {
       _isReversed = true;
@@ -106,7 +106,7 @@ class AnimatedSvgController extends ChangeNotifier {
     }
   }
 
-  /// Воспроизводить в прямом направлении
+  /// Play in forward direction
   void forward() {
     if (_isReversed) {
       _isReversed = false;
@@ -114,13 +114,13 @@ class AnimatedSvgController extends ChangeNotifier {
     }
   }
 
-  /// Toggle направление воспроизведения
+  /// Toggle playback direction
   void toggleDirection() {
     _isReversed = !_isReversed;
     notifyListeners();
   }
 
-  /// Перезапустить анимацию с начала
+  /// Restart the animation from the beginning
   void restart() {
     _seekTarget = Duration.zero;
     if (_isPaused) {
@@ -129,7 +129,7 @@ class AnimatedSvgController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Очистить pending seek (вызывается виджетом после обработки)
+  /// Clear the pending seek (called by the widget after processing)
   ///
   /// @nodoc - internal use only
   void clearPendingSeek() {

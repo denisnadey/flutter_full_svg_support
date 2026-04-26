@@ -6,11 +6,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Утилиты для детального визуального тестирования анимаций
+/// Utilities for detailed visual testing of animations
 class VisualTestUtils {
-  /// Захватить скриншот виджета и вернуть пиксели (БЕЗ pumpAndSettle)
+  /// Capture a screenshot of the widget and return pixels (WITHOUT pumpAndSettle)
   static Future<Uint8List> captureWidgetPixels(WidgetTester tester) async {
-    // НЕ вызываем pumpAndSettle - это зависает на бесконечных анимациях!
+    // Do NOT call pumpAndSettle — it hangs on infinite animations!
 
     final finder = find.byType(RepaintBoundary).first;
     final renderObject = tester.renderObject(finder);
@@ -27,7 +27,7 @@ class VisualTestUtils {
 
       final result = byteData!.buffer.asUint8List();
 
-      // ВАЖНО: Dispose image чтобы освободить нативные ресурсы
+      // IMPORTANT: Dispose image to free native resources
       image.dispose();
 
       return result;
@@ -36,7 +36,7 @@ class VisualTestUtils {
     return pixels!;
   }
 
-  /// Проанализировать пиксели и найти красные пиксели (rect)
+  /// Analyze pixels and find red pixels (rect)
   static PixelAnalysis analyzeRedPixels(
     Uint8List pixels,
     int width,
@@ -52,7 +52,7 @@ class VisualTestUtils {
         final b = pixels[offset + 2];
         final a = pixels[offset + 3];
 
-        // Красный цвет (с небольшим допуском)
+        // Red color (with a small tolerance)
         if (r > 200 && g < 100 && b < 100 && a > 200) {
           redPixels.add(Offset(x.toDouble(), y.toDouble()));
         }
@@ -62,7 +62,7 @@ class VisualTestUtils {
     return PixelAnalysis(pixels: redPixels, width: width, height: height);
   }
 
-  /// Вычислить хеш пикселей для сравнения
+  /// Compute a pixel hash for comparison
   static String computePixelHash(Uint8List pixels) {
     int hash = 0;
     for (int i = 0; i < pixels.length; i++) {
@@ -72,7 +72,7 @@ class VisualTestUtils {
     return hash.toRadixString(16);
   }
 
-  /// Сравнить два набора пикселей и вычислить процент различий
+  /// Compare two pixel sets and compute the percentage of differences
   static double computePixelDifference(Uint8List pixels1, Uint8List pixels2) {
     if (pixels1.length != pixels2.length) {
       return 100.0;
@@ -88,7 +88,7 @@ class VisualTestUtils {
       final g2 = pixels2[i + 1];
       final b2 = pixels2[i + 2];
 
-      // Считаем пиксель разным если хоть один канал отличается больше чем на 10
+      // Count a pixel as different if any channel differs by more than 10
       if ((r1 - r2).abs() > 10 ||
           (g1 - g2).abs() > 10 ||
           (b1 - b2).abs() > 10) {
@@ -100,7 +100,7 @@ class VisualTestUtils {
   }
 }
 
-/// Результат анализа пикселей
+/// Result of pixel analysis
 class PixelAnalysis {
   PixelAnalysis({
     required this.pixels,
@@ -112,7 +112,7 @@ class PixelAnalysis {
   final int width;
   final int height;
 
-  /// Вычислить ограничивающий прямоугольник (bounding box)
+  /// Compute the bounding box
   Rect get boundingBox {
     if (pixels.isEmpty) return Rect.zero;
 
@@ -131,7 +131,7 @@ class PixelAnalysis {
     return Rect.fromLTRB(minX, minY, maxX, maxY);
   }
 
-  /// Центр масс объекта
+  /// Center of mass of the object
   Offset get centroid {
     if (pixels.isEmpty) return Offset.zero;
 
@@ -146,26 +146,26 @@ class PixelAnalysis {
     return Offset(sumX / pixels.length, sumY / pixels.length);
   }
 
-  /// Количество пикселей
+  /// Number of pixels
   int get pixelCount => pixels.length;
 
-  /// Ширина bounding box
+  /// Width of the bounding box
   double get objectWidth => boundingBox.width;
 
-  /// Высота bounding box
+  /// Height of the bounding box
   double get objectHeight => boundingBox.height;
 
-  /// Приблизительный угол поворота на основе распределения пикселей
-  /// Использует моменты второго порядка для определения ориентации
+  /// Approximate rotation angle based on pixel distribution
+  /// Uses second-order moments to determine orientation
   double get estimatedRotationAngle {
     if (pixels.length < 4) return 0.0;
 
     final center = centroid;
 
-    // Вычисляем моменты второго порядка
-    double mu20 = 0; // Момент по x^2
-    double mu02 = 0; // Момент по y^2
-    double mu11 = 0; // Смешанный момент xy
+    // Compute second-order moments
+    double mu20 = 0; // Moment for x^2
+    double mu02 = 0; // Moment for y^2
+    double mu11 = 0; // Mixed moment xy
 
     for (final p in pixels) {
       final dx = p.dx - center.dx;
@@ -175,27 +175,27 @@ class PixelAnalysis {
       mu11 += dx * dy;
     }
 
-    // Угол ориентации из главной оси
+    // Orientation angle from the principal axis
     final angle = 0.5 * math.atan2(2 * mu11, mu20 - mu02);
 
-    // Конвертируем в градусы
+    // Convert to degrees
     return angle * 180 / math.pi;
   }
 
-  /// Проверить повернулся ли объект относительно другого анализа
+  /// Check whether the object has rotated relative to another analysis
   bool isRotatedComparedTo(PixelAnalysis other, {double tolerance = 5.0}) {
     final angleDiff = (estimatedRotationAngle - other.estimatedRotationAngle)
         .abs();
     return angleDiff > tolerance;
   }
 
-  /// Проверить сместился ли объект
+  /// Check whether the object has translated
   bool isTranslatedComparedTo(PixelAnalysis other, {double tolerance = 2.0}) {
     final centerDiff = (centroid - other.centroid).distance;
     return centerDiff > tolerance;
   }
 
-  /// Проверить изменился ли размер
+  /// Check whether the size has changed
   bool isScaledComparedTo(PixelAnalysis other, {double tolerance = 2.0}) {
     final widthDiff = (objectWidth - other.objectWidth).abs();
     final heightDiff = (objectHeight - other.objectHeight).abs();
@@ -213,17 +213,17 @@ class PixelAnalysis {
         ')';
   }
 
-  /// Детальный отчет для тестов
+  /// Detailed report for tests
   String toDetailedReport() {
     return '''
-=== Детальный визуальный анализ ===
-Количество красных пикселей: $pixelCount
-Центр масс: (${centroid.dx.toStringAsFixed(2)}, ${centroid.dy.toStringAsFixed(2)})
-Bounding Box: 
-  - Левый верхний: (${boundingBox.left.toStringAsFixed(2)}, ${boundingBox.top.toStringAsFixed(2)})
-  - Правый нижний: (${boundingBox.right.toStringAsFixed(2)}, ${boundingBox.bottom.toStringAsFixed(2)})
-  - Размер: ${objectWidth.toStringAsFixed(2)} x ${objectHeight.toStringAsFixed(2)}
-Приблизительный угол поворота: ${estimatedRotationAngle.toStringAsFixed(2)}°
+=== Detailed Visual Analysis ===
+Red pixel count: $pixelCount
+Center of mass: (${centroid.dx.toStringAsFixed(2)}, ${centroid.dy.toStringAsFixed(2)})
+Bounding Box:
+  - Top left: (${boundingBox.left.toStringAsFixed(2)}, ${boundingBox.top.toStringAsFixed(2)})
+  - Bottom right: (${boundingBox.right.toStringAsFixed(2)}, ${boundingBox.bottom.toStringAsFixed(2)})
+  - Size: ${objectWidth.toStringAsFixed(2)} x ${objectHeight.toStringAsFixed(2)}
+Estimated rotation angle: ${estimatedRotationAngle.toStringAsFixed(2)}°
 ================================
 ''';
   }

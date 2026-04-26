@@ -5,21 +5,21 @@ part of 'svg_filters.dart';
 /// Generates Perlin noise with fractal octaves for procedural texture generation.
 /// Implements SVG Filter 1.1 feTurbulence with full numOctaves support.
 class SvgTurbulenceFilter extends SvgFilter {
-  /// Базовая частота шума по X/Y.
+  /// Base noise frequency along X/Y.
   final double baseFrequencyX;
   final double baseFrequencyY;
 
-  /// Количество октав для фрактального шума.
+  /// Number of octaves for fractal noise.
   /// Each additional octave adds finer detail at half the amplitude.
   final int numOctaves;
 
-  /// Seed генератора шума.
+  /// Noise generator seed.
   final double seed;
 
-  /// Режим тайлинга.
+  /// Tiling mode.
   final SvgTurbulenceStitchTiles stitchTiles;
 
-  /// Тип функции шума.
+  /// Noise function type.
   final SvgTurbulenceType noiseType;
 
   SvgTurbulenceFilter({

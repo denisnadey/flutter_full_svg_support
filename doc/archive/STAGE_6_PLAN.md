@@ -1,17 +1,17 @@
 # Stage 6: Path Animations & animateMotion - Detailed Plan
 
-**Дата начала:** 20 ноября 2025 г.  
-**Приоритет:** P1 (High Priority)  
-**Сложность:** ⭐⭐⭐⭐ (High - path morphing is complex)
+**Start date:** November 20, 2025  
+**Priority:** P1 (High Priority)  
+**Complexity:** ⭐⭐⭐⭐ (High - path morphing is complex)
 
 ---
 
-## 🎯 Цели Stage 6
+## 🎯 Stage 6 Goals
 
-Реализовать полную поддержку path анимаций:
-1. **Path morphing** - плавное преобразование одного пути в другой
-2. **animateMotion** - движение элемента вдоль пути
-3. **Path interpolation** - интерполяция между path командами
+Implement full support for path animations:
+1. **Path morphing** - smooth transformation of one path into another
+2. **animateMotion** - element motion along a path
+3. **Path interpolation** - interpolation between path commands
 
 ---
 
@@ -19,10 +19,10 @@
 
 ### 6.1 Path Parsing & Data Structures
 
-**Файл:** `lib/src/animation/path_parser.dart`
+**File:** `lib/src/animation/path_parser.dart`
 
 ```dart
-// Структуры данных для path команд
+// Data structures for path commands
 abstract class PathCommand {
   String get type;
   List<double> get params;
@@ -58,14 +58,14 @@ class ArcCommand extends PathCommand {
 class ClosePathCommand extends PathCommand {}
 ```
 
-**Функциональность:**
-- ✅ Парсинг SVG path syntax (d="M10,10 L20,20")
-- ✅ Поддержка всех команд: M/m, L/l, H/h, V/v, C/c, S/s, Q/q, T/t, A/a, Z/z
-- ✅ Обработка запятых и пробелов
-- ✅ Обработка implicit команд (L после M)
-- ✅ Валидация синтаксиса
+**Functionality:**
+- ✅ Parsing SVG path syntax (d="M10,10 L20,20")
+- ✅ Support for all commands: M/m, L/l, H/h, V/v, C/c, S/s, Q/q, T/t, A/a, Z/z
+- ✅ Handling commas and spaces
+- ✅ Handling implicit commands (L after M)
+- ✅ Syntax validation
 
-**Примеры:**
+**Examples:**
 ```dart
 final parser = PathParser();
 final commands = parser.parse('M10,10 L20,20 C30,30 40,40 50,50 Z');
@@ -75,16 +75,16 @@ final commands = parser.parse('M10,10 L20,20 C30,30 40,40 50,50 Z');
 
 ### 6.2 Path Normalization
 
-**Файл:** `lib/src/animation/path_normalizer.dart`
+**File:** `lib/src/animation/path_normalizer.dart`
 
-**Функциональность:**
-- ✅ Конвертация relative → absolute координаты
-- ✅ Конвертация H/V → L (horizontal/vertical lines)
-- ✅ Конвертация S/T → C/Q (smooth curves)
-- ✅ Разбивка composite paths на одинаковое количество сегментов
-- ✅ Добавление промежуточных точек для выравнивания
+**Functionality:**
+- ✅ Converting relative → absolute coordinates
+- ✅ Converting H/V → L (horizontal/vertical lines)
+- ✅ Converting S/T → C/Q (smooth curves)
+- ✅ Splitting composite paths into equal segment counts
+- ✅ Adding intermediate points for alignment
 
-**Алгоритм:**
+**Algorithm:**
 ```
 1. Parse path1 and path2
 2. Convert all to absolute coordinates
@@ -93,7 +93,7 @@ final commands = parser.parse('M10,10 L20,20 C30,30 40,40 50,50 Z');
 5. If different, subdivide curves
 ```
 
-**Примеры:**
+**Examples:**
 ```dart
 final normalizer = PathNormalizer();
 final result = normalizer.normalize(
@@ -105,15 +105,15 @@ final result = normalizer.normalize(
 
 ### 6.3 Path Interpolation
 
-**Файл:** `lib/src/animation/path_interpolation.dart`
+**File:** `lib/src/animation/path_interpolation.dart`
 
-**Функциональность:**
-- ✅ Интерполяция между двумя нормализованными путями
-- ✅ Linear interpolation координат
-- ✅ Smooth interpolation для curve control points
-- ✅ Генерация промежуточного пути по t (0.0 - 1.0)
+**Functionality:**
+- ✅ Interpolation between two normalized paths
+- ✅ Linear interpolation of coordinates
+- ✅ Smooth interpolation for curve control points
+- ✅ Generating an intermediate path at t (0.0 - 1.0)
 
-**Алгоритм:**
+**Algorithm:**
 ```dart
 Path interpolate(List<PathCommand> from, List<PathCommand> to, double t) {
   final path = Path();
@@ -138,9 +138,9 @@ Path interpolate(List<PathCommand> from, List<PathCommand> to, double t) {
 
 ### 6.4 Animate d Attribute
 
-**Обновление:** `lib/src/animation/smil_parser.dart`
+**Update:** `lib/src/animation/smil_parser.dart`
 
-**Поддержка:**
+**Support:**
 ```xml
 <path d="M10,10 L50,10 L50,50 Z">
   <animate 
@@ -152,9 +152,9 @@ Path interpolate(List<PathCommand> from, List<PathCommand> to, double t) {
 </path>
 ```
 
-**Интеграция:**
+**Integration:**
 ```dart
-// В SmilAnimation
+// In SmilAnimation
 if (attributeName == 'd') {
   final pathFrom = pathParser.parse(from);
   final pathTo = pathParser.parse(to);
@@ -171,17 +171,17 @@ if (attributeName == 'd') {
 
 ### 6.5 animateMotion Support
 
-**Файл:** `lib/src/animation/motion_path.dart`
+**File:** `lib/src/animation/motion_path.dart`
 
-**Функциональность:**
-- ✅ Парсинг `<animateMotion>` элемента
-- ✅ Вычисление позиции на пути по t (0.0 - 1.0)
-- ✅ Поддержка `rotate="auto"` - автоматический поворот
-- ✅ Поддержка `rotate="auto-reverse"`
-- ✅ Поддержка `keyPoints` - контрольные точки на пути
-- ✅ Path.computeMetrics() для точного позиционирования
+**Functionality:**
+- ✅ Parsing `<animateMotion>` element
+- ✅ Computing position on the path at t (0.0 - 1.0)
+- ✅ Support for `rotate="auto"` - automatic rotation
+- ✅ Support for `rotate="auto-reverse"`
+- ✅ Support for `keyPoints` - control points on the path
+- ✅ Path.computeMetrics() for precise positioning
 
-**Пример XML:**
+**Example XML:**
 ```xml
 <circle cx="0" cy="0" r="5">
   <animateMotion 
@@ -192,7 +192,7 @@ if (attributeName == 'd') {
 </circle>
 ```
 
-**Алгоритм:**
+**Algorithm:**
 ```dart
 class MotionPathAnimation {
   final Path path;
@@ -223,11 +223,11 @@ class MotionPathAnimation {
 
 ### 6.6 Integration with AnimatedSvgPainter
 
-**Обновление:** `lib/src/animation/animated_svg_painter.dart`
+**Update:** `lib/src/animation/animated_svg_painter.dart`
 
 ```dart
 class AnimatedSvgPainter extends CustomPainter {
-  // Добавить обработку path morphing
+  // Add path morphing handling
   void _applyPathMorph(Canvas canvas, PathMorphAnimation anim, double t) {
     final interpolated = pathInterpolator.interpolate(
       anim.fromCommands,
@@ -238,7 +238,7 @@ class AnimatedSvgPainter extends CustomPainter {
     canvas.drawPath(interpolated, paint);
   }
   
-  // Добавить обработку animateMotion
+  // Add animateMotion handling
   void _applyMotionPath(Canvas canvas, MotionPathAnimation anim, double t) {
     final transform = anim.getTransformAt(t);
     canvas.save();
@@ -255,7 +255,7 @@ class AnimatedSvgPainter extends CustomPainter {
 
 ### Test Coverage: Minimum 20 tests
 
-**Файл:** `test/animation/path_morphing_test.dart`
+**File:** `test/animation/path_morphing_test.dart`
 
 1. **Path Parser Tests (8 tests)**
    - Parse simple path (M, L, Z)
@@ -280,7 +280,7 @@ class AnimatedSvgPainter extends CustomPainter {
    - Interpolate at t=0.5 (midpoint)
    - Interpolate complex paths
 
-**Файл:** `test/animation/motion_path_test.dart`
+**File:** `test/animation/motion_path_test.dart`
 
 4. **animateMotion Tests (3 tests)**
    - Position at start (t=0)

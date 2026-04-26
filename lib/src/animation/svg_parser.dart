@@ -19,38 +19,38 @@ part 'svg_parser_filters_primitives_advanced.dart';
 part 'svg_parser_filters_lighting.dart';
 part 'svg_parser_filters_utils.dart';
 
-/// Парсер SVG XML в DOM-дерево
+/// SVG XML parser that builds a DOM tree
 ///
-/// Преобразует XML строку в структуру [SvgDocument] с деревом [SvgNode].
-/// В отличие от vector_graphics_compiler, сохраняет полную DOM-структуру,
-/// включая анимационные элементы (<animate>, <animateTransform>, etc.)
+/// Converts an XML string into an [SvgDocument] structure with an [SvgNode] tree.
+/// Unlike vector_graphics_compiler, it preserves the full DOM structure,
+/// including animation elements (<animate>, <animateTransform>, etc.)
 class SvgParser {
   SvgParser._();
 
-  /// Парсит SVG XML строку в документ
+  /// Parses an SVG XML string into a document
   static SvgDocument parse(String svgXml) {
     final document = XmlDocument.parse(svgXml);
     final svgElement = document.findElements('svg').first;
 
-    // Парсим фильтры из <defs><filter>...</filter></defs>
+    // Parse filters from <defs><filter>...</filter></defs>
     final filters = _parseFilters(svgElement);
 
-    // Парсим CSS <style> элементы для @keyframes
+    // Parse CSS <style> elements for @keyframes
     final keyframes = _parseStyleElements(svgElement);
 
-    // Парсим CSS правила для селекторов (id, class)
+    // Parse CSS rules for selectors (id, class)
     final selectorRules = _parseSelectorRulesElements(svgElement);
 
     // Parse @font-face rules for embedded fonts
     final fontFaceRules = _parseFontFaceRulesElements(svgElement);
 
-    // Парсим корневой <svg> элемент
+    // Parse the root <svg> element
     final rootNode = _parseElement(svgElement);
 
     // Link filter primitives to their DOM SvgNodes for animated attribute access
     _linkFilterPrimitivesToNodes(rootNode, filters);
 
-    // Извлекаем viewBox, width, height из корневого элемента
+    // Extract viewBox, width, height from the root element
     final viewBox = _parseViewBox(svgElement.getAttribute('viewBox'));
     final width = _parseLength(svgElement.getAttribute('width'));
     final height = _parseLength(svgElement.getAttribute('height'));

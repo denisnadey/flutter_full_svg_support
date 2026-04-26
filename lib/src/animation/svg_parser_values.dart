@@ -1,6 +1,6 @@
 part of 'svg_parser.dart';
 
-/// Парсит число или пару чисел (например "5" или "5 10")
+/// Parses a number or a pair of numbers (e.g. "5" or "5 10")
 (double, double) _parseNumberOptionalNumber(String value) {
   final parts = value
       .trim()
@@ -18,14 +18,14 @@ part of 'svg_parser.dart';
   }
 }
 
-/// Парсит числовое значение (может содержать единицы измерения)
+/// Parses a numeric value (may contain units)
 double _parseNumber(String value) {
-  // Убираем единицы измерения и пробелы
+  // Strip units and whitespace
   final cleaned = value.trim().replaceAll(RegExp(r'[a-zA-Z%]+$'), '');
   return double.tryParse(cleaned) ?? 0.0;
 }
 
-/// Парсит viewBox атрибут
+/// Parses the viewBox attribute
 ui.Rect? _parseViewBox(String? viewBox) {
   if (viewBox == null || viewBox.isEmpty) {
     return null;
@@ -45,7 +45,7 @@ ui.Rect? _parseViewBox(String? viewBox) {
   return null;
 }
 
-/// Парсит длину (может быть число, px, em, %, etc.)
+/// Parses a length value (can be a number, px, em, %, etc.)
 double? _parseLength(String? length) {
   if (length == null || length.isEmpty) {
     return null;

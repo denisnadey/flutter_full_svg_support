@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../state/app_state.dart';
 
-/// Панель для настройки параметров AnimatedSvgPicture
+/// Panel for configuring AnimatedSvgPicture parameters
 class ParametersPanel extends StatelessWidget {
   final AppState state;
 

@@ -544,7 +544,7 @@ class Css3DTransformDecomposer {
   }
 }
 
-/// CSS Keyframe правило
+/// CSS Keyframe rule
 class CssKeyframe {
   final double offset; // 0.0 - 1.0
   final Map<String, String> properties;
@@ -560,7 +560,7 @@ class CssKeyframe {
   });
 }
 
-/// CSS @keyframes анимация
+/// CSS @keyframes animation
 class CssKeyframes {
   final String name;
   final List<CssKeyframe> keyframes;
@@ -568,7 +568,7 @@ class CssKeyframes {
   CssKeyframes({required this.name, required this.keyframes});
 }
 
-/// CSS Animation свойство (shorthand)
+/// CSS Animation property (shorthand)
 /// animation: name duration timing-function delay iteration-count direction fill-mode play-state;
 class CssAnimation {
   final String name;

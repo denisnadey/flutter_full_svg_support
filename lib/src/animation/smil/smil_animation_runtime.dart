@@ -6,8 +6,8 @@ extension SmilAnimationRuntimeExtension on SmilAnimation {
     if (attr != null) {
       attr.setAnimatedValue(value);
     } else {
-      // Если атрибута нет, создаем его
-      // Это происходит для animateTransform когда у элемента изначально нет transform
+      // If the attribute doesn't exist, create it.
+      // This happens for animateTransform when the element initially has no transform
       targetNode.setAttribute(attributeName, value, type: attributeType);
       final newAttr = targetNode.getAttribute(attributeName);
       if (newAttr != null) {
@@ -16,7 +16,7 @@ extension SmilAnimationRuntimeExtension on SmilAnimation {
     }
   }
 
-  /// Убрать анимированное значение
+  /// Clear the animated value
   void _clearValue() {
     final attr = targetNode.getAttribute(attributeName);
     if (attr != null) {

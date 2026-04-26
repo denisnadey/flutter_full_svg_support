@@ -1,7 +1,7 @@
 part of 'animated_svg_painter.dart';
 
 extension AnimatedSvgPainterShapesRectExtension on AnimatedSvgPainter {
-  /// Рисует <rect>
+  /// Paints <rect>
   void _paintRect(
     ui.Canvas canvas,
     SvgNode node, {

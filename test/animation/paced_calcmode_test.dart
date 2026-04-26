@@ -125,14 +125,14 @@ void main() {
       // Paced mode should generate keyTimes automatically
       // Distance: 0->10 = 10, 10->100 = 90, total = 100
       // keyTimes should be [0, 10/100=0.1, 1.0]
-      // Проверяем, что значения интерполируются правильно
+      // Verify that values are interpolated correctly
       final valueAt0 = animation.computeValue(0.0);
       final valueAt01 = animation.computeValue(0.1);
       final valueAt1 = animation.computeValue(1.0);
 
       expect(valueAt0, equals(0.0));
       expect(valueAt1, equals(100.0));
-      // В 0.1 прогресса должны быть около 10 (но с учетом paced распределения)
+      // At 0.1 progress should be around 10 (taking paced distribution into account)
       expect(valueAt01, isA<double>());
     });
 
@@ -236,8 +236,8 @@ void main() {
     });
 
     test('Paced mode ignores explicit keyTimes', () {
-      // Когда calcMode="paced", explicit keyTimes игнорируются в Blink
-      // Но в нашей реализации мы генерируем paced keyTimes только если keyTimes == null
+      // When calcMode="paced", explicit keyTimes are ignored in Blink
+      // But in our implementation we only generate paced keyTimes when keyTimes == null
       final svgString = '''
 <svg viewBox="0 0 100 100">
   <rect x="0" y="0" width="20" height="20">
@@ -254,8 +254,8 @@ void main() {
       final animations = SmilParser.parseAnimations(document);
       final animation = animations[0];
 
-      // Если keyTimes заданы явно, они используются (не генерируем paced)
-      // Это соответствует поведению Blink - paced генерируется только если keyTimes не заданы
+      // If keyTimes are specified explicitly, they are used (paced keyTimes are not generated)
+      // This matches Blink behavior — paced is generated only when keyTimes are not provided
       expect(animation.keyTimes, isNotNull);
     });
   });

@@ -13,21 +13,21 @@ part 'smil_parser_animation_parsing.dart';
 part 'smil_parser_css_extraction.dart';
 part 'smil_parser_motion.dart';
 
-/// Парсер SMIL анимационных элементов из SVG DOM
+/// Parser for SMIL animation elements from SVG DOM
 class SmilParser {
   SmilParser._();
 
-  /// Извлечь все SMIL анимации из документа (включая CSS анимации)
+  /// Extract all SMIL animations from the document (including CSS animations)
   static List<SmilAnimation> parseAnimations(SvgDocument document) {
     final animations = <SmilAnimation>[];
 
-    // Парсим SMIL анимации (<animate>, <animateTransform>, etc.)
+    // Parse SMIL animations (<animate>, <animateTransform>, etc.)
     _extractAnimations(document.root, document, animations);
 
-    // Парсим CSS анимации из style атрибутов и @keyframes
+    // Parse CSS animations from style attributes and @keyframes
     _extractCssAnimations(document.root, document, animations);
 
-    // Парсим CSS анимации из <style> селекторов (#id, .class, tagName)
+    // Parse CSS animations from <style> selectors (#id, .class, tagName)
     if (document.cssSelectorRules != null) {
       _extractCssSelectorAnimations(
         document.root,

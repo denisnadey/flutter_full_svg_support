@@ -1,49 +1,49 @@
-# Example App - Новая архитектура
+# Example App - New Architecture
 
-## Обзор
+## Overview
 
-Полностью переработанное example приложение с чистым кодом, простым state management и максимальной переиспользуемостью компонентов.
+A completely redesigned example application with clean code, simple state management, and maximum component reusability.
 
-## Структура проекта
+## Project Structure
 
 ```
 example/lib/
-├── main.dart                           # Точка входа
+├── main.dart                           # Entry point
 ├── state/
 │   └── app_state.dart                 # State management (ChangeNotifier)
 ├── models/
-│   └── svg_example.dart               # Модель примера SVG
+│   └── svg_example.dart               # SVG example model
 ├── data/
-│   └── examples_data.dart             # Коллекция всех примеров
+│   └── examples_data.dart             # Collection of all examples
 ├── pages/
-│   └── examples_page.dart             # Главная страница
+│   └── examples_page.dart             # Main page
 └── widgets/
-    ├── animated_svg_viewer.dart       # Просмотрщик SVG с параметрами
-    ├── parameters_panel.dart          # Панель настройки параметров
-    └── fps_monitor.dart               # FPS монитор
+    ├── animated_svg_viewer.dart       # SVG viewer with parameters
+    ├── parameters_panel.dart          # Parameter settings panel
+    └── fps_monitor.dart               # FPS monitor
 ```
 
-## Основные компоненты
+## Main Components
 
 ### 1. State Management (`app_state.dart`)
 
-Простой ChangeNotifier для управления состоянием:
+Simple ChangeNotifier for state management:
 
-**Параметры AnimatedSvgPicture:**
-- `width` / `height` - размеры виджета
+**AnimatedSvgPicture Parameters:**
+- `width` / `height` - widget dimensions
 - `fit` - BoxFit (contain, cover, fill, etc.)
-- `alignment` - выравнивание (topLeft, center, etc.)
-- `backgroundColor` - фоновый цвет
-- `playbackRate` - скорость воспроизведения (0.1 - 5.0x)
-- `autoPlay` - автоматический старт
-- `initialTime` - начальное время
+- `alignment` - alignment (topLeft, center, etc.)
+- `backgroundColor` - background color
+- `playbackRate` - playback speed (0.1 - 5.0x)
+- `autoPlay` - auto start
+- `initialTime` - initial time
 
-**UI параметры:**
-- `showFPS` - показать FPS монитор
-- `showParameters` - показать панель параметров
-- `selectedExampleIndex` - текущий пример
+**UI Parameters:**
+- `showFPS` - show FPS monitor
+- `showParameters` - show parameters panel
+- `selectedExampleIndex` - current example
 
-### 2. Модель данных (`svg_example.dart`)
+### 2. Data Model (`svg_example.dart`)
 
 ```dart
 class SvgExample {
@@ -57,78 +57,78 @@ class SvgExample {
 }
 ```
 
-**Категории:**
-- Basic - базовые анимации (движение, пульсация, затухание)
-- Transform - трансформации (rotation, translate, scale)
-- Color - цветовые анимации
-- Path - морфинг путей
-- Motion - движение по пути (animateMotion)
-- Advanced - сложные комбинации
+**Categories:**
+- Basic - basic animations (movement, pulsing, fading)
+- Transform - transforms (rotation, translate, scale)
+- Color - color animations
+- Path - path morphing
+- Motion - motion along a path (animateMotion)
+- Advanced - complex combinations
 
-### 3. Примеры (`examples_data.dart`)
+### 3. Examples (`examples_data.dart`)
 
-**13+ готовых примеров:**
+**13+ ready-made examples:**
 
 **Basic:**
-- Moving Rectangle - горизонтальное движение
-- Pulsing Circle - пульсирующий круг
-- Fading Square - затухание прозрачности
+- Moving Rectangle - horizontal movement
+- Pulsing Circle - pulsing circle
+- Fading Square - opacity fade
 
 **Transform:**
-- Rotating Square - вращение
-- Bouncing Ball - перемещение с easing
-- Scaling Heart - масштабирование
+- Rotating Square - rotation
+- Bouncing Ball - movement with easing
+- Scaling Heart - scaling
 
 **Color:**
-- Rainbow Circle - радужная заливка
-- Colorful Border - цветная обводка
+- Rainbow Circle - rainbow fill
+- Colorful Border - colored stroke
 
 **Path:**
-- Square to Circle - морфинг квадрата в круг
-- Star to Pentagon - морфинг звезды
+- Square to Circle - square-to-circle morph
+- Star to Pentagon - star morph
 
 **Motion:**
-- Circle Path - движение по кругу
-- Car on Track - автомобиль с авто-поворотом
+- Circle Path - movement along a circle
+- Car on Track - car with auto-rotation
 
 **Advanced:**
-- Animated Clock - часы с несколькими стрелками
-- Loading Spinner - спиннер загрузки
+- Animated Clock - clock with multiple hands
+- Loading Spinner - loading spinner
 
-### 4. Виджеты
+### 4. Widgets
 
-**AnimatedSvgViewer** - показывает AnimatedSvgPicture с текущими параметрами из AppState
+**AnimatedSvgViewer** - displays AnimatedSvgPicture with the current parameters from AppState
 
-**ParametersPanel** - интерактивная панель:
-- Слайдеры для width/height/playbackRate
-- Переключатель autoPlay
-- Dropdown для fit/alignment
-- Цветовые чипы для backgroundColor
-- Кнопка сброса к дефолтным значениям
+**ParametersPanel** - interactive panel:
+- Sliders for width/height/playbackRate
+- autoPlay toggle
+- Dropdown for fit/alignment
+- Color chips for backgroundColor
+- Reset to defaults button
 
-**FPSMonitor** - мониторинг производительности:
-- Текущий FPS
-- График истории (60 кадров)
-- Цветовая индикация (зеленый >55, оранжевый >30, красный <30)
+**FPSMonitor** - performance monitoring:
+- Current FPS
+- History graph (60 frames)
+- Color indicator (green >55, orange >30, red <30)
 
-### 5. Главная страница (`examples_page.dart`)
+### 5. Main Page (`examples_page.dart`)
 
 **Desktop layout:**
-- Левая панель (280px) - список примеров по категориям
-- Центральная область - SVG с описанием и тегами
-- Правая панель (320px) - параметры (опционально)
+- Left panel (280px) - list of examples by category
+- Center area - SVG with description and tags
+- Right panel (320px) - parameters (optional)
 
 **Mobile layout:**
-- Горизонтальный скролл примеров сверху
-- Центральная область - SVG
-- Сворачиваемая панель параметров снизу
+- Horizontal scroll of examples at the top
+- Center area - SVG
+- Collapsible parameters panel at the bottom
 
-## Использование
+## Usage
 
-### Добавление нового примера
+### Adding a New Example
 
 ```dart
-// В examples_data.dart
+// In examples_data.dart
 SvgExample(
   id: 'my_example',
   title: 'My Example',
@@ -144,71 +144,71 @@ SvgExample(
 ),
 ```
 
-### Добавление новой категории
+### Adding a New Category
 
 ```dart
-// В svg_example.dart
+// In svg_example.dart
 class ExampleCategory {
   static const String myCategory = 'My Category';
 }
 ```
 
-### Управление состоянием
+### State Management
 
 ```dart
-// Глобальный state доступен в main.dart
+// Global state is available in main.dart
 final _appState = AppState();
 
-// Изменение параметров
+// Changing parameters
 state.setWidth(400);
 state.setPlaybackRate(2.0);
 state.toggleFPS();
 state.resetToDefaults();
 ```
 
-## Особенности реализации
+## Implementation Notes
 
-### Адаптивный дизайн
-- Брейкпоинт: 900px
-- Mobile < 900: вертикальный layout
-- Desktop ≥ 900: трехколоночный layout
+### Responsive Design
+- Breakpoint: 900px
+- Mobile < 900: vertical layout
+- Desktop >= 900: three-column layout
 
 ### Performance
-- ListenableBuilder для минимальных перерисовок
-- FPS монитор с 60-frame буфером
-- Оптимизированные слайдеры с divisions
+- ListenableBuilder for minimal redraws
+- FPS monitor with 60-frame buffer
+- Optimized sliders with divisions
 
 ### UX
-- Визуальная обратная связь (выбранный пример)
-- Цветовая индикация FPS
-- Интуитивные иконки для категорий
-- Теги для быстрого поиска функций
+- Visual feedback (selected example)
+- Color-coded FPS indicator
+- Intuitive icons for categories
+- Tags for quick feature search
 
-## Доступные параметры AnimatedSvgPicture
+## Available AnimatedSvgPicture Parameters
 
-Все параметры доступны в интерактивной панели:
+All parameters are available in the interactive panel:
 
-| Параметр | Тип | Диапазон | Описание |
-|----------|-----|----------|----------|
-| width | double | 100-600 | Ширина виджета |
-| height | double | 100-600 | Высота виджета |
-| fit | BoxFit | 7 вариантов | Как вписать SVG |
-| alignment | Alignment | 9 позиций | Выравнивание |
-| backgroundColor | Color? | 6 пресетов | Фон контейнера |
-| playbackRate | double | 0.1-5.0 | Скорость анимации |
-| autoPlay | bool | true/false | Автостарт |
-| initialTime | Duration? | - | Начальное время |
+| Parameter | Type | Range | Description |
+|-----------|------|-------|-------------|
+| width | double | 100-600 | Widget width |
+| height | double | 100-600 | Widget height |
+| fit | BoxFit | 7 options | How to fit SVG |
+| alignment | Alignment | 9 positions | Alignment |
+| backgroundColor | Color? | 6 presets | Container background |
+| playbackRate | double | 0.1-5.0 | Animation speed |
+| autoPlay | bool | true/false | Auto start |
+| initialTime | Duration? | - | Initial time |
 
-## Команды разработки
+## Development Commands
 
 ```bash
-# Запуск на macOS
+# Run on macOS
 cd example && flutter run -d macos
 
-# Запуск на Chrome
+# Run on Chrome
 cd example && flutter run -d chrome
 
-# Запуск на iOS симуляторе
+# Run on iOS simulator
 cd example && flutter run -d ios
 
 # Hot reload
@@ -218,13 +218,13 @@ r
 R
 ```
 
-## Архитектурные преимущества
+## Architectural Advantages
 
-✅ **Простота** - 5 файлов вместо 15+
-✅ **Переиспользование** - все компоненты универсальны
-✅ **Масштабируемость** - легко добавлять примеры
-✅ **Чистота кода** - один паттерн для всех примеров
-✅ **State management** - простой ChangeNotifier без зависимостей
-✅ **Производительность** - минимальные перерисовки
-✅ **UX** - адаптивный дизайн для mobile/desktop
-✅ **Визуализация** - все параметры доступны в UI
+✅ **Simplicity** - 5 files instead of 15+
+✅ **Reusability** - all components are universal
+✅ **Scalability** - easy to add examples
+✅ **Code quality** - one pattern for all examples
+✅ **State management** - simple ChangeNotifier with no dependencies
+✅ **Performance** - minimal redraws
+✅ **UX** - responsive design for mobile/desktop
+✅ **Visualization** - all parameters available in the UI

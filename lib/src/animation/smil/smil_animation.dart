@@ -10,36 +10,36 @@ part 'smil_animation_value_computation.dart';
 part 'smil_animation_runtime.dart';
 part 'smil_animation_curves.dart';
 
-/// Тип SMIL анимации
+/// SMIL animation type
 enum SmilAnimationType {
-  /// <animate> - анимация атрибута
+  /// <animate> - attribute animation
   animate,
 
-  /// <animateTransform> - анимация трансформации
+  /// <animateTransform> - transform animation
   animateTransform,
 
-  /// <animateMotion> - анимация движения по пути
+  /// <animateMotion> - motion along a path animation
   animateMotion,
 
-  /// <set> - одномоментная установка значения
+  /// <set> - instantaneous value assignment
   set,
 
-  /// <animateColor> - анимация цвета (deprecated, но может встречаться)
+  /// <animateColor> - color animation (deprecated, but may be encountered)
   animateColor,
 }
 
-/// Режим вычисления промежуточных значений
+/// Intermediate value calculation mode
 enum SmilCalcMode {
-  /// Линейная интерполяция между значениями
+  /// Linear interpolation between values
   linear,
 
-  /// Дискретная (ступенчатая) - без интерполяции
+  /// Discrete (step-based) - no interpolation
   discrete,
 
-  /// Равномерная скорость (paced) - автоматическая настройка keyTimes
+  /// Uniform speed (paced) - automatic keyTimes adjustment
   paced,
 
-  /// Сплайновая интерполяция с использованием keySplines
+  /// Spline interpolation using keySplines
   spline,
 }
 
@@ -58,27 +58,27 @@ enum SmilFillMode {
   both,
 }
 
-/// Режим добавления (additive)
+/// Additive mode
 enum SmilAdditiveMode {
-  /// Заменить базовое значение
+  /// Replace the base value
   replace,
 
-  /// Добавить к базовому значению
+  /// Add to the base value
   sum,
 }
 
-/// Направление проигрывания повторов (CSS animation-direction compatibility)
+/// Playback direction for repeats (CSS animation-direction compatibility)
 enum SmilPlaybackDirection {
-  /// Каждая итерация проигрывается от 0 до 1
+  /// Each iteration plays from 0 to 1
   normal,
 
-  /// Каждая итерация проигрывается от 1 до 0
+  /// Each iteration plays from 1 to 0
   reverse,
 
-  /// Чередование: 1-я итерация normal, 2-я reverse, ...
+  /// Alternating: 1st iteration normal, 2nd reverse, ...
   alternate,
 
-  /// Чередование: 1-я итерация reverse, 2-я normal, ...
+  /// Alternating: 1st iteration reverse, 2nd normal, ...
   alternateReverse,
 }
 
@@ -116,7 +116,7 @@ class SmilAnimation {
     this.isPaused = false,
     this.documentOrder = 0,
   }) {
-    // Валидация
+    // Validation
     if (values != null) {
       if (keyTimes != null && keyTimes!.length != values!.length) {
         throw ArgumentError('keyTimes length must match values length');
@@ -129,8 +129,8 @@ class SmilAnimation {
         }
       }
 
-      // Генерируем keyTimes для paced mode, если они не заданы явно
-      // Реализация основана на Blink SVGAnimationElement::calculateKeyTimesForCalcModePaced()
+      // Generate keyTimes for paced mode if not explicitly specified.
+      // Implementation based on Blink SVGAnimationElement::calculateKeyTimesForCalcModePaced()
       if (calcMode == SmilCalcMode.paced &&
           keyTimes == null &&
           values != null &&
@@ -140,8 +140,8 @@ class SmilAnimation {
     }
   }
 
-  /// Генерирует keyTimes для calcMode="paced" на основе расстояний между значениями
-  /// Реализация основана на Blink SVGAnimationElement::calculateKeyTimesForCalcModePaced()
+  /// Generates keyTimes for calcMode="paced" based on distances between values.
+  /// Implementation based on Blink SVGAnimationElement::calculateKeyTimesForCalcModePaced()
   List<double>? _generatePacedKeyTimes() {
     if (values == null || values!.length < 2) return null;
 
@@ -150,21 +150,21 @@ class SmilAnimation {
     double totalDistance = 0.0;
     final distances = <double>[];
 
-    // Вычисляем расстояния между последовательными значениями
+    // Compute distances between consecutive values
     for (int i = 0; i < values!.length - 1; i++) {
       final distance = calculator.distance(values![i], values![i + 1]);
       if (distance < 0) {
-        // Если расстояние не может быть вычислено, возвращаем null
-        // Это означает, что paced mode не поддерживается для этого типа
+        // If the distance cannot be computed, return null.
+        // This means paced mode is not supported for this type
         return null;
       }
       totalDistance += distance;
       distances.add(distance);
     }
 
-    // Если totalDistance равен нулю, все значения одинаковые
+    // If totalDistance is zero, all values are identical
     if (totalDistance == 0.0) {
-      // Равномерное распределение
+      // Uniform distribution
       final step = 1.0 / (values!.length - 1);
       for (int i = 1; i < values!.length; i++) {
         keyTimesForPaced.add(i * step);
@@ -173,82 +173,82 @@ class SmilAnimation {
       return keyTimesForPaced;
     }
 
-    // Нормализуем расстояния в keyTimes
-    // Алгоритм из Blink: keyTimesForPaced[n] = keyTimesForPaced[n-1] + distances[n] / totalDistance
+    // Normalize distances into keyTimes.
+    // Algorithm from Blink: keyTimesForPaced[n] = keyTimesForPaced[n-1] + distances[n] / totalDistance
     double cumulative = 0.0;
     for (int i = 0; i < distances.length; i++) {
       cumulative += distances[i] / totalDistance;
       keyTimesForPaced.add(cumulative);
     }
 
-    // Последний keyTime всегда 1.0
+    // The last keyTime is always 1.0
     keyTimesForPaced[values!.length - 1] = 1.0;
 
     return keyTimesForPaced;
   }
 
-  /// ID анимации (из атрибута xml:id или id)
-  /// Используется для syncbase timing
+  /// Animation ID (from xml:id or id attribute).
+  /// Used for syncbase timing
   final String? id;
 
-  /// Тип анимации
+  /// Animation type
   final SmilAnimationType type;
 
-  /// Целевой узел, к которому применяется анимация
+  /// Target node to which the animation is applied
   final SvgNode targetNode;
 
-  /// Имя анимируемого атрибута
+  /// Name of the animated attribute
   final String attributeName;
 
-  /// Тип атрибута (для корректной интерполяции)
+  /// Attribute type (for correct interpolation)
   final SvgAttributeType attributeType;
 
-  /// Тип трансформации для animateTransform (translate, rotate, scale, etc.)
+  /// Transform type for animateTransform (translate, rotate, scale, etc.)
   final String? transformType;
 
-  // === Значения анимации ===
+  // === Animation values ===
 
-  /// Начальное значение (from)
+  /// Initial value (from)
   final Object? from;
 
-  /// Конечное значение (to)
+  /// Final value (to)
   final Object? to;
 
-  /// Относительное изменение (by)
+  /// Relative change (by)
   final Object? by;
 
-  /// Список ключевых значений (values) для keyframe анимации
+  /// List of keyframe values (values) for keyframe animation
   final List<Object>? values;
 
-  /// Временные метки для values (от 0.0 до 1.0)
+  /// Timestamps for values (from 0.0 to 1.0)
   final List<double>? keyTimes;
 
-  /// Сгенерированные keyTimes для paced mode (если calcMode == paced и keyTimes не заданы)
+  /// Generated keyTimes for paced mode (if calcMode == paced and keyTimes are not specified)
   List<double>? _pacedKeyTimes;
 
-  /// Контрольные точки кубических кривых Безье для spline интерполяции
-  /// Каждый элемент представляет кривую между двумя соседними keyframes
+  /// Control points of cubic Bezier curves for spline interpolation.
+  /// Each element represents a curve between two adjacent keyframes
   final List<CubicBezier>? keySplines;
 
-  /// Шаги для дискретной интерполяции (CSS steps())
-  /// Содержится по одному на каждый интервал между соседними keyframes
+  /// Steps for discrete interpolation (CSS steps()).
+  /// One entry per interval between adjacent keyframes
   final List<StepTiming>? keySteps;
 
-  // === Тайминг ===
+  // === Timing ===
 
-  /// Длительность одной итерации анимации
+  /// Duration of one animation iteration
   final Duration dur;
 
-  /// Время начала анимации
+  /// Animation start time
   final Duration begin;
 
-  /// Время окончания анимации (если null, зависит от repeatCount/repeatDur)
+  /// Animation end time (if null, depends on repeatCount/repeatDur)
   final Duration? end;
 
-  /// Количество повторений (double.infinity для indefinite)
+  /// Number of repetitions (double.infinity for indefinite)
   final double repeatCount;
 
-  /// Общая длительность повторений
+  /// Total repeat duration
   final Duration? repeatDur;
 
   /// Minimum active duration constraint (per SMIL spec)
@@ -261,24 +261,24 @@ class SmilAnimation {
   /// Per SMIL: when min > max, min takes precedence.
   final Duration? max;
 
-  /// Условия начала анимации (parsed from begin attribute)
+  /// Animation begin conditions (parsed from begin attribute)
   final List<TimingCondition> beginConditions;
 
-  /// Условия окончания анимации (parsed from end attribute)
+  /// Animation end conditions (parsed from end attribute)
   final List<TimingCondition> endConditions;
 
-  // === Поведение ===
+  // === Behavior ===
 
-  /// Режим заполнения после окончания
+  /// Fill mode after animation ends
   final SmilFillMode fillMode;
 
-  /// Режим вычисления промежуточных значений
+  /// Intermediate value calculation mode
   final SmilCalcMode calcMode;
 
-  /// Направление проигрывания итераций (используется для CSS animation-direction)
+  /// Playback direction for iterations (used for CSS animation-direction)
   final SmilPlaybackDirection playbackDirection;
 
-  /// Режим добавления к базовому значению
+  /// Mode for adding to the base value
   final SmilAdditiveMode additive;
 
   /// Accumulate values between iterations
@@ -293,28 +293,28 @@ class SmilAnimation {
 
   // === Runtime state ===
 
-  /// Активна ли анимация в данный момент
+  /// Whether the animation is currently active
   bool _isActive = false;
 
-  /// Текущая итерация
+  /// Current iteration
   int _currentIteration = 0;
 
-  /// Локальное время внутри текущей итерации
+  /// Local time within the current iteration
   Duration _localTime = Duration.zero;
 
-  /// Последнее вычисленное значение
+  /// Last computed value
   Object? _lastValue;
 
   /// Resolved begin time from syncbase conditions (overrides `begin` if set)
   Duration? _resolvedBeginTime;
 
-  /// Активна ли анимация
+  /// Whether the animation is active
   bool get isActive => _isActive;
 
-  /// Текущая итерация
+  /// Current iteration
   int get currentIteration => _currentIteration;
 
-  /// Локальное время
+  /// Local time
   Duration get localTime => _localTime;
   Duration getEffectiveBeginTime() {
     return _resolvedBeginTime ?? begin;
@@ -325,7 +325,7 @@ class SmilAnimation {
     _resolvedBeginTime = time;
   }
 
-  /// Вычислить эффективное конечное время анимации
+  /// Compute the effective end time of the animation
   /// Per SVG/SMIL spec: when both repeatCount and repeatDur are specified,
   /// the active duration is min(repeatCount * dur, repeatDur).
   /// When one is indefinite, the other determines the duration.
@@ -435,21 +435,21 @@ class SmilAnimation {
     return Duration(microseconds: micros.round());
   }
 
-  /// Вычислить значение анимации в момент времени t ∈ [0, 1] внутри итерации
+  /// Compute the animation value at time t ∈ [0, 1] within an iteration.
   ///
-  /// Параметр [t] представляет прогресс внутри одной итерации анимации.
-  /// Учитывает calcMode для выбора метода интерполяции.
-  /// [completedRepeats] - количество завершённых повторений (для accumulate)
+  /// The parameter [t] represents progress within one animation iteration.
+  /// Respects calcMode when choosing the interpolation method.
+  /// [completedRepeats] - the number of completed repetitions (for accumulate)
   Object? computeValue(double t, {int completedRepeats = 0}) {
-    // Для animateMotion используем специальную логику
+    // For animateMotion, use special logic
     if (type == SmilAnimationType.animateMotion) {
-      // animateMotion обычно не использует additive (он всегда суммирует трансформации)
-      // Но применяем accumulate если нужно
+      // animateMotion does not normally use additive (it always sums transforms),
+      // but accumulate is applied if needed
       final motionValue = _computeMotionValue(
         t,
         completedRepeats: completedRepeats,
       );
-      // Для motion accumulate применяется внутри _computeMotionValue через keyPoints
+      // For motion, accumulate is applied inside _computeMotionValue via keyPoints
       return motionValue;
     }
 
@@ -459,39 +459,39 @@ class SmilAnimation {
     if (type == SmilAnimationType.set) {
       // <set> simply sets the attribute to 'to' value
       final setValue = to;
-      // Применяем additive="sum" (добавляем к базовому значению)
+      // Apply additive="sum" (add to the base value)
       return _applyAdditive(setValue);
     }
 
-    // Для discrete calcMode - без интерполяции
+    // For discrete calcMode - no interpolation
     if (calcMode == SmilCalcMode.discrete) {
       final animValue = _computeDiscreteValue(t);
 
-      // Применяем accumulate="sum"
+      // Apply accumulate="sum"
       final accumulatedValue = _applyAccumulate(animValue, completedRepeats);
 
-      // Применяем additive="sum"
+      // Apply additive="sum"
       return _applyAdditive(accumulatedValue);
     }
 
-    // Для values-based анимации
+    // For values-based animation
     if (values != null && values!.isNotEmpty) {
       final animValue = _computeValuesBasedValue(t);
 
-      // Применяем accumulate="sum" (если есть завершённые повторения)
+      // Apply accumulate="sum" (if there are completed repeats)
       final accumulatedValue = _applyAccumulate(animValue, completedRepeats);
 
-      // Применяем additive="sum" (добавляем к базовому значению)
+      // Apply additive="sum" (add to the base value)
       return _applyAdditive(accumulatedValue);
     }
 
-    // Для from/to/by анимации
+    // For from/to/by animation
     final animValue = _computeSimpleValue(t);
 
-    // Применяем accumulate="sum" (если есть завершённые повторения)
+    // Apply accumulate="sum" (if there are completed repetitions)
     final accumulatedValue = _applyAccumulate(animValue, completedRepeats);
 
-    // Применяем additive="sum" (добавляем к базовому значению)
+    // Apply additive="sum" (add to the base value)
     return _applyAdditive(accumulatedValue);
   }
 
@@ -666,8 +666,8 @@ class SmilAnimation {
     }
   }
 
-  /// Применить значение к атрибуту
-  /// Сбросить состояние анимации в начальное
+  /// Apply the value to the attribute.
+  /// Reset animation state to initial
   void reset() {
     _isActive = false;
     _currentIteration = 0;

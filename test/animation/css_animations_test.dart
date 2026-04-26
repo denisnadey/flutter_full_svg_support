@@ -247,10 +247,10 @@ circle, rect {
       final document = SvgParser.parse(svgString);
       final animations = SmilParser.parseAnimations(document);
 
-      // CSS анимация должна быть сконвертирована в SMIL
+      // CSS animation should be converted to SMIL
       expect(animations, isNotEmpty);
 
-      // Проверяем что есть анимация transform
+      // Verify that there is a transform animation
       final transformAnims = animations
           .where((anim) => anim.attributeName == 'transform')
           .toList();

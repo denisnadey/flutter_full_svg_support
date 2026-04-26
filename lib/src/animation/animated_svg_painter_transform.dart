@@ -21,7 +21,7 @@ extension AnimatedSvgPainterCanvasTransformExtension on AnimatedSvgPainter {
       return;
     }
 
-    // Парсим трансформации
+    // Parse transforms
     final transforms = SvgTransform.parse(transformStr);
     if (transforms.isEmpty) return;
 

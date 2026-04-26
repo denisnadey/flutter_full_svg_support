@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:full_svg_flutter/src/animation.dart';
 import '../state/app_state.dart';
 
-/// Виджет для отображения AnimatedSvgPicture с текущими параметрами из AppState
+/// Widget for displaying AnimatedSvgPicture with current parameters from AppState
 class AnimatedSvgViewer extends StatelessWidget {
   final String svgContent;
   final AppState state;

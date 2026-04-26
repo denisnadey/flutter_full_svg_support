@@ -1,6 +1,6 @@
 part of 'svg_parser.dart';
 
-/// Парсит цвет
+/// Parses a color
 Object _parseColor(String value) {
   final trimmed = value.trim().toLowerCase();
 
@@ -14,13 +14,13 @@ Object _parseColor(String value) {
     return value.trim();
   }
 
-  // Пока возвращаем строку, позже добавим полный парсинг
+  // For now return a string; full parsing will be added later
   // #RGB, #RRGGBB, rgb(), rgba(), named colors, etc.
   if (trimmed == 'none' || trimmed == 'transparent') {
     return ui.Color(0x00000000);
   }
 
-  // Именованные цвета (базовые)
+  // Named colors (basic)
   if (_namedColors.containsKey(trimmed)) {
     return _namedColors[trimmed]!;
   }
@@ -47,9 +47,9 @@ Object _parseColor(String value) {
   return value.trim();
 }
 
-/// Парсит hex цвет
+/// Parses a hex color
 ui.Color _parseHexColor(String hex) {
-  var cleaned = hex.substring(1); // убираем #
+  var cleaned = hex.substring(1); // strip #
 
   // #RGB -> #RRGGBB
   if (cleaned.length == 3) {

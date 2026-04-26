@@ -11,11 +11,11 @@ part 'interpolators_color_parsing.dart';
 part 'interpolators_path.dart';
 part 'interpolators_transform.dart';
 
-/// Утилиты для интерполяции различных типов значений.
+/// Utilities for interpolating various value types.
 class Interpolators {
   Interpolators._();
 
-  /// Интерполировать значение в зависимости от его типа.
+  /// Interpolate a value based on its type.
   static Object? interpolate(
     Object from,
     Object to,
@@ -41,7 +41,7 @@ class Interpolators {
     }
   }
 
-  /// Интерполировать числовое значение.
+  /// Interpolate a numeric value.
   static double interpolateNumber(Object from, Object to, double t) {
     final fromNum = _toNumber(from);
     final toNum = _toNumber(to);
@@ -52,7 +52,7 @@ class Interpolators {
     return fromNum + (toNum - fromNum) * t;
   }
 
-  /// Интерполировать цвет.
+  /// Interpolate a color.
   static ui.Color interpolateColor(Object from, Object to, double t) {
     final fromColor = _toColor(from);
     final toColor = _toColor(to);
@@ -85,12 +85,12 @@ class Interpolators {
     return ui.Color.fromARGB(a, r, g, b);
   }
 
-  /// Интерполировать SVG path.
+  /// Interpolate an SVG path.
   static String interpolatePath(Object from, Object to, double t) {
     return _interpolatePathValue(from, to, t);
   }
 
-  /// Интерполировать список значений (например, для points, stroke-dasharray).
+  /// Interpolate a list of values (e.g., for points, stroke-dasharray).
   static List<double> interpolateList(Object from, Object to, double t) {
     final fromList = _toNumberList(from);
     final toList = _toNumberList(to);
@@ -110,12 +110,12 @@ class Interpolators {
     return result;
   }
 
-  /// Интерполировать трансформацию.
+  /// Interpolate a transform.
   static String interpolateTransform(Object from, Object to, double t) {
     return _interpolateTransformValue(from, to, t);
   }
 
-  /// Сложить два значения (для additive='sum').
+  /// Add two values together (for additive='sum').
   static Object? add(Object base, Object delta, SvgAttributeType type) {
     switch (type) {
       case SvgAttributeType.number:

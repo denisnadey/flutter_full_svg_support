@@ -4,19 +4,19 @@ extension _AnimatedSvgPictureStateLifecycleExtension
     on _AnimatedSvgPictureState {
   /// Handles widget updates when configuration changes.
   void _handleWidgetUpdate(AnimatedSvgPicture oldWidget) {
-    // Обновляем подписку на контроллер
+    // Update controller subscription
     if (widget.controller != oldWidget.controller) {
       oldWidget.controller?.removeListener(_onControllerUpdate);
       widget.controller?.addListener(_onControllerUpdate);
     }
 
     if (widget._svgString != oldWidget._svgString) {
-      // SVG изменился - полная переинициализация
+      // SVG changed - full re-initialization
       _dispose();
       _initialize();
     } else if (widget.playbackRate != oldWidget.playbackRate &&
         _timeline != null) {
-      // Только скорость изменилась
+      // Only the speed changed
       final currentProgress = _controller?.value ?? 0.0;
       _timeline!.playbackRate = widget.playbackRate;
       if (_controller != null) {
@@ -30,16 +30,16 @@ extension _AnimatedSvgPictureStateLifecycleExtension
         _startPlayback();
       }
     } else if (widget.autoPlay != oldWidget.autoPlay) {
-      // AutoPlay изменился
+      // AutoPlay changed
       if (widget.autoPlay && _controller == null && _timeline != null) {
-        // Нужно создать контроллер
+        // Need to create a controller
         final duration = _timeline!.totalDuration;
         _controller = AnimationController(vsync: this, duration: duration);
         _controller!.addListener(_onAnimationTick);
         _isReversed = widget.controller?.isReversed ?? _isReversed;
         _startPlayback();
       } else if (!widget.autoPlay && _controller != null) {
-        // Нужно удалить контроллер
+        // Need to remove the controller
         _controller?.removeListener(_onAnimationTick);
         _controller?.dispose();
         _controller = null;
@@ -63,10 +63,10 @@ extension _AnimatedSvgPictureStateLifecycleExtension
     _disposeResolvedImages();
 
     try {
-      // Проверяем наличие анимаций
+      // Check for animations
       _hasAnimations = AnimationDetector.hasAnimations(widget._svgString);
 
-      // Парсим SVG
+      // Parse SVG
       _document = SvgParser.parse(widget._svgString);
       _trace(
         category: 'init',
@@ -89,7 +89,7 @@ extension _AnimatedSvgPictureStateLifecycleExtension
       _scheduleFontRegistration();
 
       if (_hasAnimations) {
-        // Парсим анимации
+        // Parse animations
         final animations = SmilParser.parseAnimations(_document);
         _trace(
           category: 'init',
@@ -98,14 +98,14 @@ extension _AnimatedSvgPictureStateLifecycleExtension
         );
 
         if (animations.isNotEmpty) {
-          // Создаём timeline
+          // Create timeline
           _timeline = SvgTimeline(
             animations: animations,
             rootNode: _document.root,
           );
           _timeline!.playbackRate = widget.playbackRate;
 
-          // Инициализируем начальное состояние анимаций (t=0 или initialTime)
+          // Initialize the initial animation state (t=0 or initialTime)
           final startTime = widget.initialTime ?? Duration.zero;
           _timeline!.seek(startTime);
           _trace(
@@ -118,13 +118,13 @@ extension _AnimatedSvgPictureStateLifecycleExtension
             },
           );
 
-          // Перерисовываем первый кадр (важно для autoPlay: false)
+          // Repaint the first frame (important when autoPlay: false)
           if (mounted) {
             _markNeedsRepaint();
           }
 
-          // Создаём AnimationController если autoPlay или есть event-based анимации
-          // Event-based анимации требуют тикера для обновления кадров после активации
+          // Create AnimationController if autoPlay or if there are event-based animations
+          // Event-based animations require a ticker to update frames after activation
           final hasEventAnimations = _timeline!.hasEventBasedAnimations();
           if (widget.autoPlay || hasEventAnimations) {
             final duration = _timeline!.totalDuration;
@@ -132,14 +132,14 @@ extension _AnimatedSvgPictureStateLifecycleExtension
             _controller = AnimationController(vsync: this, duration: duration);
             _isReversed = widget.controller?.isReversed ?? false;
 
-            // Устанавливаем начальное значение контроллера если задано initialTime
+            // Set the initial controller value if initialTime is specified
             if (widget.initialTime != null && duration.inMicroseconds > 0) {
               final progress =
                   widget.initialTime!.inMicroseconds / duration.inMicroseconds;
               _controller!.value = progress.clamp(0.0, 1.0);
             }
 
-            // Слушаем обновления контроллера
+            // Listen for controller updates
             _controller!.addListener(_onAnimationTick);
             _trace(
               category: 'controller',
@@ -157,8 +157,8 @@ extension _AnimatedSvgPictureStateLifecycleExtension
             if (widget.autoPlay) {
               _startPlayback();
             } else {
-              // Для event-driven режима запускаем контроллер в repeat mode
-              // чтобы тикер работал и обновлял кадры после событий
+              // For event-driven mode, start the controller in repeat mode
+              // so the ticker runs and updates frames after events
               _controller!.repeat();
               _trace(
                 category: 'controller',
@@ -255,7 +255,7 @@ extension _AnimatedSvgPictureStateLifecycleExtension
               .round(),
     );
 
-    // Обновляем timeline
+    // Update timeline
     _timeline!.seek(elapsed);
 
     if (widget.traceFrameTicks) {
@@ -271,7 +271,7 @@ extension _AnimatedSvgPictureStateLifecycleExtension
       );
     }
 
-    // Перерисовываем
+    // Repaint
     _markNeedsRepaint();
   }
 
@@ -281,7 +281,7 @@ extension _AnimatedSvgPictureStateLifecycleExtension
     final controller = widget.controller;
     if (controller == null) return;
 
-    // Обработка reverse/forward
+    // Handle reverse/forward
     if (_isReversed != controller.isReversed) {
       _isReversed = controller.isReversed;
       _trace(
@@ -294,7 +294,7 @@ extension _AnimatedSvgPictureStateLifecycleExtension
       }
     }
 
-    // Обработка pause/resume
+    // Handle pause/resume
     if (controller.isPaused) {
       _controller?.stop();
       _trace(category: 'controller', message: 'Paused by external controller');
@@ -303,7 +303,7 @@ extension _AnimatedSvgPictureStateLifecycleExtension
       _startPlayback();
     }
 
-    // Обработка playbackRate
+    // Handle playbackRate
     if (controller.playbackRate != _timeline!.playbackRate) {
       final currentProgress = _controller?.value ?? 0.0;
       _timeline!.playbackRate = controller.playbackRate;
@@ -326,7 +326,7 @@ extension _AnimatedSvgPictureStateLifecycleExtension
       );
     }
 
-    // Обработка seek
+    // Handle seek
     if (controller.pendingSeek != null) {
       final targetTime = controller.pendingSeek!;
       _timeline!.seek(targetTime);
@@ -504,7 +504,7 @@ extension _AnimatedSvgPictureStateLifecycleExtension
       svgWidget = _buildWithForeignObjectOverlay(context, svgWidget);
     }
 
-    // Оборачиваем в SizedBox если указаны размеры
+    // Wrap in SizedBox if dimensions are specified
     if (widget.width != null || widget.height != null) {
       svgWidget = SizedBox(
         width: widget.width,
@@ -533,23 +533,23 @@ extension _AnimatedSvgPictureStateLifecycleExtension
     return svgWidget;
   }
 
-  /// Запустить анимацию
+  /// Start the animation
   void _play() {
     _controller?.forward();
   }
 
-  /// Остановить анимацию
+  /// Stop the animation
   void _pause() {
     _controller?.stop();
   }
 
-  /// Перейти к началу
+  /// Go to the beginning
   void _reset() {
     _controller?.reset();
     _timeline?.reset();
   }
 
-  /// Перейти к конкретному времени
+  /// Seek to a specific time
   void _seekTo(Duration time) {
     if (_controller == null || _timeline == null) return;
 

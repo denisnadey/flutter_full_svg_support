@@ -7,7 +7,7 @@ import '../widgets/animated_svg_viewer.dart';
 import '../widgets/parameters_panel.dart';
 import '../widgets/fps_monitor.dart';
 
-/// Главная страница примеров
+/// Main examples page
 class ExamplesPage extends StatefulWidget {
   final AppState state;
 

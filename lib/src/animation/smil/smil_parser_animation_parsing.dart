@@ -1,31 +1,31 @@
 part of 'smil_parser.dart';
 
-/// Распарсить анимационный элемент
+/// Parse an animation element
 SmilAnimation? _parseAnimationElement(
   SvgNode animNode,
   SvgNode targetNode,
   SvgDocument document,
 ) {
   try {
-    // Определяем тип анимации
+    // Determine the animation type
     final type = _parseAnimationType(animNode.tagName);
 
-    // Для animateMotion логика отличается - там нет attributeName
+    // animateMotion uses different logic - it has no attributeName
     if (type == SmilAnimationType.animateMotion) {
       return _parseAnimateMotion(animNode, targetNode, document);
     }
 
-    // Получаем имя анимируемого атрибута
+    // Get the name of the animated attribute
     final attributeName =
         animNode.getAttributeValue('attributeName') as String?;
     if (attributeName == null) {
-      return null; // Без attributeName анимация невалидна
+      return null; // Without attributeName the animation is invalid
     }
 
-    // Определяем тип атрибута
+    // Determine the attribute type
     final attributeType = _inferAttributeType(attributeName, targetNode);
 
-    // Для animateTransform получаем тип трансформации (rotate, translate, etc.)
+    // For animateTransform, get the transform type (rotate, translate, etc.)
     String? transformType;
     if (type == SmilAnimationType.animateTransform) {
       transformType = animNode
@@ -33,11 +33,11 @@ SmilAnimation? _parseAnimationElement(
           ?.toString()
           .toLowerCase();
       if (transformType == null) {
-        return null; // animateTransform без type невалидна
+        return null; // animateTransform without type is invalid
       }
     }
 
-    // Парсим значения анимации
+    // Parse animation values
     final from = _parseValue(
       animNode.getAttributeValue('from'),
       attributeType,
@@ -54,7 +54,7 @@ SmilAnimation? _parseAnimationElement(
       transformType: transformType,
     );
 
-    // Парсим values и keyTimes
+    // Parse values and keyTimes
     List<Object>? values;
     List<double>? keyTimes;
     final valuesStr = animNode.getAttributeValue('values') as String?;
@@ -71,33 +71,33 @@ SmilAnimation? _parseAnimationElement(
       keyTimes = _parseKeyTimes(keyTimesStr);
     }
 
-    // Парсим keySplines
+    // Parse keySplines
     List<CubicBezier>? keySplines;
     final keySplinesStr = animNode.getAttributeValue('keySplines') as String?;
     if (keySplinesStr != null) {
       keySplines = _parseKeySplines(keySplinesStr);
     }
 
-    // Парсим ID анимации (для syncbase timing)
+    // Parse animation ID (for syncbase timing)
     final id = animNode.id;
 
-    // Парсим тайминг
+    // Parse timing
     final dur = _parseDuration(animNode.getAttributeValue('dur'));
     if (dur == null) {
-      return null; // Без dur анимация невалидна
+      return null; // Without dur the animation is invalid
     }
 
-    // Парсим begin/end как timing conditions (поддержка syncbase)
+    // Parse begin/end as timing conditions (syncbase support)
     var begin = Duration.zero;
     List<TimingCondition> beginConditions = [];
     final beginAttr = animNode.getAttributeValue('begin')?.toString();
     if (beginAttr != null) {
       beginConditions = TimingParser.parse(beginAttr);
-      // Если есть простое offset condition, используем его как begin
+      // If there is a simple offset condition, use it as begin
       if (beginConditions.length == 1 &&
           beginConditions.first is OffsetCondition) {
         begin = (beginConditions.first as OffsetCondition).offset;
-        beginConditions = []; // Не нужны conditions для простого offset
+        beginConditions = []; // Conditions are not needed for a simple offset
       }
     }
 
@@ -106,14 +106,14 @@ SmilAnimation? _parseAnimationElement(
     final endAttr = animNode.getAttributeValue('end')?.toString();
     if (endAttr != null) {
       endConditions = TimingParser.parse(endAttr);
-      // Если есть простое offset condition, используем его как end
+      // If there is a simple offset condition, use it as end
       if (endConditions.length == 1 && endConditions.first is OffsetCondition) {
         end = (endConditions.first as OffsetCondition).offset;
-        endConditions = []; // Не нужны conditions для простого offset
+        endConditions = []; // Conditions are not needed for a simple offset
       }
     }
 
-    // Парсим repeatCount
+    // Parse repeatCount
     var repeatCount = 1.0;
     final repeatCountStr = animNode.getAttributeValue('repeatCount') as String?;
     if (repeatCountStr != null) {
@@ -126,7 +126,7 @@ SmilAnimation? _parseAnimationElement(
 
     final repeatDur = _parseDuration(animNode.getAttributeValue('repeatDur'));
 
-    // Парсим режимы - используем toString() для безопасной конвертации
+    // Parse modes - use toString() for safe conversion
     final fillMode = _parseFillMode(
       animNode.getAttributeValue('fill')?.toString(),
     );
@@ -178,12 +178,12 @@ SmilAnimation? _parseAnimationElement(
       accumulate: accumulate,
     );
   } catch (_) {
-    // Игнорируем невалидные анимации
+    // Ignore invalid animations
     return null;
   }
 }
 
-/// Определить тип анимации по тегу
+/// Determine the animation type by tag name
 SmilAnimationType _parseAnimationType(String tagName) {
   switch (tagName) {
     case 'animate':
@@ -201,7 +201,7 @@ SmilAnimationType _parseAnimationType(String tagName) {
   }
 }
 
-/// Определить тип атрибута
+/// Determine the attribute type
 SvgAttributeType _inferAttributeType(String attributeName, SvgNode targetNode) {
   // feColorMatrix animates its `values` list; this must be interpolated
   // numerically instead of treated as a discrete string.
@@ -238,7 +238,7 @@ SvgAttributeType _inferAttributeType(String attributeName, SvgNode targetNode) {
   return SvgAttributeType.string;
 }
 
-/// Распарсить значение в соответствии с типом
+/// Parse a value according to its type
 Object? _parseValue(
   Object? value,
   SvgAttributeType type, {
@@ -261,11 +261,11 @@ Object? _parseValue(
       return null;
 
     case SvgAttributeType.color:
-      // Цвета будут парситься интерполяторами
+      // Colors will be parsed by the interpolators
       return value;
 
     case SvgAttributeType.transform:
-      // Для animateTransform нужно обернуть значения в тип трансформации
+      // For animateTransform, wrap values in the transform type
       if (transformType != null) {
         return '$transformType($value)';
       }
@@ -276,13 +276,13 @@ Object? _parseValue(
   }
 }
 
-/// Распарсить список values
+/// Parse the values list
 List<Object> _parseValues(
   String valuesStr,
   SvgAttributeType type, {
   String? transformType,
 }) {
-  // values разделяются точкой с запятой
+  // values are separated by semicolons
   final parts = valuesStr
       .split(';')
       .map((s) => s.trim())
@@ -299,9 +299,9 @@ List<Object> _parseValues(
   return result;
 }
 
-/// Распарсить keyTimes
+/// Parse keyTimes
 List<double> _parseKeyTimes(String keyTimesStr) {
-  // keyTimes разделяются точкой с запятой
+  // keyTimes are separated by semicolons
   final parts = keyTimesStr
       .split(';')
       .map((s) => s.trim())
@@ -318,10 +318,10 @@ List<double> _parseKeyTimes(String keyTimesStr) {
   return result;
 }
 
-/// Распарсить keySplines
+/// Parse keySplines
 List<CubicBezier> _parseKeySplines(String keySplinesStr) {
-  // keySplines разделяются точкой с запятой
-  // Каждый сплайн: "x1 y1 x2 y2"
+  // keySplines are separated by semicolons
+  // Each spline: "x1 y1 x2 y2"
   final parts = keySplinesStr
       .split(';')
       .map((s) => s.trim())
@@ -343,7 +343,7 @@ List<CubicBezier> _parseKeySplines(String keySplinesStr) {
   return result;
 }
 
-/// Распарсить длительность (dur, begin, end, repeatDur)
+/// Parse a duration value (dur, begin, end, repeatDur)
 Duration? _parseDuration(Object? value) {
   if (value == null) {
     return null;
@@ -351,18 +351,18 @@ Duration? _parseDuration(Object? value) {
 
   final str = value.toString().trim();
 
-  // Форматы:
-  // - "2s" (секунды)
-  // - "500ms" (миллисекунды)
+  // Formats:
+  // - "2s" (seconds)
+  // - "500ms" (milliseconds)
   // - "2.5s"
-  // - "0:0:2" (часы:минуты:секунды)
-  // - "indefinite" (возвращаем null)
+  // - "0:0:2" (hours:minutes:seconds)
+  // - "indefinite" (returns null)
 
   if (str == 'indefinite') {
     return null;
   }
 
-  // Секунды
+  // Seconds
   if (str.endsWith('s') && !str.endsWith('ms')) {
     final seconds = double.tryParse(str.substring(0, str.length - 1));
     if (seconds != null) {
@@ -370,7 +370,7 @@ Duration? _parseDuration(Object? value) {
     }
   }
 
-  // Миллисекунды
+  // Milliseconds
   if (str.endsWith('ms')) {
     final ms = double.tryParse(str.substring(0, str.length - 2));
     if (ms != null) {
@@ -378,19 +378,19 @@ Duration? _parseDuration(Object? value) {
     }
   }
 
-  // Clock value (часы:минуты:секунды или минуты:секунды)
+  // Clock value (hours:minutes:seconds or minutes:seconds)
   if (str.contains(':')) {
     final parts = str.split(':').map((s) => double.tryParse(s)).toList();
     if (parts.every((p) => p != null)) {
       if (parts.length == 2) {
-        // минуты:секунды
+        // minutes:seconds
         return Duration(
           minutes: parts[0]!.toInt(),
           microseconds: (parts[1]! * 1000000).round(),
         );
       }
       if (parts.length == 3) {
-        // часы:минуты:секунды
+        // hours:minutes:seconds
         return Duration(
           hours: parts[0]!.toInt(),
           minutes: parts[1]!.toInt(),
@@ -403,7 +403,7 @@ Duration? _parseDuration(Object? value) {
   return null;
 }
 
-/// Распарсить fill mode
+/// Parse fill mode
 SmilFillMode _parseFillMode(String? value) {
   final str = value?.toLowerCase().trim();
   if (str == 'freeze') {
@@ -412,7 +412,7 @@ SmilFillMode _parseFillMode(String? value) {
   return SmilFillMode.remove;
 }
 
-/// Распарсить calc mode
+/// Parse calc mode
 SmilCalcMode _parseCalcMode(String? value) {
   switch (value?.toLowerCase().trim()) {
     case 'discrete':
@@ -426,7 +426,7 @@ SmilCalcMode _parseCalcMode(String? value) {
   }
 }
 
-/// Распарсить additive mode
+/// Parse additive mode
 SmilAdditiveMode _parseAdditiveMode(String? value) {
   if (value?.toLowerCase().trim() == 'sum') {
     return SmilAdditiveMode.sum;
@@ -434,7 +434,7 @@ SmilAdditiveMode _parseAdditiveMode(String? value) {
   return SmilAdditiveMode.replace;
 }
 
-// Наборы известных атрибутов
+// Sets of known attributes
 const Set<String> _numberAttributes = {
   'x',
   'y',

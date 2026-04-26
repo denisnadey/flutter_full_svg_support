@@ -1,6 +1,6 @@
 part of 'svg_parser.dart';
 
-/// Парсит feGaussianBlur элемент
+/// Parses a feGaussianBlur element
 SvgGaussianBlurFilter _parseGaussianBlur(XmlElement element, String filterId) {
   final stdDeviationStr = element.getAttribute('stdDeviation') ?? '0';
   final stdDeviation = _parseNumberOptionalNumber(stdDeviationStr);
@@ -18,7 +18,7 @@ SvgGaussianBlurFilter _parseGaussianBlur(XmlElement element, String filterId) {
   );
 }
 
-/// Парсит feMorphology элемент
+/// Parses a feMorphology element
 SvgMorphologyFilter _parseMorphology(XmlElement element, String filterId) {
   final operatorRaw = element.getAttribute('operator')?.trim().toLowerCase();
   final operatorType = operatorRaw == 'dilate'
@@ -41,7 +41,7 @@ SvgMorphologyFilter _parseMorphology(XmlElement element, String filterId) {
   );
 }
 
-/// Парсит feDisplacementMap элемент
+/// Parses a feDisplacementMap element
 SvgDisplacementMapFilter _parseDisplacementMap(
   XmlElement element,
   String filterId,
@@ -65,7 +65,7 @@ SvgDisplacementMapFilter _parseDisplacementMap(
   );
 }
 
-/// Парсит feImage элемент
+/// Parses a feImage element
 SvgFeImageFilter _parseFeImage(XmlElement element, String filterId) {
   final rawX = element.getAttribute('x')?.trim();
   final rawY = element.getAttribute('y')?.trim();
@@ -94,7 +94,7 @@ SvgFeImageFilter _parseFeImage(XmlElement element, String filterId) {
   );
 }
 
-/// Парсит feConvolveMatrix элемент
+/// Parses a feConvolveMatrix element
 SvgConvolveMatrixFilter _parseConvolveMatrix(
   XmlElement element,
   String filterId,
@@ -167,7 +167,7 @@ SvgConvolveMatrixFilter _parseConvolveMatrix(
   );
 }
 
-/// Парсит feTurbulence элемент
+/// Parses a feTurbulence element
 SvgTurbulenceFilter _parseTurbulence(XmlElement element, String filterId) {
   final baseFrequency = _parseNumberOptionalNumber(
     element.getAttribute('baseFrequency') ?? '0',
@@ -191,7 +191,7 @@ SvgTurbulenceFilter _parseTurbulence(XmlElement element, String filterId) {
   );
 }
 
-/// Парсит feComponentTransfer элемент
+/// Parses a feComponentTransfer element
 SvgComponentTransferFilter _parseComponentTransfer(
   XmlElement element,
   String filterId,

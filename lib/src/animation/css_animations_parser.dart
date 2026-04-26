@@ -1,25 +1,25 @@
 part of 'css_animations.dart';
 
-/// Парсер CSS для SVG
+/// CSS parser for SVG
 class CssParser {
-  /// Парсит содержимое <style> элемента
+  /// Parses the contents of a <style> element
   static List<CssKeyframes> parseKeyframes(String cssText) {
     return _parseKeyframes(cssText);
   }
 
-  /// Парсит CSS правила с простыми селекторами (#id, .class, element).
+  /// Parses CSS rules with simple selectors (#id, .class, element).
   ///
-  /// Игнорирует @-правила (including @keyframes) и многокомпонентные
-  /// селекторы с пробелами (потомки, дочерние) — они слишком сложны
-  /// для SVG контекста и не используются в SVGator-генерированных файлах.
+  /// Ignores @-rules (including @keyframes) and multi-component selectors
+  /// with spaces (descendants, children) — they are too complex
+  /// for the SVG context and are not used in SVGator-generated files.
   ///
-  /// Возвращает список [CssSelectorRule] — по одному на каждый найденный
-  /// selector-body блок. Один selector может дублироваться (cascading).
+  /// Returns a list of [CssSelectorRule] — one per each found
+  /// selector-body block. A single selector may be duplicated (cascading).
   static List<CssSelectorRule> parseSelectorRules(String cssText) {
     return _parseSelectorRules(cssText);
   }
 
-  /// Парсит animation shorthand свойство
+  /// Parses the animation shorthand property
   /// animation: name duration timing-function delay iteration-count direction fill-mode;
   static CssAnimation? parseAnimation(String animationValue) {
     return _parseAnimation(animationValue);
@@ -31,7 +31,7 @@ class CssParser {
     return _parseMultipleAnimations(animationValue);
   }
 
-  /// Парсит animation-* свойства из style атрибута или строки стилей
+  /// Parses animation-* properties from a style attribute or style string
   static CssAnimation? parseAnimationFromStyle(String styleText) {
     return _parseAnimationFromStyle(styleText);
   }

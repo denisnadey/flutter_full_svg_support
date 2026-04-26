@@ -1,13 +1,13 @@
 part of 'smil_parser.dart';
 
-/// Распарсить <animateMotion> элемент
+/// Parse an <animateMotion> element
 SmilAnimation? _parseAnimateMotion(
   SvgNode animNode,
   SvgNode targetNode,
   SvgDocument document,
 ) {
   try {
-    // Парсим ID анимации (для syncbase timing)
+    // Parse animation ID (for syncbase timing)
     final id = animNode.id;
 
     // Determine the animation mode: path, values with coordinates, or from/to/by
@@ -98,13 +98,13 @@ SmilAnimation? _parseAnimateMotion(
       return null;
     }
 
-    // Парсим тайминг
+    // Parse timing
     final dur = _parseDuration(animNode.getAttributeValue('dur'));
     if (dur == null) {
       return null;
     }
 
-    // Парсим begin/end как timing conditions (поддержка syncbase)
+    // Parse begin/end as timing conditions (syncbase support)
     var begin = Duration.zero;
     List<TimingCondition> beginConditions = [];
     final beginAttr = animNode.getAttributeValue('begin')?.toString();
@@ -128,7 +128,7 @@ SmilAnimation? _parseAnimateMotion(
       }
     }
 
-    // Парсим repeatCount
+    // Parse repeatCount
     var repeatCount = 1.0;
     final repeatCountStr = animNode.getAttributeValue('repeatCount') as String?;
     if (repeatCountStr != null) {
@@ -141,7 +141,7 @@ SmilAnimation? _parseAnimateMotion(
 
     final repeatDur = _parseDuration(animNode.getAttributeValue('repeatDur'));
 
-    // Парсим режимы
+    // Parse modes
     final fillMode = _parseFillMode(
       animNode.getAttributeValue('fill')?.toString(),
     );
@@ -153,22 +153,22 @@ SmilAnimation? _parseAnimateMotion(
     final accumulate =
         animNode.getAttributeValue('accumulate')?.toString() == 'sum';
 
-    // Парсим rotate атрибут
+    // Parse rotate attribute
     final rotateStr = animNode.getAttributeValue('rotate')?.toString();
     String? rotateMode;
     if (rotateStr != null) {
       rotateMode = rotateStr.trim();
-      // Может быть "auto", "auto-reverse", или угол в градусах (например "45")
+      // Can be "auto", "auto-reverse", or an angle in degrees (e.g. "45")
     }
 
-    // Парсим keyPoints
+    // Parse keyPoints
     List<double>? keyPoints;
     final keyPointsStr = animNode.getAttributeValue('keyPoints') as String?;
     if (keyPointsStr != null) {
-      keyPoints = _parseKeyTimes(keyPointsStr); // Тот же формат что keyTimes
+      keyPoints = _parseKeyTimes(keyPointsStr); // Same format as keyTimes
     }
 
-    // Парсим keyTimes
+    // Parse keyTimes
     List<double>? keyTimes;
     final keyTimesStr = animNode.getAttributeValue('keyTimes') as String?;
     if (keyTimesStr != null) {
@@ -205,8 +205,8 @@ SmilAnimation? _parseAnimateMotion(
       }
     }
 
-    // Создаём SmilAnimation для animateMotion
-    // Используем специальное значение для from/to - сам path
+    // Create SmilAnimation for animateMotion
+    // Use a special value for from/to — the path itself
     return SmilAnimation(
       id: id,
       type: SmilAnimationType.animateMotion,
@@ -214,8 +214,8 @@ SmilAnimation? _parseAnimateMotion(
       attributeName:
           'transform', // Use 'transform' so renderer picks up the value
       attributeType: SvgAttributeType.transform,
-      from: pathData, // Path data хранится в from
-      to: rotateMode, // Rotate mode хранится в to
+      from: pathData, // Path data is stored in from
+      to: rotateMode, // Rotate mode is stored in to
       values: keyPoints?.map((kp) => kp as Object).toList(),
       keyTimes: keyTimes,
       keySplines: keySplines,
@@ -228,7 +228,7 @@ SmilAnimation? _parseAnimateMotion(
       repeatDur: repeatDur,
       fillMode: fillMode,
       calcMode: calcMode,
-      additive: SmilAdditiveMode.sum, // Motion всегда аддитивен
+      additive: SmilAdditiveMode.sum, // Motion is always additive
       accumulate: accumulate,
     );
   } catch (_) {

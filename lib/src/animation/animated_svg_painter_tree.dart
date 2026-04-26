@@ -61,10 +61,10 @@ void _paintNodeImplWithUseContext(
   final currentUseStack = useStack ?? <String>{};
   canvas.save();
 
-  // Применяем transform если есть.
+  // Apply transform if present.
   painter._applyTransform(canvas, node);
 
-  // Baseline foreignObject viewport: смещение + clip children областью.
+  // Baseline foreignObject viewport: offset + clip children to the region.
   painter._applyForeignObjectViewport(canvas, node);
 
   // Apply nested SVG viewport transform within foreignObject
@@ -77,7 +77,7 @@ void _paintNodeImplWithUseContext(
   // Apply nested SVG viewport transform for regular SVG-in-SVG nesting.
   painter._applyNestedSvgViewport(canvas, node, foreignObjectParent);
 
-  // Применяем clipPath если есть.
+  // Apply clipPath if present.
   painter._applyClipPath(canvas, node, useStack: currentUseStack);
 
   // Check if node has a mask - use advanced layer-based masking
@@ -120,7 +120,7 @@ void _paintNodeImplWithUseContext(
     }
   }
 
-  // Рисуем сам узел в зависимости от типа.
+  // Paint the node itself depending on its type.
   if (!isHidden) {
     switch (node.tagName) {
       case 'rect':
@@ -269,10 +269,10 @@ void _paintNodeImplWithUseContext(
         );
         break;
       case 'tspan':
-        // Рендерится из родительского <text> прохода.
+        // Rendered from the parent <text> pass.
         break;
       case 'textPath':
-        // Рендерится из родительского <text> прохода.
+        // Rendered from the parent <text> pass.
         break;
       case 'use':
         painter._paintUse(
@@ -324,12 +324,12 @@ void _paintNodeImplWithUseContext(
         painter._paintSwitch(canvas, node, useStack: currentUseStack);
         break;
       default:
-        // Игнорируем неподдерживаемые элементы (animate, text, etc.).
+        // Ignore unsupported elements (animate, text, etc.).
         break;
     }
   }
 
-  // Рекурсивно рисуем детей.
+  // Recursively paint children.
   if (painter._shouldPaintChildren(node)) {
     // Determine if this node establishes a foreignObject context for children
     // - foreignObject: sets new FO context for direct children

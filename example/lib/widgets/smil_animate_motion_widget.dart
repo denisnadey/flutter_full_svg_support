@@ -3,14 +3,14 @@ import 'package:full_svg_flutter/src/animation/animated_svg_picture.dart';
 
 import 'animation_theme.dart';
 
-/// Виджет с примерами SMIL animateMotion анимаций
+/// Widget with SMIL animateMotion animation examples
 ///
-/// Демонстрирует:
-/// - Базовое движение по пути
-/// - rotate="auto" - автоповорот по касательной
-/// - rotate="auto-reverse" - автоповорот + 180°
-/// - keyPoints - контроль скорости движения
-/// - Сложные пути
+/// Demonstrates:
+/// - Basic motion along a path
+/// - rotate="auto" — automatic rotation along the tangent
+/// - rotate="auto-reverse" — automatic rotation + 180°
+/// - keyPoints — speed control along the path
+/// - Complex paths
 class SMILAnimateMotionWidget extends StatefulWidget {
   const SMILAnimateMotionWidget({super.key, this.autoPlay = true});
 
@@ -28,7 +28,7 @@ class _SMILAnimateMotionWidgetState extends State<SMILAnimateMotionWidget> {
   final List<_MotionExample> _examples = [
     _MotionExample(
       name: 'Basic Motion',
-      description: 'Simple движение по прямоугольному пути',
+      description: 'Simple motion along a rectangular path',
       svgData: '''
 <svg viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg">
   <defs>
@@ -36,10 +36,10 @@ class _SMILAnimateMotionWidgetState extends State<SMILAnimateMotionWidget> {
           fill="none" stroke="#E0E0E0" stroke-width="2" stroke-dasharray="5,5"/>
   </defs>
   
-  <!-- Показываем путь -->
+  <!-- Show the path -->
   <use href="#motionPath1"/>
-  
-  <!-- Анимированный круг -->
+
+  <!-- Animated circle -->
   <circle r="8" fill="#2196F3">
     <animateMotion
       path="M50,50 L250,50 L250,150 L50,150 Z"
@@ -53,7 +53,7 @@ class _SMILAnimateMotionWidgetState extends State<SMILAnimateMotionWidget> {
     ),
     _MotionExample(
       name: 'Rotate Auto',
-      description: 'Объект поворачивается по направлению движения',
+      description: 'Object rotates in the direction of movement',
       svgData: '''
 <svg viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg">
   <defs>
@@ -61,10 +61,10 @@ class _SMILAnimateMotionWidgetState extends State<SMILAnimateMotionWidget> {
           fill="none" stroke="#E0E0E0" stroke-width="2" stroke-dasharray="5,5"/>
   </defs>
   
-  <!-- Показываем путь -->
+  <!-- Show the path -->
   <use href="#motionPath2"/>
-  
-  <!-- Анимированный треугольник (стрелка) -->
+
+  <!-- Animated triangle (arrow) -->
   <path d="M-10,-5 L10,0 L-10,5 Z" fill="#FF5722">
     <animateMotion
       path="M50,100 C100,50 200,50 250,100 C200,150 100,150 50,100 Z"
@@ -79,7 +79,7 @@ class _SMILAnimateMotionWidgetState extends State<SMILAnimateMotionWidget> {
     ),
     _MotionExample(
       name: 'Rotate Auto-Reverse',
-      description: 'Автоповорот + 180° (хвост следует за головой)',
+      description: 'Auto-rotation + 180° (tail follows the head)',
       svgData: '''
 <svg viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg">
   <defs>
@@ -87,10 +87,10 @@ class _SMILAnimateMotionWidgetState extends State<SMILAnimateMotionWidget> {
           fill="none" stroke="#E0E0E0" stroke-width="2" stroke-dasharray="5,5"/>
   </defs>
   
-  <!-- Показываем путь -->
+  <!-- Show the path -->
   <use href="#motionPath3"/>
-  
-  <!-- Анимированный треугольник -->
+
+  <!-- Animated triangle -->
   <path d="M-10,-5 L10,0 L-10,5 Z" fill="#9C27B0">
     <animateMotion
       path="M150,50 L250,150 L50,150 Z"
@@ -105,7 +105,7 @@ class _SMILAnimateMotionWidgetState extends State<SMILAnimateMotionWidget> {
     ),
     _MotionExample(
       name: 'With keyPoints',
-      description: 'Контроль скорости движения вдоль пути',
+      description: 'Speed control along the path',
       svgData: '''
 <svg viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg">
   <defs>
@@ -113,10 +113,10 @@ class _SMILAnimateMotionWidgetState extends State<SMILAnimateMotionWidget> {
           fill="none" stroke="#E0E0E0" stroke-width="2" stroke-dasharray="5,5"/>
   </defs>
   
-  <!-- Показываем путь -->
+  <!-- Show the path -->
   <use href="#motionPath4"/>
-  
-  <!-- Медленно движется в начале, быстро в конце -->
+
+  <!-- Moves slowly at the beginning, quickly at the end -->
   <circle r="10" fill="#4CAF50">
     <animateMotion
       path="M50,100 Q150,50 250,100"
@@ -128,9 +128,9 @@ class _SMILAnimateMotionWidgetState extends State<SMILAnimateMotionWidget> {
       repeatCount="indefinite"/>
   </circle>
   
-  <!-- Подсказка -->
+  <!-- Hint -->
   <text x="150" y="180" text-anchor="middle" font-size="12" fill="#666">
-    70% времени на первые 30% пути
+    70% of time for the first 30% of the path
   </text>
 </svg>
 ''',
@@ -139,7 +139,7 @@ class _SMILAnimateMotionWidgetState extends State<SMILAnimateMotionWidget> {
     ),
     _MotionExample(
       name: 'Complex Path',
-      description: 'Движение по сложному пути со звездой',
+      description: 'Motion along a complex star-shaped path',
       svgData: '''
 <svg viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg">
   <defs>
@@ -148,10 +148,10 @@ class _SMILAnimateMotionWidgetState extends State<SMILAnimateMotionWidget> {
           fill="none" stroke="#E0E0E0" stroke-width="2" stroke-dasharray="5,5"/>
   </defs>
   
-  <!-- Показываем путь (звезда) -->
+  <!-- Show the path (star) -->
   <use href="#motionPath5"/>
   
-  <!-- Анимированный круг -->
+  <!-- Animated circle -->
   <g>
     <circle r="6" fill="#FF9800">
       <animateMotion
@@ -187,7 +187,7 @@ class _SMILAnimateMotionWidgetState extends State<SMILAnimateMotionWidget> {
           ),
           const SizedBox(height: AnimationTheme.spacingSmall),
           Text(
-            'Демонстрация движения объектов по SVG путям с автоповоротом и keyPoints',
+            'Demonstration of object motion along SVG paths with auto-rotation and keyPoints',
             style: Theme.of(
               context,
             ).textTheme.bodyMedium?.copyWith(color: Colors.grey.shade600),

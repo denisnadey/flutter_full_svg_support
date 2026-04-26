@@ -8,16 +8,16 @@ const double _maxGaussianBlurStdDeviation = 50.0;
 /// A kernel radius of 256 pixels is already very large.
 const int _maxBlurKernelRadius = 256;
 
-/// Gaussian Blur фильтр
+/// Gaussian Blur filter
 ///
-/// Использует ImageFilter.blur для размытия.
+/// Uses ImageFilter.blur for blurring.
 /// Supports edgeMode per SVG Filter 1.1 spec.
 /// For extreme stdDeviation values (>50), uses iterative box blur approximation.
 class SvgGaussianBlurFilter extends SvgFilter {
-  /// Стандартное отклонение по X (размытие по горизонтали)
+  /// Standard deviation along X (horizontal blur)
   double stdDeviationX;
 
-  /// Стандартное отклонение по Y (размытие по вертикали)
+  /// Standard deviation along Y (vertical blur)
   double stdDeviationY;
 
   /// Edge mode for handling pixels at the filter region boundary.
@@ -63,8 +63,8 @@ class SvgGaussianBlurFilter extends SvgFilter {
     // The GaussianBlurProcessor handles the actual large blur via box blur approx.
     final (sigmaX, sigmaY) = clampedStdDeviation;
 
-    // Flutter ImageFilter.blur использует sigma (стандартное отклонение)
-    // В SVG stdDeviation = sigma
+    // Flutter ImageFilter.blur uses sigma (standard deviation)
+    // In SVG, stdDeviation = sigma
     // Note: Flutter's blur doesn't directly support edgeMode - we handle this
     // via the tile mode in the shader when applicable.
     final tileMode = _edgeModeToTileMode(edgeMode);
@@ -526,18 +526,18 @@ class GaussianBlurProcessor {
   }
 }
 
-/// Morphology фильтр
+/// Morphology filter
 ///
-/// Использует ImageFilter.erode/dilate для базовой SVG feMorphology-поддержки.
+/// Uses ImageFilter.erode/dilate for basic SVG feMorphology support.
 /// Supports edgeMode per SVG Filter 1.1 spec.
 class SvgMorphologyFilter extends SvgFilter {
-  /// Оператор morphology: erode или dilate.
+  /// Morphology operator: erode or dilate.
   final SvgMorphologyOperator operatorType;
 
-  /// Радиус по X.
+  /// Radius along X.
   final double radiusX;
 
-  /// Радиус по Y.
+  /// Radius along Y.
   final double radiusY;
 
   /// Edge mode for handling pixels at the filter region boundary.

@@ -69,15 +69,15 @@ part 'animated_svg_painter_markers.dart';
 part 'animated_svg_painter_patterns.dart';
 part 'animated_svg_painter_paint_order.dart';
 
-/// CustomPainter для отрисовки анимированного SVG
+/// CustomPainter for rendering an animated SVG
 ///
-/// Использует SvgDocument с уже применёнными анимированными значениями
-/// атрибутов (через AnimatableSvgAttribute.effectiveValue).
+/// Uses SvgDocument with already-applied animated attribute values
+/// (via AnimatableSvgAttribute.effectiveValue).
 ///
-/// Для статических поддеревьев (hasAnimations = false) можно использовать
-/// cachedPicture для оптимизации.
+/// For static subtrees (hasAnimations = false), cachedPicture can be used
+/// for optimization.
 class AnimatedSvgPainter extends CustomPainter {
-  /// Создаёт painter для анимированного SVG
+  /// Creates a painter for an animated SVG
   AnimatedSvgPainter({
     required this.document,
     this.backgroundColor,
@@ -90,10 +90,10 @@ class AnimatedSvgPainter extends CustomPainter {
     _RenderCache? renderCache,
   }) : _renderCache = renderCache ?? _RenderCache();
 
-  /// SVG документ с актуальными (анимированными) значениями атрибутов
+  /// SVG document with current (animated) attribute values
   final SvgDocument document;
 
-  /// Фоновый цвет (опционально)
+  /// Background color (optional)
   final ui.Color? backgroundColor;
 
   /// Decoded raster images keyed by raw `href`/`xlink:href` value.
@@ -152,9 +152,9 @@ class AnimatedSvgPainter extends CustomPainter {
         ? null
         : CssCascadeResolver(cssRules: _currentDocumentCssRules!);
 
-    // Применяем фон:
-    // 1) явный параметр виджета backgroundColor
-    // 2) fallback на корневой SVG style/background-color
+    // Apply background:
+    // 1) explicit widget parameter backgroundColor
+    // 2) fallback to root SVG style/background-color
     final resolvedBackgroundColor =
         backgroundColor ?? _resolveDocumentBackgroundColor();
     if (resolvedBackgroundColor != null) {
@@ -164,13 +164,13 @@ class AnimatedSvgPainter extends CustomPainter {
       );
     }
 
-    // Вычисляем трансформацию viewBox → size
+    // Compute the viewBox → size transform
     final transform = _computeViewBoxTransform(size);
 
     canvas.save();
     canvas.transform(transform.storage);
 
-    // Рисуем корневой узел
+    // Paint the root node
     _paintNode(canvas, document.root);
 
     canvas.restore();
@@ -180,13 +180,13 @@ class AnimatedSvgPainter extends CustomPainter {
     _currentDocumentCssResolver = null;
   }
 
-  /// Вычисляет матрицу трансформации для viewBox
+  /// Computes the transformation matrix for the viewBox
   Matrix4 _computeViewBoxTransform(ui.Size size) {
     // Use active viewBox (from <view> element if selected, otherwise root viewBox)
     final viewBox = document.activeViewBox;
 
     if (viewBox == null) {
-      // Без viewBox используем 1:1 масштаб
+      // Without a viewBox, use 1:1 scale
       return Matrix4.identity();
     }
 
@@ -246,7 +246,7 @@ class AnimatedSvgPainter extends CustomPainter {
     return null;
   }
 
-  /// Рисует узел и его детей
+  /// Paints a node and its children
   void _paintNode(ui.Canvas canvas, SvgNode node, {Set<String>? useStack}) {
     _paintNodeImpl(this, canvas, node, useStack: useStack);
   }
@@ -285,7 +285,7 @@ class AnimatedSvgPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(AnimatedSvgPainter oldDelegate) {
-    // Всегда перерисовываем, так как анимации могут изменить значения
+    // Always repaint, as animations may have changed values
     return true;
   }
 

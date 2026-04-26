@@ -2,7 +2,7 @@ part of 'animated_svg_painter.dart';
 
 /// Extension for line shapes.
 extension AnimatedSvgPainterShapesLinesExtension on AnimatedSvgPainter {
-  /// Рисует <line>
+  /// Paints <line>
   void _paintLine(
     ui.Canvas canvas,
     SvgNode node, {

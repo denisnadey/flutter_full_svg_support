@@ -33,12 +33,12 @@ class SvgFilterRegion {
   }
 }
 
-/// Коллекция фильтров в SVG документе
+/// Collection of filters in an SVG document
 class SvgFilters {
-  /// Карта ID фильтра -> список примитивов в порядке объявления.
+  /// Map of filter ID -> list of primitives in declaration order.
   final Map<String, List<SvgFilter>> _filters = {};
 
-  /// Карта ID фильтра -> filter region (x, y, width, height).
+  /// Map of filter ID -> filter region (x, y, width, height).
   final Map<String, SvgFilterRegion> _filterRegions = {};
   List<SvgFilterPaintPass>? _activeFillPaint;
   List<SvgFilterPaintPass>? _activeStrokePaint;
@@ -53,7 +53,7 @@ class SvgFilters {
   /// Current transform matrix for BackgroundImage coordinate mapping.
   Float64List? _activeBackgroundTransform;
 
-  /// Добавить фильтр
+  /// Add a filter
   void add(SvgFilter filter) {
     _filters.putIfAbsent(filter.id, () => <SvgFilter>[]).add(filter);
   }
@@ -69,7 +69,7 @@ class SvgFilters {
     return _filterRegions[id] ?? const SvgFilterRegion();
   }
 
-  /// Получить последний примитив фильтра по ID (совместимость с legacy API).
+  /// Get the last filter primitive by ID (legacy API compatibility).
   SvgFilter? getById(String id) {
     final list = _filters[id];
     if (list == null || list.isEmpty) {
@@ -78,7 +78,7 @@ class SvgFilters {
     return list.last;
   }
 
-  /// Получить все примитивы фильтра по ID в порядке объявления.
+  /// Get all filter primitives by ID in declaration order.
   List<SvgFilter> getAllById(String id) {
     final list = _filters[id];
     if (list == null) {
@@ -87,13 +87,13 @@ class SvgFilters {
     return List<SvgFilter>.unmodifiable(list);
   }
 
-  /// Проверить наличие фильтра
+  /// Check whether a filter exists
   bool hasFilter(String id) {
     final list = _filters[id];
     return list != null && list.isNotEmpty;
   }
 
-  /// Получить все фильтры (flattened).
+  /// Get all filters (flattened).
   List<SvgFilter> get all =>
       _filters.values.expand((filters) => filters).toList(growable: false);
 

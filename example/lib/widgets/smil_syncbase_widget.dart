@@ -3,14 +3,14 @@ import 'package:full_svg_flutter/src/animation/animated_svg_picture.dart';
 
 import 'animation_theme.dart';
 
-/// Виджет с примерами SMIL syncbase timing
+/// Widget with SMIL syncbase timing examples
 ///
-/// Демонстрирует:
-/// - begin="anim1.begin" - синхронизация с началом анимации
-/// - begin="anim1.end" - начало после завершения анимации
-/// - begin="anim1.end+2s" - начало с задержкой после завершения
-/// - begin="anim1.repeat(2)" - начало на определенном повторе
-/// - Цепочки зависимостей
+/// Demonstrates:
+/// - begin="anim1.begin" - synchronize with the start of an animation
+/// - begin="anim1.end" - start after another animation ends
+/// - begin="anim1.end+2s" - start with a delay after another animation ends
+/// - begin="anim1.repeat(2)" - start on a specific repeat of another animation
+/// - Dependency chains
 class SMILSyncbaseWidget extends StatefulWidget {
   const SMILSyncbaseWidget({super.key, this.autoPlay = true});
 
@@ -27,10 +27,10 @@ class _SMILSyncbaseWidgetState extends State<SMILSyncbaseWidget> {
   final List<_SyncbaseExample> _examples = [
     _SyncbaseExample(
       name: 'Simple Begin Sync',
-      description: 'Второй элемент начинает анимацию одновременно с первым',
+      description: 'The second element starts its animation at the same time as the first',
       svgData: '''
 <svg viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg">
-  <!-- Первая анимация -->
+  <!-- First animation -->
   <circle cx="50" cy="100" r="20" fill="#2196F3">
     <animate id="anim1"
       attributeName="cx"
@@ -38,8 +38,8 @@ class _SMILSyncbaseWidgetState extends State<SMILSyncbaseWidget> {
       dur="3s"
       repeatCount="indefinite"/>
   </circle>
-  
-  <!-- Вторая анимация синхронизирована с первой -->
+
+  <!-- Second animation synchronized with the first -->
   <circle cx="50" cy="150" r="15" fill="#FF5722">
     <animate
       attributeName="cx"
@@ -48,10 +48,10 @@ class _SMILSyncbaseWidgetState extends State<SMILSyncbaseWidget> {
       dur="3s"
       repeatCount="indefinite"/>
   </circle>
-  
-  <!-- Метки -->
+
+  <!-- Labels -->
   <text x="200" y="30" text-anchor="middle" font-size="14" fill="#666">
-    Обе анимации начинаются одновременно
+    Both animations start simultaneously
   </text>
 </svg>
 ''',
@@ -60,10 +60,10 @@ class _SMILSyncbaseWidgetState extends State<SMILSyncbaseWidget> {
     ),
     _SyncbaseExample(
       name: 'End Sync',
-      description: 'Вторая анимация начинается когда первая заканчивается',
+      description: 'The second animation starts when the first one ends',
       svgData: '''
 <svg viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg">
-  <!-- Первая анимация - 2 секунды -->
+  <!-- First animation - 2 seconds -->
   <rect x="20" y="80" width="40" height="40" fill="#4CAF50">
     <animate id="rect1"
       attributeName="x"
@@ -72,8 +72,8 @@ class _SMILSyncbaseWidgetState extends State<SMILSyncbaseWidget> {
       repeatCount="1"
       fill="freeze"/>
   </rect>
-  
-  <!-- Вторая анимация начинается когда первая заканчивается -->
+
+  <!-- Second animation starts when the first one ends -->
   <rect x="200" y="80" width="40" height="40" fill="#9C27B0">
     <animate
       attributeName="x"
@@ -83,10 +83,10 @@ class _SMILSyncbaseWidgetState extends State<SMILSyncbaseWidget> {
       repeatCount="1"
       fill="freeze"/>
   </rect>
-  
-  <!-- Метки -->
+
+  <!-- Labels -->
   <text x="200" y="30" text-anchor="middle" font-size="14" fill="#666">
-    Вторая начинается после первой
+    Second starts after first
   </text>
   <text x="90" y="160" text-anchor="middle" font-size="12" fill="#4CAF50">0-2s</text>
   <text x="270" y="160" text-anchor="middle" font-size="12" fill="#9C27B0">2-4s</text>
@@ -98,10 +98,10 @@ class _SMILSyncbaseWidgetState extends State<SMILSyncbaseWidget> {
     _SyncbaseExample(
       name: 'End Sync with Offset',
       description:
-          'Вторая анимация начинается через 1 секунду после завершения первой',
+          'The second animation starts 1 second after the first one ends',
       svgData: '''
 <svg viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg">
-  <!-- Первая анимация - пульсация -->
+  <!-- First animation - pulse -->
   <circle cx="100" cy="100" r="20" fill="#2196F3">
     <animate id="pulse1"
       attributeName="r"
@@ -110,8 +110,8 @@ class _SMILSyncbaseWidgetState extends State<SMILSyncbaseWidget> {
       repeatCount="1"
       fill="freeze"/>
   </circle>
-  
-  <!-- Вторая анимация начинается через 1s после первой -->
+
+  <!-- Second animation starts 1s after the first -->
   <circle cx="250" cy="100" r="20" fill="#FF5722">
     <animate
       attributeName="r"
@@ -121,10 +121,10 @@ class _SMILSyncbaseWidgetState extends State<SMILSyncbaseWidget> {
       repeatCount="1"
       fill="freeze"/>
   </circle>
-  
-  <!-- Метки -->
+
+  <!-- Labels -->
   <text x="200" y="30" text-anchor="middle" font-size="14" fill="#666">
-    1 секунда паузы между анимациями
+    1 second pause between animations
   </text>
   <text x="100" y="170" text-anchor="middle" font-size="12" fill="#2196F3">0-1.5s</text>
   <text x="250" y="170" text-anchor="middle" font-size="12" fill="#FF5722">2.5-4s</text>
@@ -135,10 +135,10 @@ class _SMILSyncbaseWidgetState extends State<SMILSyncbaseWidget> {
     ),
     _SyncbaseExample(
       name: 'Repeat Sync',
-      description: 'Анимация начинается на втором повторе другой анимации',
+      description: 'An animation starts on the second repeat of another animation',
       svgData: '''
 <svg viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg">
-  <!-- Первая анимация - 3 повтора по 1s -->
+  <!-- First animation - 3 repeats of 1s each -->
   <rect x="20" y="60" width="30" height="30" fill="#4CAF50">
     <animate id="bounce"
       attributeName="y"
@@ -147,8 +147,8 @@ class _SMILSyncbaseWidgetState extends State<SMILSyncbaseWidget> {
       repeatCount="3"
       fill="freeze"/>
   </rect>
-  
-  <!-- Вторая анимация начинается на 2-м повторе первой (t=1s) -->
+
+  <!-- Second animation starts on the 2nd repeat of the first (t=1s) -->
   <circle cx="200" cy="100" r="15" fill="#FF9800">
     <animate
       attributeName="r"
@@ -158,13 +158,13 @@ class _SMILSyncbaseWidgetState extends State<SMILSyncbaseWidget> {
       repeatCount="1"
       fill="freeze"/>
   </circle>
-  
-  <!-- Метки -->
+
+  <!-- Labels -->
   <text x="200" y="30" text-anchor="middle" font-size="14" fill="#666">
-    Круг растет на 2-м повторе прыжка
+    Circle grows on the 2nd bounce repeat
   </text>
-  <text x="35" y="140" text-anchor="middle" font-size="10" fill="#4CAF50">прыжок x3</text>
-  <text x="200" y="165" text-anchor="middle" font-size="10" fill="#FF9800">начало на 2-м повторе</text>
+  <text x="35" y="140" text-anchor="middle" font-size="10" fill="#4CAF50">bounce x3</text>
+  <text x="200" y="165" text-anchor="middle" font-size="10" fill="#FF9800">starts on 2nd repeat</text>
 </svg>
 ''',
       timing: 'begin="bounce.repeat(1)"',
@@ -172,10 +172,10 @@ class _SMILSyncbaseWidgetState extends State<SMILSyncbaseWidget> {
     ),
     _SyncbaseExample(
       name: 'Chained Dependencies',
-      description: 'Цепочка из трех последовательных анимаций',
+      description: 'A chain of three sequential animations',
       svgData: '''
 <svg viewBox="0 0 400 250" xmlns="http://www.w3.org/2000/svg">
-  <!-- Первая анимация -->
+  <!-- First animation -->
   <circle cx="50" cy="80" r="20" fill="#2196F3">
     <animate id="chain1"
       attributeName="cx"
@@ -184,8 +184,8 @@ class _SMILSyncbaseWidgetState extends State<SMILSyncbaseWidget> {
       repeatCount="1"
       fill="freeze"/>
   </circle>
-  
-  <!-- Вторая начинается когда первая заканчивается -->
+
+  <!-- Second starts when the first ends -->
   <circle cx="50" cy="130" r="20" fill="#4CAF50">
     <animate id="chain2"
       attributeName="cx"
@@ -195,8 +195,8 @@ class _SMILSyncbaseWidgetState extends State<SMILSyncbaseWidget> {
       repeatCount="1"
       fill="freeze"/>
   </circle>
-  
-  <!-- Третья начинается когда вторая заканчивается -->
+
+  <!-- Third starts when the second ends -->
   <circle cx="50" cy="180" r="20" fill="#FF5722">
     <animate
       attributeName="cx"
@@ -206,10 +206,10 @@ class _SMILSyncbaseWidgetState extends State<SMILSyncbaseWidget> {
       repeatCount="1"
       fill="freeze"/>
   </circle>
-  
-  <!-- Метки -->
+
+  <!-- Labels -->
   <text x="200" y="30" text-anchor="middle" font-size="14" fill="#666">
-    Последовательная цепочка
+    Sequential chain
   </text>
   <text x="100" y="60" font-size="11" fill="#2196F3">1: 0-1.5s</text>
   <text x="100" y="110" font-size="11" fill="#4CAF50">2: 1.5-3s</text>
@@ -221,10 +221,10 @@ class _SMILSyncbaseWidgetState extends State<SMILSyncbaseWidget> {
     ),
     _SyncbaseExample(
       name: 'Parallel + Sequential',
-      description: 'Комбинация параллельных и последовательных анимаций',
+      description: 'A combination of parallel and sequential animations',
       svgData: '''
 <svg viewBox="0 0 400 250" xmlns="http://www.w3.org/2000/svg">
-  <!-- Первая группа - параллельно -->
+  <!-- First group - parallel -->
   <rect x="20" y="70" width="30" height="30" fill="#2196F3">
     <animate id="para1"
       attributeName="x"
@@ -233,7 +233,7 @@ class _SMILSyncbaseWidgetState extends State<SMILSyncbaseWidget> {
       repeatCount="1"
       fill="freeze"/>
   </rect>
-  
+
   <rect x="20" y="110" width="30" height="30" fill="#2196F3" opacity="0.6">
     <animate
       attributeName="x"
@@ -243,8 +243,8 @@ class _SMILSyncbaseWidgetState extends State<SMILSyncbaseWidget> {
       repeatCount="1"
       fill="freeze"/>
   </rect>
-  
-  <!-- Вторая группа - после первой -->
+
+  <!-- Second group - after the first -->
   <circle cx="220" cy="85" r="15" fill="#4CAF50">
     <animate id="seq1"
       attributeName="cx"
@@ -254,7 +254,7 @@ class _SMILSyncbaseWidgetState extends State<SMILSyncbaseWidget> {
       repeatCount="1"
       fill="freeze"/>
   </circle>
-  
+
   <circle cx="220" cy="125" r="15" fill="#4CAF50" opacity="0.6">
     <animate
       attributeName="cx"
@@ -264,13 +264,13 @@ class _SMILSyncbaseWidgetState extends State<SMILSyncbaseWidget> {
       repeatCount="1"
       fill="freeze"/>
   </circle>
-  
-  <!-- Метки -->
+
+  <!-- Labels -->
   <text x="200" y="30" text-anchor="middle" font-size="14" fill="#666">
-    Параллельные группы последовательно
+    Parallel groups in sequence
   </text>
-  <text x="85" y="160" text-anchor="middle" font-size="11" fill="#2196F3">Группа 1</text>
-  <text x="285" y="160" text-anchor="middle" font-size="11" fill="#4CAF50">Группа 2</text>
+  <text x="85" y="160" text-anchor="middle" font-size="11" fill="#2196F3">Group 1</text>
+  <text x="285" y="160" text-anchor="middle" font-size="11" fill="#4CAF50">Group 2</text>
 </svg>
 ''',
       timing: 'mixed sync',
@@ -286,7 +286,7 @@ class _SMILSyncbaseWidgetState extends State<SMILSyncbaseWidget> {
 
     return Column(
       children: [
-        // Информационная панель
+        // Info panel
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(AnimationTheme.spacingMedium),
@@ -370,7 +370,7 @@ class _SMILSyncbaseWidgetState extends State<SMILSyncbaseWidget> {
           ),
         ),
 
-        // Селектор примера
+        // Example selector
         Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(
@@ -447,7 +447,7 @@ class _SMILSyncbaseWidgetState extends State<SMILSyncbaseWidget> {
   }
 }
 
-/// Модель примера syncbase анимации
+/// Model for a syncbase animation example
 class _SyncbaseExample {
   const _SyncbaseExample({
     required this.name,
