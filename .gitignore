@@ -34,5 +34,37 @@ tool/golden_capture/package-lock.json
 test/goldens/flutter/
 test/goldens/diff/
 
-# === Misc ===
+# === AI tools ===
+.claude/
+.qoder/
 .aider*
+.venv/
+
+# === Reference sources (local only) ===
+blink-b87d44f-Source-core-svg/
+
+# === Internal development docs (not for public consumption) ===
+ANIMATION.md
+ARCHITECTURE.md
+CURRENT_STATUS.md
+DOCUMENTATION_INDEX.md
+METADATA
+NEXT_STEPS.md
+RELEASE_CHECKLIST.md
+RELEASE_NOTES_1.0.0.md
+ROADMAP.md
+ROADMAP_VISUAL.md
+TODO.md
+VISUAL_TESTING_GUIDELINES.md
+W3C_SVG_11_TestSuite/
+W3C_SVG_11_TestSuite_PLAN_README.md
+W3C_SVG_11_TestSuite_README.md
+doc/archive/
+doc/BLINK_PARITY_AUDIT.md
+doc/COMPREHENSIVE_GAP_ANALYSIS.md
+doc/RESOLVED_ISSUES.md
+doc/W3C_GAP_CLOSURE_PLAN.md
+example/ENHANCEMENTS_SUMMARY.md
+example/NEW_ARCHITECTURE.md
+example/SEARCH_FEATURE.md
+test_output.log
