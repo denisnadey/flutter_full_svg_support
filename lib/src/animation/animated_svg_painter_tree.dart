@@ -310,6 +310,7 @@ void _paintNodeImplWithUseContext(
           canvas,
           node,
           currentUseStack,
+          filterPasses: filterPasses,
           foreignObjectParent: groupFoParent,
           useContext: useContext,
         )) {
@@ -377,6 +378,7 @@ bool _paintGroupWithOpacity(
   ui.Canvas canvas,
   SvgNode node,
   Set<String> useStack, {
+  List<SvgFilterPaintPass>? filterPasses,
   SvgNode? foreignObjectParent,
   _UseInheritanceContext? useContext,
 }) {
@@ -414,9 +416,24 @@ bool _paintGroupWithOpacity(
   final groupBlendMode = painter._resolveMixBlendMode(node);
   final hasGroupBlendMode = groupBlendMode != null;
 
+  // Find the first filter pass with a non-trivial image or color filter.
+  SvgFilterPaintPass? filterPass;
+  if (filterPasses != null) {
+    for (final p in filterPasses) {
+      if (p.imageFilter != null || p.colorFilter != null) {
+        filterPass = p;
+        break;
+      }
+    }
+  }
+  final hasFilter = filterPass != null;
+
   // Determine if saveLayer is needed for compositing
-  final needsLayer =
-      opacity < 1.0 || isIsolated || hasEnableBackground || hasGroupBlendMode;
+  final needsLayer = opacity < 1.0 ||
+      isIsolated ||
+      hasEnableBackground ||
+      hasGroupBlendMode ||
+      hasFilter;
 
   // If no compositing needed, children painted normally by the
   // recursive call after this switch statement.
@@ -424,11 +441,18 @@ bool _paintGroupWithOpacity(
     return false;
   }
 
-  // Build the layer paint with opacity and optional blend mode.
+  // Build the layer paint with opacity, blend mode, and optional filter.
   final layerPaint = ui.Paint()
     ..color = ui.Color.fromARGB((opacity * 255).round(), 255, 255, 255);
   if (hasGroupBlendMode) {
     layerPaint.blendMode = groupBlendMode;
+  }
+  if (hasFilter) {
+    if (filterPass.imageFilter != null) {
+      layerPaint.imageFilter = filterPass.imageFilter;
+    } else if (filterPass.colorFilter != null) {
+      layerPaint.colorFilter = filterPass.colorFilter;
+    }
   }
 
   canvas.saveLayer(null, layerPaint);

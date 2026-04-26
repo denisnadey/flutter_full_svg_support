@@ -356,29 +356,38 @@ extension SmilAnimationValueComputationExtension on SmilAnimation {
   Object? _applyAdditive(Object? animValue) {
     if (animValue == null) return null;
 
-    // animValue is already non-null here
-    final animValueNonNull = animValue;
-
-    // If additive="replace" or this is a ToAnimation, simply return the value.
-    // Our implementation does not yet have an explicit ToAnimation, but it can be checked
     if (additive == SmilAdditiveMode.replace) {
-      return animValueNonNull;
+      return animValue;
     }
 
-    // additive="sum" - add to the base value.
-    // Get the base value from targetNode
+    // additive="sum" - add to the static base value.
+    // Used for single-animation case (no sandwich model involvement).
     final baseAttr = targetNode.getAttribute(attributeName);
     final baseValue = baseAttr?.baseValue;
 
     if (baseValue == null) {
-      // If there is no base value, return animValue
-      return animValueNonNull;
+      return animValue;
     }
 
-    // Add animValue to baseValue
-    // For nested additive animations, this will be called multiple times
-    // with the accumulated result being stored in the attribute
-    return Interpolators.add(baseValue, animValueNonNull, attributeType);
+    return Interpolators.add(baseValue, animValue, attributeType);
+  }
+
+  /// Apply additive with an explicit accumulated base value.
+  ///
+  /// Used by the sandwich model so that replace+sum chains accumulate
+  /// correctly: replace resets the running total, sum adds to it.
+  Object? applyAdditiveWithBase(Object? rawValue, Object? currentBase) {
+    if (rawValue == null) return currentBase;
+    if (additive == SmilAdditiveMode.replace) return rawValue;
+    // additive == sum
+    if (currentBase == null) {
+      // Fall back to static base if no sandwich base has been set yet.
+      final baseAttr = targetNode.getAttribute(attributeName);
+      final base = baseAttr?.baseValue;
+      if (base == null) return rawValue;
+      return Interpolators.add(base, rawValue, attributeType);
+    }
+    return Interpolators.add(currentBase, rawValue, attributeType);
   }
 
   /// Update the animation state for the given global time

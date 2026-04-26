@@ -148,30 +148,24 @@ void _applyAnimationSandwichModel(SvgTimeline timeline) {
           .compareTo(timeline.animations.indexOf(b)),
     );
 
-    // Process animations in order:
-    // - Non-additive animations use "last wins"
-    // - Additive animations stack in order
+    // Apply the SVG animation sandwich model in document order.
     //
-    // The current implementation already handles this through the attribute's
-    // setAnimatedValue method. Each animation calls _applyValue which sets
-    // the animated value. Later animations naturally override earlier ones.
-    //
-    // For proper sandwich model with additive stacking, the animations
-    // are processed in document order, and _applyAdditive in the animation's
-    // computeValue handles the additive="sum" case.
-
-    // Re-apply values in document order to ensure correct priority
+    // additive="replace" resets the running accumulated value.
+    // additive="sum" adds the raw computed value to the running accumulation.
+    // This correctly handles replace+sum chains used in animateTransform.
+    Object? accumulated;
+    AnimatableSvgAttribute? targetAttr;
     for (final anim in animations) {
-      final value = anim.computeValue(
-        anim.localTime.inMicroseconds / anim.dur.inMicroseconds,
+      final t = anim.localTime.inMicroseconds / anim.dur.inMicroseconds;
+      final raw = anim.computeRawValue(
+        t,
         completedRepeats: anim.currentIteration,
       );
-      if (value != null) {
-        final attr = anim.targetNode.getAttribute(anim.attributeName);
-        if (attr != null) {
-          attr.setAnimatedValue(value);
-        }
-      }
+      accumulated = anim.applyAdditiveWithBase(raw, accumulated);
+      targetAttr = anim.targetNode.getAttribute(anim.attributeName);
+    }
+    if (accumulated != null && targetAttr != null) {
+      targetAttr.setAnimatedValue(accumulated);
     }
   }
 }

@@ -139,13 +139,10 @@ extension AnimatedSvgPainterUseExtension on AnimatedSvgPainter {
     final x = _getNumber(node, 'x') ?? 0.0;
     final y = _getNumber(node, 'y') ?? 0.0;
     canvas.save();
-    final transformStr = node.getAttributeValue('transform')?.toString();
-    if (transformStr != null && transformStr.isNotEmpty) {
-      final transformMatrix = _buildTransformMatrixFromValue(transformStr);
-      if (transformMatrix != null) {
-        canvas.transform(transformMatrix.storage);
-      }
-    }
+    // NOTE: the `transform` attribute is already applied by _paintNodeImplWithUseContext
+    // via _applyTransform() before this method is called. Applying it again here
+    // would double the transform and misplace all referenced content.
+    // Only the SVG-spec x/y translation (separate from `transform`) is applied here.
     canvas.translate(x, y);
     final currentUseContext = _UseInheritanceContext(
       useNode: node,
