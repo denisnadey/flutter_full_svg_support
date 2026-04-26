@@ -7,7 +7,7 @@ void _activateAnimationByEventImpl(
   String? elementId,
   Duration eventTime,
 ) {
-  // Найти соответствующее EventCondition в begin условиях
+  // Find the matching EventCondition in the begin conditions
   EventCondition? matchingCondition;
   for (final condition in anim.beginConditions) {
     if (condition is EventCondition) {
@@ -23,14 +23,14 @@ void _activateAnimationByEventImpl(
     return;
   }
 
-  // Вычисляем время начала с учётом offset
+  // Compute the start time taking offset into account
   final startTime = eventTime + matchingCondition.offset;
 
-  // Обновляем resolved begin time в карте И в анимации
+  // Update resolved begin time in the map AND in the animation
   timeline._resolvedBeginTimes[anim] = startTime;
   anim.setResolvedBeginTime(startTime);
 
-  // Обновляем анимацию с новым временем начала
+  // Update the animation with the new start time
   anim.updateForTime(timeline._currentTime);
 }
 
@@ -95,14 +95,14 @@ void _updateAnimationsImpl(SvgTimeline timeline, Duration time) {
     final prevIteration = previousIterations[animation] ?? 0;
     final currIteration = animation.currentIteration;
 
-    // Если анимация закончилась (была активна, теперь неактивна)
+    // If the animation ended (was active, now inactive)
     if (wasActive && !isActive && time >= animation.getEffectiveEndTime()) {
       timeline._triggerSyncbaseEvent(animation, 'end', time);
       // Also dispatch endEvent as DOM event for external listeners
       _dispatchAnimationDOMEvent(timeline, animation, 'endEvent', time);
     }
 
-    // Если анимация началась (не была активна, теперь активна)
+    // If the animation started (was not active, now active)
     if (!wasActive && isActive) {
       timeline._triggerSyncbaseEvent(animation, 'begin', time);
       // Also dispatch beginEvent as DOM event for external listeners

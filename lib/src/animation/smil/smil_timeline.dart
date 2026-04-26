@@ -10,65 +10,65 @@ part 'smil_timeline_syncbase.dart';
 
 const Duration _kTimelineInfinity = Duration(days: 365 * 100);
 
-/// Таймлайн для управления SMIL анимациями
+/// Timeline for managing SMIL animations
 ///
-/// Отвечает за:
-/// - Обновление времени (tick/seek)
-/// - Активацию/деактивацию анимаций
-/// - Вычисление общей длительности
+/// Responsible for:
+/// - Advancing time (tick/seek)
+/// - Activating/deactivating animations
+/// - Computing total duration
 /// - Syncbase dependency tracking
 class SvgTimeline {
-  /// Создаёт таймлайн с заданными анимациями
+  /// Creates a timeline with the given animations
   SvgTimeline({required this.animations, required this.rootNode}) {
     _buildDependencyGraph();
     _initializeEventBasedAnimations();
     _resolveTimingConditions();
     _totalDuration = _computeTotalDuration(
       animations,
-    ); // Вычисляем ПОСЛЕ разрешения syncbase
+    ); // Computed AFTER resolving syncbase
   }
 
-  /// Список всех SMIL анимаций в документе
+  /// List of all SMIL animations in the document
   final List<SmilAnimation> animations;
 
-  /// Корневой узел документа
+  /// Root node of the document
   final SvgNode rootNode;
 
-  /// Текущее время документа
+  /// Current document time
   Duration _currentTime = Duration.zero;
 
-  /// Общая длительность всех анимаций
+  /// Total duration of all animations
   late final Duration _totalDuration;
 
-  /// Скорость воспроизведения (1.0 = нормальная, 2.0 = x2, 0.5 = замедленно)
+  /// Playback rate (1.0 = normal, 2.0 = x2, 0.5 = slow)
   double _playbackRate = 1.0;
 
-  /// Карта ID анимации -> анимация для быстрого поиска syncbase зависимостей
+  /// Map of animation ID -> animation for fast syncbase dependency lookups
   final Map<String, SmilAnimation> _animationById = {};
 
-  /// Карта анимации -> список зависимых от неё анимаций (для syncbase)
+  /// Map of animation -> list of animations that depend on it (for syncbase)
   final Map<SmilAnimation, List<SmilAnimation>> _dependents = {};
 
-  /// Resolved begin times для анимаций с syncbase conditions
+  /// Resolved begin times for animations with syncbase conditions
   final Map<SmilAnimation, Duration> _resolvedBeginTimes = {};
 
-  /// Карта анимаций, ожидающих события: eventKey -> список анимаций
-  /// eventKey format: "elementId:eventType" или ":eventType" для document-level events
+  /// Map of animations waiting for events: eventKey -> list of animations
+  /// eventKey format: "elementId:eventType" or ":eventType" for document-level events
   final Map<String, List<SmilAnimation>> _eventListeners = {};
 
-  /// Карта времени, когда произошло событие: eventKey -> время события
+  /// Map of event times: eventKey -> time of the event
   final Map<String, Duration> _eventTimes = {};
 
-  /// Получить текущее время
+  /// Get the current time
   Duration get currentTime => _currentTime;
 
-  /// Получить общую длительность
+  /// Get the total duration
   Duration get totalDuration => _totalDuration;
 
-  /// Получить скорость воспроизведения
+  /// Get the playback rate
   double get playbackRate => _playbackRate;
 
-  /// Установить скорость воспроизведения
+  /// Set the playback rate
   set playbackRate(double value) {
     if (value <= 0) {
       throw ArgumentError('Playback rate must be positive');
@@ -76,16 +76,16 @@ class SvgTimeline {
     _playbackRate = value;
   }
 
-  /// Продвинуть время на delta
+  /// Advance time by delta
   ///
-  /// Учитывает playbackRate при вычислении эффективного изменения времени
+  /// Takes playbackRate into account when computing the effective time delta
   void tick(Duration delta) {
     final effectiveDelta = delta * _playbackRate;
     _currentTime += effectiveDelta;
     _updateAnimations(_currentTime);
   }
 
-  /// Перейти к конкретному времени
+  /// Seek to a specific time
   void seek(Duration time) {
     if (time < Duration.zero) {
       _currentTime = Duration.zero;
@@ -97,15 +97,15 @@ class SvgTimeline {
     _updateAnimations(_currentTime);
   }
 
-  /// Сбросить таймлайн в начало
+  /// Reset the timeline to the beginning
   void reset() {
     _currentTime = Duration.zero;
-    _eventTimes.clear(); // Очистить записи о событиях
-    _resolvedBeginTimes.clear(); // Очистить resolved begin times
+    _eventTimes.clear(); // Clear event records
+    _resolvedBeginTimes.clear(); // Clear resolved begin times
 
-    // Сначала установить infinity begin times для event-based анимаций
+    // First set infinity begin times for event-based animations
     for (final anim in animations) {
-      // Очистить resolved begin times для event-based анимаций
+      // Clear resolved begin times for event-based animations
       final hasEventConditions = anim.beginConditions.any(
         (c) => c is EventCondition,
       );
@@ -116,44 +116,44 @@ class SvgTimeline {
       }
     }
 
-    // Затем сбросить состояние всех анимаций
+    // Then reset the state of all animations
     for (final anim in animations) {
       anim.reset();
     }
 
-    // НЕ вызываем _updateAnimations здесь, чтобы избежать повторной активации
-    // Анимации будут обновлены при следующем tick() или triggerEvent()
+    // Do NOT call _updateAnimations here to avoid re-activation
+    // Animations will be updated on the next tick() or triggerEvent()
   }
 
-  /// Триггерить событие для элемента
+  /// Trigger an event for an element
   ///
-  /// [elementId] - ID элемента SVG или null для document-level событий
-  /// [eventType] - тип события (click, mouseover, mouseout, focus, blur)
+  /// [elementId] - ID of the SVG element, or null for document-level events
+  /// [eventType] - event type (click, mouseover, mouseout, focus, blur)
   ///
-  /// Пример:
+  /// Example:
   /// ```dart
-  /// timeline.triggerEvent('myRect', 'click'); // элемент кликнут
-  /// timeline.triggerEvent(null, 'click'); // клик на документ
+  /// timeline.triggerEvent('myRect', 'click'); // element clicked
+  /// timeline.triggerEvent(null, 'click'); // click on document
   /// ```
   void triggerEvent(String? elementId, String eventType) {
     final eventKey = _getEventKey(elementId, eventType);
     final eventTime = _currentTime;
 
-    // Сохраняем время события
+    // Store the event time
     _eventTimes[eventKey] = eventTime;
 
-    // Находим все анимации, ожидающие это событие
+    // Find all animations waiting for this event
     final listeners = _eventListeners[eventKey];
     if (listeners == null || listeners.isEmpty) {
       return;
     }
 
-    // Активируем анимации с учётом offset
+    // Activate animations taking offset into account
     for (final anim in listeners) {
       _activateAnimationByEvent(anim, eventType, elementId, eventTime);
     }
 
-    // Обновляем отрисовку
+    // Update rendering
     _updateAnimations(_currentTime);
   }
 
@@ -208,23 +208,23 @@ class SvgTimeline {
     _resolveTimingConditionsImpl(this);
   }
 
-  /// Получить список активных анимаций в текущий момент
+  /// Get the list of currently active animations
   List<SmilAnimation> getActiveAnimations() {
     return animations.where((anim) => anim.isActive).toList();
   }
 
-  /// Проверить, есть ли хотя бы одна активная анимация
+  /// Check whether there is at least one active animation
   bool hasActiveAnimations() {
     return animations.any((anim) => anim.isActive);
   }
 
-  /// Проверить, есть ли анимации, ожидающие событий (click, mouseover, etc.)
-  /// Используется для определения необходимости тикера при autoPlay=false
+  /// Check whether there are animations waiting for events (click, mouseover, etc.)
+  /// Used to determine whether a ticker is needed when autoPlay=false
   bool hasEventBasedAnimations() {
     return _eventListeners.isNotEmpty;
   }
 
-  /// Вычислить общую длительность всех анимаций
+  /// Compute the total duration of all animations
   static Duration _computeTotalDuration(List<SmilAnimation> animations) {
     if (animations.isEmpty) {
       return Duration.zero;
@@ -249,11 +249,11 @@ class SvgTimeline {
       return _kTimelineInfinity;
     }
 
-    // Если все анимации конечные, вернём разумное значение по умолчанию
+    // If all animations are finite, return a reasonable default value
     return max == Duration.zero ? const Duration(seconds: 10) : max;
   }
 
-  /// Получить информацию о состоянии анимаций
+  /// Get information about the animation state
   TimelineInfo getInfo() {
     final activeCount = animations.where((a) => a.isActive).length;
 

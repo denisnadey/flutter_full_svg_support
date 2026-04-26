@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/svg_example.dart';
 
-/// Коллекция всех примеров SVG анимаций
+/// Collection of all SVG animation examples
 class ExamplesData {
   static const List<SvgExample> all = [
     // ============ BASIC ANIMATIONS ============

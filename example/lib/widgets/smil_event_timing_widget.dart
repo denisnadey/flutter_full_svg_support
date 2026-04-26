@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:full_svg_flutter/src/animation/animated_svg_picture.dart';
 
-/// Виджет с примерами SMIL event-based timing
+/// Widget with SMIL event-based timing examples
 ///
-/// Демонстрирует:
-/// - begin="click" - начало анимации по клику
-/// - begin="mouseover" - начало по наведению мыши
-/// - begin="click+1s" - начало с задержкой после клика
-/// - Цепочки событий
+/// Demonstrates:
+/// - begin="click" — start animation on click
+/// - begin="mouseover" — start on mouse hover
+/// - begin="click+1s" — start with a delay after click
+/// - Event chains
 class SMILEventTimingWidget extends StatefulWidget {
   const SMILEventTimingWidget({super.key, this.autoPlay = false});
 
@@ -24,13 +24,13 @@ class _SMILEventTimingWidgetState extends State<SMILEventTimingWidget> {
   final List<_EventExample> _examples = [
     _EventExample(
       name: 'Click to Start',
-      description: 'Кликните на область, чтобы запустить анимацию',
+      description: 'Click on the area to start the animation',
       svgData: '''
 <svg viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg">
-  <!-- Фон для клика -->
+  <!-- Click background -->
   <rect x="0" y="0" width="400" height="200" fill="#f0f0f0" opacity="0"/>
-  
-  <!-- Квадрат, который анимируется по клику -->
+
+  <!-- Rectangle that animates on click -->
   <rect x="50" y="80" width="40" height="40" fill="#2196F3">
     <animate
       attributeName="x"
@@ -40,12 +40,12 @@ class _SMILEventTimingWidgetState extends State<SMILEventTimingWidget> {
       fill="freeze"/>
   </rect>
   
-  <!-- Подсказка -->
+  <!-- Hint -->
   <text x="200" y="30" text-anchor="middle" font-size="14" fill="#666">
-    Нажмите на SVG, чтобы запустить анимацию
+    Click on the SVG to start the animation
   </text>
-  
-  <!-- Индикатор -->
+
+  <!-- Indicator -->
   <circle cx="200" cy="170" r="5" fill="#FF5722">
     <animate
       attributeName="fill"
@@ -61,13 +61,13 @@ class _SMILEventTimingWidgetState extends State<SMILEventTimingWidget> {
     ),
     _EventExample(
       name: 'Hover Effect',
-      description: 'Наведите курсор мыши для запуска анимации',
+      description: 'Hover with the mouse to start the animation',
       svgData: '''
 <svg viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg">
-  <!-- Фон для hover -->
+  <!-- Hover background -->
   <rect x="0" y="0" width="400" height="200" fill="#e8f5e9" opacity="0.3"/>
-  
-  <!-- Круг, который пульсирует при наведении -->
+
+  <!-- Circle that pulses on hover -->
   <circle cx="200" cy="100" r="30" fill="#4CAF50">
     <animate
       attributeName="r"
@@ -83,12 +83,12 @@ class _SMILEventTimingWidgetState extends State<SMILEventTimingWidget> {
       fill="freeze"/>
   </circle>
   
-  <!-- Подсказка -->
+  <!-- Hint -->
   <text x="200" y="30" text-anchor="middle" font-size="14" fill="#2E7D32">
-    Наведите курсор на SVG
+    Hover over the SVG
   </text>
-  
-  <!-- Дополнительная анимация при выходе -->
+
+  <!-- Additional animation on mouse-out -->
   <circle cx="200" cy="100" r="30" fill="none" stroke="#4CAF50" stroke-width="2">
     <animate
       attributeName="r"
@@ -104,14 +104,14 @@ class _SMILEventTimingWidgetState extends State<SMILEventTimingWidget> {
     ),
     _EventExample(
       name: 'Delayed Start',
-      description: 'Анимация начинается через 1 секунду после клика',
+      description: 'Animation starts 1 second after the click',
       svgData: '''
 <svg viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg">
-  <!-- Кнопка -->
+  <!-- Button -->
   <rect x="150" y="80" width="100" height="40" rx="20" fill="#9C27B0"/>
-  <text x="200" y="107" text-anchor="middle" font-size="16" fill="white">Кликни</text>
-  
-  <!-- Индикатор задержки -->
+  <text x="200" y="107" text-anchor="middle" font-size="16" fill="white">Click</text>
+
+  <!-- Delay indicator -->
   <circle cx="80" cy="100" r="15" fill="#FFB300" opacity="0.3">
     <animate
       attributeName="opacity"
@@ -121,7 +121,7 @@ class _SMILEventTimingWidgetState extends State<SMILEventTimingWidget> {
       fill="freeze"/>
   </circle>
   
-  <!-- Основная анимация с задержкой -->
+  <!-- Main animation with delay -->
   <rect x="280" y="85" width="30" height="30" fill="#E91E63">
     <animate
       attributeName="y"
@@ -137,9 +137,9 @@ class _SMILEventTimingWidgetState extends State<SMILEventTimingWidget> {
       fill="freeze"/>
   </rect>
   
-  <!-- Подсказка -->
+  <!-- Hint -->
   <text x="200" y="30" text-anchor="middle" font-size="14" fill="#666">
-    Квадрат начнет падать через 1с после клика
+    The square will start falling 1s after the click
   </text>
 </svg>
 ''',
@@ -148,10 +148,10 @@ class _SMILEventTimingWidgetState extends State<SMILEventTimingWidget> {
     ),
     _EventExample(
       name: 'Multi-Click',
-      description: 'Каждый клик запускает новую анимацию',
+      description: 'Each click starts a new animation',
       svgData: '''
 <svg viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg">
-  <!-- Несколько элементов, реагирующих на клик -->
+  <!-- Multiple elements responding to click -->
   <circle cx="100" cy="100" r="20" fill="#F44336">
     <animate
       attributeName="cy"
@@ -182,13 +182,13 @@ class _SMILEventTimingWidgetState extends State<SMILEventTimingWidget> {
       repeatCount="1"/>
   </circle>
   
-  <!-- Подсказка -->
+  <!-- Hint -->
   <text x="200" y="30" text-anchor="middle" font-size="14" fill="#666">
-    Кликайте несколько раз!
+    Click multiple times!
   </text>
-  
+
   <text x="200" y="180" text-anchor="middle" font-size="12" fill="#999">
-    Анимация повторяется при каждом клике
+    Animation repeats on every click
   </text>
 </svg>
 ''',
@@ -197,10 +197,10 @@ class _SMILEventTimingWidgetState extends State<SMILEventTimingWidget> {
     ),
     _EventExample(
       name: 'Event Chain',
-      description: 'Клик запускает цепочку анимаций',
+      description: 'Click triggers a chain of animations',
       svgData: '''
 <svg viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg">
-  <!-- Первая анимация - по клику -->
+  <!-- First animation — triggered by click -->
   <rect x="20" y="80" width="30" height="30" fill="#673AB7">
     <animate id="anim1"
       attributeName="x"
@@ -210,7 +210,7 @@ class _SMILEventTimingWidgetState extends State<SMILEventTimingWidget> {
       fill="freeze"/>
   </rect>
   
-  <!-- Вторая начинается когда первая заканчивается -->
+  <!-- Second starts when the first ends -->
   <rect x="150" y="80" width="30" height="30" fill="#3F51B5">
     <animate id="anim2"
       attributeName="x"
@@ -220,7 +220,7 @@ class _SMILEventTimingWidgetState extends State<SMILEventTimingWidget> {
       fill="freeze"/>
   </rect>
   
-  <!-- Третья начинается когда вторая заканчивается -->
+  <!-- Third starts when the second ends -->
   <rect x="280" y="80" width="30" height="30" fill="#2196F3">
     <animate
       attributeName="x"
@@ -229,10 +229,10 @@ class _SMILEventTimingWidgetState extends State<SMILEventTimingWidget> {
       begin="anim2.end"
       fill="freeze"/>
   </rect>
-  
-  <!-- Подсказка -->
+
+  <!-- Hint -->
   <text x="200" y="30" text-anchor="middle" font-size="14" fill="#666">
-    Клик запускает цепную реакцию
+    Click triggers a chain reaction
   </text>
   
   <text x="200" y="170" text-anchor="middle" font-size="11" fill="#999">
@@ -245,10 +245,10 @@ class _SMILEventTimingWidgetState extends State<SMILEventTimingWidget> {
     ),
     _EventExample(
       name: 'Interactive Button',
-      description: 'Интерактивная кнопка с анимированной обратной связью',
+      description: 'Interactive button with animated feedback',
       svgData: '''
 <svg viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg">
-  <!-- Кнопка -->
+  <!-- Button -->
   <g id="button">
     <rect x="125" y="70" width="150" height="60" rx="30" fill="#FF5722">
       <animate
@@ -265,9 +265,9 @@ class _SMILEventTimingWidgetState extends State<SMILEventTimingWidget> {
         fill="freeze"/>
     </rect>
     
-    <!-- Текст кнопки -->
+    <!-- Button text -->
     <text x="200" y="107" text-anchor="middle" font-size="20" fill="white">
-      НАЖМИ!
+      PRESS!
       <animate
         attributeName="font-size"
         from="20" to="18"
@@ -282,7 +282,7 @@ class _SMILEventTimingWidgetState extends State<SMILEventTimingWidget> {
         fill="freeze"/>
     </text>
     
-    <!-- Эффект ripple -->
+    <!-- Ripple effect -->
     <circle cx="200" cy="100" r="0" fill="white" opacity="0.5">
       <animate
         attributeName="r"
@@ -299,14 +299,14 @@ class _SMILEventTimingWidgetState extends State<SMILEventTimingWidget> {
     </circle>
   </g>
   
-  <!-- Подсказка -->
+  <!-- Hint -->
   <text x="200" y="30" text-anchor="middle" font-size="14" fill="#666">
-    Интерактивная кнопка с эффектом нажатия
+    Interactive button with press effect
   </text>
-  
-  <!-- Индикатор нажатий -->
+
+  <!-- Click indicator -->
   <text x="200" y="175" text-anchor="middle" font-size="12" fill="#999">
-    ✓ Клики регистрируются
+    ✓ Clicks are registered
   </text>
 </svg>
 ''',
@@ -322,7 +322,7 @@ class _SMILEventTimingWidgetState extends State<SMILEventTimingWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Селектор примеров
+        // Example selector
         Card(
           margin: const EdgeInsets.all(16),
           child: Padding(
@@ -361,7 +361,7 @@ class _SMILEventTimingWidgetState extends State<SMILEventTimingWidget> {
           ),
         ),
 
-        // SVG область
+        // SVG area
         Expanded(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -393,7 +393,7 @@ class _SMILEventTimingWidgetState extends State<SMILEventTimingWidget> {
           ),
         ),
 
-        // Информационная панель
+        // Info panel
         Card(
           margin: const EdgeInsets.all(16),
           child: Padding(
@@ -510,25 +510,25 @@ class _SMILEventTimingWidgetState extends State<SMILEventTimingWidget> {
   String _getEventInfo(String eventType) {
     switch (eventType) {
       case 'click':
-        return 'Анимация запускается при клике на SVG область. '
-            'Используйте begin="click" в элементе <animate>.';
+        return 'Animation starts on a click in the SVG area. '
+            'Use begin="click" on the <animate> element.';
       case 'hover':
-        return 'Анимация запускается при наведении мыши. '
-            'Используйте begin="mouseover" и begin="mouseout".';
+        return 'Animation starts on mouse hover. '
+            'Use begin="mouseover" and begin="mouseout".';
       case 'delayed click':
-        return 'Анимация запускается с задержкой после события. '
-            'Используйте begin="click+1s" для задержки в 1 секунду.';
+        return 'Animation starts with a delay after the event. '
+            'Use begin="click+1s" for a 1-second delay.';
       case 'multi-click':
-        return 'Каждое событие перезапускает анимацию. '
-            'Анимации с repeatCount="1" сбрасываются при новом событии.';
+        return 'Each event restarts the animation. '
+            'Animations with repeatCount="1" reset on every new event.';
       case 'chain':
-        return 'События могут запускать цепочки анимаций. '
-            'Комбинируйте begin="click" и begin="anim1.end".';
+        return 'Events can trigger animation chains. '
+            'Combine begin="click" and begin="anim1.end".';
       case 'interactive':
-        return 'Создавайте интерактивные UI элементы с visual feedback. '
-            'Комбинируйте несколько анимаций для сложных эффектов.';
+        return 'Create interactive UI elements with visual feedback. '
+            'Combine multiple animations for complex effects.';
       default:
-        return 'Event-based анимации позволяют создавать интерактивный SVG контент.';
+        return 'Event-based animations allow creating interactive SVG content.';
     }
   }
 }

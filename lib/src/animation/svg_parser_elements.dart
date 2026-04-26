@@ -13,12 +13,12 @@ SvgNode _parseElement(XmlElement element) {
   node.ariaDescribedby = element.getAttribute('aria-describedby');
   node.ariaRole = element.getAttribute('role');
 
-  // Парсим атрибуты
+  // Parse attributes
   for (final attr in element.attributes) {
     final attrName = attr.name.local;
     final attrValue = attr.value;
 
-    // Пропускаем специальные атрибуты, которые уже обработаны
+    // Skip special attributes that have already been handled
     if (attrName == 'id' ||
         attrName == 'class' ||
         attrName == 'aria-label' ||
@@ -27,8 +27,8 @@ SvgNode _parseElement(XmlElement element) {
       continue;
     }
 
-    // Определяем тип атрибута и парсим значение
-    // Для анимационных элементов fill - это режим заполнения, не цвет
+    // Determine the attribute type and parse the value
+    // For animation elements, fill is the fill mode, not a color
     final isAnimationElement = _isAnimationElement(tagName);
     final attributeType = _inferAttributeType(attrName, isAnimationElement);
     final parsedValue = _parseAttributeValue(attrValue, attributeType);
@@ -48,7 +48,7 @@ SvgNode _parseElement(XmlElement element) {
   if (isTextContainer && hasElementChildren) {
     _parseTextContainerChildren(element, node);
   } else {
-    // Сохраняем прямой текстовый контент для простых текстовых узлов.
+    // Preserve direct text content for simple text nodes.
     if (isTextContainer) {
       final directText = _extractDirectText(element);
       if (directText != null) {
@@ -56,7 +56,7 @@ SvgNode _parseElement(XmlElement element) {
       }
     }
 
-    // Рекурсивно парсим дочерние элементы
+    // Recursively parse child elements
     for (final child in element.childElements) {
       _parseAndAddChildElement(node, child);
     }
@@ -126,9 +126,9 @@ void _parseTextContainerChildren(XmlElement element, SvgNode node) {
 bool _parseAndAddChildElement(SvgNode node, XmlElement child) {
   final childTagName = child.name.local;
 
-  // Пропускаем <style> элементы - они обрабатываются отдельно
+  // Skip <style> elements - they are handled separately
   if (childTagName == 'style') {
-    return false; // CSS parsing будет позже
+    return false; // CSS parsing will happen later
   }
 
   // Extract <title> text content and store on parent (use first only)
@@ -228,12 +228,12 @@ String? _extractDirectText(XmlElement element) {
   return normalized.isEmpty ? null : normalized;
 }
 
-/// Определяет тип атрибута по его имени
+/// Determines the attribute type by its name
 SvgAttributeType _inferAttributeType(
   String attributeName, [
   bool isAnimationElement = false,
 ]) {
-  // Для анимационных элементов fill/calcMode/etc - это строки, не цвета
+  // For animation elements, fill/calcMode/etc are strings, not colors
   if (isAnimationElement &&
       (attributeName == 'fill' ||
           attributeName == 'calcMode' ||
@@ -242,41 +242,41 @@ SvgAttributeType _inferAttributeType(
     return SvgAttributeType.string;
   }
 
-  // Числовые атрибуты
+  // Numeric attributes
   if (_numericAttributes.contains(attributeName)) {
     return SvgAttributeType.number;
   }
 
-  // Цветовые атрибуты
+  // Color attributes
   if (_colorAttributes.contains(attributeName)) {
     return SvgAttributeType.color;
   }
 
-  // Трансформации
+  // Transformations
   if (attributeName == 'transform') {
     return SvgAttributeType.transform;
   }
 
-  // Path данные
+  // Path data
   if (attributeName == 'd') {
     return SvgAttributeType.path;
   }
 
-  // Points для polygon/polyline
+  // Points for polygon/polyline
   if (attributeName == 'points') {
     return SvgAttributeType.points;
   }
 
-  // URL ссылки
+  // URL references
   if (_urlAttributes.contains(attributeName)) {
     return SvgAttributeType.url;
   }
 
-  // По умолчанию — строка
+  // Default — string
   return SvgAttributeType.string;
 }
 
-/// Парсит значение атрибута в соответствующий тип
+/// Parses an attribute value into the corresponding type
 Object _parseAttributeValue(String value, SvgAttributeType type) {
   switch (type) {
     case SvgAttributeType.number:
@@ -290,12 +290,12 @@ Object _parseAttributeValue(String value, SvgAttributeType type) {
     case SvgAttributeType.url:
     case SvgAttributeType.list:
     case SvgAttributeType.length:
-      // Пока возвращаем как строку, парсинг будет позже
+      // For now return as a string; parsing will happen later
       return value;
   }
 }
 
-/// Проверяет, является ли элемент анимационным
+/// Checks whether an element is an animation element
 bool _isAnimationElement(String tagName) {
   return tagName == 'animate' ||
       tagName == 'animateTransform' ||

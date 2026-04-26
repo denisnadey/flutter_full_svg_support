@@ -1,10 +1,10 @@
 part of 'css_to_smil_converter.dart';
 
-/// Извлекает все анимируемые свойства из keyframes
+/// Extracts all animatable properties from keyframes
 Map<String, List<Object>> _extractAnimatedProperties(CssKeyframes keyframes) {
   final properties = <String, Map<double, String>>{};
 
-  // Собираем все свойства из всех keyframes
+  // Collect all properties from all keyframes
   for (final keyframe in keyframes.keyframes) {
     for (final prop in keyframe.properties.entries) {
       properties.putIfAbsent(prop.key, () => {});
@@ -12,10 +12,10 @@ Map<String, List<Object>> _extractAnimatedProperties(CssKeyframes keyframes) {
     }
   }
 
-  // Конвертируем в список значений с keyTimes
+  // Convert to a list of values with keyTimes
   final result = <String, List<Object>>{};
   for (final prop in properties.entries) {
-    // Сортируем по offset
+    // Sort by offset
     final sortedOffsets = prop.value.keys.toList()..sort();
     final values = sortedOffsets.map((offset) => prop.value[offset]!).toList();
     result[prop.key] = values;
@@ -33,16 +33,16 @@ SmilAnimation? _createSmilAnimation({
   required SvgAttributeType attributeType,
   required List<Object> values,
 }) {
-  // Конвертируем CSS values в SMIL values
+  // Convert CSS values to SMIL values
   final smilValues = _convertCssValues(values, attributeType, attributeName);
 
-  // Создаём keyTimes из keyframe offsets
+  // Create keyTimes from keyframe offsets
   final keyTimes = _extractKeyTimes(keyframes, attributeName);
 
-  // Конвертируем direction в runtime направление проигрывания итераций
+  // Convert direction to the runtime iteration playback direction
   final playbackDirection = _convertDirection(animation.direction);
 
-  // Строим per-keyframe timing.
+  // Build per-keyframe timing.
   // Each interval [i..i+1] uses the timingFunction of keyframe[i], or the
   // animation-level timing as fallback.
   final relevantKeyframes =
@@ -127,17 +127,17 @@ SmilAnimation? _createSmilAnimation({
     }
   }
 
-  // Конвертируем fillMode
+  // Convert fillMode
   final fillMode = _convertFillMode(animation.fillMode);
 
   try {
-    // Определяем тип SMIL анимации
+    // Determine the SMIL animation type
     SmilAnimationType type = SmilAnimationType.animate;
     String? transformType;
 
     if (attributeName == 'transform') {
       type = SmilAnimationType.animateTransform;
-      // Пытаемся определить тип трансформации из первого значения
+      // Try to determine the transform type from the first value
       transformType = _inferTransformType(
         smilValues.isNotEmpty ? smilValues[0] : null,
       );
@@ -164,31 +164,31 @@ SmilAnimation? _createSmilAnimation({
       isPaused: animation.isPaused,
     );
   } catch (_) {
-    // Если не удалось создать анимацию, возвращаем null
+    // If the animation could not be created, return null
     return null;
   }
 }
 
-/// Извлекает keyTimes для конкретного свойства
+/// Extracts keyTimes for a specific property
 List<double> _extractKeyTimes(CssKeyframes keyframes, String propertyName) {
-  // Находим keyframes, которые содержат это свойство
+  // Find keyframes that contain this property
   final relevantKeyframes = keyframes.keyframes
       .where((kf) => kf.properties.containsKey(propertyName))
       .toList();
 
-  // Сортируем по offset
+  // Sort by offset
   relevantKeyframes.sort((a, b) => a.offset.compareTo(b.offset));
 
   return relevantKeyframes.map((kf) => kf.offset).toList();
 }
 
-/// Конвертирует CSS values в SMIL values
+/// Converts CSS values to SMIL values
 List<Object> _convertCssValues(
   List<Object> cssValues,
   SvgAttributeType attributeType,
   String attributeName,
 ) {
-  // Для transform нужно парсить CSS функции
+  // For transform, CSS functions need to be parsed
   if (attributeName == 'transform' &&
       attributeType == SvgAttributeType.transform) {
     return cssValues.map((value) {
@@ -196,7 +196,7 @@ List<Object> _convertCssValues(
     }).toList();
   }
 
-  // Для других типов возвращаем как есть
+  // For other types, return as-is
   return cssValues;
 }
 
@@ -229,9 +229,9 @@ SmilPlaybackDirection _convertDirection(String direction) {
   }
 }
 
-/// Определяет тип атрибута
+/// Determines the attribute type
 SvgAttributeType _inferAttributeType(String attributeName, SvgNode node) {
-  // Базовые числовые атрибуты
+  // Basic numeric attributes
   const numericAttributes = {
     'x',
     'y',
@@ -260,14 +260,14 @@ SvgAttributeType _inferAttributeType(String attributeName, SvgNode node) {
     return SvgAttributeType.number;
   }
 
-  // Цветовые атрибуты
+  // Color attributes
   if (attributeName == 'fill' ||
       attributeName == 'stroke' ||
       attributeName == 'stop-color') {
     return SvgAttributeType.color;
   }
 
-  // Трансформации
+  // Transforms
   if (attributeName == 'transform') {
     return SvgAttributeType.transform;
   }
@@ -275,7 +275,7 @@ SvgAttributeType _inferAttributeType(String attributeName, SvgNode node) {
   return SvgAttributeType.string;
 }
 
-/// Определяет тип трансформации из значения
+/// Determines the transform type from a value
 String? _inferTransformType(Object? value) {
   if (value == null) {
     return null;
@@ -298,5 +298,5 @@ String? _inferTransformType(Object? value) {
     return 'skewY';
   }
 
-  return 'matrix'; // По умолчанию для нераспознанных трансформаций
+  return 'matrix'; // Default for unrecognized transforms
 }

@@ -1,6 +1,6 @@
 part of 'svg_parser.dart';
 
-/// Парсит feDiffuseLighting элемент
+/// Parses a feDiffuseLighting element
 SvgDiffuseLightingFilter _parseDiffuseLighting(
   XmlElement element,
   String filterId,
@@ -26,7 +26,7 @@ SvgDiffuseLightingFilter _parseDiffuseLighting(
   );
 }
 
-/// Парсит feSpecularLighting элемент
+/// Parses a feSpecularLighting element
 SvgSpecularLightingFilter _parseSpecularLighting(
   XmlElement element,
   String filterId,
@@ -55,7 +55,7 @@ SvgSpecularLightingFilter _parseSpecularLighting(
   );
 }
 
-/// Парсит feDropShadow элемент
+/// Parses a feDropShadow element
 SvgDropShadowFilter _parseDropShadow(XmlElement element, String filterId) {
   final styleDeclarations = _parseInlineStyleDeclarations(
     element.getAttribute('style'),
@@ -90,7 +90,7 @@ SvgDropShadowFilter _parseDropShadow(XmlElement element, String filterId) {
   final input = _normalizeFilterInput(element.getAttribute('in'));
   final resultName = _normalizeFilterResult(element.getAttribute('result'));
 
-  // Парсим flood-color
+  // Parse flood-color
   final floodColorStr =
       _getFilterPrimitiveAttributeOrStyleValue(
         element,
@@ -124,7 +124,7 @@ SvgDropShadowFilter _parseDropShadow(XmlElement element, String filterId) {
   );
 }
 
-/// Парсит feOffset элемент
+/// Parses a feOffset element
 SvgOffsetFilter _parseOffset(XmlElement element, String filterId) {
   final dx = _parseNumber(element.getAttribute('dx') ?? '0');
   final dy = _parseNumber(element.getAttribute('dy') ?? '0');
@@ -140,7 +140,7 @@ SvgOffsetFilter _parseOffset(XmlElement element, String filterId) {
   );
 }
 
-/// Парсит feFlood элемент
+/// Parses a feFlood element
 SvgFloodFilter _parseFlood(XmlElement element, String filterId) {
   final styleDeclarations = _parseInlineStyleDeclarations(
     element.getAttribute('style'),
@@ -175,7 +175,7 @@ SvgFloodFilter _parseFlood(XmlElement element, String filterId) {
   );
 }
 
-/// Парсит feBlend элемент
+/// Parses a feBlend element
 SvgBlendFilter _parseBlend(XmlElement element, String filterId) {
   final mode = parseSvgBlendMode(element.getAttribute('mode'));
   return SvgBlendFilter(
@@ -187,7 +187,7 @@ SvgBlendFilter _parseBlend(XmlElement element, String filterId) {
   );
 }
 
-/// Парсит feComposite элемент
+/// Parses a feComposite element
 SvgCompositeFilter _parseComposite(XmlElement element, String filterId) {
   final operatorType = element.getAttribute('operator') ?? 'over';
   final mode = parseSvgCompositeOperator(operatorType);
@@ -206,7 +206,7 @@ SvgCompositeFilter _parseComposite(XmlElement element, String filterId) {
   );
 }
 
-/// Парсит feColorMatrix элемент
+/// Parses a feColorMatrix element
 SvgColorMatrixFilter _parseColorMatrix(XmlElement element, String filterId) {
   final typeStr = element.getAttribute('type') ?? 'matrix';
   final valuesStr = element.getAttribute('values') ?? '';
@@ -230,7 +230,7 @@ SvgColorMatrixFilter _parseColorMatrix(XmlElement element, String filterId) {
       break;
   }
 
-  // Парсим values
+  // Parse values
   final values = valuesStr
       .split(RegExp(r'[\s,]+'))
       .map((s) => double.tryParse(s.trim()))
@@ -246,7 +246,7 @@ SvgColorMatrixFilter _parseColorMatrix(XmlElement element, String filterId) {
   );
 }
 
-/// Парсит feMerge элемент и его дочерние feMergeNode.
+/// Parses a feMerge element and its feMergeNode children.
 SvgMergeFilter _parseMerge(XmlElement element, String filterId) {
   final nodeInputs = <String?>[];
 
@@ -268,7 +268,7 @@ SvgMergeFilter _parseMerge(XmlElement element, String filterId) {
   );
 }
 
-/// Парсит feTile элемент.
+/// Parses a feTile element.
 SvgTileFilter _parseTile(XmlElement element, String filterId) {
   return SvgTileFilter(
     id: filterId,

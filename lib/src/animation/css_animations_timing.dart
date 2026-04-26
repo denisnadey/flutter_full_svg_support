@@ -15,11 +15,11 @@ CssAnimation? _parseAnimation(String animationValue) {
 
   bool durationFound = false;
 
-  // Парсим остальные части
+  // Parse the remaining parts
   for (int i = 1; i < parts.length; i++) {
     final part = parts[i];
 
-    // Duration (например "2s", "500ms") - первое встреченное время
+    // Duration (e.g. "2s", "500ms") - first time value encountered
     final parsedTime = _parseTimeToken(part);
     if (parsedTime != null && !durationFound) {
       duration = parsedTime;
@@ -33,7 +33,7 @@ CssAnimation? _parseAnimation(String animationValue) {
       continue;
     }
 
-    // Delay - второе встреченное время (после duration)
+    // Delay - second time value encountered (after duration)
     if (parsedTime != null) {
       delay = parsedTime;
       continue;
@@ -87,7 +87,7 @@ CssAnimation? _parseAnimation(String animationValue) {
   );
 }
 
-/// Проверяет является ли строка timing function
+/// Checks whether the string is a timing function
 bool _isTimingFunction(String value) {
   final normalized = value.toLowerCase().trim();
   return [

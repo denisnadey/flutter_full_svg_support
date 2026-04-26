@@ -57,12 +57,12 @@ class SmilAnimation {
 ### 2. Updated SmilParser to Extract `type` Attribute
 
 ```dart
-// For animateTransform получаем тип трансформации
+// For animateTransform we get the transform type
 String? transformType;
 if (type == SmilAnimationType.animateTransform) {
   transformType = animNode.getAttributeValue('type')?.toString().toLowerCase();
   if (transformType == null) {
-    return null; // animateTransform без type невалидна
+    return null; // animateTransform without type is invalid
   }
 }
 ```
@@ -71,7 +71,7 @@ if (type == SmilAnimationType.animateTransform) {
 
 ```dart
 case SvgAttributeType.transform:
-  // Для animateTransform нужно обернуть значения в тип трансформации
+  // For animateTransform, values need to be wrapped in the transform type
   if (transformType != null) {
     return '$transformType($value)'; // "rotate(0 50 50)"
   }
@@ -86,7 +86,7 @@ case SvgAttributeType.transform:
 Added direct interpolation for single transform of same type:
 
 ```dart
-// Для одиночной трансформации одного типа - прямая интерполяция
+// For a single transform of the same type — direct interpolation
 if (fromTransforms.length == 1 &&
     toTransforms.length == 1 &&
     fromTransforms[0].type == toTransforms[0].type) {
@@ -159,7 +159,7 @@ computeValue(1.0): rotate(360.00 50.00 50.00) ✅
 
 ## 📝 Related Files
 
-- **Bug Report:** User message "погоди а ты точно уверен что работает все с 12 шага?"
+- **Bug Report:** User message "wait, are you actually sure everything works from step 12?"
 - **Fix Commits:** 
   - SmilAnimation: added transformType field
   - SmilParser: extract type attribute, wrap values

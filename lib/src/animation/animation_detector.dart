@@ -1,27 +1,27 @@
-/// Утилита для быстрого определения наличия анимаций в SVG
+/// Utility for quickly detecting the presence of animations in an SVG
 ///
-/// Используется для выбора между быстрым статичным pipeline (vector_graphics)
-/// и полноценным анимационным pipeline с DOM-деревом.
+/// Used to choose between the fast static pipeline (vector_graphics)
+/// and the full-featured animation pipeline with the DOM tree.
 class AnimationDetector {
   AnimationDetector._();
 
-  /// Проверить, содержит ли SVG анимации (SMIL или CSS)
+  /// Check whether the SVG contains animations (SMIL or CSS)
   ///
-  /// Использует быстрый regex-поиск для определения наличия:
-  /// - SMIL элементов: <animate>, <animateTransform>, <animateMotion>, <set>
-  /// - CSS анимаций: @keyframes, animation-* свойства
-  /// - CSS transitions: transition-* свойства
+  /// Uses a fast regex search to detect the presence of:
+  /// - SMIL elements: <animate>, <animateTransform>, <animateMotion>, <set>
+  /// - CSS animations: @keyframes, animation-* properties
+  /// - CSS transitions: transition-* properties
   ///
-  /// Это эвристическая проверка — false positives возможны (например,
-  /// если эти строки встречаются в комментариях или текстовом контенте),
-  /// но для большинства реальных SVG файлов работает корректно.
+  /// This is a heuristic check — false positives are possible (for example,
+  /// if these strings appear inside comments or text content),
+  /// but it works correctly for the vast majority of real SVG files.
   static bool hasAnimations(String svgXml) {
-    // SMIL анимации
+    // SMIL animations
     if (_hasSmilAnimations(svgXml)) {
       return true;
     }
 
-    // CSS анимации и transitions
+    // CSS animations and transitions
     if (_hasCssAnimations(svgXml)) {
       return true;
     }
@@ -29,17 +29,17 @@ class AnimationDetector {
     return false;
   }
 
-  /// Проверить наличие SMIL анимаций
+  /// Check for SMIL animations
   static bool hasSmilAnimations(String svgXml) {
     return _hasSmilAnimations(svgXml);
   }
 
-  /// Проверить наличие CSS анимаций
+  /// Check for CSS animations
   static bool hasCssAnimations(String svgXml) {
     return _hasCssAnimations(svgXml);
   }
 
-  // Regex паттерны для SMIL элементов
+  // Regex patterns for SMIL elements
   static final RegExp _animatePattern = RegExp(r'<animate[\s>]');
   static final RegExp _animateTransformPattern = RegExp(
     r'<animateTransform[\s>]',
@@ -48,9 +48,9 @@ class AnimationDetector {
   static final RegExp _setPattern = RegExp(r'<set[\s>]');
   static final RegExp _animateColorPattern = RegExp(
     r'<animateColor[\s>]',
-  ); // deprecated, но может встречаться
+  ); // deprecated, but may still appear
 
-  // Regex паттерны для CSS
+  // Regex patterns for CSS
   static final RegExp _keyframesPattern = RegExp(r'@keyframes\s+');
   static final RegExp _animationPropertyPattern = RegExp(
     r'animation[\s]*[:-]',
@@ -75,7 +75,7 @@ class AnimationDetector {
         _transitionPropertyPattern.hasMatch(svgXml);
   }
 
-  /// Получить детальную информацию о типах анимаций в SVG
+  /// Get detailed information about the animation types in the SVG
   static AnimationInfo analyzeAnimations(String svgXml) {
     return AnimationInfo(
       hasSmilAnimate: _animatePattern.hasMatch(svgXml),
@@ -90,9 +90,9 @@ class AnimationDetector {
   }
 }
 
-/// Детальная информация о типах анимаций в SVG
+/// Detailed information about animation types in an SVG
 class AnimationInfo {
-  /// Создаёт информацию об анимациях
+  /// Creates animation information
   const AnimationInfo({
     this.hasSmilAnimate = false,
     this.hasSmilAnimateTransform = false,
@@ -104,31 +104,31 @@ class AnimationInfo {
     this.hasCssTransitionProperty = false,
   });
 
-  /// Есть ли <animate> элементы
+  /// Whether there are <animate> elements
   final bool hasSmilAnimate;
 
-  /// Есть ли <animateTransform> элементы
+  /// Whether there are <animateTransform> elements
   final bool hasSmilAnimateTransform;
 
-  /// Есть ли <animateMotion> элементы
+  /// Whether there are <animateMotion> elements
   final bool hasSmilAnimateMotion;
 
-  /// Есть ли <set> элементы
+  /// Whether there are <set> elements
   final bool hasSmilSet;
 
-  /// Есть ли <animateColor> элементы (deprecated)
+  /// Whether there are <animateColor> elements (deprecated)
   final bool hasSmilAnimateColor;
 
-  /// Есть ли @keyframes в <style>
+  /// Whether there are @keyframes in <style>
   final bool hasCssKeyframes;
 
-  /// Есть ли CSS animation-* свойства
+  /// Whether there are CSS animation-* properties
   final bool hasCssAnimationProperty;
 
-  /// Есть ли CSS transition-* свойства
+  /// Whether there are CSS transition-* properties
   final bool hasCssTransitionProperty;
 
-  /// Есть ли любые SMIL анимации
+  /// Whether there are any SMIL animations
   bool get hasAnySmil =>
       hasSmilAnimate ||
       hasSmilAnimateTransform ||
@@ -136,11 +136,11 @@ class AnimationInfo {
       hasSmilSet ||
       hasSmilAnimateColor;
 
-  /// Есть ли любые CSS анимации
+  /// Whether there are any CSS animations
   bool get hasAnyCss =>
       hasCssKeyframes || hasCssAnimationProperty || hasCssTransitionProperty;
 
-  /// Есть ли любые анимации вообще
+  /// Whether there are any animations at all
   bool get hasAny => hasAnySmil || hasAnyCss;
 
   @override

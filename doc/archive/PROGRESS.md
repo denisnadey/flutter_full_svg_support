@@ -1,299 +1,299 @@
-# Прогресс реализации SMIL/CSS анимаций для flutter_svg
+# SMIL/CSS Animation Implementation Progress for flutter_svg
 
-## ✅ Этап 1: Базовая инфраструктура — ЗАВЕРШЁН
+## ✅ Stage 1: Basic Infrastructure — COMPLETED
 
-**Реализовано:**
-- ✅ SvgNode DOM-дерево с поддержкой анимаций
-- ✅ AnimatableSvgAttribute с baseValue/animatedValue
-- ✅ SvgDocument с viewBox, width, height
-- ✅ AnimationDetector (regex-based) для быстрой проверки SMIL/CSS
-- ✅ SvgParser: XML → SvgNode с поддержкой rect/circle/path, цветов, viewBox
-- ✅ hasAnimations флаг с распространением вверх по дереву
+**Implemented:**
+- ✅ SvgNode DOM tree with animation support
+- ✅ AnimatableSvgAttribute with baseValue/animatedValue
+- ✅ SvgDocument with viewBox, width, height
+- ✅ AnimationDetector (regex-based) for fast SMIL/CSS detection
+- ✅ SvgParser: XML → SvgNode with support for rect/circle/path, colors, viewBox
+- ✅ hasAnimations flag with propagation up the tree
 
-**Тесты:** 21/21 в test/animation/svg_parser_test.dart
+**Tests:** 21/21 in test/animation/svg_parser_test.dart
 
 ---
 
-## ✅ Этап 2: SMIL Core — Числовые анимации — ЗАВЕРШЁН
+## ✅ Stage 2: SMIL Core — Numeric Animations — COMPLETED
 
-**Реализовано:**
+**Implemented:**
 
-### SmilAnimation класс
-- ✅ From/to/by анимации
-- ✅ Values + keyTimes для keyframe анимаций
-- ✅ Calc modes: linear, discrete, spline (с CubicBezier easing)
-- ✅ Fill modes: freeze (сохранить финальное значение), remove (вернуть к базовому)
-- ✅ RepeatCount (включая indefinite)
-- ✅ Begin/end тайминг
-- ✅ Активация/деактивация по времени
-- ✅ updateForTime() для применения анимаций
+### SmilAnimation class
+- ✅ From/to/by animations
+- ✅ Values + keyTimes for keyframe animations
+- ✅ Calc modes: linear, discrete, spline (with CubicBezier easing)
+- ✅ Fill modes: freeze (keep final value), remove (revert to base)
+- ✅ RepeatCount (including indefinite)
+- ✅ Begin/end timing
+- ✅ Activation/deactivation by time
+- ✅ updateForTime() for applying animations
 
-### Interpolators модуль
-- ✅ Числовая интерполяция (линейная)
-- ✅ RGB интерполяция цветов
-- ✅ Интерполяция списков (для path, transform)
-- ✅ Additive режим (сложение значений для by анимаций)
-- ✅ Парсинг цветов: #RGB, #RRGGBB, named (red, blue, green...), rgb(r,g,b)
+### Interpolators module
+- ✅ Numeric interpolation (linear)
+- ✅ RGB color interpolation
+- ✅ List interpolation (for path, transform)
+- ✅ Additive mode (summing values for by animations)
+- ✅ Color parsing: #RGB, #RRGGBB, named (red, blue, green...), rgb(r,g,b)
 
 ### CubicBezier
-- ✅ keySplines поддержка для spline calc mode
-- ✅ Newton-Raphson solver для вычисления кривой Безье
-- ✅ Стандартные easing функции (ease-in-out, etc.)
+- ✅ keySplines support for spline calc mode
+- ✅ Newton-Raphson solver for computing Bezier curves
+- ✅ Standard easing functions (ease-in-out, etc.)
 
 ### SvgTimeline
-- ✅ tick(delta) с учетом playbackRate
-- ✅ seek(time) для прямого перехода
-- ✅ Управление активными анимациями
-- ✅ Вычисление общей длительности всех анимаций
+- ✅ tick(delta) accounting for playbackRate
+- ✅ seek(time) for direct time seeking
+- ✅ Active animation management
+- ✅ Computing total duration of all animations
 
 ### SmilParser
-- ✅ Парсинг анимаций из SvgDocument DOM
-- ✅ Извлечение from/to/by/values
-- ✅ Парсинг keyTimes, keySplines
-- ✅ Парсинг dur в форматах: "2s", "500ms", "0:01:30"
-- ✅ Парсинг repeatCount (включая "indefinite")
-- ✅ Парсинг fill/calcMode/additive modes
-- ✅ Правильная обработка fill атрибута (animate vs rect)
+- ✅ Parsing animations from SvgDocument DOM
+- ✅ Extracting from/to/by/values
+- ✅ Parsing keyTimes, keySplines
+- ✅ Parsing dur in formats: "2s", "500ms", "0:01:30"
+- ✅ Parsing repeatCount (including "indefinite")
+- ✅ Parsing fill/calcMode/additive modes
+- ✅ Correct handling of the fill attribute (animate vs rect)
 
-**Исправленные баги:**
-- ✅ Discrete calcMode: корректный расчет индекса
-- ✅ PlaybackRate: правильная работа с fill=freeze
-- ✅ Fill mode parsing: различие fillMode vs fill-color
-- ✅ Type casting: безопасная конвертация toString()
+**Fixed bugs:**
+- ✅ Discrete calcMode: correct index calculation
+- ✅ PlaybackRate: correct behavior with fill=freeze
+- ✅ Fill mode parsing: distinguishing fillMode vs fill-color
+- ✅ Type casting: safe toString() conversion
 
-**Тесты:** 28/28 в test/animation/smil_test.dart
+**Tests:** 28/28 in test/animation/smil_test.dart
 
-**Всего анимационных тестов: 49/49 ✅**
+**Total animation tests: 49/49 ✅**
 
 ---
 
-## ✅ Этап 3: Рендеринг анимаций — ЗАВЕРШЁН
+## ✅ Stage 3: Animation Rendering — COMPLETED
 
-**Реализовано:**
+**Implemented:**
 
 ### AnimatedSvgPainter (CustomPainter)
-- ✅ Рендеринг rect, circle, ellipse, line с анимированными атрибутами
-- ✅ Поддержка fill, stroke, opacity, stroke-width
-- ✅ ViewBox трансформация с масштабированием и центрированием
-- ✅ Парсинг цветов (#RGB, #RRGGBB, named colors)
+- ✅ Rendering rect, circle, ellipse, line with animated attributes
+- ✅ Support for fill, stroke, opacity, stroke-width
+- ✅ ViewBox transform with scaling and centering
+- ✅ Color parsing (#RGB, #RRGGBB, named colors)
 - ✅ Rounded rect (rx, ry)
-- ✅ shouldRepaint() для оптимизации
+- ✅ shouldRepaint() for optimization
 
-### AnimatedSvgPicture виджет
-- ✅ API схожий с SvgPicture.string()
-- ✅ Автоматическое определение анимаций через AnimationDetector
-- ✅ Управление AnimationController (autoPlay, playbackRate)
-- ✅ Методы: play(), pause(), reset(), seekTo()
-- ✅ Поддержка repeatCount="indefinite"
-- ✅ Интеграция с SvgTimeline
-- ✅ Параметры: width, height, fit, alignment, backgroundColor
+### AnimatedSvgPicture widget
+- ✅ API similar to SvgPicture.string()
+- ✅ Automatic animation detection via AnimationDetector
+- ✅ AnimationController management (autoPlay, playbackRate)
+- ✅ Methods: play(), pause(), reset(), seekTo()
+- ✅ Support for repeatCount="indefinite"
+- ✅ Integration with SvgTimeline
+- ✅ Parameters: width, height, fit, alignment, backgroundColor
 
-**Текущие ограничения:**
-- Path элементы пропускаются (парсинг path в Этапе 6)
-- Transform не поддерживается (Этап 5)
-- Градиенты, паттерны пока не реализованы
+**Current limitations:**
+- Path elements are skipped (path parsing in Stage 6)
+- Transform not supported (Stage 5)
+- Gradients, patterns not yet implemented
 
-**Тесты:** 12/12 в test/animation/animated_svg_picture_test.dart
+**Tests:** 12/12 in test/animation/animated_svg_picture_test.dart
 
-**Всего анимационных тестов: 61/61 ✅**
+**Total animation tests: 61/61 ✅**
 
-**Дополнительно создано:**
-- ✅ `lib/src/animation.dart` - публичный API для экспорта
-- ✅ `example/lib/animated_svg_demo.dart` - демо с 7 примерами анимаций
-- ✅ `example/lib/main.dart` - обновлён с навигацией к demo
-- ✅ `ANIMATION_README.md` - подробная документация
+**Additionally created:**
+- ✅ `lib/src/animation.dart` - public API for export
+- ✅ `example/lib/animated_svg_demo.dart` - demo with 7 animation examples
+- ✅ `example/lib/main.dart` - updated with navigation to demo
+- ✅ `ANIMATION_README.md` - detailed documentation
 
 ---
 
-## ✅ Этап 4: Color анимации — ЗАВЕРШЁН
+## ✅ Stage 4: Color Animations — COMPLETED
 
-**Реализовано:**
+**Implemented:**
 
 ### Color Interpolation
-- ✅ RGB интерполяция уже была реализована в Interpolators модуле (Этап 2)
-- ✅ SmilParser корректно определяет color attributes (fill, stroke, stop-color, flood-color, lighting-color)
-- ✅ Поддержка форматов: #RGB, #RRGGBB, rgb(r,g,b), named colors
+- ✅ RGB interpolation was already implemented in the Interpolators module (Stage 2)
+- ✅ SmilParser correctly identifies color attributes (fill, stroke, stop-color, flood-color, lighting-color)
+- ✅ Support for formats: #RGB, #RRGGBB, rgb(r,g,b), named colors
 - ✅ Keyframe color animations (values + keyTimes)
-- ✅ Применение анимированных цветов к узлам DOM
+- ✅ Application of animated colors to DOM nodes
 
-### Тестирование
-- ✅ Парсинг fill/stroke color animations
-- ✅ Интерполяция цветов в промежуточных значениях (t=0.0 до t=1.0)
-- ✅ Keyframe цветовые анимации
-- ✅ Применение анимированных цветов к rect/circle элементам
-- ✅ Widget integration тесты (AnimatedSvgPainter рендерит анимированные цвета)
+### Testing
+- ✅ Parsing fill/stroke color animations
+- ✅ Color interpolation at intermediate values (t=0.0 to t=1.0)
+- ✅ Keyframe color animations
+- ✅ Application of animated colors to rect/circle elements
+- ✅ Widget integration tests (AnimatedSvgPainter renders animated colors)
 
-### Demo Примеры
+### Demo Examples
 - ✅ Fill color transition (red → blue)
 - ✅ Stroke color animation (green → magenta)
 - ✅ Multi-color keyframe (red → green → blue → red)
-- ✅ Combined animation (размер + цвет одновременно)
+- ✅ Combined animation (size + color simultaneously)
 
-**Важное открытие:**
-Color анимации уже были полностью реализованы в Этапе 2 (Interpolators.interpolateColor), требовалось только добавить тесты и демо-примеры для проверки работоспособности.
+**Key finding:**
+Color animations were already fully implemented in Stage 2 (Interpolators.interpolateColor); only tests and demo examples needed to be added to verify functionality.
 
-**Тесты:** 7/7 в test/animation/color_animation_test.dart + 2/2 widget tests
+**Tests:** 7/7 in test/animation/color_animation_test.dart + 2/2 widget tests
 
-**Всего анимационных тестов: 70/70 ✅** (61 из Этапов 1-3 + 7 color tests + 2 widget tests)
+**Total animation tests: 70/70 ✅** (61 from Stages 1-3 + 7 color tests + 2 widget tests)
 
 ---
 
-## 📊 Общая статистика
+## 📊 Overall Statistics
 
-**Созданные файлы:**
+**Created files:**
 ```
 lib/src/animation/
-├── svg_dom.dart                    (220 строк) - DOM модель
-├── svg_parser.dart                 (290 строк) - XML парсер
-├── animation_detector.dart         (160 строк) - Детектор анимаций
-├── animated_svg_painter.dart       (360 строк) - CustomPainter
-├── animated_svg_picture.dart       (200 строк) - Виджет
-├── animation.dart                  (30 строк)  - Публичный API
+├── svg_dom.dart                    (220 lines) - DOM model
+├── svg_parser.dart                 (290 lines) - XML parser
+├── animation_detector.dart         (160 lines) - Animation detector
+├── animated_svg_painter.dart       (360 lines) - CustomPainter
+├── animated_svg_picture.dart       (200 lines) - Widget
+├── animation.dart                  (30 lines)  - Public API
 └── smil/
-    ├── smil_animation.dart         (500 строк) - SMIL ядро
-    ├── interpolators.dart          (280 строк) - Интерполяторы (+ RGB color interpolation)
-    ├── smil_timeline.dart          (180 строк) - Таймлайн
-    └── smil_parser.dart            (400 строк) - SMIL парсер
+    ├── smil_animation.dart         (500 lines) - SMIL core
+    ├── interpolators.dart          (280 lines) - Interpolators (+ RGB color interpolation)
+    ├── smil_timeline.dart          (180 lines) - Timeline
+    └── smil_parser.dart            (400 lines) - SMIL parser
 
 test/animation/
-├── svg_parser_test.dart            (21 тестов)
-├── smil_test.dart                  (28 тестов)
-├── color_animation_test.dart       (7 тестов)  ← НОВЫЙ
-└── animated_svg_picture_test.dart  (14 тестов, +2 для color)
+├── svg_parser_test.dart            (21 tests)
+├── smil_test.dart                  (28 tests)
+├── color_animation_test.dart       (7 tests)  ← NEW
+└── animated_svg_picture_test.dart  (14 tests, +2 for color)
 
 example/lib/
-└── animated_svg_demo.dart          (400 строк) - Демо с 11 примерами (+4 color примера)
+└── animated_svg_demo.dart          (400 lines) - Demo with 11 examples (+4 color examples)
 ```
 
-**Итого:**
-- 📝 ~2900 строк кода (+100 строк от Этапа 3)
-- ✅ 70 тестов (100% success rate) (+9 от Этапа 3)
-- 📚 2 документа (ANIMATION_ARCHITECTURE.md, ANIMATION_README.md с color примерами)
-- 🎨 11 демо примеров (+4 color анимации)
+**Total:**
+- 📝 ~2900 lines of code (+100 lines from Stage 3)
+- ✅ 70 tests (100% success rate) (+9 from Stage 3)
+- 📚 2 documents (ANIMATION_ARCHITECTURE.md, ANIMATION_README.md with color examples)
+- 🎨 11 demo examples (+4 color animations)
 
 ---
 
-## ✅ Этап 5: Transform анимации — ЗАВЕРШЁН
+## ✅ Stage 5: Transform Animations — COMPLETED
 
-**Реализовано:**
+**Implemented:**
 
-### SvgTransform класс
-- ✅ Парсинг transform строк: translate(x, y), rotate(angle, cx, cy), scale(x, y)
-- ✅ Поддержка matrix и skewX/skewY (парсинг готов, рендеринг частично)
-- ✅ Парсинг множественных трансформаций в одной строке
-- ✅ SvgTransformType enum для различных типов
+### SvgTransform class
+- ✅ Parsing transform strings: translate(x, y), rotate(angle, cx, cy), scale(x, y)
+- ✅ Support for matrix and skewX/skewY (parsing ready, rendering partially)
+- ✅ Parsing multiple transforms in a single string
+- ✅ SvgTransformType enum for different types
 
 ### TransformDecomposition
-- ✅ Декомпозиция трансформаций для плавной интерполяции
-- ✅ Извлечение компонентов: translateX, translateY, rotation, scaleX, scaleY, skewX
-- ✅ Интерполяция между двумя декомпозициями через lerp()
-- ✅ Преобразование обратно в список трансформаций
+- ✅ Transform decomposition for smooth interpolation
+- ✅ Component extraction: translateX, translateY, rotation, scaleX, scaleY, skewX
+- ✅ Interpolation between two decompositions via lerp()
+- ✅ Converting back to a list of transforms
 
 ### Interpolators.interpolateTransform()
-- ✅ **ИСПРАВЛЕН КРИТИЧЕСКИЙ БАГ:** Парсинг `type` атрибута в `<animateTransform>`
-  - Проблема: `from="0 50 50"` интерпретировалось как сырые значения вместо `rotate(0 50 50)`
-  - Решение: SmilParser теперь извлекает `type="rotate"` и оборачивает значения: `rotate(0 50 50)`
-  - Добавлено поле `transformType` в SmilAnimation
-  - Метод `_parseValue()` теперь создаёт правильные transform строки
-- ✅ Прямая интерполяция для одиночных трансформаций (сохраняет cx, cy для rotate)
-- ✅ Декомпозиция для сложных комбинированных трансформаций
-- ✅ Обработка пустых трансформаций (дискретная интерполяция)
-- ✅ Формирование строки результата
+- ✅ **CRITICAL BUG FIXED:** Parsing `type` attribute in `<animateTransform>`
+  - Problem: `from="0 50 50"` was interpreted as raw values instead of `rotate(0 50 50)`
+  - Solution: SmilParser now extracts `type="rotate"` and wraps values: `rotate(0 50 50)`
+  - Added `transformType` field to SmilAnimation
+  - `_parseValue()` method now creates correct transform strings
+- ✅ Direct interpolation for single transforms (preserves cx, cy for rotate)
+- ✅ Decomposition for complex combined transforms
+- ✅ Handling empty transforms (discrete interpolation)
+- ✅ Building the result string
 
 ### AnimatedSvgPainter
-- ✅ Применение трансформаций к canvas перед рендерингом
-- ✅ Поддержка translate(tx, ty)
-- ✅ Поддержка rotate(angle, cx, cy) с центром вращения
-- ✅ Поддержка scale(sx, sy)
-- ✅ Применение множественных трансформаций в порядке объявления
+- ✅ Applying transforms to canvas before rendering
+- ✅ Support for translate(tx, ty)
+- ✅ Support for rotate(angle, cx, cy) with rotation center
+- ✅ Support for scale(sx, sy)
+- ✅ Applying multiple transforms in declaration order
 
 ### SmilParser
-- ✅ Распознавание `<animateTransform>` элементов
-- ✅ **НОВОЕ:** Парсинг атрибута `type` (rotate, translate, scale, etc.)
-- ✅ **НОВОЕ:** Создание полных transform строк из значений + тип
-- ✅ Определение SvgAttributeType.transform
-- ✅ Парсинг from/to/values для трансформаций
+- ✅ Recognizing `<animateTransform>` elements
+- ✅ **NEW:** Parsing `type` attribute (rotate, translate, scale, etc.)
+- ✅ **NEW:** Creating full transform strings from values + type
+- ✅ Determining SvgAttributeType.transform
+- ✅ Parsing from/to/values for transforms
 
-### Тестирование
-- ✅ 8 тестов парсинга SvgTransform (translate, rotate, scale, matrix, multiple)
-- ✅ 4 теста TransformDecomposition (создание, интерполяция)
-- ✅ 7 тестов Transform Animation (парсинг, интерполяция, применение)
-- ✅ 2 widget теста (rotate, translate рендеринг)
-- ✅ **ВЕРИФИКАЦИЯ:** Проверка реальных интерполированных значений:
+### Testing
+- ✅ 8 SvgTransform parsing tests (translate, rotate, scale, matrix, multiple)
+- ✅ 4 TransformDecomposition tests (creation, interpolation)
+- ✅ 7 Transform Animation tests (parsing, interpolation, application)
+- ✅ 2 widget tests (rotate, translate rendering)
+- ✅ **VERIFICATION:** Checking actual interpolated values:
   - `computeValue(0.0)` → `"rotate(0.00 50.00 50.00)"` ✅
   - `computeValue(0.5)` → `"rotate(180.00 50.00 50.00)"` ✅
   - `computeValue(1.0)` → `"rotate(360.00 50.00 50.00)"` ✅
 
-### Demo Примеры
-- ✅ Rotation animation (вращение квадрата вокруг центра)
-- ✅ Translation animation (перемещение круга)
-- ✅ Scale animation (масштабирование прямоугольника)
-- ✅ Combined transform (вращение + другие эффекты)
+### Demo Examples
+- ✅ Rotation animation (square rotating around its center)
+- ✅ Translation animation (circle movement)
+- ✅ Scale animation (rectangle scaling)
+- ✅ Combined transform (rotation + other effects)
 
-**Текущие ограничения:**
-- ~~skewX/skewY парсятся, но рендеринг не реализован~~ ✅ ИСПРАВЛЕНО
-- ~~matrix парсится, но трансформация не применяется~~ ✅ ИСПРАВЛЕНО
+**Current limitations:**
+- ~~skewX/skewY parsed but rendering not implemented~~ ✅ FIXED
+- ~~matrix parsed but transform not applied~~ ✅ FIXED
 
-**Тесты:** 19/19 в test/animation/transform_animation_test.dart + 2 widget теста + **13 новых**
+**Tests:** 19/19 in test/animation/transform_animation_test.dart + 2 widget tests + **13 new**
 
-**Всего анимационных тестов: 113/113 ✅** (100 из Stage 5 + **13 доработок**)
+**Total animation tests: 113/113 ✅** (100 from Stage 5 + **13 follow-up fixes**)
 
-**Доработки после основного Stage 5:**
-- ✅ Исправлен bug autoPlay: false (SVG не рендерился)
-- ✅ Реализован skewX/skewY rendering через Matrix4
-- ✅ Реализован matrix transform rendering
-- ✅ Добавлен initialTime API параметр
-- ✅ Добавлено 13 новых тестов (autoplay_false, advanced_transform, initial_time)
+**Follow-up improvements after main Stage 5:**
+- ✅ Fixed autoPlay: false bug (SVG was not rendering)
+- ✅ Implemented skewX/skewY rendering via Matrix4
+- ✅ Implemented matrix transform rendering
+- ✅ Added initialTime API parameter
+- ✅ Added 13 new tests (autoplay_false, advanced_transform, initial_time)
 
-**Новые файлы тестов:**
-- test/animation/autoplay_false_test.dart (3 теста)
-- test/animation/advanced_transform_test.dart (6 тестов)
-- test/animation/initial_time_test.dart (4 теста)
+**New test files:**
+- test/animation/autoplay_false_test.dart (3 tests)
+- test/animation/advanced_transform_test.dart (6 tests)
+- test/animation/initial_time_test.dart (4 tests)
 
 ---
 
-## 📊 Общая статистика
+## 📊 Overall Statistics
 
-**Созданные файлы:**
+**Created files:**
 ```
 lib/src/animation/
-├── svg_dom.dart                    (220 строк) - DOM модель
-├── svg_parser.dart                 (290 строк) - XML парсер
-├── svg_transform.dart              (250 строк) - Transform классы ← НОВЫЙ
-├── animation_detector.dart         (160 строк) - Детектор анимаций
-├── animated_svg_painter.dart       (410 строк) - CustomPainter (+60 для transform)
-├── animated_svg_picture.dart       (200 строк) - Виджет
-├── animation.dart                  (30 строк)  - Публичный API
+├── svg_dom.dart                    (220 lines) - DOM model
+├── svg_parser.dart                 (290 lines) - XML parser
+├── svg_transform.dart              (250 lines) - Transform classes ← NEW
+├── animation_detector.dart         (160 lines) - Animation detector
+├── animated_svg_painter.dart       (410 lines) - CustomPainter (+60 for transform)
+├── animated_svg_picture.dart       (200 lines) - Widget
+├── animation.dart                  (30 lines)  - Public API
 └── smil/
-    ├── smil_animation.dart         (500 строк) - SMIL ядро
-    ├── interpolators.dart          (320 строк) - Интерполяторы (+40 для transform)
-    ├── smil_timeline.dart          (180 строк) - Таймлайн
-    └── smil_parser.dart            (400 строк) - SMIL парсер
+    ├── smil_animation.dart         (500 lines) - SMIL core
+    ├── interpolators.dart          (320 lines) - Interpolators (+40 for transform)
+    ├── smil_timeline.dart          (180 lines) - Timeline
+    └── smil_parser.dart            (400 lines) - SMIL parser
 
 test/animation/
-├── svg_parser_test.dart            (21 тестов)
-├── smil_test.dart                  (28 тестов)
-├── color_animation_test.dart       (7 тестов)
-├── transform_animation_test.dart   (19 тестов)  ← НОВЫЙ
-└── animated_svg_picture_test.dart  (16 тестов, +2 для transform)
+├── svg_parser_test.dart            (21 tests)
+├── smil_test.dart                  (28 tests)
+├── color_animation_test.dart       (7 tests)
+├── transform_animation_test.dart   (19 tests)  ← NEW
+└── animated_svg_picture_test.dart  (16 tests, +2 for transform)
 
 example/lib/
-└── animated_svg_demo.dart          (550 строк) - Демо с 15 примерами (+4 transform)
+└── animated_svg_demo.dart          (550 lines) - Demo with 15 examples (+4 transform)
 ```
 
-**Итого:**
-- 📝 ~3600 строк кода (+400 от Этапа 4, +50 доработки)
-- ✅ 113 тестов (100% success rate) (+22 от Этапа 4, +13 доработки)
-- 📚 2 документа (ANIMATION_ARCHITECTURE.md, ANIMATION_README.md с transform примерами) + STAGE_5_FINAL_COMPLETE.md
-- 🎨 15 демо примеров (+4 transform анимации)
+**Total:**
+- 📝 ~3600 lines of code (+400 from Stage 4, +50 follow-up)
+- ✅ 113 tests (100% success rate) (+22 from Stage 4, +13 follow-up)
+- 📚 2 documents (ANIMATION_ARCHITECTURE.md, ANIMATION_README.md with transform examples) + STAGE_5_FINAL_COMPLETE.md
+- 🎨 15 demo examples (+4 transform animations)
 
 ---
 
-## 📋 Дальнейшие этапы
+## 📋 Further Stages
 
-- **Этап 6:** Path анимации (морфинг с path interpolation)
-- **Этап 7:** CSS @keyframes animations
-- **Этап 8:** CSS transitions
-- **Этап 9:** Синхронизация времени и события
-- **Этап 10:** Оптимизации (dirty tracking, layer caching, cachedPicture)
-- **Этап 11:** Документация и примеры
+- **Stage 6:** Path animations (morphing with path interpolation)
+- **Stage 7:** CSS @keyframes animations
+- **Stage 8:** CSS transitions
+- **Stage 9:** Time synchronization and events
+- **Stage 10:** Optimizations (dirty tracking, layer caching, cachedPicture)
+- **Stage 11:** Documentation and examples

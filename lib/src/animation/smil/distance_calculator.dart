@@ -5,15 +5,15 @@ import '../svg_dom.dart';
 import '../svg_transform.dart';
 import 'motion_path.dart';
 
-/// Абстрактный класс для вычисления расстояния между значениями
-/// Используется для calcMode="paced" для генерации keyTimes
+/// Abstract class for computing the distance between values.
+/// Used for calcMode="paced" to generate keyTimes
 abstract class DistanceCalculator {
-  /// Вычислить расстояние между двумя значениями
-  /// Возвращает неотрицательное число или -1 если расстояние не может быть вычислено
+  /// Compute the distance between two values.
+  /// Returns a non-negative number, or -1 if the distance cannot be computed
   double distance(Object? from, Object? to);
 }
 
-/// Вычислитель расстояния для числовых значений
+/// Distance calculator for numeric values
 class NumericDistanceCalculator extends DistanceCalculator {
   @override
   double distance(Object? from, Object? to) {
@@ -24,14 +24,14 @@ class NumericDistanceCalculator extends DistanceCalculator {
 
     if (fromNum == null || toNum == null) return -1.0;
 
-    // Просто абсолютная разница, как в Blink SVGAnimatedNumberAnimator
+    // Simple absolute difference, as in Blink SVGAnimatedNumberAnimator
     return (toNum - fromNum).abs();
   }
 
   double? _toDouble(Object? value) {
     if (value is num) return value.toDouble();
     if (value is String) {
-      // Парсим строку, убирая единицы измерения
+      // Parse the string, stripping units of measurement
       final cleaned = value.trim().replaceAll(RegExp(r'[a-zA-Z%]+$'), '');
       return double.tryParse(cleaned);
     }
@@ -39,8 +39,8 @@ class NumericDistanceCalculator extends DistanceCalculator {
   }
 }
 
-/// Вычислитель расстояния для цветов
-/// Использует Euclidean distance в RGB пространстве, как в Blink
+/// Distance calculator for colors.
+/// Uses Euclidean distance in RGB space, as in Blink
 class ColorDistanceCalculator extends DistanceCalculator {
   @override
   double distance(Object? from, Object? to) {
@@ -51,9 +51,9 @@ class ColorDistanceCalculator extends DistanceCalculator {
 
     if (fromColor == null || toColor == null) return -1.0;
 
-    // Euclidean distance в RGB пространстве
-    // Как в Blink ColorDistance::distance()
-    // Используем .r, .g, .b вместо deprecated .red, .green, .blue
+    // Euclidean distance in RGB space
+    // As in Blink ColorDistance::distance()
+    // Use .r, .g, .b instead of deprecated .red, .green, .blue
     final fromR = (fromColor.r * 255.0).round().clamp(0, 255);
     final fromG = (fromColor.g * 255.0).round().clamp(0, 255);
     final fromB = (fromColor.b * 255.0).round().clamp(0, 255);
@@ -70,13 +70,13 @@ class ColorDistanceCalculator extends DistanceCalculator {
 
   ui.Color? _toColor(Object? value) {
     if (value is ui.Color) return value;
-    // Для строк может потребоваться парсинг, но обычно значения уже парсятся
+    // For strings, parsing may be needed, but values are usually already parsed
     return null;
   }
 }
 
-/// Вычислитель расстояния для длин (с учетом единиц измерения)
-/// Конвертирует длины в пиксели, как в Blink SVGAnimatedLengthAnimator
+/// Distance calculator for lengths (accounting for units of measurement).
+/// Converts lengths to pixels, as in Blink SVGAnimatedLengthAnimator
 class LengthDistanceCalculator extends DistanceCalculator {
   @override
   double distance(Object? from, Object? to) {
@@ -87,9 +87,9 @@ class LengthDistanceCalculator extends DistanceCalculator {
 
     if (fromNum == null || toNum == null) return -1.0;
 
-    // Для длин используем абсолютную разницу
-    // В Blink SVGLength конвертируется в пиксели через SVGLengthContext,
-    // но для упрощения пока используем числовые значения
+    // For lengths, use the absolute difference.
+    // In Blink, SVGLength is converted to pixels via SVGLengthContext,
+    // but for simplicity we use numeric values for now
     return (toNum - fromNum).abs();
   }
 
@@ -103,8 +103,8 @@ class LengthDistanceCalculator extends DistanceCalculator {
   }
 }
 
-/// Вычислитель расстояния для путей (path morphing)
-/// Использует длину пути через PathMetrics
+/// Distance calculator for paths (path morphing).
+/// Uses path length via PathMetrics
 class PathDistanceCalculator extends DistanceCalculator {
   @override
   double distance(Object? from, Object? to) {
@@ -114,10 +114,10 @@ class PathDistanceCalculator extends DistanceCalculator {
       return -1.0;
     }
 
-    // Оцениваем расстояние как сумму:
-    // 1) |длина(from) - длина(to)|
-    // 2) среднее смещение соответствующих точек вдоль пути.
-    // Это даёт стабильную метрику для paced keyTimes без тяжёлой геометрии.
+    // Estimate the distance as the sum of:
+    // 1) |length(from) - length(to)|
+    // 2) average displacement of corresponding points along the path.
+    // This gives a stable metric for paced keyTimes without heavy geometry.
     final lengthDelta = (fromPath.totalLength - toPath.totalLength).abs();
     const sampleCount = 24;
     var sampledDelta = 0.0;
@@ -146,8 +146,8 @@ class PathDistanceCalculator extends DistanceCalculator {
   }
 }
 
-/// Вычислитель расстояния для transform анимаций
-/// Использует Euclidean distance между точками для motion
+/// Distance calculator for transform animations.
+/// Uses Euclidean distance between points for motion
 class TransformDistanceCalculator extends DistanceCalculator {
   @override
   double distance(Object? from, Object? to) {
@@ -157,9 +157,9 @@ class TransformDistanceCalculator extends DistanceCalculator {
       return -1.0;
     }
 
-    // Нормализованная евклидова метрика по компонентам декомпозиции.
-    // Углы переводим в градусы, масштаб усиливаем коэффициентом,
-    // чтобы вклад scale/rotate не терялся относительно translate.
+    // Normalized Euclidean metric over decomposition components.
+    // Angles are converted to degrees and scale is amplified by a factor
+    // so that the contribution of scale/rotate is not lost relative to translate.
     final dTranslateX = toDecomp.translateX - fromDecomp.translateX;
     final dTranslateY = toDecomp.translateY - fromDecomp.translateY;
     final dRotationDeg =
@@ -203,9 +203,9 @@ class TransformDistanceCalculator extends DistanceCalculator {
   }
 }
 
-/// Фабрика для создания подходящего калькулятора расстояний
+/// Factory for creating the appropriate distance calculator
 class DistanceCalculatorFactory {
-  /// Создать калькулятор для заданного типа атрибута
+  /// Create a calculator for the given attribute type
   static DistanceCalculator create(SvgAttributeType attributeType) {
     switch (attributeType) {
       case SvgAttributeType.number:
@@ -222,13 +222,13 @@ class DistanceCalculatorFactory {
         return TransformDistanceCalculator();
 
       case SvgAttributeType.points:
-        // Для points используем numeric distance
+        // For points, use numeric distance
         return NumericDistanceCalculator();
 
       case SvgAttributeType.string:
       case SvgAttributeType.url:
       case SvgAttributeType.list:
-        // Для строк и других типов используем numeric как fallback
+        // For strings and other types, use numeric as fallback
         return NumericDistanceCalculator();
     }
   }

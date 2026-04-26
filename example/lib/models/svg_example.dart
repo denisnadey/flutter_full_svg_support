@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Модель примера SVG анимации
+/// Model for an SVG animation example
 class SvgExample {
   final String id;
   final String title;
@@ -21,7 +21,7 @@ class SvgExample {
   });
 }
 
-/// Категории примеров
+/// Example categories
 class ExampleCategory {
   static const String basic = 'Basic';
   static const String transform = 'Transform';

@@ -3,7 +3,7 @@ part of 'css_animations.dart';
 List<CssKeyframes> _parseKeyframes(String cssText) {
   final keyframes = <CssKeyframes>[];
 
-  // Регулярное выражение для @keyframes с поддержкой вложенных фигурных скобок
+  // Regular expression for @keyframes with support for nested curly braces
   final keyframesRegex = RegExp(
     r'@keyframes\s+([\w-]+)\s*\{',
     multiLine: true,
@@ -20,7 +20,7 @@ List<CssKeyframes> _parseKeyframes(String cssText) {
     final relativeStart = match.end;
     final start = pos + relativeStart;
 
-    // Находим закрывающую скобку, учитывая вложенность
+    // Find the closing brace, accounting for nesting
     int depth = 1;
     int end = start;
     while (end < cssText.length && depth > 0) {
@@ -44,32 +44,32 @@ List<CssKeyframes> _parseKeyframes(String cssText) {
 List<CssSelectorRule> _parseSelectorRules(String cssText) {
   final rules = <CssSelectorRule>[];
 
-  // Шаг 1: убираем @keyframes блоки, чтобы их фигурные скобки не мешали.
+  // Step 1: remove @keyframes blocks so their curly braces don't interfere.
   final strippedCss = _stripAtRuleBlocks(cssText);
 
-  // Шаг 2: ищем блоки вида `selector { ... }`.
-  // Поддерживаем: #id, .class, element, #id.class и т.п.
-  // Не поддерживаем: a > b, a ~ b (descendant combinator).
+  // Step 2: look for blocks of the form `selector { ... }`.
+  // Supported: #id, .class, element, #id.class, etc.
+  // Not supported: a > b, a ~ b (descendant combinator).
   int pos = 0;
   while (pos < strippedCss.length) {
-    // Ищем ближайшую открывающую скобку.
+    // Find the nearest opening brace.
     final braceOpen = strippedCss.indexOf('{', pos);
     if (braceOpen == -1) break;
 
-    // Извлекаем selector (всё что до '{', trimmed).
+    // Extract the selector (everything before '{', trimmed).
     final rawSelector = strippedCss.substring(pos, braceOpen).trim();
 
-    // Ищем закрывающую скобку (без вложенности — simple rules).
+    // Find the closing brace (no nesting — simple rules).
     final braceClose = strippedCss.indexOf('}', braceOpen + 1);
     if (braceClose == -1) break;
 
     final body = strippedCss.substring(braceOpen + 1, braceClose);
     pos = braceClose + 1;
 
-    // Пропускаем пустые или @-правила.
+    // Skip empty selectors or @-rules.
     if (rawSelector.isEmpty || rawSelector.startsWith('@')) continue;
 
-    // Обрабатываем мультиселекторы через запятую: `#a, .b { ... }`.
+    // Handle comma-separated multi-selectors: `#a, .b { ... }`.
     final selectors = rawSelector
         .split(',')
         .map((s) => s.trim())
@@ -87,28 +87,28 @@ List<CssSelectorRule> _parseSelectorRules(String cssText) {
   return rules;
 }
 
-/// Убирает все @-rule блоки (типа @keyframes) из CSS текста, заменяя
-/// их пустыми строками той же длины (для сохранения офсетов, если нужно).
+/// Removes all @-rule blocks (such as @keyframes) from CSS text, replacing
+/// them with spaces of the same length (to preserve offsets if needed).
 String _stripAtRuleBlocks(String css) {
-  // Простой подход: заменяем каждый @... {...} на пробелы.
+  // Simple approach: replace each @... {...} block with spaces.
   final result = StringBuffer();
   int pos = 0;
   while (pos < css.length) {
-    // Ищем знак '@'.
+    // Look for the '@' character.
     final atPos = css.indexOf('@', pos);
     if (atPos == -1) {
       result.write(css.substring(pos));
       break;
     }
-    // Копируем всё до '@'.
+    // Copy everything before '@'.
     result.write(css.substring(pos, atPos));
-    // Ищем '{' после '@'.
+    // Look for '{' after '@'.
     final braceOpen = css.indexOf('{', atPos);
     if (braceOpen == -1) {
-      // Нет '{' — конец файла.
+      // No '{' found — end of file.
       break;
     }
-    // Пропускаем блок с учётом вложенности.
+    // Skip the block accounting for nesting.
     int depth = 1;
     int end = braceOpen + 1;
     while (end < css.length && depth > 0) {
@@ -116,20 +116,20 @@ String _stripAtRuleBlocks(String css) {
       if (css[end] == '}') depth--;
       end++;
     }
-    // Заменяем пробелами.
+    // Replace with spaces.
     result.write(' ' * (end - atPos));
     pos = end;
   }
   return result.toString();
 }
 
-/// Парсит тело @keyframes блока
+/// Parses the body of a @keyframes block
 List<CssKeyframe> _parseKeyframeBody(String body) {
   final keyframes = <CssKeyframe>[];
 
-  // Парсим keyframe правила:
+  // Parse keyframe rules:
   //   0% { ... }, 16.666667% { ... }, from { ... }, to { ... }
-  // и списки селекторов:
+  // and selector lists:
   //   0%, 50% { ... }
   final keyframeRegex = RegExp(
     r'((?:\d*\.?\d+%|from|to)(?:\s*,\s*(?:\d*\.?\d+%|from|to))*)\s*\{([^}]*)\}',
@@ -143,10 +143,10 @@ List<CssKeyframe> _parseKeyframeBody(String body) {
     final selectorsStr = match.group(1)!;
     final propertiesStr = match.group(2)!;
 
-    // Парсим CSS свойства
+    // Parse CSS properties
     final properties = _parseProperties(propertiesStr);
 
-    // Извлекаем per-keyframe animation-timing-function (не анимируемое свойство)
+    // Extract per-keyframe animation-timing-function (not an animatable property)
     final perKeyframeTiming = properties.remove('animation-timing-function');
 
     final selectors = selectorsStr
@@ -155,7 +155,7 @@ List<CssKeyframe> _parseKeyframeBody(String body) {
         .where((s) => s.isNotEmpty);
 
     for (final selector in selectors) {
-      // Конвертируем offset в число 0.0-1.0
+      // Convert offset to a number in range 0.0-1.0
       final offset = switch (selector) {
         'from' => 0.0,
         'to' => 1.0,
@@ -172,17 +172,17 @@ List<CssKeyframe> _parseKeyframeBody(String body) {
     }
   }
 
-  // Сортируем по offset
+  // Sort by offset
   keyframes.sort((a, b) => a.offset.compareTo(b.offset));
 
   return keyframes;
 }
 
-/// Парсит CSS свойства из строки
+/// Parses CSS properties from a string
 Map<String, String> _parseProperties(String propertiesStr) {
   final properties = <String, String>{};
 
-  // Разделяем по ; и парсим каждое свойство
+  // Split by ; and parse each property
   final lines = propertiesStr.split(';');
 
   for (final line in lines) {

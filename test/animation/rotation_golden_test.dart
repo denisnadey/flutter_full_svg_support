@@ -31,7 +31,7 @@ void main() {
                   width: 200,
                   height: 200,
                   fit: BoxFit.contain,
-                  autoPlay: false, // Не запускаем автоматически
+                  autoPlay: false, // Do not start automatically
                 ),
               ),
             ),
@@ -41,7 +41,7 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Golden test для t=0
+      // Golden test for t=0
       await expectLater(
         find.byType(AnimatedSvgPicture),
         matchesGoldenFile('goldens/rotation_0deg.png'),
@@ -83,11 +83,11 @@ void main() {
         ),
       );
 
-      // Перемотать на 0.5 секунды (25% от 2s = 90 градусов)
+      // Advance to 0.5 seconds (25% of 2s = 90 degrees)
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
 
-      // Golden test для t=0.25 (90°)
+      // Golden test for t=0.25 (90°)
       await expectLater(
         find.byType(AnimatedSvgPicture),
         matchesGoldenFile('goldens/rotation_90deg.png'),
@@ -129,11 +129,11 @@ void main() {
         ),
       );
 
-      // Перемотать на 1.0 секунду (50% от 2s = 180 градусов)
+      // Advance to 1.0 second (50% of 2s = 180 degrees)
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 1000));
 
-      // Golden test для t=0.5 (180°)
+      // Golden test for t=0.5 (180°)
       await expectLater(
         find.byType(AnimatedSvgPicture),
         matchesGoldenFile('goldens/rotation_180deg.png'),
@@ -177,11 +177,11 @@ void main() {
         ),
       );
 
-      // Перемотать на 1.5 секунды (75% от 2s = 270 градусов)
+      // Advance to 1.5 seconds (75% of 2s = 270 degrees)
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 1500));
 
-      // Golden test для t=0.75 (270°)
+      // Golden test for t=0.75 (270°)
       await expectLater(
         find.byType(AnimatedSvgPicture),
         matchesGoldenFile('goldens/rotation_270deg.png'),
@@ -226,30 +226,30 @@ void main() {
         ),
       );
 
-      // Начальный кадр (0°)
+      // Initial frame (0°)
       await tester.pump();
 
-      // Сделаем скриншоты на разных углах для визуальной проверки
+      // Take screenshots at different angles for visual verification
       await expectLater(
         find.byType(Scaffold),
         matchesGoldenFile('goldens/rotation_sequence_0deg.png'),
       );
 
-      // Переместить на 90 градусов
+      // Advance to 90 degrees
       await tester.pump(const Duration(milliseconds: 500));
       await expectLater(
         find.byType(Scaffold),
         matchesGoldenFile('goldens/rotation_sequence_90deg.png'),
       );
 
-      // Переместить на 180 градусов
+      // Advance to 180 degrees
       await tester.pump(const Duration(milliseconds: 500));
       await expectLater(
         find.byType(Scaffold),
         matchesGoldenFile('goldens/rotation_sequence_180deg.png'),
       );
 
-      // Переместить на 270 градусов
+      // Advance to 270 degrees
       await tester.pump(const Duration(milliseconds: 500));
       await expectLater(
         find.byType(Scaffold),

@@ -1,22 +1,22 @@
-# Архитектурный план добавления SMIL/CSS анимаций в flutter_svg
+# Architectural Plan for Adding SMIL/CSS Animations to flutter_svg
 
-## 📊 АНАЛИЗ ТЕКУЩЕЙ АРХИТЕКТУРЫ
+## 📊 CURRENT ARCHITECTURE ANALYSIS
 
-### Текущий Pipeline (flutter_svg 2.2.2)
+### Current Pipeline (flutter_svg 2.2.2)
 
 ```
 SVG Source (asset/network/string/bytes)
          ↓
    SvgLoader (SvgAssetLoader, SvgNetworkLoader, etc.)
          ↓
-   prepareMessage() — загрузка сырых данных
+   prepareMessage() — loading raw data
          ↓
-   provideSvg() — получение строки XML
+   provideSvg() — obtaining the XML string
          ↓
-   compute() в isolate:
+   compute() in isolate:
       vector_graphics_compiler.encodeSvg()
          ↓
-   ByteData (бинарный .vec формат)
+   ByteData (binary .vec format)
          ↓
    Cache (svg.cache)
          ↓
@@ -24,87 +24,87 @@ SVG Source (asset/network/string/bytes)
          ↓
    VectorGraphic widget
          ↓
-   RenderObject рендерит Picture/Image
+   RenderObject renders Picture/Image
 ```
 
-### Ключевые находки
+### Key Findings
 
-1. **Полная делегация парсинга**: `flutter_svg` **НЕ** парсит SVG сам, он делегирует это `vector_graphics_compiler.encodeSvg()`
-2. **Потеря DOM**: После `encodeSvg()` получается бинарный формат `.vec`, который содержит только команды рисования (paths, fills, strokes), **БЕЗ** DOM-структуры
-3. **Нет Drawable классов**: В текущей версии нет старых `DrawableRoot`/`DrawableShape` — всё через `vector_graphics`
-4. **Публичный API стабилен**: `SvgPicture.asset/network/string/memory` + `BytesLoader` хорошо изолированы
+1. **Full parsing delegation**: `flutter_svg` does **NOT** parse SVG itself, it delegates to `vector_graphics_compiler.encodeSvg()`
+2. **DOM loss**: After `encodeSvg()` the result is a binary `.vec` format that contains only drawing commands (paths, fills, strokes), **WITHOUT** the DOM structure
+3. **No Drawable classes**: The current version has no old `DrawableRoot`/`DrawableShape` — everything goes through `vector_graphics`
+4. **Stable public API**: `SvgPicture.asset/network/string/memory` + `BytesLoader` are well isolated
 
-### Что теряется в текущем pipeline
+### What Is Lost in the Current Pipeline
 
-❌ **DOM-дерево** элементов (`<g>`, `<rect>`, `<circle>`, `<path>`)  
-❌ **ID элементов** и их иерархия  
-❌ **SMIL элементы** (`<animate>`, `<animateTransform>`, `<animateMotion>`)  
-❌ **CSS `<style>` блоки** и `@keyframes`  
-❌ **События** (хотя их в Flutter всё равно сложно реализовать)  
-❌ **Динамические атрибуты** — после компиляции всё "запечено" в commands  
-
----
-
-## 🎯 СТРАТЕГИЯ ИНТЕГРАЦИИ
-
-### Вариант A: Форк vector_graphics_compiler (❌ Не рекомендую)
-
-**Плюсы:**
-- Полный контроль над парсингом
-- Можно расширить .vec формат для анимаций
-
-**Минусы:**
-- Огромный объём работы
-- Необходимость поддерживать форк
-- Синхронизация с upstream
-- Зависимость от внутренних деталей vector_graphics
-
-### Вариант B: Параллельный анимационный pipeline ⭐ **РЕКОМЕНДУЮ**
-
-**Суть:**
-- Для статичных SVG — оставить текущий быстрый путь через `vector_graphics`
-- Для SVG с анимациями — новый путь с собственным парсером и DOM-деревом
-- Автоопределение или явный флаг `hasAnimations`
-
-**Плюсы:**
-- ✅ Не ломает существующий API
-- ✅ Не зависит от vector_graphics для анимаций
-- ✅ Можно внедрять итеративно
-- ✅ Оптимальный выбор производительности
-
-**Минусы:**
-- Дублирование некоторой логики парсинга (но минимальное)
-- Две кодовые ветки рендеринга
+❌ **DOM tree** of elements (`<g>`, `<rect>`, `<circle>`, `<path>`)  
+❌ **Element IDs** and their hierarchy  
+❌ **SMIL elements** (`<animate>`, `<animateTransform>`, `<animateMotion>`)  
+❌ **CSS `<style>` blocks** and `@keyframes`  
+❌ **Events** (though they are hard to implement in Flutter anyway)  
+❌ **Dynamic attributes** — after compilation everything is "baked" into commands  
 
 ---
 
-## 🏗️ АРХИТЕКТУРА РЕШЕНИЯ (Вариант B)
+## 🎯 INTEGRATION STRATEGY
 
-### Новые модули
+### Option A: Fork vector_graphics_compiler (❌ Not recommended)
+
+**Pros:**
+- Full control over parsing
+- Can extend the .vec format for animations
+
+**Cons:**
+- Enormous amount of work
+- Need to maintain the fork
+- Syncing with upstream
+- Dependency on vector_graphics internals
+
+### Option B: Parallel Animation Pipeline ⭐ **RECOMMENDED**
+
+**Concept:**
+- For static SVGs — keep the current fast path through `vector_graphics`
+- For SVGs with animations — a new path with its own parser and DOM tree
+- Auto-detection or explicit `hasAnimations` flag
+
+**Pros:**
+- ✅ Does not break the existing API
+- ✅ Does not depend on vector_graphics for animations
+- ✅ Can be introduced iteratively
+- ✅ Optimal performance choice
+
+**Cons:**
+- Some duplication of parsing logic (but minimal)
+- Two rendering code paths
+
+---
+
+## 🏗️ SOLUTION ARCHITECTURE (Option B)
+
+### New Modules
 
 ```
 lib/src/
 ├── animation/
-│   ├── svg_dom.dart              # SVG DOM модель
+│   ├── svg_dom.dart              # SVG DOM model
 │   ├── smil/
-│   │   ├── smil_animation.dart   # Базовые классы SMIL анимаций
-│   │   ├── smil_parser.dart      # Парсер <animate>, <animateTransform>, etc.
-│   │   ├── smil_timeline.dart    # Управление временем и тиканием
-│   │   ├── interpolators.dart    # Интерполяция значений (число, цвет, transform, path)
-│   │   └── timing.dart           # begin/end/dur/repeatCount логика
+│   │   ├── smil_animation.dart   # Base SMIL animation classes
+│   │   ├── smil_parser.dart      # Parser for <animate>, <animateTransform>, etc.
+│   │   ├── smil_timeline.dart    # Time management and ticking
+│   │   ├── interpolators.dart    # Value interpolation (number, color, transform, path)
+│   │   └── timing.dart           # begin/end/dur/repeatCount logic
 │   ├── css/
-│   │   ├── css_animation.dart    # CSS @keyframes анимации
-│   │   ├── css_parser.dart       # Минимальный CSS парсер
+│   │   ├── css_animation.dart    # CSS @keyframes animations
+│   │   ├── css_parser.dart       # Minimal CSS parser
 │   │   └── css_transition.dart   # CSS transitions
-│   ├── svg_parser.dart           # Облегчённый XML→DOM парсер для анимаций
-│   ├── animated_renderer.dart    # CustomPainter для анимированных SVG
-│   └── animation_detector.dart   # Определяет наличие анимаций в SVG
-└── loaders.dart                  # (расширить)
+│   ├── svg_parser.dart           # Lightweight XML→DOM parser for animations
+│   ├── animated_renderer.dart    # CustomPainter for animated SVGs
+│   └── animation_detector.dart   # Detects whether an SVG contains animations
+└── loaders.dart                  # (extend)
 ```
 
-### Публичный API
+### Public API
 
-#### Новый виджет: `AnimatedSvgPicture`
+#### New Widget: `AnimatedSvgPicture`
 
 ```dart
 /// lib/src/animated_svg_picture.dart
@@ -114,7 +114,7 @@ class AnimatedSvgPicture extends StatefulWidget {
     this.bytesLoader, {
     super.key,
     
-    // Все существующие параметры SvgPicture
+    // All existing SvgPicture parameters
     this.width,
     this.height,
     this.fit = BoxFit.contain,
@@ -124,7 +124,7 @@ class AnimatedSvgPicture extends StatefulWidget {
     this.clipBehavior = Clip.hardEdge,
     // ... etc
     
-    // ⭐ НОВЫЕ параметры для анимаций
+    // ⭐ NEW parameters for animations
     this.enableSmilAnimations = true,
     this.enableCssAnimations = true,
     this.autoPlay = true,
@@ -143,7 +143,7 @@ class AnimatedSvgPicture extends StatefulWidget {
   final VoidCallback? onAnimationStart;
   final VoidCallback? onAnimationEnd;
   
-  // Именованные конструкторы как у SvgPicture
+  // Named constructors like SvgPicture
   AnimatedSvgPicture.asset(...);
   AnimatedSvgPicture.network(...);
   AnimatedSvgPicture.string(...);
@@ -151,7 +151,7 @@ class AnimatedSvgPicture extends StatefulWidget {
 }
 ```
 
-#### Контроллер анимаций
+#### Animation Controller
 
 ```dart
 /// lib/src/animation/svg_animation_controller.dart
@@ -177,14 +177,14 @@ class SvgAnimationController extends ChangeNotifier {
 }
 ```
 
-### Внутренние структуры данных
+### Internal Data Structures
 
 #### SVG DOM
 
 ```dart
 /// lib/src/animation/svg_dom.dart
 
-/// Узел SVG DOM дерева
+/// An SVG DOM tree node
 class SvgNode {
   SvgNode({
     required this.tagName,
@@ -202,17 +202,17 @@ class SvgNode {
   final List<SvgNode> children;
   SvgNode? parent;
   
-  /// Список анимаций, привязанных к этому узлу
+  /// List of animations attached to this node
   final List<SmilAnimation> animations = [];
   
-  /// Для оптимизации: флаг, есть ли анимации в поддереве
+  /// Optimization flag: whether there are animations in the subtree
   bool hasAnimations = false;
   
-  /// Кэшированный Picture для статичных поддеревьев
+  /// Cached Picture for static subtrees
   ui.Picture? cachedPicture;
 }
 
-/// Атрибут SVG элемента (может быть анимирован)
+/// An SVG element attribute (can be animated)
 class SvgAttribute {
   SvgAttribute({
     required this.name,
@@ -221,21 +221,21 @@ class SvgAttribute {
   
   final String name; // 'x', 'y', 'fill', 'transform', etc.
   
-  /// Базовое значение из XML
+  /// Base value from XML
   Object baseValue; // String, double, Color, Transform, etc.
   
-  /// Текущее анимированное значение (если есть активная анимация)
+  /// Current animated value (if there is an active animation)
   Object? animatedValue;
   
-  /// Флаг: активна ли анимация в данный момент
+  /// Flag: whether an animation is currently active
   bool isAnimated = false;
   
-  /// Получить эффективное значение (animatedValue если есть, иначе baseValue)
+  /// Get the effective value (animatedValue if present, otherwise baseValue)
   Object get effectiveValue => isAnimated ? animatedValue! : baseValue;
 }
 ```
 
-#### SMIL Анимация
+#### SMIL Animation
 
 ```dart
 /// lib/src/animation/smil/smil_animation.dart
@@ -255,13 +255,13 @@ enum SmilCalcMode {
 }
 
 enum SmilFillMode {
-  freeze,   // сохранить последнее значение
-  remove,   // вернуться к base value
+  freeze,   // keep the last value
+  remove,   // revert to base value
 }
 
 enum SmilAdditiveMode {
-  replace,  // заменить базовое значение
-  sum,      // добавить к базовому
+  replace,  // replace the base value
+  sum,      // add to the base value
 }
 
 class SmilAnimation {
@@ -292,50 +292,50 @@ class SmilAnimation {
   final String attributeName; // 'x', 'y', 'fill', etc.
   final SvgAttributeType attributeType;
   
-  // Значения анимации
+  // Animation values
   final Object? from;
   final Object? to;
   final Object? by;
-  final List<Object>? values; // для keyframe анимаций
+  final List<Object>? values; // for keyframe animations
   final List<double>? keyTimes; // [0.0, 0.5, 1.0]
-  final List<CubicBezier>? keySplines; // для spline интерполяции
+  final List<CubicBezier>? keySplines; // for spline interpolation
   
-  // Тайминг
+  // Timing
   final Duration dur;
   final Duration begin;
   final Duration? end;
-  final double repeatCount; // double.infinity для 'indefinite'
+  final double repeatCount; // double.infinity for 'indefinite'
   final Duration? repeatDur;
   
-  // Поведение
+  // Behavior
   final SmilFillMode fillMode;
   final SmilCalcMode calcMode;
   final SmilAdditiveMode additive;
   final bool accumulate;
   
-  // Runtime состояние
+  // Runtime state
   bool isActive = false;
   int currentIteration = 0;
   Duration localTime = Duration.zero;
   
-  /// Вычислить значение анимации в момент времени t ∈ [0, 1] внутри итерации
+  /// Compute the animation value at time t ∈ [0, 1] within an iteration
   Object? computeValue(double t);
 }
 
-/// Тип атрибута для корректной интерполяции
+/// Attribute type for correct interpolation
 enum SvgAttributeType {
   number,        // x, y, width, height, opacity, stroke-width
-  length,        // с единицами: px, em, %
+  length,        // with units: px, em, %
   color,         // fill, stroke
   transform,     // transform attribute
-  path,          // d attribute для <path>
-  points,        // points для <polygon>, <polyline>
-  string,        // для discrete анимаций
-  list,          // stroke-dasharray и подобные
+  path,          // d attribute for <path>
+  points,        // points for <polygon>, <polyline>
+  string,        // for discrete animations
+  list,          // stroke-dasharray and similar
 }
 ```
 
-#### Timeline (управление временем)
+#### Timeline (time management)
 
 ```dart
 /// lib/src/animation/smil/smil_timeline.dart
@@ -352,19 +352,19 @@ class SvgTimeline {
   Duration _currentTime = Duration.zero;
   Duration get currentTime => _currentTime;
   
-  /// Продвинуть время на delta
+  /// Advance time by delta
   void tick(Duration delta) {
     _currentTime += delta;
     _updateAnimations(_currentTime);
   }
   
-  /// Перепрыгнуть на конкретное время
+  /// Jump to a specific time
   void seek(Duration time) {
     _currentTime = time;
     _updateAnimations(_currentTime);
   }
   
-  /// Обновить все анимации для текущего времени
+  /// Update all animations for the current time
   void _updateAnimations(Duration time) {
     for (final animation in animations) {
       _updateAnimation(animation, time);
@@ -372,18 +372,18 @@ class SvgTimeline {
   }
   
   void _updateAnimation(SmilAnimation anim, Duration globalTime) {
-    // Проверить, активна ли анимация
+    // Check whether the animation is active
     final effectiveEnd = anim.end ?? 
         (anim.begin + anim.dur * anim.repeatCount);
     
     if (globalTime < anim.begin || globalTime >= effectiveEnd) {
-      // Не активна или закончилась
+      // Not active or finished
       if (anim.isActive && anim.fillMode == SmilFillMode.freeze) {
-        // Оставить последнее значение
+        // Keep the last value
         anim.isActive = false;
-        // Значение уже установлено
+        // Value is already set
       } else {
-        // Убрать анимацию
+        // Remove the animation
         anim.isActive = false;
         final attr = anim.targetNode.attributes[anim.attributeName];
         if (attr != null) {
@@ -394,10 +394,10 @@ class SvgTimeline {
       return;
     }
     
-    // Анимация активна
+    // Animation is active
     anim.isActive = true;
     
-    // Вычислить локальное время внутри повтора
+    // Compute local time within the repeat
     final timeSinceBegin = globalTime - anim.begin;
     anim.currentIteration = (timeSinceBegin.inMicroseconds / 
                              anim.dur.inMicroseconds).floor();
@@ -405,10 +405,10 @@ class SvgTimeline {
                                anim.dur.inMicroseconds) / 
                               anim.dur.inMicroseconds;
     
-    // Вычислить значение
+    // Compute value
     final value = anim.computeValue(iterationProgress);
     
-    // Применить к атрибуту
+    // Apply to the attribute
     final attr = anim.targetNode.attributes[anim.attributeName];
     if (attr != null) {
       attr.isAnimated = true;
@@ -416,7 +416,7 @@ class SvgTimeline {
     }
   }
   
-  /// Получить общую длительность всех анимаций
+  /// Get the total duration of all animations
   Duration getTotalDuration() {
     Duration max = Duration.zero;
     for (final anim in animations) {
@@ -428,7 +428,7 @@ class SvgTimeline {
 }
 ```
 
-### Рендеринг
+### Rendering
 
 #### AnimatedSvgPainter
 
@@ -448,12 +448,12 @@ class AnimatedSvgPainter extends CustomPainter {
   
   @override
   void paint(Canvas canvas, Size size) {
-    // Применить viewBox transform
+    // Apply viewBox transform
     final matrix = _computeViewBoxTransform(size);
     canvas.save();
     canvas.transform(matrix.storage);
     
-    // Рендерить дерево рекурсивно
+    // Render the tree recursively
     _paintNode(canvas, rootNode);
     
     canvas.restore();
@@ -462,17 +462,17 @@ class AnimatedSvgPainter extends CustomPainter {
   void _paintNode(Canvas canvas, SvgNode node) {
     canvas.save();
     
-    // Применить трансформы узла
+    // Apply the node's transforms
     _applyTransform(canvas, node);
     
-    // Если узел статичен и есть кэш — использовать его
+    // If the node is static and has a cached picture — use it
     if (!node.hasAnimations && node.cachedPicture != null) {
       canvas.drawPicture(node.cachedPicture!);
       canvas.restore();
       return;
     }
     
-    // Рендерить текущий узел
+    // Render the current node
     switch (node.tagName) {
       case 'rect':
         _paintRect(canvas, node);
@@ -485,12 +485,12 @@ class AnimatedSvgPainter extends CustomPainter {
         break;
       case 'g':
       case 'svg':
-        // Только контейнер
+        // Container only
         break;
-      // ... другие элементы
+      // ... other elements
     }
     
-    // Рендерить детей
+    // Render children
     for (final child in node.children) {
       _paintNode(canvas, child);
     }
@@ -546,7 +546,7 @@ class AnimatedSvgPainter extends CustomPainter {
   
   @override
   bool shouldRepaint(AnimatedSvgPainter oldDelegate) {
-    // Перерисовывать каждый кадр для анимаций
+    // Repaint every frame for animations
     return true;
   }
 }
@@ -554,17 +554,17 @@ class AnimatedSvgPainter extends CustomPainter {
 
 ---
 
-## 🔄 PIPELINE ПЕРЕКЛЮЧЕНИЯ
+## 🔄 PIPELINE SWITCHING
 
-### Логика выбора pipeline
+### Pipeline Selection Logic
 
 ```dart
 /// lib/src/animation/animation_detector.dart
 
 class AnimationDetector {
-  /// Быстрая проверка: есть ли в SVG анимации
+  /// Quick check: does the SVG contain animations?
   static bool hasSvgAnimations(String svgXml) {
-    // Простой regex поиск
+    // Simple regex search
     return svgXml.contains(RegExp(r'<animate[^>]*>')) ||
            svgXml.contains(RegExp(r'<animateTransform[^>]*>')) ||
            svgXml.contains(RegExp(r'<animateMotion[^>]*>')) ||
@@ -574,24 +574,24 @@ class AnimationDetector {
 }
 ```
 
-### Модифицированный SvgLoader
+### Modified SvgLoader
 
 ```dart
-/// lib/src/loaders.dart (расширение)
+/// lib/src/loaders.dart (extension)
 
 abstract class SvgLoader<T> extends BytesLoader {
-  // ... существующий код ...
+  // ... existing code ...
   
-  /// НОВЫЙ метод: определить, нужен ли анимационный pipeline
+  /// NEW method: determine whether the animation pipeline is needed
   @protected
   bool shouldUseAnimationPipeline(String svg) {
     return AnimationDetector.hasSvgAnimations(svg);
   }
   
-  /// НОВЫЙ метод: парсинг для анимаций
+  /// NEW method: parsing for animations
   @protected
   Future<SvgDomDocument> parseForAnimations(String svg, BuildContext? context) {
-    // Парсим XML в DOM
+    // Parse XML into DOM
     return compute((String xml) {
       return SvgParser.parse(xml);
     }, svg);
@@ -601,45 +601,45 @@ abstract class SvgLoader<T> extends BytesLoader {
 
 ---
 
-## 📝 ПЛАН РЕАЛИЗАЦИИ ПО ЭТАПАМ
+## 📝 IMPLEMENTATION PLAN BY STAGES
 
-### Этап 1: Базовая инфраструктура (1-2 недели)
+### Stage 1: Basic Infrastructure (1-2 weeks)
 
-**Задачи:**
-1. ✅ Создать `lib/src/animation/` структуру
-2. ✅ Реализовать `SvgNode` и `SvgAttribute`
-3. ✅ Создать `AnimationDetector`
-4. ✅ Базовый XML → SvgNode парсер (`SvgParser`)
-5. ✅ Тесты для парсера базовых элементов (rect, circle, path, g)
+**Tasks:**
+1. ✅ Create `lib/src/animation/` structure
+2. ✅ Implement `SvgNode` and `SvgAttribute`
+3. ✅ Create `AnimationDetector`
+4. ✅ Basic XML → SvgNode parser (`SvgParser`)
+5. ✅ Tests for parser of basic elements (rect, circle, path, g)
 
-**Файлы:**
+**Files:**
 - `lib/src/animation/svg_dom.dart`
 - `lib/src/animation/svg_parser.dart`
 - `lib/src/animation/animation_detector.dart`
 - `test/animation/svg_parser_test.dart`
 
-**Критерий готовности:**
-- Парсер может преобразовать простой SVG в дерево SvgNode
-- Атрибуты корректно извлекаются
+**Readiness criterion:**
+- Parser can convert a simple SVG into an SvgNode tree
+- Attributes are correctly extracted
 
-### Этап 2: SMIL Core — числовые анимации (2 недели)
+### Stage 2: SMIL Core — Numeric Animations (2 weeks)
 
-**Задачи:**
-1. ✅ Реализовать `SmilAnimation` базовый класс
-2. ✅ Парсер `<animate>` для числовых атрибутов (x, y, width, height, opacity)
-3. ✅ `SvgTimeline` с методами tick/seek
-4. ✅ Интерполятор для чисел (linear, discrete)
-5. ✅ Поддержка `from/to`, `values + keyTimes`
-6. ✅ Юнит-тесты для тайминга и интерполяции
+**Tasks:**
+1. ✅ Implement `SmilAnimation` base class
+2. ✅ Parser for `<animate>` for numeric attributes (x, y, width, height, opacity)
+3. ✅ `SvgTimeline` with tick/seek methods
+4. ✅ Interpolator for numbers (linear, discrete)
+5. ✅ Support for `from/to`, `values + keyTimes`
+6. ✅ Unit tests for timing and interpolation
 
-**Файлы:**
+**Files:**
 - `lib/src/animation/smil/smil_animation.dart`
 - `lib/src/animation/smil/smil_parser.dart`
 - `lib/src/animation/smil/smil_timeline.dart`
 - `lib/src/animation/smil/interpolators.dart`
 - `test/animation/smil_animation_test.dart`
 
-**Пример теста:**
+**Example test:**
 ```dart
 test('animate opacity from 0 to 1', () {
   final anim = SmilAnimation(
@@ -656,23 +656,23 @@ test('animate opacity from 0 to 1', () {
 });
 ```
 
-### Этап 3: Рендеринг анимированных SVG (2 недели)
+### Stage 3: Rendering Animated SVGs (2 weeks)
 
-**Задачи:**
-1. ✅ `AnimatedSvgPainter` — CustomPainter для отрисовки SvgNode дерева
-2. ✅ Рендеринг базовых фигур: rect, circle, ellipse, line
-3. ✅ Применение fill, stroke, opacity из атрибутов
-4. ✅ Создать `AnimatedSvgPicture` виджет
-5. ✅ Интеграция с Flutter Ticker для анимации
-6. ✅ Тесты: golden tests для простых анимированных SVG
+**Tasks:**
+1. ✅ `AnimatedSvgPainter` — CustomPainter for rendering the SvgNode tree
+2. ✅ Rendering of basic shapes: rect, circle, ellipse, line
+3. ✅ Applying fill, stroke, opacity from attributes
+4. ✅ Create `AnimatedSvgPicture` widget
+5. ✅ Integration with Flutter Ticker for animation
+6. ✅ Tests: golden tests for simple animated SVGs
 
-**Файлы:**
+**Files:**
 - `lib/src/animation/animated_renderer.dart`
 - `lib/src/animated_svg_picture.dart`
-- `lib/animated_svg.dart` (новый export файл)
+- `lib/animated_svg.dart` (new export file)
 - `test/golden_animation/simple_opacity_test.dart`
 
-**Пример использования:**
+**Usage example:**
 ```dart
 AnimatedSvgPicture.string(
   '''
@@ -690,115 +690,115 @@ AnimatedSvgPicture.string(
 );
 ```
 
-### Этап 4: Цветовые анимации (1 неделя)
+### Stage 4: Color Animations (1 week)
 
-**Задачи:**
-1. ✅ Интерполятор для Color (RGB space)
-2. ✅ Поддержка анимации fill, stroke
-3. ✅ Парсинг CSS/SVG цветов (#RGB, rgb(), named colors)
-4. ✅ Тесты
+**Tasks:**
+1. ✅ Interpolator for Color (RGB space)
+2. ✅ Support for animating fill, stroke
+3. ✅ Parsing CSS/SVG colors (#RGB, rgb(), named colors)
+4. ✅ Tests
 
-**Файлы:**
-- `lib/src/animation/smil/interpolators.dart` (расширение)
+**Files:**
+- `lib/src/animation/smil/interpolators.dart` (extension)
 - `lib/src/animation/color_parser.dart`
 
-### Этап 5: Transform анимации (2 недели)
+### Stage 5: Transform Animations (2 weeks)
 
-**Задачи:**
-1. ✅ Реализовать `<animateTransform>`
-2. ✅ Поддержка типов: translate, scale, rotate, skewX, skewY
-3. ✅ Интерполяция трансформаций
-4. ✅ Применение в рендерере
-5. ✅ Тесты и goldens
+**Tasks:**
+1. ✅ Implement `<animateTransform>`
+2. ✅ Support for types: translate, scale, rotate, skewX, skewY
+3. ✅ Transform interpolation
+4. ✅ Application in the renderer
+5. ✅ Tests and goldens
 
-**Файлы:**
+**Files:**
 - `lib/src/animation/smil/transform_animation.dart`
 - `lib/src/animation/transform_parser.dart`
 
-### Этап 6: Path анимации (2-3 недели)
+### Stage 6: Path Animations (2-3 weeks)
 
-**Задачи:**
-1. ✅ Парсинг SVG path `d` attribute
-2. ✅ Интерполяция path (требует совместимости сегментов)
-3. ✅ Поддержка `<animateMotion>`
-4. ✅ Тесты
+**Tasks:**
+1. ✅ Parsing SVG path `d` attribute
+2. ✅ Path interpolation (requires compatible segments)
+3. ✅ Support for `<animateMotion>`
+4. ✅ Tests
 
-**Сложности:**
-- Path интерполяция работает только для совместимых path (одинаковое количество команд)
-- Нужен нормализатор path
+**Challenges:**
+- Path interpolation only works for compatible paths (same number of commands)
+- A path normalizer is needed
 
-### Этап 7: Расширенный SMIL (1-2 недели)
+### Stage 7: Extended SMIL (1-2 weeks)
 
-**Задачи:**
-1. ✅ `keySplines` для cubic bezier easing
+**Tasks:**
+1. ✅ `keySplines` for cubic bezier easing
 2. ✅ `calcMode="paced"`
-3. ✅ `additive="sum"` и `accumulate="sum"`
+3. ✅ `additive="sum"` and `accumulate="sum"`
 4. ✅ `repeatCount`, `repeatDur`
-5. ✅ `<set>` элемент
+5. ✅ `<set>` element
 6. ✅ Syncbase timing (`begin="anim1.end+2s"`)
 
-### Этап 8: CSS Animations (3 недели)
+### Stage 8: CSS Animations (3 weeks)
 
-**Задачи:**
-1. ✅ Минимальный CSS парсер для `<style>` блоков
-2. ✅ Парсинг `@keyframes`
-3. ✅ Поддержка `animation-*` свойств
-4. ✅ Интеграция с общим timeline
-5. ✅ Тесты
+**Tasks:**
+1. ✅ Minimal CSS parser for `<style>` blocks
+2. ✅ Parsing `@keyframes`
+3. ✅ Support for `animation-*` properties
+4. ✅ Integration with the common timeline
+5. ✅ Tests
 
-**Файлы:**
+**Files:**
 - `lib/src/animation/css/css_parser.dart`
 - `lib/src/animation/css/css_animation.dart`
 
-### Этап 9: CSS Transitions (2 недели)
+### Stage 9: CSS Transitions (2 weeks)
 
-**Задачи:**
-1. ✅ Отслеживание изменений стилей
-2. ✅ Создание временных анимаций
+**Tasks:**
+1. ✅ Tracking style changes
+2. ✅ Creating transient animations
 3. ✅ `transition-property`, `transition-duration`, `transition-timing-function`
-4. ✅ Тесты
+4. ✅ Tests
 
-### Этап 10: Оптимизации (2 недели)
+### Stage 10: Optimizations (2 weeks)
 
-**Задачи:**
-1. ✅ Кэширование статичных поддеревьев в Picture
-2. ✅ Dirty tracking — перерисовка только изменённых узлов
-3. ✅ Profiling и оптимизация аллокаций
-4. ✅ Ленивый парсинг CSS
-5. ✅ Тесты производительности
+**Tasks:**
+1. ✅ Caching static subtrees in Picture
+2. ✅ Dirty tracking — repaint only changed nodes
+3. ✅ Profiling and allocation optimization
+4. ✅ Lazy CSS parsing
+5. ✅ Performance tests
 
-### Этап 11: Документация и примеры (1 неделя)
+### Stage 11: Documentation and Examples (1 week)
 
-**Задачи:**
-1. ✅ README обновление
-2. ✅ API документация
-3. ✅ Пример приложения с разными анимациями
+**Tasks:**
+1. ✅ README update
+2. ✅ API documentation
+3. ✅ Example app with various animations
 4. ✅ Migration guide
-5. ✅ Таблица поддержки SMIL/CSS возможностей
+5. ✅ SMIL/CSS feature support table
 
 ---
 
-## 🎨 ПУБЛИЧНЫЙ API (финальный вид)
+## 🎨 PUBLIC API (final form)
 
-### Экспорты
+### Exports
 
 ```dart
-// lib/flutter_svg.dart (без изменений)
+// lib/flutter_svg.dart (unchanged)
 export 'svg.dart';
 
-// lib/animated_svg.dart (НОВЫЙ)
+// lib/animated_svg.dart (NEW)
 export 'src/animated_svg_picture.dart';
 export 'src/animation/svg_animation_controller.dart';
 ```
 
-### Использование
+### Usage
 
-#### Статичный SVG (старый способ, без изменений)
+#### Static SVG (old way, unchanged)
 ```dart
 SvgPicture.asset('assets/logo.svg')
 ```
 
-#### Анимированный SVG (новый способ)
+#### Animated SVG (new way)
 ```dart
 AnimatedSvgPicture.asset(
   'assets/animated_logo.svg',
@@ -807,7 +807,7 @@ AnimatedSvgPicture.asset(
 )
 ```
 
-#### С контроллером
+#### With a controller
 ```dart
 final controller = SvgAnimationController();
 
@@ -817,7 +817,7 @@ AnimatedSvgPicture.network(
   autoPlay: false,
 )
 
-// Управление
+// Control
 controller.play();
 controller.pause();
 controller.seek(Duration(seconds: 2));
@@ -825,11 +825,11 @@ controller.seek(Duration(seconds: 2));
 
 ---
 
-## ⚡ ОПТИМИЗАЦИИ
+## ⚡ OPTIMIZATIONS
 
-### 1. Статичные поддеревья → Picture cache
+### 1. Static subtrees → Picture cache
 ```dart
-// Если у узла и всех детей hasAnimations == false
+// If a node and all its children have hasAnimations == false
 if (!node.hasAnimations && node.cachedPicture == null) {
   final recorder = ui.PictureRecorder();
   final canvas = Canvas(recorder);
@@ -850,46 +850,46 @@ class SvgNode {
 }
 ```
 
-### 3. Предварительный парсинг
-- Все `values`, `keyTimes`, `keySplines` парсим в конструкторе SmilAnimation
-- Никаких строк не парсим в `tick()`
+### 3. Pre-parsing
+- All `values`, `keyTimes`, `keySplines` are parsed in the SmilAnimation constructor
+- No string parsing in `tick()`
 
-### 4. Object pooling для Path
-- Переиспользовать Path объекты где возможно
-- Использовать `Path.reset()` вместо создания новых
-
----
-
-## 🧪 СТРАТЕГИЯ ТЕСТИРОВАНИЯ
-
-### Unit тесты
-- `SvgParser`: парсинг разных элементов
-- `SmilAnimation`: вычисление значений
-- Интерполяторы: числа, цвета, transform, path
-- `SvgTimeline`: тайминг и активация анимаций
-
-### Widget тесты
-- `AnimatedSvgPicture` создаётся корректно
-- Контроллер работает
-
-### Golden тесты
-- Snapshots анимированных SVG в разные моменты времени
-- Сравнение с эталонными изображениями
-
-### Performance тесты
-- FPS для сложных анимаций
-- Memory profiling (нет утечек)
+### 4. Object pooling for Path
+- Reuse Path objects where possible
+- Use `Path.reset()` instead of creating new ones
 
 ---
 
-## 📊 ТАБЛИЦА ПОДДЕРЖКИ ВОЗМОЖНОСТЕЙ
+## 🧪 TESTING STRATEGY
 
-### SMIL (целевая поддержка)
+### Unit Tests
+- `SvgParser`: parsing various elements
+- `SmilAnimation`: computing values
+- Interpolators: numbers, colors, transforms, paths
+- `SvgTimeline`: timing and animation activation
 
-| Возможность | Статус | Приоритет | Этап |
-|------------|--------|-----------|------|
-| `<animate>` числа | ✅ Planned | P0 | 2 |
-| `<animate>` цвета | ✅ Planned | P0 | 4 |
+### Widget Tests
+- `AnimatedSvgPicture` is created correctly
+- Controller works
+
+### Golden Tests
+- Snapshots of animated SVGs at different time points
+- Comparison with reference images
+
+### Performance Tests
+- FPS for complex animations
+- Memory profiling (no leaks)
+
+---
+
+## 📊 FEATURE SUPPORT TABLE
+
+### SMIL (target support)
+
+| Feature | Status | Priority | Stage |
+|---------|--------|----------|-------|
+| `<animate>` numbers | ✅ Planned | P0 | 2 |
+| `<animate>` colors | ✅ Planned | P0 | 4 |
 | `<animateTransform>` | ✅ Planned | P0 | 5 |
 | `<animateMotion>` | ✅ Planned | P1 | 6 |
 | `<set>` | ✅ Planned | P2 | 7 |
@@ -906,8 +906,8 @@ class SvgNode {
 
 ### CSS Animations
 
-| Возможность | Статус | Приоритет | Этап |
-|------------|--------|-----------|------|
+| Feature | Status | Priority | Stage |
+|---------|--------|----------|-------|
 | `@keyframes` | ✅ Planned | P1 | 8 |
 | `animation-name` | ✅ Planned | P1 | 8 |
 | `animation-duration` | ✅ Planned | P1 | 8 |
@@ -920,28 +920,28 @@ class SvgNode {
 
 ---
 
-## 🚀 СЛЕДУЮЩИЕ ШАГИ
+## 🚀 NEXT STEPS
 
-1. **Создать базовую структуру модулей** (Этап 1)
-2. **Написать парсер SvgNode** 
-3. **Реализовать SMIL ядро для чисел** (Этап 2)
-4. **Создать AnimatedSvgPicture виджет** (Этап 3)
-5. **Итеративно добавлять функции** (Этапы 4-9)
-
----
-
-## 💡 КЛЮЧЕВЫЕ ПРЕИМУЩЕСТВА АРХИТЕКТУРЫ
-
-✅ **Обратная совместимость**: `SvgPicture` не меняется  
-✅ **Оптимальная производительность**: статика через vector_graphics, анимации — отдельно  
-✅ **Модульность**: можно включать/выключать SMIL и CSS независимо  
-✅ **Расширяемость**: легко добавлять новые типы анимаций  
-✅ **Тестируемость**: каждый компонент изолирован  
-✅ **Flutter-native**: используем Ticker, CustomPainter, стандартные паттерны  
+1. **Create the basic module structure** (Stage 1)
+2. **Write the SvgNode parser** 
+3. **Implement the SMIL core for numbers** (Stage 2)
+4. **Create the AnimatedSvgPicture widget** (Stage 3)
+5. **Iteratively add features** (Stages 4-9)
 
 ---
 
-## 📚 СПРАВОЧНЫЕ МАТЕРИАЛЫ
+## 💡 KEY ARCHITECTURAL ADVANTAGES
+
+✅ **Backward compatibility**: `SvgPicture` is unchanged  
+✅ **Optimal performance**: static content via vector_graphics, animations separately  
+✅ **Modularity**: SMIL and CSS can be enabled/disabled independently  
+✅ **Extensibility**: easy to add new animation types  
+✅ **Testability**: each component is isolated  
+✅ **Flutter-native**: uses Ticker, CustomPainter, standard patterns  
+
+---
+
+## 📚 REFERENCE MATERIALS
 
 - [SVG 1.1 Spec](https://www.w3.org/TR/SVG11/)
 - [SMIL Animation](https://www.w3.org/TR/2001/REC-smil-animation-20010904/)
@@ -951,4 +951,4 @@ class SvgNode {
 
 ---
 
-**Этот документ — живой план.** По мере реализации будем обновлять статусы и детали.
+**This document is a living plan.** It will be updated with statuses and details as implementation progresses.

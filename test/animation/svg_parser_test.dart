@@ -468,12 +468,12 @@ void main() {
       expect(group.hasAnimations, isFalse);
       expect(rect.hasAnimations, isFalse);
 
-      // Добавляем дочерний элемент с анимацией
+      // Add a child element with an animation
       final animatedChild = SvgNode(tagName: 'circle');
       animatedChild.hasAnimations = true;
       rect.addChild(animatedChild);
 
-      // Флаг должен распространиться вверх через addChild
+      // The flag should propagate upward through addChild
       expect(root.hasAnimations, isTrue);
       expect(group.hasAnimations, isTrue);
       expect(rect.hasAnimations, isTrue);

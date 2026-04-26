@@ -1,11 +1,11 @@
 part of 'svg_filters.dart';
 
-/// Базовый класс для SVG фильтра
+/// Base class for an SVG filter
 abstract class SvgFilter {
-  /// ID фильтра
+  /// Filter ID
   final String id;
 
-  /// Тип фильтра
+  /// Filter type
   final SvgFilterType type;
 
   /// Primitive input (`in` attribute).
@@ -30,23 +30,23 @@ abstract class SvgFilter {
     this.resultName,
   });
 
-  /// Применить фильтр к изображению
-  /// Возвращает ImageFilter для использования в Flutter Canvas
+  /// Apply the filter to an image.
+  /// Returns an ImageFilter for use on the Flutter Canvas
   ui.ImageFilter? apply();
 
-  /// Опциональный ColorFilter (если фильтр влияет на цвет напрямую).
+  /// Optional ColorFilter (if the filter directly affects color).
   ui.ColorFilter? colorFilter() => null;
 
-  /// Опциональный blend mode (если фильтр задаёт композицию).
+  /// Optional blend mode (if the filter defines composition).
   ui.BlendMode? blendMode() => null;
 }
 
-/// feFlood: закрашивает результат сплошным цветом.
+/// feFlood: fills the result with a solid color.
 class SvgFloodFilter extends SvgFilter {
-  /// Цвет заливки.
+  /// Fill color.
   final ui.Color floodColor;
 
-  /// Прозрачность flood (0..1).
+  /// Flood opacity (0..1).
   final double floodOpacity;
 
   SvgFloodFilter({
@@ -74,9 +74,9 @@ class SvgFloodFilter extends SvgFilter {
   }
 }
 
-/// feBlend: приближенно задаёт режим смешивания слоя.
+/// feBlend: approximates the blend mode of a layer.
 class SvgBlendFilter extends SvgFilter {
-  /// Режим смешивания.
+  /// Blend mode.
   final ui.BlendMode mode;
 
   SvgBlendFilter({
@@ -94,15 +94,15 @@ class SvgBlendFilter extends SvgFilter {
   ui.BlendMode? blendMode() => mode;
 }
 
-/// feComposite: приближенно задаёт режим композиции слоя.
+/// feComposite: approximates the composition mode of a layer.
 class SvgCompositeFilter extends SvgFilter {
-  /// Оператор композиции из SVG (over/in/out/atop/xor/lighter/arithmetic).
+  /// SVG composition operator (over/in/out/atop/xor/lighter/arithmetic).
   final String operatorType;
 
-  /// Соответствующий Flutter BlendMode (если есть приближение).
+  /// Corresponding Flutter BlendMode (if an approximation exists).
   final ui.BlendMode? mode;
 
-  /// Параметры arithmetic (если заданы).
+  /// Arithmetic parameters (if specified).
   final double k1;
   final double k2;
   final double k3;
@@ -128,12 +128,12 @@ class SvgCompositeFilter extends SvgFilter {
   ui.BlendMode? blendMode() => mode;
 }
 
-/// feMerge: объединяет несколько входов в один результат.
+/// feMerge: combines multiple inputs into a single result.
 ///
-/// В текущем baseline-пайплайне хранит структуру примитива, но не выполняет
-/// полноценную графовую композицию входов.
+/// In the current baseline pipeline it stores the primitive structure but does
+/// not perform full graph-based input composition.
 class SvgMergeFilter extends SvgFilter {
-  /// Список входов из дочерних `<feMergeNode in="...">`.
+  /// List of inputs from child `<feMergeNode in="...">` elements.
   final List<String?> nodeInputs;
 
   SvgMergeFilter({
@@ -142,14 +142,14 @@ class SvgMergeFilter extends SvgFilter {
     super.resultName,
   }) : super(type: SvgFilterType.merge);
 
-  /// Количество merge-node в примитиве.
+  /// Number of merge-nodes in the primitive.
   int get nodeCount => nodeInputs.length;
 
   @override
   ui.ImageFilter? apply() => null;
 }
 
-/// feTile: baseline-pass-through примитив.
+/// feTile: baseline pass-through primitive.
 ///
 /// Tiles the input image to fill the filter primitive subregion.
 /// Supports subregion specification (x, y, width, height) and proper
@@ -315,7 +315,7 @@ class SvgTilePaintPass extends SvgFilterPaintPass {
   }
 }
 
-/// Парсит feBlend mode в Flutter BlendMode.
+/// Parses feBlend mode into a Flutter BlendMode.
 ui.BlendMode parseSvgBlendMode(String? rawMode) {
   switch ((rawMode ?? 'normal').trim().toLowerCase()) {
     case 'multiply':
@@ -354,9 +354,9 @@ ui.BlendMode parseSvgBlendMode(String? rawMode) {
   }
 }
 
-/// Парсит feComposite operator в Flutter BlendMode.
+/// Parses feComposite operator into a Flutter BlendMode.
 ///
-/// Для `arithmetic` возвращает null (в текущем пайплайне нет точного аналога).
+/// Returns null for `arithmetic` (there is no exact equivalent in the current pipeline).
 ui.BlendMode? parseSvgCompositeOperator(String? rawOperator) {
   switch ((rawOperator ?? 'over').trim().toLowerCase()) {
     case 'over':

@@ -1,25 +1,25 @@
 # Example App Enhancement - Quick Summary
 
-## 🎯 Что сделано / What's Done
+## 🎯 What Was Done / What's Done
 
-Создано подробное демо-приложение с метриками и локализацией.
+A detailed demo application was created with metrics and localization.
 
-## ✅ Основные возможности
+## ✅ Main Features
 
-### 1. 🌍 Двуязычность (i18n)
-- **Русский** - полный перевод
-- **English** - полный перевод
-- Переключение кнопкой 🌐 в AppBar
-- 50+ переведенных строк
+### 1. 🌍 Bilingual Support (i18n)
+- **Russian** - full translation
+- **English** - full translation
+- One-button switching 🌐 in AppBar
+- 50+ translated strings
 
 ### 2. 📊 Real-time Performance Metrics
 
 **FPS Overlay:**
-- Real-time FPS в правом верхнем углу
-- Цветовая индикация:
-  - 🟢 >55 FPS = отлично
-  - 🟠 >30 FPS = приемлемо
-  - 🔴 ≤30 FPS = проблемы
+- Real-time FPS in the top-right corner
+- Color indicator:
+  - 🟢 >55 FPS = excellent
+  - 🟠 >30 FPS = acceptable
+  - 🔴 ≤30 FPS = issues
 
 **Detailed Metrics Panel:**
 - FPS (frames per second)
@@ -29,21 +29,21 @@
 - Playback Rate (0.1x - 3.0x)
 - Animation Status
 
-### 3. 🎨 Интерактивные примеры
+### 3. 🎨 Interactive Examples
 
-**4 типа анимаций:**
-1. **Rotation** - вращение 360°
-2. **Translation** - перемещение
-3. **Scale** - масштабирование
-4. **Combined** - все вместе
+**4 animation types:**
+1. **Rotation** - 360° rotation
+2. **Translation** - movement
+3. **Scale** - scaling
+4. **Combined** - all together
 
-**Управление:**
+**Controls:**
 - ▶️/⏸ Play/Pause
 - 🔄 Restart
 - 🎚️ Speed slider (0.1x - 3.0x)
 - 👁️ Hide/Show metrics
 
-## 📁 Созданные файлы
+## 📁 Created Files
 
 ```
 example/lib/
@@ -62,9 +62,9 @@ example/
   └── README.md                       ✅ MODIFIED
 ```
 
-**Всего:** ~1000 строк нового кода
+**Total:** ~1000 lines of new code
 
-## 🚀 Как запустить
+## 🚀 How to Run
 
 ```bash
 cd example
@@ -72,24 +72,24 @@ flutter pub get
 flutter run
 ```
 
-## 📊 Результаты тестирования
+## 📊 Test Results
 
 ```
-✅ Сборка успешна
-✅ Запуск на macOS OK
-✅ Нет runtime ошибок
-✅ Все 113 тестов проходят
-✅ FPS overlay работает
-✅ Локализация работает
-✅ Все контролы работают
+✅ Build successful
+✅ Running on macOS OK
+✅ No runtime errors
+✅ All 113 tests passing
+✅ FPS overlay works
+✅ Localization works
+✅ All controls work
 ```
 
-## 🎯 Метрики производительности
+## 🎯 Performance Metrics
 
 **FPS Calculation:**
-- Скользящее среднее по 60 кадрам
-- Обновление каждый кадр через SchedulerBinding
-- Расчет: `1,000,000 / frameTimeMicroseconds`
+- Rolling average over 60 frames
+- Updated every frame via SchedulerBinding
+- Calculation: `1,000,000 / frameTimeMicroseconds`
 
 **Color Logic:**
 ```dart
@@ -98,7 +98,7 @@ if (fps > 30) → Orange  // Acceptable
 else          → Red     // Poor
 ```
 
-## 📱 Структура приложения
+## 📱 App Structure
 
 ```
 HomePage
@@ -116,24 +116,24 @@ HomePage
           └── Playback Rate Slider
 ```
 
-## 🌐 Локализация
+## 🌐 Localization
 
-**Языки:**
+**Languages:**
 - `en` - English
-- `ru` - Русский
+- `ru` - Russian
 
-**Использование:**
+**Usage:**
 ```dart
 final l10n = AppLocalizations.of(context);
 Text(l10n.translate('fps')); // "FPS" or "Частота кадров"
 ```
 
-**Переключение:**
+**Switching:**
 ```dart
 MyApp.of(context)?.setLocale(Locale('ru'));
 ```
 
-## 💡 Примеры кода
+## 💡 Code Examples
 
 ### Performance Metrics Widget
 ```dart
@@ -157,13 +157,13 @@ AnimatedSvgPicture.string(
 )
 ```
 
-## 📖 Документация
+## 📖 Documentation
 
-Полная документация в:
-- `EXAMPLE_APP_ENHANCEMENT.md` - детальный отчет
-- `example/README.md` - инструкции по использованию
+Full documentation in:
+- `EXAMPLE_APP_ENHANCEMENT.md` - detailed report
+- `example/README.md` - usage instructions
 
-## ✨ Дополнительные фишки
+## ✨ Bonus Features
 
 - ✅ Material Design 3
 - ✅ Dark theme support
@@ -173,29 +173,29 @@ AnimatedSvgPicture.string(
 - ✅ Rolling average FPS
 - ✅ Color-coded indicators
 
-## 📈 Статистика
+## 📈 Statistics
 
-| Метрика | Значение |
-|---------|----------|
-| Новых файлов | 5 |
-| Измененных файлов | 3 |
-| Строк кода | ~1000 |
-| Языков | 2 (EN, RU) |
-| Метрик | 7 |
-| Анимаций | 4 |
-| Тестов | 113 ✅ |
+| Metric | Value |
+|--------|-------|
+| New files | 5 |
+| Modified files | 3 |
+| Lines of code | ~1000 |
+| Languages | 2 (EN, RU) |
+| Metrics | 7 |
+| Animations | 4 |
+| Tests | 113 ✅ |
 
-## 🎉 Статус
+## 🎉 Status
 
-**✅ ПОЛНОСТЬЮ ГОТОВО**
+**✅ FULLY COMPLETE**
 
-Все задачи выполнены:
-- ✅ Подробные метрики в реальном времени
-- ✅ Отображение FPS (framerate)
-- ✅ Поддержка русского и английского языков
-- ✅ Интерактивные примеры
-- ✅ Полная документация
-- ✅ Тестирование пройдено
+All tasks done:
+- ✅ Detailed real-time metrics
+- ✅ FPS (framerate) display
+- ✅ Russian and English language support
+- ✅ Interactive examples
+- ✅ Complete documentation
+- ✅ Testing passed
 
 ---
 

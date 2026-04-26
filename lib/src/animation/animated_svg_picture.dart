@@ -595,7 +595,7 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
   void initState() {
     super.initState();
     _initialize();
-    // Подписываемся на изменения контроллера
+    // Subscribe to controller changes
     widget.controller?.addListener(_onControllerUpdate);
   }
 

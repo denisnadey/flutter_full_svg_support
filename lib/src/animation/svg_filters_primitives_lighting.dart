@@ -1,6 +1,6 @@
 part of 'svg_filters.dart';
 
-/// Базовый тип источника света для lighting-примитивов.
+/// Base type for a light source used by lighting primitives.
 abstract class SvgLightSource {
   const SvgLightSource();
 }

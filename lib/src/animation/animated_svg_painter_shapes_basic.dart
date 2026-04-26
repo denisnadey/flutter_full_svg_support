@@ -2,7 +2,7 @@ part of 'animated_svg_painter.dart';
 
 /// Extension for basic oval-based shapes (circle, ellipse).
 extension AnimatedSvgPainterShapesBasicExtension on AnimatedSvgPainter {
-  /// Рисует <circle>
+  /// Paints <circle>
   void _paintCircle(
     ui.Canvas canvas,
     SvgNode node, {
@@ -50,7 +50,7 @@ extension AnimatedSvgPainterShapesBasicExtension on AnimatedSvgPainter {
     );
   }
 
-  /// Рисует <ellipse>
+  /// Paints <ellipse>
   void _paintEllipse(
     ui.Canvas canvas,
     SvgNode node, {

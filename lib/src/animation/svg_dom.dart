@@ -5,54 +5,54 @@ import 'package:flutter/foundation.dart';
 import 'css_animations.dart';
 import 'svg_filters.dart';
 
-/// Тип атрибута SVG элемента для корректной интерполяции
+/// Type of an SVG element attribute for correct interpolation
 enum SvgAttributeType {
-  /// Числовое значение: x, y, width, height, opacity, stroke-width
+  /// Numeric value: x, y, width, height, opacity, stroke-width
   number,
 
-  /// Длина с единицами измерения: px, em, %, pt, etc.
+  /// Length with units: px, em, %, pt, etc.
   length,
 
-  /// Цвет: fill, stroke, stop-color
+  /// Color: fill, stroke, stop-color
   color,
 
-  /// Трансформация: transform attribute
+  /// Transformation: transform attribute
   transform,
 
-  /// Path данные: d attribute для <path>
+  /// Path data: d attribute for <path>
   path,
 
-  /// Списки точек: points для <polygon>, <polyline>
+  /// Point lists: points for <polygon>, <polyline>
   points,
 
-  /// Строковое значение (для discrete анимаций)
+  /// String value (for discrete animations)
   string,
 
-  /// Списковое значение: stroke-dasharray и подобные
+  /// List value: stroke-dasharray and similar
   list,
 
-  /// URL ссылка: для gradients, masks, filters
+  /// URL reference: for gradients, masks, filters
   url,
 }
 
-/// Атрибут SVG элемента, который может быть анимирован
-/// Базовый immutable класс для константных значений
+/// An SVG element attribute that can be animated
+/// Base immutable class for constant values
 @immutable
 class SvgAttribute {
-  /// Создаёт атрибут с базовым значением
+  /// Creates an attribute with a base value
   const SvgAttribute({
     required this.name,
     required this.baseValue,
     this.type = SvgAttributeType.string,
   });
 
-  /// Имя атрибута (например, 'x', 'y', 'fill', 'transform')
+  /// Attribute name (e.g. 'x', 'y', 'fill', 'transform')
   final String name;
 
-  /// Базовое значение из XML/CSS
+  /// Base value from XML/CSS
   final Object baseValue;
 
-  /// Тип атрибута (для правильной интерполяции)
+  /// Attribute type (for correct interpolation)
   final SvgAttributeType type;
 
   @override
@@ -71,48 +71,48 @@ class SvgAttribute {
   String toString() => 'SvgAttribute($name: $baseValue, type: $type)';
 }
 
-/// Mutable атрибут с поддержкой анимированного значения
-/// (не наследуется от @immutable SvgAttribute для возможности изменения состояния)
+/// Mutable attribute with support for an animated value
+/// (does not extend @immutable SvgAttribute to allow state mutation)
 class AnimatableSvgAttribute {
-  /// Создаёт анимируемый атрибут
+  /// Creates an animatable attribute
   AnimatableSvgAttribute({
     required this.name,
     required this.baseValue,
     this.type = SvgAttributeType.string,
   });
 
-  /// Имя атрибута
+  /// Attribute name
   final String name;
 
-  /// Базовое значение
+  /// Base value
   final Object baseValue;
 
-  /// Тип атрибута
+  /// Attribute type
   final SvgAttributeType type;
 
-  /// Текущее анимированное значение (если анимация активна)
+  /// Current animated value (if animation is active)
   Object? _animatedValue;
 
-  /// Флаг: активна ли анимация в данный момент
+  /// Flag: whether an animation is currently active
   bool _isAnimated = false;
 
-  /// Получить эффективное значение
-  /// (animatedValue если анимация активна, иначе baseValue)
+  /// Get the effective value
+  /// (animatedValue if animation is active, otherwise baseValue)
   Object get effectiveValue => _isAnimated ? _animatedValue! : baseValue;
 
-  /// Установить анимированное значение
+  /// Set the animated value
   void setAnimatedValue(Object? value) {
     _animatedValue = value;
     _isAnimated = value != null;
   }
 
-  /// Сбросить анимацию (вернуться к baseValue)
+  /// Reset the animation (return to baseValue)
   void clearAnimation() {
     _animatedValue = null;
     _isAnimated = false;
   }
 
-  /// Активна ли анимация
+  /// Whether the animation is active
   bool get isAnimated => _isAnimated;
 
   @override
@@ -120,9 +120,9 @@ class AnimatableSvgAttribute {
       'AnimatableSvgAttribute($name: ${_isAnimated ? _animatedValue : baseValue}, animated: $_isAnimated)';
 }
 
-/// Узел SVG DOM дерева
+/// A node in the SVG DOM tree
 class SvgNode {
-  /// Создаёт SVG узел
+  /// Creates an SVG node
   SvgNode({
     required this.tagName,
     this.id,
@@ -153,47 +153,47 @@ class SvgNode {
 
   // === Core Properties ===
 
-  /// Тег элемента: 'svg', 'g', 'rect', 'circle', 'path', 'text', etc.
+  /// Element tag: 'svg', 'g', 'rect', 'circle', 'path', 'text', etc.
   final String tagName;
 
-  /// ID элемента (атрибут id)
+  /// Element ID (id attribute)
   final String? id;
 
-  /// Класс элемента (атрибут class)
+  /// Element class (class attribute)
   final String? className;
 
-  /// Атрибуты элемента
+  /// Element attributes
   final Map<String, AnimatableSvgAttribute> attributes;
 
   /// Raw attribute values for CSS selector matching
   final Map<String, String> _rawAttributes;
 
-  /// Дочерние элементы
+  /// Child elements
   final List<SvgNode> children;
 
-  /// Родительский узел
+  /// Parent node
   SvgNode? parent;
 
-  /// Флаг: есть ли анимации в этом узле или его поддереве
-  /// (для оптимизации рендеринга)
+  /// Flag: whether there are animations in this node or its subtree
+  /// (used for rendering optimization)
   bool hasAnimations = false;
 
-  /// Кэшированный Picture для статичных поддеревьев
-  /// (используется только если hasAnimations == false)
+  /// Cached Picture for static subtrees
+  /// (used only when hasAnimations == false)
   ui.Picture? cachedPicture;
 
-  /// Добавить дочерний элемент
+  /// Add a child element
   void addChild(SvgNode child) {
     children.add(child);
     child.parent = this;
 
-    // Если у ребёнка есть анимации, пометить всех родителей
+    // If the child has animations, mark all ancestors
     if (child.hasAnimations) {
       _markHasAnimations();
     }
   }
 
-  /// Пометить этот узел и всех родителей как имеющие анимации
+  /// Mark this node and all ancestors as having animations
   void _markHasAnimations() {
     if (!hasAnimations) {
       hasAnimations = true;
@@ -203,13 +203,13 @@ class SvgNode {
     }
   }
 
-  /// Получить атрибут по имени
+  /// Get an attribute by name
   AnimatableSvgAttribute? getAttribute(String name) => attributes[name];
 
-  /// Получить эффективное значение атрибута (с учётом анимации)
-  /// Также поддерживает специальные поля 'id' и 'className'
+  /// Get the effective attribute value (taking animation into account)
+  /// Also supports the special fields 'id' and 'className'
   Object? getAttributeValue(String name) {
-    // Специальные поля хранятся отдельно, не в attributes
+    // Special fields are stored separately, not in attributes
     if (name == 'id') return id;
     if (name == 'className' || name == 'class') return className;
     return attributes[name]?.effectiveValue;
@@ -222,7 +222,7 @@ class SvgNode {
     return _rawAttributes[name];
   }
 
-  /// Установить атрибут
+  /// Set an attribute
   void setAttribute(
     String name,
     Object value, {
@@ -239,7 +239,7 @@ class SvgNode {
         rawValue ?? (value is String ? value : value.toString());
   }
 
-  /// Найти узел по ID в поддереве
+  /// Find a node by ID within the subtree
   SvgNode? findById(String searchId) {
     if (id == searchId) return this;
 
@@ -251,7 +251,7 @@ class SvgNode {
     return null;
   }
 
-  /// Найти все узлы с указанным классом в поддереве
+  /// Find all nodes with the given class within the subtree
   List<SvgNode> findByClass(String searchClass) {
     final result = <SvgNode>[];
 
@@ -266,7 +266,7 @@ class SvgNode {
     return result;
   }
 
-  /// Найти все узлы с указанным тегом в поддереве
+  /// Find all nodes with the given tag within the subtree
   List<SvgNode> findByTag(String searchTag) {
     final result = <SvgNode>[];
 
@@ -281,7 +281,7 @@ class SvgNode {
     return result;
   }
 
-  /// Освободить ресурсы
+  /// Release resources
   void dispose() {
     cachedPicture?.dispose();
     cachedPicture = null;
@@ -439,9 +439,9 @@ class SvgViewElement {
       'SvgViewElement(id: $id, viewBox: $viewBox, preserveAspectRatio: $preserveAspectRatio)';
 }
 
-/// Корневой документ SVG
+/// Root SVG document
 class SvgDocument {
-  /// Создаёт SVG документ
+  /// Creates an SVG document
   SvgDocument({
     required this.root,
     this.viewBox,
@@ -455,22 +455,22 @@ class SvgDocument {
        _views = {},
        _fontRegistry = SvgFontRegistry();
 
-  /// Корневой <svg> узел
+  /// Root <svg> node
   final SvgNode root;
 
-  /// ViewBox документа (если указан)
+  /// Document viewBox (if specified)
   final ui.Rect? viewBox;
 
-  /// Ширина документа
+  /// Document width
   final double? width;
 
-  /// Высота документа
+  /// Document height
   final double? height;
 
-  /// Коллекция фильтров в документе
+  /// Collection of filters in the document
   final SvgFilters? filters;
 
-  /// CSS @keyframes анимации
+  /// CSS @keyframes animations
   final List<CssKeyframes>? cssKeyframes;
 
   /// CSS selector rules (#id, .class)
@@ -560,14 +560,14 @@ class SvgDocument {
   /// Defaults to 'img' if not specified (per SVG accessibility guidelines).
   String get accessibleRole => root.ariaRole ?? 'img';
 
-  /// Найти узел по ID во всём документе
+  /// Find a node by ID in the entire document
   SvgNode? getElementById(String id) => root.findById(id);
 
-  /// Найти узлы по классу
+  /// Find nodes by class
   List<SvgNode> getElementsByClass(String className) =>
       root.findByClass(className);
 
-  /// Найти узлы по тегу
+  /// Find nodes by tag
   List<SvgNode> getElementsByTag(String tagName) => root.findByTag(tagName);
 
   // === Font Registration ===
@@ -608,7 +608,7 @@ class SvgDocument {
   /// Get any errors that occurred during font registration.
   List<String> get fontRegistrationErrors => _fontRegistry.errors;
 
-  /// Освободить ресурсы
+  /// Release resources
   void dispose() {
     root.dispose();
   }

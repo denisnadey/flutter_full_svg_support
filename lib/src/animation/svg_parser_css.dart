@@ -1,17 +1,17 @@
 part of 'svg_parser.dart';
 
-/// Парсит CSS <style> элементы и извлекает @keyframes
+/// Parses CSS <style> elements and extracts @keyframes
 List<CssKeyframes> _parseStyleElements(XmlElement svgElement) {
   final keyframes = <CssKeyframes>[];
 
-  // Ищем все <style> элементы во всем документе (включая <defs> и вложенные группы)
+  // Find all <style> elements in the entire document (including <defs> and nested groups)
   final styleElements = svgElement.findAllElements('style');
 
   for (final styleElement in styleElements) {
     final cssText = styleElement.innerText;
     if (cssText.isEmpty) continue;
 
-    // Парсим @keyframes из CSS текста
+    // Parse @keyframes from the CSS text
     final parsedKeyframes = CssParser.parseKeyframes(cssText);
     keyframes.addAll(parsedKeyframes);
   }
@@ -19,7 +19,7 @@ List<CssKeyframes> _parseStyleElements(XmlElement svgElement) {
   return keyframes;
 }
 
-/// Парсит CSS <style> элементы и извлекает правила для селекторов
+/// Parses CSS <style> elements and extracts selector rules
 List<CssSelectorRule> _parseSelectorRulesElements(XmlElement svgElement) {
   final rules = <CssSelectorRule>[];
 

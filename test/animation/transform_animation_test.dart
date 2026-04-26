@@ -237,7 +237,7 @@ void main() {
         dur: const Duration(seconds: 1),
       );
 
-      // Применяем анимацию на середине
+      // Apply animation at midpoint
       final value = anim.computeValue(0.5);
 
       expect(value, isA<String>());

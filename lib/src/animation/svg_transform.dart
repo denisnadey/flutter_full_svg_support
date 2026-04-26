@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 
 import 'transform_3d.dart';
 
-/// Тип SVG трансформации
+/// SVG transformation type
 enum SvgTransformType {
   /// translate(x [y])
   translate,
@@ -58,9 +58,9 @@ enum SvgTransformType {
   matrix3d,
 }
 
-/// Представление SVG transform attribute
+/// Representation of an SVG transform attribute
 ///
-/// Поддерживает парсинг и интерполяцию различных типов трансформаций:
+/// Supports parsing and interpolation of various transformation types:
 /// - translate(x, y)
 /// - rotate(angle, cx, cy)
 /// - scale(x, y)
@@ -69,30 +69,30 @@ enum SvgTransformType {
 /// - matrix(a, b, c, d, e, f)
 @immutable
 class SvgTransform {
-  /// Создаёт трансформацию заданного типа
+  /// Creates a transformation of the specified type
   const SvgTransform({required this.type, required this.values});
 
-  /// Тип трансформации
+  /// Transformation type
   final SvgTransformType type;
 
-  /// Числовые значения трансформации
-  /// - translate: [tx, ty] (ty опционален, по умолчанию 0)
-  /// - rotate: [angle, cx, cy] (cx, cy опциональны, по умолчанию 0)
-  /// - scale: [sx, sy] (sy опционален, по умолчанию равен sx)
+  /// Numeric transformation values
+  /// - translate: [tx, ty] (ty optional, defaults to 0)
+  /// - rotate: [angle, cx, cy] (cx, cy optional, default to 0)
+  /// - scale: [sx, sy] (sy optional, defaults to sx)
   /// - skewX/skewY: [angle]
   /// - matrix: [a, b, c, d, e, f]
   final List<double> values;
 
-  /// Парсит SVG transform строку в список трансформаций
+  /// Parses an SVG transform string into a list of transformations
   ///
-  /// Поддерживает:
+  /// Supports:
   /// - translate(10, 20)
   /// - rotate(45)
-  /// - rotate(45, 50, 50) - с центром вращения
+  /// - rotate(45, 50, 50) - with rotation center
   /// - scale(2)
   /// - scale(2, 3)
   /// - matrix(1, 0, 0, 1, 0, 0)
-  /// - Комбинации: "translate(10, 20) rotate(45)"
+  /// - Combinations: "translate(10, 20) rotate(45)"
   /// - 3D transforms: translate3d, translateZ, rotateX, rotateY, rotateZ,
   ///   rotate3d, scale3d, scaleZ, perspective, matrix3d
   static List<SvgTransform> parse(String transformString) {
@@ -268,10 +268,10 @@ class SvgTransform {
     return double.tryParse(trimmed) ?? 0.0;
   }
 
-  /// Конвертирует трансформацию в Matrix4
+  /// Converts the transformation to a Matrix4
   ui.Offset toMatrix4() {
-    // Для простоты возвращаем offset для translate
-    // Полная реализация Matrix4 будет добавлена при необходимости
+    // For simplicity, return an offset for translate
+    // Full Matrix4 implementation will be added when needed
     if (type == SvgTransformType.translate) {
       return ui.Offset(
         values.isNotEmpty ? values[0] : 0.0,
@@ -281,7 +281,7 @@ class SvgTransform {
     return ui.Offset.zero;
   }
 
-  /// Возвращает строковое представление для отладки
+  /// Returns a string representation for debugging
   @override
   String toString() {
     final name = type.toString().split('.').last;
@@ -300,10 +300,10 @@ class SvgTransform {
   int get hashCode => Object.hash(type, Object.hashAll(values));
 }
 
-/// Декомпозиция матрицы трансформации для интерполяции
+/// Decomposition of a transformation matrix for interpolation
 ///
-/// Разбивает matrix на компоненты: translate, rotate, scale, skew
-/// для более плавной интерполяции между различными трансформациями.
+/// Breaks a matrix into components: translate, rotate, scale, skew
+/// for smoother interpolation between different transformations.
 /// Uses QR decomposition for proper handling of arbitrary 2D matrices.
 @immutable
 class TransformDecomposition {
@@ -330,13 +330,13 @@ class TransformDecomposition {
 
   final double translateX;
   final double translateY;
-  final double rotation; // в радианах
+  final double rotation; // in radians
   final double scaleX;
   final double scaleY;
-  final double skewX; // в радианах
-  final double skewY; // в радианах
+  final double skewX; // in radians
+  final double skewY; // in radians
 
-  /// Создаёт декомпозицию из списка трансформаций
+  /// Creates a decomposition from a list of transformations
   factory TransformDecomposition.fromTransforms(List<SvgTransform> transforms) {
     double tx = 0.0, ty = 0.0;
     double rotation = 0.0;
@@ -464,7 +464,7 @@ class TransformDecomposition {
     );
   }
 
-  /// Интерполирует между двумя декомпозициями
+  /// Interpolates between two decompositions
   TransformDecomposition lerp(TransformDecomposition other, double t) {
     // Handle rotation interpolation via shortest path
     var fromRotation = rotation;
@@ -488,7 +488,7 @@ class TransformDecomposition {
     );
   }
 
-  /// Преобразует обратно в список трансформаций
+  /// Converts back to a list of transformations
   List<SvgTransform> toTransforms() {
     final result = <SvgTransform>[];
 

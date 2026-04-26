@@ -23,23 +23,23 @@ void main() {
       final animation = animations[0];
       expect(animation.additive, equals(SmilAdditiveMode.sum));
 
-      // Базовое значение x="50"
-      // Анимация: from="0" to="100"
-      // С additive="sum" результат должен быть: 50 + (0..100) = 50..150
+      // Base value x="50"
+      // Animation: from="0" to="100"
+      // With additive="sum" the result should be: 50 + (0..100) = 50..150
 
-      // В начале (t=0): baseValue(50) + from(0) = 50
+      // At start (t=0): baseValue(50) + from(0) = 50
       final valueAt0 = animation.computeValue(0.0);
       expect(valueAt0, isA<double>());
-      // Базовое значение 50 + анимация 0 = 50
-      // Но в нашей реализации базовое значение берется из baseValue атрибута
-      // Проверяем что значение вычисляется
+      // Base value 50 + animation 0 = 50
+      // In our implementation the base value is taken from the baseValue attribute
+      // Verify that the value is computed
       expect(valueAt0, isNotNull);
 
-      // В середине (t=0.5): baseValue(50) + interpolated(50) = 100
+      // At midpoint (t=0.5): baseValue(50) + interpolated(50) = 100
       final valueAt05 = animation.computeValue(0.5);
       expect(valueAt05, isA<double>());
 
-      // В конце (t=1.0): baseValue(50) + to(100) = 150
+      // At end (t=1.0): baseValue(50) + to(100) = 150
       final valueAt1 = animation.computeValue(1.0);
       expect(valueAt1, isA<double>());
     });
@@ -59,13 +59,13 @@ void main() {
 
       expect(animation.additive, equals(SmilAdditiveMode.replace));
 
-      // С additive="replace" результат должен быть: 0..100 (игнорируя базовое значение 50)
+      // With additive="replace" the result should be: 0..100 (ignoring base value 50)
       final valueAt0 = animation.computeValue(0.0);
       final valueAt1 = animation.computeValue(1.0);
 
       expect(valueAt0, isA<double>());
       expect(valueAt1, isA<double>());
-      // Значения должны быть 0 и 100, а не 50 и 150
+      // Values should be 0 and 100, not 50 and 150
     });
 
     test('Additive works with numeric values', () {
@@ -84,8 +84,8 @@ void main() {
       expect(animation.additive, equals(SmilAdditiveMode.sum));
       expect(animation.attributeType, equals(SvgAttributeType.number));
 
-      // Базовое значение cx="10", анимация 0..80
-      // Результат: 10..90
+      // Base value cx="10", animation 0..80
+      // Result: 10..90
       final valueAtStart = animation.computeValue(0.0);
       final valueAtEnd = animation.computeValue(1.0);
 
@@ -113,22 +113,22 @@ void main() {
       expect(animation.accumulate, isTrue);
       expect(animation.repeatCount, equals(3.0));
 
-      // Первая итерация (completedRepeats=0): 0..100
+      // First iteration (completedRepeats=0): 0..100
       final firstIter = animation.computeValue(1.0, completedRepeats: 0);
       expect(firstIter, equals(100.0));
 
-      // После первой итерации (completedRepeats=1): 100 (from previous) + 0..100 = 100..200
-      // В начале второй итерации (t=0, completedRepeats=1): 100 + 0 = 100
+      // After the first iteration (completedRepeats=1): 100 (from previous) + 0..100 = 100..200
+      // At start of second iteration (t=0, completedRepeats=1): 100 + 0 = 100
       final secondIterStart = animation.computeValue(0.0, completedRepeats: 1);
       expect(secondIterStart, isA<double>());
 
-      // В конце второй итерации (t=1, completedRepeats=1): 100 + 100 = 200
+      // At end of second iteration (t=1, completedRepeats=1): 100 + 100 = 200
       final secondIterEnd = animation.computeValue(1.0, completedRepeats: 1);
-      // Ожидаем: базовое значение (0) + накопленное (100) + текущее (100) = 200
-      // Но в нашей реализации accumulate добавляет только к animValue, не к базовому
+      // Expected: base value (0) + accumulated (100) + current (100) = 200
+      // In our implementation accumulate only adds to animValue, not to the base value
       expect(secondIterEnd, isA<double>());
 
-      // После второй итерации (completedRepeats=2): 200 + 0..100 = 200..300
+      // After second iteration (completedRepeats=2): 200 + 0..100 = 200..300
       final thirdIterEnd = animation.computeValue(1.0, completedRepeats: 2);
       expect(thirdIterEnd, isA<double>());
     });
@@ -150,11 +150,11 @@ void main() {
       expect(animation.accumulate, isTrue);
       expect(animation.values, equals([0.0, 50.0, 100.0]));
 
-      // Первая итерация: последнее значение = 100
+      // First iteration: last value = 100
       final firstEnd = animation.computeValue(1.0, completedRepeats: 0);
       expect(firstEnd, equals(100.0));
 
-      // Вторая итерация с accumulate: финальное значение = 100 + 100 = 200
+      // Second iteration with accumulate: final value = 100 + 100 = 200
       final secondEnd = animation.computeValue(1.0, completedRepeats: 1);
       expect(secondEnd, isA<double>());
     });
@@ -175,7 +175,7 @@ void main() {
 
       expect(animation.accumulate, isFalse);
 
-      // Значения должны быть одинаковыми независимо от completedRepeats
+      // Values should be the same regardless of completedRepeats
       final firstEnd = animation.computeValue(1.0, completedRepeats: 0);
       final secondEnd = animation.computeValue(1.0, completedRepeats: 1);
 
@@ -201,12 +201,12 @@ void main() {
       expect(animation.additive, equals(SmilAdditiveMode.sum));
       expect(animation.accumulate, isTrue);
 
-      // Базовое значение x="50"
-      // Первая итерация: 50 + (0..100) = 50..150
+      // Base value x="50"
+      // First iteration: 50 + (0..100) = 50..150
       final firstEnd = animation.computeValue(1.0, completedRepeats: 0);
       expect(firstEnd, isA<double>());
 
-      // Вторая итерация с accumulate: 
+      // Second iteration with accumulate:
       // baseValue(50) + accumulate(100) + animValue(0..100) = 150..250
       final secondEnd = animation.computeValue(1.0, completedRepeats: 1);
       expect(secondEnd, isA<double>());

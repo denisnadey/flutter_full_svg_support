@@ -95,10 +95,10 @@ void main() {
     test('ease-in-out (0.42 0 0.58 1) curve', () {
       const easeInOut = CubicBezier(0.42, 0, 0.58, 1);
 
-      // В начале медленнее
+      // Slower at the beginning
       expect(easeInOut.transform(0.1), lessThan(0.1));
 
-      // В конце тоже медленнее
+      // Also slower at the end
       expect(easeInOut.transform(0.9), greaterThan(0.9));
     });
   });
@@ -302,7 +302,7 @@ void main() {
         to: 100.0,
         dur: const Duration(seconds: 2),
         fillMode: SmilFillMode
-            .freeze, // Нужно freeze для сохранения финального значения
+            .freeze, // freeze is needed to preserve the final value
       );
 
       final timeline = SvgTimeline(animations: [anim], rootNode: rootNode);

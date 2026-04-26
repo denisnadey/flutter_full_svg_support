@@ -35,7 +35,7 @@ class _MetricsDemoPageState extends State<MetricsDemoPage>
   Timer? _updateTimer;
   AnimationController? _animationController;
 
-  // SVG примеры
+  // SVG examples
   int _currentExample = 0;
   final List<String> _svgExamples = [
     // Rotation

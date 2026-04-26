@@ -1,6 +1,6 @@
 part of 'svg_parser.dart';
 
-/// Парсит фильтры из <defs><filter> элементов
+/// Parses filters from <defs><filter> elements
 SvgFilters _parseFilters(XmlElement svgElement) {
   final filters = SvgFilters();
 
@@ -15,7 +15,7 @@ SvgFilters _parseFilters(XmlElement svgElement) {
   for (final filterElement in filterElements) {
     final filterId = filterElement.getAttribute('id');
     if (filterId == null || filterId.isEmpty) {
-      continue; // Фильтр без ID не может быть использован
+      continue; // A filter without an ID cannot be referenced
     }
 
     // Parse filter region (x, y, width, height) for output clipping.
@@ -23,7 +23,7 @@ SvgFilters _parseFilters(XmlElement svgElement) {
     final filterRegion = _parseFilterRegion(filterElement);
     filters.setFilterRegion(filterId, filterRegion);
 
-    // Парсим примитивы фильтра (feGaussianBlur, feDropShadow, etc.)
+    // Parse filter primitives (feGaussianBlur, feDropShadow, etc.)
     for (final child in filterElement.childElements) {
       final filter = _parseFilterPrimitive(child, filterId);
       if (filter != null) {
@@ -35,7 +35,7 @@ SvgFilters _parseFilters(XmlElement svgElement) {
   return filters;
 }
 
-/// Парсит примитив фильтра (feGaussianBlur, feDropShadow, feColorMatrix)
+/// Parses a filter primitive (feGaussianBlur, feDropShadow, feColorMatrix)
 SvgFilter? _parseFilterPrimitive(XmlElement element, String filterId) {
   final tagName = element.name.local;
 
@@ -75,7 +75,7 @@ SvgFilter? _parseFilterPrimitive(XmlElement element, String filterId) {
     case 'feColorMatrix':
       return _parseColorMatrix(element, filterId);
     default:
-      // Другие фильтры пока не поддерживаются
+      // Other filters are not yet supported
       return null;
   }
 }

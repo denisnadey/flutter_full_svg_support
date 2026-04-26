@@ -2,32 +2,32 @@ part of 'svg_filters.dart';
 
 /// feConvolveMatrix primitive
 ///
-/// Baseline-поддержка хранит параметры свертки для parity-аудита и графа.
-/// До полноценной растерной реализации примитив ведет себя как pass-through.
+/// Baseline support stores convolution parameters for parity audit and graph.
+/// Until a full raster implementation is available the primitive behaves as pass-through.
 class SvgConvolveMatrixFilter extends SvgFilter {
-  /// Размер ядра свертки.
+  /// Convolution kernel size.
   final int orderX;
   final int orderY;
 
-  /// Матрица свертки.
+  /// Convolution kernel matrix.
   final List<double> kernelMatrix;
 
-  /// Нормализация и смещение результата.
+  /// Result normalization and bias.
   final double divisor;
   final double bias;
 
-  /// Позиция целевого элемента ядра.
+  /// Target kernel element position.
   final int targetX;
   final int targetY;
 
-  /// Поведение на границе.
+  /// Edge handling behavior.
   final SvgConvolveEdgeMode edgeMode;
 
-  /// Размер единицы ядра в user space (опционально).
+  /// Kernel unit length in user space (optional).
   final double? kernelUnitLengthX;
   final double? kernelUnitLengthY;
 
-  /// Сохранять альфу входа.
+  /// Preserve input alpha.
   final bool preserveAlpha;
 
   SvgConvolveMatrixFilter({

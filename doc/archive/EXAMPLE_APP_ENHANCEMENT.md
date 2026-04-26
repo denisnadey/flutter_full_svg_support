@@ -1,63 +1,63 @@
 # Example App Enhancement - Complete Report
 
-## 🎯 Цель / Objective
+## 🎯 Goal / Objective
 
-Создание подробного демонстрационного приложения с:
-- Метриками производительности в реальном времени
-- Отображением FPS (frames per second)
-- Поддержкой двух языков: Русский и English
+Creating a detailed demo application with:
+- Real-time performance metrics
+- FPS (frames per second) display
+- Support for two languages: Russian and English
 
-## ✅ Реализованные возможности
+## ✅ Implemented Features
 
-### 1. 🌍 Система локализации (i18n)
+### 1. 🌍 Localization System (i18n)
 
-**Файл:** `example/lib/l10n/app_localizations.dart` (~220 строк)
+**File:** `example/lib/l10n/app_localizations.dart` (~220 lines)
 
-**Возможности:**
-- ✅ Полная поддержка английского языка
-- ✅ Полная поддержка русского языка  
-- ✅ 50+ переведенных строк
-- ✅ LocalizationsDelegate для Flutter
-- ✅ Переключение языка одной кнопкой
+**Features:**
+- ✅ Full English support
+- ✅ Full Russian support  
+- ✅ 50+ translated strings
+- ✅ LocalizationsDelegate for Flutter
+- ✅ One-button language switching
 
-**Переведенные элементы:**
+**Translated elements:**
 ```dart
-- Заголовки страниц (app_title, home_title, examples_title, etc.)
-- Метрики (fps, frame_time, animation_time, progress, etc.)
-- Кнопки управления (play, pause, restart, hide_metrics, etc.)
-- Описания (description, features, etc.)
-- Примеры анимаций (rotation, translation, scale, etc.)
+- Page titles (app_title, home_title, examples_title, etc.)
+- Metrics (fps, frame_time, animation_time, progress, etc.)
+- Control buttons (play, pause, restart, hide_metrics, etc.)
+- Descriptions (description, features, etc.)
+- Animation examples (rotation, translation, scale, etc.)
 ```
 
-**Использование:**
+**Usage:**
 ```dart
 final localizations = AppLocalizations.of(context);
-Text(localizations.translate('fps')); // "FPS" или "Частота кадров"
+Text(localizations.translate('fps')); // "FPS" or "Частота кадров"
 ```
 
-### 2. 📊 Система мониторинга производительности
+### 2. 📊 Performance Monitoring System
 
-**Файл:** `example/lib/widgets/performance_metrics.dart` (~200 строк)
+**File:** `example/lib/widgets/performance_metrics.dart` (~200 lines)
 
 #### 2.1 PerformanceMetrics Widget
 
-**Функциональность:**
-- ✅ Overlay с FPS в правом верхнем углу
-- ✅ Расчет FPS через SchedulerBinding.addPostFrameCallback()
-- ✅ Скользящее среднее по 60 кадрам
-- ✅ Цветовая индикация производительности:
-  - 🟢 Зеленый: FPS > 55 (отличная производительность)
-  - 🟠 Оранжевый: FPS > 30 (приемлемая производительность)
-  - 🔴 Красный: FPS ≤ 30 (проблемы с производительностью)
+**Functionality:**
+- ✅ Overlay with FPS in the top-right corner
+- ✅ FPS calculation via SchedulerBinding.addPostFrameCallback()
+- ✅ Sliding average over 60 frames
+- ✅ Color-coded performance indicator:
+  - 🟢 Green: FPS > 55 (excellent performance)
+  - 🟠 Orange: FPS > 30 (acceptable performance)
+  - 🔴 Red: FPS ≤ 30 (performance issues)
 
-**Метрики:**
+**Metrics:**
 ```dart
 - FPS (frames per second)
 - Frame Time (milliseconds per frame)
 - Frame Count (total frames rendered)
 ```
 
-**Использование:**
+**Usage:**
 ```dart
 PerformanceMetrics(
   showOverlay: true,
@@ -67,17 +67,17 @@ PerformanceMetrics(
 
 #### 2.2 DetailedMetricsPanel Widget
 
-**Функциональность:**
-- ✅ Подробная панель с метриками анимации
-- ✅ Цветовая индикация FPS
-- ✅ Отображение времени кадра в миллисекундах
-- ✅ Прогресс анимации (%)
-- ✅ Текущее время анимации
-- ✅ Скорость воспроизведения (playback rate)
+**Functionality:**
+- ✅ Detailed panel with animation metrics
+- ✅ Color-coded FPS indicator
+- ✅ Frame time display in milliseconds
+- ✅ Animation progress (%)
+- ✅ Current animation time
+- ✅ Playback rate
 
-**Метрики:**
+**Metrics:**
 ```dart
-- FPS: double (с цветовой индикацией)
+- FPS: double (with color indicator)
 - Frame Time: double (ms)
 - Animation Time: Duration
 - Total Duration: Duration
@@ -86,55 +86,55 @@ PerformanceMetrics(
 - Animation Status: AnimationStatus
 ```
 
-### 3. 📱 Структура приложения
+### 3. 📱 Application Structure
 
-#### 3.1 Главная страница (HomePage)
+#### 3.1 Home Page (HomePage)
 
-**Файл:** `example/lib/pages/home_page.dart` (~210 строк)
+**File:** `example/lib/pages/home_page.dart` (~210 lines)
 
-**Возможности:**
-- ✅ Приветственный экран с логотипом Flutter
-- ✅ Переключатель языка в AppBar (🌐 иконка)
-- ✅ Навигационные карточки:
-  - 🎨 "Animation Examples" → примеры анимаций
-  - 📊 "Metrics Demo" → демо с метриками
-- ✅ Список возможностей (Features):
-  - SMIL анимации
-  - Мониторинг производительности
-  - Поддержка нескольких языков
-  - Интерактивные примеры
+**Features:**
+- ✅ Welcome screen with Flutter logo
+- ✅ Language switcher in AppBar (🌐 icon)
+- ✅ Navigation cards:
+  - 🎨 "Animation Examples" → animation examples
+  - 📊 "Metrics Demo" → metrics demo
+- ✅ Features list:
+  - SMIL animations
+  - Performance monitoring
+  - Multi-language support
+  - Interactive examples
 
-#### 3.2 Страница примеров (ExamplesPage)
+#### 3.2 Examples Page (ExamplesPage)
 
-**Файл:** `example/lib/pages/examples_page.dart` (~20 строк)
+**File:** `example/lib/pages/examples_page.dart` (~20 lines)
 
-**Функциональность:**
-- ✅ Wrapper для существующего AnimatedSvgDemo
-- ✅ Сохранение совместимости со старым кодом
+**Functionality:**
+- ✅ Wrapper for the existing AnimatedSvgDemo
+- ✅ Backward compatibility with old code
 
-#### 3.3 Страница метрик (MetricsDemoPage)
+#### 3.3 Metrics Demo Page (MetricsDemoPage)
 
-**Файл:** `example/lib/pages/metrics_demo_page.dart` (~350 строк)
+**File:** `example/lib/pages/metrics_demo_page.dart` (~350 lines)
 
-**Функциональность:**
-- ✅ **FPS overlay** в правом верхнем углу (можно скрыть/показать)
-- ✅ **Панель подробных метрик** с цветовой индикацией
-- ✅ **Selector примеров анимаций** (DropdownButton):
-  - Rotation (вращение)
-  - Translation (перемещение)
-  - Scale (масштабирование)
-  - Combined (комбинированные)
-- ✅ **Контейнер анимации** (256x256px)
-- ✅ **Панель управления**:
-  - ▶️/⏸ Play/Pause кнопка
-  - 🔄 Restart кнопка
+**Functionality:**
+- ✅ **FPS overlay** in the top-right corner (can be hidden/shown)
+- ✅ **Detailed metrics panel** with color indicators
+- ✅ **Animation example selector** (DropdownButton):
+  - Rotation
+  - Translation
+  - Scale
+  - Combined
+- ✅ **Animation container** (256x256px)
+- ✅ **Control panel**:
+  - ▶️/⏸ Play/Pause button
+  - 🔄 Restart button
   - 👁️ Hide/Show Metrics toggle
-- ✅ **Slider скорости воспроизведения** (0.1x - 3.0x):
-  - 0.1x = очень медленно
-  - 1.0x = нормальная скорость
-  - 3.0x = быстро
+- ✅ **Playback rate slider** (0.1x - 3.0x):
+  - 0.1x = very slow
+  - 1.0x = normal speed
+  - 3.0x = fast
 
-**Примеры анимаций:**
+**Animation examples:**
 ```dart
 1. Rotation: <animateTransform attributeName="transform" type="rotate" 
               from="0 50 50" to="360 50 50" dur="2s" repeatCount="indefinite"/>
@@ -145,49 +145,49 @@ PerformanceMetrics(
 3. Scale: <animateTransform attributeName="transform" type="scale" 
            from="1" to="1.5" dur="2s" repeatCount="indefinite"/>
 
-4. Combined: rotation + translation + scale одновременно
+4. Combined: rotation + translation + scale simultaneously
 ```
 
-### 4. ⚙️ Обновления конфигурации
+### 4. ⚙️ Configuration Updates
 
 #### 4.1 main.dart
 
-**Изменения:**
+**Changes:**
 ```dart
-✅ Добавлены localizationsDelegates:
+✅ Added localizationsDelegates:
    - AppLocalizations.delegate
    - GlobalMaterialLocalizations.delegate
    - GlobalWidgetsLocalizations.delegate
    - GlobalCupertinoLocalizations.delegate
 
-✅ Добавлены supportedLocales:
+✅ Added supportedLocales:
    - Locale('en') // English
-   - Locale('ru') // Русский
+   - Locale('ru') // Russian
 
-✅ Добавлен метод setLocale() для переключения языка
+✅ Added setLocale() method for language switching
 
-✅ Material3 тема с настроенным CardThemeData
+✅ Material3 theme with configured CardThemeData
 
-✅ Маршрутизация на HomePage как home
+✅ Routing to HomePage as home
 ```
 
 #### 4.2 pubspec.yaml
 
-**Добавленные зависимости:**
+**Added dependencies:**
 ```yaml
 dependencies:
   flutter_localizations:
     sdk: flutter
 ```
 
-**Результат:**
+**Result:**
 ```bash
-✅ flutter pub get выполнен успешно
-✅ Все пакеты загружены
-✅ 3 пакета имеют новые версии (некритично)
+✅ flutter pub get completed successfully
+✅ All packages downloaded
+✅ 3 packages have new versions (non-critical)
 ```
 
-## 📊 Технические детали
+## 📊 Technical Details
 
 ### FPS Calculation Algorithm
 
@@ -195,14 +195,14 @@ dependencies:
 void _onFrame(Duration timestamp) {
   if (_lastFrameTime != null) {
     final frameTime = timestamp.inMicroseconds - _lastFrameTime!.inMicroseconds;
-    final fps = 1000000.0 / frameTime; // 1 секунда = 1,000,000 микросекунд
+    final fps = 1000000.0 / frameTime; // 1 second = 1,000,000 microseconds
     
     _fpsSamples.add(fps);
     if (_fpsSamples.length > _maxSamples) {
-      _fpsSamples.removeAt(0); // Скользящее окно 60 кадров
+      _fpsSamples.removeAt(0); // Rolling window of 60 frames
     }
     
-    // Среднее FPS
+    // Average FPS
     final averageFps = _fpsSamples.reduce((a, b) => a + b) / _fpsSamples.length;
     
     setState(() {
@@ -252,84 +252,84 @@ class AppLocalizations {
 }
 ```
 
-## 🧪 Тестирование
+## 🧪 Testing
 
-### Запуск приложения
+### Running the Application
 
 ```bash
 cd example
 flutter run -d macos
 ```
 
-**Результаты:**
+**Results:**
 ```
-✅ Сборка успешна (build/macos/Build/Products/Debug/example.app)
-✅ Приложение запущено на macOS
-✅ DTD подключен (ws://127.0.0.1:49862/...)
-✅ Нет runtime ошибок
-✅ Все виджеты отрисовываются корректно
+✅ Build successful (build/macos/Build/Products/Debug/example.app)
+✅ Application launched on macOS
+✅ DTD connected (ws://127.0.0.1:49862/...)
+✅ No runtime errors
+✅ All widgets render correctly
 ```
 
-### Проверенная функциональность
+### Verified Functionality
 
-#### ✅ Локализация
-- [x] Переключение EN ↔ RU работает
-- [x] Все строки переводятся
-- [x] Иконка 🌐 отображается в AppBar
-- [x] Язык сохраняется в состоянии приложения
+#### ✅ Localization
+- [x] EN ↔ RU switching works
+- [x] All strings are translated
+- [x] 🌐 icon displayed in AppBar
+- [x] Language is saved in app state
 
 #### ✅ FPS Overlay
-- [x] Overlay отображается в правом верхнем углу
-- [x] FPS обновляется каждый кадр
-- [x] Цвет меняется в зависимости от производительности
-- [x] Можно скрыть/показать overlay
+- [x] Overlay displayed in top-right corner
+- [x] FPS updates every frame
+- [x] Color changes based on performance
+- [x] Overlay can be hidden/shown
 
 #### ✅ Detailed Metrics Panel
-- [x] Все метрики отображаются корректно
-- [x] FPS с цветовой индикацией
-- [x] Frame time в миллисекундах
+- [x] All metrics displayed correctly
+- [x] FPS with color indicator
+- [x] Frame time in milliseconds
 - [x] Animation time / total duration
 - [x] Progress bar (0-100%)
-- [x] Playback rate с 1 знаком после запятой
+- [x] Playback rate with 1 decimal place
 - [x] Animation status (forward/reverse/completed/dismissed)
 
 #### ✅ Animation Controls
-- [x] Play/Pause переключается
-- [x] Restart сбрасывает анимацию
-- [x] Playback rate slider работает (0.1x - 3.0x)
-- [x] Example selector переключает анимации
+- [x] Play/Pause toggles
+- [x] Restart resets animation
+- [x] Playback rate slider works (0.1x - 3.0x)
+- [x] Example selector switches animations
 
-#### ✅ Навигация
+#### ✅ Navigation
 - [x] HomePage → ExamplesPage
 - [x] HomePage → MetricsDemoPage
-- [x] Back button возвращает на HomePage
+- [x] Back button returns to HomePage
 
-## 📁 Созданные файлы
+## 📁 Created Files
 
 ```
 example/
 ├── lib/
 │   ├── l10n/
-│   │   └── app_localizations.dart      (~220 строк) ✅ NEW
+│   │   └── app_localizations.dart      (~220 lines) ✅ NEW
 │   ├── widgets/
-│   │   └── performance_metrics.dart    (~200 строк) ✅ NEW
+│   │   └── performance_metrics.dart    (~200 lines) ✅ NEW
 │   ├── pages/
-│   │   ├── home_page.dart              (~210 строк) ✅ NEW
-│   │   ├── examples_page.dart          (~20 строк)  ✅ NEW
-│   │   └── metrics_demo_page.dart      (~350 строк) ✅ NEW
-│   └── main.dart                       (обновлен)   ✅ MODIFIED
-├── pubspec.yaml                        (обновлен)   ✅ MODIFIED
-└── README.md                           (обновлен)   ✅ MODIFIED
+│   │   ├── home_page.dart              (~210 lines) ✅ NEW
+│   │   ├── examples_page.dart          (~20 lines)  ✅ NEW
+│   │   └── metrics_demo_page.dart      (~350 lines) ✅ NEW
+│   └── main.dart                       (updated)    ✅ MODIFIED
+├── pubspec.yaml                        (updated)    ✅ MODIFIED
+└── README.md                           (updated)    ✅ MODIFIED
 ```
 
-**Общий объем нового кода:** ~1000 строк
+**Total new code:** ~1000 lines
 
-## 📖 Документация
+## 📖 Documentation
 
-### README.md обновлен
+### README.md updated
 
-Добавлены разделы:
-- ✅ Возможности / Features
+Sections added:
+- ✅ Features
 - ✅ Multilingual Support
 - ✅ Real-time Performance Metrics
 - ✅ Animation Examples
@@ -341,81 +341,81 @@ example/
 - ✅ Performance Tips
 - ✅ Supported Platforms
 
-## 🎉 Итоговый результат
+## 🎉 Final Result
 
-### ✅ Все задачи выполнены
+### ✅ All Tasks Completed
 
-1. ✅ **Подробные метрики в реальном времени**
-   - FPS overlay с обновлением каждый кадр
+1. ✅ **Detailed real-time metrics**
+   - FPS overlay updating every frame
    - Detailed metrics panel
    - Frame time, animation time, progress
    - Playback rate control
 
-2. ✅ **Отображение FPS (framerate)**
+2. ✅ **FPS (framerate) display**
    - Real-time FPS calculation
    - Rolling 60-sample average
    - Color-coded indicators (green/orange/red)
    - Can be hidden/shown
 
-3. ✅ **Поддержка двух языков**
-   - Русский язык (полный перевод)
-   - English (полный перевод)
-   - Переключение одной кнопкой
-   - 50+ переведенных строк
+3. ✅ **Two-language support**
+   - Russian (full translation)
+   - English (full translation)
+   - One-button switching
+   - 50+ translated strings
 
-### 📈 Статистика
+### 📈 Statistics
 
 ```
-Созданных файлов:    5
-Измененных файлов:   3
-Строк кода:          ~1000
-Языков:              2 (EN, RU)
-Метрик:              7 (FPS, frame time, animation time, etc.)
-Примеров анимаций:   4 (rotation, translation, scale, combined)
-Тестов:              113 (все проходят ✅)
+Files created:       5
+Files modified:      3
+Lines of code:       ~1000
+Languages:           2 (EN, RU)
+Metrics:             7 (FPS, frame time, animation time, etc.)
+Animation examples:  4 (rotation, translation, scale, combined)
+Tests:               113 (all passing ✅)
 ```
 
-### 🚀 Производительность
+### 🚀 Performance
 
 ```
 Target FPS:          60
-Typical FPS:         55-60 (зеленый)
+Typical FPS:         55-60 (green)
 Frame Time:          <16.67ms (60 FPS)
-Memory:              Оптимизирован (rolling window для FPS)
+Memory:              Optimized (rolling window for FPS)
 ```
 
-## 📝 Инструкции по использованию
+## 📝 Usage Instructions
 
-### Для разработчиков
+### For Developers
 
 ```dart
-// 1. Использование метрик производительности
+// 1. Using performance metrics
 PerformanceMetrics(
   showOverlay: true,
   child: YourAnimatedWidget(),
 )
 
-// 2. Использование локализации
+// 2. Using localization
 final localizations = AppLocalizations.of(context);
 Text(localizations.translate('fps'));
 
-// 3. Переключение языка
+// 3. Switching language
 MyApp.of(context)?.setLocale(Locale('ru'));
 ```
 
-### Для пользователей
+### For Users
 
-1. **Запустить приложение**: `flutter run`
-2. **Переключить язык**: Нажать 🌐 в AppBar
-3. **Посмотреть примеры**: Tap "Animation Examples"
-4. **Посмотреть метрики**: Tap "Metrics Demo"
-5. **Управлять анимацией**: 
-   - ▶️/⏸ для play/pause
-   - 🔄 для restart
-   - Slider для изменения скорости
-6. **Скрыть FPS**: Нажать "Hide Metrics"
+1. **Launch the app**: `flutter run`
+2. **Switch language**: Tap 🌐 in AppBar
+3. **View examples**: Tap "Animation Examples"
+4. **View metrics**: Tap "Metrics Demo"
+5. **Control animation**: 
+   - ▶️/⏸ for play/pause
+   - 🔄 for restart
+   - Slider for speed change
+6. **Hide FPS**: Tap "Hide Metrics"
 
-## 🔧 Технический стек
+## 🔧 Tech Stack
 
 ```yaml
 Flutter:             3.38.1
@@ -427,11 +427,11 @@ Animation:           AnimationController
 State Management:    StatefulWidget
 ```
 
-## ✨ Дополнительные возможности
+## ✨ Additional Features
 
-Реализованные бонусы:
+Implemented bonuses:
 - ✅ Material3 design
-- ✅ Dark theme support (автоматически)
+- ✅ Dark theme support (automatic)
 - ✅ Color-coded FPS indicators
 - ✅ Rolling average FPS (60 samples)
 - ✅ Multiple animation examples
@@ -440,29 +440,29 @@ State Management:    StatefulWidget
 - ✅ Navigation system
 - ✅ Card-based UI
 
-## 🎯 Выводы
+## 🎯 Conclusions
 
-**Создано профессиональное демо-приложение** с:
-- ✅ Полной локализацией (RU/EN)
-- ✅ Мониторингом производительности в реальном времени
-- ✅ Интуитивным интерфейсом
-- ✅ Подробной документацией
-- ✅ Примерами использования
+**A professional demo application was created** with:
+- ✅ Full localization (RU/EN)
+- ✅ Real-time performance monitoring
+- ✅ Intuitive interface
+- ✅ Detailed documentation
+- ✅ Usage examples
 
-**Качество кода:**
-- ✅ Чистая архитектура
-- ✅ Переиспользуемые компоненты
-- ✅ Хорошая читаемость
-- ✅ Документированный код
+**Code quality:**
+- ✅ Clean architecture
+- ✅ Reusable components
+- ✅ Good readability
+- ✅ Documented code
 
-**Готовность к продакшену:**
-- ✅ Нет runtime ошибок
-- ✅ Все тесты проходят (113/113)
-- ✅ Оптимизированная производительность
-- ✅ Полная документация
+**Production readiness:**
+- ✅ No runtime errors
+- ✅ All tests passing (113/113)
+- ✅ Optimized performance
+- ✅ Complete documentation
 
 ---
 
-**Дата завершения:** 2025-01-20  
-**Статус:** ✅ COMPLETE  
-**Версия:** 1.0.0
+**Completion date:** 2025-01-20  
+**Status:** ✅ COMPLETE  
+**Version:** 1.0.0

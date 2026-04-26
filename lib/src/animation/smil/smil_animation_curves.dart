@@ -1,33 +1,33 @@
 part of 'smil_animation.dart';
 
-/// Кубическая кривая Безье для keySplines
+/// Cubic Bezier curve for keySplines
 @immutable
 class CubicBezier {
-  /// Создаёт кубическую кривую Безье
+  /// Creates a cubic Bezier curve
   const CubicBezier(this.x1, this.y1, this.x2, this.y2);
 
-  /// Контрольная точка 1 - X
+  /// Control point 1 - X
   final double x1;
 
-  /// Контрольная точка 1 - Y
+  /// Control point 1 - Y
   final double y1;
 
-  /// Контрольная точка 2 - X
+  /// Control point 2 - X
   final double x2;
 
-  /// Контрольная точка 2 - Y
+  /// Control point 2 - Y
   final double y2;
 
-  /// Вычислить значение кривой для t ∈ [0, 1]
+  /// Compute the curve value for t ∈ [0, 1].
   ///
-  /// Использует приближённый метод Ньютона для решения
+  /// Uses Newton's approximation method for solving
   double transform(double t) {
-    // Для линейной кривой (0 0 1 1) - оптимизация
+    // For the linear curve (0 0 1 1) - optimization
     if (x1 == 0 && y1 == 0 && x2 == 1 && y2 == 1) {
       return t;
     }
 
-    // Метод Ньютона для поиска X по t
+    // Newton's method for finding X given t
     double x = t;
     for (int i = 0; i < 8; i++) {
       final curveX = _bezierX(x);
@@ -43,7 +43,7 @@ class CubicBezier {
     return _bezierY(x);
   }
 
-  // Вспомогательные функции для вычисления полинома
+  // Helper functions for computing the polynomial
   double _bezierX(double t) {
     return _bezierA(x1, x2) * t * t * t +
         _bezierB(x1, x2) * t * t +
@@ -82,19 +82,19 @@ class CubicBezier {
   String toString() => 'CubicBezier($x1, $y1, $x2, $y2)';
 }
 
-/// Дискретная функция времени (аналог CSS steps())
+/// Discrete timing function (analogous to CSS steps())
 @immutable
 class StepTiming {
-  /// Создаёт ступенчатую функцию
+  /// Creates a step timing function
   const StepTiming({required this.steps, this.stepAtStart = false});
 
-  /// Количество шагов
+  /// Number of steps
   final int steps;
 
-  /// Делать ли шаг в самом начале интервала
+  /// Whether to take the step at the very beginning of the interval
   final bool stepAtStart;
 
-  /// Вычислить значение ступенчатой функции для t ∈ [0, 1]
+  /// Compute the step timing function value for t ∈ [0, 1]
   double transform(double t) {
     if (t >= 1.0) return 1.0;
     if (t <= 0.0) return 0.0;

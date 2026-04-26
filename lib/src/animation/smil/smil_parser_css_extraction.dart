@@ -413,29 +413,29 @@ List<SvgNode> _getPreviousSiblings(SvgNode node) {
   return siblings.sublist(0, index).reversed.toList();
 }
 
-/// Рекурсивно извлечь анимации из узла и его детей
+/// Recursively extract animations from a node and its children
 void _extractAnimations(
   SvgNode node,
   SvgDocument document,
   List<SmilAnimation> animations,
 ) {
-  // Ищем анимационные элементы среди детей
+  // Look for animation elements among children
   for (final child in node.children) {
     if (_isAnimationElement(child.tagName)) {
       final animation = _parseAnimationElement(child, node, document);
       if (animation != null) {
         animations.add(animation);
-        // Помечаем родительский узел как имеющий анимации
+        // Mark the parent node as having animations
         node.hasAnimations = true;
       }
     }
 
-    // Рекурсивно обрабатываем детей
+    // Recursively process children
     _extractAnimations(child, document, animations);
   }
 }
 
-/// Проверить, является ли тег анимационным элементом
+/// Check whether the tag is an animation element
 bool _isAnimationElement(String tagName) {
   return tagName == 'animate' ||
       tagName == 'animateTransform' ||

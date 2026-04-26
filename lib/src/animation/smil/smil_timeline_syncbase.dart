@@ -102,16 +102,16 @@ void _triggerRepeatEventImpl(
 }
 
 void _buildDependencyGraphImpl(SvgTimeline timeline) {
-  // Создать карту ID -> анимация
+  // Build the ID -> animation map
   for (final anim in timeline.animations) {
     if (anim.id != null) {
       timeline._animationById[anim.id!] = anim;
     }
   }
 
-  // Найти все syncbase зависимости и event listeners
+  // Find all syncbase dependencies and event listeners
   for (final anim in timeline.animations) {
-    // Обработать syncbase conditions
+    // Process syncbase conditions
     for (final condition in anim.beginConditions) {
       if (condition is SyncbaseCondition) {
         final sourceAnim = timeline._animationById[condition.animationId];
@@ -119,7 +119,7 @@ void _buildDependencyGraphImpl(SvgTimeline timeline) {
           timeline._dependents.putIfAbsent(sourceAnim, () => []).add(anim);
         }
       } else if (condition is EventCondition) {
-        // Регистрируем event listener
+        // Register event listener
         final eventKey = timeline._getEventKey(
           condition.targetId,
           condition.eventType,
@@ -142,7 +142,7 @@ void _buildDependencyGraphImpl(SvgTimeline timeline) {
 
 void _initializeEventBasedAnimationsImpl(SvgTimeline timeline) {
   for (final anim in timeline.animations) {
-    // Проверяем, есть ли ТОЛЬКО event conditions в begin
+    // Check whether begin contains ONLY event conditions
     final hasOnlyEventConditions =
         anim.beginConditions.isNotEmpty &&
         anim.beginConditions.every(
@@ -150,7 +150,7 @@ void _initializeEventBasedAnimationsImpl(SvgTimeline timeline) {
         );
 
     if (hasOnlyEventConditions) {
-      // Устанавливаем begin time в "infinity"
+      // Set begin time to "infinity"
       anim.setResolvedBeginTime(_kTimelineInfinity);
     }
   }
@@ -169,7 +169,7 @@ Duration? _resolveSyncbaseConditionImpl(
 
   switch (condition.type) {
     case SyncbaseType.begin:
-      // Используем resolved begin time если есть, иначе простой begin
+      // Use resolved begin time if available, otherwise use the simple begin
       baseTime = timeline._resolvedBeginTimes[sourceAnim] ?? sourceAnim.begin;
       break;
 

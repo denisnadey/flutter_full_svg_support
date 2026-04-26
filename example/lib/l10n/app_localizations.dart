@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Класс для локализации приложения
+/// Application localization class
 class AppLocalizations {
   final Locale locale;
 
@@ -18,13 +18,13 @@ class AppLocalizations {
     Locale('ru', ''), // Russian
   ];
 
-  // Общие
+  // General
   String get appTitle => _localizedStrings[locale.languageCode]!['app_title']!;
   String get language => _localizedStrings[locale.languageCode]!['language']!;
   String get switchLanguage =>
       _localizedStrings[locale.languageCode]!['switch_language']!;
 
-  // Главная страница
+  // Home page
   String get welcomeTitle =>
       _localizedStrings[locale.languageCode]!['welcome_title']!;
   String get welcomeSubtitle =>
@@ -34,7 +34,7 @@ class AppLocalizations {
   String get viewMetrics =>
       _localizedStrings[locale.languageCode]!['view_metrics']!;
 
-  // Примеры
+  // Examples
   String get examplesTitle =>
       _localizedStrings[locale.languageCode]!['examples_title']!;
   String get basicAnimations =>
@@ -46,7 +46,7 @@ class AppLocalizations {
   String get pathAnimations =>
       _localizedStrings[locale.languageCode]!['path_animations']!;
 
-  // Метрики
+  // Metrics
   String get metricsTitle =>
       _localizedStrings[locale.languageCode]!['metrics_title']!;
   String get realTimeMetrics =>
@@ -68,13 +68,13 @@ class AppLocalizations {
   String get repeatCount =>
       _localizedStrings[locale.languageCode]!['repeat_count']!;
 
-  // Кнопки управления
+  // Control buttons
   String get play => _localizedStrings[locale.languageCode]!['play']!;
   String get pause => _localizedStrings[locale.languageCode]!['pause']!;
   String get reset => _localizedStrings[locale.languageCode]!['reset']!;
   String get restart => _localizedStrings[locale.languageCode]!['restart']!;
 
-  // Примеры анимаций
+  // Animation examples
   String get rotation => _localizedStrings[locale.languageCode]!['rotation']!;
   String get translation =>
       _localizedStrings[locale.languageCode]!['translation']!;
@@ -86,7 +86,7 @@ class AppLocalizations {
       _localizedStrings[locale.languageCode]!['color_change']!;
   String get combined => _localizedStrings[locale.languageCode]!['combined']!;
 
-  // Path Morphing
+  // Path morphing
   String get pathMorphing =>
       _localizedStrings[locale.languageCode]!['path_morphing']!;
   String get squareToCircle =>
@@ -101,7 +101,7 @@ class AppLocalizations {
   String get morphingProgress =>
       _localizedStrings[locale.languageCode]!['morphing_progress']!;
 
-  // Описания
+  // Descriptions
   String get rotationDesc =>
       _localizedStrings[locale.languageCode]!['rotation_desc']!;
   String get translationDesc =>
@@ -121,7 +121,7 @@ class AppLocalizations {
   String get pathMorphingDesc =>
       _localizedStrings[locale.languageCode]!['path_morphing_desc']!;
 
-  // Unified Examples
+  // Unified examples
   String get smilAnimations =>
       _localizedStrings[locale.languageCode]!['smil_animations']!;
   String get metrics => _localizedStrings[locale.languageCode]!['metrics']!;
@@ -183,61 +183,59 @@ class AppLocalizations {
       'path_morphing_desc': 'Smooth shape morphing using path interpolation',
     },
     'ru': {
-      'app_title': 'Flutter SVG Анимации',
-      'language': 'Язык',
-      'switch_language': 'Переключить на английский',
-      'welcome_title': 'Добро пожаловать в Flutter SVG Анимации',
-      'welcome_subtitle':
-          'Примеры SMIL анимаций с метриками в реальном времени',
-      'view_examples': 'Посмотреть примеры',
-      'view_metrics': 'Посмотреть метрики',
-      'examples_title': 'Примеры анимаций',
-      'basic_animations': 'Базовые анимации',
-      'transform_animations': 'Трансформации',
-      'color_animations': 'Цветовые анимации',
-      'path_animations': 'Анимации путей',
-      'metrics_title': 'Метрики анимации',
-      'real_time_metrics': 'Метрики производительности в реальном времени',
+      'app_title': 'Flutter SVG Animations',
+      'language': 'Language',
+      'switch_language': 'Switch to Russian',
+      'welcome_title': 'Welcome to Flutter SVG Animations',
+      'welcome_subtitle': 'SMIL Animation Examples with Real-time Metrics',
+      'view_examples': 'View Examples',
+      'view_metrics': 'View Metrics',
+      'examples_title': 'Animation Examples',
+      'basic_animations': 'Basic Animations',
+      'transform_animations': 'Transformations',
+      'color_animations': 'Color Animations',
+      'path_animations': 'Path Animations',
+      'metrics_title': 'Animation Metrics',
+      'real_time_metrics': 'Real-time Performance Metrics',
       'fps': 'FPS',
-      'frame_time': 'Время кадра',
-      'animation_time': 'Время анимации',
-      'total_duration': 'Общая длительность',
-      'current_time': 'Текущее время',
-      'progress': 'Прогресс',
-      'playback_rate': 'Скорость воспроизведения',
-      'is_playing': 'Воспроизводится',
-      'repeat_count': 'Количество повторов',
-      'play': 'Играть',
-      'pause': 'Пауза',
-      'reset': 'Сброс',
-      'restart': 'Перезапуск',
-      'rotation': 'Вращение',
-      'translation': 'Перемещение',
-      'scale': 'Масштабирование',
-      'skew_x': 'Наклон X',
-      'skew_y': 'Наклон Y',
-      'opacity': 'Прозрачность',
-      'color_change': 'Смена цвета',
-      'combined': 'Комбинированные',
-      'path_morphing': 'Морфинг путей',
-      'square_to_circle': 'Квадрат ↔ Круг',
-      'star_to_heart': 'Звезда ↔ Сердце',
-      'triangle_to_hexagon': 'Треугольник ↔ Шестиугольник',
-      'from_shape': 'Из',
-      'to_shape': 'В',
-      'morphing_progress': 'Морфинг',
-      'smil_animations': 'SMIL Анимации',
-      'metrics': 'Метрики',
-      'rotation_desc': 'Прямоугольник вращается на 360° вокруг центра',
-      'translation_desc': 'Круг перемещается слева направо',
-      'scale_desc': 'Прямоугольник увеличивается от 1x до 2x',
-      'skew_x_desc': 'Прямоугольник наклоняется по горизонтали',
-      'skew_y_desc': 'Прямоугольник наклоняется по вертикали',
-      'opacity_desc': 'Появление и исчезновение',
-      'color_change_desc': 'Переход цвета от красного к синему',
-      'combined_desc': 'Несколько трансформаций вместе',
-      'path_morphing_desc':
-          'Плавный морфинг форм с использованием интерполяции путей',
+      'frame_time': 'Frame Time',
+      'animation_time': 'Animation Time',
+      'total_duration': 'Total Duration',
+      'current_time': 'Current Time',
+      'progress': 'Progress',
+      'playback_rate': 'Playback Rate',
+      'is_playing': 'Playing',
+      'repeat_count': 'Repeat Count',
+      'play': 'Play',
+      'pause': 'Pause',
+      'reset': 'Reset',
+      'restart': 'Restart',
+      'rotation': 'Rotation',
+      'translation': 'Translation',
+      'scale': 'Scale',
+      'skew_x': 'Skew X',
+      'skew_y': 'Skew Y',
+      'opacity': 'Opacity',
+      'color_change': 'Color Change',
+      'combined': 'Combined',
+      'path_morphing': 'Path Morphing',
+      'square_to_circle': 'Square ↔ Circle',
+      'star_to_heart': 'Star ↔ Heart',
+      'triangle_to_hexagon': 'Triangle ↔ Hexagon',
+      'from_shape': 'From',
+      'to_shape': 'To',
+      'morphing_progress': 'Morphing',
+      'smil_animations': 'SMIL Animations',
+      'metrics': 'Metrics',
+      'rotation_desc': 'Rectangle rotating 360° around center',
+      'translation_desc': 'Circle moving from left to right',
+      'scale_desc': 'Rectangle scaling from 1x to 2x',
+      'skew_x_desc': 'Rectangle skewing horizontally',
+      'skew_y_desc': 'Rectangle skewing vertically',
+      'opacity_desc': 'Fading in and out',
+      'color_change_desc': 'Color transition from red to blue',
+      'combined_desc': 'Multiple transforms combined',
+      'path_morphing_desc': 'Smooth shape morphing using path interpolation',
     },
   };
 }

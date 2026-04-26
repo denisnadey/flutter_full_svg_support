@@ -162,19 +162,19 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
 
-      // Проверяем начальное состояние
+      // Check initial state
       final pixels1 = await VisualTestUtils.captureWidgetPixels(tester);
       final analysis1 = VisualTestUtils.analyzeRedPixels(pixels1, 800, 600);
       expect(analysis1.pixelCount, greaterThan(0));
 
       final centroid1 = analysis1.centroid;
 
-      // Делаем seek через контроллер
+      // Seek via controller
       controller.seek(const Duration(seconds: 1));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));
 
-      // Проверяем что прямоугольник сдвинулся
+      // Verify that the rectangle has moved
       final pixels2 = await VisualTestUtils.captureWidgetPixels(tester);
       final analysis2 = VisualTestUtils.analyzeRedPixels(pixels2, 800, 600);
 
@@ -212,21 +212,21 @@ void main() {
 
       await tester.pump();
 
-      // Запускаем анимацию
+      // Start animation
       await tester.pump(const Duration(milliseconds: 100));
 
       final pixels1 = await VisualTestUtils.captureWidgetPixels(tester);
       final analysis1 = VisualTestUtils.analyzeRedPixels(pixels1, 800, 600);
       final centroid1 = analysis1.centroid;
 
-      // Паузим
+      // Pause
       controller.pause();
       await tester.pump();
 
-      // Ждём
+      // Wait
       await tester.pump(const Duration(milliseconds: 500));
 
-      // Проверяем что не двигается
+      // Verify it does not move
       final pixels2 = await VisualTestUtils.captureWidgetPixels(tester);
       final analysis2 = VisualTestUtils.analyzeRedPixels(pixels2, 800, 600);
       final centroid2 = analysis2.centroid;
@@ -235,7 +235,7 @@ void main() {
       print('  Centroid before pause wait: $centroid1');
       print('  Centroid after pause wait: $centroid2');
 
-      // Позиция должна остаться примерно той же (допуск ±2 пикселя)
+      // Position should remain approximately the same (tolerance ±2 pixels)
       expect(
         (centroid2.dx - centroid1.dx).abs(),
         lessThan(3),
@@ -263,7 +263,7 @@ void main() {
 
       await tester.pump();
 
-      // Устанавливаем быструю скорость
+      // Set fast playback speed
       controller.setPlaybackRate(2.0);
       await tester.pump();
 
@@ -271,7 +271,7 @@ void main() {
       final analysis1 = VisualTestUtils.analyzeRedPixels(pixels1, 800, 600);
       final centroid1 = analysis1.centroid;
 
-      // Ждём 250ms (но эффективно 500ms из-за 2x скорости)
+      // Wait 250ms (effectively 500ms due to 2x speed)
       await tester.pump(const Duration(milliseconds: 250));
 
       final pixels2 = await VisualTestUtils.captureWidgetPixels(tester);
@@ -283,7 +283,7 @@ void main() {
       print('  Centroid after 250ms at 2x: $centroid2');
       print('  Delta X: ${(centroid2.dx - centroid1.dx).toStringAsFixed(1)}');
 
-      // С 2x скоростью должно сдвинуться больше
+      // With 2x speed it should move further
       expect(
         centroid2.dx,
         greaterThan(centroid1.dx + 5),

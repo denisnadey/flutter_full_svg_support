@@ -1,6 +1,6 @@
 part of 'css_to_smil_converter.dart';
 
-/// Конвертирует CSS timing function в SMIL calcMode/keySplines
+/// Converts a CSS timing function to SMIL calcMode/keySplines
 _TimingConversion _convertTimingFunction(
   String timingFunction,
   int valueCount,

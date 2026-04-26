@@ -46,7 +46,7 @@ void main() {
               svgXml,
               width: 200,
               height: 200,
-              autoPlay: false, // Не автостарт для тестирования
+              autoPlay: false, // No auto-start for testing
             ),
           ),
         ),
@@ -78,20 +78,20 @@ void main() {
         ),
       );
 
-      // Начальное состояние
+      // Initial state
       await tester.pump();
 
-      // Анимация должна запуститься
-      // Проверяем что CustomPaint существует
+      // Animation should start
+      // Verify that CustomPaint exists
       expect(find.byType(CustomPaint), findsWidgets);
 
-      // Продвигаем время на половину анимации (500ms)
+      // Advance time to half of the animation (500ms)
       await tester.pump(const Duration(milliseconds: 500));
 
-      // Виджет должен перерисоваться
+      // Widget should redraw
       expect(find.byType(CustomPaint), findsWidgets);
 
-      // Завершаем анимацию (ещё 500ms)
+      // Complete the animation (another 500ms)
       await tester.pump(const Duration(milliseconds: 500));
 
       expect(find.byType(CustomPaint), findsWidgets);
@@ -382,7 +382,7 @@ void main() {
       final inside = _pixelAt(pixels, width: 800, x: 80, y: 60);
       final clippedOut = _pixelAt(pixels, width: 800, x: 120, y: 60);
 
-      // 20x20 SVG area => ~40x40 px после viewBox scale(2), с учетом anti-alias.
+      // 20x20 SVG area => ~40x40 px after viewBox scale(2), accounting for anti-aliasing.
       expect(analysis.pixelCount, greaterThan(1100));
       expect(analysis.pixelCount, lessThan(2800));
 
@@ -390,7 +390,7 @@ void main() {
       expect(inside.g, lessThan(120));
       expect(inside.b, lessThan(120));
 
-      // Точка вне clipped viewport должна оставаться фоном.
+      // Point outside the clipped viewport should remain background.
       expect(clippedOut.r, greaterThan(220));
       expect(clippedOut.g, greaterThan(220));
       expect(clippedOut.b, greaterThan(220));
@@ -1888,9 +1888,9 @@ void main() {
         (r, g, b, a) => r < 90 && g < 90 && b < 90 && a > 40,
       );
 
-      // Источник должен оставаться заметно красным.
+      // The source should remain visibly red.
       expect(redPixels, greaterThan(2500));
-      // Должно появляться значимое количество темных shadow-пикселей.
+      // A significant number of dark shadow pixels should appear.
       expect(shadowPixels, greaterThan(300));
     });
 
@@ -1992,12 +1992,12 @@ void main() {
       final outsideBlur = _pixelAt(pixels, width: 800, x: 70, y: 70);
       final center = _pixelAt(pixels, width: 800, x: 90, y: 90);
 
-      // Центр источника остается ярко-синим.
+      // The source center remains bright blue.
       expect(center.b, greaterThan(170));
       expect(center.r, lessThan(120));
       expect(center.g, lessThan(120));
 
-      // Вне исходной геометрии ожидаем синий blur-хвост от merge(blurred + source).
+      // Outside the source geometry, expect a blue blur tail from merge(blurred + source).
       expect(outsideBlur.b, greaterThan(30));
       expect(outsideBlur.a, greaterThan(20));
     });
@@ -2056,7 +2056,7 @@ void main() {
       await tester.pump();
       expect(find.byType(CustomPaint), findsWidgets);
 
-      // Несколько циклов анимации
+      // Several animation cycles
       await tester.pump(const Duration(seconds: 1));
       await tester.pump(const Duration(seconds: 1));
       await tester.pump(const Duration(seconds: 1));
@@ -2329,7 +2329,7 @@ void main() {
       final pictureFinder = find.byType(AnimatedSvgPicture);
       final topLeft = tester.getTopLeft(pictureFinder);
 
-      // Клик вне target элемента не должен запускать target.click анимацию
+      // Click outside the target element should not trigger the target.click animation
       await tester.tapAt(topLeft + const Offset(170, 170));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
@@ -2344,7 +2344,7 @@ void main() {
 
       expect((outsideCentroid.dx - beforeCentroid.dx).abs(), lessThan(3));
 
-      // Клик по target должен запустить анимацию moving элемента
+      // Click on target should trigger the moving element's animation
       await tester.tapAt(topLeft + const Offset(40, 40));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
@@ -5626,7 +5626,7 @@ void main() {
         final outsideCentroid = outsideAnalysis.centroid;
         expect((outsideCentroid.dx - beforeCentroid.dx).abs(), lessThan(4));
 
-        // foreignObject(x=20,y=20,w=20,h=20) => target виден примерно в зоне 40..80 px.
+        // foreignObject(x=20,y=20,w=20,h=20) => target is visible roughly in the 40..80 px zone.
         await tester.tapAt(topLeft + const Offset(60, 60));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 300));

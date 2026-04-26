@@ -1,17 +1,17 @@
 part of 'svg_filters.dart';
 
-/// Displacement map фильтр
+/// Displacement map filter
 ///
 /// Uses pixels from in2 to spatially displace the image from in.
 /// Supports scale animation and edge pixel handling per SVG spec.
 class SvgDisplacementMapFilter extends SvgFilter {
-  /// Масштаб смещения.
+  /// Displacement scale.
   final double scale;
 
-  /// Канал для X-компоненты смещения.
+  /// Channel for the X displacement component.
   final SvgChannelSelector xChannelSelector;
 
-  /// Канал для Y-компоненты смещения.
+  /// Channel for the Y displacement component.
   final SvgChannelSelector yChannelSelector;
 
   /// Edge mode for handling displaced coordinates outside input bounds.

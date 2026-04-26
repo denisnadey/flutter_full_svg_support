@@ -1,25 +1,25 @@
 part of 'svg_filters.dart';
 
-/// Drop Shadow фильтр
+/// Drop Shadow filter
 ///
-/// Создает тень от объекта
+/// Creates a drop shadow for an object
 class SvgDropShadowFilter extends SvgFilter {
-  /// Смещение по X
+  /// X offset
   double dx;
 
-  /// Смещение по Y
+  /// Y offset
   double dy;
 
-  /// Стандартное отклонение по X (размытие тени)
+  /// Standard deviation along X (shadow blur)
   double stdDeviationX;
 
-  /// Стандартное отклонение по Y (размытие тени)
+  /// Standard deviation along Y (shadow blur)
   double stdDeviationY;
 
-  /// Цвет тени
+  /// Shadow color
   final ui.Color? floodColor;
 
-  /// Прозрачность тени (0..1)
+  /// Shadow opacity (0..1)
   final double floodOpacity;
 
   SvgDropShadowFilter({
@@ -39,17 +39,17 @@ class SvgDropShadowFilter extends SvgFilter {
     return ui.ImageFilter.blur(sigmaX: stdDeviationX, sigmaY: stdDeviationY);
   }
 
-  /// Получить offset для применения через transform
+  /// Get the offset for application via transform
   ui.Offset get offset => ui.Offset(dx, dy);
 
-  /// Эффективный цвет тени с учётом flood-opacity.
+  /// Effective shadow color taking flood-opacity into account.
   ui.Color get effectiveShadowColor {
     final base = floodColor ?? const ui.Color(0xFF000000);
     final opacity = floodOpacity.clamp(0.0, 1.0);
     return base.withValues(alpha: base.a * opacity);
   }
 
-  /// Совместимость со старым API (среднее по осям).
+  /// Compatibility with the old API (average across axes).
   double get stdDeviation => (stdDeviationX + stdDeviationY) / 2.0;
 }
 
@@ -93,14 +93,14 @@ class SvgDropShadowPaintPass extends SvgFilterPaintPass {
   }
 }
 
-/// Color Matrix фильтр
+/// Color Matrix filter
 ///
-/// Применяет цветовые трансформации
+/// Applies color transformations
 class SvgColorMatrixFilter extends SvgFilter {
-  /// Тип трансформации
+  /// Transformation type
   final SvgColorMatrixType matrixType;
 
-  /// Значения для матрицы (зависят от типа)
+  /// Matrix values (depend on the type)
   List<double> values;
 
   SvgColorMatrixFilter({
@@ -140,10 +140,10 @@ class SvgColorMatrixFilter extends SvgFilter {
   @override
   ui.ImageFilter? apply() => colorFilter();
 
-  /// Конвертирует SVG матрицу 5x4 (20 значений) в Flutter матрицу 4x5 (20 значений)
+  /// Converts an SVG 5x4 matrix (20 values) to a Flutter 4x5 matrix (20 values)
   ///
-  /// SVG формат: строка за строкой (R, G, B, A, 1 для каждой строки)
-  /// Flutter формат: столбец за столбцом (RGBA + offset)
+  /// SVG format: row by row (R, G, B, A, 1 for each row)
+  /// Flutter format: column by column (RGBA + offset)
   List<double> _convertSvgMatrixToFlutter(List<double> svgMatrix) {
     // SVG matrix (5x4):
     // [Rr Rg Rb Ra Rk]
@@ -172,7 +172,7 @@ class SvgColorMatrixFilter extends SvgFilter {
     // Alpha column: Ra, Ga, Ba, Aa
     result.addAll([svgMatrix[3], svgMatrix[8], svgMatrix[13], svgMatrix[18]]);
 
-    // Offset row: Rk, Gk, Bk, Ak (умножаем на 255 так как Flutter работает в [0-1], а SVG в [0-255])
+    // Offset row: Rk, Gk, Bk, Ak (divide by 255 because Flutter works in [0-1] while SVG uses [0-255])
     result.addAll([
       svgMatrix[4] / 255.0,
       svgMatrix[9] / 255.0,
@@ -183,7 +183,7 @@ class SvgColorMatrixFilter extends SvgFilter {
     return result;
   }
 
-  /// Создает матрицу для насыщенности (saturate)
+  /// Creates a matrix for saturation (saturate)
   List<double> _saturateMatrix(double s) {
     // SVG saturate matrix formula (feColorMatrix type="saturate"):
     // [0.213+0.787s, 0.715-0.715s, 0.072-0.072s, 0, 0]
@@ -214,9 +214,9 @@ class SvgColorMatrixFilter extends SvgFilter {
     ];
   }
 
-  /// Создает матрицу для hue rotation (поворот оттенка)
+  /// Creates a matrix for hue rotation
   List<double> _hueRotateMatrix(double degrees) {
-    // Конвертируем градусы в радианы
+    // Convert degrees to radians
     final radians = degrees * 3.141592653589793 / 180.0;
     final cos = math.cos(radians);
     final sin = math.sin(radians);
@@ -242,7 +242,7 @@ class SvgColorMatrixFilter extends SvgFilter {
     ];
   }
 
-  /// Создает матрицу для luminance to alpha
+  /// Creates a matrix for luminance to alpha
   List<double> _luminanceToAlphaMatrix() {
     // Luminance weights: 0.2126 * R + 0.7152 * G + 0.0722 * B
     return [
