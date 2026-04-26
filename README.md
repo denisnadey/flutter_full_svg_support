@@ -6,35 +6,149 @@
 
 **The most complete SVG renderer for Flutter.** Not a subset. Not an approximation.
 
-Static rendering with `SvgPicture`, animated rendering with `AnimatedSvgPicture` — two pipelines, one package, one import.
-
 ---
 
 <div align="center">
 
-| Spinner (SMIL) | Heartbeat (dash animation) | Path morphing (SMIL) | Filter stack |
+| Spinner (SMIL) | Heartbeat (dash animation) | Path morphing | Filter stack |
 |:-:|:-:|:-:|:-:|
 | <img src="assets/demo_spinner.svg" width="80" alt="Spinner"/> | <img src="assets/demo_pulse.svg" width="160" alt="Pulse"/> | <img src="assets/demo_morph.svg" width="80" alt="Morph"/> | <img src="assets/demo_filters.svg" width="200" alt="Filters"/> |
 
-*All four are SVG files rendered by `AnimatedSvgPicture` — no GIFs, no Lottie, no third-party runtimes.*
+*All four are live SVG files — no GIFs, no Lottie, no third-party runtimes.*
 
 </div>
 
 ---
 
+## The main widget: `FSvgPicture`
+
+`FSvgPicture` is the recommended entry point. It loads any SVG, detects animation markers at runtime (`<animate>`, `<animateTransform>`, CSS `animation`, `@keyframes`, etc.), and automatically routes to the right renderer — no manual switching required.
+
+```dart
+import 'package:full_svg_flutter/full_svg_flutter.dart';
+
+// Works for both static and animated SVGs — same widget, zero config
+FSvgPicture.asset('assets/logo.svg')
+FSvgPicture.asset('assets/spinner.svg')   // auto-detects animations, plays them
+FSvgPicture.network('https://example.com/chart.svg')
+FSvgPicture.string(rawSvgString)
+FSvgPicture.file(file)
+FSvgPicture.memory(bytes)
+```
+
+Animation control parameters are always available, no-op when the SVG has no animations:
+
+```dart
+FSvgPicture.asset(
+  'assets/hero.svg',
+  autoPlay: false,
+  playbackRate: 0.5,        // half speed
+  initialTime: Duration(milliseconds: 300),
+  width: 200,
+  height: 200,
+  fit: BoxFit.contain,
+  colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+  semanticsLabel: 'Hero illustration',
+  placeholderBuilder: (context) => const CircularProgressIndicator(),
+)
+```
+
+---
+
 ## Drop-in replacement for `flutter_svg`
 
-The API surface is intentionally identical. Migrating is a one-line change:
+`SvgPicture` is also exported with the identical API to `flutter_svg`. One-line migration:
 
 ```dart
 // Before
 import 'package:flutter_svg/flutter_svg.dart';
 
-// After — same widget, same parameters
+// After
 import 'package:full_svg_flutter/full_svg_flutter.dart';
 ```
 
-`SvgPicture.asset()`, `SvgPicture.network()`, `SvgPicture.string()`, `SvgPicture.memory()`, `ColorMapper`, loaders — all signatures match. Swap the import, get the rest for free.
+`SvgPicture.asset()`, `SvgPicture.network()`, `SvgPicture.string()`, `SvgPicture.memory()`, `ColorMapper`, all loaders — signatures unchanged.
+
+---
+
+## Playback control: `AnimatedSvgController`
+
+When you need programmatic control over animation — use `AnimatedSvgPicture` directly (not `FSvgPicture`) and attach a controller.
+
+```dart
+final controller = AnimatedSvgController();
+
+@override
+void dispose() {
+  controller.dispose(); // AnimatedSvgController extends ChangeNotifier
+  super.dispose();
+}
+```
+
+```dart
+AnimatedSvgPicture.asset(
+  'assets/loader.svg',
+  controller: controller,
+  autoPlay: false,      // start paused
+  playbackRate: 1.0,
+)
+```
+
+### Play / pause
+
+```dart
+controller.pause();
+controller.resume();
+controller.togglePlayPause();  // flip current state
+
+bool isPaused = controller.isPaused;
+```
+
+### Seek
+
+```dart
+controller.seek(const Duration(seconds: 2));
+controller.restart();  // seek to zero + unpause
+```
+
+### Speed
+
+```dart
+controller.setPlaybackRate(2.0);   // 2× speed
+controller.setPlaybackRate(0.25);  // slow motion
+double rate = controller.playbackRate;
+```
+
+### Direction
+
+```dart
+controller.reverse();          // play backwards
+controller.forward();          // back to normal
+controller.toggleDirection();  // flip
+bool isReversed = controller.isReversed;
+```
+
+### SVG `<view>` navigation
+
+SVG files can define named viewports via the `<view>` element. The controller can switch between them at runtime:
+
+```dart
+// After the widget renders, available views are populated
+print(controller.availableViews); // ['intro', 'loop', 'outro']
+
+controller.switchToView('loop');
+controller.switchToView(null);  // back to root viewBox
+```
+
+### Listening to state changes
+
+`AnimatedSvgController` extends `ChangeNotifier`, so you can react to state changes:
+
+```dart
+controller.addListener(() {
+  setState(() {}); // rebuild when paused/resumed/seeked
+});
+```
 
 ---
 
@@ -46,45 +160,6 @@ dependencies:
 ```
 
 ---
-
-## Basic usage
-
-```dart
-// Static SVG — identical to flutter_svg
-SvgPicture.asset('assets/logo.svg')
-SvgPicture.network('https://example.com/icon.svg', semanticsLabel: 'icon')
-SvgPicture.string('<svg>...</svg>', width: 200)
-
-// Tinting
-SvgPicture.asset(
-  'assets/icon.svg',
-  colorFilter: const ColorFilter.mode(Colors.blue, BlendMode.srcIn),
-)
-
-// Custom color mapping
-SvgPicture.asset('assets/branded.svg', colorMapper: const MyColorMapper())
-```
-
-## Animated SVG
-
-```dart
-// Plays SMIL/CSS animations automatically
-AnimatedSvgPicture.asset('assets/spinner.svg')
-AnimatedSvgPicture.network('https://example.com/chart.svg')
-
-// Manual playback control
-final controller = SvgAnimationController();
-
-AnimatedSvgPicture.asset(
-  'assets/logo.svg',
-  controller: controller,
-  autoplay: false,
-)
-
-controller.play();
-controller.pause();
-controller.seek(const Duration(milliseconds: 500));
-```
 
 ## Render to canvas / image
 
@@ -98,7 +173,6 @@ final PictureInfo info = await vg.loadPicture(
 
 canvas.drawPicture(info.picture);
 
-// Or export as image
 final ui.Image image = await info.picture.toImage(width, height);
 info.picture.dispose();
 ```
@@ -130,8 +204,6 @@ info.picture.dispose();
 
 > **250+ unit test files. W3C SVG 1.1 conformance suite. Visual golden regression. Animation integration tests.**
 
-The test suite is organized into four layers:
-
 | Layer | What it covers |
 |---|---|
 | **Unit** | Every parser, interpolator, filter primitive, CSS property, text layout algorithm, hit-test geometry — individually |
@@ -141,10 +213,10 @@ The test suite is organized into four layers:
 
 Selected test coverage (from `test/unit/`):
 
-- **SMIL**: `smil_test.dart`, `smil_edge_cases_test.dart`, `smil_timing_precision_test.dart`, `smil_keypoints_timing_test.dart`, `smil_path_morphing_integration_test.dart`, `animate_motion_advanced_test.dart`
-- **CSS**: `css_animations_test.dart`, `css_3d_transforms_test.dart`, `css_variables_calc_test.dart`, `css_cascade_specificity_test.dart`, `css_nth_selectors_test.dart`, `css_selectors_combinators_test.dart`
-- **Filters**: `filters_test.dart`, `fe_lighting_test.dart`, `fe_convolve_matrix_test.dart`, `filter_displacement_tile_test.dart`, `filter_input_graph_advanced_test.dart`, `turbulence_edge_cases_test.dart`
-- **Text**: `text_typography_parity_test.dart`, `text_bidi_complex_scripts_test.dart`, `text_ligature_shaping_test.dart`, `text_path_precision_test.dart`, `text_advanced_typography_features_test.dart`
+- **SMIL**: `smil_test.dart`, `smil_timing_precision_test.dart`, `smil_keypoints_timing_test.dart`, `smil_path_morphing_integration_test.dart`, `animate_motion_advanced_test.dart`
+- **CSS**: `css_animations_test.dart`, `css_3d_transforms_test.dart`, `css_variables_calc_test.dart`, `css_cascade_specificity_test.dart`, `css_nth_selectors_test.dart`
+- **Filters**: `filters_test.dart`, `fe_lighting_test.dart`, `fe_convolve_matrix_test.dart`, `filter_displacement_tile_test.dart`, `turbulence_edge_cases_test.dart`
+- **Text**: `text_typography_parity_test.dart`, `text_bidi_complex_scripts_test.dart`, `text_ligature_shaping_test.dart`, `text_path_precision_test.dart`
 - **Clipping/Masking**: `advanced_clip_mask_composition_test.dart`, `mask_pipeline_test.dart`, `clip_path_advanced_test.dart`
 - **Geometry**: `path_morphing_correctness_test.dart`, `geometry_edge_cases_test.dart`, `gradient_pattern_units_test.dart`, `marker_test.dart`
 - **Hit-testing**: `hit_test_advanced_features_test.dart`, `hit_test_precision_test.dart`, `hit_test_deep_nesting_test.dart`
@@ -159,7 +231,7 @@ Gradient shaders, pattern images, text paragraphs, and hit-test geometry are all
 Optional `raster` render strategy for `drawImage` performance:
 
 ```dart
-SvgPicture.asset('assets/icon.svg', renderStrategy: RenderStrategy.raster)
+FSvgPicture.asset('assets/icon.svg', renderingStrategy: RenderingStrategy.raster)
 ```
 
 ---
@@ -196,7 +268,7 @@ class ThemeColorMapper extends ColorMapper {
   }
 }
 
-SvgPicture.asset('assets/logo.svg', colorMapper: ThemeColorMapper(Theme.of(context).primaryColor))
+FSvgPicture.asset('assets/logo.svg', colorMapper: ThemeColorMapper(Theme.of(context).primaryColor))
 ```
 
 ---
