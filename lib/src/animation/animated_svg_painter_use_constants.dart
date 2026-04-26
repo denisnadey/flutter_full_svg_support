@@ -1,6 +1,6 @@
 part of 'animated_svg_painter.dart';
 
-/// Maximum recursion depth for nested <use> elements (matching Blink).
+/// Maximum recursion depth for nested `<use>` elements (matching Blink).
 /// This prevents infinite loops and excessive resource usage.
 const int _kMaxUseRecursionDepth = 10;
 
@@ -14,7 +14,7 @@ CssCascadeResolver? _currentDocumentCssResolver;
 
 /// CSS properties that are inherited by default per CSS/SVG specification.
 /// Non-inherited properties (like opacity, transform, display) should NOT
-/// flow through <use> boundaries.
+/// flow through `<use>` boundaries.
 const Set<String> _cssInheritablePropertiesForUse = {
   // Color properties
   'color',

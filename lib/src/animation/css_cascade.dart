@@ -214,14 +214,14 @@ const Set<String> cssInheritableProperties = {
 /// For use-referenced elements, the cascade order is:
 /// 1. Inline style on referenced element (highest - specificity 1,0,0,0)
 /// 2. !important declarations
-/// 3. CSS rules from <style> blocks (by specificity, then source order)
+/// 3. CSS rules from `<style>` blocks (by specificity, then source order)
 /// 4. Presentation attributes on referenced element (specificity 0,0,0,0)
-/// 5. Inherited from <use> element's style attribute (for inheritable props)
-/// 6. Inherited from <use> element's presentation attributes (for inheritable props)
+/// 5. Inherited from `<use>` element's style attribute (for inheritable props)
+/// 6. Inherited from `<use>` element's presentation attributes (for inheritable props)
 /// 7. Inherited from use's ancestors
 ///
 /// Shadow Boundary Behavior:
-/// Per SVG 2 spec, <use> creates a shadow-like scope:
+/// Per SVG 2 spec, `<use>` creates a shadow-like scope:
 /// - CSS selectors with combinators (>, ~, +, space) stop at shadow boundary
 /// - Inherited CSS properties flow through the boundary
 /// - The shadow root ID can be tracked to properly scope selector matching

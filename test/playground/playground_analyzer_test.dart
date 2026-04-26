@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import '../../example/lib/playground/playground_analyzer.dart';
+import 'package:flutter_svg_example/playground/playground_analyzer.dart';
 
 void main() {
   group('PlaygroundAnalyzer', () {

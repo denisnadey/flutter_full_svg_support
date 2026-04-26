@@ -1,3 +1,4 @@
+// ignore_for_file: implementation_imports
 import 'dart:convert';
 
 import 'package:full_svg_flutter/src/animation.dart';

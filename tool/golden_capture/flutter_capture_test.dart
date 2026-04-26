@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_print
 // Copyright 2024 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
@@ -16,7 +17,7 @@
 /// Run comparison tests:
 ///   flutter test tool/golden_capture/flutter_capture_test.dart --tags=compare
 @Tags(['golden'])
-library flutter_capture_test;
+library;
 
 import 'dart:io';
 import 'dart:typed_data';
@@ -111,7 +112,6 @@ void main() {
         if (browserGoldenFile.existsSync()) {
           await _compareSvg(tester, svgName);
         } else {
-          // ignore: avoid_print
           print('  ⚠️ Skipping comparison - no browser golden for $svgName');
         }
       }, tags: ['full']);
@@ -144,13 +144,11 @@ List<String> _getAvailableSvgFiles() {
 
 /// Captures an SVG file to PNG.
 Future<void> _captureSvg(WidgetTester tester, String svgName) async {
-  // ignore: avoid_print
   print('📸 Capturing $svgName...');
 
   // Load SVG file
   final svgFile = File('$kSvgAssetsDir/$svgName.svg');
   if (!svgFile.existsSync()) {
-    // ignore: avoid_print
     print('  ⚠️ SVG file not found: ${svgFile.path}');
     return;
   }
@@ -218,7 +216,6 @@ Future<void> _captureSvg(WidgetTester tester, String svgName) async {
     await outputFile.parent.create(recursive: true);
     await outputFile.writeAsBytes(pngBytes);
 
-    // ignore: avoid_print
     print('  ✅ Saved: ${outputFile.path} (${pngBytes.length} bytes)');
   } finally {
     // Reset viewport
@@ -229,15 +226,12 @@ Future<void> _captureSvg(WidgetTester tester, String svgName) async {
 
 /// Compares Flutter-rendered SVG against browser golden.
 Future<void> _compareSvg(WidgetTester tester, String svgName) async {
-  // ignore: avoid_print
   print('🔍 Comparing $svgName...');
 
   // Load Flutter golden
   final flutterGoldenFile = File('$kFlutterGoldensDir/$svgName.png');
   if (!flutterGoldenFile.existsSync()) {
-    // ignore: avoid_print
     print('  ⚠️ Flutter golden not found: ${flutterGoldenFile.path}');
-    // ignore: avoid_print
     print('  Run capture tests first: flutter test ... --tags=capture');
     return;
   }
@@ -245,9 +239,7 @@ Future<void> _compareSvg(WidgetTester tester, String svgName) async {
   // Load browser golden
   final browserGoldenFile = File('$kBrowserGoldensDir/$svgName.png');
   if (!browserGoldenFile.existsSync()) {
-    // ignore: avoid_print
     print('  ⚠️ Browser golden not found: ${browserGoldenFile.path}');
-    // ignore: avoid_print
     print('  Run browser capture first: node tool/golden_capture/capture.js');
     return;
   }
@@ -265,7 +257,6 @@ Future<void> _compareSvg(WidgetTester tester, String svgName) async {
 
   // Report results
   final percentage = (result.similarity * 100).toStringAsFixed(1);
-  // ignore: avoid_print
   print(
     '  $svgName: $percentage% similar '
     '(${result.differentPixels} different pixels out of ${result.totalPixels})',
@@ -276,7 +267,6 @@ Future<void> _compareSvg(WidgetTester tester, String svgName) async {
     final diffFile = File('$kDiffOutputDir/$svgName.png');
     await diffFile.parent.create(recursive: true);
     await diffFile.writeAsBytes(result.diffImage!);
-    // ignore: avoid_print
     print('  📊 Diff saved: ${diffFile.path}');
   }
 
@@ -289,7 +279,6 @@ Future<void> _compareSvg(WidgetTester tester, String svgName) async {
         'below threshold $kDefaultThreshold',
   );
 
-  // ignore: avoid_print
   print('  ✅ PASSED');
 }
 
@@ -373,31 +362,22 @@ class BatchComparisonResult {
   double get passRate => results.isEmpty ? 0.0 : passed.length / results.length;
 
   void printSummary() {
-    // ignore: avoid_print
     print('\n📊 Batch Comparison Summary');
-    // ignore: avoid_print
     print('=' * 50);
-    // ignore: avoid_print
     print('Passed: ${passed.length}');
-    // ignore: avoid_print
     print('Failed: ${failed.length}');
-    // ignore: avoid_print
     print('Skipped: ${skipped.length}');
-    // ignore: avoid_print
     print('Pass Rate: ${(passRate * 100).toStringAsFixed(1)}%');
 
     if (failed.isNotEmpty) {
-      // ignore: avoid_print
       print('\nFailed tests:');
       for (final name in failed) {
         final result = results[name];
         if (result != null) {
-          // ignore: avoid_print
           print('  ❌ $name: ${(result.similarity * 100).toStringAsFixed(1)}%');
         }
       }
     }
-    // ignore: avoid_print
     print('=' * 50);
   }
 }

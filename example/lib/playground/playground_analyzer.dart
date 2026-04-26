@@ -1,3 +1,4 @@
+// ignore_for_file: implementation_imports
 import 'package:full_svg_flutter/src/animation.dart';
 import 'package:full_svg_flutter/src/animation/smil/smil_parser.dart';
 

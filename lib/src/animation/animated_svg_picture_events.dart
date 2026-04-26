@@ -67,7 +67,7 @@ class _EventDispatchContext {
 
 extension _AnimatedSvgPictureStateEventsExtension on _AnimatedSvgPictureState {
   /// Handle tap with full W3C event model support.
-  /// Events bubble through the DOM tree and get retargeted through <use> shadows.
+  /// Events bubble through the DOM tree and get retargeted through `<use>` shadows.
   void _handleTapDown(TapDownDetails details) {
     final hitResult = _hitTestWithEventModel(details.localPosition);
     final actualTargetId = hitResult.elementId;

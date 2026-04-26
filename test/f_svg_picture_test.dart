@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:full_svg_flutter/full_svg_flutter.dart';
-import 'package:full_svg_flutter/src/animation/animated_svg_picture.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 

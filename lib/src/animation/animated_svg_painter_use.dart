@@ -1,6 +1,6 @@
 part of 'animated_svg_painter.dart';
 
-/// Extension for painting <use> elements and their referenced content.
+/// Extension for painting `<use>` elements and their referenced content.
 ///
 /// This extension handles:
 /// - Basic use element rendering with x/y translation

@@ -1,8 +1,8 @@
 import 'package:full_svg_flutter/src/animation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../../example/lib/playground/playground_models.dart';
-import '../../example/lib/playground/playground_trace_store.dart';
+import 'package:flutter_svg_example/playground/playground_models.dart';
+import 'package:flutter_svg_example/playground/playground_trace_store.dart';
 
 void main() {
   group('PlaygroundTraceStore', () {

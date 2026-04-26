@@ -63,7 +63,7 @@ extension AnimatedSvgPainterTextLayoutRenderExtension on AnimatedSvgPainter {
     final fontFeaturesKey = _fontFeaturesHashKey(allFontFeatures);
     final useCache = foregroundPaint == null;
     final cacheKey =
-        _RenderCache.textKey(
+        '${_RenderCache.textKey(
           processedText,
           effectiveFontSize,
           style.fontFamily,
@@ -71,8 +71,7 @@ extension AnimatedSvgPainterTextLayoutRenderExtension on AnimatedSvgPainter {
           style.fontStyle.index,
           style.letterSpacing,
           style.color.toARGB32(),
-        ) +
-        '|$fontFeaturesKey';
+        )}|$fontFeaturesKey';
 
     if (useCache) {
       final cached = _renderCache.textParagraphs[cacheKey];
@@ -151,8 +150,9 @@ extension AnimatedSvgPainterTextLayoutRenderExtension on AnimatedSvgPainter {
       paragraph.layout(const ui.ParagraphConstraints(width: 1000000));
       return paragraph;
     }
-    if (runs.length == 1)
+    if (runs.length == 1) {
       return _buildTextParagraph(runs.first.text, runs.first.style);
+    }
 
     final firstStyle = runs.first.style;
     final cacheKeyBuffer = StringBuffer('mr:');
@@ -221,14 +221,17 @@ extension AnimatedSvgPainterTextLayoutRenderExtension on AnimatedSvgPainter {
       if (!canShareLigatures && i > 0) paragraphBuilder.addText('\u200C');
 
       final fontVariations = <ui.FontVariation>[];
-      if ((style.fontStretch - 100.0).abs() > 0.1)
+      if ((style.fontStretch - 100.0).abs() > 0.1) {
         fontVariations.add(ui.FontVariation('wdth', style.fontStretch));
-      if (style.fontOpticalSizing == 'auto')
+      }
+      if (style.fontOpticalSizing == 'auto') {
         fontVariations.add(ui.FontVariation('opsz', style.fontSize));
-      if (style.fontVariationSettings != null)
+      }
+      if (style.fontVariationSettings != null) {
         fontVariations.addAll(
           _parseFontVariationSettings(style.fontVariationSettings!),
         );
+      }
 
       final decoration = _buildTextDecoration(style.decorations);
       final runFillPaint = ui.Paint()
@@ -276,10 +279,11 @@ extension AnimatedSvgPainterTextLayoutRenderExtension on AnimatedSvgPainter {
     _addFontVariantNumericFeatures(features, style.fontVariantNumeric);
     _addFontVariantLigaturesFeatures(features, style.fontVariantLigatures);
     _addFontVariantPositionFeatures(features, style.fontVariantPosition);
-    if (style.fontKerning == 'none')
+    if (style.fontKerning == 'none') {
       features.add(const ui.FontFeature.disable('kern'));
-    else if (style.fontKerning == 'normal')
+    } else if (style.fontKerning == 'normal') {
       features.add(const ui.FontFeature.enable('kern'));
+    }
     return features;
   }
 
@@ -290,8 +294,9 @@ extension AnimatedSvgPainterTextLayoutRenderExtension on AnimatedSvgPainter {
     final n = nextChar.toLowerCase();
     if (c == 'f' && (n == 'i' || n == 'l' || n == 'f')) return true;
     if ((c == 's' && n == 't') || (c == 'c' && n == 't')) return true;
-    if ((char == 'T' && nextChar == 'h') || (char == 'Q' && nextChar == 'u'))
+    if ((char == 'T' && nextChar == 'h') || (char == 'Q' && nextChar == 'u')) {
       return true;
+    }
     return false;
   }
 
@@ -304,8 +309,9 @@ extension AnimatedSvgPainterTextLayoutRenderExtension on AnimatedSvgPainter {
     final strokeValue = _getInheritedAttributeValue(node, 'stroke');
     if (strokeValue == null ||
         strokeValue.toString().trim() == 'none' ||
-        strokeValue.toString().trim().isEmpty)
+        strokeValue.toString().trim().isEmpty) {
       return null;
+    }
 
     final strokeColor = _resolveColorForNode(strokeValue, node);
     final strokeUsesPaintServer = _extractPaintServerId(strokeValue) != null;

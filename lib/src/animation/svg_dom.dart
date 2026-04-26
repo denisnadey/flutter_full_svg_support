@@ -19,10 +19,10 @@ enum SvgAttributeType {
   /// Transformation: transform attribute
   transform,
 
-  /// Path data: d attribute for <path>
+  /// Path data: d attribute for `<path>`
   path,
 
-  /// Point lists: points for <polygon>, <polyline>
+  /// Point lists: points for `<polygon>`, `<polyline>`
   points,
 
   /// String value (for discrete animations)
@@ -136,10 +136,10 @@ class SvgNode {
 
   // === Accessibility Properties ===
 
-  /// Title text from child <title> element (for tooltips/accessibility).
+  /// Title text from child `<title>` element (for tooltips/accessibility).
   String? titleText;
 
-  /// Description text from child <desc> element (for accessibility).
+  /// Description text from child `<desc>` element (for accessibility).
   String? descText;
 
   /// ARIA label attribute value (aria-label).
@@ -418,9 +418,9 @@ bool isFocusableElement(SvgNode node) {
   return false;
 }
 
-/// Represents an SVG <view> element.
+/// Represents an SVG `<view>` element.
 ///
-/// A <view> element defines an alternate view of an SVG document,
+/// A `<view>` element defines an alternate view of an SVG document,
 /// with its own viewBox and preserveAspectRatio.
 class SvgViewElement {
   const SvgViewElement({this.id, this.viewBox, this.preserveAspectRatio});
@@ -455,7 +455,7 @@ class SvgDocument {
        _views = {},
        _fontRegistry = SvgFontRegistry();
 
-  /// Root <svg> node
+  /// Root `<svg>` node
   final SvgNode root;
 
   /// Document viewBox (if specified)
@@ -485,7 +485,7 @@ class SvgDocument {
   /// Font registry for managing embedded fonts.
   final SvgFontRegistry _fontRegistry;
 
-  /// Parsed <view> elements by ID
+  /// Parsed `<view>` elements by ID
   final Map<String, SvgViewElement> _views;
 
   /// Current active view ID (from fragment identifier or programmatic switch)
@@ -516,7 +516,7 @@ class SvgDocument {
     return root.getAttributeValue('preserveAspectRatio')?.toString();
   }
 
-  /// Register a <view> element
+  /// Register a `<view>` element
   void registerView(SvgViewElement view) {
     if (view.id != null) {
       _views[view.id!] = view;
@@ -549,11 +549,11 @@ class SvgDocument {
   // === Accessibility Properties ===
 
   /// The accessible name for the entire SVG widget.
-  /// Returns aria-label if present, otherwise the root <title> text.
+  /// Returns aria-label if present, otherwise the root `<title>` text.
   String? get accessibleName => root.ariaLabel ?? root.titleText;
 
   /// The accessible description for the entire SVG widget.
-  /// Returns aria-describedby if present, otherwise the root <desc> text.
+  /// Returns aria-describedby if present, otherwise the root `<desc>` text.
   String? get accessibleDescription => root.ariaDescribedby ?? root.descText;
 
   /// The ARIA role for the SVG widget.

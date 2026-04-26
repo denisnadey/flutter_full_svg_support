@@ -1,32 +1,32 @@
 part of 'animated_svg_painter.dart';
 
-/// Context for tracking inherited CSS properties across <use> element boundaries.
+/// Context for tracking inherited CSS properties across `<use>` element boundaries.
 ///
 /// Per SVG spec, presentation attributes and inherited CSS properties on a
-/// <use> element should be visible to the referenced content. This context
+/// `<use>` element should be visible to the referenced content. This context
 /// captures those inherited values and makes them available during rendering
 /// of the referenced subtree.
 ///
 /// Cascade priority (highest to lowest):
 /// 1. Inline style on referenced element (with !important taking absolute priority)
-/// 2. CSS rules from <style> blocks (by specificity, then source order)
+/// 2. CSS rules from `<style>` blocks (by specificity, then source order)
 /// 3. Presentation attributes on referenced element
-/// 4. Inherited from <use> element's style attribute (for inheritable props only)
-/// 5. Inherited from <use> element's presentation attributes (for inheritable props)
+/// 4. Inherited from `<use>` element's style attribute (for inheritable props only)
+/// 5. Inherited from `<use>` element's presentation attributes (for inheritable props)
 /// 6. Inherited from use's ancestors (DOM tree)
 /// 7. Inherited from parent use context (nested use chains)
 ///
-/// IMPORTANT: Only inheritable CSS properties should flow through <use> boundaries.
+/// IMPORTANT: Only inheritable CSS properties should flow through `<use>` boundaries.
 /// Non-inherited properties (opacity, transform, display, clip-path, mask, filter)
 /// should NOT cascade to referenced content.
 ///
 /// ID Namespace Scoping:
-/// When multiple <use> elements reference the same content, internal IDs (for
+/// When multiple `<use>` elements reference the same content, internal IDs (for
 /// filters, gradients, clip-paths) are scoped per-use instance to avoid conflicts.
 /// Each use context tracks its unique instance ID for proper ID resolution.
 ///
 /// Shadow Boundary Behavior:
-/// Per SVG 2 spec, <use> creates a shadow-like scope:
+/// Per SVG 2 spec, `<use>` creates a shadow-like scope:
 /// - CSS selectors with combinators (>, ~, +, space) stop at shadow boundary
 /// - Inherited CSS properties flow through the boundary
 /// - Original definition context CSS rules still apply to referenced elements
@@ -53,13 +53,13 @@ class _UseInheritanceContext {
     _instanceCounter = 0;
   }
 
-  /// The <use> element providing inherited properties.
+  /// The `<use>` element providing inherited properties.
   final SvgNode useNode;
 
-  /// Parent inheritance context for nested <use> chains.
+  /// Parent inheritance context for nested `<use>` chains.
   final _UseInheritanceContext? parentContext;
 
-  /// CSS rules from the document's <style> blocks.
+  /// CSS rules from the document's `<style>` blocks.
   /// Used to resolve CSS class/id rules on referenced elements.
   final List<CssSelectorRule>? cssRules;
 
@@ -210,7 +210,7 @@ class _UseInheritanceContext {
 
   /// Gets the inherited value for a property, checking the use chain.
   ///
-  /// Per SVG spec, inherited CSS properties flow through <use> shadow boundaries.
+  /// Per SVG spec, inherited CSS properties flow through `<use>` shadow boundaries.
   /// This method traverses the use chain from innermost to outermost, allowing
   /// each level to override or inherit from its parent.
   ///
@@ -317,7 +317,7 @@ class _UseInheritanceContext {
   /// Gets the inherited value for display property.
   ///
   /// Note: display:none does NOT inherit in CSS, but we track it through
-  /// use boundaries because if a <use> element has display:none, its
+  /// use boundaries because if a `<use>` element has display:none, its
   /// entire shadow content should not render.
   String? getUseDisplayValue() {
     final display = _extractStyleValueFromNode(useNode, 'display');
@@ -390,7 +390,7 @@ class _UseInheritanceContext {
   ///
   /// Per SVG 2 spec and CSS cascade:
   /// 1. Inline styles on referenced elements (with !important taking absolute priority)
-  /// 2. CSS rules from <style> apply normally (respecting shadow boundary for combinators)
+  /// 2. CSS rules from `<style>` apply normally (respecting shadow boundary for combinators)
   /// 3. Presentation attributes on referenced elements
   /// 4. Use element's style attribute (for inheritable properties only)
   /// 5. Use element's presentation attributes (for inheritable properties only)
@@ -549,7 +549,7 @@ class _UseInheritanceContext {
 
   /// Gets the inherited pointer-events value through use boundaries.
   ///
-  /// Per SVG spec, pointer-events on a <use> element affects the entire
+  /// Per SVG spec, pointer-events on a `<use>` element affects the entire
   /// shadow tree. This cascades correctly through nested use elements.
   String? getInheritedPointerEvents() {
     final pointerEvents = _extractStyleValueFromNode(useNode, 'pointer-events');
@@ -613,7 +613,7 @@ class _UseInheritanceContext {
 
   /// Gets a scoped ID that is unique to this use instance.
   String getScopedId(String originalId) {
-    return '${instanceId}$originalId';
+    return '$instanceId$originalId';
   }
 
   /// Gets the root use context (the outermost use in nested chains).

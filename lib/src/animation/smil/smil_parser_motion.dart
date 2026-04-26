@@ -1,6 +1,6 @@
 part of 'smil_parser.dart';
 
-/// Parse an <animateMotion> element
+/// Parse an `<animateMotion>` element
 SmilAnimation? _parseAnimateMotion(
   SvgNode animNode,
   SvgNode targetNode,
@@ -283,8 +283,8 @@ String? _resolveAnimateMotionPathData(SvgNode animNode, SvgDocument document) {
   return referencedPath.trim();
 }
 
-/// Evaluate a <switch> element and return the path data of the first matching child.
-/// Per SVG spec, the <switch> element evaluates requiredFeatures, requiredExtensions,
+/// Evaluate a `<switch>` element and return the path data of the first matching child.
+/// Per SVG spec, the `<switch>` element evaluates requiredFeatures, requiredExtensions,
 /// and systemLanguage attributes on each child and renders the first child where
 /// all specified attributes evaluate to true.
 String? _evaluateSwitchAndGetPath(SvgNode switchNode, SvgDocument document) {

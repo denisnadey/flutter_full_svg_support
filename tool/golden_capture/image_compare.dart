@@ -6,7 +6,7 @@
 ///
 /// This library provides pixel-by-pixel comparison of PNG images
 /// for comparing Flutter-rendered SVGs against browser golden references.
-library image_compare;
+library;
 
 import 'dart:typed_data';
 import 'dart:ui' as ui;

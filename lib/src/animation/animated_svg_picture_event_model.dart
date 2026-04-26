@@ -16,27 +16,27 @@ class _EventHitTestResult {
   /// Link info from the nearest <a> ancestor.
   final SvgLinkInfo? anchorInfo;
 
-  /// The ID of the <use> element if hit is inside a use shadow tree.
+  /// The ID of the `<use>` element if hit is inside a use shadow tree.
   final String? useElementId;
 
   /// The composed path including shadow tree elements.
   /// This is the full path from root through use to the actual element.
   final List<String> composedPath;
 
-  /// The shadow path - elements inside the <use> shadow tree only.
+  /// The shadow path - elements inside the `<use>` shadow tree only.
   /// Used for W3C composedPath() behavior.
   final List<String> shadowPath;
 
-  /// Whether the hit is inside a <use> shadow tree.
+  /// Whether the hit is inside a `<use>` shadow tree.
   bool get isInsideUseShadow => useElementId != null;
 
   /// Returns the retargeted element ID (use element if inside shadow).
   /// Per W3C spec, events fired inside a shadow tree have their target
-  /// retargeted to the shadow host (the <use> element).
+  /// retargeted to the shadow host (the `<use>` element).
   String? get retargetedElementId => useElementId ?? elementId;
 
   /// Returns the event path for non-composed events (retargeted).
-  /// Starts from the <use> element when inside a shadow tree.
+  /// Starts from the `<use>` element when inside a shadow tree.
   List<String> get retargetedPath {
     if (useElementId == null) return composedPath;
     // Find the use element in the composed path and return from there
@@ -385,7 +385,7 @@ class _UseEventContext {
   _UseEventContext({this.useElementId, List<String>? shadowPathBuilder})
     : shadowPathBuilder = shadowPathBuilder ?? [];
 
-  /// The ID of the <use> element that is the shadow host.
+  /// The ID of the `<use>` element that is the shadow host.
   final String? useElementId;
 
   /// Builder for tracking the shadow path (elements inside the use shadow).

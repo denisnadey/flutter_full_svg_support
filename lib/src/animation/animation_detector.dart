@@ -8,7 +8,7 @@ class AnimationDetector {
   /// Check whether the SVG contains animations (SMIL or CSS)
   ///
   /// Uses a fast regex search to detect the presence of:
-  /// - SMIL elements: <animate>, <animateTransform>, <animateMotion>, <set>
+  /// - SMIL elements: `<animate>`, `<animateTransform>`, `<animateMotion>`, `<set>`
   /// - CSS animations: @keyframes, animation-* properties
   /// - CSS transitions: transition-* properties
   ///
@@ -104,22 +104,22 @@ class AnimationInfo {
     this.hasCssTransitionProperty = false,
   });
 
-  /// Whether there are <animate> elements
+  /// Whether there are `<animate>` elements
   final bool hasSmilAnimate;
 
-  /// Whether there are <animateTransform> elements
+  /// Whether there are `<animateTransform>` elements
   final bool hasSmilAnimateTransform;
 
-  /// Whether there are <animateMotion> elements
+  /// Whether there are `<animateMotion>` elements
   final bool hasSmilAnimateMotion;
 
-  /// Whether there are <set> elements
+  /// Whether there are `<set>` elements
   final bool hasSmilSet;
 
-  /// Whether there are <animateColor> elements (deprecated)
+  /// Whether there are `<animateColor>` elements (deprecated)
   final bool hasSmilAnimateColor;
 
-  /// Whether there are @keyframes in <style>
+  /// Whether there are @keyframes in `<style>`
   final bool hasCssKeyframes;
 
   /// Whether there are CSS animation-* properties

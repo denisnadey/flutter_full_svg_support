@@ -1,3 +1,4 @@
+// ignore_for_file: implementation_imports
 import 'package:flutter/material.dart';
 import 'package:full_svg_flutter/src/animation.dart';
 

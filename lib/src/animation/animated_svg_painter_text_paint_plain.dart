@@ -58,8 +58,9 @@ extension AnimatedSvgPainterTextPlainExtension on AnimatedSvgPainter {
       isFirstLine: isFirstLine,
       isLastLine: isLastLine,
     );
-    if (hangingInfo.startHangWidth > 0)
+    if (hangingInfo.startHangWidth > 0) {
       effectiveX -= hangingInfo.startHangWidth;
+    }
     var effectiveStyle = style;
     var paragraph = _buildTextParagraph(text, effectiveStyle);
     var width = paragraph.maxIntrinsicWidth;
@@ -163,7 +164,7 @@ extension AnimatedSvgPainterTextPlainExtension on AnimatedSvgPainter {
         return;
       }
 
-      final drawWithShader = (double x) {
+      bool drawWithShader(double x) {
         if (fillValue == null) {
           return false;
         }
@@ -197,7 +198,7 @@ extension AnimatedSvgPainterTextPlainExtension on AnimatedSvgPainter {
           text: text,
         );
         return true;
-      };
+      }
 
       if ((scaleX - 1.0).abs() > 1e-6) {
         canvas.save();
@@ -236,7 +237,7 @@ extension AnimatedSvgPainterTextPlainExtension on AnimatedSvgPainter {
 
     void drawStroke() {
       if (strokeParagraph == null) return;
-      final drawWithShader = (double x) {
+      bool drawWithShader(double x) {
         if (strokeValue == null) {
           return false;
         }
@@ -256,7 +257,7 @@ extension AnimatedSvgPainterTextPlainExtension on AnimatedSvgPainter {
         if (shaderStrokeParagraph == null) return false;
         canvas.drawParagraph(shaderStrokeParagraph, ui.Offset(x, drawY));
         return true;
-      };
+      }
       if ((scaleX - 1.0).abs() > 1e-6) {
         canvas.save();
         canvas.translate(drawX, 0.0);

@@ -1,7 +1,7 @@
 part of 'animated_svg_painter.dart';
 
 /// Internal use context being passed during rendering.
-/// Used to track CSS inheritance across <use> boundaries.
+/// Used to track CSS inheritance across `<use>` boundaries.
 _UseInheritanceContext? _currentUseContext;
 
 void _paintNodeImpl(
@@ -23,7 +23,7 @@ void _paintNodeImpl(
 
 /// Paints a node with use inheritance context for proper CSS cascade.
 /// This is the core rendering function that handles CSS property inheritance
-/// from <use> elements to their referenced content.
+/// from `<use>` elements to their referenced content.
 void _paintNodeImplWithUseContext(
   AnimatedSvgPainter painter,
   ui.Canvas canvas,
@@ -506,7 +506,7 @@ bool _paintLightingPassImpl(
     return false;
   }
 
-  final key = '$filterId|${width}x${height}|$kind';
+  final key = '$filterId|${width}x$height|$kind';
   final image = painter.lightingImagesByFilterKey[key];
   if (image == null) {
     return false;
@@ -1137,7 +1137,7 @@ bool _paintDisplacementPassImpl(
     return false;
   }
 
-  final key = '${pass.displacementFilter.id}|${width}x${height}';
+  final key = '${pass.displacementFilter.id}|${width}x$height';
   final image = painter.displacementImagesByFilterKey[key];
   if (image == null) {
     return false;

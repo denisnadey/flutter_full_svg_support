@@ -1,5 +1,5 @@
 @Tags(['golden', 'w3c'])
-library w3c_static_golden_test;
+library;
 
 import 'dart:async';
 import 'dart:convert';
@@ -110,7 +110,7 @@ String _buildTraceRunId() {
   final min = now.minute.toString().padLeft(2, '0');
   final s = now.second.toString().padLeft(2, '0');
   final ms = now.millisecond.toString().padLeft(3, '0');
-  return 'run-${y}${m}${d}-${h}${min}${s}-${ms}';
+  return 'run-$y$m$d-$h$min$s-$ms';
 }
 
 class _CaseTraceCollector {

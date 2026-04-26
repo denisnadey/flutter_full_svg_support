@@ -168,8 +168,8 @@ class SvgFilterPaintPass {
       offset: offset ?? this.offset,
       paintFill: paintFill ?? this.paintFill,
       paintStroke: paintStroke ?? this.paintStroke,
-      fillColorOverride: this.fillColorOverride,
-      strokeColorOverride: this.strokeColorOverride,
+      fillColorOverride: fillColorOverride,
+      strokeColorOverride: strokeColorOverride,
     );
   }
 }
@@ -207,8 +207,8 @@ class SvgSolidPaintSourcePass extends SvgFilterPaintPass {
       offset: offset ?? this.offset,
       paintFill: paintFill ?? this.paintFill,
       paintStroke: paintStroke ?? this.paintStroke,
-      fillColorOverride: this.fillColorOverride,
-      strokeColorOverride: this.strokeColorOverride,
+      fillColorOverride: fillColorOverride,
+      strokeColorOverride: strokeColorOverride,
     );
   }
 }

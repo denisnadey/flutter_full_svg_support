@@ -124,8 +124,9 @@ extension AnimatedSvgPainterTextGlyphExtension on AnimatedSvgPainter {
       isLastLine: true,
     );
     double startHangOffset = 0.0;
-    if (hangingInfo.startHangWidth > 0)
+    if (hangingInfo.startHangWidth > 0) {
       startHangOffset = -hangingInfo.startHangWidth;
+    }
     double mixedBaselineOffset = 0.0;
     if (parentStyle != null && parentStyle.fontSize != style.fontSize) {
       final parentParagraph = _buildTextParagraph('X', parentStyle);
@@ -225,8 +226,9 @@ extension AnimatedSvgPainterTextGlyphExtension on AnimatedSvgPainter {
           style: style,
           text: glyph,
         );
-        if (strokeParagraph != null)
+        if (strokeParagraph != null) {
           canvas.drawParagraph(strokeParagraph, ui.Offset(drawX, drawY));
+        }
       }
       if (needsCanvasSave) canvas.restore();
       final scaledWidth = glyphWidth * scaleFactor;

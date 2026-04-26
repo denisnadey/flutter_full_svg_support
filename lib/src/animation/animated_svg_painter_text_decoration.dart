@@ -175,11 +175,12 @@ extension AnimatedSvgPainterTextDecorationExtension on AnimatedSvgPainter {
           markType = part;
           break;
         default:
-          if (part.startsWith("'") || part.startsWith('"'))
+          if (part.startsWith("'") || part.startsWith('"')) {
             return part.substring(1, part.length - 1);
-          else if (part.isNotEmpty &&
-              !['none', 'filled', 'open'].contains(part))
+          } else if (part.isNotEmpty &&
+              !['none', 'filled', 'open'].contains(part)) {
             return part;
+          }
       }
     }
 
@@ -220,8 +221,9 @@ extension AnimatedSvgPainterTextDecorationExtension on AnimatedSvgPainter {
       'brown': 0xFFA52A2A,
     };
 
-    if (colorMap.containsKey(normalized))
+    if (colorMap.containsKey(normalized)) {
       return ui.Color(colorMap[normalized]!);
+    }
 
     if (normalized.startsWith('#')) {
       final hex = normalized.substring(1);
@@ -288,12 +290,13 @@ extension AnimatedSvgPainterTextDecorationExtension on AnimatedSvgPainter {
   String _toFullWidth(String text) {
     final buffer = StringBuffer();
     for (final rune in text.runes) {
-      if (rune >= 0x21 && rune <= 0x7E)
+      if (rune >= 0x21 && rune <= 0x7E) {
         buffer.writeCharCode(rune + 0xFEE0);
-      else if (rune == 0x20)
+      } else if (rune == 0x20) {
         buffer.writeCharCode(0x3000);
-      else
+      } else {
         buffer.writeCharCode(rune);
+      }
     }
     return buffer.toString();
   }
@@ -367,8 +370,9 @@ extension AnimatedSvgPainterTextDecorationExtension on AnimatedSvgPainter {
       'grey': 0xFF808080,
       'transparent': 0x00000000,
     };
-    if (colorMap.containsKey(normalized))
+    if (colorMap.containsKey(normalized)) {
       return ui.Color(colorMap[normalized]!);
+    }
 
     if (normalized.startsWith('#')) {
       final hex = normalized.substring(1);

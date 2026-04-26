@@ -18,7 +18,7 @@ class MotionPathPoint {
 
 /// Class for computing the position and orientation of an element along an SVG path.
 ///
-/// Used to implement SMIL <animateMotion>
+/// Used to implement SMIL `<animateMotion>`
 class MotionPath {
   MotionPath(String pathData) {
     _parsePath(pathData);

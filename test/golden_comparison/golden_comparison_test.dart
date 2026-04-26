@@ -39,7 +39,7 @@
 ///   - Overall progress percentage
 ///
 @Tags(['golden'])
-library golden_comparison_test;
+library;
 
 import 'dart:io';
 import 'dart:typed_data';

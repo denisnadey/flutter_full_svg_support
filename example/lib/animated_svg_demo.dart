@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:full_svg_flutter/src/animation/animated_svg_picture.dart';
+import 'package:full_svg_flutter/full_svg_flutter.dart';
 
 /// SMIL animation demo examples
 void main() {

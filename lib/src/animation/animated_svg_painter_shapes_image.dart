@@ -174,7 +174,7 @@ extension AnimatedSvgPainterShapesImageExtension on AnimatedSvgPainter {
       final targetWidth = width.round();
       final targetHeight = height.round();
       if (activePass is SvgConvolveMatrixPaintPass) {
-        final convolvedKey = '$href|$filterId|${targetWidth}x${targetHeight}';
+        final convolvedKey = '$href|$filterId|${targetWidth}x$targetHeight';
         image = convolvedImagesByFilterKey[convolvedKey] ?? image;
       } else if (activePass is SvgDiffuseLightingPaintPass ||
           activePass is SvgSpecularLightingPaintPass) {
@@ -182,7 +182,7 @@ extension AnimatedSvgPainterShapesImageExtension on AnimatedSvgPainter {
             ? 'diffuse'
             : 'specular';
         final lightingKey =
-            '$href|$filterId|${targetWidth}x${targetHeight}|$variantKind';
+            '$href|$filterId|${targetWidth}x$targetHeight|$variantKind';
         image = lightingImagesByFilterKey[lightingKey] ?? image;
       }
     }
@@ -781,7 +781,7 @@ extension AnimatedSvgPainterShapesImageExtension on AnimatedSvgPainter {
 
   /// Computes transform for nested SVG within foreignObject.
   ///
-  /// When a foreignObject contains an <svg> child with its own viewBox
+  /// When a foreignObject contains an `<svg>` child with its own viewBox
   /// and preserveAspectRatio, the coordinate system composition must
   /// handle all preserveAspectRatio values correctly.
   ///

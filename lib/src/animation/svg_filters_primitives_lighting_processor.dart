@@ -6,6 +6,7 @@ extension SvgLightSourceExtension on SvgLightSource {
   ///
   /// For distant lights, returns the constant direction.
   /// For point/spot lights, returns direction from origin as approximation.
+  // ignore: library_private_types_in_public_api
   _LightingVector3 getPrimaryDirection() {
     if (this is SvgDistantLightSource) {
       final distant = this as SvgDistantLightSource;

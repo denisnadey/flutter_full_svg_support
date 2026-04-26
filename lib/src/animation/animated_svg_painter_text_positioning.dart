@@ -405,9 +405,12 @@ extension AnimatedSvgPainterTextPositioningExtension on AnimatedSvgPainter {
   ///
   /// This is a convenience method that extracts just the Y offset for
   /// horizontal text rendering, which is the most common case.
+  // ignore: library_private_types_in_public_api
   double resolveMixedBaselineOffset({
     required SvgNode node,
+    // ignore: library_private_types_in_public_api
     required _ResolvedTextStyle currentStyle,
+    // ignore: library_private_types_in_public_api
     _ResolvedTextStyle? parentStyle,
   }) {
     // Use accumulated offset for deep nesting support

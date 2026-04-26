@@ -1,16 +1,17 @@
+// ignore_for_file: avoid_print
 // Copyright 2024 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-/// SVG Rendering Performance Benchmarks
-///
-/// This benchmark suite establishes baseline performance metrics for SVG
-/// rendering operations to enable regression detection and cache tuning.
-///
-/// Run with: flutter test benchmark/svg_render_benchmark.dart
-///
-/// For JSON output:
-/// flutter test benchmark/svg_render_benchmark.dart --dart-define=JSON_OUTPUT=true
+// SVG Rendering Performance Benchmarks
+//
+// This benchmark suite establishes baseline performance metrics for SVG
+// rendering operations to enable regression detection and cache tuning.
+//
+// Run with: flutter test benchmark/svg_render_benchmark.dart
+//
+// For JSON output:
+// flutter test benchmark/svg_render_benchmark.dart --dart-define=JSON_OUTPUT=true
 
 import 'benchmark_config.dart';
 import 'benchmarks/parse_benchmark.dart';
@@ -49,7 +50,7 @@ class BenchmarkResult {
         : '';
     return 'Benchmark: $name - min: ${minMs.toStringAsFixed(3)}ms, '
         'avg: ${avgMs.toStringAsFixed(3)}ms, max: ${maxMs.toStringAsFixed(3)}ms '
-        '(${iterations} iterations)$memoryInfo';
+        '($iterations iterations)$memoryInfo';
   }
 
   /// Machine-parseable format for CI integration.

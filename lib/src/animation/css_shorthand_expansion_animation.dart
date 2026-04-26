@@ -134,19 +134,19 @@ Map<String, String> _parseSingleAnimationToComponents(String value) {
     }
 
     // Otherwise, it's the animation name
-    if (name == null) {
-      name = token;
-    }
+    name ??= token;
   }
 
   final result = <String, String>{};
   if (name != null) result['animation-name'] = name;
   if (duration != null) result['animation-duration'] = duration;
-  if (timingFunction != null)
+  if (timingFunction != null) {
     result['animation-timing-function'] = timingFunction;
+  }
   if (delay != null) result['animation-delay'] = delay;
-  if (iterationCount != null)
+  if (iterationCount != null) {
     result['animation-iteration-count'] = iterationCount;
+  }
   if (direction != null) result['animation-direction'] = direction;
   if (fillMode != null) result['animation-fill-mode'] = fillMode;
   if (playState != null) result['animation-play-state'] = playState;
@@ -295,16 +295,15 @@ Map<String, String> _parseSingleTransitionToComponents(String value) {
     }
 
     // Otherwise, it's the property name
-    if (property == null) {
-      property = token;
-    }
+    property ??= token;
   }
 
   final result = <String, String>{};
   if (property != null) result['transition-property'] = property;
   if (duration != null) result['transition-duration'] = duration;
-  if (timingFunction != null)
+  if (timingFunction != null) {
     result['transition-timing-function'] = timingFunction;
+  }
   if (delay != null) result['transition-delay'] = delay;
 
   return result.isNotEmpty ? result : {'transition': value};

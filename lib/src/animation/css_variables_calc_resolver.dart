@@ -118,7 +118,7 @@ class CssVariableResolver {
   /// Checks in order:
   /// 1. Inline style custom properties on the element and ancestors
   /// 2. CSS rules from style blocks (via cascade resolver)
-  /// 3. Use inheritance context for properties defined on <use> elements
+  /// 3. Use inheritance context for properties defined on `<use>` elements
   static String? _lookupVariable(String name, SvgNode node) {
     // Check inline custom properties first (highest specificity)
     SvgNode? current = node;

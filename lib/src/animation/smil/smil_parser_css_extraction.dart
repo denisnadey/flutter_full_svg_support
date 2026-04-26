@@ -181,8 +181,9 @@ bool _matchCombinatorChain(
       while (ancestor != null) {
         if (_matchesSimpleSelector(ancestor, selectorToMatch)) {
           if (partIndex == 0) return true;
-          if (_matchCombinatorChain(ancestor, parts, partIndex - 1))
+          if (_matchCombinatorChain(ancestor, parts, partIndex - 1)) {
             return true;
+          }
         }
         ancestor = ancestor.parent;
       }

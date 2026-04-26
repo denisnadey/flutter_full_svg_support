@@ -1,6 +1,6 @@
 /// W3C SVG Event model implementation.
 ///
-/// Provides proper event bubbling, capturing, and retargeting through <use>
+/// Provides proper event bubbling, capturing, and retargeting through `<use>`
 /// shadow boundaries following the DOM Event specification.
 library;
 
@@ -27,7 +27,7 @@ enum SvgEventPhase {
 ///
 /// Supports:
 /// - Event bubbling and capturing phases
-/// - Event retargeting through <use> shadow boundaries
+/// - Event retargeting through `<use>` shadow boundaries
 /// - stopPropagation() and stopImmediatePropagation()
 /// - preventDefault() for cancelable events
 class SvgEvent {
@@ -49,11 +49,11 @@ class SvgEvent {
   final bool cancelable;
 
   /// Whether this event crosses shadow DOM boundaries.
-  /// For <use> elements, this determines event retargeting behavior.
+  /// For `<use>` elements, this determines event retargeting behavior.
   final bool composed;
 
   /// The element that originally received the event.
-  /// For events inside <use> shadow trees, this is the original element.
+  /// For events inside `<use>` shadow trees, this is the original element.
   SvgNode? _target;
 
   /// The current target during event propagation.
@@ -82,12 +82,12 @@ class SvgEvent {
   /// The retargeted path for non-composed events, excluding shadow internals.
   List<SvgNode>? _retargetedPath;
 
-  /// The <use> element that is the shadow host, if any.
+  /// The `<use>` element that is the shadow host, if any.
   SvgNode? _useElement;
 
   /// Gets the event target.
-  /// For events inside <use> shadows with non-composed events,
-  /// this returns the <use> element.
+  /// For events inside `<use>` shadows with non-composed events,
+  /// this returns the `<use>` element.
   SvgNode? get target {
     if (!composed && _useElement != null) {
       return _useElement;

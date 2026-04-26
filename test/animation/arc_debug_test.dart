@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_print
 import 'package:flutter_test/flutter_test.dart';
 import 'package:full_svg_flutter/src/animation/path_parser.dart';
 import 'package:full_svg_flutter/src/animation/path_normalizer.dart';

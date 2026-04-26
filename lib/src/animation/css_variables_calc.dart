@@ -11,11 +11,11 @@ part 'css_variables_calc_evaluator.dart';
 part 'css_variables_calc_combined.dart';
 
 /// Callback type for looking up custom properties from use context.
-/// This enables CSS variables to flow through <use> boundaries.
+/// This enables CSS variables to flow through `<use>` boundaries.
 typedef UseContextCustomPropertyLookup = String? Function(String name);
 
 /// Global hook for use context custom property lookup.
-/// Set by the render tree when inside a <use> boundary.
+/// Set by the render tree when inside a `<use>` boundary.
 /// Made public for access from part files.
 UseContextCustomPropertyLookup? useContextCustomPropertyLookup;
 

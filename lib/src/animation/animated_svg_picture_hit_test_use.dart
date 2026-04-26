@@ -1,21 +1,21 @@
 part of 'animated_svg_picture.dart';
 
-/// Maximum recursion depth for nested <use> elements (matching Blink).
+/// Maximum recursion depth for nested `<use>` elements (matching Blink).
 /// This prevents infinite loops and excessive resource usage.
 const int _kMaxUseRecursionDepthHitTest = 10;
 
-/// Context for tracking pointer-events inheritance across <use> boundaries.
+/// Context for tracking pointer-events inheritance across `<use>` boundaries.
 /// Also handles event retargeting per SVG spec - events from shadow content
-/// should target the <use> element, not the referenced content.
+/// should target the `<use>` element, not the referenced content.
 ///
 /// Per SVG 2 specification:
-/// - Events on content inside a <use> shadow tree should bubble up to the
-///   <use> element itself
-/// - Hit-test results should report the <use> element's ID (not the referenced
+/// - Events on content inside a `<use>` shadow tree should bubble up to the
+///   `<use>` element itself
+/// - Hit-test results should report the `<use>` element's ID (not the referenced
 ///   element's ID) when the SVG uses event retargeting
-/// - The outermost <use> element with an ID is the event target
-/// - Nested <use> elements bubble events from innermost to outermost
-/// - pointer-events on a <use> element affects the entire shadow tree
+/// - The outermost `<use>` element with an ID is the event target
+/// - Nested `<use>` elements bubble events from innermost to outermost
+/// - pointer-events on a `<use>` element affects the entire shadow tree
 class _UseHitTestContext {
   const _UseHitTestContext({
     this.inheritedPointerEvents,
@@ -25,21 +25,21 @@ class _UseHitTestContext {
     this.nestingLevel = 1,
   });
 
-  /// Pointer-events value inherited from <use> element.
+  /// Pointer-events value inherited from `<use>` element.
   /// If null, use the referenced element's own pointer-events.
   final String? inheritedPointerEvents;
 
-  /// The ID of the <use> element for event retargeting.
-  /// Per SVG spec, events from shadow content should target the <use> element.
+  /// The ID of the `<use>` element for event retargeting.
+  /// Per SVG spec, events from shadow content should target the `<use>` element.
   final String? useElementId;
 
-  /// The <use> element node for full context access.
+  /// The `<use>` element node for full context access.
   final SvgNode? useNode;
 
-  /// Parent hit-test context for nested <use> chains.
+  /// Parent hit-test context for nested `<use>` chains.
   final _UseHitTestContext? parentContext;
 
-  /// Nesting level for nested <use> elements (1-based).
+  /// Nesting level for nested `<use>` elements (1-based).
   final int nestingLevel;
 
   /// Creates a new context inheriting from this one.
@@ -59,11 +59,11 @@ class _UseHitTestContext {
   }
 
   /// Gets the event target ID per SVG retargeting spec.
-  /// When inside a <use> shadow tree, events should target the outermost
-  /// <use> element that has an ID, not the inner referenced content.
+  /// When inside a `<use>` shadow tree, events should target the outermost
+  /// `<use>` element that has an ID, not the inner referenced content.
   ///
   /// This implements the SVG event retargeting behavior where events from
-  /// shadow content bubble up to and are retargeted to the <use> element.
+  /// shadow content bubble up to and are retargeted to the `<use>` element.
   ///
   /// For nested use elements, the event path goes:
   /// innermost-content -> inner-use -> outer-use -> document
@@ -79,7 +79,7 @@ class _UseHitTestContext {
 
   /// Gets the immediate use element ID (for innermost event targeting).
   /// Unlike getRetargetedId which returns outermost, this returns
-  /// the immediate <use> element's ID.
+  /// the immediate `<use>` element's ID.
   String? get immediateUseElementId {
     if (useElementId != null && useElementId!.isNotEmpty) {
       return useElementId;
@@ -327,7 +327,7 @@ extension _AnimatedSvgPictureStateHitTestUseExtension
     }
   }
 
-  /// Hit tests a node with <use> context for pointer-events inheritance.
+  /// Hit tests a node with `<use>` context for pointer-events inheritance.
   /// Properly handles nested use elements and text content within use shadows.
   String? _hitTestNodeWithUseContext(
     SvgNode node,

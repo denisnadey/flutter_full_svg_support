@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 @Tags(['golden', 'w3c_golden'])
-library w3c_golden_comparison_test;
+library;
 
 import 'dart:convert';
 import 'dart:io';
@@ -1356,7 +1356,7 @@ void main() {
       testWidgets('W3C: ${testCase.id}', (tester) async {
         final stopwatch = Stopwatch()..start();
         final prefix =
-            '[${currentIndex}/${selectedCases.length}] ${testCase.id}';
+            '[$currentIndex/${selectedCases.length}] ${testCase.id}';
 
         // ignore: avoid_print
         print('\n$prefix');

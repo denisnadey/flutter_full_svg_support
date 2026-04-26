@@ -139,7 +139,7 @@ class AnimatedSvgController extends ChangeNotifier {
   /// Switch to a specific view by ID.
   ///
   /// Pass null to switch back to the default view (the root SVG's viewBox).
-  /// The view must be defined via a <view> element in the SVG.
+  /// The view must be defined via a `<view>` element in the SVG.
   void switchToView(String? viewId) {
     _viewId = viewId;
     _viewChangeRequested = true;

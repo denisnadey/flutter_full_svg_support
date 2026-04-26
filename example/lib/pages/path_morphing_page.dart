@@ -88,9 +88,7 @@ class _PathMorphingPageState extends State<PathMorphingPage>
           });
         },
         title:
-            _getShapeName(_selectedExample, true, l10n) +
-            ' ↔ ' +
-            _getShapeName(_selectedExample, false, l10n),
+            '${_getShapeName(_selectedExample, true, l10n)} ↔ ${_getShapeName(_selectedExample, false, l10n)}',
         subtitle: l10n.pathMorphingDesc,
       ),
     );

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../../example/lib/pages/custom_svg_viewer_page.dart';
+import 'package:flutter_svg_example/pages/custom_svg_viewer_page.dart';
 
 void main() {
   group('CustomSvgViewerPage', () {
@@ -85,7 +85,7 @@ void main() {
               'severity': 'error',
               'category': 'reference',
               'title': 'Broken reference',
-              'details': 'fill points to missing id \"missingGradient\".',
+              'details': 'fill points to missing id "missingGradient".',
             },
           ],
         },

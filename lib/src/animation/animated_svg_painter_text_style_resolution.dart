@@ -77,7 +77,7 @@ extension AnimatedSvgPainterTextStyleResolutionExtension on AnimatedSvgPainter {
   }
 
   /// Resolves text-combine-upright CSS property for vertical writing.
-  /// Returns combination mode (none, all, digits <count>).
+  /// Returns combination mode (none, all, digits `<count>`).
   String _resolveTextCombineUpright(String? value) {
     if (value == null || value.trim().isEmpty) {
       return 'none';

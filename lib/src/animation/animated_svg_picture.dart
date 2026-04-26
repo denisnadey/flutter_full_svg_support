@@ -52,7 +52,7 @@ part 'animated_svg_picture_hit_test_advanced.dart';
 typedef AnimatedSvgErrorWidgetBuilder =
     Widget Function(BuildContext context, Object error, StackTrace stackTrace);
 
-/// Optional callback for loading external image bytes referenced by <image> href.
+/// Optional callback for loading external image bytes referenced by `<image>` href.
 ///
 /// Returning null delegates loading to default bundle/network/data-uri logic.
 typedef SvgImageLoader = Future<Uint8List?> Function(String href);
@@ -330,7 +330,7 @@ class AnimatedSvgPicture extends StatefulWidget {
   /// This is useful for embedding Flutter widgets in place of HTML content.
   final SvgForeignObjectBuilder? foreignObjectBuilder;
 
-  /// Optional callback to resolve external image bytes for <image> href values.
+  /// Optional callback to resolve external image bytes for `<image>` href values.
   final SvgImageLoader? imageLoader;
 
   /// Optional callback to resolve external font bytes for @font-face src URLs.

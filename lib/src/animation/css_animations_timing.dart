@@ -222,8 +222,9 @@ Duration? _parseDurationString(String durationStr) {
     if (ms != null) return Duration(microseconds: (ms * 1000).toInt());
   } else if (str.endsWith('s')) {
     final seconds = double.tryParse(str.replaceAll('s', ''));
-    if (seconds != null)
+    if (seconds != null) {
       return Duration(microseconds: (seconds * 1000000).toInt());
+    }
   }
   return null;
 }

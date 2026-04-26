@@ -87,6 +87,7 @@ class AnimatedSvgPainter extends CustomPainter {
     this.displacementImagesByFilterKey = const <String, ui.Image>{},
     this.animationTime,
     this.hasAnimations = false,
+    // ignore: library_private_types_in_public_api
     _RenderCache? renderCache,
   }) : _renderCache = renderCache ?? _RenderCache();
 

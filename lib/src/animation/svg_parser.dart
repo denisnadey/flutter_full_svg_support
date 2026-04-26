@@ -23,7 +23,7 @@ part 'svg_parser_filters_utils.dart';
 ///
 /// Converts an XML string into an [SvgDocument] structure with an [SvgNode] tree.
 /// Unlike vector_graphics_compiler, it preserves the full DOM structure,
-/// including animation elements (<animate>, <animateTransform>, etc.)
+/// including animation elements (`<animate>`, `<animateTransform>`, etc.)
 class SvgParser {
   SvgParser._();
 
@@ -72,7 +72,7 @@ class SvgParser {
     return svgDocument;
   }
 
-  /// Parse <view> elements and register them with the document.
+  /// Parse `<view>` elements and register them with the document.
   static void _parseViewElements(XmlElement svgElement, SvgDocument document) {
     // Find all <view> elements in the document
     final viewElements = svgElement.findAllElements('view');

@@ -1,6 +1,6 @@
 part of 'svg_parser.dart';
 
-/// Parses filters from <defs><filter> elements
+/// Parses filters from `<defs><filter>` elements
 SvgFilters _parseFilters(XmlElement svgElement) {
   final filters = SvgFilters();
 
@@ -105,7 +105,7 @@ const Set<String> _filterPrimitiveTags = {
 /// in the DOM tree. This enables filter primitives to read animated attribute
 /// values at render time.
 ///
-/// Walks the DOM tree to find <defs><filter><fe*> elements, then matches
+/// Walks the DOM tree to find `<defs><filter><fe*>` elements, then matches
 /// them positionally to the SvgFilter objects in the filter registry.
 void _linkFilterPrimitivesToNodes(SvgNode root, SvgFilters filters) {
   void visit(SvgNode node) {

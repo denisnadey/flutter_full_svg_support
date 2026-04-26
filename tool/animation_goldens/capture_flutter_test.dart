@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_print
 // Copyright 2024 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
@@ -18,7 +19,7 @@
 ///   ANIM_SUBSET=N      Run only N random SVGs for quick iteration
 ///
 @Tags(['animation_golden'])
-library capture_flutter_test;
+library;
 
 import 'dart:io';
 import 'dart:typed_data';
@@ -92,7 +93,6 @@ void main() {
 
   var fixtures = _discoverSvgFixtures();
   if (fixtures.isEmpty) {
-    // ignore: avoid_print
     print('No SVG fixtures found in $kSvgFixturesDir');
     return;
   }
@@ -103,29 +103,19 @@ void main() {
       _animSubset! < fixtures.length) {
     final shuffled = List<FileSystemEntity>.from(fixtures)..shuffle();
     fixtures = shuffled.take(_animSubset!).toList();
-    // ignore: avoid_print
     print(
       '\nANIM_SUBSET=$_animSubset: Capturing ${fixtures.length} of ${_discoverSvgFixtures().length} SVGs\n',
     );
   }
 
-  // ignore: avoid_print
   print('');
-  // ignore: avoid_print
   print('=' * 60);
-  // ignore: avoid_print
   print('  Flutter Animation Frame Capture');
-  // ignore: avoid_print
   print('=' * 60);
-  // ignore: avoid_print
   print('  Duration : ${_animDuration}s');
-  // ignore: avoid_print
   print('  Frames   : $_animFrames');
-  // ignore: avoid_print
   print('  SVGs     : ${fixtures.length}');
-  // ignore: avoid_print
   print('=' * 60);
-  // ignore: avoid_print
   print('');
 
   group('Animation Frame Capture', () {
@@ -134,13 +124,11 @@ void main() {
       final baseName = svgPath.split('/').last.replaceAll('.svg', '');
 
       testWidgets('Capture frames: $baseName', (tester) async {
-        // ignore: avoid_print
         print('\n  Capturing: $baseName ($_animFrames frames)...');
 
         // Read SVG
         final svgFile = File(svgPath);
         if (!svgFile.existsSync()) {
-          // ignore: avoid_print
           print('    SKIP: SVG file not found');
           return;
         }
@@ -234,7 +222,6 @@ void main() {
             });
 
             if (pngBytes == null) {
-              // ignore: avoid_print
               print(
                 '    WARN: Failed to capture frame $frameIndex (t=${timeSeconds.toStringAsFixed(1)}s)',
               );
@@ -248,7 +235,6 @@ void main() {
             });
           }
 
-          // ignore: avoid_print
           print(
             '    -> $_animFrames frames saved to $kFlutterOutputDir/$baseName/',
           );

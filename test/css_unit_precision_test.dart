@@ -6,6 +6,8 @@
 /// - ch and ex unit approximation
 /// - calc() with mixed units
 /// - Edge cases: zero values, negative values, deep nesting
+library;
+
 import 'dart:ui';
 
 import 'package:flutter_test/flutter_test.dart';

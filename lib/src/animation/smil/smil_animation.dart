@@ -12,19 +12,19 @@ part 'smil_animation_curves.dart';
 
 /// SMIL animation type
 enum SmilAnimationType {
-  /// <animate> - attribute animation
+  /// `<animate>` - attribute animation
   animate,
 
-  /// <animateTransform> - transform animation
+  /// `<animateTransform>` - transform animation
   animateTransform,
 
-  /// <animateMotion> - motion along a path animation
+  /// `<animateMotion>` - motion along a path animation
   animateMotion,
 
-  /// <set> - instantaneous value assignment
+  /// `<set>` - instantaneous value assignment
   set,
 
-  /// <animateColor> - color animation (deprecated, but may be encountered)
+  /// `<animateColor>` - color animation (deprecated, but may be encountered)
   animateColor,
 }
 

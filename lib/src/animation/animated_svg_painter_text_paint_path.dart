@@ -253,8 +253,9 @@ extension AnimatedSvgPainterTextPathExtension on AnimatedSvgPainter {
           style: style,
           text: glyphs[i],
         );
-        if (strokeParagraph != null)
+        if (strokeParagraph != null) {
           canvas.drawParagraph(strokeParagraph, ui.Offset(drawX, drawY));
+        }
       }
       canvas.restore();
       cursor += glyphAdvance;

@@ -61,10 +61,12 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
         : parentRotateStartIndex;
     if (hasAbsoluteX && nodeXList.isNotEmpty) cursor.x = nodeXList[0];
     if (hasAbsoluteY && nodeYList.isNotEmpty) cursor.y = nodeYList[0];
-    if (dxList.isNotEmpty && cursor.charIndex < dxList.length)
+    if (dxList.isNotEmpty && cursor.charIndex < dxList.length) {
       cursor.x += dxList[cursor.charIndex];
-    if (dyList.isNotEmpty && cursor.charIndex < dyList.length)
+    }
+    if (dyList.isNotEmpty && cursor.charIndex < dyList.length) {
       cursor.y += dyList[cursor.charIndex];
+    }
     final style = _resolveTextStyle(node, parentStyle: parentStyle);
 
     // Build bidi context for elements with direction or unicode-bidi attributes.
@@ -245,10 +247,12 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
         : parentRotateStartIndex;
     if (hasAbsoluteX && nodeXList.isNotEmpty) cursor.x = nodeXList[0];
     if (hasAbsoluteY && nodeYList.isNotEmpty) cursor.y = nodeYList[0];
-    if (dxList.isNotEmpty && cursor.charIndex < dxList.length)
+    if (dxList.isNotEmpty && cursor.charIndex < dxList.length) {
       cursor.x += dxList[cursor.charIndex];
-    if (dyList.isNotEmpty && cursor.charIndex < dyList.length)
+    }
+    if (dyList.isNotEmpty && cursor.charIndex < dyList.length) {
       cursor.y += dyList[cursor.charIndex];
+    }
     final style = _resolveTextStyle(trefNode, parentStyle: parentStyle);
     final consumed = _paintPlainTextWithPositions(
       canvas,
@@ -342,10 +346,12 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
 
     if (hasAbsoluteX && nodeXList.isNotEmpty) cursor.x = nodeXList[0];
     if (hasAbsoluteY && nodeYList.isNotEmpty) cursor.y = nodeYList[0];
-    if (dxList.isNotEmpty && cursor.charIndex < dxList.length)
+    if (dxList.isNotEmpty && cursor.charIndex < dxList.length) {
       cursor.x += dxList[cursor.charIndex];
-    if (dyList.isNotEmpty && cursor.charIndex < dyList.length)
+    }
+    if (dyList.isNotEmpty && cursor.charIndex < dyList.length) {
       cursor.y += dyList[cursor.charIndex];
+    }
 
     // Resolve style with forced direction from BDO
     final baseStyle = _resolveTextStyle(bdoNode, parentStyle: parentStyle);

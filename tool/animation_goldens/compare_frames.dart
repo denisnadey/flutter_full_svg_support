@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_print
 // Copyright 2024 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
@@ -18,7 +19,7 @@
 ///   - Flutter: flutter test tool/animation_goldens/capture_flutter_test.dart --tags animation_golden
 ///
 @Tags(['animation_compare'])
-library compare_frames;
+library;
 
 import 'dart:convert';
 import 'dart:io';
@@ -173,7 +174,6 @@ void main() {
       final svgNames = _discoverComparableSvgs();
 
       if (svgNames.isEmpty) {
-        // ignore: avoid_print
         print(
           '\nNo comparable SVGs found.\n'
           'Make sure both browser and Flutter frames are captured first.\n'
@@ -187,27 +187,18 @@ void main() {
       Directory(kDiffDir).createSync(recursive: true);
       Directory(kReportsDir).createSync(recursive: true);
 
-      // ignore: avoid_print
       print('');
-      // ignore: avoid_print
       print('=' * 70);
-      // ignore: avoid_print
       print('  Animation Frame Comparison Report');
-      // ignore: avoid_print
       print('=' * 70);
-      // ignore: avoid_print
       print('  SVGs to compare: ${svgNames.length}');
-      // ignore: avoid_print
       print('  Per-pixel threshold: ${(kPerPixelThreshold * 100).toInt()}%');
-      // ignore: avoid_print
       print('=' * 70);
-      // ignore: avoid_print
       print('');
 
       final allReports = <SvgReport>[];
 
       for (final svgName in svgNames) {
-        // ignore: avoid_print
         print('  Comparing: $svgName');
 
         final browserFrameDir = '$kBrowserDir/$svgName';
@@ -225,7 +216,6 @@ void main() {
               ..sort();
 
         if (commonFrames.isEmpty) {
-          // ignore: avoid_print
           print('    SKIP: No matching frame files');
           continue;
         }
@@ -318,7 +308,6 @@ void main() {
         final avgPct = (report.averageSimilarity * 100).toStringAsFixed(1);
         final worstPct = (report.worstSimilarity * 100).toStringAsFixed(1);
         final worstIdx = report.worstFrame;
-        // ignore: avoid_print
         print(
           '    ${commonFrames.length} frames | avg: $avgPct% | worst: $worstPct% (frame $worstIdx)',
         );
@@ -381,19 +370,13 @@ void main() {
         );
 
         // Print summary table
-        // ignore: avoid_print
         print('');
-        // ignore: avoid_print
         print('=' * 70);
-        // ignore: avoid_print
         print('  SUMMARY');
-        // ignore: avoid_print
         print('=' * 70);
-        // ignore: avoid_print
         print(
           '  ${'SVG'.padRight(35)} ${'Avg%'.padLeft(7)} ${'Worst%'.padLeft(7)} ${'Frames'.padLeft(6)}',
         );
-        // ignore: avoid_print
         print('  ${'-' * 55}');
 
         for (final r in allReports) {
@@ -404,34 +387,24 @@ void main() {
               : r.averageSimilarity >= 0.90
               ? 'WARN'
               : 'FAIL';
-          // ignore: avoid_print
           print(
             '  ${r.svg.padRight(35)} ${avgP.padLeft(6)}% ${worstP.padLeft(6)}% ${r.frames.toString().padLeft(6)}  $status',
           );
         }
 
-        // ignore: avoid_print
         print('  ${'-' * 55}');
         final overallPct = (overallAvg * 100).toStringAsFixed(1);
-        // ignore: avoid_print
         print('  Overall: $overallPct% average similarity');
-        // ignore: avoid_print
         print('  $above95/${allReports.length} SVGs above 95%');
         if (below90 > 0) {
-          // ignore: avoid_print
           print('  WARNING: $below90 SVGs below 90%');
         }
-        // ignore: avoid_print
         print(
           '  Worst: ${allReports[worstSvgIdx].svg} (${(allReports[worstSvgIdx].averageSimilarity * 100).toStringAsFixed(1)}%)',
         );
-        // ignore: avoid_print
         print('');
-        // ignore: avoid_print
         print('  Reports saved to: $kReportsDir/');
-        // ignore: avoid_print
         print('  Diffs saved to:   $kDiffDir/');
-        // ignore: avoid_print
         print('=' * 70);
       }
     },

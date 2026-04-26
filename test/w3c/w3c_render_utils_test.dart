@@ -1,5 +1,5 @@
 @Tags(['w3c'])
-library w3c_render_utils_test;
+library;
 
 import 'dart:ui' as ui;
 import 'dart:typed_data';

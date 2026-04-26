@@ -437,7 +437,7 @@ class CssCalcEvaluator {
       }
 
       result =
-          result.substring(0, start) + '$nestedValue' + result.substring(end);
+          '${result.substring(0, start)}$nestedValue${result.substring(end)}';
       iterations++;
     }
 

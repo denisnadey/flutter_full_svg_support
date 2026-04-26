@@ -63,7 +63,7 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
   /// - Image elements: image (uses bounding rectangle)
   ///
   /// Supports clip-rule attribute on individual shapes for evenodd/nonzero fill.
-  /// When <use> elements appear inside clipPath, CSS properties are properly
+  /// When `<use>` elements appear inside clipPath, CSS properties are properly
   /// inherited through the use shadow boundary per SVG spec.
   void _appendClipGeometry({
     required ui.Path target,
@@ -240,7 +240,7 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
   /// - Proper CSS property inheritance through use shadow boundary
   /// - objectBoundingBox coordinate system when clipPathUnits="objectBoundingBox"
   ///
-  /// Per SVG spec, when <use> appears in clipPath:
+  /// Per SVG spec, when `<use>` appears in clipPath:
   /// - The referenced content contributes its geometry to the clip region
   /// - CSS properties like fill-rule and clip-rule cascade correctly
   /// - Transforms from the use element are applied to referenced content

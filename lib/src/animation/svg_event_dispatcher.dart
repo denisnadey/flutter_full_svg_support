@@ -1,7 +1,7 @@
 /// SVG Event Dispatcher implementing W3C DOM event dispatch algorithm.
 ///
 /// Handles event path construction, capture phase, target phase, and bubble
-/// phase with proper event retargeting through <use> shadow boundaries.
+/// phase with proper event retargeting through `<use>` shadow boundaries.
 library;
 
 import 'svg_dom.dart';
@@ -19,7 +19,7 @@ class SvgHitTestResult {
   /// The actual element hit.
   final SvgNode target;
 
-  /// The <use> element if the target is inside a use shadow tree.
+  /// The `<use>` element if the target is inside a use shadow tree.
   final SvgNode? useElement;
 
   /// The event path for bubbling (may be retargeted).
@@ -28,7 +28,7 @@ class SvgHitTestResult {
   /// The composed path including shadow elements.
   final List<SvgNode> composedPath;
 
-  /// Whether the hit is inside a <use> shadow tree.
+  /// Whether the hit is inside a `<use>` shadow tree.
   bool get isInsideUseShadow => useElement != null;
 }
 
@@ -82,8 +82,9 @@ class SvgEventTarget {
   /// Returns true if the event was not prevented.
   bool dispatchEvent(SvgEvent event) {
     final typeListeners = _listeners[event.type];
-    if (typeListeners == null || typeListeners.isEmpty)
+    if (typeListeners == null || typeListeners.isEmpty) {
       return !event.defaultPrevented;
+    }
 
     final phase = event.eventPhase;
     final useCapture = phase == SvgEventPhase.capturing;
@@ -166,8 +167,8 @@ class SvgEventDispatcher {
 
   /// Builds the composed path including shadow tree elements.
   ///
-  /// For elements inside a <use> shadow tree, includes both the shadow
-  /// elements and the <use> element's ancestors.
+  /// For elements inside a `<use>` shadow tree, includes both the shadow
+  /// elements and the `<use>` element's ancestors.
   List<SvgNode> buildComposedPath(
     SvgNode target, {
     SvgNode? useElement,
@@ -201,8 +202,8 @@ class SvgEventDispatcher {
 
   /// Builds the retargeted path for non-composed events.
   ///
-  /// When an event fires on an element inside a <use> shadow tree
-  /// and the event is not composed, the path starts from the <use> element.
+  /// When an event fires on an element inside a `<use>` shadow tree
+  /// and the event is not composed, the path starts from the `<use>` element.
   List<SvgNode> buildRetargetedPath(SvgNode useElement) {
     final path = <SvgNode>[];
     SvgNode? current = useElement;

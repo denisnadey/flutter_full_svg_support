@@ -965,14 +965,14 @@ void main() {
         expect(val0, closeTo(val6, 0.001));
 
         // Octave 1: wrapX = 6 << 1 = 12
-        final val0_oct1 = generator.noise2D(0.0, 0.0, stitch: true, octave: 1);
-        final val12_oct1 = generator.noise2D(
+        final val0Oct1 = generator.noise2D(0.0, 0.0, stitch: true, octave: 1);
+        final val12Oct1 = generator.noise2D(
           12.0,
           0.0,
           stitch: true,
           octave: 1,
         );
-        expect(val0_oct1, closeTo(val12_oct1, 0.001));
+        expect(val0Oct1, closeTo(val12Oct1, 0.001));
       });
 
       test('resetStitching returns to default lattice size', () {

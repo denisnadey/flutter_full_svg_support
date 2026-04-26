@@ -1,21 +1,21 @@
 /// Property inheritance for CSS cascade through use shadow boundaries.
 part of 'css_cascade.dart';
 
-/// Context for resolving CSS properties through <use> shadow boundaries.
+/// Context for resolving CSS properties through `<use>` shadow boundaries.
 ///
 /// This class encapsulates the cascade logic for use-referenced elements,
 /// implementing the correct priority order per SVG 2 and CSS specifications:
 ///
 /// 1. Inline style on referenced element (highest priority except !important)
-/// 2. CSS rules from <style> blocks (by specificity, then source order)
+/// 2. CSS rules from `<style>` blocks (by specificity, then source order)
 /// 3. Presentation attributes on referenced element
-/// 4. Inherited from <use> element (style attr, then presentation attrs)
+/// 4. Inherited from `<use>` element (style attr, then presentation attrs)
 /// 5. Inherited from use's ancestors
 ///
 /// Only inheritable CSS properties flow through the use boundary.
 ///
 /// Shadow Boundary Behavior:
-/// Per SVG 2 spec, <use> creates a shadow-like scope:
+/// Per SVG 2 spec, `<use>` creates a shadow-like scope:
 /// - CSS selectors with combinators (>, ~, +, space) stop at shadow boundary
 /// - Inherited CSS properties flow through the boundary
 /// - Original definition context CSS rules still apply to referenced elements
@@ -35,13 +35,13 @@ class UseCascadeContext {
     this.nestingDepth = 0,
   });
 
-  /// CSS rules from the document's <style> blocks.
+  /// CSS rules from the document's `<style>` blocks.
   final List<CssSelectorRule> cssRules;
 
-  /// The <use> element providing inherited properties.
+  /// The `<use>` element providing inherited properties.
   final SvgNode? useNode;
 
-  /// Parent cascade context for nested <use> chains.
+  /// Parent cascade context for nested `<use>` chains.
   final UseCascadeContext? parentContext;
 
   /// ID of the shadow root (referenced element ID) for boundary tracking.

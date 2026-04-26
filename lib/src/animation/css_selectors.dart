@@ -710,8 +710,12 @@ CssPseudoClass? _parsePseudoClass(String name) {
   final (attrName, nameEndPos) = _parseIdent(str, pos);
   if (attrName.isEmpty) {
     // Skip to ] and return null
-    while (pos < str.length && str[pos] != ']') pos++;
-    if (pos < str.length) pos++;
+    while (pos < str.length && str[pos] != ']') {
+      pos++;
+    }
+    if (pos < str.length) {
+      pos++;
+    }
     return (null, pos);
   }
   pos = nameEndPos;
@@ -719,7 +723,9 @@ CssPseudoClass? _parsePseudoClass(String name) {
 
   // Check for ] (existence check)
   if (pos >= str.length || str[pos] == ']') {
-    if (pos < str.length) pos++;
+    if (pos < str.length) {
+      pos++;
+    }
     return (
       CssAttributeSelector(
         attribute: attrName,
@@ -747,8 +753,12 @@ CssPseudoClass? _parsePseudoClass(String name) {
     pos += 2;
   } else {
     // Invalid operator, skip to ]
-    while (pos < str.length && str[pos] != ']') pos++;
-    if (pos < str.length) pos++;
+    while (pos < str.length && str[pos] != ']') {
+      pos++;
+    }
+    if (pos < str.length) {
+      pos++;
+    }
     return (null, pos);
   }
 
@@ -783,8 +793,12 @@ CssPseudoClass? _parsePseudoClass(String name) {
   }
 
   // Skip to ]
-  while (pos < str.length && str[pos] != ']') pos++;
-  if (pos < str.length) pos++;
+  while (pos < str.length && str[pos] != ']') {
+    pos++;
+  }
+  if (pos < str.length) {
+    pos++;
+  }
 
   return (
     CssAttributeSelector(

@@ -1,7 +1,7 @@
 part of 'animated_svg_painter.dart';
 
 extension AnimatedSvgPainterShapesPathExtension on AnimatedSvgPainter {
-  /// Paints <path>
+  /// Paints `<path>`
   void _paintPath(
     ui.Canvas canvas,
     SvgNode node, {

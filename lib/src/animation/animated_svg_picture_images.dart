@@ -347,7 +347,7 @@ extension _AnimatedSvgPictureStateImagesExtension on _AnimatedSvgPictureState {
                 textureSource != _DisplacementInputSource.href &&
                 mapSource != _DisplacementInputSource.href) {
               final requestKey =
-                  '$filterId|${targetWidth}x${targetHeight}|${textureSource.name}|${mapSource.name}|${node.id ?? node.tagName}';
+                  '$filterId|${targetWidth}x$targetHeight|${textureSource.name}|${mapSource.name}|${node.id ?? node.tagName}';
               if (seenRequestKeys.add(requestKey)) {
                 requests.add(
                   _DisplacementImageRequest.sourceBased(
@@ -375,7 +375,7 @@ extension _AnimatedSvgPictureStateImagesExtension on _AnimatedSvgPictureState {
                 mapHref != null &&
                 mapHref.isNotEmpty) {
               final requestKey =
-                  '$filterId|${targetWidth}x${targetHeight}|$textureHref|$mapHref';
+                  '$filterId|${targetWidth}x$targetHeight|$textureHref|$mapHref';
               if (seenRequestKeys.add(requestKey)) {
                 requests.add(
                   _DisplacementImageRequest.hrefBased(
@@ -581,7 +581,7 @@ extension _AnimatedSvgPictureStateImagesExtension on _AnimatedSvgPictureState {
         return;
       }
 
-      final key = '$href|${request.filterId}|${inputWidth}x${inputHeight}';
+      final key = '$href|${request.filterId}|${inputWidth}x$inputHeight';
       final previous = _convolvedImagesByFilterKey[key];
       if (!identical(previous, convolvedImage)) {
         previous?.dispose();
@@ -693,7 +693,7 @@ extension _AnimatedSvgPictureStateImagesExtension on _AnimatedSvgPictureState {
       }
 
       final key =
-          '$href|${request.filterId}|${inputWidth}x${inputHeight}|${request.kindName}';
+          '$href|${request.filterId}|${inputWidth}x$inputHeight|${request.kindName}';
       final previous = _lightingImagesByFilterKey[key];
       if (!identical(previous, outputImage)) {
         previous?.dispose();
@@ -1566,30 +1566,27 @@ enum _LightingVariantKind { diffuse, specular }
 class _LightingImageRequest {
   const _LightingImageRequest.diffuse({
     required this.filterId,
-    required SvgDiffuseLightingPaintPass diffusePass,
+    required this.diffusePass,
     this.targetWidth,
     this.targetHeight,
   }) : kind = _LightingVariantKind.diffuse,
-       diffusePass = diffusePass,
        specularPass = null,
        sourceNode = null;
 
   const _LightingImageRequest.specular({
     required this.filterId,
-    required SvgSpecularLightingPaintPass specularPass,
+    required this.specularPass,
     this.targetWidth,
     this.targetHeight,
   }) : kind = _LightingVariantKind.specular,
        diffusePass = null,
-       specularPass = specularPass,
        sourceNode = null;
 
   const _LightingImageRequest.sourceDiffuse({
     required this.filterId,
     required this.sourceNode,
-    required SvgDiffuseLightingPaintPass diffusePass,
+    required this.diffusePass,
   }) : kind = _LightingVariantKind.diffuse,
-       diffusePass = diffusePass,
        specularPass = null,
        targetWidth = null,
        targetHeight = null;
@@ -1597,10 +1594,9 @@ class _LightingImageRequest {
   const _LightingImageRequest.sourceSpecular({
     required this.filterId,
     required this.sourceNode,
-    required SvgSpecularLightingPaintPass specularPass,
+    required this.specularPass,
   }) : kind = _LightingVariantKind.specular,
        diffusePass = null,
-       specularPass = specularPass,
        targetWidth = null,
        targetHeight = null;
 
