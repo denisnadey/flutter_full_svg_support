@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+    <!-- radialGradient with focal point (fx, fy) offset from center -->
+    <defs>
+        <!-- Centered focal point (default behavior) -->
+        <radialGradient id="radialCenter" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#ffffff" />
+            <stop offset="100%" stop-color="#3366cc" />
+        </radialGradient>
+
+        <!-- Focal point offset to top-left -->
+        <radialGradient id="radialTopLeft" cx="50%" cy="50%" r="50%" fx="25%" fy="25%">
+            <stop offset="0%" stop-color="#ffffff" />
+            <stop offset="100%" stop-color="#cc3366" />
+        </radialGradient>
+
+        <!-- Focal point offset to bottom-right -->
+        <radialGradient id="radialBottomRight" cx="50%" cy="50%" r="50%" fx="75%" fy="75%">
+            <stop offset="0%" stop-color="#ffffff" />
+            <stop offset="100%" stop-color="#33cc66" />
+        </radialGradient>
+
+        <!-- Extreme focal point offset (near edge) -->
+        <radialGradient id="radialEdge" cx="50%" cy="50%" r="50%" fx="85%" fy="50%">
+            <stop offset="0%" stop-color="#ffffff" />
+            <stop offset="100%" stop-color="#cc9933" />
+        </radialGradient>
+
+        <!-- Focal point outside radius (should clamp) -->
+        <radialGradient id="radialOutside" cx="50%" cy="50%" r="40%" fx="10%" fy="10%">
+            <stop offset="0%" stop-color="#ffffff" />
+            <stop offset="50%" stop-color="#ff6600" />
+            <stop offset="100%" stop-color="#660066" />
+        </radialGradient>
+    </defs>
+
+    <rect width="200" height="200" fill="#f5f5f5" />
+
+    <!-- Centered focal -->
+    <circle cx="45" cy="45" r="35" fill="url(#radialCenter)" />
+
+    <!-- Top-left focal -->
+    <circle cx="145" cy="45" r="35" fill="url(#radialTopLeft)" />
+
+    <!-- Bottom-right focal -->
+    <circle cx="45" cy="145" r="35" fill="url(#radialBottomRight)" />
+
+    <!-- Edge focal -->
+    <circle cx="145" cy="145" r="35" fill="url(#radialEdge)" />
+
+    <!-- Rectangle with outside focal -->
+    <rect x="75" y="80" width="50" height="40" rx="5" fill="url(#radialOutside)" />
+</svg>

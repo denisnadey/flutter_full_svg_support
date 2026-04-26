@@ -1,0 +1,352 @@
+part of 'animated_svg_painter.dart';
+
+extension AnimatedSvgPainterPaintsExtension on AnimatedSvgPainter {
+  double _resolvePaintOpacityForColorInterpolation(
+    SvgNode node,
+    double opacity,
+  ) {
+    final rawMode = _getInheritedString(node, 'color-interpolation');
+    final mode = rawMode?.trim().toLowerCase() ?? 'srgb';
+    if (mode != 'linearrgb') {
+      return opacity;
+    }
+    return _linearToSrgbOpacity(opacity);
+  }
+
+  double _linearToSrgbOpacity(double linearOpacity) {
+    final value = linearOpacity.clamp(0.0, 1.0);
+    if (value <= 0.0031308) {
+      return (12.92 * value).clamp(0.0, 1.0);
+    }
+    return (1.055 * math.pow(value, 1.0 / 2.4) - 0.055).clamp(0.0, 1.0);
+  }
+
+  ui.Paint? _createFillPaint(
+    SvgNode node, {
+    required ui.Rect paintBounds,
+    ui.ImageFilter? imageFilter,
+    ui.ColorFilter? colorFilter,
+    ui.BlendMode? blendMode,
+  }) {
+    if (!_currentPassPaintFill) {
+      return null;
+    }
+    final fillValue = _getInheritedAttributeValue(node, 'fill');
+    if (_isPaintNone(fillValue)) {
+      return null;
+    }
+
+    final opacity = _getInheritedNumber(node, 'opacity') ?? 1.0;
+    final fillOpacity = _getInheritedNumber(node, 'fill-opacity') ?? 1.0;
+    final finalOpacity = (opacity * fillOpacity).clamp(0.0, 1.0);
+    final effectiveOpacity = _resolvePaintOpacityForColorInterpolation(
+      node,
+      finalOpacity,
+    );
+
+    final paint = ui.Paint()
+      ..style = ui.PaintingStyle.fill
+      ..isAntiAlias = _resolveShapeRendering(node);
+    final shader = _resolvePaintServerShader(fillValue, paintBounds);
+    if (shader != null) {
+      paint
+        ..shader = shader
+        ..color = const ui.Color(
+          0xFFFFFFFF,
+        ).withValues(alpha: effectiveOpacity);
+    } else {
+      final fillSourceNode = _findInheritedAttributeSourceNode(node, 'fill');
+      final color =
+          _resolveColorForNode(fillValue, fillSourceNode ?? node) ??
+          const ui.Color(0xFF000000);
+      paint.color = _applyOpacity(color, effectiveOpacity);
+    }
+
+    final fillColorOverride = _currentPassFillColorOverride;
+    if (fillColorOverride != null) {
+      paint
+        ..shader = null
+        ..color = fillColorOverride;
+    }
+
+    if (imageFilter != null) {
+      paint.imageFilter = imageFilter;
+    }
+    if (colorFilter != null) {
+      paint.colorFilter = colorFilter;
+    }
+    if (blendMode != null) {
+      paint.blendMode = blendMode;
+    } else {
+      // Check for mix-blend-mode CSS property
+      final mixBlendMode = _resolveMixBlendMode(node);
+      if (mixBlendMode != null) {
+        paint.blendMode = mixBlendMode;
+      }
+    }
+    return paint;
+  }
+
+  /// Get the filter ID from the filter attribute
+  /// Supports the format url(#filterId) or just filterId
+  String? _getFilterId(SvgNode node) {
+    final filterAttr = _getStyleOrAttributeValue(node, 'filter')?.toString();
+    if (filterAttr == null || filterAttr.trim().isEmpty) {
+      return null;
+    }
+
+    final paintServerId = _extractPaintServerId(filterAttr);
+    if (paintServerId != null && paintServerId.isNotEmpty) {
+      return paintServerId;
+    }
+
+    final normalized = filterAttr.trim();
+    if (normalized.toLowerCase() == 'none') {
+      return null;
+    }
+
+    // Or just an ID if there is no url()
+    return normalized;
+  }
+
+  Object? _getStyleOrAttributeValue(SvgNode node, String attributeName) {
+    final styleValue = _extractStyleValue(node, attributeName.toLowerCase());
+    if (styleValue != null) {
+      return styleValue;
+    }
+    return node.getAttributeValue(attributeName);
+  }
+
+  /// Creates a Paint for stroke (or null if there is no stroke).
+  ui.Paint? _createStrokePaint(
+    SvgNode node, {
+    required ui.Rect paintBounds,
+    ui.ImageFilter? imageFilter,
+    ui.ColorFilter? colorFilter,
+    ui.BlendMode? blendMode,
+  }) {
+    if (!_currentPassPaintStroke) {
+      return null;
+    }
+    final strokeValue = _getInheritedAttributeValue(node, 'stroke');
+    if (strokeValue == null || _isPaintNone(strokeValue)) {
+      return null;
+    }
+
+    var strokeWidth = _getInheritedNumber(node, 'stroke-width') ?? 1.0;
+    final opacity = _getInheritedNumber(node, 'opacity') ?? 1.0;
+    final strokeOpacity = _getInheritedNumber(node, 'stroke-opacity') ?? 1.0;
+    final finalOpacity = (opacity * strokeOpacity).clamp(0.0, 1.0);
+    final effectiveOpacity = _resolvePaintOpacityForColorInterpolation(
+      node,
+      finalOpacity,
+    );
+
+    // Check for vector-effect: non-scaling-stroke
+    final vectorEffect = _getInheritedString(node, 'vector-effect');
+    if (vectorEffect != null &&
+        vectorEffect.trim().toLowerCase() == 'non-scaling-stroke') {
+      final scale = _computeAccumulatedScale(node);
+      if (scale > 0 && scale != 1.0) {
+        strokeWidth = strokeWidth / scale;
+      }
+    }
+
+    final paint = ui.Paint()
+      ..style = ui.PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = _resolveStrokeLinecap(node)
+      ..strokeJoin = _resolveStrokeLinejoin(node)
+      ..strokeMiterLimit = _getInheritedNumber(node, 'stroke-miterlimit') ?? 4.0
+      ..isAntiAlias = _resolveShapeRendering(node);
+
+    final shader = _resolvePaintServerShader(strokeValue, paintBounds);
+    if (shader != null) {
+      paint
+        ..shader = shader
+        ..color = const ui.Color(
+          0xFFFFFFFF,
+        ).withValues(alpha: effectiveOpacity);
+    } else {
+      final strokeSourceNode = _findInheritedAttributeSourceNode(
+        node,
+        'stroke',
+      );
+      final strokeColor = _resolveColorForNode(
+        strokeValue,
+        strokeSourceNode ?? node,
+      );
+      if (strokeColor == null) {
+        return null;
+      }
+      paint.color = _applyOpacity(strokeColor, effectiveOpacity);
+    }
+
+    final strokeColorOverride = _currentPassStrokeColorOverride;
+    if (strokeColorOverride != null) {
+      paint
+        ..shader = null
+        ..color = strokeColorOverride;
+    }
+
+    if (imageFilter != null) {
+      paint.imageFilter = imageFilter;
+    }
+    if (colorFilter != null) {
+      paint.colorFilter = colorFilter;
+    }
+    if (blendMode != null) {
+      paint.blendMode = blendMode;
+    } else {
+      // Check for mix-blend-mode CSS property
+      final mixBlendMode = _resolveMixBlendMode(node);
+      if (mixBlendMode != null) {
+        paint.blendMode = mixBlendMode;
+      }
+    }
+    return paint;
+  }
+
+  /// Applies stroke-dasharray / stroke-dashoffset to a path.
+  ///
+  /// If stroke-dasharray is not set or is 'none', returns [path] unchanged.
+  /// Otherwise walks the path's PathMetrics and builds a new dashed path.
+  ///
+  /// Supports pathLength attribute for scaling dasharray/dashoffset values.
+  /// When pathLength is specified, all dash values are scaled by the ratio
+  /// of actual path length to pathLength.
+  ui.Path _buildDashedPath(ui.Path path, SvgNode node) {
+    final dashArrayRaw = _getInheritedString(node, 'stroke-dasharray')?.trim();
+    if (dashArrayRaw == null ||
+        dashArrayRaw.isEmpty ||
+        dashArrayRaw.toLowerCase() == 'none') {
+      return path;
+    }
+
+    final dashes = _parseDashArray(dashArrayRaw);
+    if (dashes.isEmpty || dashes.every((d) => d == 0)) {
+      return path;
+    }
+
+    // SVG spec: odd-length dasharray is doubled.
+    var pattern = dashes.length.isOdd ? [...dashes, ...dashes] : [...dashes];
+
+    // pathLength attribute support: scale dasharray and dashoffset values
+    final declaredPathLength = _getNumber(node, 'pathLength');
+    double? scaleFactor;
+    if (declaredPathLength != null && declaredPathLength > 0) {
+      // Calculate actual path length once
+      var actualLength = 0.0;
+      for (final metric in path.computeMetrics()) {
+        actualLength += metric.length;
+      }
+      if (actualLength > 0) {
+        scaleFactor = actualLength / declaredPathLength;
+        pattern = pattern.map((d) => d * scaleFactor!).toList();
+      }
+    }
+
+    final totalDash = pattern.fold<double>(0.0, (s, d) => s + d);
+    if (totalDash <= 0) return path;
+
+    var rawOffset = _getInheritedNumber(node, 'stroke-dashoffset') ?? 0.0;
+    // Scale dashoffset by same factor if pathLength is specified
+    if (scaleFactor != null) {
+      rawOffset = rawOffset * scaleFactor;
+    }
+    // Normalise offset into [0, totalDash). SVG offset shifts the pattern start.
+    var phase = rawOffset % totalDash;
+    if (phase < 0) phase += totalDash;
+
+    // Find which pattern index corresponds to [phase].
+    var patternIndex = 0;
+    var phaseAccum = 0.0;
+    for (int i = 0; i < pattern.length; i++) {
+      if (phaseAccum + pattern[i] > phase) {
+        patternIndex = i;
+        phaseAccum = phase - phaseAccum; // consumed from current segment
+        break;
+      }
+      phaseAccum += pattern[i];
+      patternIndex = i + 1;
+      if (patternIndex >= pattern.length) {
+        patternIndex = 0;
+        phaseAccum = 0;
+      }
+    }
+
+    // remaining = how much is left in the current pattern segment.
+    var remaining = pattern[patternIndex] - phaseAccum;
+    var drawing = patternIndex.isEven; // even indices are dash, odd are gap
+
+    final dashedPath = ui.Path();
+    for (final metric in path.computeMetrics()) {
+      final pathLength = metric.length;
+      if (pathLength <= 0) continue;
+
+      var pathPos = 0.0;
+      var segRemaining = remaining;
+      var segDrawing = drawing;
+      var segPatternIndex = patternIndex;
+
+      // Safety counter to prevent infinite loops from degenerate patterns
+      int iterationCount = 0;
+      const int maxIterations = 100000;
+
+      while (pathPos < pathLength && iterationCount < maxIterations) {
+        iterationCount++;
+        final segEnd = math.min(pathPos + segRemaining, pathLength);
+        if (segDrawing) {
+          dashedPath.addPath(
+            metric.extractPath(pathPos, segEnd),
+            ui.Offset.zero,
+          );
+        }
+        final consumed = segEnd - pathPos;
+        pathPos = segEnd;
+        segRemaining -= consumed;
+
+        if (segRemaining <= 1e-6) {
+          // Advance to next pattern segment.
+          segPatternIndex = (segPatternIndex + 1) % pattern.length;
+          segDrawing = !segDrawing;
+          segRemaining = pattern[segPatternIndex];
+
+          // Skip zero-length pattern segments to ensure forward progress
+          int skipCount = 0;
+          while (segRemaining <= 1e-6 && skipCount < pattern.length) {
+            segPatternIndex = (segPatternIndex + 1) % pattern.length;
+            segDrawing = !segDrawing;
+            segRemaining = pattern[segPatternIndex];
+            skipCount++;
+          }
+          // If all pattern values are effectively zero, force loop exit
+          if (segRemaining <= 1e-6) {
+            pathPos = pathLength;
+          }
+        }
+      }
+    }
+
+    return dashedPath;
+  }
+
+  /// Parses stroke-dasharray value into a list of doubles.
+  /// Filters out near-zero values to prevent infinite loops in dashing.
+  List<double> _parseDashArray(String value) {
+    final parsed = value
+        .split(RegExp(r'[\s,]+'))
+        .map((s) {
+          final cleaned = s.trim().replaceAll(RegExp(r'[a-zA-Z%]+$'), '');
+          return double.tryParse(cleaned) ?? 0.0;
+        })
+        .where((d) => d >= 0)
+        .toList();
+
+    // Filter near-zero values to prevent degenerate patterns
+    final filtered = parsed.where((d) => d > 1e-6).toList();
+
+    // If all values were filtered out, return original to let caller handle it
+    return filtered.isNotEmpty ? filtered : parsed;
+  }
+}

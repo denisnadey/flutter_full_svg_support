@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+    <!-- Element with both mask AND clip-path applied -->
+    <defs>
+        <!-- Clip paths -->
+        <clipPath id="circleClip">
+            <circle cx="50" cy="50" r="40" />
+        </clipPath>
+
+        <clipPath id="starClip">
+            <polygon points="100,10 115,40 150,40 122,60 135,95 100,75 65,95 78,60 50,40 85,40" />
+        </clipPath>
+
+        <clipPath id="rectClip">
+            <rect x="110" y="110" width="80" height="80" />
+        </clipPath>
+
+        <!-- Masks -->
+        <linearGradient id="fadeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="white" />
+            <stop offset="100%" stop-color="black" />
+        </linearGradient>
+
+        <mask id="fadeMask" maskContentUnits="objectBoundingBox">
+            <rect x="0" y="0" width="1" height="1" fill="url(#fadeGrad)" />
+        </mask>
+
+        <radialGradient id="spotGrad" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="white" />
+            <stop offset="70%" stop-color="white" />
+            <stop offset="100%" stop-color="black" />
+        </radialGradient>
+
+        <mask id="spotMask" maskContentUnits="objectBoundingBox">
+            <rect x="0" y="0" width="1" height="1" fill="url(#spotGrad)" />
+        </mask>
+    </defs>
+
+    <rect width="200" height="200" fill="#f5f5f5" />
+
+    <!-- Clip + Mask on rectangle -->
+    <rect x="10" y="10" width="80" height="80" fill="#3366cc" clip-path="url(#circleClip)"
+        mask="url(#fadeMask)" />
+
+    <!-- Star clip with fade mask -->
+    <g transform="translate(50, 50)">
+        <rect x="0" y="0" width="100" height="100" fill="#cc3366" clip-path="url(#starClip)"
+            mask="url(#spotMask)" />
+    </g>
+
+    <!-- Rect clip with gradient mask -->
+    <rect x="100" y="100" width="100" height="100" fill="#33cc66" clip-path="url(#rectClip)"
+        mask="url(#fadeMask)" />
+
+    <!-- Circle with both clip and mask -->
+    <circle cx="50" cy="150" r="40" fill="#cc9933" clip-path="url(#circleClip)"
+        mask="url(#spotMask)" transform="translate(0,100)" />
+</svg>

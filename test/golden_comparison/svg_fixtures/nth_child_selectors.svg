@@ -1,0 +1,184 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+    <!-- nth-child and nth-of-type CSS selectors test -->
+    <style>
+        /* nth-child selectors */
+        .nth-child-demo rect:nth-child(odd) { fill: #FF6600; }
+        .nth-child-demo rect:nth-child(even) { fill: #0066FF; }
+
+        /* nth-child(n) */
+        .nth-3n rect:nth-child(3n) { fill: #00CC66; }
+        .nth-3n rect:nth-child(3n+1) { fill: #FF6600; }
+        .nth-3n rect:nth-child(3n+2) { fill: #0066FF; }
+
+        /* first-child, last-child */
+        .first-last rect { fill: #CCCCCC; }
+        .first-last rect:first-child { fill: #FF0000; }
+        .first-last rect:last-child { fill: #00CC00; }
+
+        /* nth-of-type */
+        .nth-type circle:nth-of-type(odd) { fill: #FF6600; }
+        .nth-type circle:nth-of-type(even) { fill: #0066FF; }
+        .nth-type rect { fill: #CCCCCC; }
+
+        /* Mixed selectors */
+        .mixed rect:nth-child(2n) { fill: #CC00CC; }
+        .mixed circle:nth-child(2n+1) { fill: #FFCC00; }
+
+        /* nth-last-child */
+        .nth-last rect { fill: #999999; }
+        .nth-last rect:nth-last-child(1) { fill: #FF0000; }
+        .nth-last rect:nth-last-child(2) { fill: #FF6600; }
+        .nth-last rect:nth-last-child(3) { fill: #FFCC00; }
+
+        /* Complex formulas */
+        .complex rect:nth-child(4n+1) { fill: #FF0000; }
+        .complex rect:nth-child(4n+2) { fill: #00CC00; }
+        .complex rect:nth-child(4n+3) { fill: #0066FF; }
+        .complex rect:nth-child(4n) { fill: #CC00CC; }
+
+        /* only-child */
+        .only-child-demo g rect { fill: #CCCCCC; }
+        .only-child-demo g rect:only-child { fill: #FF6600; }
+    </style>
+
+    <text x="50" y="30" font-size="18" fill="#333333">CSS nth-child &amp; nth-of-type Selectors</text>
+
+    <!-- Row 1: Basic odd/even -->
+    <text x="50" y="70" font-size="14" fill="#666666">:nth-child(odd) / :nth-child(even)</text>
+
+    <g transform="translate(50, 90)" class="nth-child-demo">
+        <rect x="0" y="0" width="40" height="40" />
+        <rect x="50" y="0" width="40" height="40" />
+        <rect x="100" y="0" width="40" height="40" />
+        <rect x="150" y="0" width="40" height="40" />
+        <rect x="200" y="0" width="40" height="40" />
+        <rect x="250" y="0" width="40" height="40" />
+        <rect x="300" y="0" width="40" height="40" />
+        <rect x="350" y="0" width="40" height="40" />
+    </g>
+
+    <!-- Row 2: nth-child(3n) pattern -->
+    <text x="50" y="160" font-size="14" fill="#666666">:nth-child(3n), (3n+1), (3n+2)</text>
+
+    <g transform="translate(50, 180)" class="nth-3n">
+        <rect x="0" y="0" width="35" height="40" />
+        <rect x="45" y="0" width="35" height="40" />
+        <rect x="90" y="0" width="35" height="40" />
+        <rect x="135" y="0" width="35" height="40" />
+        <rect x="180" y="0" width="35" height="40" />
+        <rect x="225" y="0" width="35" height="40" />
+        <rect x="270" y="0" width="35" height="40" />
+        <rect x="315" y="0" width="35" height="40" />
+        <rect x="360" y="0" width="35" height="40" />
+    </g>
+
+    <!-- Row 3: first-child, last-child -->
+    <text x="50" y="250" font-size="14" fill="#666666">:first-child (red), :last-child (green)</text>
+
+    <g transform="translate(50, 270)" class="first-last">
+        <rect x="0" y="0" width="40" height="40" />
+        <rect x="50" y="0" width="40" height="40" />
+        <rect x="100" y="0" width="40" height="40" />
+        <rect x="150" y="0" width="40" height="40" />
+        <rect x="200" y="0" width="40" height="40" />
+    </g>
+
+    <!-- Row 4: nth-of-type with mixed elements -->
+    <text x="50" y="340" font-size="14" fill="#666666">:nth-of-type (circles only)</text>
+
+    <g transform="translate(50, 360)" class="nth-type">
+        <circle cx="20" cy="20" r="18" />
+        <rect x="50" y="2" width="36" height="36" />
+        <circle cx="110" cy="20" r="18" />
+        <rect x="140" y="2" width="36" height="36" />
+        <circle cx="200" cy="20" r="18" />
+        <rect x="230" y="2" width="36" height="36" />
+        <circle cx="290" cy="20" r="18" />
+    </g>
+
+    <!-- Row 5: nth-last-child -->
+    <text x="50" y="430" font-size="14" fill="#666666">:nth-last-child (from end)</text>
+
+    <g transform="translate(50, 450)" class="nth-last">
+        <rect x="0" y="0" width="40" height="40" />
+        <rect x="50" y="0" width="40" height="40" />
+        <rect x="100" y="0" width="40" height="40" />
+        <rect x="150" y="0" width="40" height="40" />
+        <rect x="200" y="0" width="40" height="40" />
+        <rect x="250" y="0" width="40" height="40" />
+    </g>
+
+    <!-- Complex 4n formulas -->
+    <g transform="translate(450, 90)" class="complex">
+        <text x="0" y="-5" font-size="12" fill="#666666">:nth-child(4n+1,2,3,4)</text>
+        <rect x="0" y="0" width="30" height="30" />
+        <rect x="40" y="0" width="30" height="30" />
+        <rect x="80" y="0" width="30" height="30" />
+        <rect x="120" y="0" width="30" height="30" />
+        <rect x="160" y="0" width="30" height="30" />
+        <rect x="200" y="0" width="30" height="30" />
+        <rect x="240" y="0" width="30" height="30" />
+        <rect x="280" y="0" width="30" height="30" />
+    </g>
+
+    <!-- Grid pattern with nth-child -->
+    <g transform="translate(450, 160)">
+        <text x="0" y="-5" font-size="12" fill="#666666">Grid Pattern</text>
+        <g class="nth-child-demo">
+            <rect x="0" y="0" width="25" height="25" />
+            <rect x="30" y="0" width="25" height="25" />
+            <rect x="60" y="0" width="25" height="25" />
+            <rect x="90" y="0" width="25" height="25" />
+            <rect x="0" y="30" width="25" height="25" />
+            <rect x="30" y="30" width="25" height="25" />
+            <rect x="60" y="30" width="25" height="25" />
+            <rect x="90" y="30" width="25" height="25" />
+            <rect x="0" y="60" width="25" height="25" />
+            <rect x="30" y="60" width="25" height="25" />
+            <rect x="60" y="60" width="25" height="25" />
+            <rect x="90" y="60" width="25" height="25" />
+        </g>
+    </g>
+
+    <!-- only-child -->
+    <g transform="translate(450, 280)" class="only-child-demo">
+        <text x="0" y="-5" font-size="12" fill="#666666">:only-child</text>
+        <g transform="translate(0, 0)">
+            <rect x="0" y="0" width="40" height="40" />
+        </g>
+        <g transform="translate(60, 0)">
+            <rect x="0" y="0" width="40" height="40" />
+            <rect x="0" y="50" width="40" height="40" />
+        </g>
+        <g transform="translate(120, 0)">
+            <rect x="0" y="0" width="40" height="40" />
+        </g>
+    </g>
+
+    <!-- Nested nth-child -->
+    <g transform="translate(450, 400)">
+        <text x="0" y="-5" font-size="12" fill="#666666">Nested Groups</text>
+        <g class="nth-child-demo">
+            <g transform="translate(0, 0)">
+                <rect x="0" y="0" width="30" height="30" />
+                <rect x="35" y="0" width="30" height="30" />
+                <rect x="70" y="0" width="30" height="30" />
+            </g>
+            <g transform="translate(0, 40)" class="nth-3n">
+                <rect x="0" y="0" width="30" height="30" />
+                <rect x="35" y="0" width="30" height="30" />
+                <rect x="70" y="0" width="30" height="30" />
+            </g>
+        </g>
+    </g>
+
+    <!-- Labels for legend -->
+    <g transform="translate(600, 520)">
+        <rect x="0" y="0" width="20" height="20" fill="#FF6600" />
+        <text x="25" y="15" font-size="11" fill="#333333">odd</text>
+        <rect x="60" y="0" width="20" height="20" fill="#0066FF" />
+        <text x="85" y="15" font-size="11" fill="#333333">even</text>
+        <rect x="120" y="0" width="20" height="20" fill="#00CC66" />
+        <text x="145" y="15" font-size="11" fill="#333333">3n</text>
+    </g>
+</svg>

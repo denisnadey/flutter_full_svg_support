@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+    <!-- Vertical writing modes test -->
+    <text x="50" y="30" font-size="18" fill="#333333">Text Writing Modes</text>
+
+    <!-- Row 1: Horizontal vs Vertical -->
+    <text x="50" y="70" font-size="14" fill="#666666">Writing Mode Comparison</text>
+
+    <!-- Horizontal (default) -->
+    <g transform="translate(50, 90)">
+        <text x="0" y="-5" font-size="11" fill="#999999">horizontal-tb (default)</text>
+        <rect width="150" height="120" fill="#EEEEEE" stroke="#CCCCCC" />
+        <text x="10" y="40" font-size="20" fill="#333333">Hello World</text>
+        <text x="10" y="70" font-size="20" fill="#333333">Testing</text>
+        <text x="10" y="100" font-size="20" fill="#333333">Text</text>
+    </g>
+
+    <!-- Vertical RL -->
+    <g transform="translate(220, 90)">
+        <text x="0" y="-5" font-size="11" fill="#999999">vertical-rl</text>
+        <rect width="150" height="200" fill="#EEEEEE" stroke="#CCCCCC" />
+        <text x="120" y="20" font-size="20" fill="#333333" writing-mode="vertical-rl">Hello World</text>
+        <text x="80" y="20" font-size="20" fill="#333333" writing-mode="vertical-rl">Testing</text>
+        <text x="40" y="20" font-size="20" fill="#333333" writing-mode="vertical-rl">Text</text>
+    </g>
+
+    <!-- Vertical LR -->
+    <g transform="translate(390, 90)">
+        <text x="0" y="-5" font-size="11" fill="#999999">vertical-lr</text>
+        <rect width="150" height="200" fill="#EEEEEE" stroke="#CCCCCC" />
+        <text x="20" y="20" font-size="20" fill="#333333" writing-mode="vertical-lr">Hello World</text>
+        <text x="60" y="20" font-size="20" fill="#333333" writing-mode="vertical-lr">Testing</text>
+        <text x="100" y="20" font-size="20" fill="#333333" writing-mode="vertical-lr">Text</text>
+    </g>
+
+    <!-- Row 2: Different font sizes vertical -->
+    <text x="50" y="320" font-size="14" fill="#666666">Vertical Text Sizes</text>
+
+    <g transform="translate(50, 340)">
+        <rect width="200" height="220" fill="#EEEEEE" stroke="#CCCCCC" />
+        <text x="160" y="10" font-size="12" fill="#333333" writing-mode="vertical-rl">Small (12px)</text>
+        <text x="120" y="10" font-size="18" fill="#333333" writing-mode="vertical-rl">Medium (18px)</text>
+        <text x="70" y="10" font-size="24" fill="#333333" writing-mode="vertical-rl">Large (24px)</text>
+        <text x="20" y="10" font-size="14" fill="#FF6600" writing-mode="vertical-rl">Colored</text>
+    </g>
+
+    <!-- Row 2: Styled vertical text -->
+    <g transform="translate(270, 340)">
+        <text x="0" y="-5" font-size="11" fill="#999999">Styled Vertical</text>
+        <rect width="180" height="220" fill="#EEEEEE" stroke="#CCCCCC" />
+        <text x="140" y="10" font-size="18" font-weight="bold" fill="#333333"
+            writing-mode="vertical-rl">Bold</text>
+        <text x="100" y="10" font-size="18" font-style="italic" fill="#333333"
+            writing-mode="vertical-rl">Italic</text>
+        <text x="60" y="10" font-size="18" fill="#0066FF" writing-mode="vertical-rl">Blue</text>
+        <text x="20" y="10" font-size="18" fill="#FF0000" writing-mode="vertical-rl">Red</text>
+    </g>
+
+    <!-- Mixed CJK and Latin -->
+    <g transform="translate(470, 340)">
+        <text x="0" y="-5" font-size="11" fill="#999999">Mixed Scripts</text>
+        <rect width="180" height="220" fill="#EEEEEE" stroke="#CCCCCC" />
+        <text x="140" y="10" font-size="20" fill="#333333" writing-mode="vertical-rl">ABC123</text>
+        <text x="100" y="10" font-size="20" fill="#333333" writing-mode="vertical-rl">Test</text>
+        <text x="60" y="10" font-size="20" fill="#333333" writing-mode="vertical-rl">Hello</text>
+    </g>
+
+    <!-- Vertical text with transforms -->
+    <g transform="translate(550, 90)">
+        <text x="0" y="-5" font-size="11" fill="#999999">Vertical with Transforms</text>
+        <rect width="200" height="200" fill="#EEEEEE" stroke="#CCCCCC" />
+        <text x="160" y="20" font-size="16" fill="#FF6600" writing-mode="vertical-rl">Normal</text>
+        <text x="120" y="20" font-size="16" fill="#0066FF" writing-mode="vertical-rl"
+            transform="scale(1.2)">Scaled</text>
+        <g transform="translate(80, 100) rotate(15)">
+            <text font-size="16" fill="#00CC66" writing-mode="vertical-rl">Rotated</text>
+        </g>
+    </g>
+
+    <!-- tspan within vertical text -->
+    <g transform="translate(670, 340)">
+        <text x="0" y="-5" font-size="11" fill="#999999">tspan Vertical</text>
+        <rect width="100" height="220" fill="#EEEEEE" stroke="#CCCCCC" />
+        <text x="60" y="10" font-size="18" fill="#333333" writing-mode="vertical-rl">
+            <tspan fill="#FF0000">Red</tspan>
+            <tspan fill="#00CC00">Green</tspan>
+            <tspan fill="#0000FF">Blue</tspan>
+        </text>
+    </g>
+</svg>

@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+    <!-- Scale up from center -->
+    <rect x="370" y="270" width="60" height="60" fill="#e74c3c" rx="5">
+        <animateTransform attributeName="transform" type="scale"
+            values="1;2.5;0.5;1.8;1" dur="15s" fill="freeze"
+            additive="sum" />
+    </rect>
+
+    <!-- Scale with translate (group) -->
+    <g transform="translate(200,150)">
+        <animateTransform attributeName="transform" type="scale"
+            from="0.3" to="2.0" dur="15s" fill="freeze"
+            additive="sum" />
+        <circle cx="0" cy="0" r="40" fill="#3498db" />
+    </g>
+
+    <!-- Non-uniform scale -->
+    <g transform="translate(600,450)">
+        <animateTransform attributeName="transform" type="scale"
+            values="1 1;2 0.5;0.5 2;1 1" dur="15s" fill="freeze"
+            additive="sum" />
+        <rect x="-40" y="-30" width="80" height="60" fill="#2ecc71" rx="8" />
+    </g>
+
+    <!-- Scale + rotation combined via two animateTransforms -->
+    <g transform="translate(600,150)">
+        <animateTransform attributeName="transform" type="scale"
+            values="1;1.5;1" dur="15s" fill="freeze"
+            additive="sum" />
+        <animateTransform attributeName="transform" type="rotate"
+            from="0" to="360" dur="15s" fill="freeze"
+            additive="sum" />
+        <polygon points="0,-30 26,15 -26,15" fill="#f39c12" />
+    </g>
+</svg>

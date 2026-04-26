@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 80" width="200" height="80">
+  <defs>
+    <linearGradient id="waveGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#6C63FF" stop-opacity="0"/>
+      <stop offset="30%" stop-color="#6C63FF"/>
+      <stop offset="70%" stop-color="#3EC6E0"/>
+      <stop offset="100%" stop-color="#3EC6E0" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <!-- heartbeat line -->
+  <polyline points="0,40 30,40 40,20 50,60 60,40 80,40 90,10 100,70 110,40 130,40 140,25 150,55 160,40 200,40"
+    fill="none" stroke="url(#waveGrad)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <animate attributeName="stroke-dasharray" values="0,500;500,0" dur="2s" repeatCount="indefinite"/>
+  </polyline>
+  <!-- trailing glow circles -->
+  <circle cx="100" cy="40" r="4" fill="#3EC6E0" opacity="0.8">
+    <animate attributeName="cx" values="0;200" dur="2s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0;1;0" dur="2s" repeatCount="indefinite"/>
+  </circle>
+</svg>

@@ -1,0 +1,158 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+    <!-- Filter composition chains test -->
+    <defs>
+        <!-- Individual filters -->
+        <filter id="blurOnly" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="3" />
+        </filter>
+
+        <filter id="shadowOnly" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="4" dy="4" stdDeviation="2" flood-color="#333333" flood-opacity="0.5" />
+        </filter>
+
+        <!-- Chain: Blur + Shadow -->
+        <filter id="blurShadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur" />
+            <feDropShadow in="blur" dx="4" dy="4" stdDeviation="2" flood-color="#333333"
+                flood-opacity="0.5" />
+        </filter>
+
+        <!-- Chain: Multiple blurs -->
+        <filter id="multiBlur" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="1" result="blur1" />
+            <feGaussianBlur in="blur1" stdDeviation="2" result="blur2" />
+            <feGaussianBlur in="blur2" stdDeviation="3" />
+        </filter>
+
+        <!-- Chain: Color + Blur -->
+        <filter id="colorBlur" x="-20%" y="-20%" width="140%" height="140%">
+            <feColorMatrix type="saturate" values="0.3" result="desaturate" />
+            <feGaussianBlur in="desaturate" stdDeviation="2" />
+        </filter>
+
+        <!-- feMerge with multiple inputs -->
+        <filter id="mergeFilter" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur" />
+            <feOffset in="SourceGraphic" dx="4" dy="4" result="offset" />
+            <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="offset" />
+                <feMergeNode in="SourceGraphic" />
+            </feMerge>
+        </filter>
+
+        <!-- Complex chain: Multiple effects -->
+        <filter id="complexChain" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="shadow" />
+            <feOffset in="shadow" dx="5" dy="5" result="offsetShadow" />
+            <feFlood flood-color="#000000" flood-opacity="0.4" result="shadowColor" />
+            <feComposite in="shadowColor" in2="offsetShadow" operator="in" result="finalShadow" />
+            <feMerge>
+                <feMergeNode in="finalShadow" />
+                <feMergeNode in="SourceGraphic" />
+            </feMerge>
+        </filter>
+
+        <!-- Glow effect chain -->
+        <filter id="glowChain" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blur1" />
+            <feGaussianBlur in="blur1" stdDeviation="5" result="blur2" />
+            <feMerge>
+                <feMergeNode in="blur2" />
+                <feMergeNode in="blur1" />
+                <feMergeNode in="SourceGraphic" />
+            </feMerge>
+        </filter>
+    </defs>
+
+    <text x="50" y="30" font-size="18" fill="#333333">Filter Composition Chains</text>
+
+    <!-- Row 1: Individual vs Combined -->
+    <text x="50" y="70" font-size="14" fill="#666666">Individual vs Combined Filters</text>
+
+    <g transform="translate(50, 90)">
+        <text x="30" y="-5" font-size="11" fill="#999999">No filter</text>
+        <rect width="120" height="80" fill="#EEEEEE" stroke="#CCCCCC" />
+        <rect x="20" y="15" width="80" height="50" fill="#FF6600" rx="5" />
+    </g>
+
+    <g transform="translate(200, 90)">
+        <text x="30" y="-5" font-size="11" fill="#999999">Blur only</text>
+        <rect width="120" height="80" fill="#EEEEEE" stroke="#CCCCCC" />
+        <rect x="20" y="15" width="80" height="50" fill="#FF6600" rx="5" filter="url(#blurOnly)" />
+    </g>
+
+    <g transform="translate(350, 90)">
+        <text x="20" y="-5" font-size="11" fill="#999999">Shadow only</text>
+        <rect width="120" height="80" fill="#EEEEEE" stroke="#CCCCCC" />
+        <rect x="15" y="10" width="80" height="50" fill="#FF6600" rx="5" filter="url(#shadowOnly)" />
+    </g>
+
+    <g transform="translate(500, 90)">
+        <text x="15" y="-5" font-size="11" fill="#999999">Blur + Shadow</text>
+        <rect width="120" height="80" fill="#EEEEEE" stroke="#CCCCCC" />
+        <rect x="15" y="10" width="80" height="50" fill="#FF6600" rx="5" filter="url(#blurShadow)" />
+    </g>
+
+    <!-- Row 2: Multiple blurs -->
+    <text x="50" y="200" font-size="14" fill="#666666">Multiple Blur Passes</text>
+
+    <g transform="translate(50, 220)">
+        <text x="40" y="-5" font-size="11" fill="#999999">Original</text>
+        <rect width="150" height="100" fill="#EEEEEE" stroke="#CCCCCC" />
+        <circle cx="75" cy="50" r="35" fill="#0066FF" />
+    </g>
+
+    <g transform="translate(230, 220)">
+        <text x="30" y="-5" font-size="11" fill="#999999">Multi-blur chain</text>
+        <rect width="150" height="100" fill="#EEEEEE" stroke="#CCCCCC" />
+        <circle cx="75" cy="50" r="35" fill="#0066FF" filter="url(#multiBlur)" />
+    </g>
+
+    <g transform="translate(410, 220)">
+        <text x="30" y="-5" font-size="11" fill="#999999">Color + Blur</text>
+        <rect width="150" height="100" fill="#EEEEEE" stroke="#CCCCCC" />
+        <circle cx="75" cy="50" r="35" fill="#0066FF" filter="url(#colorBlur)" />
+    </g>
+
+    <!-- Row 3: feMerge combinations -->
+    <text x="50" y="350" font-size="14" fill="#666666">feMerge Multiple Inputs</text>
+
+    <g transform="translate(50, 370)">
+        <text x="20" y="-5" font-size="11" fill="#999999">Merge Filter</text>
+        <rect width="180" height="120" fill="#EEEEEE" stroke="#CCCCCC" />
+        <rect x="30" y="20" width="100" height="70" fill="#00CC66" rx="10"
+            filter="url(#mergeFilter)" />
+    </g>
+
+    <g transform="translate(260, 370)">
+        <text x="20" y="-5" font-size="11" fill="#999999">Complex Chain</text>
+        <rect width="180" height="120" fill="#EEEEEE" stroke="#CCCCCC" />
+        <rect x="30" y="20" width="100" height="70" fill="#CC00CC" rx="10"
+            filter="url(#complexChain)" />
+    </g>
+
+    <g transform="translate(470, 370)">
+        <text x="30" y="-5" font-size="11" fill="#999999">Glow Effect</text>
+        <rect width="180" height="120" fill="#333333" stroke="#CCCCCC" />
+        <circle cx="90" cy="60" r="30" fill="#FFCC00" filter="url(#glowChain)" />
+    </g>
+
+    <!-- Row 4: Filter on text -->
+    <text x="50" y="520" font-size="14" fill="#666666">Filters on Text</text>
+
+    <g transform="translate(50, 540)">
+        <rect width="200" height="50" fill="#EEEEEE" stroke="#CCCCCC" />
+        <text x="15" y="35" font-size="28" fill="#333333" filter="url(#blurShadow)">Filtered</text>
+    </g>
+
+    <g transform="translate(280, 540)">
+        <rect width="200" height="50" fill="#333333" stroke="#CCCCCC" />
+        <text x="30" y="38" font-size="28" fill="#FFCC00" filter="url(#glowChain)">Glow</text>
+    </g>
+
+    <g transform="translate(510, 540)">
+        <rect width="200" height="50" fill="#EEEEEE" stroke="#CCCCCC" />
+        <text x="15" y="35" font-size="28" fill="#0066FF" filter="url(#complexChain)">Shadow</text>
+    </g>
+</svg>

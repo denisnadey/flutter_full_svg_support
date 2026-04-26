@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+    <!-- Gradients test: linear and radial gradients on various shapes -->
+    <defs>
+        <!-- Linear gradients -->
+        <linearGradient id="linearHorizontal" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#FF0000" />
+            <stop offset="50%" stop-color="#FFFF00" />
+            <stop offset="100%" stop-color="#00FF00" />
+        </linearGradient>
+
+        <linearGradient id="linearVertical" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#0000FF" />
+            <stop offset="100%" stop-color="#00FFFF" />
+        </linearGradient>
+
+        <linearGradient id="linearDiagonal" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#FF00FF" />
+            <stop offset="100%" stop-color="#FF8800" />
+        </linearGradient>
+
+        <!-- Radial gradients -->
+        <radialGradient id="radialCenter" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#FFFFFF" />
+            <stop offset="100%" stop-color="#0000FF" />
+        </radialGradient>
+
+        <radialGradient id="radialOffset" cx="30%" cy="30%" r="70%" fx="20%" fy="20%">
+            <stop offset="0%" stop-color="#FFFF00" />
+            <stop offset="100%" stop-color="#FF0000" />
+        </radialGradient>
+
+        <radialGradient id="radialMultiStop" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#FF0000" />
+            <stop offset="33%" stop-color="#00FF00" />
+            <stop offset="66%" stop-color="#0000FF" />
+            <stop offset="100%" stop-color="#FF00FF" />
+        </radialGradient>
+    </defs>
+
+    <!-- Row 1: Linear gradients on rectangles -->
+    <text x="50" y="40" font-size="16" fill="#333333">Linear Gradients</text>
+    <rect x="50" y="60" width="200" height="80" fill="url(#linearHorizontal)" />
+    <rect x="300" y="60" width="200" height="80" fill="url(#linearVertical)" />
+    <rect x="550" y="60" width="200" height="80" fill="url(#linearDiagonal)" />
+
+    <!-- Row 2: Radial gradients on circles -->
+    <text x="50" y="190" font-size="16" fill="#333333">Radial Gradients</text>
+    <circle cx="150" cy="280" r="70" fill="url(#radialCenter)" />
+    <circle cx="400" cy="280" r="70" fill="url(#radialOffset)" />
+    <circle cx="650" cy="280" r="70" fill="url(#radialMultiStop)" />
+
+    <!-- Row 3: Gradients with stroke -->
+    <text x="50" y="390" font-size="16" fill="#333333">Gradients with Stroke</text>
+    <rect x="50" y="410" width="150" height="80" fill="url(#linearHorizontal)" stroke="#333333"
+        stroke-width="3" />
+    <circle cx="350" cy="450" r="50" fill="url(#radialCenter)" stroke="#333333" stroke-width="3" />
+    <ellipse cx="550" cy="450" rx="80" ry="50" fill="url(#linearDiagonal)" stroke="#333333"
+        stroke-width="2" />
+
+    <!-- Row 4: Gradient on path -->
+    <text x="50" y="530" font-size="16" fill="#333333">Gradient on Path</text>
+    <path d="M50,580 Q200,520 350,580 T650,580" fill="none" stroke="url(#linearHorizontal)"
+        stroke-width="8" />
+</svg>

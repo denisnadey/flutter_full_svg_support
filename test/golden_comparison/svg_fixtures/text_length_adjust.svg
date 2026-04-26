@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+    <!-- textLength and lengthAdjust test -->
+    <text x="50" y="30" font-size="18" fill="#333333">textLength &amp; lengthAdjust</text>
+
+    <!-- Row 1: textLength basics -->
+    <text x="50" y="70" font-size="14" fill="#666666">textLength Basics</text>
+
+    <g transform="translate(50, 90)">
+        <text x="0" y="-5" font-size="11" fill="#999999">Natural width</text>
+        <rect width="250" height="50" fill="#EEEEEE" stroke="#CCCCCC" />
+        <text x="10" y="35" font-size="24" fill="#333333">Hello World</text>
+    </g>
+
+    <g transform="translate(320, 90)">
+        <text x="0" y="-5" font-size="11" fill="#999999">textLength="350"</text>
+        <rect width="370" height="50" fill="#EEEEEE" stroke="#CCCCCC" />
+        <text x="10" y="35" font-size="24" fill="#333333" textLength="350">Hello World</text>
+    </g>
+
+    <!-- Row 2: Compression -->
+    <text x="50" y="170" font-size="14" fill="#666666">Text Compression (shorter textLength)</text>
+
+    <g transform="translate(50, 190)">
+        <text x="0" y="-5" font-size="11" fill="#999999">textLength="100"</text>
+        <rect width="120" height="50" fill="#EEEEEE" stroke="#CCCCCC" />
+        <text x="10" y="35" font-size="24" fill="#333333" textLength="100">Hello World</text>
+    </g>
+
+    <g transform="translate(200, 190)">
+        <text x="0" y="-5" font-size="11" fill="#999999">textLength="150"</text>
+        <rect width="170" height="50" fill="#EEEEEE" stroke="#CCCCCC" />
+        <text x="10" y="35" font-size="24" fill="#333333" textLength="150">Hello World</text>
+    </g>
+
+    <g transform="translate(400, 190)">
+        <text x="0" y="-5" font-size="11" fill="#999999">textLength="80"</text>
+        <rect width="100" height="50" fill="#EEEEEE" stroke="#CCCCCC" />
+        <text x="10" y="35" font-size="24" fill="#333333" textLength="80">Hello World</text>
+    </g>
+
+    <!-- Row 3: lengthAdjust spacing -->
+    <text x="50" y="280" font-size="14" fill="#666666">lengthAdjust="spacing"</text>
+
+    <g transform="translate(50, 300)">
+        <text x="0" y="-5" font-size="11" fill="#999999">Expanded</text>
+        <rect width="400" height="50" fill="#EEEEEE" stroke="#CCCCCC" />
+        <text x="10" y="35" font-size="24" fill="#0066FF" textLength="380" lengthAdjust="spacing">Hello
+            World</text>
+    </g>
+
+    <g transform="translate(480, 300)">
+        <text x="0" y="-5" font-size="11" fill="#999999">Compressed</text>
+        <rect width="150" height="50" fill="#EEEEEE" stroke="#CCCCCC" />
+        <text x="10" y="35" font-size="24" fill="#0066FF" textLength="130" lengthAdjust="spacing">Hello
+            World</text>
+    </g>
+
+    <!-- Row 4: lengthAdjust spacingAndGlyphs -->
+    <text x="50" y="390" font-size="14" fill="#666666">lengthAdjust="spacingAndGlyphs"</text>
+
+    <g transform="translate(50, 410)">
+        <text x="0" y="-5" font-size="11" fill="#999999">Expanded</text>
+        <rect width="400" height="50" fill="#EEEEEE" stroke="#CCCCCC" />
+        <text x="10" y="35" font-size="24" fill="#FF6600" textLength="380"
+            lengthAdjust="spacingAndGlyphs">Hello World</text>
+    </g>
+
+    <g transform="translate(480, 410)">
+        <text x="0" y="-5" font-size="11" fill="#999999">Compressed</text>
+        <rect width="150" height="50" fill="#EEEEEE" stroke="#CCCCCC" />
+        <text x="10" y="35" font-size="24" fill="#FF6600" textLength="130"
+            lengthAdjust="spacingAndGlyphs">Hello World</text>
+    </g>
+
+    <!-- Row 5: Comparison -->
+    <text x="50" y="500" font-size="14" fill="#666666">Side-by-Side Comparison</text>
+
+    <g transform="translate(50, 520)">
+        <rect width="700" height="70" fill="#EEEEEE" stroke="#CCCCCC" />
+        <text x="10" y="25" font-size="12" fill="#999999">Natural:</text>
+        <text x="80" y="25" font-size="18" fill="#333333">Testing textLength</text>
+
+        <text x="10" y="50" font-size="12" fill="#999999">spacing:</text>
+        <text x="80" y="50" font-size="18" fill="#0066FF" textLength="300" lengthAdjust="spacing">Testing
+            textLength</text>
+
+        <text x="400" y="25" font-size="12" fill="#999999">spacingAndGlyphs:</text>
+        <text x="520" y="25" font-size="18" fill="#FF6600" textLength="160"
+            lengthAdjust="spacingAndGlyphs">Testing textLength</text>
+    </g>
+</svg>

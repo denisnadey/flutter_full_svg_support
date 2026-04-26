@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+    <!-- Basic text rendering test: different sizes, weights, colors -->
+
+    <!-- Small text -->
+    <text x="50" y="50" font-size="12" fill="#333333">Small text (12px)</text>
+
+    <!-- Medium text -->
+    <text x="50" y="100" font-size="24" fill="#333333">Medium text (24px)</text>
+
+    <!-- Large text -->
+    <text x="50" y="160" font-size="36" fill="#333333">Large text (36px)</text>
+
+    <!-- Bold text -->
+    <text x="50" y="230" font-size="24" font-weight="bold" fill="#333333">Bold text</text>
+
+    <!-- Italic text -->
+    <text x="50" y="280" font-size="24" font-style="italic" fill="#333333">Italic text</text>
+
+    <!-- Colored text -->
+    <text x="50" y="330" font-size="24" fill="#FF0000">Red text</text>
+    <text x="250" y="330" font-size="24" fill="#00FF00">Green text</text>
+    <text x="450" y="330" font-size="24" fill="#0000FF">Blue text</text>
+
+    <!-- Different font families -->
+    <text x="50" y="400" font-size="24" font-family="serif" fill="#333333">Serif font</text>
+    <text x="50" y="450" font-size="24" font-family="sans-serif" fill="#333333">Sans-serif font</text>
+    <text x="50" y="500" font-size="24" font-family="monospace" fill="#333333">Monospace font</text>
+
+    <!-- Text with stroke -->
+    <text x="50" y="560" font-size="32" fill="none" stroke="#333333" stroke-width="1">Stroked text</text>
+    <text x="350" y="560" font-size="32" fill="#FFD700" stroke="#333333" stroke-width="2">Fill +
+        Stroke</text>
+</svg>

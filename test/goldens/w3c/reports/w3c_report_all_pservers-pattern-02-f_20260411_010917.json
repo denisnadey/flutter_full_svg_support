@@ -1,0 +1,49 @@
+{
+  "generatedAt": "2026-04-11T01:09:19.939091",
+  "manifestPath": "tool/w3c_goldens/w3c_manifest.json",
+  "filters": {
+    "tier": "all",
+    "case": "pservers-pattern-02-f",
+    "limit": null,
+    "includeSkipped": false,
+    "enableRender": true,
+    "enforceThreshold": false,
+    "useAnimatedRenderer": false
+  },
+  "counts": {
+    "manifestCases": 433,
+    "selectedCases": 1,
+    "recordedResults": 1,
+    "missingResults": 0
+  },
+  "statusCounts": {
+    "measured": 1
+  },
+  "missingResultIds": [],
+  "results": [
+    {
+      "id": "pservers-pattern-02-f",
+      "category": "pservers",
+      "tier": "core",
+      "status": "measured",
+      "threshold": 0.1,
+      "perPixelThreshold": 0.2,
+      "animationTimeMs": 0,
+      "similarity": 0.4894354166666667,
+      "totalPixels": 480000,
+      "differentPixels": 245071,
+      "message": null,
+      "note": "Would pass strict threshold.",
+      "elapsedMs": 574,
+      "svgPath": "W3C_SVG_11_TestSuite/svg/pservers-pattern-02-f.svg",
+      "flags": {
+        "hasAnimation": false,
+        "hasExternalImageRef": false,
+        "hasImageElement": false,
+        "hasResourceRef": true,
+        "hasScript": false,
+        "hasTextElement": true
+      }
+    }
+  ]
+}

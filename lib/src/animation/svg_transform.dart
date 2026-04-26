@@ -1,0 +1,671 @@
+import 'dart:math' as math;
+import 'dart:ui' as ui;
+
+import 'package:flutter/foundation.dart';
+
+import 'transform_3d.dart';
+
+/// SVG transformation type
+enum SvgTransformType {
+  /// translate(x [y])
+  translate,
+
+  /// rotate(angle [cx cy])
+  rotate,
+
+  /// scale(x [y])
+  scale,
+
+  /// skewX(angle)
+  skewX,
+
+  /// skewY(angle)
+  skewY,
+
+  /// matrix(a b c d e f)
+  matrix,
+
+  // 3D transform types
+
+  /// translate3d(x, y, z)
+  translate3d,
+
+  /// translateZ(z)
+  translateZ,
+
+  /// scale3d(x, y, z)
+  scale3d,
+
+  /// scaleZ(z)
+  scaleZ,
+
+  /// rotateX(angle)
+  rotateX,
+
+  /// rotateY(angle)
+  rotateY,
+
+  /// rotateZ(angle) - alias for rotate
+  rotateZ,
+
+  /// rotate3d(x, y, z, angle)
+  rotate3d,
+
+  /// perspective(length)
+  perspective,
+
+  /// matrix3d - 4x4 matrix (16 values)
+  matrix3d,
+}
+
+/// Representation of an SVG transform attribute
+///
+/// Supports parsing and interpolation of various transformation types:
+/// - translate(x, y)
+/// - rotate(angle, cx, cy)
+/// - scale(x, y)
+/// - skewX(angle)
+/// - skewY(angle)
+/// - matrix(a, b, c, d, e, f)
+@immutable
+class SvgTransform {
+  /// Creates a transformation of the specified type
+  const SvgTransform({required this.type, required this.values});
+
+  /// Transformation type
+  final SvgTransformType type;
+
+  /// Numeric transformation values
+  /// - translate: [tx, ty] (ty optional, defaults to 0)
+  /// - rotate: [angle, cx, cy] (cx, cy optional, default to 0)
+  /// - scale: [sx, sy] (sy optional, defaults to sx)
+  /// - skewX/skewY: [angle]
+  /// - matrix: [a, b, c, d, e, f]
+  final List<double> values;
+
+  /// Parses an SVG transform string into a list of transformations
+  ///
+  /// Supports:
+  /// - translate(10, 20)
+  /// - rotate(45)
+  /// - rotate(45, 50, 50) - with rotation center
+  /// - scale(2)
+  /// - scale(2, 3)
+  /// - matrix(1, 0, 0, 1, 0, 0)
+  /// - Combinations: "translate(10, 20) rotate(45)"
+  /// - 3D transforms: translate3d, translateZ, rotateX, rotateY, rotateZ,
+  ///   rotate3d, scale3d, scaleZ, perspective, matrix3d
+  static List<SvgTransform> parse(String transformString) {
+    final transforms = <SvgTransform>[];
+    // Updated regex to include 3D transform functions
+    final regex = RegExp(
+      r'(translate3d|translatez|translate|rotate3d|rotatex|rotatey|rotatez|rotate|scale3d|scalez|scale|skewX|skewY|matrix3d|matrix|perspective)\s*\(\s*([^)]+)\s*\)',
+      caseSensitive: false,
+    );
+
+    for (final match in regex.allMatches(transformString)) {
+      final type = match.group(1)!.toLowerCase();
+      final valuesStr = match.group(2)!;
+      final values = _tokenizeSvgNumbers(
+        valuesStr,
+      ).map((s) => _parseValueWithUnit(s)).toList();
+
+      final transformType = switch (type) {
+        'translate' => SvgTransformType.translate,
+        'rotate' => SvgTransformType.rotate,
+        'scale' => SvgTransformType.scale,
+        'skewx' => SvgTransformType.skewX,
+        'skewy' => SvgTransformType.skewY,
+        'matrix' => SvgTransformType.matrix,
+        // 3D transform types
+        'translate3d' => SvgTransformType.translate3d,
+        'translatez' => SvgTransformType.translateZ,
+        'scale3d' => SvgTransformType.scale3d,
+        'scalez' => SvgTransformType.scaleZ,
+        'rotatex' => SvgTransformType.rotateX,
+        'rotatey' => SvgTransformType.rotateY,
+        'rotatez' => SvgTransformType.rotateZ,
+        'rotate3d' => SvgTransformType.rotate3d,
+        'perspective' => SvgTransformType.perspective,
+        'matrix3d' => SvgTransformType.matrix3d,
+        _ => null,
+      };
+
+      if (transformType != null) {
+        transforms.add(SvgTransform(type: transformType, values: values));
+      }
+    }
+
+    return transforms;
+  }
+
+  /// Tokenizes SVG number list values, handling adjacent negative numbers.
+  ///
+  /// SVG allows numbers to be separated by:
+  /// - Whitespace
+  /// - Comma (with optional surrounding whitespace)
+  /// - Sign character (- or +) when it starts a new number
+  ///
+  /// This handles cases like "0-1" which means "0" followed by "-1",
+  /// and "10.5-3.2" which means "10.5" followed by "-3.2".
+  static List<String> _tokenizeSvgNumbers(String input) {
+    final result = <String>[];
+    final buffer = StringBuffer();
+
+    for (var i = 0; i < input.length; i++) {
+      final char = input[i];
+
+      // Skip whitespace and commas as separators
+      if (char == ' ' ||
+          char == '\t' ||
+          char == '\n' ||
+          char == '\r' ||
+          char == ',') {
+        if (buffer.isNotEmpty) {
+          result.add(buffer.toString());
+          buffer.clear();
+        }
+        continue;
+      }
+
+      // Handle sign characters (- or +)
+      if (char == '-' || char == '+') {
+        if (buffer.isEmpty) {
+          // Start of number with sign
+          buffer.write(char);
+        } else {
+          // Check if this is an exponent sign (e.g., "1e-5")
+          final lastChar = buffer.toString()[buffer.length - 1].toLowerCase();
+          if (lastChar == 'e') {
+            // Part of exponent notation
+            buffer.write(char);
+          } else {
+            // New number starting with sign
+            result.add(buffer.toString());
+            buffer.clear();
+            buffer.write(char);
+          }
+        }
+        continue;
+      }
+
+      // Handle decimal point
+      if (char == '.') {
+        // Check if we already have a decimal point in the current number
+        if (buffer.toString().contains('.')) {
+          // New number starting with decimal
+          result.add(buffer.toString());
+          buffer.clear();
+        }
+        buffer.write(char);
+        continue;
+      }
+
+      // All other characters (digits, letters for units)
+      buffer.write(char);
+    }
+
+    // Add remaining buffer content
+    if (buffer.isNotEmpty) {
+      result.add(buffer.toString());
+    }
+
+    return result;
+  }
+
+  /// Parses a value that may include units (deg, rad, px, em, etc.)
+  static double _parseValueWithUnit(String s) {
+    final trimmed = s.trim().toLowerCase();
+
+    // Handle angle units first
+    // NOTE: 'grad' must be checked before 'rad' because 'grad'.endsWith('rad') == true
+    if (trimmed.endsWith('deg')) {
+      return double.tryParse(trimmed.substring(0, trimmed.length - 3)) ?? 0.0;
+    } else if (trimmed.endsWith('grad')) {
+      final grad =
+          double.tryParse(trimmed.substring(0, trimmed.length - 4)) ?? 0.0;
+      return grad * 0.9; // Convert to degrees (100 grad = 90 deg)
+    } else if (trimmed.endsWith('rad')) {
+      final rad =
+          double.tryParse(trimmed.substring(0, trimmed.length - 3)) ?? 0.0;
+      return rad * 180.0 / math.pi; // Convert to degrees
+    } else if (trimmed.endsWith('turn')) {
+      final turn =
+          double.tryParse(trimmed.substring(0, trimmed.length - 4)) ?? 0.0;
+      return turn * 360.0; // Convert to degrees
+    }
+
+    // Handle length units for translate functions
+    // Map of unit suffixes to their pixel conversion factors
+    // Base assumptions: 16px = 1em = 1rem, 96dpi for absolute units
+    // Sorted by length descending to avoid 'em' matching 'rem'
+    const lengthUnits = <String, double>{
+      'rem': 16.0, // Must come before 'em'
+      'em': 16.0,
+      'px': 1.0,
+      'ex': 8.0,
+      'ch': 8.0,
+      'cm': 37.795,
+      'mm': 3.7795,
+      'in': 96.0,
+      'pt': 1.333,
+      'pc': 16.0,
+    };
+
+    for (final entry in lengthUnits.entries) {
+      if (trimmed.endsWith(entry.key)) {
+        final numStr = trimmed.substring(0, trimmed.length - entry.key.length);
+        final num = double.tryParse(numStr) ?? 0.0;
+        return num * entry.value;
+      }
+    }
+
+    // Handle percentage (for transforms, just parse the number as-is)
+    if (trimmed.endsWith('%')) {
+      return double.tryParse(trimmed.substring(0, trimmed.length - 1)) ?? 0.0;
+    }
+
+    return double.tryParse(trimmed) ?? 0.0;
+  }
+
+  /// Converts the transformation to a Matrix4
+  ui.Offset toMatrix4() {
+    // For simplicity, return an offset for translate
+    // Full Matrix4 implementation will be added when needed
+    if (type == SvgTransformType.translate) {
+      return ui.Offset(
+        values.isNotEmpty ? values[0] : 0.0,
+        values.length > 1 ? values[1] : 0.0,
+      );
+    }
+    return ui.Offset.zero;
+  }
+
+  /// Returns a string representation for debugging
+  @override
+  String toString() {
+    final name = type.toString().split('.').last;
+    return 'SvgTransform.$name(${values.join(', ')})';
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SvgTransform &&
+          runtimeType == other.runtimeType &&
+          type == other.type &&
+          listEquals(values, other.values);
+
+  @override
+  int get hashCode => Object.hash(type, Object.hashAll(values));
+}
+
+/// Decomposition of a transformation matrix for interpolation
+///
+/// Breaks a matrix into components: translate, rotate, scale, skew
+/// for smoother interpolation between different transformations.
+/// Uses QR decomposition for proper handling of arbitrary 2D matrices.
+@immutable
+class TransformDecomposition {
+  const TransformDecomposition({
+    required this.translateX,
+    required this.translateY,
+    required this.rotation,
+    required this.scaleX,
+    required this.scaleY,
+    required this.skewX,
+    this.skewY = 0.0,
+  });
+
+  /// Identity transform decomposition.
+  static const identity = TransformDecomposition(
+    translateX: 0.0,
+    translateY: 0.0,
+    rotation: 0.0,
+    scaleX: 1.0,
+    scaleY: 1.0,
+    skewX: 0.0,
+    skewY: 0.0,
+  );
+
+  final double translateX;
+  final double translateY;
+  final double rotation; // in radians
+  final double scaleX;
+  final double scaleY;
+  final double skewX; // in radians
+  final double skewY; // in radians
+
+  /// Creates a decomposition from a list of transformations
+  factory TransformDecomposition.fromTransforms(List<SvgTransform> transforms) {
+    double tx = 0.0, ty = 0.0;
+    double rotation = 0.0;
+    double sx = 1.0, sy = 1.0;
+    double skewX = 0.0;
+    double skewY = 0.0;
+
+    for (final transform in transforms) {
+      switch (transform.type) {
+        case SvgTransformType.translate:
+          tx += transform.values.isNotEmpty ? transform.values[0] : 0.0;
+          ty += transform.values.length > 1 ? transform.values[1] : 0.0;
+        case SvgTransformType.rotate:
+          rotation += transform.values.isNotEmpty
+              ? transform.values[0] * math.pi / 180.0
+              : 0.0;
+        case SvgTransformType.scale:
+          sx *= transform.values.isNotEmpty ? transform.values[0] : 1.0;
+          sy *= transform.values.length > 1
+              ? transform.values[1]
+              : (transform.values.isNotEmpty ? transform.values[0] : 1.0);
+        case SvgTransformType.skewX:
+          skewX += transform.values.isNotEmpty
+              ? transform.values[0] * math.pi / 180.0
+              : 0.0;
+        case SvgTransformType.skewY:
+          skewY += transform.values.isNotEmpty
+              ? transform.values[0] * math.pi / 180.0
+              : 0.0;
+        case SvgTransformType.matrix:
+          if (transform.values.length >= 6) {
+            final matrixDecomposition = _decomposeMatrix(transform.values);
+            tx += matrixDecomposition.translateX;
+            ty += matrixDecomposition.translateY;
+            rotation += matrixDecomposition.rotation;
+            sx *= matrixDecomposition.scaleX;
+            sy *= matrixDecomposition.scaleY;
+            skewX += matrixDecomposition.skewX;
+          }
+          break;
+        // 3D transforms - project to 2D for decomposition
+        case SvgTransformType.translate3d:
+          tx += transform.values.isNotEmpty ? transform.values[0] : 0.0;
+          ty += transform.values.length > 1 ? transform.values[1] : 0.0;
+          // Z translation is ignored in 2D projection
+          break;
+        case SvgTransformType.translateZ:
+          // Z-only translation has no effect in 2D without perspective
+          break;
+        case SvgTransformType.scale3d:
+          sx *= transform.values.isNotEmpty ? transform.values[0] : 1.0;
+          sy *= transform.values.length > 1 ? transform.values[1] : 1.0;
+          // Z scale is ignored in 2D projection
+          break;
+        case SvgTransformType.scaleZ:
+          // Z-only scale has no effect in 2D without perspective
+          break;
+        case SvgTransformType.rotateX:
+        case SvgTransformType.rotateY:
+          // X/Y rotations produce perspective effects
+          // For decomposition, we extract the projected 2D transform
+          final angle = transform.values.isNotEmpty
+              ? transform.values[0] * math.pi / 180.0
+              : 0.0;
+          final matrix = transform.type == SvgTransformType.rotateX
+              ? Matrix4x4.rotationX(angle)
+              : Matrix4x4.rotationY(angle);
+          final extracted = matrix.extract2DMatrix();
+          final matrixDecomp = _decomposeMatrix(extracted);
+          rotation += matrixDecomp.rotation;
+          sx *= matrixDecomp.scaleX;
+          sy *= matrixDecomp.scaleY;
+          skewX += matrixDecomp.skewX;
+          break;
+        case SvgTransformType.rotateZ:
+          // Same as regular rotate
+          rotation += transform.values.isNotEmpty
+              ? transform.values[0] * math.pi / 180.0
+              : 0.0;
+          break;
+        case SvgTransformType.rotate3d:
+          // rotate3d(x, y, z, angle)
+          if (transform.values.length >= 4) {
+            final axisX = transform.values[0];
+            final axisY = transform.values[1];
+            final axisZ = transform.values[2];
+            final angle = transform.values[3] * math.pi / 180.0;
+            final matrix = Matrix4x4.rotation3d(axisX, axisY, axisZ, angle);
+            final extracted = matrix.extract2DMatrix();
+            final matrixDecomp = _decomposeMatrix(extracted);
+            rotation += matrixDecomp.rotation;
+            sx *= matrixDecomp.scaleX;
+            sy *= matrixDecomp.scaleY;
+            skewX += matrixDecomp.skewX;
+          }
+          break;
+        case SvgTransformType.perspective:
+          // Perspective doesn't affect decomposition directly
+          break;
+        case SvgTransformType.matrix3d:
+          // Extract 2D portion of 4x4 matrix
+          if (transform.values.length >= 16) {
+            final matrix = Matrix4x4.fromMatrix3d(transform.values);
+            final extracted = matrix.extract2DMatrix();
+            final matrixDecomp = _decomposeMatrix(extracted);
+            tx += matrixDecomp.translateX;
+            ty += matrixDecomp.translateY;
+            rotation += matrixDecomp.rotation;
+            sx *= matrixDecomp.scaleX;
+            sy *= matrixDecomp.scaleY;
+            skewX += matrixDecomp.skewX;
+          }
+          break;
+      }
+    }
+
+    return TransformDecomposition(
+      translateX: tx,
+      translateY: ty,
+      rotation: rotation,
+      scaleX: sx,
+      scaleY: sy,
+      skewX: skewX,
+      skewY: skewY,
+    );
+  }
+
+  /// Interpolates between two decompositions
+  TransformDecomposition lerp(TransformDecomposition other, double t) {
+    // Handle rotation interpolation via shortest path
+    var fromRotation = rotation;
+    var toRotation = other.rotation;
+    final rotationDiff = toRotation - fromRotation;
+    // If rotation difference is > pi, take the shorter path
+    if (rotationDiff > math.pi) {
+      fromRotation += 2 * math.pi;
+    } else if (rotationDiff < -math.pi) {
+      toRotation += 2 * math.pi;
+    }
+
+    return TransformDecomposition(
+      translateX: ui.lerpDouble(translateX, other.translateX, t)!,
+      translateY: ui.lerpDouble(translateY, other.translateY, t)!,
+      rotation: ui.lerpDouble(fromRotation, toRotation, t)!,
+      scaleX: ui.lerpDouble(scaleX, other.scaleX, t)!,
+      scaleY: ui.lerpDouble(scaleY, other.scaleY, t)!,
+      skewX: ui.lerpDouble(skewX, other.skewX, t)!,
+      skewY: ui.lerpDouble(skewY, other.skewY, t)!,
+    );
+  }
+
+  /// Converts back to a list of transformations
+  List<SvgTransform> toTransforms() {
+    final result = <SvgTransform>[];
+
+    if (translateX != 0.0 || translateY != 0.0) {
+      result.add(
+        SvgTransform(
+          type: SvgTransformType.translate,
+          values: [translateX, translateY],
+        ),
+      );
+    }
+
+    if (rotation != 0.0) {
+      result.add(
+        SvgTransform(
+          type: SvgTransformType.rotate,
+          values: [rotation * 180.0 / math.pi],
+        ),
+      );
+    }
+
+    if (scaleX != 1.0 || scaleY != 1.0) {
+      result.add(
+        SvgTransform(type: SvgTransformType.scale, values: [scaleX, scaleY]),
+      );
+    }
+
+    if (skewX != 0.0) {
+      result.add(
+        SvgTransform(
+          type: SvgTransformType.skewX,
+          values: [skewX * 180.0 / math.pi],
+        ),
+      );
+    }
+
+    if (skewY != 0.0) {
+      result.add(
+        SvgTransform(
+          type: SvgTransformType.skewY,
+          values: [skewY * 180.0 / math.pi],
+        ),
+      );
+    }
+
+    return result;
+  }
+
+  @override
+  String toString() {
+    return 'TransformDecomposition('
+        'translate: ($translateX, $translateY), '
+        'rotation: ${rotation * 180 / math.pi}°, '
+        'scale: ($scaleX, $scaleY), '
+        'skewX: ${skewX * 180 / math.pi}°, '
+        'skewY: ${skewY * 180 / math.pi}°)';
+  }
+
+  /// Decomposes a 2D matrix into translation, rotation, scale, and skew.
+  /// Uses QR decomposition with improved handling of degenerate matrices.
+  static TransformDecomposition _decomposeMatrix(List<double> values) {
+    if (values.length < 6) {
+      return TransformDecomposition.identity;
+    }
+
+    final a0 = values[0];
+    final b0 = values[1];
+    final c0 = values[2];
+    final d0 = values[3];
+    final tx = values[4];
+    final ty = values[5];
+    const epsilon = 1e-12;
+
+    // Check for degenerate matrix (zero determinant)
+    final determinant = a0 * d0 - b0 * c0;
+    if (determinant.abs() < epsilon) {
+      // Degenerate matrix - return identity-like transform with translation
+      return TransformDecomposition(
+        translateX: tx,
+        translateY: ty,
+        rotation: 0.0,
+        scaleX: 0.0,
+        scaleY: 0.0,
+        skewX: 0.0,
+        skewY: 0.0,
+      );
+    }
+
+    var a = a0;
+    var b = b0;
+    var c = c0;
+    var d = d0;
+
+    final scaleXRaw = math.sqrt(a * a + b * b);
+    if (scaleXRaw <= epsilon) {
+      final scaleYFallback = math.sqrt(c * c + d * d);
+      final rotationFallback = scaleYFallback <= epsilon
+          ? 0.0
+          : math.atan2(-c, d);
+      return TransformDecomposition(
+        translateX: tx,
+        translateY: ty,
+        rotation: rotationFallback,
+        scaleX: 0.0,
+        scaleY: scaleYFallback,
+        skewX: 0.0,
+        skewY: 0.0,
+      );
+    }
+
+    var scaleX = scaleXRaw;
+    a /= scaleX;
+    b /= scaleX;
+
+    var skew = a * c + b * d;
+    c -= a * skew;
+    d -= b * skew;
+
+    var scaleY = math.sqrt(c * c + d * d);
+    if (scaleY > epsilon) {
+      c /= scaleY;
+      d /= scaleY;
+      skew /= scaleY;
+    } else {
+      scaleY = 0.0;
+      skew = 0.0;
+    }
+
+    final det = a * d - b * c;
+    if (det < 0) {
+      scaleX = -scaleX;
+      skew = -skew;
+      a = -a;
+      b = -b;
+    }
+
+    final rotation = math.atan2(b, a);
+    final skewX = math.atan(skew);
+
+    return TransformDecomposition(
+      translateX: tx,
+      translateY: ty,
+      rotation: rotation,
+      scaleX: scaleX,
+      scaleY: scaleY,
+      skewX: skewX,
+      skewY: 0.0, // skewY is not extracted from matrix decomposition
+    );
+  }
+}
+
+/// Returns an identity 2D matrix as a list of 6 values [a, b, c, d, e, f].
+/// The identity matrix: [1, 0, 0, 1, 0, 0]
+List<double> getIdentityMatrix2D() => [1.0, 0.0, 0.0, 1.0, 0.0, 0.0];
+
+/// Checks if a 2D matrix is singular (non-invertible).
+/// A matrix is singular when its determinant is zero or very close to zero.
+/// Matrix format: [a, b, c, d, e, f] where the 2x2 portion is:
+/// | a  c |
+/// | b  d |
+/// Determinant = a*d - b*c
+bool isMatrix2DSingular(List<double> matrix) {
+  // Need at least 4 values for the 2x2 portion
+  if (matrix.length < 4) {
+    return true;
+  }
+
+  final a = matrix[0];
+  final b = matrix[1];
+  final c = matrix[2];
+  final d = matrix[3];
+
+  // Calculate determinant
+  final det = a * d - b * c;
+
+  // Check if determinant is zero or very close to zero
+  // Use a small epsilon for floating point comparison
+  const epsilon = 1e-10;
+  return det.abs() < epsilon;
+}

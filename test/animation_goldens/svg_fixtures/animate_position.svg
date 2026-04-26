@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+    <!-- Basic position animation: rect moves across the screen -->
+    <rect x="50" y="250" width="80" height="80" fill="#e74c3c" rx="8">
+        <animate attributeName="x" from="50" to="670" dur="15s" fill="freeze" />
+    </rect>
+
+    <!-- Circle moves vertically -->
+    <circle cx="400" cy="50" r="40" fill="#3498db">
+        <animate attributeName="cy" from="50" to="550" dur="15s" fill="freeze" />
+    </circle>
+
+    <!-- Ellipse moves diagonally -->
+    <ellipse cx="50" cy="50" rx="35" ry="25" fill="#2ecc71">
+        <animate attributeName="cx" from="50" to="750" dur="15s" fill="freeze" />
+        <animate attributeName="cy" from="50" to="550" dur="15s" fill="freeze" />
+    </ellipse>
+
+    <!-- Reference grid lines (static) -->
+    <line x1="0" y1="300" x2="800" y2="300" stroke="#ccc" stroke-width="1" stroke-dasharray="5,5" />
+    <line x1="400" y1="0" x2="400" y2="600" stroke="#ccc" stroke-width="1" stroke-dasharray="5,5" />
+</svg>

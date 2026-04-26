@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+    <!-- SMIL syncbase timing with begin="other.end+1s" -->
+    <rect width="200" height="200" fill="#f5f5f5" />
+
+    <!-- Timeline indicator -->
+    <line x1="20" y1="20" x2="180" y2="20" stroke="#ccc" stroke-width="2" />
+    <circle cx="20" cy="20" r="4" fill="#999" />
+    <circle cx="100" cy="20" r="4" fill="#999" />
+    <circle cx="180" cy="20" r="4" fill="#999" />
+
+    <!-- First animation: baseline -->
+    <rect id="first" x="30" y="50" width="40" height="40" fill="#3366cc" rx="3">
+        <animate id="anim1" attributeName="x" from="30" to="130" dur="1s" fill="freeze" />
+    </rect>
+
+    <!-- Second animation: starts when first ends -->
+    <circle id="second" cx="50" cy="120" r="20" fill="#cc3366">
+        <animate id="anim2" attributeName="cx" from="50" to="150" dur="1s" begin="anim1.end"
+            fill="freeze" />
+    </circle>
+
+    <!-- Third animation: starts 0.5s after second ends -->
+    <polygon id="third" points="50,180 70,150 30,150" fill="#33cc66">
+        <animate id="anim3" attributeName="points" from="50,180 70,150 30,150"
+            to="150,180 170,150 130,150" dur="1s" begin="anim2.end+0.5s" fill="freeze" />
+    </polygon>
+
+    <!-- Animation that depends on multiple triggers -->
+    <rect x="160" y="80" width="20" height="20" fill="#cc9933" rx="2">
+        <animate attributeName="fill" from="#cc9933" to="#339933" dur="0.5s" begin="anim3.end"
+            fill="freeze" />
+    </rect>
+</svg>

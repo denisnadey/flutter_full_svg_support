@@ -1,0 +1,40 @@
+# Tooling and local environment
+.dart_tool/
+.vscode/
+.fvm/
+
+# Development-only content
+benchmark/
+tool/
+test/
+W3C_SVG_11_TestSuite/
+blink-b87d44f-Source-core-svg/
+
+# Internal development documentation
+ANIMATION.md
+ARCHITECTURE.md
+CURRENT_STATUS.md
+DOCUMENTATION_INDEX.md
+METADATA
+NEXT_STEPS.md
+RELEASE_CHECKLIST.md
+RELEASE_NOTES_1.0.0.md
+ROADMAP.md
+ROADMAP_VISUAL.md
+TODO.md
+VISUAL_TESTING_GUIDELINES.md
+W3C_SVG_11_TestSuite_PLAN_README.md
+W3C_SVG_11_TestSuite_README.md
+doc/archive/
+doc/BLINK_PARITY_AUDIT.md
+doc/COMPREHENSIVE_GAP_ANALYSIS.md
+doc/RESOLVED_ISSUES.md
+doc/W3C_GAP_CLOSURE_PLAN.md
+example/ENHANCEMENTS_SUMMARY.md
+example/NEW_ARCHITECTURE.md
+example/SEARCH_FEATURE.md
+
+# Local artifacts and logs
+build/
+test_output.log
+.aider*

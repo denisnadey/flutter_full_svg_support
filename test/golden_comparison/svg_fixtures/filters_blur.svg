@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+    <!-- Gaussian blur filter test -->
+    <defs>
+        <!-- Light blur -->
+        <filter id="blurLight" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="2" />
+        </filter>
+
+        <!-- Medium blur -->
+        <filter id="blurMedium" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="5" />
+        </filter>
+
+        <!-- Heavy blur -->
+        <filter id="blurHeavy" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="10" />
+        </filter>
+
+        <!-- X-only blur -->
+        <filter id="blurX" x="-30%" y="-10%" width="160%" height="120%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="8,0" />
+        </filter>
+
+        <!-- Y-only blur -->
+        <filter id="blurY" x="-10%" y="-30%" width="120%" height="160%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="0,8" />
+        </filter>
+
+        <!-- Drop shadow effect using blur -->
+        <filter id="dropShadow" x="-20%" y="-20%" width="150%" height="150%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="4" result="blur" />
+            <feOffset in="blur" dx="4" dy="4" result="offsetBlur" />
+            <feMerge>
+                <feMergeNode in="offsetBlur" />
+                <feMergeNode in="SourceGraphic" />
+            </feMerge>
+        </filter>
+    </defs>
+
+    <!-- Row 1: Different blur amounts -->
+    <text x="50" y="30" font-size="16" fill="#333333">Blur Intensity</text>
+
+    <g transform="translate(50, 50)">
+        <text x="50" y="-5" font-size="12" fill="#666666" text-anchor="middle">No blur</text>
+        <rect width="100" height="100" fill="#FF0000" />
+    </g>
+
+    <g transform="translate(200, 50)">
+        <text x="50" y="-5" font-size="12" fill="#666666" text-anchor="middle">Light (2px)</text>
+        <rect width="100" height="100" fill="#FF0000" filter="url(#blurLight)" />
+    </g>
+
+    <g transform="translate(350, 50)">
+        <text x="50" y="-5" font-size="12" fill="#666666" text-anchor="middle">Medium (5px)</text>
+        <rect width="100" height="100" fill="#FF0000" filter="url(#blurMedium)" />
+    </g>
+
+    <g transform="translate(500, 50)">
+        <text x="50" y="-5" font-size="12" fill="#666666" text-anchor="middle">Heavy (10px)</text>
+        <rect width="100" height="100" fill="#FF0000" filter="url(#blurHeavy)" />
+    </g>
+
+    <!-- Row 2: Directional blur -->
+    <text x="50" y="200" font-size="16" fill="#333333">Directional Blur</text>
+
+    <g transform="translate(50, 220)">
+        <text x="50" y="-5" font-size="12" fill="#666666" text-anchor="middle">Original</text>
+        <circle cx="50" cy="50" r="40" fill="#0066FF" />
+    </g>
+
+    <g transform="translate(200, 220)">
+        <text x="50" y="-5" font-size="12" fill="#666666" text-anchor="middle">X-blur only</text>
+        <circle cx="50" cy="50" r="40" fill="#0066FF" filter="url(#blurX)" />
+    </g>
+
+    <g transform="translate(350, 220)">
+        <text x="50" y="-5" font-size="12" fill="#666666" text-anchor="middle">Y-blur only</text>
+        <circle cx="50" cy="50" r="40" fill="#0066FF" filter="url(#blurY)" />
+    </g>
+
+    <!-- Row 3: Blur on different shapes -->
+    <text x="50" y="370" font-size="16" fill="#333333">Blur on Various Shapes</text>
+
+    <ellipse cx="100" cy="450" rx="60" ry="35" fill="#00CC00" filter="url(#blurMedium)" />
+
+    <polygon points="250,480 300,400 350,480" fill="#FF00FF" filter="url(#blurMedium)" />
+
+    <path d="M450,400 Q500,440 450,480 T550,480" fill="none" stroke="#FF6600" stroke-width="8"
+        filter="url(#blurLight)" />
+
+    <!-- Row 4: Drop shadow -->
+    <text x="50" y="530" font-size="16" fill="#333333">Drop Shadow (blur-based)</text>
+
+    <rect x="50" y="550" width="120" height="40" fill="#0066FF" filter="url(#dropShadow)" />
+    <circle cx="280" cy="570" r="25" fill="#FF0000" filter="url(#dropShadow)" />
+    <text x="400" y="575" font-size="24" fill="#333333" filter="url(#dropShadow)">Shadow Text</text>
+</svg>

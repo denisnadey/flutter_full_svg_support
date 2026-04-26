@@ -1,0 +1,28 @@
+import 'dart:math' as math;
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+
+part 'svg_filters_types.dart';
+part 'svg_filters_base.dart';
+part 'svg_filters_primitives.dart';
+part 'svg_filters_primitives_blur.dart';
+part 'svg_filters_primitives_convolve_matrix.dart';
+part 'svg_filters_primitives_displacement.dart';
+part 'svg_filters_primitives_image.dart';
+part 'svg_filters_primitives_turbulence.dart';
+part 'svg_filters_primitives_component_transfer.dart';
+part 'svg_filters_primitives_lighting.dart';
+part 'svg_filters_primitives_lighting_common.dart';
+part 'svg_filters_primitives_lighting_sources.dart';
+part 'svg_filters_primitives_lighting_diffuse.dart';
+part 'svg_filters_primitives_lighting_specular.dart';
+part 'svg_filters_primitives_lighting_processor.dart';
+part 'svg_filters_color_matrix.dart';
+part 'svg_filters_registry.dart';
+part 'svg_filters_registry_pipeline.dart';
+part 'svg_filters_registry_pipeline_compositing.dart';
+part 'svg_filters_registry_pipeline_primitives.dart';
+part 'svg_filters_registry_pipeline_primitives_effects.dart';
+part 'svg_filters_registry_pipeline_primitives_paint.dart';
+part 'svg_filters_registry_inputs.dart';
+part 'svg_filters_registry_outputs.dart';

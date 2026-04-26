@@ -1,0 +1,49 @@
+{
+  "generatedAt": "2026-04-11T01:10:55.319784",
+  "manifestPath": "tool/w3c_goldens/w3c_manifest.json",
+  "filters": {
+    "tier": "all",
+    "case": "styling-css-04-f",
+    "limit": null,
+    "includeSkipped": false,
+    "enableRender": true,
+    "enforceThreshold": false,
+    "useAnimatedRenderer": false
+  },
+  "counts": {
+    "manifestCases": 433,
+    "selectedCases": 1,
+    "recordedResults": 1,
+    "missingResults": 0
+  },
+  "statusCounts": {
+    "measured": 1
+  },
+  "missingResultIds": [],
+  "results": [
+    {
+      "id": "styling-css-04-f",
+      "category": "styling",
+      "tier": "core",
+      "status": "measured",
+      "threshold": 0.08,
+      "perPixelThreshold": 0.2,
+      "animationTimeMs": 0,
+      "similarity": 0.7038916666666667,
+      "totalPixels": 480000,
+      "differentPixels": 142132,
+      "message": null,
+      "note": "Would pass strict threshold.",
+      "elapsedMs": 879,
+      "svgPath": "W3C_SVG_11_TestSuite/svg/styling-css-04-f.svg",
+      "flags": {
+        "hasAnimation": false,
+        "hasExternalImageRef": false,
+        "hasImageElement": false,
+        "hasResourceRef": true,
+        "hasScript": false,
+        "hasTextElement": true
+      }
+    }
+  ]
+}

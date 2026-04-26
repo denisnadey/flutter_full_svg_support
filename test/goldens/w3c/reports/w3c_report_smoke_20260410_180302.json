@@ -1,0 +1,97 @@
+{
+  "generatedAt": "2026-04-10T18:03:08.436251",
+  "manifestPath": "tool/w3c_goldens/w3c_manifest.json",
+  "filters": {
+    "tier": "smoke",
+    "case": null,
+    "limit": 3,
+    "includeSkipped": false,
+    "enableRender": true,
+    "enforceThreshold": false,
+    "useAnimatedRenderer": true
+  },
+  "counts": {
+    "manifestCases": 433,
+    "selectedCases": 3,
+    "recordedResults": 3,
+    "missingResults": 0
+  },
+  "statusCounts": {
+    "measured": 3
+  },
+  "missingResultIds": [],
+  "results": [
+    {
+      "id": "color-prop-01-b",
+      "category": "color",
+      "tier": "smoke",
+      "status": "measured",
+      "threshold": 0.12,
+      "perPixelThreshold": 0.2,
+      "animationTimeMs": 0,
+      "similarity": 0.09948125,
+      "totalPixels": 480000,
+      "differentPixels": 432249,
+      "message": null,
+      "note": "Below strict threshold.",
+      "elapsedMs": 393,
+      "svgPath": "W3C_SVG_11_TestSuite/svg/color-prop-01-b.svg",
+      "flags": {
+        "hasAnimation": false,
+        "hasExternalImageRef": false,
+        "hasImageElement": false,
+        "hasResourceRef": true,
+        "hasScript": false,
+        "hasTextElement": true
+      }
+    },
+    {
+      "id": "color-prop-02-f",
+      "category": "color",
+      "tier": "smoke",
+      "status": "measured",
+      "threshold": 0.12,
+      "perPixelThreshold": 0.2,
+      "animationTimeMs": 0,
+      "similarity": 0.2707625,
+      "totalPixels": 480000,
+      "differentPixels": 350034,
+      "message": null,
+      "note": "Would pass strict threshold.",
+      "elapsedMs": 87,
+      "svgPath": "W3C_SVG_11_TestSuite/svg/color-prop-02-f.svg",
+      "flags": {
+        "hasAnimation": false,
+        "hasExternalImageRef": false,
+        "hasImageElement": false,
+        "hasResourceRef": true,
+        "hasScript": false,
+        "hasTextElement": true
+      }
+    },
+    {
+      "id": "coords-coord-01-t",
+      "category": "coords",
+      "tier": "smoke",
+      "status": "measured",
+      "threshold": 0.12,
+      "perPixelThreshold": 0.2,
+      "animationTimeMs": 0,
+      "similarity": 0.02125,
+      "totalPixels": 480000,
+      "differentPixels": 469800,
+      "message": null,
+      "note": "Below strict threshold.",
+      "elapsedMs": 67,
+      "svgPath": "W3C_SVG_11_TestSuite/svg/coords-coord-01-t.svg",
+      "flags": {
+        "hasAnimation": false,
+        "hasExternalImageRef": false,
+        "hasImageElement": false,
+        "hasResourceRef": true,
+        "hasScript": false,
+        "hasTextElement": true
+      }
+    }
+  ]
+}

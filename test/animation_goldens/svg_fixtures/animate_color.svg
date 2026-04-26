@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+    <!-- Color interpolation: fill transitions through multiple colors -->
+    <rect x="100" y="100" width="200" height="200" rx="20">
+        <animate attributeName="fill" values="#e74c3c;#f39c12;#2ecc71;#3498db;#9b59b6;#e74c3c"
+            dur="15s" fill="freeze" />
+    </rect>
+
+    <!-- Stroke color animation -->
+    <circle cx="550" cy="200" r="90" fill="none" stroke-width="12">
+        <animate attributeName="stroke" values="#1abc9c;#e74c3c;#f1c40f;#1abc9c" dur="15s"
+            fill="freeze" />
+    </circle>
+
+    <!-- Both fill and stroke animating -->
+    <polygon points="400,400 300,550 500,550" stroke-width="6">
+        <animate attributeName="fill" values="#3498db;#e74c3c;#2ecc71;#3498db" dur="15s"
+            fill="freeze" />
+        <animate attributeName="stroke" values="#2c3e50;#ecf0f1;#2c3e50" dur="15s" fill="freeze" />
+    </polygon>
+
+    <!-- Gradient stop color animation via rect fill -->
+    <defs>
+        <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#e74c3c" />
+            <stop offset="100%" stop-color="#3498db" />
+        </linearGradient>
+    </defs>
+    <rect x="550" y="380" width="200" height="180" rx="15" fill="url(#grad1)">
+        <animate attributeName="opacity" values="0.3;1;0.3" dur="15s" fill="freeze" />
+    </rect>
+</svg>

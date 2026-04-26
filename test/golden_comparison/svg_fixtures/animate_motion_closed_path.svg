@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+    <!-- animateMotion on a closed path with rotate="auto" -->
+    <defs>
+        <!-- Closed circular path -->
+        <path id="circlePath" d="M 100,30 A 70,70 0 1,1 99.9,30 Z" fill="none" stroke="#ddd"
+            stroke-width="2" />
+
+        <!-- Closed rectangular path -->
+        <path id="rectPath" d="M 30,100 L 80,100 L 80,170 L 30,170 Z" fill="none" stroke="#ddd"
+            stroke-width="2" />
+
+        <!-- Closed triangular path -->
+        <path id="triPath" d="M 150,100 L 180,170 L 120,170 Z" fill="none" stroke="#ddd"
+            stroke-width="2" />
+    </defs>
+
+    <rect width="200" height="200" fill="#f5f5f5" />
+
+    <!-- Show the paths -->
+    <use href="#circlePath" />
+    <use href="#rectPath" />
+    <use href="#triPath" />
+
+    <!-- Arrow following circular path with rotate=auto -->
+    <polygon points="-8,0 8,0 0,-12" fill="#3366cc">
+        <animateMotion dur="4s" fill="freeze" rotate="auto">
+            <mpath href="#circlePath" />
+        </animateMotion>
+    </polygon>
+
+    <!-- Square following rectangular path with rotate=auto -->
+    <rect x="-6" y="-6" width="12" height="12" fill="#cc3366">
+        <animateMotion dur="4s" fill="freeze" rotate="auto">
+            <mpath href="#rectPath" />
+        </animateMotion>
+    </rect>
+
+    <!-- Circle following triangular path -->
+    <circle r="8" fill="#33cc66">
+        <animateMotion dur="4s" fill="freeze" rotate="auto">
+            <mpath href="#triPath" />
+        </animateMotion>
+    </circle>
+</svg>

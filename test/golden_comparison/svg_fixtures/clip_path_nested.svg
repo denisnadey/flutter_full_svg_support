@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+    <!-- Nested clip-paths test -->
+    <defs>
+        <!-- Outer clip: large circle -->
+        <clipPath id="outerClip">
+            <circle cx="100" cy="75" r="70" />
+        </clipPath>
+
+        <!-- Inner clip: rectangle -->
+        <clipPath id="innerClip">
+            <rect x="40" y="25" width="120" height="100" />
+        </clipPath>
+
+        <!-- Nested clip: applies both -->
+        <clipPath id="nestedClipA">
+            <circle cx="80" cy="60" r="50" />
+        </clipPath>
+
+        <clipPath id="nestedClipB">
+            <polygon points="80,10 130,110 30,110" />
+        </clipPath>
+
+        <!-- Star clip -->
+        <clipPath id="starClip">
+            <polygon points="100,10 120,70 180,70 130,100 150,160 100,130 50,160 70,100 20,70 80,70" />
+        </clipPath>
+
+        <!-- Ellipse clip -->
+        <clipPath id="ellipseClip">
+            <ellipse cx="100" cy="75" rx="80" ry="50" />
+        </clipPath>
+    </defs>
+
+    <text x="50" y="30" font-size="18" fill="#333333">Nested Clip-Paths</text>
+
+    <!-- Test 1: Circle clipped by rectangle (nested clips) -->
+    <g transform="translate(50, 50)">
+        <text x="0" y="-10" font-size="12" fill="#666666">Circle → Rectangle</text>
+        <rect width="200" height="150" fill="#EEEEEE" stroke="#CCCCCC" />
+        <g clip-path="url(#outerClip)">
+            <g clip-path="url(#innerClip)">
+                <rect width="200" height="150" fill="#FF6600" />
+                <circle cx="100" cy="75" r="60" fill="#FFCC00" />
+            </g>
+        </g>
+    </g>
+
+    <!-- Test 2: Two circles overlapping -->
+    <g transform="translate(300, 50)">
+        <text x="0" y="-10" font-size="12" fill="#666666">Circle → Triangle</text>
+        <rect width="200" height="150" fill="#EEEEEE" stroke="#CCCCCC" />
+        <g clip-path="url(#nestedClipA)">
+            <g clip-path="url(#nestedClipB)">
+                <rect width="200" height="150" fill="#0066FF" />
+            </g>
+        </g>
+    </g>
+
+    <!-- Test 3: Star inside ellipse -->
+    <g transform="translate(550, 50)">
+        <text x="0" y="-10" font-size="12" fill="#666666">Ellipse → Star</text>
+        <rect width="200" height="170" fill="#EEEEEE" stroke="#CCCCCC" />
+        <g clip-path="url(#ellipseClip)">
+            <g clip-path="url(#starClip)">
+                <rect width="200" height="170" fill="#00CC66" />
+            </g>
+        </g>
+    </g>
+
+    <!-- Test 4: Triple nested clips -->
+    <g transform="translate(50, 270)">
+        <text x="0" y="-10" font-size="12" fill="#666666">Triple Nesting</text>
+        <rect width="200" height="150" fill="#EEEEEE" stroke="#CCCCCC" />
+        <g clip-path="url(#ellipseClip)">
+            <g clip-path="url(#innerClip)">
+                <g clip-path="url(#nestedClipA)">
+                    <rect width="200" height="150" fill="#FF00FF" />
+                </g>
+            </g>
+        </g>
+    </g>
+
+    <!-- Test 5: Nested clips with transforms -->
+    <g transform="translate(300, 270)">
+        <text x="0" y="-10" font-size="12" fill="#666666">With Transforms</text>
+        <rect width="200" height="150" fill="#EEEEEE" stroke="#CCCCCC" />
+        <g transform="rotate(15, 100, 75)">
+            <g clip-path="url(#outerClip)">
+                <g transform="scale(0.8)">
+                    <g clip-path="url(#innerClip)">
+                        <rect x="-50" y="-50" width="300" height="250" fill="#FF3366" />
+                    </g>
+                </g>
+            </g>
+        </g>
+    </g>
+
+    <!-- Test 6: Deeply nested with complex shapes -->
+    <g transform="translate(550, 270)">
+        <text x="0" y="-10" font-size="12" fill="#666666">Complex Nested</text>
+        <rect width="200" height="150" fill="#EEEEEE" stroke="#CCCCCC" />
+        <g clip-path="url(#starClip)">
+            <g clip-path="url(#outerClip)">
+                <g clip-path="url(#nestedClipB)">
+                    <rect width="200" height="170" fill="#6600CC" />
+                </g>
+            </g>
+        </g>
+    </g>
+
+    <!-- Test 7: Content spanning clip boundaries -->
+    <g transform="translate(50, 470)">
+        <text x="0" y="-10" font-size="12" fill="#666666">Spanning Content</text>
+        <rect width="200" height="100" fill="#EEEEEE" stroke="#CCCCCC" />
+        <g clip-path="url(#outerClip)">
+            <g clip-path="url(#nestedClipA)">
+                <line x1="-50" y1="0" x2="250" y2="150" stroke="#333333" stroke-width="4" />
+                <line x1="-50" y1="150" x2="250" y2="0" stroke="#333333" stroke-width="4" />
+                <circle cx="100" cy="75" r="30" fill="#FFCC00" />
+            </g>
+        </g>
+    </g>
+</svg>

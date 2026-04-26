@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+    <!-- Clipping and Masking test -->
+    <defs>
+        <!-- Clip paths -->
+        <clipPath id="circleClip">
+            <circle cx="100" cy="100" r="80" />
+        </clipPath>
+
+        <clipPath id="rectClip">
+            <rect x="0" y="0" width="120" height="120" />
+        </clipPath>
+
+        <clipPath id="pathClip">
+            <path d="M50,0 L100,100 L0,100 Z" />
+        </clipPath>
+
+        <clipPath id="complexClip">
+            <circle cx="60" cy="60" r="40" />
+            <rect x="80" y="20" width="60" height="80" />
+        </clipPath>
+
+        <!-- Masks -->
+        <mask id="gradientMask">
+            <rect x="0" y="0" width="200" height="150" fill="url(#maskGradient)" />
+        </mask>
+
+        <linearGradient id="maskGradient">
+            <stop offset="0%" stop-color="white" />
+            <stop offset="100%" stop-color="black" />
+        </linearGradient>
+
+        <mask id="circleMask">
+            <circle cx="100" cy="75" r="60" fill="white" />
+            <circle cx="100" cy="75" r="30" fill="black" />
+        </mask>
+
+        <mask id="softMask">
+            <radialGradient id="softGrad" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="white" />
+                <stop offset="100%" stop-color="black" />
+            </radialGradient>
+            <rect x="0" y="0" width="200" height="150" fill="url(#softGrad)" />
+        </mask>
+    </defs>
+
+    <!-- Row 1: Clip paths -->
+    <text x="50" y="30" font-size="16" fill="#333333">Clip Paths</text>
+
+    <!-- Circle clip -->
+    <g transform="translate(50, 50)">
+        <rect width="200" height="150" fill="#EEEEEE" stroke="#CCCCCC" />
+        <g clip-path="url(#circleClip)">
+            <rect width="200" height="150" fill="#FF6600" />
+            <line x1="0" y1="0" x2="200" y2="150" stroke="#333333" stroke-width="3" />
+            <line x1="200" y1="0" x2="0" y2="150" stroke="#333333" stroke-width="3" />
+        </g>
+    </g>
+
+    <!-- Rectangle clip -->
+    <g transform="translate(300, 50)">
+        <rect width="200" height="150" fill="#EEEEEE" stroke="#CCCCCC" />
+        <g clip-path="url(#rectClip)">
+            <circle cx="100" cy="75" r="80" fill="#0066FF" />
+        </g>
+    </g>
+
+    <!-- Complex clip (multiple shapes) -->
+    <g transform="translate(550, 50)">
+        <rect width="200" height="150" fill="#EEEEEE" stroke="#CCCCCC" />
+        <g clip-path="url(#complexClip)">
+            <rect width="200" height="150" fill="#FF00FF" />
+        </g>
+    </g>
+
+    <!-- Row 2: Masks -->
+    <text x="50" y="240" font-size="16" fill="#333333">Masks</text>
+
+    <!-- Gradient mask (fade effect) -->
+    <g transform="translate(50, 260)">
+        <rect width="200" height="150" fill="#EEEEEE" stroke="#CCCCCC" />
+        <g mask="url(#gradientMask)">
+            <rect width="200" height="150" fill="#FF0000" />
+            <text x="20" y="80" font-size="24" fill="white">Faded</text>
+        </g>
+    </g>
+
+    <!-- Circle mask (donut shape) -->
+    <g transform="translate(300, 260)">
+        <rect width="200" height="150" fill="#EEEEEE" stroke="#CCCCCC" />
+        <g mask="url(#circleMask)">
+            <rect width="200" height="150" fill="#00FF00" />
+        </g>
+    </g>
+
+    <!-- Soft edge mask -->
+    <g transform="translate(550, 260)">
+        <rect width="200" height="150" fill="#EEEEEE" stroke="#CCCCCC" />
+        <g mask="url(#softMask)">
+            <rect width="200" height="150" fill="#0000FF" />
+        </g>
+    </g>
+
+    <!-- Row 3: Combined clip and mask -->
+    <text x="50" y="450" font-size="16" fill="#333333">Clip + Mask Combined</text>
+
+    <g transform="translate(50, 470)">
+        <rect width="200" height="120" fill="#EEEEEE" stroke="#CCCCCC" />
+        <g clip-path="url(#circleClip)" mask="url(#gradientMask)">
+            <rect width="200" height="150" fill="#FF6600" />
+        </g>
+    </g>
+
+    <g transform="translate(300, 470)">
+        <rect width="200" height="120" fill="#EEEEEE" stroke="#CCCCCC" />
+        <g clip-path="url(#rectClip)">
+            <g mask="url(#softMask)">
+                <circle cx="100" cy="60" r="80" fill="#6600FF" />
+            </g>
+        </g>
+    </g>
+</svg>

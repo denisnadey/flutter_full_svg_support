@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+    <!-- Diamond morphing to star-like shape -->
+    <path fill="#e74c3c">
+        <animate attributeName="d" dur="15s" fill="freeze"
+            values="M 200,100 L 300,300 L 200,500 L 100,300 Z;
+              M 200,50 L 350,250 L 250,500 L 50,400 L 100,150 Z;
+              M 200,100 L 300,200 L 350,350 L 150,450 L 50,250 Z;
+              M 200,100 L 300,300 L 200,500 L 100,300 Z" />
+    </path>
+
+    <!-- Simple rect-like path morphing to rounded shape -->
+    <path fill="#3498db">
+        <animate attributeName="d" dur="15s" fill="freeze"
+            values="M 450,100 L 700,100 L 700,350 L 450,350 Z;
+              M 500,80 Q 750,80 750,225 Q 750,370 500,370 Q 450,225 500,80;
+              M 475,120 C 600,50 750,150 700,300 C 650,400 500,400 475,300 Z;
+              M 450,100 L 700,100 L 700,350 L 450,350 Z" />
+    </path>
+
+    <!-- Triangle morphing -->
+    <path fill="#2ecc71">
+        <animate attributeName="d" dur="15s" fill="freeze"
+            values="M 400,420 L 500,580 L 300,580 Z;
+              M 400,400 L 550,550 L 350,600 L 250,550 Z;
+              M 400,380 L 520,500 L 480,600 L 320,600 L 280,500 Z;
+              M 400,420 L 500,580 L 300,580 Z" />
+    </path>
+</svg>

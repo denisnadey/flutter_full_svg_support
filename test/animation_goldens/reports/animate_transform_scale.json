@@ -1,0 +1,219 @@
+{
+  "svg": "animate_transform_scale",
+  "frames": 30,
+  "results": [
+    {
+      "frame": 0,
+      "time_s": 0.0,
+      "similarity": 1.0,
+      "different_pixels": 18,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 1,
+      "time_s": 0.207,
+      "similarity": 0.9994,
+      "different_pixels": 271,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 2,
+      "time_s": 0.414,
+      "similarity": 0.999,
+      "different_pixels": 472,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 3,
+      "time_s": 0.621,
+      "similarity": 0.9986,
+      "different_pixels": 650,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 4,
+      "time_s": 0.828,
+      "similarity": 0.9982,
+      "different_pixels": 848,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 5,
+      "time_s": 1.034,
+      "similarity": 0.9979,
+      "different_pixels": 1016,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 6,
+      "time_s": 1.241,
+      "similarity": 0.9973,
+      "different_pixels": 1278,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 7,
+      "time_s": 1.448,
+      "similarity": 0.9969,
+      "different_pixels": 1495,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 8,
+      "time_s": 1.655,
+      "similarity": 0.9969,
+      "different_pixels": 1499,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 9,
+      "time_s": 1.862,
+      "similarity": 0.9974,
+      "different_pixels": 1254,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 10,
+      "time_s": 2.069,
+      "similarity": 0.9979,
+      "different_pixels": 993,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 11,
+      "time_s": 2.276,
+      "similarity": 0.9982,
+      "different_pixels": 844,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 12,
+      "time_s": 2.483,
+      "similarity": 0.9987,
+      "different_pixels": 647,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 13,
+      "time_s": 2.69,
+      "similarity": 0.9991,
+      "different_pixels": 455,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 14,
+      "time_s": 2.897,
+      "similarity": 0.9994,
+      "different_pixels": 280,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 15,
+      "time_s": 3.103,
+      "similarity": 1.0,
+      "different_pixels": 18,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 16,
+      "time_s": 3.31,
+      "similarity": 1.0,
+      "different_pixels": 18,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 17,
+      "time_s": 3.517,
+      "similarity": 1.0,
+      "different_pixels": 18,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 18,
+      "time_s": 3.724,
+      "similarity": 1.0,
+      "different_pixels": 18,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 19,
+      "time_s": 3.931,
+      "similarity": 1.0,
+      "different_pixels": 18,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 20,
+      "time_s": 4.138,
+      "similarity": 1.0,
+      "different_pixels": 18,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 21,
+      "time_s": 4.345,
+      "similarity": 1.0,
+      "different_pixels": 18,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 22,
+      "time_s": 4.552,
+      "similarity": 1.0,
+      "different_pixels": 18,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 23,
+      "time_s": 4.759,
+      "similarity": 1.0,
+      "different_pixels": 18,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 24,
+      "time_s": 4.966,
+      "similarity": 1.0,
+      "different_pixels": 18,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 25,
+      "time_s": 5.172,
+      "similarity": 1.0,
+      "different_pixels": 18,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 26,
+      "time_s": 5.379,
+      "similarity": 1.0,
+      "different_pixels": 18,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 27,
+      "time_s": 5.586,
+      "similarity": 1.0,
+      "different_pixels": 18,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 28,
+      "time_s": 5.793,
+      "similarity": 1.0,
+      "different_pixels": 18,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 29,
+      "time_s": 6.0,
+      "similarity": 1.0,
+      "different_pixels": 18,
+      "total_pixels": 480000
+    }
+  ],
+  "average_similarity": 0.9991,
+  "worst_frame": 8,
+  "worst_similarity": 0.9969
+}

@@ -1,0 +1,302 @@
+part of 'css_to_smil_converter.dart';
+
+/// Extracts all animatable properties from keyframes
+Map<String, List<Object>> _extractAnimatedProperties(CssKeyframes keyframes) {
+  final properties = <String, Map<double, String>>{};
+
+  // Collect all properties from all keyframes
+  for (final keyframe in keyframes.keyframes) {
+    for (final prop in keyframe.properties.entries) {
+      properties.putIfAbsent(prop.key, () => {});
+      properties[prop.key]![keyframe.offset] = prop.value;
+    }
+  }
+
+  // Convert to a list of values with keyTimes
+  final result = <String, List<Object>>{};
+  for (final prop in properties.entries) {
+    // Sort by offset
+    final sortedOffsets = prop.value.keys.toList()..sort();
+    final values = sortedOffsets.map((offset) => prop.value[offset]!).toList();
+    result[prop.key] = values;
+  }
+
+  return result;
+}
+
+/// Creates a SMIL animation from CSS keyframes and animation
+SmilAnimation? _createSmilAnimation({
+  required CssKeyframes keyframes,
+  required CssAnimation animation,
+  required SvgNode targetNode,
+  required String attributeName,
+  required SvgAttributeType attributeType,
+  required List<Object> values,
+}) {
+  // Convert CSS values to SMIL values
+  final smilValues = _convertCssValues(values, attributeType, attributeName);
+
+  // Create keyTimes from keyframe offsets
+  final keyTimes = _extractKeyTimes(keyframes, attributeName);
+
+  // Convert direction to the runtime iteration playback direction
+  final playbackDirection = _convertDirection(animation.direction);
+
+  // Build per-keyframe timing.
+  // Each interval [i..i+1] uses the timingFunction of keyframe[i], or the
+  // animation-level timing as fallback.
+  final relevantKeyframes =
+      keyframes.keyframes
+          .where((kf) => kf.properties.containsKey(attributeName))
+          .toList()
+        ..sort((a, b) => a.offset.compareTo(b.offset));
+
+  final intervalCount = smilValues.length > 1 ? smilValues.length - 1 : 0;
+  SmilCalcMode calcMode = SmilCalcMode.linear;
+  List<CubicBezier>? keySplines;
+  List<StepTiming>? keySteps;
+
+  // Per SMIL spec: string-type attributes must use discrete calcMode
+  // This includes visibility, display, fill-rule, stroke-linecap, etc.
+  const discreteAttributes = {
+    'visibility',
+    'display',
+    'fill-rule',
+    'stroke-linecap',
+    'stroke-linejoin',
+    'pointer-events',
+    'clip-rule',
+    'text-anchor',
+    'dominant-baseline',
+    'alignment-baseline',
+  };
+
+  final isDiscreteAttribute =
+      discreteAttributes.contains(attributeName) ||
+      attributeType == SvgAttributeType.string ||
+      attributeType == SvgAttributeType.url;
+
+  if (isDiscreteAttribute) {
+    calcMode = SmilCalcMode.discrete;
+    // For discrete mode, we don't use keySplines or keySteps
+  } else if (intervalCount > 0) {
+    // Try to detect per-keyframe overrides first.
+    final perInterval = <_TimingConversion>[];
+    for (int i = 0; i < intervalCount; i++) {
+      final kfTimingStr = i < relevantKeyframes.length
+          ? relevantKeyframes[i].timingFunction
+          : null;
+      final effectiveTiming = kfTimingStr ?? animation.timingFunction;
+      perInterval.add(_convertTimingFunction(effectiveTiming, 2));
+    }
+
+    // If any interval is spline, the whole animation must be spline.
+    final anySpline = perInterval.any((t) => t.calcMode == SmilCalcMode.spline);
+    final anyStep = perInterval.any((t) => t.keySteps != null);
+
+    if (anySpline) {
+      calcMode = SmilCalcMode.spline;
+      keySplines = [];
+      for (final t in perInterval) {
+        if (t.keySplines != null && t.keySplines!.isNotEmpty) {
+          keySplines.add(t.keySplines!.first);
+        } else {
+          // linear interval mapped to cubic-bezier(0,0,1,1)
+          keySplines.add(const CubicBezier(0.0, 0.0, 1.0, 1.0));
+        }
+      }
+    } else if (anyStep) {
+      calcMode = SmilCalcMode.linear;
+      keySteps = [];
+      for (final t in perInterval) {
+        if (t.keySteps != null && t.keySteps!.isNotEmpty) {
+          keySteps.add(t.keySteps!.first);
+        } else {
+          keySteps.add(const StepTiming(steps: 1000));
+        }
+      }
+    } else {
+      // All intervals are the same non-spline mode — use animation-level default.
+      final globalTiming = _convertTimingFunction(
+        animation.timingFunction,
+        smilValues.length,
+      );
+      calcMode = globalTiming.calcMode;
+      keySplines = globalTiming.keySplines;
+      keySteps = globalTiming.keySteps;
+    }
+  }
+
+  // Convert fillMode
+  final fillMode = _convertFillMode(animation.fillMode);
+
+  try {
+    // Determine the SMIL animation type
+    SmilAnimationType type = SmilAnimationType.animate;
+    String? transformType;
+
+    if (attributeName == 'transform') {
+      type = SmilAnimationType.animateTransform;
+      // Try to determine the transform type from the first value
+      transformType = _inferTransformType(
+        smilValues.isNotEmpty ? smilValues[0] : null,
+      );
+    }
+
+    return SmilAnimation(
+      type: type,
+      targetNode: targetNode,
+      attributeName: attributeName,
+      attributeType: attributeType,
+      transformType: transformType,
+      values: smilValues,
+      keyTimes: keyTimes,
+      keySplines: keySplines,
+      keySteps: keySteps,
+      dur: animation.duration,
+      begin: animation.delay,
+      repeatCount: animation.iterationCount,
+      fillMode: fillMode,
+      calcMode: calcMode,
+      playbackDirection: playbackDirection,
+      additive: SmilAdditiveMode.replace,
+      accumulate: false,
+      isPaused: animation.isPaused,
+    );
+  } catch (_) {
+    // If the animation could not be created, return null
+    return null;
+  }
+}
+
+/// Extracts keyTimes for a specific property
+List<double> _extractKeyTimes(CssKeyframes keyframes, String propertyName) {
+  // Find keyframes that contain this property
+  final relevantKeyframes = keyframes.keyframes
+      .where((kf) => kf.properties.containsKey(propertyName))
+      .toList();
+
+  // Sort by offset
+  relevantKeyframes.sort((a, b) => a.offset.compareTo(b.offset));
+
+  return relevantKeyframes.map((kf) => kf.offset).toList();
+}
+
+/// Converts CSS values to SMIL values
+List<Object> _convertCssValues(
+  List<Object> cssValues,
+  SvgAttributeType attributeType,
+  String attributeName,
+) {
+  // For transform, CSS functions need to be parsed
+  if (attributeName == 'transform' &&
+      attributeType == SvgAttributeType.transform) {
+    return cssValues.map((value) {
+      return _normalizeCssTransform(value.toString());
+    }).toList();
+  }
+
+  // For other types, return as-is
+  return cssValues;
+}
+
+/// Converts CSS fillMode to SMIL fillMode
+SmilFillMode _convertFillMode(String fillMode) {
+  switch (fillMode.toLowerCase()) {
+    case 'forwards':
+      return SmilFillMode.freeze;
+    case 'backwards':
+      return SmilFillMode.backwards;
+    case 'both':
+      return SmilFillMode.both;
+    case 'none':
+    default:
+      return SmilFillMode.remove;
+  }
+}
+
+SmilPlaybackDirection _convertDirection(String direction) {
+  switch (direction.toLowerCase().trim()) {
+    case 'reverse':
+      return SmilPlaybackDirection.reverse;
+    case 'alternate':
+      return SmilPlaybackDirection.alternate;
+    case 'alternate-reverse':
+      return SmilPlaybackDirection.alternateReverse;
+    case 'normal':
+    default:
+      return SmilPlaybackDirection.normal;
+  }
+}
+
+/// Determines the attribute type
+SvgAttributeType _inferAttributeType(String attributeName, SvgNode node) {
+  // Basic numeric attributes
+  const numericAttributes = {
+    'x',
+    'y',
+    'cx',
+    'cy',
+    'r',
+    'rx',
+    'ry',
+    'width',
+    'height',
+    'opacity',
+    'fill-opacity',
+    'stroke-opacity',
+    'stroke-width',
+    'stroke-dashoffset',
+    'stop-opacity',
+    'font-size',
+    'letter-spacing',
+    'word-spacing',
+    // CSS motion-path progress. Treated as numeric so keyframes interpolate
+    // continuously (the parser strips '%' and runtime treats unitless as %).
+    'offset-distance',
+  };
+
+  if (numericAttributes.contains(attributeName)) {
+    return SvgAttributeType.number;
+  }
+
+  // Color attributes
+  if (attributeName == 'fill' ||
+      attributeName == 'stroke' ||
+      attributeName == 'stop-color') {
+    return SvgAttributeType.color;
+  }
+
+  // Transforms
+  if (attributeName == 'transform') {
+    return SvgAttributeType.transform;
+  }
+
+  return SvgAttributeType.string;
+}
+
+/// Determines the transform type from a value
+String? _inferTransformType(Object? value) {
+  if (value == null) {
+    return null;
+  }
+
+  final str = value.toString().toLowerCase();
+  if (str.startsWith('rotate')) {
+    return 'rotate';
+  }
+  if (str.startsWith('translate')) {
+    return 'translate';
+  }
+  if (str.startsWith('scale')) {
+    return 'scale';
+  }
+  if (str.startsWith('skewx')) {
+    return 'skewX';
+  }
+  if (str.startsWith('skewy')) {
+    return 'skewY';
+  }
+
+  return 'matrix'; // Default for unrecognized transforms
+}

@@ -1,0 +1,49 @@
+{
+  "generatedAt": "2026-04-10T23:32:04.552836",
+  "manifestPath": "tool/w3c_goldens/w3c_manifest.json",
+  "filters": {
+    "tier": "all",
+    "case": "coords-coord-01-t",
+    "limit": null,
+    "includeSkipped": false,
+    "enableRender": true,
+    "enforceThreshold": true,
+    "useAnimatedRenderer": false
+  },
+  "counts": {
+    "manifestCases": 433,
+    "selectedCases": 1,
+    "recordedResults": 1,
+    "missingResults": 0
+  },
+  "statusCounts": {
+    "pass": 1
+  },
+  "missingResultIds": [],
+  "results": [
+    {
+      "id": "coords-coord-01-t",
+      "category": "coords",
+      "tier": "smoke",
+      "status": "pass",
+      "threshold": 0.12,
+      "perPixelThreshold": 0.2,
+      "animationTimeMs": 0,
+      "similarity": 0.9291666666666667,
+      "totalPixels": 480000,
+      "differentPixels": 34000,
+      "message": null,
+      "note": null,
+      "elapsedMs": 343,
+      "svgPath": "W3C_SVG_11_TestSuite/svg/coords-coord-01-t.svg",
+      "flags": {
+        "hasAnimation": false,
+        "hasExternalImageRef": false,
+        "hasImageElement": false,
+        "hasResourceRef": true,
+        "hasScript": false,
+        "hasTextElement": true
+      }
+    }
+  ]
+}

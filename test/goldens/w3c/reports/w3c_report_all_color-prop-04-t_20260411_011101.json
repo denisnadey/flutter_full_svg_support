@@ -1,0 +1,49 @@
+{
+  "generatedAt": "2026-04-11T01:11:04.201964",
+  "manifestPath": "tool/w3c_goldens/w3c_manifest.json",
+  "filters": {
+    "tier": "all",
+    "case": "color-prop-04-t",
+    "limit": null,
+    "includeSkipped": false,
+    "enableRender": true,
+    "enforceThreshold": false,
+    "useAnimatedRenderer": false
+  },
+  "counts": {
+    "manifestCases": 433,
+    "selectedCases": 1,
+    "recordedResults": 1,
+    "missingResults": 0
+  },
+  "statusCounts": {
+    "measured": 1
+  },
+  "missingResultIds": [],
+  "results": [
+    {
+      "id": "color-prop-04-t",
+      "category": "color",
+      "tier": "core",
+      "status": "measured",
+      "threshold": 0.1,
+      "perPixelThreshold": 0.2,
+      "animationTimeMs": 0,
+      "similarity": 0.9435291666666666,
+      "totalPixels": 480000,
+      "differentPixels": 27106,
+      "message": null,
+      "note": "Would pass strict threshold.",
+      "elapsedMs": 587,
+      "svgPath": "W3C_SVG_11_TestSuite/svg/color-prop-04-t.svg",
+      "flags": {
+        "hasAnimation": false,
+        "hasExternalImageRef": false,
+        "hasImageElement": false,
+        "hasResourceRef": true,
+        "hasScript": false,
+        "hasTextElement": true
+      }
+    }
+  ]
+}
