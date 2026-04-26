@@ -71,23 +71,83 @@ import 'package:full_svg_flutter/full_svg_flutter.dart';
 
 ---
 
-## Explicit animated rendering: `AnimatedSvgPicture`
+## Playback control: `AnimatedSvgController`
 
-When you know the SVG is animated and want full playback control:
+When you need programmatic control over animation — use `AnimatedSvgPicture` directly (not `FSvgPicture`) and attach a controller.
 
 ```dart
-final controller = SvgAnimationController();
+final controller = AnimatedSvgController();
 
+@override
+void dispose() {
+  controller.dispose(); // AnimatedSvgController extends ChangeNotifier
+  super.dispose();
+}
+```
+
+```dart
 AnimatedSvgPicture.asset(
   'assets/loader.svg',
   controller: controller,
-  autoPlay: false,
-  playbackRate: 2.0,
+  autoPlay: false,      // start paused
+  playbackRate: 1.0,
 )
+```
 
-controller.play();
+### Play / pause
+
+```dart
 controller.pause();
-controller.seek(const Duration(milliseconds: 500));
+controller.resume();
+controller.togglePlayPause();  // flip current state
+
+bool isPaused = controller.isPaused;
+```
+
+### Seek
+
+```dart
+controller.seek(const Duration(seconds: 2));
+controller.restart();  // seek to zero + unpause
+```
+
+### Speed
+
+```dart
+controller.setPlaybackRate(2.0);   // 2× speed
+controller.setPlaybackRate(0.25);  // slow motion
+double rate = controller.playbackRate;
+```
+
+### Direction
+
+```dart
+controller.reverse();          // play backwards
+controller.forward();          // back to normal
+controller.toggleDirection();  // flip
+bool isReversed = controller.isReversed;
+```
+
+### SVG `<view>` navigation
+
+SVG files can define named viewports via the `<view>` element. The controller can switch between them at runtime:
+
+```dart
+// After the widget renders, available views are populated
+print(controller.availableViews); // ['intro', 'loop', 'outro']
+
+controller.switchToView('loop');
+controller.switchToView(null);  // back to root viewBox
+```
+
+### Listening to state changes
+
+`AnimatedSvgController` extends `ChangeNotifier`, so you can react to state changes:
+
+```dart
+controller.addListener(() {
+  setState(() {}); // rebuild when paused/resumed/seeked
+});
 ```
 
 ---
