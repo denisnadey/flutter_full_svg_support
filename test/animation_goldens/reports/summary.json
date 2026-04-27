@@ -1,17 +1,17 @@
 {
-  "total_svgs": 12,
-  "total_frames": 360,
-  "overall_average_similarity": 0.9942,
-  "svgs_above_95": 11,
-  "svgs_below_90": 0,
-  "worst_svg": "4d40165f-2e4c-40ee-b393-dad49c7ce221-wol450x3003fix",
-  "worst_svg_similarity": 0.9466,
+  "total_svgs": 21,
+  "total_frames": 495,
+  "overall_average_similarity": 0.9349,
+  "svgs_above_95": 13,
+  "svgs_below_90": 3,
+  "worst_svg": "betinia_eastern_emeralds",
+  "worst_svg_similarity": 0.5,
   "per_svg": [
     {
       "svg": "4d40165f-2e4c-40ee-b393-dad49c7ce221-wol450x3003fix",
-      "average_similarity": 0.9466,
-      "worst_frame": 13,
-      "worst_similarity": 0.8368,
+      "average_similarity": 0.9722,
+      "worst_frame": 22,
+      "worst_similarity": 0.8551,
       "frames": 30
     },
     {
@@ -23,23 +23,23 @@
     },
     {
       "svg": "animate_combined",
-      "average_similarity": 0.9999,
-      "worst_frame": 8,
-      "worst_similarity": 0.9999,
+      "average_similarity": 0.9991,
+      "worst_frame": 7,
+      "worst_similarity": 0.9982,
       "frames": 30
     },
     {
       "svg": "animate_filter",
-      "average_similarity": 0.9953,
+      "average_similarity": 0.9955,
       "worst_frame": 4,
-      "worst_similarity": 0.9885,
+      "worst_similarity": 0.9893,
       "frames": 30
     },
     {
       "svg": "animate_motion_path",
-      "average_similarity": 0.9998,
-      "worst_frame": 4,
-      "worst_similarity": 0.9996,
+      "average_similarity": 0.9979,
+      "worst_frame": 8,
+      "worst_similarity": 0.9948,
       "frames": 30
     },
     {
@@ -51,15 +51,15 @@
     },
     {
       "svg": "animate_path_morph",
-      "average_similarity": 0.9993,
-      "worst_frame": 0,
-      "worst_similarity": 0.9991,
+      "average_similarity": 0.9985,
+      "worst_frame": 7,
+      "worst_similarity": 0.9777,
       "frames": 30
     },
     {
       "svg": "animate_position",
       "average_similarity": 0.9999,
-      "worst_frame": 2,
+      "worst_frame": 3,
       "worst_similarity": 0.9998,
       "frames": 30
     },
@@ -72,24 +72,87 @@
     },
     {
       "svg": "animate_transform_scale",
-      "average_similarity": 0.9991,
-      "worst_frame": 8,
-      "worst_similarity": 0.9969,
+      "average_similarity": 0.9999,
+      "worst_frame": 6,
+      "worst_similarity": 0.9998,
       "frames": 30
     },
     {
+      "svg": "animated-geometric-shapes-background",
+      "average_similarity": 0.9382,
+      "worst_frame": 1,
+      "worst_similarity": 0.9352,
+      "frames": 15
+    },
+    {
       "svg": "astronaut_helmet",
-      "average_similarity": 0.9906,
-      "worst_frame": 28,
-      "worst_similarity": 0.9903,
+      "average_similarity": 0.93,
+      "worst_frame": 0,
+      "worst_similarity": 0.8687,
       "frames": 30
+    },
+    {
+      "svg": "betinia_777_hot_reels",
+      "average_similarity": 0.9413,
+      "worst_frame": 0,
+      "worst_similarity": 0.9413,
+      "frames": 15
+    },
+    {
+      "svg": "betinia_break_piggy_bank",
+      "average_similarity": 0.8005,
+      "worst_frame": 10,
+      "worst_similarity": 0.7461,
+      "frames": 15
+    },
+    {
+      "svg": "betinia_eastern_emeralds",
+      "average_similarity": 0.5,
+      "worst_frame": 4,
+      "worst_similarity": 0.5,
+      "frames": 15
+    },
+    {
+      "svg": "betinia_wol",
+      "average_similarity": 0.9752,
+      "worst_frame": 10,
+      "worst_similarity": 0.9257,
+      "frames": 15
+    },
+    {
+      "svg": "cool-loaders-svg-animation",
+      "average_similarity": 0.9462,
+      "worst_frame": 13,
+      "worst_similarity": 0.9388,
+      "frames": 15
     },
     {
       "svg": "css_animation",
       "average_similarity": 1.0,
-      "worst_frame": 1,
-      "worst_similarity": 0.9999,
+      "worst_frame": 6,
+      "worst_similarity": 1.0,
       "frames": 30
+    },
+    {
+      "svg": "js-svg-animated-geometric-objects-background",
+      "average_similarity": 0.7063,
+      "worst_frame": 7,
+      "worst_similarity": 0.5593,
+      "frames": 15
+    },
+    {
+      "svg": "stopwatch-svg-animation",
+      "average_similarity": 0.9865,
+      "worst_frame": 14,
+      "worst_similarity": 0.9422,
+      "frames": 15
+    },
+    {
+      "svg": "vr-svg-animation-example",
+      "average_similarity": 0.9452,
+      "worst_frame": 5,
+      "worst_similarity": 0.9443,
+      "frames": 15
     }
   ]
 }

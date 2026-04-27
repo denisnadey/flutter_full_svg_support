@@ -193,7 +193,9 @@ Future<void> _ensureW3cTestFontAliasesRegistered() {
     return existing;
   }
 
-  final initFuture = _registerW3cTestFontAliases().then((_) => _registerW3cCjkFont());
+  final initFuture = _registerW3cTestFontAliases().then(
+    (_) => _registerW3cCjkFont(),
+  );
   _w3cFontAliasesInitFuture = initFuture;
   return initFuture;
 }
@@ -894,8 +896,10 @@ Future<ImageCompareResult> compareWithReferencePng({
   final referenceCaptureBackground = _resolveCaptureBackgroundColorFromDecoded(
     decodedReference,
   );
-  final referenceAlpha =
-      (referenceCaptureBackground.a * 255.0).round().clamp(0, 255);
+  final referenceAlpha = (referenceCaptureBackground.a * 255.0).round().clamp(
+    0,
+    255,
+  );
   if (referenceAlpha <= 5) {
     _flattenRawRgbaToOpaquePremultiplied(renderedRgba);
     _flattenRawRgbaToOpaquePremultiplied(referenceRgba);
@@ -1881,9 +1885,7 @@ class W3cPixelDiagnostic {
     'bestShiftSimilarity': bestShiftSimilarity,
     'baselineSimilarity': baselineSimilarity,
     'diagnosis': diagnosis,
-    'shiftProfile': {
-      for (final e in shiftProfile.entries) '${e.key}': e.value,
-    },
+    'shiftProfile': {for (final e in shiftProfile.entries) '${e.key}': e.value},
     'bandSimilarities': [
       for (final b in bandSimilarities)
         {'top': b.top, 'bottom': b.bottom, 'similarity': b.similarity},
@@ -1992,7 +1994,8 @@ W3cPixelDiagnostic computeW3cPixelDiagnostic({
         'Likely cause: font-metric difference (ascender/descender values). '
         'Worst bands: $worstDesc.';
   } else if (baseSim >= 0.95) {
-    diagnosis = 'Excellent similarity (${(baseSim * 100).toStringAsFixed(1)}%).';
+    diagnosis =
+        'Excellent similarity (${(baseSim * 100).toStringAsFixed(1)}%).';
   } else {
     diagnosis =
         'Structural mismatch: similarity ${(baseSim * 100).toStringAsFixed(1)}% '
@@ -2013,13 +2016,7 @@ W3cPixelDiagnostic computeW3cPixelDiagnostic({
 }
 
 @pragma('vm:prefer-inline')
-bool _pixelMatchRaw(
-  Uint8List a,
-  Uint8List b,
-  int iA,
-  int iB,
-  int threshold,
-) {
+bool _pixelMatchRaw(Uint8List a, Uint8List b, int iA, int iB, int threshold) {
   const kNearTransparent = 8;
   final aA = a[iA + 3];
   final aB = b[iB + 3];

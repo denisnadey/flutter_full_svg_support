@@ -1,10 +1,10 @@
+// ignore_for_file: avoid_print
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:full_svg_flutter/src/animation/svg_parser.dart';
 import 'package:full_svg_flutter/src/animation/smil/smil_parser.dart';
 import 'package:full_svg_flutter/src/animation/smil/smil_timeline.dart';
 import 'package:full_svg_flutter/src/animation/svg_filters.dart';
-import 'package:full_svg_flutter/src/animation/css_animations.dart';
 
 void main() {
   test('betinia_wol - filter animation diagnostics', () {
@@ -23,10 +23,13 @@ void main() {
     // Check CSS selector rules - make sure filter:none is NOT in them
     final selectorRules = doc.cssSelectorRules ?? [];
     print('\nSelector rules count: ${selectorRules.length}');
-    final filterRules = selectorRules.where((r) =>
-      r.declarations.containsKey('filter') ||
-      r.declarations.containsKey('filter')
-    ).toList();
+    final filterRules = selectorRules
+        .where(
+          (r) =>
+              r.declarations.containsKey('filter') ||
+              r.declarations.containsKey('filter'),
+        )
+        .toList();
     print('Selector rules with "filter" property: ${filterRules.length}');
     for (final r in filterRules) {
       print('  ${r.selector}: filter=${r.declarations['filter']}');
@@ -41,14 +44,21 @@ void main() {
     }
 
     // Check filter animations are found
-    final filterAnims = animations.where((a) =>
-      a.targetNode.tagName == 'feColorMatrix' ||
-      a.targetNode.tagName == 'feFuncR' ||
-      a.targetNode.tagName == 'feFuncG' ||
-      a.targetNode.tagName == 'feFuncB'
-    ).toList();
+    final filterAnims = animations
+        .where(
+          (a) =>
+              a.targetNode.tagName == 'feColorMatrix' ||
+              a.targetNode.tagName == 'feFuncR' ||
+              a.targetNode.tagName == 'feFuncG' ||
+              a.targetNode.tagName == 'feFuncB',
+        )
+        .toList();
     print('\nFilter animations: ${filterAnims.length}');
-    expect(filterAnims.length, 8, reason: 'Expected 8 filter primitive animations');
+    expect(
+      filterAnims.length,
+      8,
+      reason: 'Expected 8 filter primitive animations',
+    );
 
     // Seek to t=6429ms
     final timeline = SvgTimeline(animations: animations, rootNode: doc.root);
@@ -59,9 +69,11 @@ void main() {
     print('\nfs1 primitives count: ${fs1Primitives.length}');
     for (final p in fs1Primitives) {
       if (p is SvgColorMatrixFilter) {
-        final src = p.sourceElement as dynamic?;
+        final src = p.sourceElement as dynamic;
         final attr = src?.getAttribute('values');
-        print('feColorMatrix: isAnimated=${attr?.isAnimated} effective=${attr?.effectiveValue}');
+        print(
+          'feColorMatrix: isAnimated=${attr?.isAnimated} effective=${attr?.effectiveValue}',
+        );
 
         // Manually simulate _syncColorMatrixValues
         if (attr?.isAnimated == true) {
@@ -71,13 +83,15 @@ void main() {
         }
       }
       if (p is SvgComponentTransferFilter) {
-        final src = p.sourceElement as dynamic?;
+        final src = p.sourceElement as dynamic;
         print('feComponentTransfer sourceElement: ${src?.tagName}');
         if (src != null) {
           for (final child in (src.children as List)) {
             final slopeAttr = (child as dynamic).getAttribute('slope');
             if (slopeAttr != null) {
-              print('  ${child.tagName}.slope: isAnimated=${slopeAttr.isAnimated} effective=${slopeAttr.effectiveValue}');
+              print(
+                '  ${child.tagName}.slope: isAnimated=${slopeAttr.isAnimated} effective=${slopeAttr.effectiveValue}',
+              );
             }
           }
         }

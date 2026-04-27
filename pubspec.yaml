@@ -2,7 +2,7 @@ name: full_svg_flutter
 description: An SVG rendering and widget library for Flutter, which allows painting and displaying Scalable Vector Graphics 1.1 files.
 repository: https://github.com/denisnadey/flutter_full_svg_support
 issue_tracker: https://github.com/denisnadey/flutter_full_svg_support/issues
-version: 1.0.0
+version: 1.0.1
 
 environment:
   sdk: ^3.8.0
@@ -17,7 +17,7 @@ dependencies:
   vector_graphics: ^1.1.13
   vector_graphics_codec: ^1.1.11+1
   vector_graphics_compiler: ^1.1.14
-  xml: ^6.0.0
+  xml: '>=6.0.0 <8.0.0'
 
 dev_dependencies:
   flutter_test:

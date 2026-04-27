@@ -63,15 +63,7 @@ extension AnimatedSvgPainterTextLayoutRenderExtension on AnimatedSvgPainter {
     final fontFeaturesKey = _fontFeaturesHashKey(allFontFeatures);
     final useCache = foregroundPaint == null;
     final cacheKey =
-        '${_RenderCache.textKey(
-          processedText,
-          effectiveFontSize,
-          style.fontFamily,
-          style.fontWeight.index,
-          style.fontStyle.index,
-          style.letterSpacing,
-          style.color.toARGB32(),
-        )}|$fontFeaturesKey';
+        '${_RenderCache.textKey(processedText, effectiveFontSize, style.fontFamily, style.fontWeight.value, style.fontStyle.index, style.letterSpacing, style.color.toARGB32())}|$fontFeaturesKey';
 
     if (useCache) {
       final cached = _renderCache.textParagraphs[cacheKey];

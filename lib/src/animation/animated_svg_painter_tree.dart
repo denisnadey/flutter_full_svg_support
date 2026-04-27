@@ -429,7 +429,8 @@ bool _paintGroupWithOpacity(
   final hasFilter = filterPass != null;
 
   // Determine if saveLayer is needed for compositing
-  final needsLayer = opacity < 1.0 ||
+  final needsLayer =
+      opacity < 1.0 ||
       isIsolated ||
       hasEnableBackground ||
       hasGroupBlendMode ||

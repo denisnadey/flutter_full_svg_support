@@ -60,7 +60,7 @@ class ColorDistanceCalculator extends DistanceCalculator {
     final toR = (toColor.r * 255.0).round().clamp(0, 255);
     final toG = (toColor.g * 255.0).round().clamp(0, 255);
     final toB = (toColor.b * 255.0).round().clamp(0, 255);
-    
+
     final dr = toR - fromR;
     final dg = toG - fromG;
     final db = toB - fromB;

@@ -78,7 +78,8 @@ extension AnimatedSvgPainterSvgFontsExtension on AnimatedSvgPainter {
             continue;
           }
           href =
-              _getString(srcChild, 'href') ?? _getString(srcChild, 'xlink:href');
+              _getString(srcChild, 'href') ??
+              _getString(srcChild, 'xlink:href');
           if (href != null && href.trim().isNotEmpty) {
             break;
           }
@@ -749,9 +750,7 @@ class _SvgFontKerningRule {
         hasUnicodeSelectors &&
         unicodeSelectors.any((selector) => selector.matches(character));
     final glyphMatch =
-        hasGlyphNames &&
-        glyphName != null &&
-        glyphNames.contains(glyphName);
+        hasGlyphNames && glyphName != null && glyphNames.contains(glyphName);
 
     return unicodeMatch || glyphMatch;
   }
