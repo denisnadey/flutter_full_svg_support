@@ -27,7 +27,18 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-FLUTTER="$PROJECT_ROOT/.fvm/versions/3.38.1/bin/flutter"
+_find_flutter() {
+  local dir="$1"
+  while [ "$dir" != "/" ]; do
+    if [ -f "$dir/.fvm/flutter_sdk/bin/flutter" ]; then
+      echo "$dir/.fvm/flutter_sdk/bin/flutter"
+      return
+    fi
+    dir="$(dirname "$dir")"
+  done
+  command -v flutter 2>/dev/null || echo "flutter"
+}
+FLUTTER="$(_find_flutter "$PROJECT_ROOT")"
 
 DURATION=15
 FRAMES=15

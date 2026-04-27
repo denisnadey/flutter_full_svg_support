@@ -1,0 +1,114 @@
+{
+  "svg": "vr-svg-animation-example",
+  "frames": 15,
+  "results": [
+    {
+      "frame": 0,
+      "time_s": 0.0,
+      "similarity": 0.9444,
+      "different_pixels": 26687,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 1,
+      "time_s": 1.071,
+      "similarity": 0.9445,
+      "different_pixels": 26647,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 2,
+      "time_s": 2.143,
+      "similarity": 0.9445,
+      "different_pixels": 26630,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 3,
+      "time_s": 3.214,
+      "similarity": 0.9444,
+      "different_pixels": 26689,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 4,
+      "time_s": 4.286,
+      "similarity": 0.9444,
+      "different_pixels": 26700,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 5,
+      "time_s": 5.357,
+      "similarity": 0.9443,
+      "different_pixels": 26736,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 6,
+      "time_s": 6.429,
+      "similarity": 0.9444,
+      "different_pixels": 26695,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 7,
+      "time_s": 7.5,
+      "similarity": 0.9447,
+      "different_pixels": 26549,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 8,
+      "time_s": 8.571,
+      "similarity": 0.9453,
+      "different_pixels": 26248,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 9,
+      "time_s": 9.643,
+      "similarity": 0.9463,
+      "different_pixels": 25767,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 10,
+      "time_s": 10.714,
+      "similarity": 0.9463,
+      "different_pixels": 25790,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 11,
+      "time_s": 11.786,
+      "similarity": 0.9462,
+      "different_pixels": 25833,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 12,
+      "time_s": 12.857,
+      "similarity": 0.9461,
+      "different_pixels": 25856,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 13,
+      "time_s": 13.929,
+      "similarity": 0.9461,
+      "different_pixels": 25876,
+      "total_pixels": 480000
+    },
+    {
+      "frame": 14,
+      "time_s": 15.0,
+      "similarity": 0.9462,
+      "different_pixels": 25846,
+      "total_pixels": 480000
+    }
+  ],
+  "average_similarity": 0.9452,
+  "worst_frame": 5,
+  "worst_similarity": 0.9443
+}

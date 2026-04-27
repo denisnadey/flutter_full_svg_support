@@ -115,7 +115,8 @@ async function captureAnimationFrames(page, svgPath, outputDir, options) {
   // Wait for fonts
   await page.evaluate(() => document.fonts.ready);
 
-  // Small initial delay
+  // Small initial delay so CSS and SMIL both advance uniformly before pausing.
+  // This keeps the timeline in a consistent state for setCurrentTime() seeking.
   await new Promise((r) => setTimeout(r, 100));
 
   // Pause all SMIL animations so we can seek deterministically

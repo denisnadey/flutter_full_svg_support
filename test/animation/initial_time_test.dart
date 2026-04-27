@@ -71,7 +71,9 @@ void main() {
                 width: 100,
                 height: 100,
                 autoPlay: false,
-                initialTime: const Duration(seconds: 1), // 50% into the animation
+                initialTime: const Duration(
+                  seconds: 1,
+                ), // 50% into the animation
               ),
             ),
           ),

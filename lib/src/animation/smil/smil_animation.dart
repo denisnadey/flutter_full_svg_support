@@ -441,58 +441,40 @@ class SmilAnimation {
   /// Respects calcMode when choosing the interpolation method.
   /// [completedRepeats] - the number of completed repetitions (for accumulate)
   Object? computeValue(double t, {int completedRepeats = 0}) {
+    final raw = computeRawValue(t, completedRepeats: completedRepeats);
+    return _applyAdditive(raw);
+  }
+
+  /// Compute the raw animated value without applying additive stacking.
+  ///
+  /// Used by the sandwich model so it can control how additive chaining works
+  /// across multiple animations targeting the same attribute.
+  Object? computeRawValue(double t, {int completedRepeats = 0}) {
     // For animateMotion, use special logic
     if (type == SmilAnimationType.animateMotion) {
-      // animateMotion does not normally use additive (it always sums transforms),
-      // but accumulate is applied if needed
-      final motionValue = _computeMotionValue(
-        t,
-        completedRepeats: completedRepeats,
-      );
-      // For motion, accumulate is applied inside _computeMotionValue via keyPoints
-      return motionValue;
+      return _computeMotionValue(t, completedRepeats: completedRepeats);
     }
 
     // For <set> elements, always return the 'to' value during the active period
-    // Per SMIL spec: <set> provides a simple means of setting the value of an
-    // attribute for a specified duration. It does not interpolate.
     if (type == SmilAnimationType.set) {
-      // <set> simply sets the attribute to 'to' value
-      final setValue = to;
-      // Apply additive="sum" (add to the base value)
-      return _applyAdditive(setValue);
+      return to;
     }
 
     // For discrete calcMode - no interpolation
     if (calcMode == SmilCalcMode.discrete) {
       final animValue = _computeDiscreteValue(t);
-
-      // Apply accumulate="sum"
-      final accumulatedValue = _applyAccumulate(animValue, completedRepeats);
-
-      // Apply additive="sum"
-      return _applyAdditive(accumulatedValue);
+      return _applyAccumulate(animValue, completedRepeats);
     }
 
     // For values-based animation
     if (values != null && values!.isNotEmpty) {
       final animValue = _computeValuesBasedValue(t);
-
-      // Apply accumulate="sum" (if there are completed repeats)
-      final accumulatedValue = _applyAccumulate(animValue, completedRepeats);
-
-      // Apply additive="sum" (add to the base value)
-      return _applyAdditive(accumulatedValue);
+      return _applyAccumulate(animValue, completedRepeats);
     }
 
     // For from/to/by animation
     final animValue = _computeSimpleValue(t);
-
-    // Apply accumulate="sum" (if there are completed repetitions)
-    final accumulatedValue = _applyAccumulate(animValue, completedRepeats);
-
-    // Apply additive="sum" (add to the base value)
-    return _applyAdditive(accumulatedValue);
+    return _applyAccumulate(animValue, completedRepeats);
   }
 
   void updateForTime(Duration globalTime) {

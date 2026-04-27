@@ -966,12 +966,7 @@ void main() {
 
         // Octave 1: wrapX = 6 << 1 = 12
         final val0Oct1 = generator.noise2D(0.0, 0.0, stitch: true, octave: 1);
-        final val12Oct1 = generator.noise2D(
-          12.0,
-          0.0,
-          stitch: true,
-          octave: 1,
-        );
+        final val12Oct1 = generator.noise2D(12.0, 0.0, stitch: true, octave: 1);
         expect(val0Oct1, closeTo(val12Oct1, 0.001));
       });
 

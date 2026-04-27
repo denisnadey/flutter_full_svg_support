@@ -5,215 +5,215 @@
     {
       "frame": 0,
       "time_s": 0.0,
-      "similarity": 0.9999,
-      "different_pixels": 26,
+      "similarity": 0.9958,
+      "different_pixels": 2024,
       "total_pixels": 480000
     },
     {
       "frame": 1,
-      "time_s": 0.207,
-      "similarity": 0.9996,
-      "different_pixels": 170,
+      "time_s": 0.517,
+      "similarity": 0.9952,
+      "different_pixels": 2287,
       "total_pixels": 480000
     },
     {
       "frame": 2,
-      "time_s": 0.414,
-      "similarity": 0.9997,
-      "different_pixels": 157,
+      "time_s": 1.034,
+      "similarity": 0.9952,
+      "different_pixels": 2285,
       "total_pixels": 480000
     },
     {
       "frame": 3,
-      "time_s": 0.621,
-      "similarity": 0.9997,
-      "different_pixels": 147,
+      "time_s": 1.552,
+      "similarity": 0.9952,
+      "different_pixels": 2281,
       "total_pixels": 480000
     },
     {
       "frame": 4,
-      "time_s": 0.828,
-      "similarity": 0.9996,
-      "different_pixels": 181,
+      "time_s": 2.069,
+      "similarity": 0.9968,
+      "different_pixels": 1549,
       "total_pixels": 480000
     },
     {
       "frame": 5,
-      "time_s": 1.034,
-      "similarity": 0.9997,
-      "different_pixels": 148,
+      "time_s": 2.586,
+      "similarity": 0.9968,
+      "different_pixels": 1553,
       "total_pixels": 480000
     },
     {
       "frame": 6,
-      "time_s": 1.241,
-      "similarity": 0.9996,
-      "different_pixels": 177,
+      "time_s": 3.103,
+      "similarity": 0.9968,
+      "different_pixels": 1556,
       "total_pixels": 480000
     },
     {
       "frame": 7,
-      "time_s": 1.448,
-      "similarity": 0.9997,
-      "different_pixels": 140,
+      "time_s": 3.621,
+      "similarity": 0.9964,
+      "different_pixels": 1731,
       "total_pixels": 480000
     },
     {
       "frame": 8,
-      "time_s": 1.655,
-      "similarity": 0.9997,
-      "different_pixels": 132,
+      "time_s": 4.138,
+      "similarity": 0.9948,
+      "different_pixels": 2507,
       "total_pixels": 480000
     },
     {
       "frame": 9,
-      "time_s": 1.862,
-      "similarity": 0.9996,
-      "different_pixels": 174,
+      "time_s": 4.655,
+      "similarity": 0.9948,
+      "different_pixels": 2505,
       "total_pixels": 480000
     },
     {
       "frame": 10,
-      "time_s": 2.069,
-      "similarity": 0.9997,
-      "different_pixels": 144,
+      "time_s": 5.172,
+      "similarity": 0.9948,
+      "different_pixels": 2501,
       "total_pixels": 480000
     },
     {
       "frame": 11,
-      "time_s": 2.276,
-      "similarity": 0.9996,
-      "different_pixels": 179,
+      "time_s": 5.69,
+      "similarity": 0.9963,
+      "different_pixels": 1764,
       "total_pixels": 480000
     },
     {
       "frame": 12,
-      "time_s": 2.483,
-      "similarity": 0.9997,
-      "different_pixels": 148,
+      "time_s": 6.207,
+      "similarity": 0.9963,
+      "different_pixels": 1774,
       "total_pixels": 480000
     },
     {
       "frame": 13,
-      "time_s": 2.69,
-      "similarity": 0.9997,
-      "different_pixels": 166,
+      "time_s": 6.724,
+      "similarity": 0.9963,
+      "different_pixels": 1778,
       "total_pixels": 480000
     },
     {
       "frame": 14,
-      "time_s": 2.897,
-      "similarity": 0.9996,
-      "different_pixels": 173,
+      "time_s": 7.241,
+      "similarity": 0.9958,
+      "different_pixels": 2024,
       "total_pixels": 480000
     },
     {
       "frame": 15,
-      "time_s": 3.103,
+      "time_s": 7.759,
       "similarity": 1.0,
       "different_pixels": 6,
       "total_pixels": 480000
     },
     {
       "frame": 16,
-      "time_s": 3.31,
+      "time_s": 8.276,
       "similarity": 1.0,
       "different_pixels": 6,
       "total_pixels": 480000
     },
     {
       "frame": 17,
-      "time_s": 3.517,
+      "time_s": 8.793,
       "similarity": 1.0,
       "different_pixels": 6,
       "total_pixels": 480000
     },
     {
       "frame": 18,
-      "time_s": 3.724,
+      "time_s": 9.31,
       "similarity": 1.0,
       "different_pixels": 6,
       "total_pixels": 480000
     },
     {
       "frame": 19,
-      "time_s": 3.931,
+      "time_s": 9.828,
       "similarity": 1.0,
       "different_pixels": 6,
       "total_pixels": 480000
     },
     {
       "frame": 20,
-      "time_s": 4.138,
+      "time_s": 10.345,
       "similarity": 1.0,
       "different_pixels": 6,
       "total_pixels": 480000
     },
     {
       "frame": 21,
-      "time_s": 4.345,
+      "time_s": 10.862,
       "similarity": 1.0,
       "different_pixels": 6,
       "total_pixels": 480000
     },
     {
       "frame": 22,
-      "time_s": 4.552,
+      "time_s": 11.379,
       "similarity": 1.0,
       "different_pixels": 6,
       "total_pixels": 480000
     },
     {
       "frame": 23,
-      "time_s": 4.759,
+      "time_s": 11.897,
       "similarity": 1.0,
       "different_pixels": 6,
       "total_pixels": 480000
     },
     {
       "frame": 24,
-      "time_s": 4.966,
+      "time_s": 12.414,
       "similarity": 1.0,
       "different_pixels": 6,
       "total_pixels": 480000
     },
     {
       "frame": 25,
-      "time_s": 5.172,
+      "time_s": 12.931,
       "similarity": 1.0,
       "different_pixels": 6,
       "total_pixels": 480000
     },
     {
       "frame": 26,
-      "time_s": 5.379,
+      "time_s": 13.448,
       "similarity": 1.0,
       "different_pixels": 6,
       "total_pixels": 480000
     },
     {
       "frame": 27,
-      "time_s": 5.586,
+      "time_s": 13.966,
       "similarity": 1.0,
       "different_pixels": 6,
       "total_pixels": 480000
     },
     {
       "frame": 28,
-      "time_s": 5.793,
+      "time_s": 14.483,
       "similarity": 1.0,
       "different_pixels": 6,
       "total_pixels": 480000
     },
     {
       "frame": 29,
-      "time_s": 6.0,
+      "time_s": 15.0,
       "similarity": 1.0,
       "different_pixels": 6,
       "total_pixels": 480000
     }
   ],
-  "average_similarity": 0.9998,
-  "worst_frame": 4,
-  "worst_similarity": 0.9996
+  "average_similarity": 0.9979,
+  "worst_frame": 8,
+  "worst_similarity": 0.9948
 }

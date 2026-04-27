@@ -464,6 +464,7 @@ extension _AnimatedSvgPictureStateLifecycleExtension
             ? null
             : _timeline!.currentTime.inMicroseconds / 1000000.0,
         hasAnimations: _hasAnimations,
+        clipToViewBox: widget.clipToViewBox,
       ),
       size: Size.infinite,
     );

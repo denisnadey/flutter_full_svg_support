@@ -303,51 +303,50 @@ void main() {
       expect(find.byType(AnimatedSvgPicture), findsOneWidget);
     });
 
-    testWidgets(
-      'tspan rotate list starts from local character index',
-      (tester) async {
-        Future<int> redPixelCountForSvg(String svg) async {
-          await tester.pumpWidget(
-            MaterialApp(
-              home: Scaffold(
-                body: AnimatedSvgPicture.string(svg, width: 420, height: 140),
-              ),
+    testWidgets('tspan rotate list starts from local character index', (
+      tester,
+    ) async {
+      Future<int> redPixelCountForSvg(String svg) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: AnimatedSvgPicture.string(svg, width: 420, height: 140),
             ),
-          );
-          await tester.pump();
-          await tester.pump();
+          ),
+        );
+        await tester.pump();
+        await tester.pump();
 
-          final pixels = await VisualTestUtils.captureWidgetPixels(tester);
-          final redAnalysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
-          return redAnalysis.pixelCount;
-        }
+        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final redAnalysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+        return redAnalysis.pixelCount;
+      }
 
-        const expectedOverlaySvg =
-            '''<svg viewBox="0 0 420 140" xmlns="http://www.w3.org/2000/svg">
+      const expectedOverlaySvg =
+          '''<svg viewBox="0 0 420 140" xmlns="http://www.w3.org/2000/svg">
         <rect x="0" y="0" width="420" height="140" fill="white"/>
         <text x="20" y="90" font-size="56" font-family="Arial, sans-serif" fill="red" rotate="0,0,0,10,20,30,40">ABCDEFG</text>
         <text x="20" y="90" font-size="56" font-family="Arial, sans-serif" fill="lime" stroke="lime" stroke-width="2" rotate="0,0,0,10,20,30,40">ABCDEFG</text>
       </svg>''';
 
-        const inheritedOverlaySvg =
-            '''<svg viewBox="0 0 420 140" xmlns="http://www.w3.org/2000/svg">
+      const inheritedOverlaySvg =
+          '''<svg viewBox="0 0 420 140" xmlns="http://www.w3.org/2000/svg">
         <rect x="0" y="0" width="420" height="140" fill="white"/>
         <text x="20" y="90" font-size="56" font-family="Arial, sans-serif" fill="red" rotate="0,0,0,10,20,30,40">ABCDEFG</text>
         <text x="20" y="90" font-size="56" font-family="Arial, sans-serif" fill="lime" stroke="lime" stroke-width="2" rotate="0">ABC<tspan rotate="10,20,30,40">DEFG</tspan></text>
       </svg>''';
 
-        final expectedRedCount = await redPixelCountForSvg(expectedOverlaySvg);
-        final inheritedRedCount = await redPixelCountForSvg(inheritedOverlaySvg);
+      final expectedRedCount = await redPixelCountForSvg(expectedOverlaySvg);
+      final inheritedRedCount = await redPixelCountForSvg(inheritedOverlaySvg);
 
-        // Nested tspan rotate behavior should match explicit per-character rotate.
-        expect(
-          inheritedRedCount,
-          lessThan(expectedRedCount + 400),
-          reason:
-              'Inherited rotate leaked too much red (expected=$expectedRedCount, inherited=$inheritedRedCount)',
-        );
-      },
-    );
+      // Nested tspan rotate behavior should match explicit per-character rotate.
+      expect(
+        inheritedRedCount,
+        lessThan(expectedRedCount + 400),
+        reason:
+            'Inherited rotate leaked too much red (expected=$expectedRedCount, inherited=$inheritedRedCount)',
+      );
+    });
 
     testWidgets('rotate with negative values works', (tester) async {
       const svg =

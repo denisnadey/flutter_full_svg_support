@@ -139,23 +139,32 @@ Uint8List? _decodeWoff1(Uint8List woff) {
   var pos = 0;
 
   // SFNT offset table
-  w.setUint32(pos, flavor); pos += 4;
-  w.setUint16(pos, numTables); pos += 2;
+  w.setUint32(pos, flavor);
+  pos += 4;
+  w.setUint16(pos, numTables);
+  pos += 2;
   final log2n = numTables > 0 ? math.log(numTables) ~/ math.log(2) : 0;
   final searchRange = (1 << log2n) * 16;
   final entrySelector = log2n;
   final rangeShift = numTables * 16 - searchRange;
-  w.setUint16(pos, searchRange); pos += 2;
-  w.setUint16(pos, entrySelector); pos += 2;
-  w.setUint16(pos, rangeShift); pos += 2;
+  w.setUint16(pos, searchRange);
+  pos += 2;
+  w.setUint16(pos, entrySelector);
+  pos += 2;
+  w.setUint16(pos, rangeShift);
+  pos += 2;
 
   // SFNT table directory
   for (var i = 0; i < numTables; i++) {
     final e = entries[i];
-    w.setUint32(pos, e.tag); pos += 4;
-    w.setUint32(pos, e.checkSum); pos += 4;
-    w.setUint32(pos, offsets[i]); pos += 4;
-    w.setUint32(pos, e.origLength); pos += 4;
+    w.setUint32(pos, e.tag);
+    pos += 4;
+    w.setUint32(pos, e.checkSum);
+    pos += 4;
+    w.setUint32(pos, offsets[i]);
+    pos += 4;
+    w.setUint32(pos, e.origLength);
+    pos += 4;
   }
 
   // Table data
@@ -339,7 +348,8 @@ int _sfntChecksum(Uint8List d) {
     if (pos + 2 > d.length) return (-1, false);
     compFlags = (d[pos] << 8) | d[pos + 1];
     pos += 2;
-    haveInstr = haveInstr || (compFlags & 0x100) != 0; // FLAG_WE_HAVE_INSTRUCTIONS
+    haveInstr =
+        haveInstr || (compFlags & 0x100) != 0; // FLAG_WE_HAVE_INSTRUCTIONS
     int argSize = 2; // glyph index
     if ((compFlags & 0x01) != 0) {
       argSize += 4; // ARG_1_AND_2_ARE_WORDS
@@ -495,7 +505,9 @@ Uint8List _buildSimpleGlyph(
       xCoords.add(dx.abs());
     } else {
       final u = dx & 0xFFFF;
-      xCoords..add((u >> 8) & 0xFF)..add(u & 0xFF);
+      xCoords
+        ..add((u >> 8) & 0xFF)
+        ..add(u & 0xFF);
     }
 
     if (dy == 0) {
@@ -506,7 +518,9 @@ Uint8List _buildSimpleGlyph(
       yCoords.add(dy.abs());
     } else {
       final u = dy & 0xFFFF;
-      yCoords..add((u >> 8) & 0xFF)..add(u & 0xFF);
+      yCoords
+        ..add((u >> 8) & 0xFF)
+        ..add(u & 0xFF);
     }
 
     if (flag == lastFlag && repeatCount < 255) {
@@ -621,14 +635,15 @@ Uint8List _buildLoca(List<int> values, int indexFormat) {
     final nContoursU = bd.getUint16(nContourPos);
     nContourPos += 2;
 
-    final haveBbox =
-        (t[subStarts[5] + (i >> 3)] & (0x80 >> (i & 7))) != 0;
+    final haveBbox = (t[subStarts[5] + (i >> 3)] & (0x80 >> (i & 7))) != 0;
 
     locaValues.add(glyfOut.length);
 
     if (nContoursU == 0xFFFF) {
       // ── composite glyph ────────────────────────────────────────────────────
-      if (!haveBbox) return (null, null, null, 0, 0); // composites must have bbox
+      if (!haveBbox) {
+        return (null, null, null, 0, 0); // composites must have bbox
+      }
 
       final (compSize, haveInstr) = _sizeOfComposite(t, compositePos);
       if (compSize < 0) return (null, null, null, 0, 0);
@@ -655,8 +670,9 @@ Uint8List _buildLoca(List<int> values, int indexFormat) {
       bboxDataPos += 8;
 
       if (compositePos + compSize > t.length) return (null, null, null, 0, 0);
-      glyfChunk
-          .add(Uint8List.sublistView(t, compositePos, compositePos + compSize));
+      glyfChunk.add(
+        Uint8List.sublistView(t, compositePos, compositePos + compSize),
+      );
       compositePos += compSize;
 
       if (haveInstr) {
@@ -664,8 +680,7 @@ Uint8List _buildLoca(List<int> values, int indexFormat) {
         instrHdr.setUint16(0, instrSize, Endian.big);
         glyfChunk.add(instrHdr.buffer.asUint8List(0, 2));
         if (instrPos + instrSize > t.length) return (null, null, null, 0, 0);
-        glyfChunk
-            .add(Uint8List.sublistView(t, instrPos, instrPos + instrSize));
+        glyfChunk.add(Uint8List.sublistView(t, instrPos, instrPos + instrSize));
         instrPos += instrSize;
       }
 
@@ -691,7 +706,13 @@ Uint8List _buildLoca(List<int> values, int indexFormat) {
       pts.clear();
       final glyphDLen = subSizes[3] - (glyphPos - subStarts[3]);
       final (pok, consumed) = _tripletDecode(
-          flagSlice, t, glyphPos, glyphDLen, totalPts, pts);
+        flagSlice,
+        t,
+        glyphPos,
+        glyphDLen,
+        totalPts,
+        pts,
+      );
       if (!pok) return (null, null, null, 0, 0);
       glyphPos += consumed;
 
@@ -700,10 +721,15 @@ Uint8List _buildLoca(List<int> values, int indexFormat) {
       glyphPos = gp2;
 
       if (instrPos + instrSize > t.length) return (null, null, null, 0, 0);
-      final instrBytes = Uint8List.sublistView(t, instrPos, instrPos + instrSize);
+      final instrBytes = Uint8List.sublistView(
+        t,
+        instrPos,
+        instrPos + instrSize,
+      );
       instrPos += instrSize;
 
-      final hasOverlapBit = hasOverlapBitmap &&
+      final hasOverlapBit =
+          hasOverlapBitmap &&
           (t[overlapBitmapStart + (i >> 3)] & (0x80 >> (i & 7))) != 0;
 
       int xMin, yMin, xMax, yMax;
@@ -732,8 +758,16 @@ Uint8List _buildLoca(List<int> values, int indexFormat) {
       xMins[i] = xMin;
 
       final glyfBytes = _buildSimpleGlyph(
-          nContours, xMin, yMin, xMax, yMax,
-          nPointsVec, pts, instrBytes, hasOverlapBit);
+        nContours,
+        xMin,
+        yMin,
+        xMax,
+        yMax,
+        nPointsVec,
+        pts,
+        instrBytes,
+        hasOverlapBit,
+      );
       glyfOut.add(glyfBytes);
     } else {
       // empty glyph (nContours == 0)
@@ -778,7 +812,8 @@ Uint8List? _reconstructHmtx(
   final advWidths = List<int>.filled(numHMetrics, 0);
   for (int i = 0; i < numHMetrics; i++) {
     if (pos + 2 > src.length) return null;
-    advWidths[i] = bd.getUint16(pos); pos += 2;
+    advWidths[i] = bd.getUint16(pos);
+    pos += 2;
   }
 
   final lsbs = List<int>.filled(numGlyphs, 0);
@@ -787,7 +822,8 @@ Uint8List? _reconstructHmtx(
   for (int i = 0; i < numHMetrics; i++) {
     if (hasProportionalLsbs) {
       if (pos + 2 > src.length) return null;
-      lsbs[i] = bd.getInt16(pos); pos += 2;
+      lsbs[i] = bd.getInt16(pos);
+      pos += 2;
     } else {
       lsbs[i] = i < xMins.length ? xMins[i] : 0;
     }
@@ -797,7 +833,8 @@ Uint8List? _reconstructHmtx(
   for (int i = numHMetrics; i < numGlyphs; i++) {
     if (hasMonospaceLsbs) {
       if (pos + 2 > src.length) return null;
-      lsbs[i] = bd.getInt16(pos); pos += 2;
+      lsbs[i] = bd.getInt16(pos);
+      pos += 2;
     } else {
       lsbs[i] = i < xMins.length ? xMins[i] : 0;
     }
@@ -809,9 +846,11 @@ Uint8List? _reconstructHmtx(
   var op = 0;
   for (int i = 0; i < numGlyphs; i++) {
     if (i < numHMetrics) {
-      out.setUint16(op, advWidths[i], Endian.big); op += 2;
+      out.setUint16(op, advWidths[i], Endian.big);
+      op += 2;
     }
-    out.setInt16(op, lsbs[i], Endian.big); op += 2;
+    out.setInt16(op, lsbs[i], Endian.big);
+    op += 2;
   }
   return out.buffer.asUint8List(0, outLen);
 }
@@ -846,7 +885,8 @@ Uint8List? _decodeWoff2(Uint8List woff) {
     int tag;
     if (tagIndex == 0x3F) {
       if (pos + 4 > woff.length) return null;
-      tag = hd.getUint32(pos); pos += 4;
+      tag = hd.getUint32(pos);
+      pos += 4;
     } else {
       tag = _kW2Tags[tagIndex];
     }
@@ -873,13 +913,15 @@ Uint8List? _decodeWoff2(Uint8List woff) {
       if (tag == 0x6C6F6361 && transformLength != 0) return null;
     }
 
-    entries.add(_W2Entry(
-      tag: tag,
-      isTransformed: isTransformed,
-      srcOffset: srcOffsetAccum,
-      srcLength: transformLength,
-      dstLength: dstLength,
-    ));
+    entries.add(
+      _W2Entry(
+        tag: tag,
+        isTransformed: isTransformed,
+        srcOffset: srcOffsetAccum,
+        srcLength: transformLength,
+        dstLength: dstLength,
+      ),
+    );
     srcOffsetAccum += transformLength;
   }
 
@@ -898,8 +940,8 @@ Uint8List? _decodeWoff2(Uint8List woff) {
   if (uncompressed.length < srcOffsetAccum) return null;
 
   // ── 4. Reconstruct tables ─────────────────────────────────────────────────────
-  final tableData = <int, Uint8List>{};   // tag → reconstructed bytes
-  final tableChecksum = <int, int>{};     // tag → SFNT checksum
+  final tableData = <int, Uint8List>{}; // tag → reconstructed bytes
+  final tableChecksum = <int, int>{}; // tag → SFNT checksum
   List<int>? xMins;
   int numGlyphs = 0;
   int numHMetrics = 0;
@@ -911,7 +953,10 @@ Uint8List? _decodeWoff2(Uint8List woff) {
 
     final src = e.srcLength > 0
         ? Uint8List.sublistView(
-            uncompressed, e.srcOffset, e.srcOffset + e.srcLength)
+            uncompressed,
+            e.srcOffset,
+            e.srcOffset + e.srcLength,
+          )
         : Uint8List(0);
 
     if (!e.isTransformed) {
@@ -934,14 +979,17 @@ Uint8List? _decodeWoff2(Uint8List woff) {
       final locaEntry = entries.firstWhere(
         (e2) => e2.tag == 0x6C6F6361,
         orElse: () => _W2Entry(
-            tag: 0x6C6F6361,
-            isTransformed: true,
-            srcOffset: 0,
-            srcLength: 0,
-            dstLength: 0),
+          tag: 0x6C6F6361,
+          isTransformed: true,
+          srcOffset: 0,
+          srcLength: 0,
+          dstLength: 0,
+        ),
       );
-      final (glyf, loca, xm, ng, _) =
-          _reconstructGlyf(src, locaEntry.dstLength);
+      final (glyf, loca, xm, ng, _) = _reconstructGlyf(
+        src,
+        locaEntry.dstLength,
+      );
       if (glyf == null) return null;
       tableData[0x676C7966] = glyf;
       tableData[0x6C6F6361] = loca!;
@@ -961,7 +1009,11 @@ Uint8List? _decodeWoff2(Uint8List woff) {
   // Pass 2: reconstruct transformed hmtx using xMins from glyf.
   if (deferredHmtxSrc != null) {
     final hmtx = _reconstructHmtx(
-        deferredHmtxSrc, numGlyphs, numHMetrics, xMins ?? const []);
+      deferredHmtxSrc,
+      numGlyphs,
+      numHMetrics,
+      xMins ?? const [],
+    );
     if (hmtx == null) return null;
     tableData[0x686D7478] = hmtx;
     tableChecksum[0x686D7478] = _sfntChecksum(hmtx);
@@ -985,20 +1037,29 @@ Uint8List? _decodeWoff2(Uint8List woff) {
   var p = 0;
 
   // SFNT offset table (12 bytes).
-  w.setUint32(p, flavor); p += 4;
-  w.setUint16(p, n); p += 2;
+  w.setUint32(p, flavor);
+  p += 4;
+  w.setUint16(p, n);
+  p += 2;
   final log2n = n > 0 ? (math.log(n) / math.log(2)).floor() : 0;
   final searchRange = (1 << log2n) * 16;
-  w.setUint16(p, searchRange); p += 2;
-  w.setUint16(p, log2n); p += 2;
-  w.setUint16(p, n * 16 - searchRange); p += 2;
+  w.setUint16(p, searchRange);
+  p += 2;
+  w.setUint16(p, log2n);
+  p += 2;
+  w.setUint16(p, n * 16 - searchRange);
+  p += 2;
 
   // Table directory (n × 16 bytes).
   for (final tag in sortedTags) {
-    w.setUint32(p, tag); p += 4;
-    w.setUint32(p, tableChecksum[tag]!); p += 4;
-    w.setUint32(p, offsets[tag]!); p += 4;
-    w.setUint32(p, tableData[tag]!.length); p += 4;
+    w.setUint32(p, tag);
+    p += 4;
+    w.setUint32(p, tableChecksum[tag]!);
+    p += 4;
+    w.setUint32(p, offsets[tag]!);
+    p += 4;
+    w.setUint32(p, tableData[tag]!.length);
+    p += 4;
   }
 
   // Table data.

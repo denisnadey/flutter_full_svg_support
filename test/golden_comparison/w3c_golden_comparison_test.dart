@@ -1355,8 +1355,7 @@ void main() {
 
       testWidgets('W3C: ${testCase.id}', (tester) async {
         final stopwatch = Stopwatch()..start();
-        final prefix =
-            '[$currentIndex/${selectedCases.length}] ${testCase.id}';
+        final prefix = '[$currentIndex/${selectedCases.length}] ${testCase.id}';
 
         // ignore: avoid_print
         print('\n$prefix');

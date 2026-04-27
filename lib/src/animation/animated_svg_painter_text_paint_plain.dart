@@ -258,6 +258,7 @@ extension AnimatedSvgPainterTextPlainExtension on AnimatedSvgPainter {
         canvas.drawParagraph(shaderStrokeParagraph, ui.Offset(x, drawY));
         return true;
       }
+
       if ((scaleX - 1.0).abs() > 1e-6) {
         canvas.save();
         canvas.translate(drawX, 0.0);
@@ -315,7 +316,10 @@ extension AnimatedSvgPainterTextPlainExtension on AnimatedSvgPainter {
       final paragraph = _buildTextParagraph(glyph, style);
       final glyphWidth = paragraph.maxIntrinsicWidth;
       final glyphHeight = style.fontSize;
-      final isUpright = _isGlyphUprightInVertical(glyph, style.glyphOrientationVertical);
+      final isUpright = _isGlyphUprightInVertical(
+        glyph,
+        style.glyphOrientationVertical,
+      );
       canvas.save();
       canvas.translate(x, cursorY);
       if (isUpright) {
@@ -361,7 +365,10 @@ extension AnimatedSvgPainterTextPlainExtension on AnimatedSvgPainter {
   /// - glyph-orientation-vertical="90" → rotated for all glyphs.
   /// - auto (null / default)            → CJK and fullwidth chars upright,
   ///                                      others rotated 90°.
-  bool _isGlyphUprightInVertical(String glyph, double? glyphOrientationVertical) {
+  bool _isGlyphUprightInVertical(
+    String glyph,
+    double? glyphOrientationVertical,
+  ) {
     if (glyphOrientationVertical != null) {
       return glyphOrientationVertical.abs() < 1.0;
     }
@@ -372,14 +379,15 @@ extension AnimatedSvgPainterTextPlainExtension on AnimatedSvgPainter {
   /// True for code points that are naturally upright in vertical text (CJK,
   /// fullwidth, Hangul, and related blocks per Unicode vertical orientation).
   bool _isCjkOrFullwidthRune(int cp) {
-    return (cp >= 0x1100 && cp <= 0x11FF) ||   // Hangul Jamo
-        (cp >= 0x2E80 && cp <= 0x2FFF) ||       // CJK Radicals / KangXi
-        (cp >= 0x3000 && cp <= 0x9FFF) ||       // CJK Symbols, Hiragana, Katakana, Unified
-        (cp >= 0xA000 && cp <= 0xA4FF) ||       // Yi
-        (cp >= 0xAC00 && cp <= 0xD7FF) ||       // Hangul Syllables
-        (cp >= 0xF900 && cp <= 0xFAFF) ||       // CJK Compatibility Ideographs
-        (cp >= 0xFE30 && cp <= 0xFE4F) ||       // CJK Compatibility Forms
-        (cp >= 0xFF00 && cp <= 0xFFEF) ||       // Fullwidth / Halfwidth
-        (cp >= 0x20000 && cp <= 0x2A6DF);       // CJK Extension B
+    return (cp >= 0x1100 && cp <= 0x11FF) || // Hangul Jamo
+        (cp >= 0x2E80 && cp <= 0x2FFF) || // CJK Radicals / KangXi
+        (cp >= 0x3000 &&
+            cp <= 0x9FFF) || // CJK Symbols, Hiragana, Katakana, Unified
+        (cp >= 0xA000 && cp <= 0xA4FF) || // Yi
+        (cp >= 0xAC00 && cp <= 0xD7FF) || // Hangul Syllables
+        (cp >= 0xF900 && cp <= 0xFAFF) || // CJK Compatibility Ideographs
+        (cp >= 0xFE30 && cp <= 0xFE4F) || // CJK Compatibility Forms
+        (cp >= 0xFF00 && cp <= 0xFFEF) || // Fullwidth / Halfwidth
+        (cp >= 0x20000 && cp <= 0x2A6DF); // CJK Extension B
   }
 }

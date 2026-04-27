@@ -140,47 +140,12 @@ class SvgColorMatrixFilter extends SvgFilter {
   @override
   ui.ImageFilter? apply() => colorFilter();
 
-  /// Converts an SVG 5x4 matrix (20 values) to a Flutter 4x5 matrix (20 values)
-  ///
-  /// SVG format: row by row (R, G, B, A, 1 for each row)
-  /// Flutter format: column by column (RGBA + offset)
+  /// SVG feColorMatrix values are row-major 4×5, identical to Flutter's
+  /// ColorFilter.matrix layout. Chromium (Blink fe_color_matrix.cc) copies
+  /// the values directly: `base::span(matrix).copy_from(values)` — no
+  /// transposition, no scaling.
   List<double> _convertSvgMatrixToFlutter(List<double> svgMatrix) {
-    // SVG matrix (5x4):
-    // [Rr Rg Rb Ra Rk]
-    // [Gr Gg Gb Ga Gk]
-    // [Br Bg Bb Ba Bk]
-    // [Ar Ag Ab Aa Ak]
-    //
-    // Flutter matrix (4x5):
-    // [Rr Gr Br Ar] - red column
-    // [Rg Gg Bg Ag] - green column
-    // [Rb Gb Bb Ab] - blue column
-    // [Ra Ga Ba Aa] - alpha column
-    // [Rk Gk Bk Ak] - offset row
-
-    final result = <double>[];
-
-    // Red column: Rr, Gr, Br, Ar
-    result.addAll([svgMatrix[0], svgMatrix[5], svgMatrix[10], svgMatrix[15]]);
-
-    // Green column: Rg, Gg, Bg, Ag
-    result.addAll([svgMatrix[1], svgMatrix[6], svgMatrix[11], svgMatrix[16]]);
-
-    // Blue column: Rb, Gb, Bb, Ab
-    result.addAll([svgMatrix[2], svgMatrix[7], svgMatrix[12], svgMatrix[17]]);
-
-    // Alpha column: Ra, Ga, Ba, Aa
-    result.addAll([svgMatrix[3], svgMatrix[8], svgMatrix[13], svgMatrix[18]]);
-
-    // Offset row: Rk, Gk, Bk, Ak (divide by 255 because Flutter works in [0-1] while SVG uses [0-255])
-    result.addAll([
-      svgMatrix[4] / 255.0,
-      svgMatrix[9] / 255.0,
-      svgMatrix[14] / 255.0,
-      svgMatrix[19] / 255.0,
-    ]);
-
-    return result;
+    return List<double>.from(svgMatrix);
   }
 
   /// Creates a matrix for saturation (saturate)

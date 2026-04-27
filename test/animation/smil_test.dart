@@ -301,8 +301,8 @@ void main() {
         from: 0.0,
         to: 100.0,
         dur: const Duration(seconds: 2),
-        fillMode: SmilFillMode
-            .freeze, // freeze is needed to preserve the final value
+        fillMode:
+            SmilFillMode.freeze, // freeze is needed to preserve the final value
       );
 
       final timeline = SvgTimeline(animations: [anim], rootNode: rootNode);
