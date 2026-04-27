@@ -87,6 +87,7 @@ class AnimatedSvgPainter extends CustomPainter {
     this.displacementImagesByFilterKey = const <String, ui.Image>{},
     this.animationTime,
     this.hasAnimations = false,
+    this.clipToViewBox = false,
     // ignore: library_private_types_in_public_api
     _RenderCache? renderCache,
   }) : _renderCache = renderCache ?? _RenderCache();
@@ -114,6 +115,15 @@ class AnimatedSvgPainter extends CustomPainter {
 
   /// Whether the document has animations.
   final bool hasAnimations;
+
+  /// When true, clips rendered content to the SVG viewBox.
+  ///
+  /// Per SVG spec, the root element defaults to overflow:hidden, but many
+  /// SVGs intentionally place animated decorations (e.g. coins) outside the
+  /// viewBox. Set this to true to enforce strict viewBox clipping and match
+  /// the behaviour of browsers viewing the SVG file directly (not embedded
+  /// in an HTML page with CSS-forced dimensions).
+  final bool clipToViewBox;
 
   /// Performance cache for computed render values.
   final _RenderCache _renderCache;
@@ -170,6 +180,24 @@ class AnimatedSvgPainter extends CustomPainter {
 
     canvas.save();
     canvas.transform(transform.storage);
+
+    // When clipToViewBox is enabled, clip to the SVG viewBox in SVG
+    // coordinate space so that content outside it (e.g. coins animated
+    // beyond the card boundary) is hidden, matching browser direct-URL
+    // rendering where overflow:hidden clips to the SVG viewport.
+    if (clipToViewBox) {
+      final viewBox = document.activeViewBox;
+      if (viewBox != null) {
+        canvas.clipRect(
+          ui.Rect.fromLTWH(
+            viewBox.left,
+            viewBox.top,
+            viewBox.width,
+            viewBox.height,
+          ),
+        );
+      }
+    }
 
     // Paint the root node
     _paintNode(canvas, document.root);

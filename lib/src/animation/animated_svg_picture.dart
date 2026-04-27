@@ -94,6 +94,7 @@ class AnimatedSvgPicture extends StatefulWidget {
     this.foreignObjectBuilder,
     this.imageLoader,
     this.fontLoader,
+    this.clipToViewBox = false,
   }) : _svgString = svgString;
 
   /// Creates an animated SVG from an asset.
@@ -119,6 +120,7 @@ class AnimatedSvgPicture extends StatefulWidget {
     SvgFontLoader? fontLoader,
     WidgetBuilder? placeholderBuilder,
     AnimatedSvgErrorWidgetBuilder? errorBuilder,
+    bool clipToViewBox = false,
   }) {
     return _DeferredAnimatedSvgPicture.asset(
       assetName,
@@ -142,6 +144,7 @@ class AnimatedSvgPicture extends StatefulWidget {
       fontLoader: fontLoader,
       placeholderBuilder: placeholderBuilder,
       errorBuilder: errorBuilder,
+      clipToViewBox: clipToViewBox,
     );
   }
 
@@ -168,6 +171,7 @@ class AnimatedSvgPicture extends StatefulWidget {
     SvgFontLoader? fontLoader,
     WidgetBuilder? placeholderBuilder,
     AnimatedSvgErrorWidgetBuilder? errorBuilder,
+    bool clipToViewBox = false,
   }) {
     return _DeferredAnimatedSvgPicture.network(
       url,
@@ -191,6 +195,7 @@ class AnimatedSvgPicture extends StatefulWidget {
       fontLoader: fontLoader,
       placeholderBuilder: placeholderBuilder,
       errorBuilder: errorBuilder,
+      clipToViewBox: clipToViewBox,
     );
   }
 
@@ -215,6 +220,7 @@ class AnimatedSvgPicture extends StatefulWidget {
     SvgFontLoader? fontLoader,
     WidgetBuilder? placeholderBuilder,
     AnimatedSvgErrorWidgetBuilder? errorBuilder,
+    bool clipToViewBox = false,
   }) {
     return _DeferredAnimatedSvgPicture.file(
       file,
@@ -236,6 +242,7 @@ class AnimatedSvgPicture extends StatefulWidget {
       fontLoader: fontLoader,
       placeholderBuilder: placeholderBuilder,
       errorBuilder: errorBuilder,
+      clipToViewBox: clipToViewBox,
     );
   }
 
@@ -260,6 +267,7 @@ class AnimatedSvgPicture extends StatefulWidget {
     SvgFontLoader? fontLoader,
     WidgetBuilder? placeholderBuilder,
     AnimatedSvgErrorWidgetBuilder? errorBuilder,
+    bool clipToViewBox = false,
   }) {
     return _DeferredAnimatedSvgPicture.memory(
       bytes,
@@ -281,6 +289,7 @@ class AnimatedSvgPicture extends StatefulWidget {
       fontLoader: fontLoader,
       placeholderBuilder: placeholderBuilder,
       errorBuilder: errorBuilder,
+      clipToViewBox: clipToViewBox,
     );
   }
 
@@ -336,6 +345,19 @@ class AnimatedSvgPicture extends StatefulWidget {
   /// Optional callback to resolve external font bytes for @font-face src URLs.
   final SvgFontLoader? fontLoader;
 
+  /// When true, clips the rendered SVG to its viewBox.
+  ///
+  /// Per the SVG specification, the root element defaults to overflow:hidden,
+  /// meaning content outside the viewBox should be invisible. Some SVGs
+  /// intentionally place animated decorations (coins, sparkles, etc.) outside
+  /// the viewBox to create overflow effects. Enable this flag to enforce strict
+  /// viewBox clipping and match browser behaviour when viewing the SVG file
+  /// directly (as opposed to embedded in an HTML page with CSS-forced
+  /// dimensions).
+  ///
+  /// Defaults to false for backward compatibility.
+  final bool clipToViewBox;
+
   @override
   State<AnimatedSvgPicture> createState() => _AnimatedSvgPictureState();
 }
@@ -361,6 +383,7 @@ class _DeferredAnimatedSvgPicture extends AnimatedSvgPicture {
     super.foreignObjectBuilder,
     super.imageLoader,
     super.fontLoader,
+    super.clipToViewBox,
     this.placeholderBuilder,
     this.errorBuilder,
   }) : _loadSvg = ((BuildContext context) {
@@ -394,6 +417,7 @@ class _DeferredAnimatedSvgPicture extends AnimatedSvgPicture {
     super.foreignObjectBuilder,
     super.imageLoader,
     super.fontLoader,
+    super.clipToViewBox,
     this.placeholderBuilder,
     this.errorBuilder,
   }) : _loadSvg = ((BuildContext context) async {
@@ -429,6 +453,7 @@ class _DeferredAnimatedSvgPicture extends AnimatedSvgPicture {
     super.foreignObjectBuilder,
     super.imageLoader,
     super.fontLoader,
+    super.clipToViewBox,
     this.placeholderBuilder,
     this.errorBuilder,
   }) : _loadSvg = ((BuildContext context) async {
@@ -457,6 +482,7 @@ class _DeferredAnimatedSvgPicture extends AnimatedSvgPicture {
     super.foreignObjectBuilder,
     super.imageLoader,
     super.fontLoader,
+    super.clipToViewBox,
     this.placeholderBuilder,
     this.errorBuilder,
   }) : _loadSvg = ((BuildContext context) {
@@ -561,6 +587,7 @@ class _DeferredAnimatedSvgPictureState
           foreignObjectBuilder: widget.foreignObjectBuilder,
           imageLoader: widget.imageLoader,
           fontLoader: widget.fontLoader,
+          clipToViewBox: widget.clipToViewBox,
         );
       },
     );
