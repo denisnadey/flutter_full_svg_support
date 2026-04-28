@@ -4,5 +4,13 @@
 <dict>
 	<key>com.apple.security.app-sandbox</key>
 	<true/>
+	<!--
+	    Outbound network access — required so MetricsReporter can POST frame
+	    timings to the local telemetry endpoint baked in by
+	    --dart-define=BENCHMARK_TELEMETRY=http://127.0.0.1:18765/metrics/flutter
+	    (used by benchmarks/comparison/record_session.py).
+	-->
+	<key>com.apple.security.network.client</key>
+	<true/>
 </dict>
 </plist>

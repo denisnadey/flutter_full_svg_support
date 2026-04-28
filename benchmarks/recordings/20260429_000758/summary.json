@@ -1,0 +1,48 @@
+{
+  "duration_s": 60,
+  "generated_at": "2026-04-29T00:09:42",
+  "flutter": {
+    "frame_count": 2177,
+    "fps_avg": 36.3,
+    "build_ms": {
+      "count": 2177,
+      "avg_ms": 27.97,
+      "p50_ms": 28.1,
+      "p90_ms": 29.17,
+      "p99_ms": 30.53,
+      "max_ms": 81.1
+    },
+    "raster_ms": {
+      "count": 2177,
+      "avg_ms": 5.44,
+      "p50_ms": 6.05,
+      "p90_ms": 7.58,
+      "p99_ms": 8.55,
+      "max_ms": 40.67
+    },
+    "total_ms": {
+      "count": 2177,
+      "avg_ms": 33.41,
+      "p50_ms": 33.29,
+      "p90_ms": 36.06,
+      "p99_ms": 38.15,
+      "max_ms": 108.31
+    },
+    "jank_60hz": 2176,
+    "jank_120hz": 2177
+  },
+  "chrome": {
+    "frame_count": 1792,
+    "fps_avg": 29.9,
+    "delta_ms": {
+      "count": 1792,
+      "avg_ms": 36.26,
+      "p50_ms": 33.4,
+      "p90_ms": 41.8,
+      "p99_ms": 50.1,
+      "max_ms": 117.6
+    },
+    "jank_60hz": 1780,
+    "jank_120hz": 1791
+  }
+}

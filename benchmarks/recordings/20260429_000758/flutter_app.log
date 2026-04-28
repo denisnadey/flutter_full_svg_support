@@ -1,0 +1,7 @@
+2026-04-29 00:08:15.380 full_svg_flutter_benchmarks[3806:12656969] Running with merged UI and platform thread. Experimental.
+[telemetry] MetricsReporter started · endpoint=http://127.0.0.1:18765/metrics/flutter · interval=5s
+[telemetry] ping OK · http://127.0.0.1:18765/metrics/ping · status=204
+[telemetry] flush #1 ok · 153 frames
+[telemetry] flush #4 ok · 173 frames
+[telemetry] flush #8 ok · 173 frames
+[telemetry] flush #12 ok · 170 frames

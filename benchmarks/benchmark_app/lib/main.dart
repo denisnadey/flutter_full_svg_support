@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 
 import 'result_models.dart';
+import 'telemetry/metrics_reporter.dart';
 import 'screens/animated_svg_benchmark_screen.dart';
 import 'screens/compatibility_gallery_screen.dart';
 import 'screens/filter_stress_benchmark_screen.dart';
@@ -13,6 +14,17 @@ import 'screens/static_single_svg_benchmark_screen.dart';
 import 'screens/text_svg_benchmark_screen.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  // If built with --dart-define=BENCHMARK_TELEMETRY=http://..., start
+  // periodic frame-timing telemetry posts. Used by the recording harness in
+  // benchmarks/comparison/record_session.py.
+  const telemetryEndpoint = String.fromEnvironment('BENCHMARK_TELEMETRY');
+  if (telemetryEndpoint.isNotEmpty) {
+    MetricsReporter(
+      endpoint: telemetryEndpoint,
+      label: 'flutter_full_svg',
+    ).start();
+  }
   runApp(const BenchmarkApp());
 }
 
@@ -21,19 +33,26 @@ class BenchmarkApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // When BENCHMARK_AUTOROUTE is set (e.g. by the recording harness), the
+    // app jumps straight to the named route on launch instead of the home
+    // screen. Used to land on /mega_stress for unattended recording.
+    const autoRoute = String.fromEnvironment('BENCHMARK_AUTOROUTE');
     return MaterialApp(
       title: 'SVG Benchmark Suite',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
         useMaterial3: true,
       ),
-      home: const BenchmarkHomeScreen(),
+      initialRoute: autoRoute.isNotEmpty ? autoRoute : '/',
+      home: autoRoute.isNotEmpty ? null : const BenchmarkHomeScreen(),
       onGenerateRoute: _generateRoute,
     );
   }
 
   static Route<dynamic>? _generateRoute(RouteSettings settings) {
     switch (settings.name) {
+      case '/':
+        return MaterialPageRoute(builder: (_) => const BenchmarkHomeScreen());
       case '/static_single':
         return MaterialPageRoute(
           builder: (_) => const StaticSingleSvgBenchmarkScreen(),

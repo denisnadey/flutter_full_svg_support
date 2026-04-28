@@ -63,3 +63,6 @@ example/ENHANCEMENTS_SUMMARY.md
 example/NEW_ARCHITECTURE.md
 example/SEARCH_FEATURE.md
 test_output.log
+
+# Compiled Swift recorder for benchmarks
+benchmarks/comparison/.bin/

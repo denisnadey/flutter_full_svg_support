@@ -7,7 +7,8 @@ environment:
   sdk: ">=3.3.0 <4.0.0"
 
 dependencies:
-  full_svg_flutter: ^1.0.1
+  full_svg_flutter:
+    path: ../../
   flutter_svg: ^2.0.14
   benchmark_harness: ^2.3.1
 

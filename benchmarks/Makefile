@@ -24,6 +24,16 @@ help:
 	@echo ""
 	@echo "  full_svg_flutter benchmarks"
 	@echo "  ──────────────────────────────────────────────────────────────"
+	@echo "  Run targets from inside benchmarks/ (\`make <target>\`)"
+	@echo "  or from repo root (\`make -C benchmarks <target>\`)."
+	@echo ""
+	@echo "  Recording (run from Terminal — needs Screen Recording perm):"
+	@echo "    ./record.sh                     ★ 3-min recording  (preferred — bypasses Xcode-make trap)"
+	@echo "    ./record-quick.sh               ★ 60s smoke recording (preferred)"
+	@echo "    make record                     same as above but via make (may break if make is from Xcode CLI tools)"
+	@echo "    make record-quick               same as above"
+	@echo "    make record-no-build            re-record without rebuilding Flutter"
+	@echo ""
 	@echo "  Side-by-side comparison (macOS):"
 	@echo "    make compare                    Build + launch Flutter & Chrome"
 	@echo "    make compare-build              Build Flutter macOS release only"
@@ -91,6 +101,34 @@ compare-flutter-only:
 .PHONY: compare-chrome-only
 compare-chrome-only:
 	@python3 "$(COMPARISON)/launcher.py" --chrome-only --no-build
+
+# ---------------------------------------------------------------------------
+# Recording (3-minute side-by-side capture → GIF + MP4 + metrics + report)
+#
+# IMPORTANT: must be run from Terminal.app, not from an IDE-embedded terminal.
+# macOS gates AVFoundation Screen Recording on the parent process; IDEs
+# typically don't have that permission and ffmpeg silently produces a black
+# frame stream.
+# ---------------------------------------------------------------------------
+
+.PHONY: record
+record:
+	@echo ""
+	@echo "  ┌──────────────────────────────────────────────────────────────┐"
+	@echo "  │  Recording requires Terminal.app + Screen Recording perm.    │"
+	@echo "  │  If run from an IDE, the MP4 will be all-black.              │"
+	@echo "  │  System Settings → Privacy & Security → Screen Recording.    │"
+	@echo "  └──────────────────────────────────────────────────────────────┘"
+	@echo ""
+	@python3 "$(COMPARISON)/record_session.py"
+
+.PHONY: record-quick
+record-quick:
+	@python3 "$(COMPARISON)/record_session.py" --duration 60 --gif-clip 15 --gif-start 5
+
+.PHONY: record-no-build
+record-no-build:
+	@python3 "$(COMPARISON)/record_session.py" --no-build
 
 # ---------------------------------------------------------------------------
 # Assets

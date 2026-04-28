@@ -117,6 +117,103 @@ The Chrome profile is isolated to `/tmp/full-svg-flutter-comparison-profile`
 so it can't pick up extensions or sync state from your main browser.
 Run `make distclean` to remove it.
 
+## Recording a 3-minute session for the README
+
+Producing GIFs + MP4 + metrics report from a real run:
+
+> ⚠ **Run this from Terminal.app, not from an IDE.** macOS gates
+> AVFoundation screen capture on the *parent process's* Screen Recording
+> permission. IDE-embedded terminals (Claude Code, VS Code, JetBrains)
+> usually don't have that permission, so `ffmpeg` silently produces a
+> black frame stream. The script auto-detects this with a 1-second probe
+> and refuses to continue.
+
+### One command
+
+```bash
+# Open Terminal.app, then either:
+
+# From the repo root:
+cd /path/to/flutter_full_svg_support
+make -C benchmarks record
+
+# OR from inside benchmarks/:
+cd /path/to/flutter_full_svg_support/benchmarks
+make record
+```
+
+First run will:
+1. Re-build Flutter macOS release with telemetry baked in
+   (`--dart-define=BENCHMARK_TELEMETRY=...` + `--dart-define=BENCHMARK_AUTOROUTE=/mega_stress`)
+2. Probe Screen Recording permission with a 1 s capture (luminance check)
+3. Position both windows side-by-side
+4. Capture full screen for **180 s** at 60 fps via `ffmpeg -f avfoundation`
+5. Split the recording into `flutter.mp4` + `chrome.mp4` (left / right halves)
+6. Build palette-optimised highlight GIFs (30 s @ 15 fps, 720 px wide)
+7. Aggregate `*.jsonl` telemetry into `summary.json`
+8. Write a side-by-side `report.md` with metrics table + GIF refs
+
+### Artifacts
+
+```
+benchmarks/recordings/<YYYYMMDD_HHMMSS>/
+├── flutter.mp4               # full 3-min capture, left half (release Flutter)
+├── chrome.mp4                # full 3-min capture, right half (Chrome --app)
+├── flutter_30s.gif           # highlight GIF, 30s @ 15fps, 720px wide
+├── chrome_30s.gif            # highlight GIF, 30s @ 15fps, 720px wide
+├── flutter_metrics.jsonl     # one POST batch per line — every frame timing
+├── chrome_metrics.jsonl      # one POST batch per line — every rAF delta
+├── summary.json              # aggregated avg/p50/p90/p99/max + jank counts
+└── report.md                 # markdown report — drop-in for top-level README
+```
+
+### Variants
+
+```bash
+make -C benchmarks record               # full 3-minute run (default)
+make -C benchmarks record-quick         # 60s quick smoke (15s GIFs)
+make -C benchmarks record-no-build      # re-record without rebuilding Flutter
+
+# Custom session:
+python3 benchmarks/comparison/record_session.py \
+    --duration 300 --gif-clip 45 --gif-fps 20 --gif-width 960
+```
+
+### How telemetry works (zero-overhead)
+
+Both apps stream frame timings into the same local HTTP server (`:18765`),
+which appends each batch to a `.jsonl` file. The server itself only
+serves static files and accepts JSON POSTs — no broker, no IPC, no GPU
+read-back. The telemetry POST cadence is **every 5 seconds** (not per frame),
+so its overhead is well under 0.1% of frame budget.
+
+* **Flutter side**: `lib/telemetry/metrics_reporter.dart` registers an
+  `addTimingsCallback`, buffers `FrameTiming` objects in-memory, and POSTs
+  a JSON batch every 5 s. Failures are silent. Build with
+  `--dart-define=BENCHMARK_TELEMETRY=...` to enable.
+* **Chrome side**: `comparison.html` reads `?telemetry=...` from its URL
+  and POSTs accumulated `requestAnimationFrame` deltas every 5 s via
+  `fetch(..., { keepalive: true })`.
+
+### Reading the report
+
+The script writes a side-by-side metrics table to `report.md`. Headline
+numbers:
+
+| Metric         | Why it matters                                                                  |
+| -------------- | ------------------------------------------------------------------------------- |
+| Avg FPS        | First-impression smoothness — but Chrome often clamps rAF to 60 Hz on macOS    |
+| **p99 frame ms** | The honest stability number — invisible jank shows up here, not in averages   |
+| Max frame ms   | Worst case. Anything > 33 ms is a visible stutter                              |
+| Jank/60Hz      | Count of frames that blew the 16.67 ms budget                                   |
+| Jank/120Hz     | Count of frames that blew the ProMotion 8.33 ms budget                          |
+| build_ms       | Flutter UI thread cost only (per-frame layout + paint)                          |
+| raster_ms      | Flutter raster/GPU thread cost only                                             |
+
+For an honest like-for-like comparison, **read p99 frame time, not average
+FPS**. Chrome's rAF clamp will hide 90Hz/120Hz capability that Flutter
+exposes natively.
+
 ## Troubleshooting
 
 **`No Chromium-family browser found`** — install Chrome, or symlink your

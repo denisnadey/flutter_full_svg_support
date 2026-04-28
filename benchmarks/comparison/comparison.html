@@ -17,26 +17,36 @@
     background: #000;
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   }
+
   /*
-   * The SVG is rendered inside an iframe so Chrome treats it as a real
-   * standalone document (full SVG semantics, no host-DOM contamination).
-   * `loading="eager"` so we don't introduce lazy-load lag.
+   * SVG is injected inline (not in an iframe).
+   *
+   * Why not iframe: an iframe creates a separate document with its own
+   * rendering pipeline. The parent page's rAF loop and the iframe's SMIL
+   * animations both need main-thread time — they compete, causing lag.
+   * Opening the SVG file directly in Chrome is smooth because nothing else
+   * is fighting for the main thread.
+   *
+   * Inline SVG runs in the same compositor context as the rest of this
+   * document, so the rAF here measures the same ticks as the SVG animations.
+   * contain:strict prevents the SVG's layout/paint from reflowing the HUD.
    */
-  #frame {
+  #svg-host {
     position: absolute;
     inset: 0;
+    overflow: hidden;
+    background: #000;
+    contain: strict;
+  }
+  #svg-host svg {
     width: 100%;
     height: 100%;
-    border: 0;
     display: block;
-    background: #000;
   }
 
   /*
-   * HUD layers — positioned absolute, with `transform: translateZ(0)` to
-   * promote each to its own GPU compositor layer. Updates touch only text
-   * content; no layout / no full-frame repaint side-effects on the iframe.
-   * `pointer-events: none` so they never steal input from the SVG.
+   * HUD layers — each on its own GPU compositor layer via transform:translateZ(0).
+   * pointer-events:none so they never intercept clicks on the SVG.
    */
   .hud {
     position: fixed;
@@ -47,6 +57,7 @@
     padding: 8px 10px;
     line-height: 1.45;
     font-size: 11px;
+    font-variant-numeric: tabular-nums;
     z-index: 9999;
     user-select: none;
     pointer-events: none;
@@ -54,7 +65,7 @@
     will-change: transform;
   }
   .hud .label  { color: rgba(255, 255, 255, 0.55); font-size: 10px; letter-spacing: 0.5px; }
-  .hud .fps    { font-weight: 700; font-size: 13px; }
+  .hud .fps    { font-weight: 700; font-size: 13px; color: var(--fps-color, #7fff7f); }
   .hud .row    { display: flex; gap: 8px; }
   .hud .row span:first-child { color: rgba(255, 255, 255, 0.55); }
   .hud.hidden  { display: none; }
@@ -62,7 +73,6 @@
   #fps-hud  { top: 12px;    right: 12px; min-width: 168px; }
   #help-hud { bottom: 12px; right: 12px; color: rgba(255, 255, 255, 0.45); font-size: 10px; }
 
-  /* Title strip — left edge so it can't be confused with the Flutter side. */
   #title-strip {
     position: fixed;
     top: 12px;
@@ -79,10 +89,7 @@
 </style>
 </head>
 <body>
-  <iframe id="frame"
-          src="../assets/stress/galactic_storm.svg"
-          loading="eager"
-          referrerpolicy="no-referrer"></iframe>
+  <div id="svg-host"></div>
 
   <div id="title-strip">CHROMIUM · NATIVE BLINK</div>
 
@@ -98,83 +105,129 @@
   <div id="help-hud" class="hud">[M] toggle HUD &nbsp;·&nbsp; [V] verbose &nbsp;·&nbsp; [R] reload SVG</div>
 
   <script>
-    /*
-     * FPS instrumentation
-     * -------------------
-     * - rAF callback enqueues a delta — this is the cheapest possible path,
-     *   no allocations beyond pushing a Number into a fixed-cap array.
-     * - We refresh the displayed text every 500 ms via setInterval, NOT on
-     *   every frame, so the layout / paint cost on the parent document is
-     *   negligible.
-     * - The iframe (which actually renders the SVG) is on the same compositor
-     *   thread, so parent-side rAF cadence is a faithful proxy for iframe
-     *   compositor throughput on Chrome's macOS build.
-     */
-    const WIN = 240;            // sliding window — ~4 s at 60Hz, 2 s at 120Hz
+    const SVG_SRC = '../assets/stress/galactic_storm.svg';
+    const host = document.getElementById('svg-host');
+
+    function loadSVG() {
+      host.innerHTML = '';
+      return fetch(SVG_SRC)
+        .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
+        .then(text => { host.innerHTML = text; })
+        .catch(() => {
+          // file:// fallback: fetch is blocked by CORS on file:// origins.
+          // <img> loads SVG without CORS and Chrome animates it on the
+          // compositor thread — smooth, no main-thread competition.
+          // (Metrics via rAF are still valid; they measure this document's
+          // compositor ticks, which is the same cadence as the SVG image.)
+          const img = document.createElement('img');
+          img.src = SVG_SRC;
+          img.style.cssText = 'width:100%;height:100%;display:block;object-fit:cover;';
+          host.appendChild(img);
+        });
+    }
+    loadSVG();
+
+    // ---------------------------------------------------------------------------
+    // FPS instrumentation
+    //
+    // ALL DOM mutations happen inside the rAF callback — never in setInterval.
+    // setInterval fires at arbitrary times relative to the compositor clock and
+    // can trigger a mid-frame repaint → flicker. rAF callbacks are always
+    // batched with the current frame's paint.
+    //
+    // rAF passes a DOMHighResTimeStamp; we use it directly, no performance.now().
+    //
+    // The telemetry network POST keeps its own setInterval (every 5 s) since
+    // fetch() is async I/O and never touches the render pipeline.
+    // ---------------------------------------------------------------------------
+    const WIN = 240;    // sliding window: ~4 s @60Hz, ~2 s @120Hz
     const deltas = [];
-    let lastT = performance.now();
+    let lastT      = 0; // 0 = first tick not yet seen
+    let lastReport = 0;
     let frameCount = 0;
-    let lastReport = performance.now();
     let displayedFps = 0;
 
-    function tick() {
-      const now = performance.now();
-      const d = now - lastT;
-      lastT = now;
-      if (d > 0 && d < 500) {     // discard tab-switch outliers
-        deltas.push(d);
-        if (deltas.length > WIN) deltas.shift();
-        frameCount++;
-      }
-      requestAnimationFrame(tick);
-    }
-    requestAnimationFrame(tick);
+    const telemetryUrl = new URLSearchParams(location.search).get('telemetry');
+    const telemetryBuffer = [];
 
-    const $ = (id) => document.getElementById(id);
+    const $ = id => document.getElementById(id);
     let verbose = true;
 
-    function report() {
-      const now = performance.now();
+    function report(now) {
       const dt = now - lastReport;
       lastReport = now;
       displayedFps = (frameCount * 1000) / Math.max(dt, 1);
       frameCount = 0;
 
       $('fps').textContent = displayedFps.toFixed(1);
-      const fpsEl = $('fps');
-      const fpsParent = fpsEl.parentElement;
-      fpsParent.style.color =
+      document.documentElement.style.setProperty('--fps-color',
         displayedFps >= 55 ? '#7fff7f' :
-        displayedFps >= 40 ? '#ffcf00' : '#ff5050';
+        displayedFps >= 40 ? '#ffcf00' : '#ff5050');
 
       if (verbose && deltas.length) {
         const sorted = [...deltas].sort((a, b) => a - b);
-        const avg = sorted.reduce((s, x) => s + x, 0) / sorted.length;
-        const p99 = sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.99))];
+        const n   = sorted.length;
+        const avg = sorted.reduce((s, x) => s + x, 0) / n;
+        const p99 = sorted[Math.min(n - 1, Math.floor(n * 0.99))];
         const j60  = deltas.reduce((c, d) => c + (d > 16.67 ? 1 : 0), 0);
-        const j120 = deltas.reduce((c, d) => c + (d > 8.33 ? 1 : 0), 0);
+        const j120 = deltas.reduce((c, d) => c + (d > 8.33  ? 1 : 0), 0);
         $('avg').textContent     = avg.toFixed(1);
         $('p99').textContent     = p99.toFixed(1);
         $('jank60').textContent  = j60;
         $('jank120').textContent = j120;
       }
     }
-    setInterval(report, 500);
 
-    // Keyboard shortcuts
-    document.addEventListener('keydown', (e) => {
+    function tick(now) {
+      if (lastT > 0) {
+        const d = now - lastT;
+        if (d > 0 && d < 500) {
+          deltas.push(d);
+          if (deltas.length > WIN) deltas.shift();
+          frameCount++;
+          if (telemetryUrl) telemetryBuffer.push(d);
+        }
+      }
+      lastT = now;
+      if (now - lastReport >= 500) report(now);
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+
+    if (telemetryUrl) {
+      let posting = false;
+      setInterval(async () => {
+        if (posting || telemetryBuffer.length === 0) return;
+        posting = true;
+        const batch = telemetryBuffer.splice(0);
+        try {
+          await fetch(telemetryUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              label: 'chrome_browser',
+              timestamp_ms: Date.now(),
+              frame_count: batch.length,
+              deltas_ms: batch,
+            }),
+            keepalive: true,
+          });
+        } catch (_) {}
+        finally { posting = false; }
+      }, 5000);
+    }
+
+    document.addEventListener('keydown', e => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       if (e.key === 'm' || e.key === 'M') {
         $('fps-hud').classList.toggle('hidden');
       } else if (e.key === 'v' || e.key === 'V') {
         verbose = !verbose;
-        // Toggle visibility of all rows except .fps when not verbose.
         document.querySelectorAll('#fps-hud .row').forEach(r => {
           r.style.display = verbose ? '' : 'none';
         });
       } else if (e.key === 'r' || e.key === 'R') {
-        const f = $('frame');
-        f.src = f.src;  // hard-reload the SVG
+        loadSVG();
       }
     });
   </script>
