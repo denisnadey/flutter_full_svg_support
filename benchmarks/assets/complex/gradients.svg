@@ -1,0 +1,74 @@
+<!-- Source: generated for full_svg_flutter benchmarks -->
+<!-- Tests: linearGradient (multi-stop), radialGradient, gradient applied to text element, gradient transforms -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <!-- Multi-stop linear gradient (horizontal) -->
+    <linearGradient id="multiStopLinear" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%"   stop-color="#FF0080" stop-opacity="1"/>
+      <stop offset="20%"  stop-color="#FF4000" stop-opacity="1"/>
+      <stop offset="40%"  stop-color="#FFD700" stop-opacity="1"/>
+      <stop offset="60%"  stop-color="#00CC44" stop-opacity="1"/>
+      <stop offset="80%"  stop-color="#0088FF" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#8800FF" stop-opacity="1"/>
+    </linearGradient>
+
+    <!-- Diagonal linear gradient with alpha -->
+    <linearGradient id="diagonalLinear" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#00FFCC" stop-opacity="0.9"/>
+      <stop offset="50%"  stop-color="#0044AA" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#220044" stop-opacity="1.0"/>
+    </linearGradient>
+
+    <!-- Radial gradient: center bright, edge dark -->
+    <radialGradient id="centreRadial" cx="50%" cy="50%" r="50%" fx="40%" fy="40%">
+      <stop offset="0%"   stop-color="#FFFFFF" stop-opacity="1"/>
+      <stop offset="30%"  stop-color="#FFD700" stop-opacity="1"/>
+      <stop offset="70%"  stop-color="#FF4500" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#1a0000" stop-opacity="1"/>
+    </radialGradient>
+
+    <!-- Radial gradient with focal point offset (spotlight effect) -->
+    <radialGradient id="spotlightRadial" cx="30%" cy="30%" r="70%" fx="25%" fy="25%">
+      <stop offset="0%"   stop-color="#FFFFFF" stop-opacity="0.95"/>
+      <stop offset="60%"  stop-color="#4488FF" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#000033" stop-opacity="0.85"/>
+    </radialGradient>
+
+    <!-- Gradient for text: gold shimmer -->
+    <linearGradient id="goldTextGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#FFD700"/>
+      <stop offset="35%"  stop-color="#FFF8DC"/>
+      <stop offset="65%"  stop-color="#DAA520"/>
+      <stop offset="100%" stop-color="#B8860B"/>
+    </linearGradient>
+
+    <!-- Gradient with gradientTransform (rotated 45°) -->
+    <linearGradient id="rotatedLinear" x1="0%" y1="0%" x2="100%" y2="0%"
+                    gradientTransform="rotate(45, 0.5, 0.5)">
+      <stop offset="0%"   stop-color="#FF0000"/>
+      <stop offset="50%"  stop-color="#00FF00"/>
+      <stop offset="100%" stop-color="#0000FF"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="400" fill="#111"/>
+
+  <!-- Row 1: Multi-stop linear gradient rectangle -->
+  <rect x="20" y="20" width="360" height="60" rx="8" fill="url(#multiStopLinear)"/>
+
+  <!-- Row 2: Left = diagonal linear, Right = radial with glow -->
+  <rect x="20" y="100" width="170" height="120" rx="10" fill="url(#diagonalLinear)"/>
+  <ellipse cx="295" cy="160" rx="85" ry="60" fill="url(#centreRadial)"/>
+
+  <!-- Row 3: Spotlight radial on a circle, rotated gradient on a polygon -->
+  <circle cx="100" cy="300" r="70" fill="url(#spotlightRadial)"/>
+  <polygon points="260,240 320,240 350,290 320,340 260,340 230,290"
+           fill="url(#rotatedLinear)"/>
+
+  <!-- Text with gradient fill -->
+  <text x="200" y="388"
+        font-family="serif" font-size="28" font-weight="bold"
+        text-anchor="middle"
+        fill="url(#goldTextGradient)">Gradient Text</text>
+</svg>

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+  <!-- Placeholder: replace with a real ~10k-segment complex path SVG -->
+  <path d="M0 300 C100 150 200 450 300 300 C400 150 500 450 600 300 C700 150 750 250 800 300 Z"
+        fill="none" stroke="#e74c3c" stroke-width="0.8"/>
+  <path d="M0 400 C100 250 200 550 300 400 C400 250 500 550 600 400 C700 250 750 350 800 400 Z"
+        fill="none" stroke="#2ecc71" stroke-width="0.8"/>
+  <path d="M0 100 C100 50 200 200 300 100 C400 0 500 200 600 100 C700 0 750 80 800 100 Z"
+        fill="#9b59b6" opacity="0.2"/>
+</svg>

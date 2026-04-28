@@ -1,0 +1,84 @@
+<!-- Source: generated for full_svg_flutter benchmarks -->
+<!-- Tests: <animate attributeName="d"> path morphing — NOT supported by flutter_svg.
+     Multiple shapes morph between states; all from/to/values paths have identical command counts. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="300" height="300">
+  <rect width="300" height="300" fill="#0a0a18"/>
+
+  <!-- Shape 1 (top-left): square -> diamond -> circle approximation -> square
+       All paths: M + 4 C commands = 5 total commands -->
+  <path fill="#f59e0b" stroke="#fde68a" stroke-width="1.5">
+    <animate attributeName="d"
+             dur="3s"
+             repeatCount="indefinite"
+             calcMode="spline"
+             keyTimes="0;0.33;0.66;1"
+             keySplines="0.4 0 0.6 1;0.4 0 0.6 1;0.4 0 0.6 1"
+             values="
+               M55,20 C75,20 90,35 90,55 C90,75 75,90 55,90 C35,90 20,75 20,55 C20,35 35,20 55,20 Z;
+               M55,15 C65,30 90,45 75,55 C90,65 65,80 55,95 C45,80 20,65 35,55 C20,45 45,30 55,15 Z;
+               M55,20 C72,20 87,35 87,55 C87,72 72,87 55,87 C38,87 23,72 23,55 C23,38 38,23 55,20 Z;
+               M55,20 C75,20 90,35 90,55 C90,75 75,90 55,90 C35,90 20,75 20,55 C20,35 35,20 55,20 Z
+             "/>
+  </path>
+
+  <!-- Shape 2 (top-right): star -> blob -> triangle-ish -> star
+       All paths: M + 8 C commands -->
+  <path fill="#ef4444" stroke="#fca5a5" stroke-width="1.5">
+    <animate attributeName="d"
+             dur="4s"
+             repeatCount="indefinite"
+             calcMode="spline"
+             keyTimes="0;0.25;0.5;0.75;1"
+             keySplines="0.4 0 0.6 1;0.4 0 0.6 1;0.4 0 0.6 1;0.4 0 0.6 1"
+             values="
+               M245,20 C252,38 268,38 278,50 C268,62 272,80 260,85 C248,80 240,95 230,85 C220,75 205,78 205,65 C205,52 218,48 218,35 C228,28 238,18 245,20 Z;
+               M245,22 C258,30 275,28 282,42 C275,58 285,72 272,82 C258,78 255,95 242,88 C228,82 212,88 210,72 C208,56 220,48 222,34 C232,24 240,16 245,22 Z;
+               M245,15 C262,25 278,22 285,38 C278,55 288,68 278,80 C265,86 260,100 245,95 C230,100 225,86 212,80 C202,68 212,55 205,38 C212,22 228,25 245,15 Z;
+               M245,22 C254,35 268,32 275,46 C270,60 280,74 268,82 C255,78 250,92 238,86 C225,80 210,84 208,70 C206,56 218,50 220,36 C230,26 238,16 245,22 Z;
+               M245,20 C252,38 268,38 278,50 C268,62 272,80 260,85 C248,80 240,95 230,85 C220,75 205,78 205,65 C205,52 218,48 218,35 C228,28 238,18 245,20 Z
+             "/>
+  </path>
+
+  <!-- Shape 3 (bottom-left): blob morphing between 3 organic states
+       M + 6 C commands each -->
+  <path fill="#10b981" stroke="#6ee7b7" stroke-width="1.5">
+    <animate attributeName="d"
+             dur="5s"
+             repeatCount="indefinite"
+             calcMode="spline"
+             keyTimes="0;0.33;0.66;1"
+             keySplines="0.42 0 0.58 1;0.42 0 0.58 1;0.42 0 0.58 1"
+             values="
+               M55,215 C75,200 95,205 100,225 C105,245 90,268 68,270 C46,272 22,258 20,238 C18,218 35,230 55,215 Z;
+               M55,210 C80,198 102,210 105,232 C108,252 88,272 65,270 C42,268 18,250 20,230 C22,210 38,220 55,210 Z;
+               M55,218 C72,202 98,208 102,228 C106,248 90,265 66,268 C42,270 20,255 20,235 C20,215 38,232 55,218 Z;
+               M55,215 C75,200 95,205 100,225 C105,245 90,268 68,270 C46,272 22,258 20,238 C18,218 35,230 55,215 Z
+             "/>
+  </path>
+
+  <!-- Shape 4 (bottom-right): pentagon -> rounded blob -> elongated -> pentagon
+       M + 5 C commands each -->
+  <path fill="#8b5cf6" stroke="#c4b5fd" stroke-width="1.5">
+    <animate attributeName="d"
+             dur="3.5s"
+             repeatCount="indefinite"
+             calcMode="spline"
+             keyTimes="0;0.25;0.5;0.75;1"
+             keySplines="0.4 0 0.6 1;0.4 0 0.6 1;0.4 0 0.6 1;0.4 0 0.6 1"
+             values="
+               M245,210 C262,205 278,215 280,232 C282,250 268,268 250,270 C232,272 215,258 215,240 C215,222 228,215 245,210 Z;
+               M245,205 C265,200 285,212 288,232 C290,252 275,272 252,274 C230,276 210,260 210,240 C210,220 225,210 245,205 Z;
+               M245,215 C258,208 272,215 276,230 C280,246 268,262 252,265 C235,268 218,258 218,242 C218,226 232,222 245,215 Z;
+               M245,208 C263,202 280,213 283,232 C286,250 272,270 250,272 C228,274 212,258 212,240 C212,222 227,214 245,208 Z;
+               M245,210 C262,205 278,215 280,232 C282,250 268,268 250,270 C232,272 215,258 215,240 C215,222 228,215 245,210 Z
+             "/>
+  </path>
+
+  <!-- Center label -->
+  <text x="150" y="148" text-anchor="middle" font-family="monospace" font-size="11"
+        fill="#94a3b8">path morphing</text>
+  <text x="150" y="163" text-anchor="middle" font-family="monospace" font-size="9"
+        fill="#475569">animate attributeName="d"</text>
+  <text x="150" y="176" text-anchor="middle" font-family="monospace" font-size="9"
+        fill="#ef4444">not supported by flutter_svg</text>
+</svg>

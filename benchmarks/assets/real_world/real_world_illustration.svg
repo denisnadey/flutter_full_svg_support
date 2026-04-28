@@ -1,0 +1,230 @@
+<!-- Source: generated for full_svg_flutter benchmarks -->
+<!-- Tests: real-world complexity — stylized landscape with paths, gradients, groups, transforms.
+     Contains 35+ elements: sky, sun, clouds, mountains, hills, trees, ground, water, reflections, birds. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+  <defs>
+    <!-- Sky gradient: dawn/dusk palette -->
+    <linearGradient id="skyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#1a1a4e"/>
+      <stop offset="35%"  stop-color="#4a2c6e"/>
+      <stop offset="65%"  stop-color="#c0514a"/>
+      <stop offset="100%" stop-color="#f4a460"/>
+    </linearGradient>
+
+    <!-- Sun glow radial -->
+    <radialGradient id="sunGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#fff7d6"/>
+      <stop offset="40%"  stop-color="#ffd54f"/>
+      <stop offset="100%" stop-color="#ff8f00" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Water reflection gradient -->
+    <linearGradient id="waterGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#2d4a7a" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#1a2a4a" stop-opacity="1"/>
+    </linearGradient>
+
+    <!-- Mountain gradient -->
+    <linearGradient id="mountGrad1" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#5c4477"/>
+      <stop offset="60%"  stop-color="#3d2b5e"/>
+      <stop offset="100%" stop-color="#2a1d44"/>
+    </linearGradient>
+
+    <linearGradient id="mountGrad2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#7b5ea7"/>
+      <stop offset="100%" stop-color="#4a3470"/>
+    </linearGradient>
+
+    <!-- Hill gradient (foreground) -->
+    <linearGradient id="hillGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#2d6a4f"/>
+      <stop offset="100%" stop-color="#1b4332"/>
+    </linearGradient>
+
+    <!-- Ground strip -->
+    <linearGradient id="groundGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#40916c"/>
+      <stop offset="100%" stop-color="#1b4332"/>
+    </linearGradient>
+
+    <!-- Cloud filter: soft blur -->
+    <filter id="cloudBlur">
+      <feGaussianBlur stdDeviation="2"/>
+    </filter>
+
+    <!-- Sun halo filter -->
+    <filter id="sunHalo" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="15" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- ===== SKY ===== -->
+  <rect id="sky" width="800" height="600" fill="url(#skyGrad)"/>
+
+  <!-- ===== STARS (small dots in upper sky) ===== -->
+  <g id="stars" opacity="0.7">
+    <circle cx="60"  cy="30"  r="1.2" fill="white"/>
+    <circle cx="130" cy="18"  r="0.9" fill="white"/>
+    <circle cx="200" cy="45"  r="1.1" fill="white"/>
+    <circle cx="290" cy="22"  r="0.8" fill="white"/>
+    <circle cx="380" cy="12"  r="1.3" fill="white"/>
+    <circle cx="470" cy="35"  r="0.9" fill="white"/>
+    <circle cx="560" cy="20"  r="1.0" fill="white"/>
+    <circle cx="640" cy="42"  r="1.2" fill="white"/>
+    <circle cx="720" cy="15"  r="0.8" fill="white"/>
+    <circle cx="760" cy="55"  r="1.1" fill="white"/>
+    <circle cx="100" cy="65"  r="0.7" fill="white"/>
+    <circle cx="330" cy="58"  r="0.9" fill="white"/>
+    <circle cx="520" cy="62"  r="0.8" fill="white"/>
+    <circle cx="690" cy="70"  r="1.0" fill="white"/>
+  </g>
+
+  <!-- ===== SUN / HORIZON GLOW ===== -->
+  <ellipse id="sunHaloEllipse" cx="400" cy="310" rx="180" ry="80"
+           fill="#ff8f00" opacity="0.18" filter="url(#sunHalo)"/>
+  <circle id="sun" cx="400" cy="305" r="48" fill="url(#sunGrad)"/>
+  <!-- Sun corona rays -->
+  <g id="sunRays" transform="translate(400,305)" opacity="0.35">
+    <line x1="0" y1="-65" x2="0"  y2="-85" stroke="#ffd54f" stroke-width="2"/>
+    <line x1="46" y1="-46" x2="60" y2="-60" stroke="#ffd54f" stroke-width="1.5"
+          transform="rotate(45)"/>
+    <line x1="65" y1="0"  x2="85" y2="0"   stroke="#ffd54f" stroke-width="2"/>
+    <line x1="46" y1="46" x2="60" y2="60"   stroke="#ffd54f" stroke-width="1.5"
+          transform="rotate(-45)"/>
+    <line x1="0"  y1="65" x2="0"  y2="85"   stroke="#ffd54f" stroke-width="2"/>
+  </g>
+
+  <!-- ===== CLOUDS ===== -->
+  <!-- Cloud 1: far left, high -->
+  <g id="cloud1" transform="translate(80,100)" opacity="0.55" filter="url(#cloudBlur)">
+    <ellipse cx="0"   cy="0" rx="55" ry="22" fill="#f0d0d8"/>
+    <ellipse cx="40"  cy="-12" rx="38" ry="18" fill="#f5dce0"/>
+    <ellipse cx="-30" cy="-8"  rx="32" ry="15" fill="#edd5da"/>
+  </g>
+  <!-- Cloud 2: upper right -->
+  <g id="cloud2" transform="translate(620,80)" opacity="0.50" filter="url(#cloudBlur)">
+    <ellipse cx="0"   cy="0"   rx="65" ry="24" fill="#e8ccd4"/>
+    <ellipse cx="50"  cy="-14" rx="40" ry="18" fill="#efd6dc"/>
+    <ellipse cx="-40" cy="-10" rx="35" ry="16" fill="#e5c8d0"/>
+  </g>
+  <!-- Cloud 3: mid-left -->
+  <g id="cloud3" transform="translate(230,145)" opacity="0.40" filter="url(#cloudBlur)">
+    <ellipse cx="0"  cy="0"   rx="45" ry="18" fill="#ddc0c8"/>
+    <ellipse cx="32" cy="-10" rx="28" ry="14" fill="#e5c8ce"/>
+  </g>
+
+  <!-- ===== DISTANT MOUNTAINS (back layer) ===== -->
+  <g id="mountains-back">
+    <!-- Mountain 1 -->
+    <polygon points="0,400 120,180 240,400" fill="url(#mountGrad1)" opacity="0.85"/>
+    <!-- Mountain 2 -->
+    <polygon points="100,400 260,140 420,400" fill="url(#mountGrad2)" opacity="0.80"/>
+    <!-- Mountain 3 -->
+    <polygon points="300,400 460,155 620,400" fill="url(#mountGrad1)" opacity="0.85"/>
+    <!-- Mountain 4 -->
+    <polygon points="520,400 670,170 800,400" fill="url(#mountGrad2)" opacity="0.80"/>
+    <!-- Snow caps -->
+    <polygon points="120,180 105,215 135,215" fill="white" opacity="0.7"/>
+    <polygon points="260,140 243,182 277,182" fill="white" opacity="0.65"/>
+    <polygon points="460,155 443,196 477,196" fill="white" opacity="0.7"/>
+    <polygon points="670,170 653,208 687,208" fill="white" opacity="0.65"/>
+  </g>
+
+  <!-- ===== MIDDLE HILLS ===== -->
+  <g id="hills-mid">
+    <path d="M0,420 Q100,340 200,390 Q320,330 440,385 Q560,330 680,390 Q740,360 800,400 L800,480 L0,480 Z"
+          fill="#2d6a4f" opacity="0.9"/>
+    <path d="M0,460 Q150,400 300,445 Q450,400 600,445 Q700,415 800,440 L800,500 L0,500 Z"
+          fill="#40916c" opacity="0.85"/>
+  </g>
+
+  <!-- ===== TREES (stylized triangular conifers) ===== -->
+  <g id="trees">
+    <!-- Left cluster -->
+    <g transform="translate(30,430)">
+      <polygon points="0,-60 -18,0 18,0"   fill="#1b4332"/>
+      <polygon points="0,-45 -14,5 14,5"   fill="#2d6a4f"/>
+      <rect x="-4" y="0" width="8" height="18" fill="#5c3317"/>
+    </g>
+    <g transform="translate(70,440)">
+      <polygon points="0,-70 -22,0 22,0"   fill="#1b4332"/>
+      <polygon points="0,-50 -16,8 16,8"   fill="#2d6a4f"/>
+      <rect x="-5" y="0" width="10" height="20" fill="#5c3317"/>
+    </g>
+    <g transform="translate(50,460)">
+      <polygon points="0,-50 -15,0 15,0"   fill="#155d27"/>
+      <rect x="-3" y="0" width="6" height="14" fill="#4a2900"/>
+    </g>
+
+    <!-- Right cluster -->
+    <g transform="translate(720,435)">
+      <polygon points="0,-65 -20,0 20,0"   fill="#1b4332"/>
+      <polygon points="0,-48 -15,6 15,6"   fill="#2d6a4f"/>
+      <rect x="-4" y="0" width="8" height="18" fill="#5c3317"/>
+    </g>
+    <g transform="translate(755,445)">
+      <polygon points="0,-55 -17,0 17,0"   fill="#1b4332"/>
+      <polygon points="0,-40 -13,5 13,5"   fill="#2d6a4f"/>
+      <rect x="-4" y="0" width="7" height="16" fill="#5c3317"/>
+    </g>
+    <g transform="translate(780,460)">
+      <polygon points="0,-45 -14,0 14,0"   fill="#155d27"/>
+      <rect x="-3" y="0" width="6" height="12" fill="#4a2900"/>
+    </g>
+
+    <!-- Center sparse trees -->
+    <g transform="translate(340,420)">
+      <polygon points="0,-55 -16,0 16,0"   fill="#1b4332"/>
+      <rect x="-3" y="0" width="7" height="15" fill="#5c3317"/>
+    </g>
+    <g transform="translate(460,415)">
+      <polygon points="0,-60 -18,0 18,0"   fill="#155d27"/>
+      <rect x="-3" y="0" width="7" height="16" fill="#4a2900"/>
+    </g>
+  </g>
+
+  <!-- ===== GROUND STRIP ===== -->
+  <rect id="ground" x="0" y="490" width="800" height="110" fill="url(#groundGrad)"/>
+
+  <!-- ===== WATER / LAKE ===== -->
+  <ellipse id="lake" cx="400" cy="510" rx="200" ry="40" fill="url(#waterGrad)" opacity="0.85"/>
+  <!-- Water reflection of sun -->
+  <ellipse id="sunReflection" cx="400" cy="520" rx="30" ry="8"
+           fill="#ffd54f" opacity="0.35"/>
+  <!-- Ripple lines -->
+  <ellipse cx="400" cy="530" rx="90" ry="5" fill="none" stroke="#4a7ab5" stroke-width="0.8" opacity="0.5"/>
+  <ellipse cx="400" cy="538" rx="130" ry="6" fill="none" stroke="#4a7ab5" stroke-width="0.7" opacity="0.4"/>
+  <ellipse cx="400" cy="546" rx="165" ry="7" fill="none" stroke="#4a7ab5" stroke-width="0.6" opacity="0.3"/>
+
+  <!-- ===== PATH / ROAD ===== -->
+  <path id="road"
+    d="M350,600 C360,560 375,530 400,510 C425,490 440,480 450,600"
+    fill="#3d2b1e" opacity="0.6"/>
+
+  <!-- ===== BIRDS (simple V shapes) ===== -->
+  <g id="birds" fill="none" stroke="#1a1a4e" stroke-width="1.5" stroke-linecap="round">
+    <path d="M150,160 C155,155 160,160 165,155"/>
+    <path d="M165,168 C170,163 175,168 180,163"/>
+    <path d="M560,140 C565,135 570,140 575,135"/>
+    <path d="M580,152 C585,147 590,152 595,147"/>
+    <path d="M600,145 C605,140 610,145 615,140"/>
+  </g>
+
+  <!-- ===== FOREGROUND GRASS TUFTS ===== -->
+  <g id="grass" stroke="#40916c" stroke-width="1.5" fill="none" stroke-linecap="round">
+    <line x1="20"  y1="580" x2="14"  y2="565"/>
+    <line x1="22"  y1="580" x2="22"  y2="563"/>
+    <line x1="24"  y1="580" x2="30"  y2="566"/>
+    <line x1="100" y1="575" x2="94"  y2="560"/>
+    <line x1="102" y1="575" x2="102" y2="558"/>
+    <line x1="104" y1="575" x2="110" y2="561"/>
+    <line x1="680" y1="578" x2="674" y2="563"/>
+    <line x1="682" y1="578" x2="682" y2="561"/>
+    <line x1="684" y1="578" x2="690" y2="564"/>
+    <line x1="760" y1="572" x2="754" y2="557"/>
+    <line x1="762" y1="572" x2="762" y2="555"/>
+    <line x1="764" y1="572" x2="770" y2="558"/>
+  </g>
+</svg>

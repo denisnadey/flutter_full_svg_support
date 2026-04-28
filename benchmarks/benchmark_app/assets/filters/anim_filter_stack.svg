@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <!-- Placeholder: replace with a real animated filter-stack SVG -->
+  <defs>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="4" result="blur"/>
+      <feColorMatrix in="blur" type="matrix"
+        values="0 0 0 0 0.2  0 0 0 0 0.6  0 0 0 0 1  0 0 0 20 -5" result="colored"/>
+      <feComposite in="SourceGraphic" in2="colored" operator="over"/>
+    </filter>
+  </defs>
+  <circle cx="100" cy="100" r="60" fill="#3498db" filter="url(#glow)">
+    <animate attributeName="r" values="60;80;60" dur="2s" repeatCount="indefinite"/>
+    <animate attributeName="fill" values="#3498db;#e74c3c;#3498db" dur="3s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="100" cy="100" r="25" fill="#ffffff" opacity="0.9">
+    <animate attributeName="r" values="25;15;25" dur="2s" repeatCount="indefinite"/>
+  </circle>
+</svg>

@@ -1,0 +1,31 @@
+<!-- Source: generated for full_svg_flutter benchmarks -->
+<!-- Tests: all basic SVG shape primitives: rect, circle, ellipse, line, polyline, polygon -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Rectangle with rounded corners -->
+  <rect x="10" y="10" width="60" height="40" rx="8" ry="8"
+        fill="#4A90D9" stroke="#2C5F8A" stroke-width="2"/>
+
+  <!-- Plain rectangle -->
+  <rect x="80" y="10" width="50" height="40"
+        fill="#E74C3C" stroke="#922B21" stroke-width="1.5"/>
+
+  <!-- Circle -->
+  <circle cx="40" cy="100" r="30"
+          fill="#2ECC71" stroke="#1A8A4A" stroke-width="2"/>
+
+  <!-- Ellipse -->
+  <ellipse cx="130" cy="90" rx="50" ry="30"
+           fill="#F39C12" stroke="#A04000" stroke-width="2"/>
+
+  <!-- Line -->
+  <line x1="10" y1="150" x2="190" y2="150"
+        stroke="#8E44AD" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Polyline (zigzag) -->
+  <polyline points="10,180 35,160 60,180 85,160 110,180 135,160 160,180 185,160"
+            fill="none" stroke="#16A085" stroke-width="2.5" stroke-linejoin="round"/>
+
+  <!-- Polygon (hexagon) -->
+  <polygon points="155,20 175,10 195,20 195,40 175,50 155,40"
+           fill="#9B59B6" stroke="#6C3483" stroke-width="1.5"/>
+</svg>

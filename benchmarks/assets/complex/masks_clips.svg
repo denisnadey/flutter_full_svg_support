@@ -1,0 +1,138 @@
+<!-- Source: generated for full_svg_flutter benchmarks -->
+<!-- Tests: clipPath (circle clipping a rect), mask with gradient transparency, nested clipping -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <!-- Clip 1: circle clip applied to a rectangle -->
+    <clipPath id="circleClip">
+      <circle cx="90" cy="90" r="65"/>
+    </clipPath>
+
+    <!-- Clip 2: star-shaped clip path -->
+    <clipPath id="starClip">
+      <polygon points="300,40 315,80 360,80 325,105 338,145 300,120 262,145 275,105 240,80 285,80"/>
+    </clipPath>
+
+    <!-- Clip 3: outer rect clip for nested clipping demo -->
+    <clipPath id="outerRectClip">
+      <rect x="20" y="220" width="170" height="160" rx="20"/>
+    </clipPath>
+
+    <!-- Clip 4: inner ellipse clip — nested inside outerRectClip -->
+    <clipPath id="innerEllipseClip" clip-path="url(#outerRectClip)">
+      <ellipse cx="105" cy="300" rx="75" ry="55"/>
+    </clipPath>
+
+    <!-- Mask 1: gradient alpha mask — white = visible, black = transparent -->
+    <mask id="gradientMask">
+      <rect width="400" height="400" fill="black"/>
+      <linearGradient id="maskGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%"   stop-color="white" stop-opacity="1"/>
+        <stop offset="100%" stop-color="white" stop-opacity="0"/>
+      </linearGradient>
+      <rect x="210" y="220" width="170" height="160" rx="12" fill="url(#maskGrad)"/>
+    </mask>
+
+    <!-- Mask 2: luminance mask with text shape -->
+    <mask id="textMask">
+      <rect width="400" height="400" fill="black"/>
+      <text x="200" y="190" font-family="Arial Black, sans-serif" font-size="52"
+            font-weight="900" text-anchor="middle" fill="white">MASK</text>
+    </mask>
+
+    <!-- Gradient for masked rectangle -->
+    <linearGradient id="rainbowH" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%"   stop-color="#ff0000"/>
+      <stop offset="17%"  stop-color="#ff7700"/>
+      <stop offset="33%"  stop-color="#ffff00"/>
+      <stop offset="50%"  stop-color="#00cc00"/>
+      <stop offset="67%"  stop-color="#0000ff"/>
+      <stop offset="83%"  stop-color="#8800cc"/>
+      <stop offset="100%" stop-color="#ff0088"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="400" fill="#1c1c2e"/>
+
+  <!-- === Section 1 (top-left): Circle clipping a checkerboard rect === -->
+  <g clip-path="url(#circleClip)">
+    <!-- Checkerboard pattern inside clip -->
+    <rect x="25" y="25" width="20" height="20" fill="#e8e8e8"/>
+    <rect x="45" y="25" width="20" height="20" fill="#888"/>
+    <rect x="65" y="25" width="20" height="20" fill="#e8e8e8"/>
+    <rect x="85" y="25" width="20" height="20" fill="#888"/>
+    <rect x="105" y="25" width="20" height="20" fill="#e8e8e8"/>
+    <rect x="125" y="25" width="20" height="20" fill="#888"/>
+    <rect x="145" y="25" width="20" height="20" fill="#e8e8e8"/>
+    <rect x="25" y="45" width="20" height="20" fill="#888"/>
+    <rect x="45" y="45" width="20" height="20" fill="#e8e8e8"/>
+    <rect x="65" y="45" width="20" height="20" fill="#888"/>
+    <rect x="85" y="45" width="20" height="20" fill="#e8e8e8"/>
+    <rect x="105" y="45" width="20" height="20" fill="#888"/>
+    <rect x="125" y="45" width="20" height="20" fill="#e8e8e8"/>
+    <rect x="145" y="45" width="20" height="20" fill="#888"/>
+    <rect x="25" y="65" width="20" height="20" fill="#e8e8e8"/>
+    <rect x="45" y="65" width="20" height="20" fill="#888"/>
+    <rect x="65" y="65" width="20" height="20" fill="#e8e8e8"/>
+    <rect x="85" y="65" width="20" height="20" fill="#888"/>
+    <rect x="105" y="65" width="20" height="20" fill="#e8e8e8"/>
+    <rect x="125" y="65" width="20" height="20" fill="#888"/>
+    <rect x="145" y="65" width="20" height="20" fill="#e8e8e8"/>
+    <rect x="25" y="85" width="20" height="20" fill="#888"/>
+    <rect x="45" y="85" width="20" height="20" fill="#e8e8e8"/>
+    <rect x="65" y="85" width="20" height="20" fill="#888"/>
+    <rect x="85" y="85" width="20" height="20" fill="#e8e8e8"/>
+    <rect x="105" y="85" width="20" height="20" fill="#888"/>
+    <rect x="125" y="85" width="20" height="20" fill="#e8e8e8"/>
+    <rect x="145" y="85" width="20" height="20" fill="#888"/>
+    <rect x="25" y="105" width="20" height="20" fill="#e8e8e8"/>
+    <rect x="45" y="105" width="20" height="20" fill="#888"/>
+    <rect x="65" y="105" width="20" height="20" fill="#e8e8e8"/>
+    <rect x="85" y="105" width="20" height="20" fill="#888"/>
+    <rect x="105" y="105" width="20" height="20" fill="#e8e8e8"/>
+    <rect x="125" y="105" width="20" height="20" fill="#888"/>
+    <rect x="145" y="105" width="20" height="20" fill="#e8e8e8"/>
+    <rect x="25" y="125" width="20" height="20" fill="#888"/>
+    <rect x="45" y="125" width="20" height="20" fill="#e8e8e8"/>
+    <rect x="65" y="125" width="20" height="20" fill="#888"/>
+    <rect x="85" y="125" width="20" height="20" fill="#e8e8e8"/>
+    <rect x="105" y="125" width="20" height="20" fill="#888"/>
+    <rect x="125" y="125" width="20" height="20" fill="#e8e8e8"/>
+    <rect x="145" y="125" width="20" height="20" fill="#888"/>
+    <rect x="25" y="145" width="20" height="20" fill="#e8e8e8"/>
+    <rect x="45" y="145" width="20" height="20" fill="#888"/>
+    <rect x="65" y="145" width="20" height="20" fill="#e8e8e8"/>
+    <rect x="85" y="145" width="20" height="20" fill="#888"/>
+    <rect x="105" y="145" width="20" height="20" fill="#e8e8e8"/>
+    <rect x="125" y="145" width="20" height="20" fill="#888"/>
+    <rect x="145" y="145" width="20" height="20" fill="#e8e8e8"/>
+  </g>
+  <text x="90" y="175" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#aaa">clipPath circle</text>
+
+  <!-- === Section 2 (top-right): Star clip on a gradient rect === -->
+  <g clip-path="url(#starClip)">
+    <rect x="230" y="30" width="140" height="130" fill="url(#rainbowH)"/>
+  </g>
+  <text x="300" y="175" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#aaa">clipPath star</text>
+
+  <!-- === Section 3 (bottom-left): Nested clipping (rect outer, ellipse inner) === -->
+  <g clip-path="url(#innerEllipseClip)">
+    <rect x="20" y="220" width="170" height="160" fill="#e74c3c"/>
+    <circle cx="60"  cy="260" r="30" fill="#f1c40f"/>
+    <circle cx="120" cy="310" r="40" fill="#3498db"/>
+    <circle cx="160" cy="260" r="25" fill="#2ecc71"/>
+  </g>
+  <text x="105" y="397" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#aaa">nested clip</text>
+
+  <!-- === Section 4 (bottom-right): Gradient mask fading shapes === -->
+  <g mask="url(#gradientMask)">
+    <rect x="210" y="220" width="170" height="160" rx="12" fill="#8e44ad"/>
+    <circle cx="250" cy="260" r="25" fill="#e67e22"/>
+    <circle cx="300" cy="290" r="30" fill="#1abc9c"/>
+    <circle cx="340" cy="255" r="20" fill="#e74c3c"/>
+  </g>
+  <text x="295" y="397" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#aaa">gradient mask</text>
+
+  <!-- === Text luminance mask in the middle band === -->
+  <rect x="40" y="158" width="320" height="58" fill="url(#rainbowH)" mask="url(#textMask)"/>
+</svg>

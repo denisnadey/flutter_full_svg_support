@@ -1,0 +1,93 @@
+<!-- Source: generated for full_svg_flutter benchmarks -->
+<!-- Tests: complex SMIL — staggered <animate>, <animateTransform>, and <set> on multiple elements.
+     Demonstrates features NOT supported by flutter_svg but supported by full_svg_flutter. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="300" height="300">
+  <rect width="300" height="300" fill="#0f0f1a"/>
+
+  <!-- Element 1: circle with staggered animate fill + animateTransform rotate -->
+  <circle id="c1" cx="80" cy="80" r="30" fill="#e74c3c">
+    <!-- Animate fill color: red -> blue -> green -> red -->
+    <animate attributeName="fill"
+             values="#e74c3c;#3498db;#2ecc71;#e74c3c"
+             keyTimes="0;0.33;0.66;1"
+             dur="3s" begin="0s" repeatCount="indefinite"/>
+    <!-- Animate radius: pulse -->
+    <animate attributeName="r"
+             values="30;42;30;20;30"
+             keyTimes="0;0.25;0.5;0.75;1"
+             dur="2s" begin="0.2s" repeatCount="indefinite"/>
+    <!-- Set visibility off briefly mid-cycle -->
+    <set attributeName="visibility" to="hidden"
+         begin="c1.click" dur="0.5s"/>
+  </circle>
+
+  <!-- Element 2: rect with animateTransform skewX + animate opacity staggered -->
+  <rect id="r1" x="175" y="50" width="60" height="60" rx="8" fill="#f39c12">
+    <animateTransform attributeName="transform"
+                      type="rotate"
+                      from="0 205 80" to="360 205 80"
+                      dur="4s" begin="0.5s" repeatCount="indefinite"
+                      additive="replace"/>
+    <animate attributeName="opacity"
+             values="1;0.3;1"
+             keyTimes="0;0.5;1"
+             dur="2s" begin="1s" repeatCount="indefinite"/>
+    <animate attributeName="fill"
+             values="#f39c12;#9b59b6;#f39c12"
+             dur="4s" begin="0s" repeatCount="indefinite"/>
+  </rect>
+
+  <!-- Element 3: polygon with animateTransform scale + animate stroke -->
+  <polygon id="p1" points="150,160 170,200 130,200" fill="#2ecc71"
+           stroke="#27ae60" stroke-width="2">
+    <animateTransform attributeName="transform"
+                      type="scale"
+                      values="1 1;1.5 1.5;1 1;0.6 0.6;1 1"
+                      keyTimes="0;0.3;0.5;0.75;1"
+                      dur="3s" begin="0.8s" repeatCount="indefinite"
+                      additive="replace"/>
+    <!-- Translate to keep scale centered -->
+    <animateTransform attributeName="transform"
+                      type="translate"
+                      values="0 0;-25 -40;0 0;24 32;0 0"
+                      keyTimes="0;0.3;0.5;0.75;1"
+                      dur="3s" begin="0.8s" repeatCount="indefinite"
+                      additive="sum"/>
+    <animate attributeName="stroke-width"
+             values="2;6;2" dur="3s" begin="0.8s" repeatCount="indefinite"/>
+  </polygon>
+
+  <!-- Element 4: ellipse with animate cx/cy (motion simulation) + set fill on begin -->
+  <ellipse id="e1" cx="230" cy="220" rx="35" ry="20" fill="#3498db">
+    <animate attributeName="cx"
+             values="230;80;230;80;230"
+             keyTimes="0;0.25;0.5;0.75;1"
+             calcMode="spline"
+             keySplines="0.4 0 0.2 1;0.4 0 0.2 1;0.4 0 0.2 1;0.4 0 0.2 1"
+             dur="5s" begin="0s" repeatCount="indefinite"/>
+    <animate attributeName="cy"
+             values="220;220;80;80;220"
+             keyTimes="0;0.25;0.5;0.75;1"
+             dur="5s" begin="0s" repeatCount="indefinite"/>
+    <animate attributeName="fill"
+             values="#3498db;#e74c3c;#f39c12;#2ecc71;#3498db"
+             keyTimes="0;0.25;0.5;0.75;1"
+             dur="5s" begin="0s" repeatCount="indefinite"/>
+    <!-- set: snap rx to 50 during mid travel -->
+    <set attributeName="rx" to="50"
+         begin="1.25s" dur="0.5s" repeatCount="indefinite" repeatDur="5s"/>
+  </ellipse>
+
+  <!-- Element 5: text with animate fill + animateTransform translate stagger -->
+  <text id="t1" x="150" y="270" text-anchor="middle"
+        font-family="monospace" font-size="14" fill="#ecf0f1">
+    SMIL Complex
+    <animate attributeName="fill"
+             values="#ecf0f1;#e74c3c;#f39c12;#2ecc71;#3498db;#ecf0f1"
+             dur="3s" begin="1.5s" repeatCount="indefinite"/>
+    <animateTransform attributeName="transform"
+                      type="translate"
+                      values="0,0;0,-8;0,0"
+                      dur="1s" begin="0s" repeatCount="indefinite"/>
+  </text>
+</svg>

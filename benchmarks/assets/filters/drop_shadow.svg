@@ -1,0 +1,47 @@
+<!-- Source: generated for full_svg_flutter benchmarks -->
+<!-- Tests: feDropShadow filter applied to text and shapes — simple but valid filter usage -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 200" width="300" height="200">
+  <defs>
+    <!-- Soft dark drop shadow -->
+    <filter id="softShadow" x="-10%" y="-10%" width="130%" height="140%">
+      <feDropShadow dx="4" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
+
+    <!-- Coloured drop shadow (elevation effect) -->
+    <filter id="colorShadow" x="-10%" y="-10%" width="130%" height="140%">
+      <feDropShadow dx="3" dy="6" stdDeviation="3" flood-color="#6200ea" flood-opacity="0.6"/>
+    </filter>
+
+    <!-- Hard offset shadow (comic / retro style) -->
+    <filter id="hardShadow" x="-5%" y="-5%" width="125%" height="130%">
+      <feDropShadow dx="6" dy="6" stdDeviation="0" flood-color="#000" flood-opacity="1"/>
+    </filter>
+
+    <!-- Large diffuse glow shadow -->
+    <filter id="diffuseShadow" x="-20%" y="-20%" width="150%" height="150%">
+      <feDropShadow dx="0" dy="0" stdDeviation="10" flood-color="#ff4081" flood-opacity="0.8"/>
+    </filter>
+  </defs>
+
+  <rect width="300" height="200" fill="#f5f5f5"/>
+
+  <!-- Shape 1: rounded rect with soft shadow -->
+  <rect x="20" y="20" width="80" height="55" rx="10"
+        fill="#2196f3" filter="url(#softShadow)"/>
+
+  <!-- Shape 2: circle with coloured elevation shadow -->
+  <circle cx="185" cy="50" r="35" fill="#4caf50" filter="url(#colorShadow)"/>
+
+  <!-- Shape 3: polygon with hard retro shadow -->
+  <polygon points="258,18 278,50 258,82 238,50" fill="#ff9800" filter="url(#hardShadow)"/>
+
+  <!-- Text with soft shadow -->
+  <text x="150" y="125" text-anchor="middle"
+        font-family="Arial, sans-serif" font-size="28" font-weight="bold"
+        fill="#212121" filter="url(#softShadow)">Drop Shadow</text>
+
+  <!-- Text with diffuse pink glow shadow -->
+  <text x="150" y="175" text-anchor="middle"
+        font-family="Arial, sans-serif" font-size="20" font-weight="bold"
+        fill="#ffffff" filter="url(#diffuseShadow)">Glow</text>
+</svg>

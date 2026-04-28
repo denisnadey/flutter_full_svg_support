@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Placeholder: CSS @keyframes animation -->
+  <style>
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.4; transform: scale(0.7); }
+    }
+    .spinner { animation: spin 1.2s linear infinite; transform-origin: 50px 50px; }
+    .dot     { animation: pulse 1.2s ease-in-out infinite; transform-origin: 50px 50px; }
+  </style>
+  <g class="spinner">
+    <rect x="45" y="12" width="10" height="22" rx="5" fill="#3498db"/>
+    <rect x="45" y="66" width="10" height="22" rx="5" fill="#3498db" opacity="0.25"/>
+    <rect x="12" y="45" width="22" height="10" rx="5" fill="#3498db" opacity="0.6"/>
+    <rect x="66" y="45" width="22" height="10" rx="5" fill="#3498db" opacity="0.6"/>
+  </g>
+  <circle cx="50" cy="50" r="7" fill="#2980b9" class="dot"/>
+</svg>

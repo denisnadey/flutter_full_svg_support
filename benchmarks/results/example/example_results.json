@@ -1,0 +1,256 @@
+{
+  "_note": "EXAMPLE DATA — not real measurements. Replace with actual device results by running ./scripts/run_android.sh or ./scripts/run_ios.sh.",
+  "timestamp": "2026-04-28T00:00:00Z",
+  "device_info": "Example Device (Pixel 8 Pro / placeholder)",
+  "flutter_version": "3.32.0",
+  "dart_version": "3.8.0",
+  "renderer_mode": "Impeller",
+  "build_mode": "profile",
+  "package_versions": {
+    "full_svg_flutter": "1.0.1",
+    "flutter_svg": "2.0.14",
+    "vector_graphics": "1.1.11"
+  },
+  "results": [
+    {
+      "_note": "PLACEHOLDER — replace with real measurement",
+      "scenario": "static_simple_icon",
+      "category": "static",
+      "asset": "assets/simple/simple_icon.svg",
+      "cache_state": "cold",
+      "packages": {
+        "full_svg_flutter_picture": {
+          "first_paint_ms": 4.2,
+          "avg_build_ms": 0.8,
+          "avg_raster_ms": 0.6,
+          "p90_build_ms": 1.1,
+          "p99_build_ms": 1.8,
+          "jank_frame_count": 0,
+          "memory_delta_mb": 0.4,
+          "sample_count": 120
+        },
+        "full_svg_flutter_raster": {
+          "first_paint_ms": 5.1,
+          "avg_build_ms": 0.3,
+          "avg_raster_ms": 0.2,
+          "p90_build_ms": 0.5,
+          "p99_build_ms": 0.9,
+          "jank_frame_count": 0,
+          "memory_delta_mb": 1.2,
+          "sample_count": 120
+        },
+        "flutter_svg": {
+          "first_paint_ms": 6.8,
+          "avg_build_ms": 1.2,
+          "avg_raster_ms": 0.9,
+          "p90_build_ms": 1.8,
+          "p99_build_ms": 2.6,
+          "jank_frame_count": 0,
+          "memory_delta_mb": 0.8,
+          "sample_count": 120
+        }
+      }
+    },
+    {
+      "_note": "PLACEHOLDER — replace with real measurement",
+      "scenario": "static_complex_gradients",
+      "category": "static",
+      "asset": "assets/complex/gradients.svg",
+      "cache_state": "warm",
+      "packages": {
+        "full_svg_flutter_picture": {
+          "first_paint_ms": 12.4,
+          "avg_build_ms": 3.2,
+          "avg_raster_ms": 4.8,
+          "p90_build_ms": 4.5,
+          "p99_build_ms": 7.2,
+          "jank_frame_count": 2,
+          "memory_delta_mb": 2.1,
+          "sample_count": 120
+        },
+        "full_svg_flutter_raster": {
+          "first_paint_ms": 18.6,
+          "avg_build_ms": 1.1,
+          "avg_raster_ms": 1.4,
+          "p90_build_ms": 1.9,
+          "p99_build_ms": 3.1,
+          "jank_frame_count": 0,
+          "memory_delta_mb": 4.8,
+          "sample_count": 120
+        },
+        "flutter_svg": {
+          "first_paint_ms": 14.2,
+          "avg_build_ms": 3.8,
+          "avg_raster_ms": 5.1,
+          "p90_build_ms": 5.2,
+          "p99_build_ms": 8.6,
+          "jank_frame_count": 4,
+          "memory_delta_mb": 2.4,
+          "sample_count": 120
+        }
+      }
+    },
+    {
+      "_note": "PLACEHOLDER — replace with real measurement",
+      "scenario": "animated_smil_spinner",
+      "category": "animated",
+      "asset": "assets/animated/smil_spinner.svg",
+      "cache_state": "warm",
+      "packages": {
+        "full_svg_flutter_picture": {
+          "first_paint_ms": 8.3,
+          "avg_build_ms": 2.1,
+          "avg_raster_ms": 3.4,
+          "p90_build_ms": 3.8,
+          "p99_build_ms": 6.2,
+          "jank_frame_count": 1,
+          "memory_delta_mb": 1.6,
+          "sample_count": 300
+        },
+        "full_svg_flutter_raster": {
+          "first_paint_ms": 9.1,
+          "avg_build_ms": 0.9,
+          "avg_raster_ms": 1.1,
+          "p90_build_ms": 1.5,
+          "p99_build_ms": 2.8,
+          "jank_frame_count": 0,
+          "memory_delta_mb": 3.2,
+          "sample_count": 300
+        },
+        "flutter_svg": {
+          "first_paint_ms": null,
+          "avg_build_ms": null,
+          "avg_raster_ms": null,
+          "p90_build_ms": null,
+          "p99_build_ms": null,
+          "jank_frame_count": null,
+          "memory_delta_mb": null,
+          "sample_count": 0,
+          "unsupported": true,
+          "unsupported_reason": "flutter_svg does not support SMIL animation"
+        }
+      }
+    },
+    {
+      "_note": "PLACEHOLDER — replace with real measurement",
+      "scenario": "filter_drop_shadow",
+      "category": "filters",
+      "asset": "assets/filters/drop_shadow.svg",
+      "cache_state": "warm",
+      "packages": {
+        "full_svg_flutter_picture": {
+          "first_paint_ms": 15.8,
+          "avg_build_ms": 4.6,
+          "avg_raster_ms": 8.2,
+          "p90_build_ms": 6.4,
+          "p99_build_ms": 12.1,
+          "jank_frame_count": 8,
+          "memory_delta_mb": 3.4,
+          "sample_count": 120
+        },
+        "full_svg_flutter_raster": {
+          "first_paint_ms": 24.2,
+          "avg_build_ms": 1.8,
+          "avg_raster_ms": 2.2,
+          "p90_build_ms": 2.9,
+          "p99_build_ms": 4.6,
+          "jank_frame_count": 0,
+          "memory_delta_mb": 8.6,
+          "sample_count": 120
+        },
+        "flutter_svg": {
+          "first_paint_ms": 16.4,
+          "avg_build_ms": 5.1,
+          "avg_raster_ms": 9.4,
+          "p90_build_ms": 7.8,
+          "p99_build_ms": 14.2,
+          "jank_frame_count": 12,
+          "memory_delta_mb": 3.8,
+          "sample_count": 120,
+          "unsupported": false,
+          "note": "partial support — feDropShadow only, complex filter chains unsupported"
+        }
+      }
+    },
+    {
+      "_note": "PLACEHOLDER — replace with real measurement",
+      "scenario": "real_world_illustration",
+      "category": "real_world",
+      "asset": "assets/real_world/real_world_illustration.svg",
+      "cache_state": "cold",
+      "packages": {
+        "full_svg_flutter_picture": {
+          "first_paint_ms": 28.6,
+          "avg_build_ms": 6.4,
+          "avg_raster_ms": 9.8,
+          "p90_build_ms": 9.2,
+          "p99_build_ms": 16.4,
+          "jank_frame_count": 5,
+          "memory_delta_mb": 4.2,
+          "sample_count": 120
+        },
+        "full_svg_flutter_raster": {
+          "first_paint_ms": 42.1,
+          "avg_build_ms": 2.4,
+          "avg_raster_ms": 2.8,
+          "p90_build_ms": 3.6,
+          "p99_build_ms": 5.9,
+          "jank_frame_count": 0,
+          "memory_delta_mb": 14.8,
+          "sample_count": 120
+        },
+        "flutter_svg": {
+          "first_paint_ms": 31.4,
+          "avg_build_ms": 7.2,
+          "avg_raster_ms": 10.6,
+          "p90_build_ms": 10.4,
+          "p99_build_ms": 18.8,
+          "jank_frame_count": 9,
+          "memory_delta_mb": 4.6,
+          "sample_count": 120
+        }
+      }
+    },
+    {
+      "_note": "PLACEHOLDER — replace with real measurement",
+      "scenario": "unsupported_css_keyframes",
+      "category": "unsupported",
+      "asset": "assets/unsupported_by_flutter_svg/css_keyframes_anim.svg",
+      "cache_state": "warm",
+      "packages": {
+        "full_svg_flutter_picture": {
+          "first_paint_ms": 11.2,
+          "avg_build_ms": 3.4,
+          "avg_raster_ms": 4.6,
+          "p90_build_ms": 5.1,
+          "p99_build_ms": 8.4,
+          "jank_frame_count": 3,
+          "memory_delta_mb": 2.8,
+          "sample_count": 300
+        },
+        "full_svg_flutter_raster": {
+          "first_paint_ms": 14.8,
+          "avg_build_ms": 1.4,
+          "avg_raster_ms": 1.8,
+          "p90_build_ms": 2.4,
+          "p99_build_ms": 4.2,
+          "jank_frame_count": 0,
+          "memory_delta_mb": 6.4,
+          "sample_count": 300
+        },
+        "flutter_svg": {
+          "first_paint_ms": null,
+          "avg_build_ms": null,
+          "avg_raster_ms": null,
+          "p90_build_ms": null,
+          "p99_build_ms": null,
+          "jank_frame_count": null,
+          "memory_delta_mb": null,
+          "sample_count": 0,
+          "unsupported": true,
+          "unsupported_reason": "flutter_svg does not support CSS @keyframes animation"
+        }
+      }
+    }
+  ]
+}

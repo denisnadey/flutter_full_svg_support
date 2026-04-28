@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Placeholder: SMIL spinner — replace with production asset -->
+  <g transform="translate(50,50)">
+    <rect x="-5" y="-30" width="10" height="20" rx="5" fill="#3498db">
+      <animateTransform attributeName="transform" type="rotate"
+        from="0" to="360" dur="1s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="1;0.2;1" dur="1s" repeatCount="indefinite"/>
+    </rect>
+    <rect x="-5" y="-30" width="10" height="20" rx="5" fill="#3498db" opacity="0.7">
+      <animateTransform attributeName="transform" type="rotate"
+        from="45" to="405" dur="1s" repeatCount="indefinite"/>
+    </rect>
+    <rect x="-5" y="-30" width="10" height="20" rx="5" fill="#3498db" opacity="0.5">
+      <animateTransform attributeName="transform" type="rotate"
+        from="90" to="450" dur="1s" repeatCount="indefinite"/>
+    </rect>
+    <rect x="-5" y="-30" width="10" height="20" rx="5" fill="#3498db" opacity="0.3">
+      <animateTransform attributeName="transform" type="rotate"
+        from="135" to="495" dur="1s" repeatCount="indefinite"/>
+    </rect>
+  </g>
+</svg>

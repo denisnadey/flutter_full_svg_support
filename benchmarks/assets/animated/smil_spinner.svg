@@ -1,0 +1,52 @@
+<!-- Source: generated for full_svg_flutter benchmarks -->
+<!-- Tests: SMIL animateTransform type="rotate" on a group of dashes arranged in a circle (classic loading spinner) -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <!-- 12 spokes arranged in a circle, each fading in opacity to suggest rotation -->
+  <g id="spinner" transform="translate(50,50)">
+    <animateTransform
+      attributeName="transform"
+      attributeType="XML"
+      type="rotate"
+      from="0 0 0"
+      to="360 0 0"
+      dur="1s"
+      repeatCount="indefinite"/>
+
+    <!-- Spoke 0 — 12 o'clock, full opacity -->
+    <rect x="-4" y="-42" width="8" height="18" rx="4" fill="#333" opacity="1.00"
+          transform="rotate(0)"/>
+    <!-- Spoke 1 — 1 o'clock -->
+    <rect x="-4" y="-42" width="8" height="18" rx="4" fill="#333" opacity="0.92"
+          transform="rotate(30)"/>
+    <!-- Spoke 2 -->
+    <rect x="-4" y="-42" width="8" height="18" rx="4" fill="#333" opacity="0.75"
+          transform="rotate(60)"/>
+    <!-- Spoke 3 — 3 o'clock -->
+    <rect x="-4" y="-42" width="8" height="18" rx="4" fill="#333" opacity="0.58"
+          transform="rotate(90)"/>
+    <!-- Spoke 4 -->
+    <rect x="-4" y="-42" width="8" height="18" rx="4" fill="#333" opacity="0.42"
+          transform="rotate(120)"/>
+    <!-- Spoke 5 -->
+    <rect x="-4" y="-42" width="8" height="18" rx="4" fill="#333" opacity="0.33"
+          transform="rotate(150)"/>
+    <!-- Spoke 6 — 6 o'clock, lowest opacity (tail) -->
+    <rect x="-4" y="-42" width="8" height="18" rx="4" fill="#333" opacity="0.25"
+          transform="rotate(180)"/>
+    <!-- Spoke 7 -->
+    <rect x="-4" y="-42" width="8" height="18" rx="4" fill="#333" opacity="0.20"
+          transform="rotate(210)"/>
+    <!-- Spoke 8 -->
+    <rect x="-4" y="-42" width="8" height="18" rx="4" fill="#333" opacity="0.17"
+          transform="rotate(240)"/>
+    <!-- Spoke 9 — 9 o'clock -->
+    <rect x="-4" y="-42" width="8" height="18" rx="4" fill="#333" opacity="0.14"
+          transform="rotate(270)"/>
+    <!-- Spoke 10 -->
+    <rect x="-4" y="-42" width="8" height="18" rx="4" fill="#333" opacity="0.12"
+          transform="rotate(300)"/>
+    <!-- Spoke 11 -->
+    <rect x="-4" y="-42" width="8" height="18" rx="4" fill="#333" opacity="0.10"
+          transform="rotate(330)"/>
+  </g>
+</svg>

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Path morphing arrow → chevron → circle — not supported by flutter_svg -->
+  <path fill="#e67e22">
+    <animate attributeName="d"
+      values="M20 50 L60 50 L60 35 L85 50 L60 65 L60 50 Z;
+              M15 35 L50 50 L15 65 L30 50 Z;
+              M50 20 C72 20 80 28 80 50 C80 72 72 80 50 80 C28 80 20 72 20 50 C20 28 28 20 50 20 Z;
+              M20 50 L60 50 L60 35 L85 50 L60 65 L60 50 Z"
+      dur="2.5s" repeatCount="indefinite" calcMode="spline"
+      keyTimes="0;0.33;0.66;1"
+      keySplines="0.4 0 0.2 1;0.4 0 0.2 1;0.4 0 0.2 1"/>
+  </path>
+</svg>

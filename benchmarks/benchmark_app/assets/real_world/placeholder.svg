@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <!-- Placeholder: add real-world SVG assets here (app icons, illustrations, etc.) -->
+  <rect width="200" height="200" rx="20" fill="#f8f9fa" stroke="#dee2e6" stroke-width="2"/>
+  <text x="100" y="90" text-anchor="middle" font-family="sans-serif"
+        font-size="13" fill="#868e96">Add real-world</text>
+  <text x="100" y="112" text-anchor="middle" font-family="sans-serif"
+        font-size="13" fill="#868e96">SVG assets here</text>
+  <text x="100" y="140" text-anchor="middle" font-family="sans-serif"
+        font-size="10" fill="#adb5bd">assets/real_world/</text>
+</svg>

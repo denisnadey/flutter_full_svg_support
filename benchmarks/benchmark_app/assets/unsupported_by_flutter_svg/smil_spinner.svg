@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- SMIL spinner — not supported by flutter_svg -->
+  <g transform="translate(50,50)">
+    <rect x="-5" y="-35" width="10" height="18" rx="5" fill="#e74c3c">
+      <animateTransform attributeName="transform" type="rotate"
+        from="0" to="360" dur="0.9s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="1;0.15;1" dur="0.9s" repeatCount="indefinite"/>
+    </rect>
+    <rect x="-5" y="-35" width="10" height="18" rx="5" fill="#e74c3c" opacity="0.6">
+      <animateTransform attributeName="transform" type="rotate"
+        from="60" to="420" dur="0.9s" repeatCount="indefinite"/>
+    </rect>
+    <rect x="-5" y="-35" width="10" height="18" rx="5" fill="#e74c3c" opacity="0.4">
+      <animateTransform attributeName="transform" type="rotate"
+        from="120" to="480" dur="0.9s" repeatCount="indefinite"/>
+    </rect>
+    <rect x="-5" y="-35" width="10" height="18" rx="5" fill="#e74c3c" opacity="0.25">
+      <animateTransform attributeName="transform" type="rotate"
+        from="180" to="540" dur="0.9s" repeatCount="indefinite"/>
+    </rect>
+    <rect x="-5" y="-35" width="10" height="18" rx="5" fill="#e74c3c" opacity="0.15">
+      <animateTransform attributeName="transform" type="rotate"
+        from="240" to="600" dur="0.9s" repeatCount="indefinite"/>
+    </rect>
+    <rect x="-5" y="-35" width="10" height="18" rx="5" fill="#e74c3c" opacity="0.08">
+      <animateTransform attributeName="transform" type="rotate"
+        from="300" to="660" dur="0.9s" repeatCount="indefinite"/>
+    </rect>
+  </g>
+</svg>

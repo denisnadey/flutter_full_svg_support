@@ -1,0 +1,33 @@
+name: full_svg_flutter_benchmarks
+description: Reproducible benchmark suite — full_svg_flutter vs flutter_svg
+publish_to: none
+version: 1.0.0
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  full_svg_flutter: ^1.0.1
+  flutter_svg: ^2.0.14
+  vector_graphics: ^1.1.13
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/simple/
+    - assets/complex/
+    - assets/animated/
+    - assets/filters/
+    - assets/text/
+    - assets/real_world/
+    - assets/unsupported_by_flutter_svg/
+    - assets/stress/

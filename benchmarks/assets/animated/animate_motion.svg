@@ -1,0 +1,49 @@
+<!-- Source: generated for full_svg_flutter benchmarks -->
+<!-- Tests: animateMotion with mpath reference — element follows a defined path curve -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200" width="400" height="200">
+  <rect width="400" height="200" fill="#0a1628"/>
+
+  <!-- The motion path (visible as a dashed guide) -->
+  <path id="motionPath"
+    d="M20,100 C60,20 120,180 180,100 C240,20 300,180 360,100 C380,80 390,100 390,100"
+    fill="none"
+    stroke="#ffffff22"
+    stroke-width="1.5"
+    stroke-dasharray="6 4"/>
+
+  <!-- Rolling planet: circle + dot marker, follows the path -->
+  <g>
+    <animateMotion dur="4s" repeatCount="indefinite" rotate="auto">
+      <mpath href="#motionPath"/>
+    </animateMotion>
+    <circle r="14" fill="#3b82f6" stroke="#93c5fd" stroke-width="2"/>
+    <circle r="4" cx="0" cy="-8" fill="#ffffff" opacity="0.8"/>
+  </g>
+
+  <!-- Trailing comet: offset start by 1s -->
+  <g>
+    <animateMotion dur="4s" begin="-1s" repeatCount="indefinite" rotate="auto">
+      <mpath href="#motionPath"/>
+    </animateMotion>
+    <ellipse rx="18" ry="7" fill="#f59e0b" opacity="0.7"/>
+    <circle r="6" fill="#fef3c7"/>
+  </g>
+
+  <!-- Small dot: offset start by 2s, faster -->
+  <g>
+    <animateMotion dur="2.5s" begin="-0.5s" repeatCount="indefinite" rotate="auto-reverse">
+      <mpath href="#motionPath"/>
+    </animateMotion>
+    <circle r="5" fill="#34d399"/>
+  </g>
+
+  <!-- Stars in background (static) -->
+  <circle cx="50"  cy="30"  r="1.5" fill="#fff" opacity="0.6"/>
+  <circle cx="130" cy="15"  r="1"   fill="#fff" opacity="0.5"/>
+  <circle cx="210" cy="40"  r="1.5" fill="#fff" opacity="0.7"/>
+  <circle cx="290" cy="20"  r="1"   fill="#fff" opacity="0.4"/>
+  <circle cx="360" cy="35"  r="1.5" fill="#fff" opacity="0.6"/>
+  <circle cx="75"  cy="170" r="1"   fill="#fff" opacity="0.5"/>
+  <circle cx="175" cy="155" r="1.5" fill="#fff" opacity="0.6"/>
+  <circle cx="320" cy="165" r="1"   fill="#fff" opacity="0.4"/>
+</svg>

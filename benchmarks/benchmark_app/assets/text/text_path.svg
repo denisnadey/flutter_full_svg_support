@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 150">
+  <!-- Placeholder: text on a curved path -->
+  <defs>
+    <path id="curve" d="M20 100 C80 20 220 20 280 100"/>
+  </defs>
+  <path d="M20 100 C80 20 220 20 280 100" fill="none" stroke="#ecf0f1" stroke-width="1"/>
+  <text font-family="sans-serif" font-size="16" fill="#2c3e50">
+    <textPath href="#curve">
+      full_svg_flutter benchmark suite
+    </textPath>
+  </text>
+</svg>

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <!-- Placeholder: replace with a real single-filter SVG -->
+  <defs>
+    <filter id="blur" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="8"/>
+    </filter>
+  </defs>
+  <rect x="20" y="20" width="160" height="160" rx="16" fill="#6c5ce7" filter="url(#blur)"/>
+  <rect x="40" y="40" width="120" height="120" rx="12" fill="#a29bfe"/>
+  <circle cx="100" cy="100" r="30" fill="#ffffff" opacity="0.8"/>
+</svg>

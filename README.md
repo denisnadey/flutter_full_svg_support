@@ -289,6 +289,37 @@ SVGs in `/assets/noto-emoji` — [Google i18n noto-emoji](https://github.com/goo
 
 ---
 
+## Performance benchmarks
+
+We maintain a reproducible benchmark suite in [`benchmarks/`](benchmarks/) that measures frame stability, parse speed, memory usage, and SVG feature compatibility against `flutter_svg`.
+
+Benchmarks cover:
+
+- Cold SVG parse / warm cached render
+- Static icon grids (100–500 items)
+- Scroll stress tests (200 SVG items)
+- SMIL / CSS animation frame stability
+- Filter-heavy SVGs
+- `picture` vs `raster` rendering strategy
+
+```bash
+# macOS — no device needed
+./benchmarks/scripts/run_macos.sh
+
+# Android
+./benchmarks/scripts/run_android.sh
+
+# Pure Dart parser microbenchmarks (no Flutter required)
+./benchmarks/scripts/run_parser_benchmarks.sh
+
+# Generate HTML + Markdown report from collected results
+dart run benchmarks/scripts/generate_report.dart
+```
+
+See [`benchmarks/README.md`](benchmarks/README.md) for the full methodology, scenario descriptions, and how to interpret UI-thread vs raster-thread numbers.
+
+---
+
 ## Commemoration
 
 This package was originally authored by [Dan Field](https://github.com/dnfield) and forked from [dnfield/flutter_svg](https://github.com/dnfield/flutter_svg). Dan was a member of the Flutter team at Google from 2018 until his death in 2024. His impact on Flutter was immeasurable. We honor his memory by continuing to develop and publish this package.

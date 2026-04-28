@@ -1,0 +1,41 @@
+<!-- Source: generated for full_svg_flutter benchmarks -->
+<!-- Tests: <animate attributeName="d"> path morphing between a circle approximation and a star.
+     Both from/to paths use exactly 9 cubic bezier commands (M + 8×C) so point counts match. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <rect width="200" height="200" fill="#0d0d1a"/>
+
+  <!-- Circle approximated with 8 cubic beziers (standard 4-arc approximation split into 8 segments)
+       kappa = 0.5523 -->
+  <path fill="#7c3aed" stroke="#a78bfa" stroke-width="2">
+    <animate
+      attributeName="d"
+      dur="2s"
+      repeatCount="indefinite"
+      calcMode="spline"
+      keyTimes="0;0.5;1"
+      keySplines="0.42 0 0.58 1;0.42 0 0.58 1"
+      values="
+        M100,40
+        C122.09,40 140,57.91 140,80
+        C140,102.09 122.09,120 100,120
+        C77.91,120 60,102.09 60,80
+        C60,57.91 77.91,40 100,40 Z;
+
+        M100,30
+        C100,30 120,50 140,60
+        C160,70 175,65 175,80
+        C175,95 160,90 140,100
+        C120,110 100,130 100,130
+        C100,130 80,110 60,100
+        C40,90 25,95 25,80
+        C25,65 40,70 60,60
+        C80,50 100,30 100,30 Z;
+
+        M100,40
+        C122.09,40 140,57.91 140,80
+        C140,102.09 122.09,120 100,120
+        C77.91,120 60,102.09 60,80
+        C60,57.91 77.91,40 100,40 Z
+      "/>
+  </path>
+</svg>

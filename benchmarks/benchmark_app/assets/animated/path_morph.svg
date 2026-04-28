@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Placeholder: path morphing animation (circle → square → triangle) -->
+  <path fill="#9b59b6">
+    <animate attributeName="d"
+      values="M50 20 C72 20 80 28 80 50 C80 72 72 80 50 80 C28 80 20 72 20 50 C20 28 28 20 50 20 Z;
+              M20 20 L80 20 L80 80 L20 80 Z;
+              M50 15 L85 80 L15 80 Z;
+              M50 20 C72 20 80 28 80 50 C80 72 72 80 50 80 C28 80 20 72 20 50 C20 28 28 20 50 20 Z"
+      dur="3s" repeatCount="indefinite" calcMode="spline"
+      keyTimes="0;0.33;0.66;1"
+      keySplines="0.4 0 0.2 1; 0.4 0 0.2 1; 0.4 0 0.2 1"/>
+  </path>
+</svg>

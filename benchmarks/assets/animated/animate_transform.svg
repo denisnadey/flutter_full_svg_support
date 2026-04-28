@@ -1,0 +1,100 @@
+<!-- Source: generated for full_svg_flutter benchmarks -->
+<!-- Tests: multiple animateTransform types (rotate, scale, translate) on different elements simultaneously -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="300" height="300">
+  <rect width="300" height="300" fill="#0a0a1e"/>
+
+  <!-- Element 1: rotating square around its own center -->
+  <rect x="30" y="30" width="60" height="60" rx="6" fill="#e74c3c" transform="translate(60,60)">
+    <animateTransform
+      attributeName="transform"
+      type="rotate"
+      from="0 0 0"
+      to="360 0 0"
+      dur="3s"
+      additive="sum"
+      repeatCount="indefinite"/>
+  </rect>
+
+  <!-- Element 2: scaling circle (breathe effect) -->
+  <circle cx="220" cy="60" r="35" fill="#3498db">
+    <animateTransform
+      attributeName="transform"
+      type="scale"
+      from="1"
+      to="1.5"
+      dur="1.5s"
+      additive="replace"
+      repeatCount="indefinite"
+      calcMode="spline"
+      keyTimes="0;0.5;1"
+      keySplines="0.4 0 0.2 1;0.4 0 0.2 1"
+      values="1 1;1.4 1.4;1 1"
+      attributeType="XML"/>
+    <!-- Compensate for scale origin -->
+    <animateTransform
+      attributeName="transform"
+      type="translate"
+      from="0 0"
+      to="0 0"
+      dur="1.5s"
+      additive="sum"
+      repeatCount="indefinite"
+      values="-33 -10;-33 -10;-33 -10"/>
+  </circle>
+
+  <!-- Element 3: translating triangle (bouncing side to side) -->
+  <polygon points="150,120 175,165 125,165" fill="#2ecc71">
+    <animateTransform
+      attributeName="transform"
+      type="translate"
+      from="-50 0"
+      to="50 0"
+      dur="2s"
+      repeatCount="indefinite"
+      calcMode="spline"
+      keyTimes="0;0.5;1"
+      keySplines="0.4 0 0.6 1;0.4 0 0.6 1"
+      values="-50 0;50 0;-50 0"/>
+  </polygon>
+
+  <!-- Element 4: rotating + translating orbit group -->
+  <g transform="translate(150,230)">
+    <animateTransform
+      attributeName="transform"
+      type="rotate"
+      from="0 0 0"
+      to="360 0 0"
+      dur="4s"
+      additive="sum"
+      repeatCount="indefinite"/>
+    <!-- Orbiting dot -->
+    <circle cx="50" cy="0" r="12" fill="#f39c12"/>
+    <!-- Center dot -->
+    <circle cx="0" cy="0" r="6" fill="#fff" opacity="0.6"/>
+  </g>
+
+  <!-- Element 5: skew-like effect using rotate on a rect -->
+  <rect x="20" y="210" width="80" height="30" rx="4" fill="#9b59b6">
+    <animateTransform
+      attributeName="transform"
+      type="rotate"
+      values="0 60 225;15 60 225;0 60 225;-15 60 225;0 60 225"
+      keyTimes="0;0.25;0.5;0.75;1"
+      dur="2s"
+      repeatCount="indefinite"/>
+  </rect>
+
+  <!-- Element 6: scaling star from center -->
+  <g transform="translate(240,220)">
+    <polygon points="0,-30 7,-10 28,-10 12,2 18,24 0,12 -18,24 -12,2 -28,-10 -7,-10"
+             fill="#e67e22">
+      <animateTransform
+        attributeName="transform"
+        type="scale"
+        values="1;1.6;1;0.7;1"
+        keyTimes="0;0.3;0.5;0.75;1"
+        dur="2.4s"
+        repeatCount="indefinite"/>
+    </polygon>
+  </g>
+</svg>

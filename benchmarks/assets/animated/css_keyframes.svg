@@ -1,0 +1,117 @@
+<!-- Source: generated for full_svg_flutter benchmarks -->
+<!-- Tests: CSS @keyframes with animation property — opacity, transform, fill color changes on 3+ elements -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="300" height="300">
+  <style>
+    /* Pulsing opacity animation */
+    @keyframes pulse {
+      0%   { opacity: 1; }
+      50%  { opacity: 0.15; }
+      100% { opacity: 1; }
+    }
+
+    /* Spinning rotation */
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+
+    /* Color cycle through hues */
+    @keyframes colorCycle {
+      0%   { fill: #e74c3c; }
+      16%  { fill: #e67e22; }
+      33%  { fill: #f1c40f; }
+      50%  { fill: #2ecc71; }
+      66%  { fill: #3498db; }
+      83%  { fill: #9b59b6; }
+      100% { fill: #e74c3c; }
+    }
+
+    /* Float up/down */
+    @keyframes float {
+      0%   { transform: translateY(0px); }
+      50%  { transform: translateY(-20px); }
+      100% { transform: translateY(0px); }
+    }
+
+    /* Scale breathe */
+    @keyframes breathe {
+      0%   { transform: scale(1);   }
+      50%  { transform: scale(1.4); }
+      100% { transform: scale(1);   }
+    }
+
+    /* Stroke dash draw */
+    @keyframes drawStroke {
+      from { stroke-dashoffset: 300; }
+      to   { stroke-dashoffset: 0; }
+    }
+
+    .pulse-circle {
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .spin-rect {
+      transform-origin: 150px 60px;
+      animation: spin 3s linear infinite;
+    }
+
+    .color-tri {
+      animation: colorCycle 4s linear infinite;
+    }
+
+    .float-star {
+      transform-origin: 240px 200px;
+      animation: float 2.5s ease-in-out infinite;
+    }
+
+    .breathe-hex {
+      transform-origin: 80px 220px;
+      animation: breathe 2s ease-in-out infinite;
+    }
+
+    .draw-ring {
+      stroke-dasharray: 300;
+      stroke-dashoffset: 300;
+      animation: drawStroke 3s ease-out infinite;
+    }
+  </style>
+
+  <rect width="300" height="300" fill="#111827"/>
+
+  <!-- Element 1: Pulsing circle (opacity animation) -->
+  <circle class="pulse-circle" cx="80" cy="80" r="50" fill="#3b82f6"/>
+  <text x="80" y="84" text-anchor="middle" font-family="sans-serif" font-size="10"
+        fill="white">pulse</text>
+
+  <!-- Element 2: Spinning square (transform: rotate) -->
+  <rect class="spin-rect" x="120" y="30" width="60" height="60" rx="6" fill="#f59e0b"/>
+  <text x="150" y="64" text-anchor="middle" font-family="sans-serif" font-size="10"
+        fill="#111">spin</text>
+
+  <!-- Element 3: Color-cycling triangle (fill animation) -->
+  <polygon class="color-tri" points="150,130 195,200 105,200"/>
+  <text x="150" y="192" text-anchor="middle" font-family="sans-serif" font-size="10"
+        fill="white">color</text>
+
+  <!-- Element 4: Floating star (transform: translateY) -->
+  <polygon class="float-star"
+    points="240,170 247,190 268,190 252,202 258,222 240,210 222,222 228,202 212,190 233,190"
+    fill="#a78bfa"/>
+
+  <!-- Element 5: Breathing hexagon (transform: scale) -->
+  <polygon class="breathe-hex"
+    points="80,195 105,180 130,195 130,225 105,240 80,225"
+    fill="#34d399"/>
+  <text x="105" y="212" text-anchor="middle" font-family="sans-serif" font-size="9"
+        fill="#064e3b">breathe</text>
+
+  <!-- Element 6: Animated stroke ring (stroke-dashoffset) -->
+  <circle class="draw-ring"
+    cx="230" cy="255" r="35"
+    fill="none"
+    stroke="#f472b6"
+    stroke-width="5"
+    stroke-linecap="round"/>
+  <text x="230" y="258" text-anchor="middle" font-family="sans-serif" font-size="9"
+        fill="#f9a8d4">draw</text>
+</svg>

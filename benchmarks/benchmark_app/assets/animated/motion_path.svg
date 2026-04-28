@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Placeholder: animateMotion along a path -->
+  <path d="M10 50 C10 20 90 20 90 50 C90 80 10 80 10 50 Z"
+        fill="none" stroke="#bdc3c7" stroke-width="1.5" stroke-dasharray="4 2"/>
+  <circle r="6" fill="#e74c3c">
+    <animateMotion dur="3s" repeatCount="indefinite" rotate="auto">
+      <mpath href="#orbit"/>
+    </animateMotion>
+  </circle>
+  <path id="orbit" d="M10 50 C10 20 90 20 90 50 C90 80 10 80 10 50 Z" fill="none"/>
+</svg>

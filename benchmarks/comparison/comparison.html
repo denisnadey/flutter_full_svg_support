@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>SVG Comparison · Chrome native</title>
+<style>
+  :root {
+    color-scheme: dark;
+  }
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background: #000;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  /*
+   * The SVG is rendered inside an iframe so Chrome treats it as a real
+   * standalone document (full SVG semantics, no host-DOM contamination).
+   * `loading="eager"` so we don't introduce lazy-load lag.
+   */
+  #frame {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    display: block;
+    background: #000;
+  }
+
+  /*
+   * HUD layers — positioned absolute, with `transform: translateZ(0)` to
+   * promote each to its own GPU compositor layer. Updates touch only text
+   * content; no layout / no full-frame repaint side-effects on the iframe.
+   * `pointer-events: none` so they never steal input from the SVG.
+   */
+  .hud {
+    position: fixed;
+    background: rgba(0, 0, 0, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
+    color: #fff;
+    padding: 8px 10px;
+    line-height: 1.45;
+    font-size: 11px;
+    z-index: 9999;
+    user-select: none;
+    pointer-events: none;
+    transform: translateZ(0);
+    will-change: transform;
+  }
+  .hud .label  { color: rgba(255, 255, 255, 0.55); font-size: 10px; letter-spacing: 0.5px; }
+  .hud .fps    { font-weight: 700; font-size: 13px; }
+  .hud .row    { display: flex; gap: 8px; }
+  .hud .row span:first-child { color: rgba(255, 255, 255, 0.55); }
+  .hud.hidden  { display: none; }
+
+  #fps-hud  { top: 12px;    right: 12px; min-width: 168px; }
+  #help-hud { bottom: 12px; right: 12px; color: rgba(255, 255, 255, 0.45); font-size: 10px; }
+
+  /* Title strip — left edge so it can't be confused with the Flutter side. */
+  #title-strip {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    color: rgba(127, 255, 255, 0.85);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-shadow: 0 0 6px rgba(0, 255, 255, 0.5);
+    z-index: 9999;
+    pointer-events: none;
+    user-select: none;
+  }
+</style>
+</head>
+<body>
+  <iframe id="frame"
+          src="../assets/stress/galactic_storm.svg"
+          loading="eager"
+          referrerpolicy="no-referrer"></iframe>
+
+  <div id="title-strip">CHROMIUM · NATIVE BLINK</div>
+
+  <div id="fps-hud" class="hud">
+    <div class="label">CHROME</div>
+    <div class="fps">FPS: <span id="fps">--</span></div>
+    <div class="row"><span>avg frame</span><span id="avg">--</span> ms</div>
+    <div class="row"><span>p99 frame</span><span id="p99">--</span> ms</div>
+    <div class="row"><span>jank/60Hz</span><span id="jank60">--</span></div>
+    <div class="row"><span>jank/120Hz</span><span id="jank120">--</span></div>
+  </div>
+
+  <div id="help-hud" class="hud">[M] toggle HUD &nbsp;·&nbsp; [V] verbose &nbsp;·&nbsp; [R] reload SVG</div>
+
+  <script>
+    /*
+     * FPS instrumentation
+     * -------------------
+     * - rAF callback enqueues a delta — this is the cheapest possible path,
+     *   no allocations beyond pushing a Number into a fixed-cap array.
+     * - We refresh the displayed text every 500 ms via setInterval, NOT on
+     *   every frame, so the layout / paint cost on the parent document is
+     *   negligible.
+     * - The iframe (which actually renders the SVG) is on the same compositor
+     *   thread, so parent-side rAF cadence is a faithful proxy for iframe
+     *   compositor throughput on Chrome's macOS build.
+     */
+    const WIN = 240;            // sliding window — ~4 s at 60Hz, 2 s at 120Hz
+    const deltas = [];
+    let lastT = performance.now();
+    let frameCount = 0;
+    let lastReport = performance.now();
+    let displayedFps = 0;
+
+    function tick() {
+      const now = performance.now();
+      const d = now - lastT;
+      lastT = now;
+      if (d > 0 && d < 500) {     // discard tab-switch outliers
+        deltas.push(d);
+        if (deltas.length > WIN) deltas.shift();
+        frameCount++;
+      }
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+
+    const $ = (id) => document.getElementById(id);
+    let verbose = true;
+
+    function report() {
+      const now = performance.now();
+      const dt = now - lastReport;
+      lastReport = now;
+      displayedFps = (frameCount * 1000) / Math.max(dt, 1);
+      frameCount = 0;
+
+      $('fps').textContent = displayedFps.toFixed(1);
+      const fpsEl = $('fps');
+      const fpsParent = fpsEl.parentElement;
+      fpsParent.style.color =
+        displayedFps >= 55 ? '#7fff7f' :
+        displayedFps >= 40 ? '#ffcf00' : '#ff5050';
+
+      if (verbose && deltas.length) {
+        const sorted = [...deltas].sort((a, b) => a - b);
+        const avg = sorted.reduce((s, x) => s + x, 0) / sorted.length;
+        const p99 = sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.99))];
+        const j60  = deltas.reduce((c, d) => c + (d > 16.67 ? 1 : 0), 0);
+        const j120 = deltas.reduce((c, d) => c + (d > 8.33 ? 1 : 0), 0);
+        $('avg').textContent     = avg.toFixed(1);
+        $('p99').textContent     = p99.toFixed(1);
+        $('jank60').textContent  = j60;
+        $('jank120').textContent = j120;
+      }
+    }
+    setInterval(report, 500);
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key === 'm' || e.key === 'M') {
+        $('fps-hud').classList.toggle('hidden');
+      } else if (e.key === 'v' || e.key === 'V') {
+        verbose = !verbose;
+        // Toggle visibility of all rows except .fps when not verbose.
+        document.querySelectorAll('#fps-hud .row').forEach(r => {
+          r.style.display = verbose ? '' : 'none';
+        });
+      } else if (e.key === 'r' || e.key === 'R') {
+        const f = $('frame');
+        f.src = f.src;  // hard-reload the SVG
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- CSS @keyframes pulse — not supported by flutter_svg -->
+  <style>
+    @keyframes pulse {
+      0%, 100% { r: 20px; opacity: 1; }
+      50%       { r: 38px; opacity: 0.3; }
+    }
+    @keyframes pulse2 {
+      0%, 100% { r: 12px; opacity: 0.8; }
+      50%       { r: 6px;  opacity: 1; }
+    }
+    .ring  { animation: pulse  1.4s ease-in-out infinite; transform-origin: 50px 50px; }
+    .core  { animation: pulse2 1.4s ease-in-out infinite; transform-origin: 50px 50px; }
+  </style>
+  <circle cx="50" cy="50" r="20" fill="none" stroke="#3498db" stroke-width="3" class="ring"/>
+  <circle cx="50" cy="50" r="12" fill="#3498db" class="core"/>
+</svg>

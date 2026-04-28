@@ -1,0 +1,73 @@
+<!-- Source: generated for full_svg_flutter benchmarks -->
+<!-- Tests: stroke-dasharray + animate attributeName="stroke-dashoffset" for a heartbeat drawing effect -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <rect width="200" height="200" fill="#1a0010"/>
+
+  <!-- Heart path (centered at 100,110, size ~120px wide) -->
+  <!-- Total approximate path length: ~400 units -->
+  <path id="heart"
+    d="M100,145
+       C100,145 45,108 45,72
+       C45,52 58,38 75,38
+       C86,38 95,45 100,55
+       C105,45 114,38 125,38
+       C142,38 155,52 155,72
+       C155,108 100,145 100,145 Z"
+    fill="none"
+    stroke="#ff2d6b"
+    stroke-width="4"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-dasharray="400"
+    stroke-dashoffset="400">
+
+    <!-- Animate stroke-dashoffset from 400 (hidden) to 0 (fully drawn) and back -->
+    <animate
+      attributeName="stroke-dashoffset"
+      from="400"
+      to="0"
+      dur="1.2s"
+      begin="0s"
+      repeatCount="indefinite"
+      calcMode="spline"
+      keyTimes="0;0.6;1"
+      keySplines="0.4 0 0.2 1; 0.4 0 0.2 1"
+      values="400;0;400"/>
+  </path>
+
+  <!-- Subtle glow duplicate -->
+  <path
+    d="M100,145
+       C100,145 45,108 45,72
+       C45,52 58,38 75,38
+       C86,38 95,45 100,55
+       C105,45 114,38 125,38
+       C142,38 155,52 155,72
+       C155,108 100,145 100,145 Z"
+    fill="none"
+    stroke="#ff2d6b"
+    stroke-width="10"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-dasharray="400"
+    stroke-dashoffset="400"
+    opacity="0.25">
+    <animate
+      attributeName="stroke-dashoffset"
+      from="400"
+      to="0"
+      dur="1.2s"
+      begin="0s"
+      repeatCount="indefinite"
+      calcMode="spline"
+      keyTimes="0;0.6;1"
+      keySplines="0.4 0 0.2 1; 0.4 0 0.2 1"
+      values="400;0;400"/>
+  </path>
+
+  <!-- Pulsing center dot -->
+  <circle cx="100" cy="145" r="4" fill="#ff2d6b">
+    <animate attributeName="opacity" values="0;1;0" dur="1.2s" repeatCount="indefinite"/>
+    <animate attributeName="r" values="2;6;2" dur="1.2s" repeatCount="indefinite"/>
+  </circle>
+</svg>
