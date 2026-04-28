@@ -211,12 +211,20 @@ class AnimatedSvgPainter extends CustomPainter {
 
   /// Computes the transformation matrix for the viewBox
   Matrix4 _computeViewBoxTransform(ui.Size size) {
-    // Use active viewBox (from <view> element if selected, otherwise root viewBox)
-    final viewBox = document.activeViewBox;
+    // Use active viewBox (from <view> element if selected, otherwise root viewBox).
+    // When no explicit viewBox is present, synthesize one from the document's
+    // declared width/height — per SVG spec the user coordinate system then maps
+    // 1:1 to the viewport defined by those dimensions.
+    var viewBox = document.activeViewBox;
 
     if (viewBox == null) {
-      // Without a viewBox, use 1:1 scale
-      return Matrix4.identity();
+      final docW = document.width;
+      final docH = document.height;
+      if (docW != null && docH != null && docW > 0 && docH > 0) {
+        viewBox = ui.Rect.fromLTWH(0, 0, docW, docH);
+      } else {
+        return Matrix4.identity();
+      }
     }
 
     final layout = resolveSvgViewportLayout(

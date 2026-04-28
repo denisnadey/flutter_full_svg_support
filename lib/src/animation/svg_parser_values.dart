@@ -45,11 +45,15 @@ ui.Rect? _parseViewBox(String? viewBox) {
   return null;
 }
 
-/// Parses a length value (can be a number, px, em, %, etc.)
+/// Parses a length value (can be a number, px, em, etc.)
+/// Returns null for percentage values — those are viewport-relative and cannot
+/// define an absolute coordinate space.
 double? _parseLength(String? length) {
   if (length == null || length.isEmpty) {
     return null;
   }
-
+  if (length.trimRight().endsWith('%')) {
+    return null;
+  }
   return _parseNumber(length);
 }
