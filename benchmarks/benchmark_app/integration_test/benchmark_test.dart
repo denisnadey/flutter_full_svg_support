@@ -718,7 +718,7 @@ void main() {
       dartVersion: Platform.version,
       rendererMode: 'unknown — TODO: detect impeller vs skia at runtime',
       packageVersions: const {
-        'full_svg_flutter': '^1.0.1',
+        'full_svg_flutter': '^1.0.2',
         'flutter_svg': '^2.0.14',
       },
       results: List.unmodifiable(_allResults),

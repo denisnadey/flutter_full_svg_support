@@ -14,3 +14,5 @@ abstract class File {
   /// Reads the entire file contents as a list of bytes synchronously.
   Uint8List readAsBytesSync();
 }
+
+Future<Uint8List?> readFileBytes(Uri uri) async => null;

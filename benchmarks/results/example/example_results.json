@@ -7,7 +7,7 @@
   "renderer_mode": "Impeller",
   "build_mode": "profile",
   "package_versions": {
-    "full_svg_flutter": "1.0.1",
+    "full_svg_flutter": "1.0.2",
     "flutter_svg": "2.0.14",
     "vector_graphics": "1.1.11"
   },

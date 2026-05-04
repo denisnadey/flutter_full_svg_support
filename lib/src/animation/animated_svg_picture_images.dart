@@ -1456,6 +1456,10 @@ extension _AnimatedSvgPictureStateImagesExtension on _AnimatedSvgPictureState {
       }
     }
 
+    if (uri != null && uri.scheme == 'file') {
+      return readFileBytes(uri);
+    }
+
     try {
       final data = await rootBundle.load(href);
       final bytes = data.buffer.asUint8List();

@@ -1,3 +1,11 @@
+## 1.0.2
+
+- Add native `file://` URI support for `<image>` elements: local files load via `dart:io` on all non-web platforms. Web stub returns null gracefully.
+- Improve pub.dev package description and topics for animated SVG discoverability.
+- Rewrite README: clear animated-SVG positioning, comparison table, migration guide, SVGator notes, FAQ, and supported-features matrix.
+- Add `docs/` directory: migration guide, feature compatibility matrix, limitations, and SEO notes.
+- Add marketing article drafts in `docs/marketing/`.
+
 ## 1.0.1
 
 * Fix filter rendering on `<g>` groups: filters applied to `<g>` elements with no opacity or blend-mode were silently discarded. Now correctly opens a `saveLayer` with the filter, improving fidelity for SVGs that animate filter primitives on groups.
