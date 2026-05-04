@@ -430,7 +430,7 @@ Selected test coverage (from `test/`):
 
 ## Performance benchmarks
 
-A reproducible benchmark suite in [`benchmarks/`](benchmarks/) measures frame stability, parse speed, memory usage, and SVG feature compatibility.
+A reproducible benchmark suite in [`benchmark/`](benchmark/) measures frame stability, parse speed, memory usage, and SVG feature compatibility.
 
 Benchmarks cover:
 
@@ -443,19 +443,19 @@ Benchmarks cover:
 
 ```bash
 # macOS — no device needed
-./benchmarks/scripts/run_macos.sh
+./benchmark/scripts/run_macos.sh
 
 # Android
-./benchmarks/scripts/run_android.sh
+./benchmark/scripts/run_android.sh
 
 # Pure Dart parser microbenchmarks (no Flutter required)
-./benchmarks/scripts/run_parser_benchmarks.sh
+./benchmark/scripts/run_parser_benchmarks.sh
 
 # Generate HTML + Markdown report from collected results
-dart run benchmarks/scripts/generate_report.dart
+dart run benchmark/scripts/generate_report.dart
 ```
 
-See [`benchmarks/README.md`](benchmarks/README.md) for full methodology and how to interpret UI-thread vs raster-thread numbers.
+See [`benchmark/README.md`](benchmark/README.md) for full methodology and how to interpret UI-thread vs raster-thread numbers.
 
 ---
 
@@ -504,7 +504,7 @@ Android, iOS, macOS, Windows, Linux, and Web (file:// URIs are web-only disabled
 - [`doc/migration_from_flutter_svg.md`](doc/migration_from_flutter_svg.md) — Step-by-step migration guide
 - [`doc/supported_features.md`](doc/supported_features.md) — Detailed SVG feature compatibility matrix
 - [`doc/limitations.md`](doc/limitations.md) — Known limitations and workarounds
-- [`benchmarks/README.md`](benchmarks/README.md) — Benchmark methodology and results
+- [`benchmark/README.md`](benchmark/README.md) — Benchmark methodology and results
 
 ---
 
