@@ -41,7 +41,7 @@ There are several ways to use animated vector graphics in Flutter: static SVG pa
 ```yaml
 # pubspec.yaml
 dependencies:
-  full_svg_flutter: ^1.0.2
+  full_svg_flutter: ^1.0.3
 ```
 
 ```dart
@@ -307,7 +307,7 @@ Known limitations:
 
 ```yaml
 dependencies:
-  full_svg_flutter: ^1.0.2
+  full_svg_flutter: ^1.0.3
 ```
 
 ```bash

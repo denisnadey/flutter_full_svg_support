@@ -162,12 +162,19 @@ extension AnimatedSvgPainterShapesImageExtension on AnimatedSvgPainter {
       return;
     }
 
-    final width =
-        _resolveImageLength(node, 'width', viewportSize.width) ??
-        image.width.toDouble();
-    final height =
-        _resolveImageLength(node, 'height', viewportSize.height) ??
-        image.height.toDouble();
+    final rawWidth = _resolveImageLength(node, 'width', viewportSize.width);
+    final rawHeight = _resolveImageLength(node, 'height', viewportSize.height);
+    // Per SVG spec: if only one dimension is given, compute the other to
+    // preserve aspect ratio. Falling back to raw pixel size causes the
+    // viewport to mismatch and resolveSvgViewportLayout to shift the image.
+    final width = rawWidth ??
+        (rawHeight != null && image.height > 0
+            ? rawHeight * image.width / image.height
+            : image.width.toDouble());
+    final height = rawHeight ??
+        (rawWidth != null && image.width > 0
+            ? rawWidth * image.height / image.width
+            : image.height.toDouble());
 
     final activePass = _currentFilterPass;
     if (filterId != null) {

@@ -4,7 +4,7 @@ repository: https://github.com/denisnadey/flutter_full_svg_support
 homepage: https://github.com/denisnadey/flutter_full_svg_support
 issue_tracker: https://github.com/denisnadey/flutter_full_svg_support/issues
 documentation: https://github.com/denisnadey/flutter_full_svg_support/tree/main/doc
-version: 1.0.2
+version: 1.0.3
 
 environment:
   sdk: ^3.8.0

@@ -44,6 +44,7 @@ class AnimatedSvgViewer extends StatelessWidget {
           playbackRate: state.playbackRate,
           autoPlay: state.autoPlay,
           initialTime: state.initialTime,
+          clipToViewBox: state.clipToViewBox,
         ),
       ),
     );

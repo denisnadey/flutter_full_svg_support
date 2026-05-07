@@ -25,6 +25,8 @@ class ParametersPanel extends StatelessWidget {
             const Divider(height: 32),
             _buildPlaybackControls(),
             const Divider(height: 32),
+            _buildRenderingControls(),
+            const Divider(height: 32),
             _buildLayoutControls(),
             const Divider(height: 32),
             _buildBackgroundControl(),
@@ -91,6 +93,25 @@ class ParametersPanel extends StatelessWidget {
           max: 5.0,
           divisions: 49,
           onChanged: state.setPlaybackRate,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRenderingControls() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Rendering', style: TextStyle(fontWeight: FontWeight.bold)),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Clip to ViewBox'),
+          subtitle: const Text(
+            'Hides content outside the SVG viewport (matches browser)',
+            style: TextStyle(fontSize: 11),
+          ),
+          value: state.clipToViewBox,
+          onChanged: state.setClipToViewBox,
         ),
       ],
     );

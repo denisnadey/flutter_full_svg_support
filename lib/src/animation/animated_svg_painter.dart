@@ -163,18 +163,6 @@ class AnimatedSvgPainter extends CustomPainter {
         ? null
         : CssCascadeResolver(cssRules: _currentDocumentCssRules!);
 
-    // Apply background:
-    // 1) explicit widget parameter backgroundColor
-    // 2) fallback to root SVG style/background-color
-    final resolvedBackgroundColor =
-        backgroundColor ?? _resolveDocumentBackgroundColor();
-    if (resolvedBackgroundColor != null) {
-      canvas.drawRect(
-        ui.Rect.fromLTWH(0, 0, size.width, size.height),
-        ui.Paint()..color = resolvedBackgroundColor,
-      );
-    }
-
     // Compute the viewBox → size transform
     final transform = _computeViewBoxTransform(size);
 
@@ -185,18 +173,36 @@ class AnimatedSvgPainter extends CustomPainter {
     // coordinate space so that content outside it (e.g. coins animated
     // beyond the card boundary) is hidden, matching browser direct-URL
     // rendering where overflow:hidden clips to the SVG viewport.
-    if (clipToViewBox) {
-      final viewBox = document.activeViewBox;
-      if (viewBox != null) {
-        canvas.clipRect(
-          ui.Rect.fromLTWH(
-            viewBox.left,
-            viewBox.top,
-            viewBox.width,
-            viewBox.height,
-          ),
-        );
-      }
+    final viewBox = document.activeViewBox;
+    if (clipToViewBox && viewBox != null) {
+      canvas.clipRect(
+        ui.Rect.fromLTWH(
+          viewBox.left,
+          viewBox.top,
+          viewBox.width,
+          viewBox.height,
+        ),
+      );
+    }
+
+    // Apply background inside the transformed (and possibly clipped) context:
+    // 1) explicit widget parameter backgroundColor
+    // 2) fallback to root SVG style/background-color
+    // Drawing in SVG coordinate space ensures the background respects both
+    // the viewBox transform and the clipToViewBox clip, matching browser
+    // behaviour where background-color is bounded by the SVG viewport.
+    final resolvedBackgroundColor =
+        backgroundColor ?? _resolveDocumentBackgroundColor();
+    if (resolvedBackgroundColor != null) {
+      final bgRect = viewBox != null
+          ? ui.Rect.fromLTWH(
+              viewBox.left,
+              viewBox.top,
+              viewBox.width,
+              viewBox.height,
+            )
+          : ui.Rect.fromLTWH(0, 0, size.width, size.height);
+      canvas.drawRect(bgRect, ui.Paint()..color = resolvedBackgroundColor);
     }
 
     // Paint the root node

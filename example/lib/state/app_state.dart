@@ -12,6 +12,9 @@ class AppState extends ChangeNotifier {
   bool _autoPlay = true;
   Duration? _initialTime;
 
+  // Rendering parameters
+  bool _clipToViewBox = true;
+
   // UI parameters
   bool _showFPS = false;
   bool _showParameters = true;
@@ -26,6 +29,7 @@ class AppState extends ChangeNotifier {
   double get playbackRate => _playbackRate;
   bool get autoPlay => _autoPlay;
   Duration? get initialTime => _initialTime;
+  bool get clipToViewBox => _clipToViewBox;
   bool get showFPS => _showFPS;
   bool get showParameters => _showParameters;
   int get selectedExampleIndex => _selectedExampleIndex;
@@ -87,6 +91,13 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  void setClipToViewBox(bool value) {
+    if (_clipToViewBox != value) {
+      _clipToViewBox = value;
+      notifyListeners();
+    }
+  }
+
   void toggleFPS() {
     _showFPS = !_showFPS;
     notifyListeners();
@@ -113,6 +124,7 @@ class AppState extends ChangeNotifier {
     _playbackRate = 1.0;
     _autoPlay = true;
     _initialTime = null;
+    _clipToViewBox = true;
     notifyListeners();
   }
 }

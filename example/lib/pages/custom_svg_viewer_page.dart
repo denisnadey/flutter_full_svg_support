@@ -52,8 +52,10 @@ class _CustomSvgViewerPageState extends State<CustomSvgViewerPage>
   bool _isLoadingUrl = false;
   bool _autoPlay = true;
   bool _traceFrameTicks = false;
+  bool _clipToViewBox = true;
   double _playbackRate = 1.0;
   double _svgSize = 320;
+  double _svgAspectRatio = 1.0;
   Set<SvgTraceLevel> _enabledLogLevels = <SvgTraceLevel>{
     ...SvgTraceLevel.values,
   };
@@ -430,6 +432,9 @@ class _CustomSvgViewerPageState extends State<CustomSvgViewerPage>
       _report = report;
       _traceStore.clearRuntimeIssues();
       _currentSvg = report.canRender ? source : null;
+      if (report.canRender) {
+        _svgAspectRatio = _parseSvgAspectRatio(source);
+      }
     });
 
     if (report.canRender) {
@@ -1000,6 +1005,20 @@ class _CustomSvgViewerPageState extends State<CustomSvgViewerPage>
                     ),
                   ],
                 ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('Clip to ViewBox'),
+                    Switch(
+                      value: _clipToViewBox,
+                      onChanged: (value) {
+                        setState(() {
+                          _clipToViewBox = value;
+                        });
+                      },
+                    ),
+                  ],
+                ),
               ],
             ),
             const SizedBox(height: 6),
@@ -1060,9 +1079,10 @@ class _CustomSvgViewerPageState extends State<CustomSvgViewerPage>
                           _currentSvg!,
                           key: ValueKey('playground-run-$_runId'),
                           width: _svgSize,
-                          height: _svgSize,
+                          height: _svgSize * _svgAspectRatio,
                           autoPlay: _autoPlay,
                           playbackRate: _playbackRate,
+                          clipToViewBox: _clipToViewBox,
                           controller: _animationController,
                           onTrace: _handleTraceEvent,
                           traceFrameTicks: _traceFrameTicks,
@@ -1541,6 +1561,23 @@ class _CustomSvgViewerPageState extends State<CustomSvgViewerPage>
         ),
       ),
     );
+  }
+
+  double _parseSvgAspectRatio(String source) {
+    final match = RegExp(r'viewBox\s*=\s*"([^"]*)"', caseSensitive: false)
+            .firstMatch(source) ??
+        RegExp(r"viewBox\s*=\s*'([^']*)'", caseSensitive: false)
+            .firstMatch(source);
+    if (match == null) return 1.0;
+    final numbers = RegExp(r'[\d.eE+\-]+')
+        .allMatches(match.group(1)!)
+        .map((m) => double.tryParse(m.group(0)!))
+        .whereType<double>()
+        .toList();
+    if (numbers.length >= 4 && numbers[2] > 0) {
+      return numbers[3] / numbers[2];
+    }
+    return 1.0;
   }
 
   Map<String, List<PlaygroundIssue>> _groupIssues(
