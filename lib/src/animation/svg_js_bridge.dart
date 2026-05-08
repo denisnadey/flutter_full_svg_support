@@ -535,6 +535,18 @@ class SvgJsBridge {
     return tl;
   }
 
+  // SVGAnimatedString — baseVal/animVal wrapper around a single attribute
+  function _makeSVGAnimatedString(getFn, setFn) {
+    var as = {};
+    Object.defineProperty(as, 'baseVal', {
+      get: function() { return getFn() || ''; },
+      set: function(v) { setFn(String(v)); }
+    });
+    Object.defineProperty(as, 'animVal', { get: function() { return getFn() || ''; } });
+    as.toString = function() { return getFn() || ''; };
+    return as;
+  }
+
   // Virtual element (created by createElement / createElementNS)
   function _makeVirtEl(tag) {
     var tagLower = tag.toLowerCase();
@@ -555,6 +567,23 @@ class SvgJsBridge {
       return v !== undefined ? v : null;
     };
     el.removeAttribute = function(n) { delete _virtAttrs[vid].attrs[n]; };
+    el.hasAttribute = function(n) {
+      return Object.prototype.hasOwnProperty.call(_virtAttrs[vid].attrs, n);
+    };
+    el.hasAttributeNS = function(ns, n) { return el.hasAttribute(n); };
+    el.getAttributeNS = function(ns, n) { return el.getAttribute(n); };
+    Object.defineProperty(el, 'href', { get: function() {
+      return _makeSVGAnimatedString(
+        function() { return _virtAttrs[vid].attrs['href'] || _virtAttrs[vid].attrs['xlink:href'] || ''; },
+        function(v) { _virtAttrs[vid].attrs['href'] = v; }
+      );
+    }, configurable: true });
+    Object.defineProperty(el, 'className', { get: function() {
+      return _makeSVGAnimatedString(
+        function() { return _virtAttrs[vid].attrs['class'] || ''; },
+        function(v) { _virtAttrs[vid].attrs['class'] = v; }
+      );
+    }, configurable: true });
     el.addEventListener = function(type, fn) {};
     el.removeEventListener = function() {};
     el.dispatchEvent = function(evt) { return true; };
@@ -667,6 +696,26 @@ class SvgJsBridge {
     el.insertAdjacentElement = function(pos, node) { return node; };
     el.focus = function() {}; el.blur = function() {};
     el.scrollIntoView = function() {};
+    el.getAttributeNode = function(n) {
+      var v = el.getAttribute(n); return v !== null ? {name: n, value: v, specified: true} : null;
+    };
+    el.setAttributeNode = function(node) { if (node) el.setAttribute(node.name, node.value); };
+    el.removeAttributeNode = function(node) { if (node) el.removeAttribute(node.name); };
+    Object.defineProperty(el, 'namespaceURI', { get: function() { return 'http://www.w3.org/2000/svg'; } });
+    Object.defineProperty(el, 'isConnected', { get: function() { return false; } });
+    el.getRootNode = function() { return globalThis.document; };
+    el.normalize = function() {};
+    el.isEqualNode = function(o) { return false; };
+    el.isSameNode = function(o) { return el === o; };
+    Object.defineProperty(el, 'offsetWidth',  { get: function() { return 0; } });
+    Object.defineProperty(el, 'offsetHeight', { get: function() { return 0; } });
+    Object.defineProperty(el, 'offsetTop',    { get: function() { return 0; } });
+    Object.defineProperty(el, 'offsetLeft',   { get: function() { return 0; } });
+    Object.defineProperty(el, 'clientWidth',  { get: function() { return 0; } });
+    Object.defineProperty(el, 'clientHeight', { get: function() { return 0; } });
+    Object.defineProperty(el, 'scrollWidth',  { get: function() { return 0; } });
+    Object.defineProperty(el, 'scrollHeight', { get: function() { return 0; } });
+    el.scrollTop = 0; el.scrollLeft = 0;
     return el;
   }
 
@@ -679,7 +728,13 @@ class SvgJsBridge {
     if (_elCache[id]) return _elCache[id];
     var el = {};
     _elCache[id] = el;
-    Object.defineProperty(el, 'id', { get: function() { return id; } });
+    Object.defineProperty(el, 'id', {
+      get: function() { return id; },
+      set: function(v) {
+        try { sendMessage('setAttribute', JSON.stringify({id: id, name: 'id', value: String(v)})); } catch(e) {}
+      },
+      configurable: true
+    });
     Object.defineProperty(el, 'tagName', { get: function() {
       try { return JSON.parse(sendMessage('getTagName', JSON.stringify({id: id}))); } catch(e) { return ''; }
     }});
@@ -729,6 +784,24 @@ class SvgJsBridge {
     el.removeAttribute = function(n) {
       sendMessage('setAttribute', JSON.stringify({id: id, name: n, value: ''}));
     };
+    el.hasAttribute = function(n) {
+      try { return JSON.parse(sendMessage('getAttribute', JSON.stringify({id: id, name: n}))) !== null; }
+      catch(e) { return false; }
+    };
+    el.hasAttributeNS = function(ns, n) { return el.hasAttribute(n); };
+    el.getAttributeNS = function(ns, n) { return el.getAttribute(n); };
+    Object.defineProperty(el, 'href', { get: function() {
+      return _makeSVGAnimatedString(
+        function() { return el.getAttribute('href') || el.getAttribute('xlink:href') || ''; },
+        function(v) { el.setAttribute('href', v); }
+      );
+    }, configurable: true });
+    Object.defineProperty(el, 'className', { get: function() {
+      return _makeSVGAnimatedString(
+        function() { return el.getAttribute('class') || ''; },
+        function(v) { el.setAttribute('class', v); }
+      );
+    }, configurable: true });
     el.addEventListener = function(type, fn) {
       var key = 'el_' + (++_seq);
       _listeners[key] = fn;
@@ -1011,6 +1084,38 @@ class SvgJsBridge {
       };
       return { baseVal: bv, animVal: bv };
     }, configurable: true });
+    el.getAttributeNode = function(n) {
+      var v = el.getAttribute(n); return v !== null ? {name: n, value: v, specified: true} : null;
+    };
+    el.setAttributeNode = function(node) { if (node) el.setAttribute(node.name, node.value); };
+    el.removeAttributeNode = function(node) { if (node) el.removeAttribute(node.name); };
+    Object.defineProperty(el, 'namespaceURI', { get: function() { return 'http://www.w3.org/2000/svg'; }, configurable: true });
+    Object.defineProperty(el, 'isConnected', { get: function() { return true; }, configurable: true });
+    el.getRootNode = function() { return globalThis.document; };
+    el.normalize = function() {};
+    el.isEqualNode = function(o) { return el === o; };
+    el.isSameNode = function(o) { return el === o; };
+    Object.defineProperty(el, 'offsetWidth',  { get: function() {
+      try { return JSON.parse(sendMessage('getBoundingClientRect', JSON.stringify({id: id}))).width || 0; } catch(e) { return 0; }
+    }, configurable: true });
+    Object.defineProperty(el, 'offsetHeight', { get: function() {
+      try { return JSON.parse(sendMessage('getBoundingClientRect', JSON.stringify({id: id}))).height || 0; } catch(e) { return 0; }
+    }, configurable: true });
+    Object.defineProperty(el, 'offsetTop',    { get: function() {
+      try { return JSON.parse(sendMessage('getBoundingClientRect', JSON.stringify({id: id}))).top || 0; } catch(e) { return 0; }
+    }, configurable: true });
+    Object.defineProperty(el, 'offsetLeft',   { get: function() {
+      try { return JSON.parse(sendMessage('getBoundingClientRect', JSON.stringify({id: id}))).left || 0; } catch(e) { return 0; }
+    }, configurable: true });
+    Object.defineProperty(el, 'clientWidth',  { get: function() {
+      try { return JSON.parse(sendMessage('getBoundingClientRect', JSON.stringify({id: id}))).width || 0; } catch(e) { return 0; }
+    }, configurable: true });
+    Object.defineProperty(el, 'clientHeight', { get: function() {
+      try { return JSON.parse(sendMessage('getBoundingClientRect', JSON.stringify({id: id}))).height || 0; } catch(e) { return 0; }
+    }, configurable: true });
+    Object.defineProperty(el, 'scrollWidth',  { get: function() { return el.clientWidth; }, configurable: true });
+    Object.defineProperty(el, 'scrollHeight', { get: function() { return el.clientHeight; }, configurable: true });
+    el.scrollTop = 0; el.scrollLeft = 0;
     return el;
   }
 
@@ -1284,6 +1389,165 @@ class SvgJsBridge {
     escape: function(s) { return String(s).replace(/[^a-zA-Z0-9_-]/g, '\\$&'); }
   };
   globalThis.matchMedia = globalThis.window.matchMedia;
+
+  // SVGLength type constants
+  globalThis.SVGLength = {
+    SVG_LENGTHTYPE_UNKNOWN:    0,
+    SVG_LENGTHTYPE_NUMBER:     1,
+    SVG_LENGTHTYPE_PERCENTAGE: 2,
+    SVG_LENGTHTYPE_EMS:        3,
+    SVG_LENGTHTYPE_EXS:        4,
+    SVG_LENGTHTYPE_PX:         5,
+    SVG_LENGTHTYPE_CM:         6,
+    SVG_LENGTHTYPE_MM:         7,
+    SVG_LENGTHTYPE_IN:         8,
+    SVG_LENGTHTYPE_PT:         9,
+    SVG_LENGTHTYPE_PC:         10
+  };
+  globalThis.SVGAngle = {
+    SVG_ANGLETYPE_UNKNOWN:    0,
+    SVG_ANGLETYPE_UNSPECIFIED: 1,
+    SVG_ANGLETYPE_DEG:        2,
+    SVG_ANGLETYPE_RAD:        3,
+    SVG_ANGLETYPE_GRAD:       4
+  };
+
+  // queueMicrotask
+  if (typeof queueMicrotask !== 'function') {
+    globalThis.queueMicrotask = typeof Promise !== 'undefined'
+      ? function(fn) { Promise.resolve().then(fn).catch(function(e) { setTimeout(function(){ throw e; }, 0); }); }
+      : function(fn) { setTimeout(fn, 0); };
+  }
+  globalThis.window.queueMicrotask = globalThis.queueMicrotask;
+
+  // window error handlers
+  globalThis.window.onerror = null;
+  globalThis.window.onunhandledrejection = null;
+  globalThis.window.onload = null;
+  globalThis.window.onDOMContentLoaded = null;
+
+  // window open/close/print
+  globalThis.window.open  = function() { return null; };
+  globalThis.window.close = function() {};
+  globalThis.window.print = function() {};
+  globalThis.window.stop  = function() {};
+  globalThis.window.focus = function() {};
+  globalThis.window.blur  = function() {};
+  globalThis.window.scroll   = function() {};
+  globalThis.window.scrollTo = function() {};
+  globalThis.window.scrollBy = function() {};
+  globalThis.window.getSelection = function() { return null; };
+  globalThis.window.screen = { width: 1280, height: 800, availWidth: 1280, availHeight: 800,
+    colorDepth: 24, pixelDepth: 24, orientation: {type: 'landscape-primary', angle: 0} };
+
+  // structuredClone — deep-copy via JSON round-trip
+  if (typeof structuredClone !== 'function') {
+    globalThis.structuredClone = function(obj) {
+      try { return JSON.parse(JSON.stringify(obj)); } catch(e) { return obj; }
+    };
+  }
+
+  // crypto.getRandomValues
+  if (typeof crypto === 'undefined' || !crypto.getRandomValues) {
+    var _seed = Date.now();
+    globalThis.crypto = {
+      getRandomValues: function(arr) {
+        for (var i = 0; i < arr.length; i++) {
+          _seed = (_seed * 1664525 + 1013904223) & 0xFFFFFFFF;
+          arr[i] = _seed & 0xFF;
+        }
+        return arr;
+      },
+      randomUUID: function() {
+        var b = new Uint8Array(16);
+        crypto.getRandomValues(b);
+        b[6] = (b[6] & 0x0f) | 0x40;
+        b[8] = (b[8] & 0x3f) | 0x80;
+        var h = Array.from(b).map(function(x){return x.toString(16).padStart(2,'0');}).join('');
+        return h.slice(0,8)+'-'+h.slice(8,12)+'-'+h.slice(12,16)+'-'+h.slice(16,20)+'-'+h.slice(20);
+      }
+    };
+    globalThis.window.crypto = globalThis.crypto;
+  }
+
+  // TextEncoder / TextDecoder — UTF-8 stubs
+  if (typeof TextEncoder === 'undefined') {
+    globalThis.TextEncoder = function() {};
+    globalThis.TextEncoder.prototype.encode = function(str) {
+      var bytes = [], s = String(str);
+      for (var i = 0; i < s.length; i++) {
+        var c = s.charCodeAt(i);
+        if (c < 0x80) { bytes.push(c); }
+        else if (c < 0x800) { bytes.push(0xC0|(c>>6)); bytes.push(0x80|(c&0x3F)); }
+        else { bytes.push(0xE0|(c>>12)); bytes.push(0x80|((c>>6)&0x3F)); bytes.push(0x80|(c&0x3F)); }
+      }
+      return new Uint8Array(bytes);
+    };
+    globalThis.TextDecoder = function(enc) { this.encoding = enc || 'utf-8'; };
+    globalThis.TextDecoder.prototype.decode = function(arr) {
+      try {
+        var bytes = Array.from ? Array.from(arr) : Array.prototype.slice.call(arr);
+        var s = '';
+        for (var i = 0; i < bytes.length; i++) {
+          var b = bytes[i];
+          if (b < 0x80) { s += String.fromCharCode(b); }
+          else if ((b & 0xE0) === 0xC0) { s += String.fromCharCode(((b&0x1F)<<6)|(bytes[++i]&0x3F)); }
+          else { s += String.fromCharCode(((b&0x0F)<<12)|((bytes[++i]&0x3F)<<6)|(bytes[++i]&0x3F)); }
+        }
+        return s;
+      } catch(e) { return ''; }
+    };
+  }
+
+  // Blob / File stubs
+  if (typeof Blob === 'undefined') {
+    globalThis.Blob = function(parts, opts) {
+      var content = (parts || []).map(String).join('');
+      this.size = content.length;
+      this.type = (opts && opts.type) || '';
+      this._content = content;
+      this.text = function() { return Promise.resolve ? Promise.resolve(content) : {then: function(f){f(content);return this;}}; };
+      this.arrayBuffer = function() { return Promise.resolve ? Promise.resolve(new ArrayBuffer(0)) : {then: function(f){f(new ArrayBuffer(0));return this;}}; };
+      this.slice = function(s, e, t) { return new Blob([content.slice(s,e)], {type: t||this.type}); };
+    };
+    globalThis.URL.createObjectURL = function() { return 'blob:'; };
+    globalThis.URL.revokeObjectURL = function() {};
+  }
+
+  // AbortController / AbortSignal
+  if (typeof AbortController === 'undefined') {
+    globalThis.AbortSignal = function() { this.aborted = false; this.reason = undefined; this._listeners = []; };
+    globalThis.AbortSignal.prototype.addEventListener = function(t, fn) { if (t==='abort') this._listeners.push(fn); };
+    globalThis.AbortSignal.prototype.removeEventListener = function(t, fn) {};
+    globalThis.AbortSignal.abort = function(r) { var s = new AbortSignal(); s.aborted = true; s.reason = r; return s; };
+    globalThis.AbortController = function() {
+      var self = this;
+      this.signal = new AbortSignal();
+      this.abort = function(r) {
+        self.signal.aborted = true; self.signal.reason = r;
+        self.signal._listeners.forEach(function(fn){ try{fn();}catch(e){} });
+      };
+    };
+  }
+
+  // WeakRef stub
+  if (typeof WeakRef === 'undefined') {
+    globalThis.WeakRef = function(target) { this._t = target; };
+    globalThis.WeakRef.prototype.deref = function() { return this._t; };
+    globalThis.FinalizationRegistry = function(cb) {};
+    globalThis.FinalizationRegistry.prototype.register = function() {};
+    globalThis.FinalizationRegistry.prototype.unregister = function() {};
+  }
+
+  // document.write/writeln — inject CSS if content looks like a style block
+  globalThis.document.write = function(html) {
+    if (String(html).indexOf('<style') >= 0 || String(html).indexOf('{') >= 0) {
+      try { sendMessage('injectCSS', JSON.stringify({html: String(html)})); } catch(e) {}
+    }
+  };
+  globalThis.document.writeln = globalThis.document.write;
+  globalThis.document.open  = function() {};
+  globalThis.document.close = function() {};
 
   // fetch — stub; real HTTP goes through Dart loadExternalScript handler
   if (typeof Promise !== 'undefined') {
