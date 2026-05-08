@@ -71,6 +71,16 @@ class SvgJsBridge {
       return jsonEncode(value?.toString());
     });
 
+    _runtime.onMessage('getAttributeNames', (dynamic args) {
+      final id = (args as Map)['id'] as String;
+      final node = _document.getElementById(id);
+      if (node == null) return jsonEncode(<String>[]);
+      final names = node.attributes.keys.toList();
+      if (node.id != null && !names.contains('id')) names.add('id');
+      if (node.className != null && !names.contains('class')) names.add('class');
+      return jsonEncode(names);
+    });
+
     _runtime.onMessage('setAttribute', (dynamic args) {
       final map = args as Map;
       final id = map['id'] as String;
@@ -561,7 +571,9 @@ class SvgJsBridge {
     };
     el.setAttributeNS = function(ns, n, v) {
       _virtAttrs[vid].attrs[n] = String(v);
+      if (ns && ns.indexOf('xlink') >= 0) _virtAttrs[vid].attrs['xlink:' + n] = String(v);
     };
+    el.getAttributeNames = function() { return Object.keys(_virtAttrs[vid].attrs); };
     el.getAttribute = function(n) {
       var v = _virtAttrs[vid].attrs[n];
       return v !== undefined ? v : null;
@@ -780,6 +792,12 @@ class SvgJsBridge {
     };
     el.setAttributeNS = function(ns, n, v) {
       sendMessage('setAttribute', JSON.stringify({id: id, name: n, value: String(v)}));
+      if (ns && ns.indexOf('xlink') >= 0) {
+        sendMessage('setAttribute', JSON.stringify({id: id, name: 'xlink:' + n, value: String(v)}));
+      }
+    };
+    el.getAttributeNames = function() {
+      try { return JSON.parse(sendMessage('getAttributeNames', JSON.stringify({id: id}))); } catch(e) { return []; }
     };
     el.removeAttribute = function(n) {
       sendMessage('setAttribute', JSON.stringify({id: id, name: n, value: ''}));
@@ -1020,8 +1038,8 @@ class SvgJsBridge {
     Object.defineProperty(el, 'ownerDocument', { get: function() { return globalThis.document; } });
     el.prepend = function(child) { _handleInsert(el, child); return child; };
     el.append  = function(child) { _handleInsert(el, child); return child; };
-    el.before  = function(child) { return child; };
-    el.after   = function(child) { return child; };
+    el.before  = function(child) { var p = el.parentNode; if (p) _handleInsert(p, child); return child; };
+    el.after   = function(child) { var p = el.parentNode; if (p) _handleInsert(p, child); return child; };
     el.remove  = function() {};
     el.cloneNode = function(deep) { return _makeVirtEl(el.tagName || 'g'); };
     Object.defineProperty(el, 'transform', { get: function() {
@@ -1116,6 +1134,25 @@ class SvgJsBridge {
     Object.defineProperty(el, 'scrollWidth',  { get: function() { return el.clientWidth; }, configurable: true });
     Object.defineProperty(el, 'scrollHeight', { get: function() { return el.clientHeight; }, configurable: true });
     el.scrollTop = 0; el.scrollLeft = 0;
+    Object.defineProperty(el, 'outerHTML', { get: function() {
+      try {
+        var tag = el.tagName || 'g';
+        var names = el.getAttributeNames();
+        var attrs = names.map(function(n) { return n + '="' + (el.getAttribute(n)||'').replace(/"/g,'&quot;') + '"'; }).join(' ');
+        return '<' + tag + (attrs ? ' ' + attrs : '') + '/>';
+      } catch(e) { return ''; }
+    }, configurable: true });
+    Object.defineProperty(el, 'title', {
+      get: function() { return el.getAttribute('title') || ''; },
+      set: function(v) { el.setAttribute('title', v); },
+      configurable: true
+    });
+    Object.defineProperty(el, 'hidden', {
+      get: function() { return el.getAttribute('visibility') === 'hidden' || el.getAttribute('display') === 'none'; },
+      set: function(v) { el.setAttribute('visibility', v ? 'hidden' : 'visible'); },
+      configurable: true
+    });
+    el.tabIndex = -1;
     return el;
   }
 
@@ -1191,7 +1228,62 @@ class SvgJsBridge {
     get head() { return document.documentElement; },
     get body() { return document.documentElement; },
     get readyState() { return 'complete'; },
-    get defaultView() { return globalThis.window; }
+    get defaultView() { return globalThis.window; },
+    get fonts() {
+      var _r = typeof Promise !== 'undefined' ? Promise.resolve() :
+        {then: function(f){f&&f();return this;}, catch: function(){return this;}};
+      return {
+        ready: _r, status: 'loaded',
+        check: function() { return true; },
+        load: function() { return _r; },
+        forEach: function() {}, size: 0, has: function() { return false; },
+        addEventListener: function() {}, removeEventListener: function() {}
+      };
+    },
+    getElementsByClassName: function(cls) {
+      try {
+        var ids = JSON.parse(sendMessage('querySelectorAll', JSON.stringify({id: null, selector: '.' + cls.trim().split(/\s+/).join('.')})));
+        return (ids || []).map(function(i) { return _makeEl(i); });
+      } catch(e) { return []; }
+    },
+    getElementsByTagNameNS: function(ns, tag) { return document.getElementsByTagName(tag); },
+    createAttribute: function(name) { return {name: name, value: '', specified: true}; },
+    adoptNode: function(node) { return node; },
+    importNode: function(node, deep) { return node; },
+    get styleSheets() {
+      var _rules = [];
+      return [{
+        cssRules: _rules,
+        insertRule: function(rule, idx) {
+          _rules.splice(idx !== undefined ? idx : _rules.length, 0, {cssText: rule});
+          try {
+            var m = rule.match(/^([^{]+)\{([^}]*)\}/);
+            if (m) {
+              var sel = m[1].trim(), decl = m[2];
+              var ids = JSON.parse(sendMessage('querySelectorAll', JSON.stringify({id: null, selector: sel})));
+              (ids || []).forEach(function(id) {
+                decl.split(';').forEach(function(d) {
+                  var kv = d.trim().split(':');
+                  if (kv.length >= 2) sendMessage('setStyle', JSON.stringify({id: id, name: kv[0].trim(), value: kv.slice(1).join(':').trim()}));
+                });
+              });
+            }
+          } catch(e) {}
+          return idx !== undefined ? idx : _rules.length - 1;
+        },
+        deleteRule: function(idx) { _rules.splice(idx, 1); }
+      }];
+    },
+    get timeline() {
+      return { currentTime: typeof performance !== 'undefined' ? performance.now() : Date.now(), duration: Infinity };
+    },
+    get implementation() {
+      return {
+        createHTMLDocument: function(title) { return document; },
+        hasFeature: function() { return true; }
+      };
+    },
+    write: function() {}, writeln: function() {}, open: function() {}, close: function() {}
   };
 
   // window
