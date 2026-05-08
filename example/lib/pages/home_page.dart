@@ -7,7 +7,10 @@ import 'examples_page.dart';
 import 'custom_svg_viewer_page.dart';
 import 'controller_demo_page.dart';
 import 'astronaut_helmet_page.dart';
+import 'js_demo_page.dart';
+import 'svgator_demo_page.dart';
 import 'w3c_playground_page.dart';
+import 'gallery_page.dart';
 
 /// The SVG to display on home page
 const String svgString = '''
@@ -237,6 +240,19 @@ class HomePage extends StatelessWidget {
           children: [
             _buildNavigationCard(
               context,
+              title: 'SVGator Gallery',
+              subtitle: '126 live SVGator animations',
+              icon: Icons.auto_awesome_rounded,
+              color: const Color(0xFF7C6FFF),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const GalleryPage(),
+                ),
+              ),
+            ),
+            _buildNavigationCard(
+              context,
               title: 'Animation Gallery',
               subtitle: 'Browse all SMIL animations',
               icon: Icons.collections_outlined,
@@ -322,6 +338,32 @@ class HomePage extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder: (context) => const ControllerDemoPage(),
+                ),
+              ),
+            ),
+            _buildNavigationCard(
+              context,
+              title: 'JS Bridge',
+              subtitle: 'Interactive SVG with <script>',
+              icon: Icons.javascript_rounded,
+              color: Colors.amber.shade700,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const JsDemoPage(),
+                ),
+              ),
+            ),
+            _buildNavigationCard(
+              context,
+              title: 'SVGator Animation',
+              subtitle: 'Dog character via SVGator player',
+              icon: Icons.pets_rounded,
+              color: Colors.deepPurple,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const SvgatorDemoPage(),
                 ),
               ),
             ),

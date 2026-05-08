@@ -20,6 +20,7 @@ import 'smil/smil_parser.dart';
 import 'smil/smil_timeline.dart';
 import 'svg_dom.dart';
 import 'svg_filters.dart';
+import 'svg_js_bridge.dart';
 import 'svg_parser.dart';
 import 'svg_transform.dart';
 import 'transform_3d.dart';
@@ -598,6 +599,7 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
     with TickerProviderStateMixin {
   late SvgDocument _document;
   SvgTimeline? _timeline;
+  SvgJsBridge? _jsBridge;
   AnimationController? _controller;
   bool _hasAnimations = false;
   bool _isReversed = false;

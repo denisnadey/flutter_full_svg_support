@@ -159,8 +159,8 @@ class SvgNode {
   /// Element ID (id attribute)
   final String? id;
 
-  /// Element class (class attribute)
-  final String? className;
+  /// Element class (class attribute) — mutable so JS can update it.
+  String? className;
 
   /// Element attributes
   final Map<String, AnimatableSvgAttribute> attributes;
@@ -451,6 +451,7 @@ class SvgDocument {
     this.cssKeyframes,
     this.cssSelectorRules,
     this.cssFontFaceRules,
+    this.scripts,
   }) : _pseudoClassState = SvgPseudoClassState(),
        _views = {},
        _fontRegistry = SvgFontRegistry();
@@ -478,6 +479,9 @@ class SvgDocument {
 
   /// CSS @font-face rules for embedded fonts.
   final List<CssFontFaceRule>? cssFontFaceRules;
+
+  /// Inline JS scripts extracted from <script> elements.
+  final List<String>? scripts;
 
   /// Pseudo-class state manager for CSS :hover, :active, :focus
   final SvgPseudoClassState _pseudoClassState;

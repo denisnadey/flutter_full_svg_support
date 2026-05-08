@@ -165,14 +165,21 @@ extension _AnimatedSvgPictureStateEventsExtension on _AnimatedSvgPictureState {
     String eventType,
     _EventDispatchContext ctx,
   ) {
-    // Check if element has event handlers registered
+    // Check if element has event handlers registered via addEventListener
     final handlers = _SvgEventHandlerRegistry.instance.getHandlers(elementId);
     if (handlers != null && handlers.containsKey(eventType)) {
       final handlerList = handlers[eventType]!;
       for (final handler in List.of(handlerList)) {
         if (ctx.immediatePropagationStopped) break;
-        // Call handler, passing context for potential stopPropagation
         handler(ctx);
+      }
+    }
+    // Fire JS inline attribute handler (onclick="...", onmouseover="...", etc.)
+    if (_jsBridge != null) {
+      final node = _document.root.findById(elementId);
+      final inlineCode = node?.getRawAttributeValue('on$eventType');
+      if (inlineCode != null && inlineCode.isNotEmpty) {
+        _jsBridge!.dispatchInlineHandler(elementId, inlineCode);
       }
     }
     // Always trigger SMIL timeline events

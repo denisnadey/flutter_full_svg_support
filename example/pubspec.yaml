@@ -17,6 +17,7 @@ dependencies:
   full_svg_flutter:
     path: ../
   vector_graphics: ^1.1.13
+  http: ^1.2.0
 
 dev_dependencies:
   flutter_test:

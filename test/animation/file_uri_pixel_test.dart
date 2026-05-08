@@ -45,13 +45,14 @@ Future<void> _pumpWithImageWait(WidgetTester tester) async {
 void main() {
   final pngPath = Platform.environment['PNG_PATH'] ?? '';
   final fileUri = Platform.environment['FILE_URI'] ?? '';
+  final _envReady = pngPath.isNotEmpty && fileUri.isNotEmpty;
 
   test('environment variables are set', () {
     expect(pngPath, isNotEmpty, reason: 'PNG_PATH env var must be set');
     expect(fileUri, isNotEmpty, reason: 'FILE_URI env var must be set');
     expect(File(pngPath).existsSync(), isTrue,
         reason: 'PNG file must exist at $pngPath');
-  });
+  }, skip: !_envReady);
 
   // ── I/O + decode chain: no FakeAsync, no widget layer ───────────────────
   //
@@ -90,7 +91,7 @@ void main() {
         reason: 'Red channel must be ~255 for a solid-red PNG');
     expect(g, lessThan(50), reason: 'Green channel must be ~0');
     expect(b, lessThan(50), reason: 'Blue channel must be ~0');
-  });
+  }, skip: !_envReady);
 
   // ── Sanity check: pixel capture works at all ────────────────────────────
 
@@ -152,8 +153,10 @@ void main() {
   //
   // The I/O path (readFileBytes + file://) is covered by the unit test above.
 
-  testWidgets('SVG renders PNG image with correct pixel color (data URI)',
-      (tester) async {
+  testWidgets(
+    'SVG renders PNG image with correct pixel color (data URI)',
+    skip: !_envReady,
+    (tester) async {
     // Pre-read outside FakeAsync to get the bytes, then convert to data URI.
     final Uint8List? pngBytes = await tester.runAsync<Uint8List>(
       () => File(pngPath).readAsBytes(),

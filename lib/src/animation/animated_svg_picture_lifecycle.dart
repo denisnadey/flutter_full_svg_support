@@ -185,6 +185,38 @@ extension _AnimatedSvgPictureStateLifecycleExtension
           message: 'Static SVG detected (no animation tags)',
         );
       }
+      // Bootstrap JS bridge if the SVG has inline <script> elements
+      final scripts = _document.scripts;
+      if (scripts != null && scripts.isNotEmpty) {
+        _jsBridge = SvgJsBridge(
+          document: _document,
+          markNeedsRepaint: _markNeedsRepaint,
+          addEventHandler: (elementId, eventType, callback) {
+            _SvgEventHandlerRegistry.instance.addHandler(
+              elementId,
+              eventType,
+              (_) => callback(),
+            );
+          },
+        );
+        for (final script in scripts) {
+          _jsBridge!.executeScript(script);
+        }
+        // Signal that inline scripts are done; external scripts may still be loading.
+        _jsBridge!.onInlinesDone();
+        _trace(
+          category: 'js',
+          message: 'JS scripts executed',
+          data: <String, Object?>{'count': scripts.length},
+        );
+        // Fire load events after all external scripts have been fetched and executed.
+        final generation = _imageLoadGeneration;
+        unawaited(_jsBridge!.externalScriptsLoaded.then((_) {
+          if (!mounted || generation != _imageLoadGeneration) return;
+          _jsBridge?.fireLoadEvents();
+          _trace(category: 'js', message: 'JS load events fired');
+        }));
+      }
     } catch (error, stackTrace) {
       _trace(
         category: 'init',
@@ -385,6 +417,8 @@ extension _AnimatedSvgPictureStateLifecycleExtension
     _timeline = null;
     _hoveredElementId = null;
     _hoveredAnchorInfo = null;
+    _jsBridge?.dispose();
+    _jsBridge = null;
   }
 
   /// Schedules font registration for embedded @font-face fonts.
@@ -471,7 +505,9 @@ extension _AnimatedSvgPictureStateLifecycleExtension
 
     // Wrap with gesture detection for event-based animations or link handling
     final needsGestureDetection =
-        (_hasAnimations && _timeline != null) || widget.onLinkTap != null;
+        (_hasAnimations && _timeline != null) ||
+        widget.onLinkTap != null ||
+        _jsBridge != null;
     if (needsGestureDetection) {
       svgWidget = Listener(
         onPointerDown: _handlePointerDown,

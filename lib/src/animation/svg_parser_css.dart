@@ -55,3 +55,17 @@ List<CssFontFaceRule> _parseFontFaceRulesElements(XmlElement svgElement) {
 
   return rules;
 }
+
+/// Extracts inline JS from <script> elements.
+List<String> _parseScriptElements(XmlElement svgElement) {
+  final scripts = <String>[];
+
+  for (final scriptElement in svgElement.findAllElements('script')) {
+    final code = scriptElement.innerText.trim();
+    if (code.isNotEmpty) {
+      scripts.add(code);
+    }
+  }
+
+  return scripts;
+}

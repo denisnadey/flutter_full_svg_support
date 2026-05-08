@@ -126,9 +126,9 @@ void _parseTextContainerChildren(XmlElement element, SvgNode node) {
 bool _parseAndAddChildElement(SvgNode node, XmlElement child) {
   final childTagName = child.name.local;
 
-  // Skip <style> elements - they are handled separately
-  if (childTagName == 'style') {
-    return false; // CSS parsing will happen later
+  // Skip <style> and <script> — handled separately
+  if (childTagName == 'style' || childTagName == 'script') {
+    return false;
   }
 
   // Extract <title> text content and store on parent (use first only)

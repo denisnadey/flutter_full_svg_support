@@ -44,6 +44,9 @@ class SvgParser {
     // Parse @font-face rules for embedded fonts
     final fontFaceRules = _parseFontFaceRulesElements(svgElement);
 
+    // Extract inline JS from <script> elements
+    final scripts = _parseScriptElements(svgElement);
+
     // Parse the root <svg> element
     final rootNode = _parseElement(svgElement);
 
@@ -64,6 +67,7 @@ class SvgParser {
       cssKeyframes: keyframes,
       cssSelectorRules: selectorRules,
       cssFontFaceRules: fontFaceRules.isEmpty ? null : fontFaceRules,
+      scripts: scripts.isEmpty ? null : scripts,
     );
 
     // Parse and register <view> elements

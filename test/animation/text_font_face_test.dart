@@ -469,22 +469,22 @@ void main() {
       expect(registry.isRegistered('ExternalFont'), isFalse);
     });
 
-    test('WOFF format produces warning', () async {
+    test('WOFF format with WOFF magic bytes but malformed content produces error',
+        () async {
       final registry = SvgFontRegistry();
+      // 'd09GRg==' base64-decodes to 4 bytes: 0x77 0x4F 0x46 0x46 ('wOFF' WOFF1 magic),
+      // followed by garbage — the WOFF decoder detects the magic but rejects the malformed file.
       final rules = [
         const CssFontFaceRule(
           fontFamily: 'WoffFont',
-          src: 'data:font/woff;base64,AAAA',
+          src: 'data:font/woff;base64,d09GRgAAAAA=',
           format: 'woff',
         ),
       ];
 
       await registry.registerFonts(rules);
       expect(registry.errors, isNotEmpty);
-      expect(
-        registry.errors.first,
-        contains('WOFF format not natively supported'),
-      );
+      expect(registry.errors.first, contains('Malformed WOFF'));
       expect(registry.isRegistered('WoffFont'), isFalse);
     });
 
