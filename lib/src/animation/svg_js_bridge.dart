@@ -30,7 +30,10 @@ class SvgJsBridge {
   }) : _document = document,
        _repaint = markNeedsRepaint,
        _addEventHandler = addEventHandler {
-    _runtime = getJavascriptRuntime();
+    // xhr: false — we handle HTTP via Dart's http.get in _fetchAndExecuteUrl.
+    // Leaving xhr: true (default) creates a 40ms Timer.periodic inside flutter_js
+    // that leaks across tests.
+    _runtime = getJavascriptRuntime(xhr: false);
     _registerHandlers();
     _injectPolyfill();
   }
