@@ -1134,6 +1134,30 @@ void _paintWithFilterPassesImpl(
       canvas.restore();
       continue;
     }
+    if (pass is SvgInnerShadowPaintPass) {
+      // Open an isolated layer: dstOut must only erase within this element's
+      // rendering, not punch through content already on the canvas below.
+      canvas.saveLayer(null, ui.Paint());
+      for (final p in pass.sourceGraphicPasses) {
+        painter._currentPassPaintFill = p.paintFill;
+        painter._currentPassPaintStroke = p.paintStroke;
+        painter._currentPassFillColorOverride = p.fillColorOverride;
+        painter._currentPassStrokeColorOverride = p.strokeColorOverride;
+        painter._currentFilterPass = p;
+        paint(p.imageFilter, p.colorFilter, p.blendMode);
+      }
+      for (final p in pass.blurAlphaPasses) {
+        painter._currentPassPaintFill = p.paintFill;
+        painter._currentPassPaintStroke = p.paintStroke;
+        painter._currentPassFillColorOverride = p.fillColorOverride;
+        painter._currentPassStrokeColorOverride = p.strokeColorOverride;
+        painter._currentFilterPass = p;
+        paint(p.imageFilter, p.colorFilter, ui.BlendMode.dstOut);
+      }
+      canvas.restore(); // restore isolated layer
+      canvas.restore(); // restore outer save from loop
+      continue;
+    }
     paint(pass.imageFilter, pass.colorFilter, pass.blendMode);
     canvas.restore();
   }

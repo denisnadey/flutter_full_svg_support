@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-09T01:21:49.105580",
+  "generatedAt": "2026-05-09T19:36:37.754733",
   "manifestPath": "tool/w3c_goldens/w3c_manifest.json",
   "filters": {
     "tier": "smoke",
@@ -58,7 +58,7 @@
       "differentPixels": null,
       "message": null,
       "note": null,
-      "elapsedMs": 1,
+      "elapsedMs": 0,
       "svgPath": "W3C_SVG_11_TestSuite/svg/color-prop-02-f.svg",
       "flags": {
         "hasAnimation": false,
@@ -106,7 +106,7 @@
       "differentPixels": null,
       "message": null,
       "note": null,
-      "elapsedMs": 5,
+      "elapsedMs": 0,
       "svgPath": "W3C_SVG_11_TestSuite/svg/coords-coord-02-t.svg",
       "flags": {
         "hasAnimation": false,
@@ -130,7 +130,7 @@
       "differentPixels": null,
       "message": null,
       "note": null,
-      "elapsedMs": 1,
+      "elapsedMs": 0,
       "svgPath": "W3C_SVG_11_TestSuite/svg/coords-trans-01-b.svg",
       "flags": {
         "hasAnimation": false,
@@ -178,7 +178,7 @@
       "differentPixels": null,
       "message": null,
       "note": null,
-      "elapsedMs": 0,
+      "elapsedMs": 1,
       "svgPath": "W3C_SVG_11_TestSuite/svg/coords-trans-03-t.svg",
       "flags": {
         "hasAnimation": false,
@@ -322,7 +322,7 @@
       "differentPixels": null,
       "message": null,
       "note": null,
-      "elapsedMs": 0,
+      "elapsedMs": 1,
       "svgPath": "W3C_SVG_11_TestSuite/svg/painting-fill-01-t.svg",
       "flags": {
         "hasAnimation": false,
@@ -802,7 +802,7 @@
       "differentPixels": null,
       "message": null,
       "note": null,
-      "elapsedMs": 1,
+      "elapsedMs": 0,
       "svgPath": "W3C_SVG_11_TestSuite/svg/shapes-circle-02-t.svg",
       "flags": {
         "hasAnimation": false,
@@ -898,7 +898,7 @@
       "differentPixels": null,
       "message": null,
       "note": null,
-      "elapsedMs": 1,
+      "elapsedMs": 0,
       "svgPath": "W3C_SVG_11_TestSuite/svg/shapes-polyline-01-t.svg",
       "flags": {
         "hasAnimation": false,

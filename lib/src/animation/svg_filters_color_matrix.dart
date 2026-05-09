@@ -140,12 +140,21 @@ class SvgColorMatrixFilter extends SvgFilter {
   @override
   ui.ImageFilter? apply() => colorFilter();
 
-  /// SVG feColorMatrix values are row-major 4×5, identical to Flutter's
-  /// ColorFilter.matrix layout. Chromium (Blink fe_color_matrix.cc) copies
-  /// the values directly: `base::span(matrix).copy_from(values)` — no
-  /// transposition, no scaling.
+  /// Converts a 4×5 SVG feColorMatrix to Flutter's ColorFilter.matrix format.
+  ///
+  /// SVG constant column (indices 4,9,14,19) is in [0,1] range.
+  /// Flutter's ColorFilter.matrix constant column is in [0,255] range
+  /// (Skia applies the matrix to uint8 channel values and adds the bias as-is).
+  /// The 4×4 coefficient sub-matrix uses the same scale in both cases, since
+  /// they multiply channel values that stay in the same relative range.
   List<double> _convertSvgMatrixToFlutter(List<double> svgMatrix) {
-    return List<double>.from(svgMatrix);
+    final m = List<double>.from(svgMatrix);
+    // Scale constant column from [0,1] → [0,255].
+    m[4]  *= 255.0;
+    m[9]  *= 255.0;
+    m[14] *= 255.0;
+    m[19] *= 255.0;
+    return m;
   }
 
   /// Creates a matrix for saturation (saturate)

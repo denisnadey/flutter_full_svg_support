@@ -348,6 +348,46 @@ class SvgOffsetFilter extends SvgFilter {
   }
 }
 
+/// Paint pass for feComposite arithmetic k2=-1, k3=1 (inner-shadow pattern).
+///
+/// Rendered with an isolated saveLayer so that the dstOut erase only affects
+/// the element's own layer rather than the underlying canvas content.
+class SvgInnerShadowPaintPass extends SvgFilterPaintPass {
+  const SvgInnerShadowPaintPass({
+    required this.sourceGraphicPasses,
+    required this.blurAlphaPasses,
+    super.blendMode,
+    super.offset,
+    super.paintFill,
+    super.paintStroke,
+  });
+
+  /// Passes that draw the shape fill (in2 = SourceGraphic).
+  final List<SvgFilterPaintPass> sourceGraphicPasses;
+
+  /// Passes for the blurred alpha mask (in = blur); rendered with dstOut.
+  final List<SvgFilterPaintPass> blurAlphaPasses;
+
+  @override
+  SvgFilterPaintPass copyWith({
+    ui.ImageFilter? imageFilter,
+    ui.ColorFilter? colorFilter,
+    ui.BlendMode? blendMode,
+    ui.Offset? offset,
+    bool? paintFill,
+    bool? paintStroke,
+  }) {
+    return SvgInnerShadowPaintPass(
+      sourceGraphicPasses: sourceGraphicPasses,
+      blurAlphaPasses: blurAlphaPasses,
+      blendMode: blendMode ?? this.blendMode,
+      offset: offset ?? this.offset,
+      paintFill: paintFill ?? this.paintFill,
+      paintStroke: paintStroke ?? this.paintStroke,
+    );
+  }
+}
+
 /// Color matrix type for feColorMatrix
 enum SvgColorMatrixType {
   /// 5x4 matrix (20 values)

@@ -648,6 +648,18 @@ extension SvgFiltersPipelineCompositingExtension on SvgFilters {
         _isApproximately(k3, 1.0)) {
       // Difference-like: i1 + i2 - i1*i2
       blendMode = ui.BlendMode.screen;
+    } else if (_isApproximately(k1, 0.0) &&
+        _isApproximately(k2, -1.0) &&
+        _isApproximately(k3, 1.0)) {
+      // Inner-shadow pattern: result = i2 - i1 (SourceGraphic minus blurred alpha).
+      // Requires an isolated saveLayer so dstOut only erases within this element's
+      // layer and does not punch through underlying canvas content.
+      return <SvgFilterPaintPass>[
+        SvgInnerShadowPaintPass(
+          sourceGraphicPasses: input2,
+          blurAlphaPasses: input,
+        ),
+      ];
     } else if (_isApproximately(k1, 0.0) && k2 > 0 && k3 > 0) {
       // Weighted blend approximation
       blendMode = ui.BlendMode.srcOver;
@@ -662,7 +674,7 @@ extension SvgFiltersPipelineCompositingExtension on SvgFilters {
 
     if (!_isApproximately(k2, 1.0) && !_isApproximately(k2, 0.0)) {
       scaledInput = input
-          .map((pass) => _scalePassByFactor(pass, k2))
+          .map((pass) => _scalePassByFactor(pass, k2.abs()))
           .toList(growable: false);
     }
 
