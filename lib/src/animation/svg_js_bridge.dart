@@ -557,6 +557,89 @@ class SvgJsBridge {
     return as;
   }
 
+  // Web Animations API — used by _makeVirtEl (id=null) and _makeEl (id=elId)
+  function _makeAnimStub(elId, keyframes, options, elRef) {
+    var dur = typeof options === 'number' ? options : (options && options.duration) || 0;
+    var delay = (options && options.delay) || 0;
+    var fill = (options && options.fill) || 'none';
+    var kfs = Array.isArray(keyframes) ? keyframes : (keyframes ? [keyframes] : []);
+    var _playState = 'running';
+    var _currentTime = 0;
+    var _startTime = null;
+    var _onfinish = null, _oncancel = null;
+    var _finishedResolve;
+    var _finishedP = typeof Promise !== 'undefined'
+      ? new Promise(function(r) { _finishedResolve = r; })
+      : {then: function(f){return this;}, catch: function(){return this;}};
+
+    function _lerp(a, b, t) { return a + (b - a) * t; }
+    function _applyFrame(progress) {
+      if (!elId || !kfs.length) return;
+      var n = kfs.length;
+      var rawIdx = progress * (n - 1);
+      var idx = Math.min(Math.floor(rawIdx), n - 2);
+      var localT = n > 1 ? rawIdx - idx : 0;
+      localT = Math.max(0, Math.min(1, localT));
+      var kf0 = kfs[idx] || {}, kf1 = kfs[Math.min(idx + 1, n - 1)] || {};
+      Object.keys(kf1).forEach(function(prop) {
+        if (prop === 'offset' || prop === 'easing') return;
+        var v0 = kf0[prop] !== undefined ? kf0[prop] : kf1[prop];
+        var v1 = kf1[prop];
+        var n0 = parseFloat(v0), n1 = parseFloat(v1);
+        var val = (!isNaN(n0) && !isNaN(n1)) ? String(_lerp(n0, n1, localT)) : (localT >= 0.5 ? String(v1) : String(v0));
+        try {
+          if (prop === 'transform' || prop === 'opacity' || prop === 'visibility' || prop.indexOf('-') >= 0) {
+            sendMessage('setStyle', JSON.stringify({id: elId, name: prop, value: val}));
+          } else {
+            sendMessage('setAttribute', JSON.stringify({id: elId, name: prop, value: val}));
+          }
+        } catch(e) {}
+      });
+    }
+    function _complete() {
+      _playState = 'finished';
+      if (fill === 'forwards' || fill === 'both') _applyFrame(1);
+      try { if (_onfinish) _onfinish({type: 'finish', target: anim}); } catch(e) {}
+      try { if (_finishedResolve) _finishedResolve(anim); } catch(e) {}
+    }
+    var _rafHandle = null;
+    function _scheduleRaf() {
+      requestAnimationFrame(function _tick(ts) {
+        if (_playState !== 'running') return;
+        if (_startTime === null) _startTime = ts - _currentTime;
+        var elapsed = ts - _startTime - delay;
+        if (elapsed < 0) { _rafHandle = requestAnimationFrame(_tick); return; }
+        _currentTime = elapsed;
+        var progress = dur > 0 ? Math.min(elapsed / dur, 1) : 1;
+        _applyFrame(progress);
+        if (progress >= 1) { _complete(); } else { _rafHandle = requestAnimationFrame(_tick); }
+      });
+    }
+    var anim = {
+      get playState() { return _playState; },
+      get currentTime() { return _currentTime; },
+      set currentTime(v) { _currentTime = v; },
+      finished: _finishedP,
+      get ready() {
+        return typeof Promise !== 'undefined' ? Promise.resolve(anim) : {then: function(f){f&&f(anim);return this;}, catch: function(){return this;}};
+      },
+      play: function() { if (_playState !== 'running') { _playState = 'running'; _scheduleRaf(); } },
+      pause: function() { _playState = 'paused'; },
+      cancel: function() { _playState = 'idle'; try{if(_oncancel)_oncancel({type:'cancel',target:anim});}catch(e){} },
+      finish: function() { _complete(); },
+      reverse: function() {},
+      get onfinish() { return _onfinish; },
+      set onfinish(fn) { _onfinish = fn; },
+      get oncancel() { return _oncancel; },
+      set oncancel(fn) { _oncancel = fn; },
+      onremove: null, effect: null, timeline: null,
+      addEventListener: function(type, fn) { if(type==='finish')_onfinish=fn; else if(type==='cancel')_oncancel=fn; },
+      removeEventListener: function() {}
+    };
+    _scheduleRaf();
+    return anim;
+  }
+
   // Virtual element (created by createElement / createElementNS)
   function _makeVirtEl(tag) {
     var tagLower = tag.toLowerCase();
@@ -606,12 +689,10 @@ class SvgJsBridge {
     };
     el.insertBefore = function(child, ref) { _handleInsert(el, child); return child; };
     el.appendChild = function(child) { _handleInsert(el, child); return child; };
-    el.animate = function() {
-      var _p = typeof Promise !== 'undefined' ? Promise.resolve() : {then: function(f){f&&f();return this;}, catch: function(){return this;}};
-      return { play:function(){}, pause:function(){}, cancel:function(){}, finished:_p, ready:_p };
-    };
+    el.animate = function(keyframes, options) { return _makeAnimStub(null, keyframes, options, null); };
     el.removeChild = function(child) { return child; };
     el.replaceChild = function(newChild, oldChild) { return newChild; };
+    el.replaceWith = function(node) {};
     el.getBBox = function() { return {x:0, y:0, width:0, height:0}; };
     el.getTotalLength = function() { return 0; };
     el.getPointAtLength = function(d) { return {x:0, y:0}; };
@@ -834,7 +915,7 @@ class SvgJsBridge {
     el.querySelectorAll = function(sel) {
       try {
         var ids = JSON.parse(sendMessage('querySelectorAll', JSON.stringify({id: id, selector: sel})));
-        return (ids || []).map(function(i) { return _makeEl(i); });
+        return _makeNodeList((ids || []).map(function(i) { return _makeEl(i); }));
       } catch(e) { return []; }
     };
     el.insertBefore = function(child, ref) { _handleInsert(el, child); return child; };
@@ -940,24 +1021,13 @@ class SvgJsBridge {
     Object.defineProperty(el, 'children', { get: function() {
       try {
         var ids = JSON.parse(sendMessage('getChildrenIds', JSON.stringify({id: id})));
-        return (ids || []).map(function(i) { return _makeEl(i); });
+        return _makeNodeList((ids || []).map(function(i) { return _makeEl(i); }));
       } catch(e) { return []; }
     }});
     Object.defineProperty(el, 'childNodes', { get: function() { return el.children; } });
     el.dispatchEvent = function(evt) { return true; };
     el.removeEventListener = function() {};
-    el.animate = function(keyframes, options) {
-      var _p = typeof Promise !== 'undefined' ? Promise.resolve() : {then: function(f){f&&f();return this;}, catch: function(){return this;}};
-      return {
-        play: function(){}, pause: function(){}, cancel: function(){},
-        finish: function(){}, reverse: function(){},
-        get playState(){ return 'finished'; },
-        get currentTime(){ return 0; }, set currentTime(v){},
-        finished: _p, ready: _p, effect: null, timeline: null,
-        onfinish: null, oncancel: null, onremove: null,
-        addEventListener: function(){}, removeEventListener: function(){}
-      };
-    };
+    el.animate = function(keyframes, options) { return _makeAnimStub(id, keyframes, options, el); };
     el.removeChild = function(child) {
       try { sendMessage('removeChild', JSON.stringify({parentId: id, childId: child.id})); } catch(e) {}
       return child;
@@ -965,6 +1035,18 @@ class SvgJsBridge {
     el.replaceChild = function(newChild, oldChild) {
       try { sendMessage('replaceChild', JSON.stringify({parentId: id, oldId: oldChild.id})); } catch(e) {}
       return oldChild;
+    };
+    el.replaceWith = function(node) {
+      try {
+        var p = el.parentNode;
+        if (p) { p.insertBefore(node, el); el.remove(); }
+      } catch(e) {}
+    };
+    el.remove = function() {
+      try {
+        var p = el.parentNode;
+        if (p && p.id) sendMessage('removeChild', JSON.stringify({parentId: p.id, childId: id}));
+      } catch(e) {}
     };
     el.getBBox = function() {
       try { return JSON.parse(sendMessage('getBBox', JSON.stringify({id: id}))); }
@@ -1153,6 +1235,13 @@ class SvgJsBridge {
       configurable: true
     });
     el.tabIndex = -1;
+    el.setPointerCapture = function() {};
+    el.releasePointerCapture = function() {};
+    el.hasPointerCapture = function() { return false; };
+    el.getAnimations = function() { return []; };
+    el.computedStyleMap = function() {
+      return { get: function(p) { return {value: el.getAttribute(p) || ''}; } };
+    };
     return el;
   }
 
@@ -1162,6 +1251,13 @@ class SvgJsBridge {
     var fn = _listeners[key];
     if (fn) { try { fn(evtData !== undefined ? evtData : {}); } catch(e) { console.error('listener error [' + key + ']:', String(e)); } }
   };
+
+  // NodeList wrapper — adds .item(n) and .forEach to plain arrays
+  function _makeNodeList(arr) {
+    arr.item = function(n) { return arr[n] !== undefined ? arr[n] : null; };
+    if (!arr.forEach) arr.forEach = function(fn) { for (var i=0; i<arr.length; i++) fn(arr[i], i, arr); };
+    return arr;
+  }
 
   // Synthetic fallback parent for getElementsByTagName when DOM has no results
   var _synthParent = {
@@ -1186,13 +1282,13 @@ class SvgJsBridge {
     querySelectorAll: function(sel) {
       try {
         var ids = JSON.parse(sendMessage('querySelectorAll', JSON.stringify({id: null, selector: sel})));
-        return (ids || []).map(function(i) { return _makeEl(i); });
+        return _makeNodeList((ids || []).map(function(i) { return _makeEl(i); }));
       } catch(e) { return []; }
     },
     getElementsByTagName: function(tag) {
       try {
         var ids = JSON.parse(sendMessage('querySelectorAll', JSON.stringify({id: null, selector: tag})));
-        var elems = (ids || []).map(function(i) { return _makeEl(i); });
+        var elems = _makeNodeList((ids || []).map(function(i) { return _makeEl(i); }));
         if (elems.length > 0) return elems;
       } catch(e) {}
       // Synthetic fallback: insertBefore on its parentNode still triggers _handleInsert
@@ -1243,7 +1339,7 @@ class SvgJsBridge {
     getElementsByClassName: function(cls) {
       try {
         var ids = JSON.parse(sendMessage('querySelectorAll', JSON.stringify({id: null, selector: '.' + cls.trim().split(/\s+/).join('.')})));
-        return (ids || []).map(function(i) { return _makeEl(i); });
+        return _makeNodeList((ids || []).map(function(i) { return _makeEl(i); }));
       } catch(e) { return []; }
     },
     getElementsByTagNameNS: function(ns, tag) { return document.getElementsByTagName(tag); },
@@ -1361,10 +1457,27 @@ class SvgJsBridge {
   globalThis.window.cancelAnimationFrame = globalThis.cancelAnimationFrame;
 
   // performance
-  globalThis.performance = {
-    now: function() { return Date.now(); }
-  };
-  globalThis.window.performance = globalThis.performance;
+  (function() {
+    var _t0 = Date.now();
+    var _marks = {}, _measures = [];
+    globalThis.performance = {
+      now: function() { return Date.now() - _t0; },
+      mark: function(name) { _marks[name] = performance.now(); },
+      measure: function(name, start, end) {
+        var s = _marks[start] || 0, e = end ? (_marks[end] || performance.now()) : performance.now();
+        _measures.push({name: name, startTime: s, duration: e - s, entryType: 'measure'});
+      },
+      getEntriesByName: function(name) { return _measures.filter(function(m){return m.name===name;}); },
+      getEntriesByType: function(type) { return type==='measure' ? _measures.slice() : []; },
+      getEntries: function() { return _measures.slice(); },
+      clearMarks: function(name) { if(name) delete _marks[name]; else _marks={}; },
+      clearMeasures: function(name) {
+        _measures = name ? _measures.filter(function(m){return m.name!==name;}) : [];
+      },
+      timeOrigin: _t0
+    };
+    globalThis.window.performance = globalThis.performance;
+  })();
 
   // console
   globalThis.console = {
@@ -1372,7 +1485,20 @@ class SvgJsBridge {
     warn:  function() { sendMessage('console.warn',  JSON.stringify(Array.from(arguments).map(String))); },
     error: function() { sendMessage('console.error', JSON.stringify(Array.from(arguments).map(String))); },
     info:  function() { sendMessage('console.log',   JSON.stringify(Array.from(arguments).map(String))); },
-    debug: function() { sendMessage('console.log',   JSON.stringify(Array.from(arguments).map(String))); }
+    debug: function() { sendMessage('console.log',   JSON.stringify(Array.from(arguments).map(String))); },
+    group: function() { sendMessage('console.log', JSON.stringify(['[group] ' + Array.from(arguments).map(String).join(' ')])); },
+    groupCollapsed: function() { sendMessage('console.log', JSON.stringify(['[group] ' + Array.from(arguments).map(String).join(' ')])); },
+    groupEnd: function() {},
+    time: function(label) { sendMessage('console.log', JSON.stringify(['[time] ' + (label||'default')])); },
+    timeEnd: function(label) { sendMessage('console.log', JSON.stringify(['[timeEnd] ' + (label||'default')])); },
+    timeLog: function(label) {},
+    trace: function() { sendMessage('console.log', JSON.stringify(['[trace] ' + Array.from(arguments).map(String).join(' ')])); },
+    assert: function(cond) { if(!cond) sendMessage('console.error', JSON.stringify(['Assertion failed: ' + Array.from(arguments).slice(1).map(String).join(' ')])); },
+    count: function() {},
+    countReset: function() {},
+    clear: function() {},
+    table: function() {},
+    dir: function() {}
   };
 
   // getComputedStyle — reads styles via the same bridge as el.style
@@ -1687,6 +1813,46 @@ class SvgJsBridge {
     globalThis.URL.createObjectURL = function() { return ''; };
     globalThis.URL.revokeObjectURL = function() {};
   }
+
+  // document.createRange — basic Range stub
+  globalThis.document.createRange = function() {
+    return {
+      setStart: function(){}, setEnd: function(){}, setStartBefore: function(){}, setEndAfter: function(){},
+      selectNode: function(){}, selectNodeContents: function(){},
+      collapse: function(){}, cloneRange: function(){ return document.createRange(); },
+      deleteContents: function(){}, extractContents: function(){ return document.createDocumentFragment(); },
+      insertNode: function(){}, surroundContents: function(){},
+      commonAncestorContainer: document.documentElement,
+      collapsed: true, startOffset: 0, endOffset: 0,
+      getBoundingClientRect: function(){ return {top:0,left:0,right:0,bottom:0,width:0,height:0}; },
+      getClientRects: function(){ return []; },
+      toString: function(){ return ''; }
+    };
+  };
+
+  // document.elementFromPoint
+  globalThis.document.elementFromPoint = function(x, y) { return document.documentElement; };
+  globalThis.document.elementsFromPoint = function(x, y) { return [document.documentElement]; };
+  globalThis.document.caretRangeFromPoint = function(x, y) { return document.createRange(); };
+
+  // window.visualViewport
+  globalThis.window.visualViewport = {
+    width: 800, height: 600, offsetLeft: 0, offsetTop: 0,
+    pageLeft: 0, pageTop: 0, scale: 1,
+    addEventListener: function(){}, removeEventListener: function(){}
+  };
+
+  // Symbol.iterator polyfill for for-of on NodeList/HTMLCollection results
+  if (typeof Symbol !== 'undefined' && Symbol.iterator && !Array.prototype[Symbol.iterator]) {
+    Array.prototype[Symbol.iterator] = function() {
+      var i = 0, arr = this;
+      return { next: function() { return i < arr.length ? {value: arr[i++], done: false} : {done: true}; } };
+    };
+  }
+
+  // SVGNumber / SVGNumberList stubs
+  globalThis.SVGNumber = function() { this.value = 0; };
+  globalThis.SVGStringList = function() { this.length = 0; this.appendItem=function(){}; this.getItem=function(){return '';}; };
 
   // requestIdleCallback — delegates to a short timeout
   globalThis.requestIdleCallback = function(fn, opts) {
