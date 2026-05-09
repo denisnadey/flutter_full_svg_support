@@ -1688,6 +1688,39 @@ class SvgJsBridge {
     globalThis.window.crypto = globalThis.crypto;
   }
 
+  // atob / btoa — needed by SVGator player; placed early so external scripts can use it
+  if (typeof atob !== 'function') {
+    var _b64chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+    globalThis.atob = function(s) {
+      s = String(s).replace(/[\s=]+$/, '');
+      if (s.length % 4 === 1) throw new Error('Invalid base64');
+      var result = '', buf = 0, bits = 0;
+      for (var i = 0; i < s.length; i++) {
+        var idx = _b64chars.indexOf(s[i]);
+        if (idx === -1) throw new Error('Invalid base64 char: ' + s[i]);
+        buf = (buf << 6) | idx;
+        bits += 6;
+        if (bits >= 8) { bits -= 8; result += String.fromCharCode((buf >> bits) & 0xFF); }
+      }
+      return result;
+    };
+    globalThis.btoa = function(s) {
+      s = String(s);
+      var result = '', i = 0;
+      while (i < s.length) {
+        var a = s.charCodeAt(i++), b = s.charCodeAt(i++) || 0, c = s.charCodeAt(i++) || 0;
+        var idx1 = a >> 2, idx2 = ((a & 3) << 4) | (b >> 4),
+            idx3 = ((b & 15) << 2) | (c >> 6), idx4 = c & 63;
+        result += _b64chars[idx1] + _b64chars[idx2] +
+                  (i > s.length + 1 ? '=' : _b64chars[idx3]) +
+                  (i > s.length ? '=' : _b64chars[idx4]);
+      }
+      return result;
+    };
+    globalThis.window.atob = globalThis.atob;
+    globalThis.window.btoa = globalThis.btoa;
+  }
+
   // TextEncoder / TextDecoder — UTF-8 stubs
   if (typeof TextEncoder === 'undefined') {
     globalThis.TextEncoder = function() {};
@@ -1717,6 +1750,31 @@ class SvgJsBridge {
     };
   }
 
+  // URL constructor — must be defined BEFORE Blob (which calls URL.createObjectURL)
+  if (typeof URL === 'undefined') {
+    globalThis.URL = function(url, base) {
+      var s = String(url);
+      var qi = s.indexOf('?'), hi = s.indexOf('#');
+      this.href = s;
+      this.pathname = qi >= 0 ? s.slice(0, qi) : (hi >= 0 ? s.slice(0, hi) : s);
+      this.search = qi >= 0 ? s.slice(qi, hi >= 0 ? hi : s.length) : '';
+      this.hash = hi >= 0 ? s.slice(hi) : '';
+      this.hostname = ''; this.host = ''; this.origin = ''; this.protocol = 'https:';
+      this.port = ''; this.username = ''; this.password = '';
+      this.searchParams = {
+        get: function() { return null; }, set: function() {}, has: function() { return false; },
+        append: function() {}, delete: function() {}, toString: function() { return ''; },
+        forEach: function() {}
+      };
+      this.toString = function() { return this.href; };
+    };
+  }
+  // Ensure URL.createObjectURL/revokeObjectURL always exist (even on a native URL)
+  if (globalThis.URL && !globalThis.URL.createObjectURL) {
+    globalThis.URL.createObjectURL = function() { return 'blob:localhost'; };
+    globalThis.URL.revokeObjectURL = function() {};
+  }
+
   // Blob / File stubs
   if (typeof Blob === 'undefined') {
     globalThis.Blob = function(parts, opts) {
@@ -1728,8 +1786,6 @@ class SvgJsBridge {
       this.arrayBuffer = function() { return Promise.resolve ? Promise.resolve(new ArrayBuffer(0)) : {then: function(f){f(new ArrayBuffer(0));return this;}}; };
       this.slice = function(s, e, t) { return new Blob([content.slice(s,e)], {type: t||this.type}); };
     };
-    globalThis.URL.createObjectURL = function() { return 'blob:'; };
-    globalThis.URL.revokeObjectURL = function() {};
   }
 
   // AbortController / AbortSignal
@@ -1791,28 +1847,6 @@ class SvgJsBridge {
     globalThis.localStorage = _makeStorage();
     globalThis.sessionStorage = _makeStorage();
   })();
-
-  // URL constructor
-  if (typeof URL === 'undefined') {
-    globalThis.URL = function(url, base) {
-      var s = String(url);
-      var qi = s.indexOf('?'), hi = s.indexOf('#');
-      this.href = s;
-      this.pathname = qi >= 0 ? s.slice(0, qi) : (hi >= 0 ? s.slice(0, hi) : s);
-      this.search = qi >= 0 ? s.slice(qi, hi >= 0 ? hi : s.length) : '';
-      this.hash = hi >= 0 ? s.slice(hi) : '';
-      this.hostname = ''; this.host = ''; this.origin = ''; this.protocol = 'https:';
-      this.port = ''; this.username = ''; this.password = '';
-      this.searchParams = {
-        get: function() { return null; }, set: function() {}, has: function() { return false; },
-        append: function() {}, delete: function() {}, toString: function() { return ''; },
-        forEach: function() {}
-      };
-      this.toString = function() { return this.href; };
-    };
-    globalThis.URL.createObjectURL = function() { return ''; };
-    globalThis.URL.revokeObjectURL = function() {};
-  }
 
   // document.createRange — basic Range stub
   globalThis.document.createRange = function() {
@@ -1976,37 +2010,6 @@ class SvgJsBridge {
   }
   if (!String.prototype.replaceAll) {
     String.prototype.replaceAll = function(s, r) { return this.split(s).join(r); };
-  }
-
-  // atob / btoa — needed by SVGator player to decode options
-  if (typeof atob !== 'function') {
-    var _b64chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-    globalThis.atob = function(s) {
-      s = String(s).replace(/[=]+$/, '');
-      if (s.length % 4 === 1) throw new Error('Invalid base64');
-      var result = '', buf = 0, bits = 0;
-      for (var i = 0; i < s.length; i++) {
-        var idx = _b64chars.indexOf(s[i]);
-        if (idx === -1) throw new Error('Invalid base64 char: ' + s[i]);
-        buf = (buf << 6) | idx;
-        bits += 6;
-        if (bits >= 8) { bits -= 8; result += String.fromCharCode((buf >> bits) & 0xFF); }
-      }
-      return result;
-    };
-    globalThis.btoa = function(s) {
-      s = String(s);
-      var result = '', i = 0;
-      while (i < s.length) {
-        var a = s.charCodeAt(i++), b = s.charCodeAt(i++) || 0, c = s.charCodeAt(i++) || 0;
-        var idx1 = a >> 2, idx2 = ((a & 3) << 4) | (b >> 4),
-            idx3 = ((b & 15) << 2) | (c >> 6), idx4 = c & 63;
-        result += _b64chars[idx1] + _b64chars[idx2] +
-                  (i > s.length + 1 ? '=' : _b64chars[idx3]) +
-                  (i > s.length ? '=' : _b64chars[idx4]);
-      }
-      return result;
-    };
   }
 
 })();
