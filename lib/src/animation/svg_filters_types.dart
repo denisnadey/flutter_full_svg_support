@@ -356,6 +356,8 @@ class SvgInnerShadowPaintPass extends SvgFilterPaintPass {
   const SvgInnerShadowPaintPass({
     required this.sourceGraphicPasses,
     required this.blurAlphaPasses,
+    super.imageFilter,
+    super.colorFilter,
     super.blendMode,
     super.offset,
     super.paintFill,
@@ -380,6 +382,8 @@ class SvgInnerShadowPaintPass extends SvgFilterPaintPass {
     return SvgInnerShadowPaintPass(
       sourceGraphicPasses: sourceGraphicPasses,
       blurAlphaPasses: blurAlphaPasses,
+      imageFilter: imageFilter ?? this.imageFilter,
+      colorFilter: colorFilter ?? this.colorFilter,
       blendMode: blendMode ?? this.blendMode,
       offset: offset ?? this.offset,
       paintFill: paintFill ?? this.paintFill,

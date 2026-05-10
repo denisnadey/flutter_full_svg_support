@@ -2108,9 +2108,10 @@ class SvgJsBridge {
 
   void _fireListener(String key) {
     if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(key)) return;
-    // Pass Date.now() so requestAnimationFrame callbacks receive a numeric timestamp.
+    // Pass performance.now() so rAF callbacks receive a monotonic relative timestamp,
+    // matching browser behaviour (SVGator stores startTime via performance.now() at init).
     _eval(
-      'if(typeof _fireListener==="function")_fireListener("$key",Date.now());',
+      'if(typeof _fireListener==="function")_fireListener("$key",performance.now());',
       label: 'fire:$key',
     );
   }

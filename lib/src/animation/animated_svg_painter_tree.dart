@@ -1135,9 +1135,13 @@ void _paintWithFilterPassesImpl(
       continue;
     }
     if (pass is SvgInnerShadowPaintPass) {
-      // Open an isolated layer: dstOut must only erase within this element's
-      // rendering, not punch through content already on the canvas below.
-      canvas.saveLayer(null, ui.Paint());
+      // Open an isolated layer so dstOut only erases within this element's
+      // rendering. Any downstream feColorMatrix is applied at composite time
+      // via the saveLayer paint.
+      final layerPaint = ui.Paint();
+      if (pass.colorFilter != null) layerPaint.colorFilter = pass.colorFilter;
+      if (pass.imageFilter != null) layerPaint.imageFilter = pass.imageFilter;
+      canvas.saveLayer(null, layerPaint);
       for (final p in pass.sourceGraphicPasses) {
         painter._currentPassPaintFill = p.paintFill;
         painter._currentPassPaintStroke = p.paintStroke;
@@ -1147,14 +1151,20 @@ void _paintWithFilterPassesImpl(
         paint(p.imageFilter, p.colorFilter, p.blendMode);
       }
       for (final p in pass.blurAlphaPasses) {
+        final hasOffset = p.offset != ui.Offset.zero;
+        if (hasOffset) {
+          canvas.save();
+          canvas.translate(p.offset.dx, p.offset.dy);
+        }
         painter._currentPassPaintFill = p.paintFill;
         painter._currentPassPaintStroke = p.paintStroke;
         painter._currentPassFillColorOverride = p.fillColorOverride;
         painter._currentPassStrokeColorOverride = p.strokeColorOverride;
         painter._currentFilterPass = p;
         paint(p.imageFilter, p.colorFilter, ui.BlendMode.dstOut);
+        if (hasOffset) canvas.restore();
       }
-      canvas.restore(); // restore isolated layer
+      canvas.restore(); // composite isolated layer (colorFilter applied here)
       canvas.restore(); // restore outer save from loop
       continue;
     }
