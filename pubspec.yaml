@@ -20,12 +20,10 @@ dependencies:
   vector_graphics_codec: ^1.1.11+1
   vector_graphics_compiler: ^1.1.14
   xml: '>=6.0.0 <8.0.0'
-  # Bundled JS runtime. During development we use the path: dep on the
-  # local copy under packages/; CI / release pipeline switches to the
-  # pub.dev version (^0.1.0) before publishing the main package. See
-  # analysis_options.yaml for the invalid_dependency note.
-  quickjs_engine:
-    path: packages/quickjs_engine
+  # Embedded JavaScript runtime — used by the SVG JS bridge.
+  # The local source lives under packages/quickjs_engine and is also
+  # published independently on pub.dev as `quickjs_engine`.
+  quickjs_engine: ^0.1.0
 
 dev_dependencies:
   flutter_test:
