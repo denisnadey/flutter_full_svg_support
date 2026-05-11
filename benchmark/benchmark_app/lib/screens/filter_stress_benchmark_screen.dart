@@ -24,7 +24,7 @@ class FilterStressBenchmarkScreen extends StatefulWidget {
 class _FilterStressBenchmarkScreenState
     extends State<FilterStressBenchmarkScreen> {
   _FilterScenario _selected = _FilterScenario.renderFilterStack;
-  List<BenchmarkMetrics> _results = [];
+  final List<BenchmarkMetrics> _results = [];
 
   static const Map<_FilterScenario, String> _assetPaths = {
     _FilterScenario.renderFilterStack:

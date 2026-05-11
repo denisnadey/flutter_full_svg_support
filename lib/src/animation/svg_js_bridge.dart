@@ -4,7 +4,7 @@ import 'dart:developer' as developer;
 import 'dart:ui' as ui;
 
 import 'package:flutter/scheduler.dart';
-import 'package:full_svg_flutter_js/full_svg_flutter_js.dart';
+import 'package:quickjs_engine/quickjs_engine.dart';
 import 'package:http/http.dart' as http;
 
 import 'css_animations.dart';

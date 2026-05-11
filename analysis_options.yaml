@@ -1,1 +1,12 @@
 include: package:flutter_lints/flutter.yaml
+
+# The bundled JS runtime (`packages/full_svg_flutter_js`) is a local fork of
+# flutter_js, vendored under `packages/` so we can ship a patched bridge
+# alongside quickjs-ng. The analyzer flags the path: dep as
+# `invalid_dependency` because publishable packages must use pub.dev/git
+# refs. We're aware — switching this to a git: dep is a release-time task.
+# Don't surface the warning every build until we're ready to ship the
+# renamed fork.
+analyzer:
+  errors:
+    invalid_dependency: ignore

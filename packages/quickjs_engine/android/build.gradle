@@ -1,0 +1,58 @@
+group 'io.quickjs_engine'
+version '0.1.0'
+
+buildscript {
+    ext.kotlin_version = '1.9.10'
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:7.4.2'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+
+android {
+    if (project.android.hasProperty("namespace")) {
+        namespace 'io.quickjs_engine'
+    }
+    compileSdkVersion 34
+
+    sourceSets {
+        main.java.srcDirs += 'src/main/kotlin'
+    }
+    defaultConfig {
+        minSdkVersion 21
+        externalNativeBuild {
+            cmake {
+                cppFlags '-std=c++17', '-DCONFIG_VERSION=\\"ng-0.14.0\\"'
+                cFlags '-std=c11', '-DCONFIG_VERSION=\\"ng-0.14.0\\"',
+                        '-Wno-unused-function', '-Wno-unused-variable',
+                        '-Wno-unused-parameter', '-Wno-unused-but-set-variable'
+                arguments '-DANDROID_STL=c++_static'
+            }
+        }
+        ndk {
+            abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
+        }
+    }
+    externalNativeBuild {
+        cmake {
+            path '../native/CMakeLists.txt'
+        }
+    }
+}
+
+dependencies {
+}

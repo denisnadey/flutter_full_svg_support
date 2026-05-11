@@ -3,7 +3,7 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
-  full_svg_flutter_js
+  quickjs_engine
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST

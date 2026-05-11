@@ -19,7 +19,7 @@ class TextSvgBenchmarkScreen extends StatefulWidget {
 
 class _TextSvgBenchmarkScreenState extends State<TextSvgBenchmarkScreen> {
   _TextScenario _selected = _TextScenario.textPath;
-  List<BenchmarkMetrics> _results = [];
+  final List<BenchmarkMetrics> _results = [];
 
   static const Map<_TextScenario, String> _assetPaths = {
     _TextScenario.textPath: 'assets/text/text_path.svg',

@@ -1,0 +1,48 @@
+name: quickjs_engine
+description: >
+  Modern QuickJS-NG 0.14.0 (2026) bundled for Flutter — same JS engine on
+  every platform (Android, iOS, macOS, Linux, Windows). API-compatible
+  fork of flutter_js with the bridge patched against QuickJS-NG's new API.
+version: 0.1.0
+homepage: https://github.com/denisnadey/flutter_full_svg_support
+repository: https://github.com/denisnadey/flutter_full_svg_support
+issue_tracker: https://github.com/denisnadey/flutter_full_svg_support/issues
+
+environment:
+  sdk: ^3.8.0
+  flutter: ">=3.32.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  ffi: ^2.0.0
+  http: ^1.0.0
+  sync_http: ^0.3.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: io.quickjs_engine
+        pluginClass: QuickjsEnginePlugin
+      ios:
+        pluginClass: QuickjsEnginePlugin
+      macos:
+        pluginClass: QuickjsEnginePlugin
+      linux:
+        pluginClass: QuickjsEnginePlugin
+      windows:
+        pluginClass: QuickjsEnginePlugin
+  assets:
+    - assets/js/
+
+topics:
+  - javascript
+  - quickjs
+  - js-engine
+  - ffi
+  - runtime

@@ -1,10 +1,10 @@
 name: full_svg_flutter
-description: Animated SVG renderer for Flutter with SMIL, CSS keyframes, filters, path morphing, playback control, and flutter_svg-compatible API.
+description: Animated SVG renderer for Flutter — SMIL, CSS keyframes, filters, path morphing, JS runtime, SVGator support, playback control, flutter_svg-compatible API.
 repository: https://github.com/denisnadey/flutter_full_svg_support
 homepage: https://github.com/denisnadey/flutter_full_svg_support
 issue_tracker: https://github.com/denisnadey/flutter_full_svg_support/issues
 documentation: https://github.com/denisnadey/flutter_full_svg_support/tree/main/doc
-version: 1.0.3
+version: 1.1.0
 
 environment:
   sdk: ^3.8.0
@@ -20,8 +20,12 @@ dependencies:
   vector_graphics_codec: ^1.1.11+1
   vector_graphics_compiler: ^1.1.14
   xml: '>=6.0.0 <8.0.0'
-  full_svg_flutter_js:
-    path: packages/full_svg_flutter_js
+  # Bundled JS runtime. During development we use the path: dep on the
+  # local copy under packages/; CI / release pipeline switches to the
+  # pub.dev version (^0.1.0) before publishing the main package. See
+  # analysis_options.yaml for the invalid_dependency note.
+  quickjs_engine:
+    path: packages/quickjs_engine
 
 dev_dependencies:
   flutter_test:

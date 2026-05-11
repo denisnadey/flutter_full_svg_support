@@ -461,9 +461,7 @@ extension _AnimatedSvgPictureStateLifecycleExtension
     void walk(SvgNode node, int depth, _M2 parentToRoot) {
       final attrs = <String, String>{};
       for (final entry in node.attributes.entries) {
-        final v = entry.value.effectiveValue;
-        if (v == null) continue;
-        attrs[entry.key] = v.toString();
+        attrs[entry.key] = entry.value.effectiveValue.toString();
       }
       // `id` and `class` are stored as dedicated fields, not in attributes.
       if (node.id != null && !attrs.containsKey('id')) attrs['id'] = node.id!;

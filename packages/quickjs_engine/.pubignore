@@ -1,0 +1,5 @@
+# CMake build artifacts — not part of the source archive.
+native/build/
+
+# Local dev artifacts not needed at consumer's end.
+.dart_tool/

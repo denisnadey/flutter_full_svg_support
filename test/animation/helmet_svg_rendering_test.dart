@@ -67,7 +67,7 @@ void main() {
     // preserveAspectRatio="xMinYMin meet" + widget 200px tall:
     //   scale = min(100/100, 200/100) = 1.0, no translate → SVG occupies
     //   widget y=0..100 exactly; widget y=100..199 is below the viewBox.
-    const _overflowSvg = '''
+    const overflowSvg = '''
 <svg viewBox="0 0 100 100" preserveAspectRatio="xMinYMin meet"
      xmlns="http://www.w3.org/2000/svg">
   <rect x="10" y="10" width="80" height="80" fill="red"/>
@@ -75,7 +75,7 @@ void main() {
 </svg>''';
     // The blue rect is at y=110..130 which is entirely outside the 0-100 viewBox.
 
-    bool _hasContentInRows(
+    bool hasContentInRows(
       List<int> bytes,
       int width,
       int height,
@@ -91,7 +91,7 @@ void main() {
       return false;
     }
 
-    Future<({List<int> bytes, int width, int height})> _renderAndCapture(
+    Future<({List<int> bytes, int width, int height})> renderAndCapture(
       WidgetTester tester,
       String svg, {
       required bool clip,
@@ -138,13 +138,13 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      final r = await _renderAndCapture(tester, _overflowSvg, clip: true);
+      final r = await renderAndCapture(tester, overflowSvg, clip: true);
       // SVG viewBox is 0-100 with xMinYMin meet; widget is 200px tall.
       // scale=1, no translate → viewBox occupies widget y=0..100 exactly.
       // Rows 100..199 are below the viewBox boundary.
       // With clipToViewBox=true those rows must be empty.
       expect(
-        _hasContentInRows(r.bytes, r.width, r.height, 100, 200),
+        hasContentInRows(r.bytes, r.width, r.height, 100, 200),
         isFalse,
         reason:
             'Content at y=110..130 should be clipped when clipToViewBox=true',
@@ -156,11 +156,11 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      final r = await _renderAndCapture(tester, _overflowSvg, clip: false);
+      final r = await renderAndCapture(tester, overflowSvg, clip: false);
       // The blue rect is at SVG y=110..130 → widget y=110..130.
       // Rows 110..130 are below the viewBox but within the 200px widget.
       expect(
-        _hasContentInRows(r.bytes, r.width, r.height, 110, 130),
+        hasContentInRows(r.bytes, r.width, r.height, 110, 130),
         isTrue,
         reason:
             'Content at y=110..130 should be visible when clipToViewBox=false',

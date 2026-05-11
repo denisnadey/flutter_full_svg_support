@@ -3,15 +3,16 @@
 /// Integration benchmark test suite.
 ///
 /// Run with:
-///   flutter test integration_test/benchmark_test.dart \
-///     --device-id <device> \
-///     --reporter expanded
+///   `flutter test integration_test/benchmark_test.dart`
+///   `  --device-id <device>`
+///   `  --reporter expanded`
 ///
-/// Results are written to results/<scenario>/<package>.json and a combined
-/// results/suite_results.json file.
+/// Results are written to `results/<scenario>/<package>.json` and a combined
+/// `results/suite_results.json` file.
 ///
 /// NOTE: dart:io is intentionally used here (integration_test context runs on
 /// the target device / host, not in Flutter widget code).
+library;
 
 import 'dart:convert';
 import 'dart:io';
@@ -62,7 +63,7 @@ final List<BenchmarkMetrics> _allResults = [];
 // Helpers
 // ---------------------------------------------------------------------------
 
-/// Writes a [BenchmarkMetrics] object to results/<scenario>/<package>.json.
+/// Writes a [BenchmarkMetrics] object to `results/<scenario>/<package>.json`.
 Future<void> _saveResult(BenchmarkMetrics metrics) async {
   // TODO: On some platforms (e.g. iOS sandbox) the working directory may not
   //       be writable. Consider using path_provider for a stable output path.
@@ -520,7 +521,7 @@ void main() {
   // -------------------------------------------------------------------------
 
   group('animation', () {
-    Future<void> _runAnimBenchmark(
+    Future<void> runAnimBenchmark(
       WidgetTester tester,
       String name,
       String scenario,
@@ -547,37 +548,37 @@ void main() {
     }
 
     testWidgets('anim_spinner_smil', (tester) async {
-      await _runAnimBenchmark(
+      await runAnimBenchmark(
           tester, 'Anim Spinner SMIL', 'anim_spinner_smil', _animSpinner);
     });
 
     testWidgets('anim_dash_heartbeat', (tester) async {
-      await _runAnimBenchmark(tester, 'Anim Dash Heartbeat',
+      await runAnimBenchmark(tester, 'Anim Dash Heartbeat',
           'anim_dash_heartbeat', _animHeartbeat);
     });
 
     testWidgets('anim_path_morph', (tester) async {
-      await _runAnimBenchmark(
+      await runAnimBenchmark(
           tester, 'Anim Path Morph', 'anim_path_morph', _animPathMorph);
     });
 
     testWidgets('anim_transform_matrix', (tester) async {
-      await _runAnimBenchmark(tester, 'Anim Transform Matrix',
+      await runAnimBenchmark(tester, 'Anim Transform Matrix',
           'anim_transform_matrix', _animTransform);
     });
 
     testWidgets('anim_motion_path', (tester) async {
-      await _runAnimBenchmark(
+      await runAnimBenchmark(
           tester, 'Anim Motion Path', 'anim_motion_path', _animMotion);
     });
 
     testWidgets('anim_css_keyframes', (tester) async {
-      await _runAnimBenchmark(tester, 'Anim CSS Keyframes',
+      await runAnimBenchmark(tester, 'Anim CSS Keyframes',
           'anim_css_keyframes', _cssKeyframes);
     });
 
     testWidgets('anim_filter_stack', (tester) async {
-      await _runAnimBenchmark(tester, 'Anim Filter Stack', 'anim_filter_stack',
+      await runAnimBenchmark(tester, 'Anim Filter Stack', 'anim_filter_stack',
           _animFilterStack);
     });
 
@@ -669,7 +670,7 @@ void main() {
         scenario: 'mega_stress_galactic_storm',
         tester: tester,
         widgetFactory: () => _wrap(
-          ffsf.FSvgPicture.asset(
+          const ffsf.FSvgPicture.asset(
             _galacticStorm,
             fit: BoxFit.cover,
             autoPlay: true,

@@ -5,8 +5,8 @@
 import FlutterMacOS
 import Foundation
 
-import full_svg_flutter_js
+import quickjs_engine
 
 func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
-  FullSvgFlutterJsPlugin.register(with: registry.registrar(forPlugin: "FullSvgFlutterJsPlugin"))
+  QuickjsEnginePlugin.register(with: registry.registrar(forPlugin: "QuickjsEnginePlugin"))
 }

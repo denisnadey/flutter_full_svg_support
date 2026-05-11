@@ -144,8 +144,8 @@ class _FlutterSvgCell extends StatefulWidget {
 }
 
 class _FlutterSvgCellState extends State<_FlutterSvgCell> {
-  bool _hasError = false;
-  String _errorMessage = '';
+  final bool _hasError = false;
+  final String _errorMessage = '';
 
   @override
   Widget build(BuildContext context) {

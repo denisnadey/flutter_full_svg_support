@@ -59,7 +59,7 @@ void main() {
   // time. The readFileBytes unit tests above cover the I/O correctness.
 
   group('file:// image in SVG (no crash)', () {
-    const _noImageSvg =
+    const noImageSvg =
         '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">'
         '<image x="10" y="10" width="80" height="80" href="file:///nonexistent/image.png"/>'
         '</svg>';
@@ -69,7 +69,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AnimatedSvgPicture.string(_noImageSvg, width: 200, height: 200),
+            body: AnimatedSvgPicture.string(noImageSvg, width: 200, height: 200),
           ),
         ),
       );

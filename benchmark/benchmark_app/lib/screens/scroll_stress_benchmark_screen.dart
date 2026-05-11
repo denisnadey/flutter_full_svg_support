@@ -21,7 +21,7 @@ class _ScrollStressBenchmarkScreenState
   final ScrollController _scrollController = ScrollController();
   _Package _activePackage = _Package.fullSvgPicture;
   bool _isScrolling = false;
-  List<BenchmarkMetrics> _results = [];
+  final List<BenchmarkMetrics> _results = [];
 
   static const int _itemCount = 200;
   static const String _iconPath = 'assets/simple/simple_icon.svg';
@@ -121,7 +121,7 @@ class _ScrollStressBenchmarkScreenState
               itemBuilder: (_, index) => ListTile(
                 leading: _buildItem(index),
                 title: Text('SVG item ${index + 1}'),
-                subtitle: Text('path: $_iconPath'),
+                subtitle: const Text('path: $_iconPath'),
               ),
             ),
           ),

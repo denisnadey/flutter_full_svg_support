@@ -7,7 +7,8 @@
 ///
 /// Output:
 ///   - A comparison table printed to stdout
-///   - A timestamped JSON result file at ../results/parser/<timestamp>.json
+///   - A timestamped JSON result file at `../results/parser/<timestamp>.json`
+library;
 
 import 'dart:convert';
 import 'dart:io';

@@ -22,7 +22,7 @@ class _StaticGridBenchmarkScreenState
     extends State<StaticGridBenchmarkScreen> {
   _Scenario _activeScenario = _Scenario.grid100SameCached;
   _Package _activePackage = _Package.fullSvgPicture;
-  List<BenchmarkMetrics> _results = [];
+  final List<BenchmarkMetrics> _results = [];
 
   // Asset paths used in grids. Adjust once actual SVG files are added.
   static const String _simpleIconPath = 'assets/simple/simple_icon.svg';

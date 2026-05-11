@@ -100,7 +100,7 @@ class _SvgGalleryCardState extends State<SvgGalleryCard> {
             boxShadow: _hovered
                 ? [
                     BoxShadow(
-                      color: cat.color.withOpacity(0.35),
+                      color: cat.color.withValues(alpha: 0.35),
                       blurRadius: 24,
                       spreadRadius: 1,
                       offset: const Offset(0, 4),
@@ -108,7 +108,7 @@ class _SvgGalleryCardState extends State<SvgGalleryCard> {
                   ]
                 : [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.18),
+                      color: Colors.black.withValues(alpha: 0.18),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -143,8 +143,8 @@ class _SvgGalleryCardState extends State<SvgGalleryCard> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            cat.color.withOpacity(0.15),
-            cat.color.withOpacity(0.05),
+            cat.color.withValues(alpha: 0.15),
+            cat.color.withValues(alpha: 0.05),
           ],
         ),
       ),
@@ -178,7 +178,7 @@ class _SvgGalleryCardState extends State<SvgGalleryCard> {
         return Center(
           key: ValueKey('error-$_gen'),
           child: Icon(Icons.broken_image_outlined,
-              size: 36, color: Colors.white.withOpacity(0.3)),
+              size: 36, color: Colors.white.withValues(alpha: 0.3)),
         );
       case _State.idle:
         return Center(
@@ -186,7 +186,7 @@ class _SvgGalleryCardState extends State<SvgGalleryCard> {
           child: Icon(
             widget.item.category.icon,
             size: 48,
-            color: widget.item.category.color.withOpacity(0.4),
+            color: widget.item.category.color.withValues(alpha: 0.4),
           ),
         );
     }
@@ -205,7 +205,7 @@ class _SvgGalleryCardState extends State<SvgGalleryCard> {
             begin: Alignment.bottomCenter,
             end: Alignment.topCenter,
             colors: [
-              Colors.black.withOpacity(_hovered ? 0.72 : 0.55),
+              Colors.black.withValues(alpha: _hovered ? 0.72 : 0.55),
               Colors.transparent,
             ],
           ),
@@ -229,7 +229,7 @@ class _SvgGalleryCardState extends State<SvgGalleryCard> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: cat.color.withOpacity(0.85),
+                color: cat.color.withValues(alpha: 0.85),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(

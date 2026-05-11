@@ -91,7 +91,7 @@ class _GalleryPageState extends State<GalleryPage> {
     if (items.isEmpty) {
       return Center(
         child: Text('No animations in this category',
-            style: TextStyle(color: Colors.white.withOpacity(0.4))),
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.4))),
       );
     }
 
@@ -153,10 +153,10 @@ class _FilterChip extends StatelessWidget {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: selected ? color : color.withOpacity(0.12),
+          color: selected ? color : color.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: selected ? color : color.withOpacity(0.3),
+            color: selected ? color : color.withValues(alpha: 0.3),
             width: 1,
           ),
         ),

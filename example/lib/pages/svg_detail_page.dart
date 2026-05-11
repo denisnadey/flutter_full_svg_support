@@ -66,7 +66,7 @@ class _SvgDetailPageState extends State<SvgDetailPage> {
             child: Chip(
               label: Text(cat.label,
                   style: const TextStyle(color: Colors.white, fontSize: 11)),
-              backgroundColor: cat.color.withOpacity(0.85),
+              backgroundColor: cat.color.withValues(alpha: 0.85),
               padding: EdgeInsets.zero,
               visualDensity: VisualDensity.compact,
               avatar: Icon(cat.icon, size: 14, color: Colors.white),
@@ -116,10 +116,10 @@ class _SvgDetailPageState extends State<SvgDetailPage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.broken_image_outlined,
-                size: 56, color: Colors.white.withOpacity(0.3)),
+                size: 56, color: Colors.white.withValues(alpha: 0.3)),
             const SizedBox(height: 16),
             Text(_error!,
-                style: TextStyle(color: Colors.white.withOpacity(0.4))),
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.4))),
             const SizedBox(height: 16),
             OutlinedButton.icon(
               onPressed: () { setState(() { _loading = true; _error = null; }); _load(); },
@@ -141,10 +141,10 @@ class _SvgDetailPageState extends State<SvgDetailPage> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                  color: widget.item.category.color.withOpacity(0.3), width: 1),
+                  color: widget.item.category.color.withValues(alpha: 0.3), width: 1),
               boxShadow: [
                 BoxShadow(
-                  color: widget.item.category.color.withOpacity(0.15),
+                  color: widget.item.category.color.withValues(alpha: 0.15),
                   blurRadius: 48,
                   spreadRadius: 4,
                 ),

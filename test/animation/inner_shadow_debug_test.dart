@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_print
 // Quick debug test — not part of the test suite
 import 'dart:typed_data';
 import 'dart:ui' as ui;

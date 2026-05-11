@@ -16,8 +16,6 @@ import 'package:flutter_test/flutter_test.dart';
 const _fixturesDir = 'test/golden_comparison/svg_fixtures';
 String _basketballSvg() =>
     File('$_fixturesDir/basketball_boy.svg').readAsStringSync();
-String _svgatorPlayerJs() =>
-    File('test/animation/_svgator_player_91c80d77.js').readAsStringSync();
 
 /// Production-like setup: do NOT inline the player JS. Only the SVG's own
 /// inline bootstrap runs; the external `cdn.svgator.com/.../91c80d77.js`

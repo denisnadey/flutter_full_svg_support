@@ -12,6 +12,17 @@ Use animated SVG files directly in Flutter without converting them to Lottie, Ri
 
 `full_svg_flutter` is designed as a full SVG runtime for Flutter and a migration path from `flutter_svg`: keep the familiar `SvgPicture`-style API while gaining support for animated SVG content through `FSvgPicture`.
 
+> **🆕 New in 1.1.0 — JavaScript runtime + SVGator export support.**
+> Animated SVGs that drive their animation via inline `<script>` (the
+> JS-export mode in [SVGator][svgator-site], hand-written JS animations,
+> custom CSS-keyframe controllers) now render correctly. A modern QuickJS
+> engine ([quickjs_engine][qjs-engine-pkg]) is bundled into the app and
+> runs the SVG's JavaScript with a polyfilled SVG DOM — no WebView, no
+> conversion step. See the [JavaScript runtime](#javascript-runtime--svgator-runtime) section below.
+
+[svgator-site]: https://www.svgator.com/
+[qjs-engine-pkg]: https://pub.dev/packages/quickjs_engine
+
 ---
 
 <div align="center">
@@ -65,6 +76,8 @@ FSvgPicture.memory(bytes)
 | Static SVG rendering | ✅ | ✅ | ❌ needs conversion |
 | Animated SVG (SMIL) | ✅ | ❌ | ❌ needs conversion |
 | CSS `@keyframes` in SVG | ✅ | ❌ | ❌ needs conversion |
+| **Inline `<script>` / JS-driven SVG** | ✅ **(new)** | ❌ | n/a |
+| **SVGator JS-export files** | ✅ **(new)** | ❌ | ❌ needs conversion |
 | Path morphing | ✅ | ❌ | ❌ needs conversion |
 | SVG filters (all 17 primitives) | ✅ | ⚠️ partial | varies |
 | Clipping & masking | ✅ | ✅ | varies |
@@ -282,9 +295,52 @@ controller.addListener(() {
 
 ## SVGator and exported animated SVG files
 
-Many animated SVG files exported from tools such as SVGator use SMIL, CSS keyframes, transforms, opacity animation, stroke-dash animation, or path changes. `full_svg_flutter` is designed to load these files directly where the used SVG features are within the supported subset.
+Animated SVG files exported from [SVGator][svgator-site] and similar tools fall into two broad categories — and `full_svg_flutter` supports **both**:
 
-SVGator export settings vary — some outputs rely heavily on JavaScript-driven animation, which is not supported. If an exported file does not render correctly, the SMIL or CSS export mode (without JavaScript) is likely to work better. Open an issue with a minimal SVG sample if you run into problems.
+1. **SMIL / CSS export** — pure declarative animation (no JavaScript). These run on the package's built-in SMIL/CSS animation engine.
+2. **JavaScript export** — the SVG ships with an inline `<script>` that drives the animation by writing to the DOM on every `requestAnimationFrame` tick. This is the default mode for most SVGator templates because it produces smaller files and gives the tool more expressive animation primitives. **As of 1.1.0 these run too**, via the bundled JavaScript runtime — see below.
+
+If a JS-export SVGator file does not render correctly on your end, open an issue with the original `.svg` attached — the JS runtime is new and the SVG-DOM polyfill is still growing.
+
+## JavaScript runtime & SVGator runtime
+
+`full_svg_flutter` ships with a real JavaScript engine — [quickjs_engine][qjs-engine-pkg], a [QuickJS-NG][qjsng] 0.14.0 fork bundled into your app on every platform (Android, iOS, macOS, Linux, Windows). When an SVG contains inline `<script>` blocks or `<script src="...">` references, they are executed against a polyfilled SVG DOM — `document.getElementById`, `Element.setAttribute`, `requestAnimationFrame`, `addEventListener`, `getTotalLength` / `getPointAtLength` on virtual `<path>` elements, `style` proxies, timers, fetch, and the rest of the surface most player scripts touch.
+
+What this means concretely:
+
+- **SVGator JS-export files render natively.** Coffee Match Cut, Glowing Gummies, Basketball Boy, Skating Girls, Dog Character, Ramen Raccoon — all play correctly with their original SVGator player script, with no manual conversion to SMIL.
+- **Bezier-path arc-length interpolation is honored.** SVGator's player uses `path.getPointAtLength(d)` for arc-length-parameterized bezier animation between keyframes; the polyfill computes real arc-length tables (not zero stubs).
+- **Cross-platform parity.** The same JS engine runs on every platform — no more "works on Android, broken on iOS" because of JSC-vs-QuickJS divergence.
+- **No WebView.** No platform channels for animation, no HTML/CSS layout engine pulled in. Pure native Skia/Impeller painting.
+
+The JS engine starts on demand — SVGs with no `<script>` element pay zero cost. When the engine does start, it runs in a sandboxed context (no real DOM, no network access beyond what the bridge intercepts via Dart `http`).
+
+[qjsng]: https://github.com/quickjs-ng/quickjs
+
+### Custom JavaScript animations
+
+You're not limited to SVGator-exported files. Any inline `<script>` that walks the SVG via `getElementById` / `setAttribute` will work — write your own animations, or use third-party JS animation runtimes that don't require a full browser.
+
+```xml
+<!-- example.svg -->
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <circle id="dot" cx="50" cy="50" r="10" fill="hotpink"/>
+  <script><![CDATA[
+    let t = 0;
+    function tick() {
+      t += 0.05;
+      document.getElementById('dot')
+        .setAttribute('cx', 50 + Math.cos(t) * 30);
+      requestAnimationFrame(tick);
+    }
+    tick();
+  ]]></script>
+</svg>
+```
+
+```dart
+FSvgPicture.asset('assets/example.svg'); // animation just runs.
+```
 
 ---
 
@@ -294,7 +350,7 @@ SVGator export settings vary — some outputs rely heavily on JavaScript-driven 
 
 Known limitations:
 
-- JavaScript inside SVG files is not executed
+- JavaScript inside SVGs runs against a polyfilled SVG DOM (see the [JavaScript runtime](#javascript-runtime--svgator-runtime) section), not a real browser DOM — pages that rely on the full HTML DOM, `window.location`, layout APIs, or third-party JS frameworks that expect a browser environment will not work
 - External cross-origin resources follow Flutter's platform security policy
 - Some advanced SVG filter combinations may render differently from browsers
 - Complex text layout (especially RTL mixed with LTR in a single `<text>`) may differ from browser engines in edge cases

@@ -1,4 +1,5 @@
 #!/usr/bin/env dart
+// ignore_for_file: avoid_print
 // generate_report.dart
 //
 // Standalone Dart script — no pub dependencies. Uses only dart:io, dart:convert, dart:math.

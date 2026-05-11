@@ -103,8 +103,12 @@ SvgCategory _categorize(String url) {
       u.contains('parrot') ||
       u.contains('game-char') ||
       u.contains('jelly-bounce') ||
-      u.contains('astronaut')) return SvgCategory.characters;
-  if (u.contains('logo')) return SvgCategory.logos;
+      u.contains('astronaut')) {
+    return SvgCategory.characters;
+  }
+  if (u.contains('logo')) {
+    return SvgCategory.logos;
+  }
   if (u.contains('loader') ||
       u.contains('spinner') ||
       u.contains('preloader') ||
@@ -122,8 +126,12 @@ SvgCategory _categorize(String url) {
       u.contains('burger-and-fries') ||
       u.contains('fingerprint') ||
       u.contains('neumorphic-css') ||
-      u.contains('neumorphic-spinner')) return SvgCategory.loaders;
-  if (u.contains('icon')) return SvgCategory.icons;
+      u.contains('neumorphic-spinner')) {
+    return SvgCategory.loaders;
+  }
+  if (u.contains('icon')) {
+    return SvgCategory.icons;
+  }
   if (u.contains('button') ||
       u.contains('toggle') ||
       u.contains('neumorphic-ui') ||
@@ -132,10 +140,14 @@ SvgCategory _categorize(String url) {
       u.contains('animated-interactive') ||
       u.contains('animated-mobile-app-buttons') ||
       u.contains('neumorphism-buttons') ||
-      u.contains('simple-animated-toggle')) return SvgCategory.buttons;
+      u.contains('simple-animated-toggle')) {
+    return SvgCategory.buttons;
+  }
   if (u.contains('morph') ||
       u.contains('origami') ||
-      u.contains('jellyfish')) return SvgCategory.morphing;
+      u.contains('jellyfish')) {
+    return SvgCategory.morphing;
+  }
   if (u.contains('text') ||
       u.contains('typography') ||
       u.contains('writing') ||
@@ -149,7 +161,9 @@ SvgCategory _categorize(String url) {
       u.contains('cyber-monday') ||
       u.contains('kinetic') ||
       u.contains('ciao-bella') ||
-      u.contains('fine-cravings')) return SvgCategory.text;
+      u.contains('fine-cravings')) {
+    return SvgCategory.text;
+  }
   if (u.contains('-path') ||
       u.contains('path-') ||
       u.contains('map') ||
@@ -162,7 +176,9 @@ SvgCategory _categorize(String url) {
       u.contains('cookies-line') ||
       u.contains('line-animation') ||
       u.contains('animated-biker') ||
-      u.contains('moving-car')) return SvgCategory.path;
+      u.contains('moving-car')) {
+    return SvgCategory.path;
+  }
   if (u.contains('3d') ||
       u.contains('faux') ||
       u.contains('fake-3d') ||
@@ -171,14 +187,18 @@ SvgCategory _categorize(String url) {
       u.contains('card-flip') ||
       u.contains('distorted') ||
       u.contains('amber') ||
-      u.contains('gaming-console')) return SvgCategory.effects3d;
+      u.contains('gaming-console')) {
+    return SvgCategory.effects3d;
+  }
   if (u.contains('background') ||
       u.contains('pattern') ||
       u.contains('geometric-shapes') ||
       u.contains('geometric-objects') ||
       u.contains('cool-shapes') ||
       u.contains('animated-js-svg') ||
-      u.contains('funky-wall')) return SvgCategory.backgrounds;
+      u.contains('funky-wall')) {
+    return SvgCategory.backgrounds;
+  }
   if (u.contains('chart') ||
       u.contains('graph') ||
       u.contains('Animated-Neumorphic') ||
@@ -190,7 +210,9 @@ SvgCategory _categorize(String url) {
       u.contains('evolution') ||
       u.contains('types-of-projects') ||
       u.contains('time-investment') ||
-      u.contains('completion-in-time')) return SvgCategory.charts;
+      u.contains('completion-in-time')) {
+    return SvgCategory.charts;
+  }
   if (u.contains('app') ||
       u.contains('mobile') ||
       u.contains('onboarding') ||
@@ -205,7 +227,9 @@ SvgCategory _categorize(String url) {
       u.contains('animated-animals-ui') ||
       u.contains('learning-app') ||
       u.contains('vr-svg') ||
-      u.contains('process')) return SvgCategory.appUI;
+      u.contains('process')) {
+    return SvgCategory.appUI;
+  }
   return SvgCategory.general;
 }
 

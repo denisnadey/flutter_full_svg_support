@@ -40,11 +40,8 @@ class MetricsReporter {
   Timer? _ticker;
   bool _flushing = false;
 
-  /// Counter so we can see in stderr how many flushes happen.
-  int _flushAttempts = 0;
   int _flushSuccesses = 0;
   int _flushFailures = 0;
-  String _lastError = '';
 
   void start() {
     if (_ticker != null) return;
@@ -122,7 +119,6 @@ class MetricsReporter {
       'rasters_ms': rasters,
     });
 
-    _flushAttempts++;
     HttpClient? client;
     try {
       client = HttpClient()..connectionTimeout = const Duration(seconds: 2);
@@ -140,7 +136,6 @@ class MetricsReporter {
       }
     } catch (e) {
       _flushFailures++;
-      _lastError = e.toString();
       // Always emit on first failure so the harness can correlate.
       if (_flushFailures == 1) {
         stderr.writeln('[telemetry] FIRST flush FAILED · err=$e');

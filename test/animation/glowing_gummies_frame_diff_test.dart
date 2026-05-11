@@ -24,7 +24,6 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:full_svg_flutter/src/animation/animated_svg_picture.dart';
 
@@ -171,7 +170,7 @@ void main() {
 
         // Compute diff vs previous frame.
         final diffPct = prevPixels != null
-            ? _diffFraction(prevPixels!, pixels) * 100
+            ? _diffFraction(prevPixels, pixels) * 100
             : 0.0;
         prevPixels = pixels;
 

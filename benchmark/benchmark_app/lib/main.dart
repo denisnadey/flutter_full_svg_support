@@ -197,7 +197,7 @@ class BenchmarkResultsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final encoder = const JsonEncoder.withIndent('  ');
+    const encoder = JsonEncoder.withIndent('  ');
     final jsonText = results.isEmpty
         ? '// No results yet. Run benchmarks from integration_test first.'
         : encoder.convert(results.map((r) => r.toJson()).toList());

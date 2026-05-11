@@ -27,19 +27,6 @@ String _coffeeSvg() =>
 String _svgatorPlayerJs() =>
     File('test/animation/_svgator_player_91c80d77.js').readAsStringSync();
 
-/// Splices the local copy of the SVGator player JS into the SVG so the
-/// player runs deterministically without trying to fetch the CDN script.
-String _coffeeSvgWithInlinePlayer() {
-  final svg = _coffeeSvg();
-  final scriptTag =
-      '<script><![CDATA[\n${_svgatorPlayerJs()}\n]]></script>';
-  final idx = svg.lastIndexOf('</svg>');
-  if (idx < 0) {
-    throw StateError('No </svg> tag');
-  }
-  return svg.substring(0, idx) + scriptTag + svg.substring(idx);
-}
-
 void main() {
   group('AnimatedSvgController debug snapshot', () {
     testWidgets('captureDebugSnapshot returns the document tree',

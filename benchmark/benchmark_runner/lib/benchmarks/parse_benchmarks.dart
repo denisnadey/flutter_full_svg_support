@@ -8,6 +8,7 @@
 ///   - [teardown()] — called once after the loop
 ///
 /// Benchmark scores are reported in microseconds per iteration by default.
+library;
 
 import 'package:benchmark_harness/benchmark_harness.dart';
 import 'package:flutter_svg/flutter_svg.dart' as fsvg;

@@ -603,7 +603,7 @@ void main() {
       // and BoxFit.fill onto a 700×400 widget, 1 viewBox unit = 1 device px.
       // For each rect, find the maximum x where the rect's distinctive
       // fill colour still shows.
-      int _rectWidthByColour(int rowY, int targetR, int targetG, int targetB) {
+      int rectWidthByColour(int rowY, int targetR, int targetG, int targetB) {
         int last = 0;
         for (int x = 0; x < 700; x++) {
           final p = _pixel(pixels, 700, x, rowY);
@@ -612,10 +612,10 @@ void main() {
         return last + 1;
       }
 
-      final widthA = _rectWidthByColour(5,  255,   0,   0);
-      final widthD = _rectWidthByColour(25,   0, 255,   0);
-      final widthE = _rectWidthByColour(45,   0,   0, 255);
-      final widthF = _rectWidthByColour(65, 255,   0, 255);
+      final widthA = rectWidthByColour(5,  255,   0,   0);
+      final widthD = rectWidthByColour(25,   0, 255,   0);
+      final widthE = rectWidthByColour(45,   0,   0, 255);
+      final widthF = rectWidthByColour(65, 255,   0, 255);
 
       final okPx = _pixel(pixels, 700, 825, 25);
       print('[Coffee matrix-decode] OK rect colour: $okPx');

@@ -1,3 +1,18 @@
+## 1.1.0
+
+### JavaScript runtime + SVGator support 🎉
+
+This release ships an embedded JavaScript engine and a polyfilled SVG DOM, so animated SVGs that drive their animation through inline `<script>` blocks now render natively — no WebView, no conversion to SMIL.
+
+- **SVGator JS-export files now render correctly.** Coffee Match Cut, Glowing Gummies, Basketball Boy, Skating Girls, Dog Character, Ramen Raccoon and similar SVGator-exported scenes play with their original player script attached. SMIL/CSS export is no longer required.
+- **Embedded JavaScript engine.** [QuickJS-NG][qjsng] 0.14.0 (May 2026 release) ships inside the app on every platform — Android, iOS, macOS, Linux, Windows — via the new [`quickjs_engine`][qjs-engine-pkg] runtime package. The same JS engine on every target eliminates the JSC-vs-old-QuickJS divergence that plagued cross-platform JS-in-SVG.
+- **SVG DOM polyfill.** `document.getElementById`, `Element.setAttribute`/`setAttributeNS`, `style` property proxy, virtual `createElementNS('svg', 'path')` with real `getTotalLength()` and `getPointAtLength(distance)` for arc-length-parameterized bezier interpolation, `requestAnimationFrame`, `addEventListener`, timers, `fetch`/XHR via Dart `http`, plus the rest of the surface SVGator and similar players touch.
+- **Cubic-bezier path arc-length math.** Virtual `<path>` elements compute real arc length via 100-sample subdivision + cumulative table; `getPointAtLength` does a binary search across the table and linearly interpolates between samples. Cached per-path keyed by the `d` attribute. This is the keystone fix that gets SVGator's `Ft()` interpolator to produce correct points instead of `{x:0, y:0}` mid-segment.
+- Custom JS animations also work — any inline `<script>` that walks the SVG via `getElementById` + `setAttribute` will animate, even if it's not from SVGator.
+
+[qjsng]: https://github.com/quickjs-ng/quickjs
+[qjs-engine-pkg]: https://pub.dev/packages/quickjs_engine
+
 ## 1.0.3
 
 - Fix `<image>` aspect ratio: when only `width` or `height` is specified, the missing dimension is now computed proportionally from the image's intrinsic size. Previously, the raw pixel dimension was used, causing images placed with a single size attribute to shift position and appear at incorrect scale.

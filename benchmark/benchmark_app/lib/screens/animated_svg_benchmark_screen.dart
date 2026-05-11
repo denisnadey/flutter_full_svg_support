@@ -27,7 +27,7 @@ class _AnimatedSvgBenchmarkScreenState
     extends State<AnimatedSvgBenchmarkScreen> {
   _AnimScenario _selected = _AnimScenario.spinnerSmil;
   ffsf.AnimatedSvgController? _controller;
-  List<BenchmarkMetrics> _results = [];
+  final List<BenchmarkMetrics> _results = [];
 
   static const Map<_AnimScenario, String> _assetPaths = {
     _AnimScenario.spinnerSmil: 'assets/animated/spinner_smil.svg',
