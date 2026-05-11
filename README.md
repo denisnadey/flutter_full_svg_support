@@ -52,7 +52,7 @@ There are several ways to use animated vector graphics in Flutter: static SVG pa
 ```yaml
 # pubspec.yaml
 dependencies:
-  full_svg_flutter: ^1.0.3
+  full_svg_flutter: ^1.1.0
 ```
 
 ```dart
@@ -288,7 +288,7 @@ controller.addListener(() {
 | Hit-testing across 12 element types | ✅ Supported |
 | `<a>` with `onLinkTap` | ✅ Supported |
 | Accessibility (`<title>`, `<desc>`, ARIA) | ✅ Supported |
-| JavaScript inside SVG | ❌ Not supported |
+| JavaScript inside SVG (inline `<script>`, external `<script src>`) | ✅ Supported via bundled QuickJS engine (see [JavaScript runtime](#javascript-runtime--svgator-runtime)) |
 | External cross-origin resources | ❌ Restricted by platform policy |
 
 ---
@@ -363,12 +363,70 @@ Known limitations:
 
 ```yaml
 dependencies:
-  full_svg_flutter: ^1.0.3
+  full_svg_flutter: ^1.1.0
 ```
 
 ```bash
 flutter pub add full_svg_flutter
 ```
+
+### Native dependencies
+
+1.1.0 pulls in [`quickjs_engine`][qjs-engine-pkg], the embedded JavaScript
+runtime used for SVGs that contain inline `<script>` blocks (SVGator
+JS-export, custom JS animations). It is a pure Flutter plugin — `flutter pub
+get` followed by your usual build command (`flutter run` /
+`flutter build`) does everything: the plugin compiles the native bridge,
+links it into your app, and the Dart-side FFI binding loads it at startup.
+
+You do **not** need to install `cmake`, `ninja`, the Android NDK, or any
+other native toolchain manually for typical app development — Flutter's
+build pipeline already runs them.
+
+When you might need to do something extra:
+
+| Situation | Action |
+|---|---|
+| **You see "Failed to load dynamic library 'libquickjs_c_bridge_plugin.\*'"** on `flutter test` for macOS, Linux, or Windows | The library hasn't been built. Run `dart run quickjs_engine:build_native` once after `flutter pub get` (or read [Building from source](#building-the-native-library-from-source) below) |
+| **You ship to a less-common Android ABI** (riscv64, x86 32-bit) | Open `android/app/build.gradle` and add the ABI to `ndk.abiFilters`. Default ABIs (`armeabi-v7a`, `arm64-v8a`, `x86`, `x86_64`) are already configured by `quickjs_engine` |
+| **You target iOS < 11.0 or macOS < 10.13** | Raise the deployment target in your Xcode project — the bridge requires C++17, which needs at least these versions |
+| **You bundle the app as an `.aab` and Play Console rejects 16 KB page size** | This is fine for `quickjs_engine` — the bundled library is built with 16 KB page alignment via the standard NDK CMake pipeline |
+
+### Building the native library from source
+
+You only need this if you're contributing to `quickjs_engine` itself, hitting
+a "library not found" error in `flutter test` on desktop, or building for a
+target architecture the plugin doesn't pre-ship. Otherwise `flutter run`
+covers everything.
+
+**macOS / Linux:**
+
+```bash
+# inside your app folder, or wherever you have full_svg_flutter installed
+cd $(dirname $(find . -name quickjs_engine -type d -not -path '*/build/*' | head -n1))
+sh tool/build_native.sh
+```
+
+**Windows (PowerShell):**
+
+```powershell
+# locate the quickjs_engine package and run the PS1 build script
+Set-Location (Get-ChildItem -Recurse -Directory -Filter quickjs_engine `
+              | Where-Object { $_.FullName -notmatch '\\build\\' } `
+              | Select-Object -First 1).FullName
+.\tool\build_native.ps1
+```
+
+Both scripts invoke `cmake -S native -B native/build && cmake --build
+native/build -j` and copy the resulting library into the platform-specific
+output folder (`macos/Frameworks/`, `linux/`, or `windows/`). They require:
+
+- **CMake ≥ 3.10** — `brew install cmake` / `apt install cmake` / [cmake.org/download](https://cmake.org/download)
+- **A C/C++17 compiler** — Xcode CLT (`xcode-select --install`), GCC ≥ 7,
+  or MSVC 2019+ ("Desktop development with C++" workload).
+- (Windows-only) **Visual Studio Build Tools** — easiest via
+  [Build Tools installer](https://aka.ms/vs/17/release/vs_BuildTools.exe)
+  with the C++ workload.
 
 ---
 
@@ -539,7 +597,7 @@ Yes. `full_svg_flutter` renders inside Flutter's own painting layer. No `webview
 
 ### Does this package work with SVGator exports?
 
-It depends on the SVGator export mode. SMIL and CSS export modes generally work. JavaScript-driven animations are not supported. Use SMIL or CSS export if available.
+Yes — both the **SMIL/CSS export** mode and the **JavaScript export** mode work. SMIL/CSS files run on the package's built-in animation engine; JS-export files are executed by the bundled QuickJS runtime against a polyfilled SVG DOM (see the [JavaScript runtime section](#javascript-runtime--svgator-runtime)). You don't have to re-export an animation just because SVGator picked the JS path.
 
 ### Is this a drop-in replacement for flutter_svg?
 

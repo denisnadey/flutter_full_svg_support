@@ -1,3 +1,14 @@
+## 1.1.1
+
+Documentation fixes for the 1.1.0 release — no code changes.
+
+- Updated supported-features table: `JavaScript inside SVG` row now reads ✅ Supported (linking to the JavaScript runtime section) instead of the stale ❌ from previous versions.
+- Updated FAQ entry on SVGator: both SMIL/CSS and JS-export modes are documented as working now.
+- Added a **Native dependencies** + **Building the native library from source** section to the README covering macOS / Linux / Windows toolchain prerequisites and when end users actually need to recompile.
+- Rewrote [`doc/limitations.md`](doc/limitations.md) JavaScript section: spelled out which DOM APIs the polyfill covers and which still aren't supported (full HTML DOM, inline `onclick=` handlers, browser frameworks).
+- Updated [`doc/supported_features.md`](doc/supported_features.md): JavaScript runtime is its own table now with the polyfill surface; removed the obsolete row from "Not supported".
+- Quick-start version pins refreshed from 1.0.3 → 1.1.0.
+
 ## 1.1.0
 
 ### JavaScript runtime + SVGator support 🎉

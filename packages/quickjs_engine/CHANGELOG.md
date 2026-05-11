@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.1
+
+Documentation + tooling additions, no engine changes.
+
+- Rewrote `README.md` with explicit per-platform tables (Android / iOS / macOS / Linux / Windows) covering how the library is produced and what action is required from package consumers (usually: none).
+- Added a **When you might need to rebuild** section so it's clear that typical app development needs no native toolchain.
+- Added a **Troubleshooting** section: macOS "tests can't find dylib", deployment-target warnings, Android NDK requirements, Windows `cl.exe` environment, missing-dylib after fresh checkout.
+- New `tool/build_native.ps1` — PowerShell version of the build script for Windows hosts. Handles MSVC's `Release\` config subdirectory.
+- `tool/build_native.sh` is now platform-aware (detects macOS vs Linux via `uname -s`) and stages the output appropriately on macOS, while leaving the Linux build under `native/build/` since the consumer's plugin CMake rebuilds anyway.
+
 ## 0.1.0
 
 Initial release.

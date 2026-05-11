@@ -1,65 +1,71 @@
+# NOTE: leading `/` anchors each pattern to the package root, so these
+# exclusions DO NOT cascade into nested packages (packages/quickjs_engine
+# publishes on its own and must be allowed to see its own files).
+
 # Internal tooling — not shipped to pub.dev consumers.
-benchmark/
+/benchmark/
 
 # Top-level build/test caches (Flutter Tools) leaked into git in some past run.
-build/
+/build/
 
 # Knowledge-graph snapshot from `graphify`. Tooling artifact, not API surface.
-graphify-out/
+/graphify-out/
 
 # Internal dev tooling (Puppeteer node_modules, snapshot scripts, etc.).
-tool/
+/tool/
 
 # External test fixtures committed for cross-referencing — they're huge and
 # not part of the published API surface.
-W3C_SVG_11_TestSuite/
-blink-b87d44f-Source-core-svg/
+/W3C_SVG_11_TestSuite/
+/blink-b87d44f-Source-core-svg/
 
 # Heavy test assets — consumers of the package don't need our golden
 # reference images, W3C-suite outputs, or the bundled SVGator player JS
 # that we use for offline-deterministic SVGator regression tests.
-test/animation_goldens/
-test/goldens/
-test/golden_widget/
-test/w3c/
-test/failures/
-test/golden_comparison/
-test/animation/_svgator_player_91c80d77.js
+/test/animation_goldens/
+/test/goldens/
+/test/golden_widget/
+/test/w3c/
+/test/failures/
+/test/golden_comparison/
+/test/animation/_svgator_player_91c80d77.js
 
 # Example app build artifacts and platform scaffold (each `flutter create`
 # regenerates these). Keep the demo Dart source under example/lib/ so the
 # pub.dev page can show a working sample.
-example/build/
-example/android/
-example/ios/
-example/macos/
-example/linux/
-example/windows/
-example/web/
-example/.dart_tool/
-example/pubspec.lock
-example/.flutter-plugins-dependencies
-example/.metadata
-example/integration_test/
+/example/build/
+/example/android/
+/example/ios/
+/example/macos/
+/example/linux/
+/example/windows/
+/example/web/
+/example/.dart_tool/
+/example/pubspec.lock
+/example/.flutter-plugins-dependencies
+/example/.metadata
+/example/integration_test/
 
-# The bundled quickjs_engine source lives here for local dev only; consumers
-# get it from pub.dev via the hosted dep. No need to duplicate ~1.5 MB of
-# vendored JS-engine source into every install.
-packages/
+# NOTE: we intentionally do NOT exclude `packages/` here, because pub's
+# .pubignore cascades into nested packages. Excluding `packages/` here
+# wipes out every file when quickjs_engine publishes itself from
+# packages/quickjs_engine/. The duplicate ~1.5 MB of vendored JS engine
+# source is the trade-off; consumers still resolve quickjs_engine via the
+# pub.dev hosted dep at runtime, not from this nested copy.
 
 # Test output dumps + dev-only docs from earlier iterations.
-example/ENHANCEMENTS_SUMMARY.md
-example/NEW_ARCHITECTURE.md
-example/SEARCH_FEATURE.md
-test_output.log
+/example/ENHANCEMENTS_SUMMARY.md
+/example/NEW_ARCHITECTURE.md
+/example/SEARCH_FEATURE.md
+/test_output.log
 
 # Local Flutter / Dart caches that may have leaked into git.
-.dart_tool/
-example/.dart_tool/
-example/build/
+/.dart_tool/
+/example/.dart_tool/
+/example/build/
 
 # CC parallel-agent worktrees.
-.claude/
+/.claude/
 
 # Marketing drafts not part of the public docs.
-docs/marketing/
+/docs/marketing/
