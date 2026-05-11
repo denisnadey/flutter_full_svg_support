@@ -6,9 +6,9 @@
 
 #include "generated_plugin_registrant.h"
 
-#include <flutter_js/flutter_js_plugin.h>
+#include <full_svg_flutter_js/full_svg_flutter_js_plugin.h>
 
 void RegisterPlugins(flutter::PluginRegistry* registry) {
-  FlutterJsPluginRegisterWithRegistrar(
-      registry->GetRegistrarForPlugin("FlutterJsPlugin"));
+  FullSvgFlutterJsPluginRegisterWithRegistrar(
+      registry->GetRegistrarForPlugin("FullSvgFlutterJsPlugin"));
 }

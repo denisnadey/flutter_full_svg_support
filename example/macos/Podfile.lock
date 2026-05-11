@@ -1,21 +1,21 @@
 PODS:
-  - flutter_js (0.0.1):
-    - FlutterMacOS
   - FlutterMacOS (1.0.0)
+  - full_svg_flutter_js (0.1.0):
+    - FlutterMacOS
 
 DEPENDENCIES:
-  - flutter_js (from `Flutter/ephemeral/.symlinks/plugins/flutter_js/macos`)
   - FlutterMacOS (from `Flutter/ephemeral`)
+  - full_svg_flutter_js (from `Flutter/ephemeral/.symlinks/plugins/full_svg_flutter_js/macos`)
 
 EXTERNAL SOURCES:
-  flutter_js:
-    :path: Flutter/ephemeral/.symlinks/plugins/flutter_js/macos
   FlutterMacOS:
     :path: Flutter/ephemeral
+  full_svg_flutter_js:
+    :path: Flutter/ephemeral/.symlinks/plugins/full_svg_flutter_js/macos
 
 SPEC CHECKSUMS:
-  flutter_js: c664361655af1d8fc24e278c7d086e9cbe0d68bc
   FlutterMacOS: d0db08ddef1a9af05a5ec4b724367152bb0500b1
+  full_svg_flutter_js: 2f0d873f6103167882e5ca9a496e4186c43ece3d
 
 PODFILE CHECKSUM: 1b29b575031b812e1e7a7cf698aec84e8b2cab1e
 

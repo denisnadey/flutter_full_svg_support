@@ -14,10 +14,15 @@ class SvgGalleryCard extends StatefulWidget {
     super.key,
     required this.item,
     required this.onTap,
+    this.onLongPress,
   });
 
   final SvgAnimationItem item;
   final VoidCallback onTap;
+
+  /// Long-press the card to open the debug viewer (timeline scrubber +
+  /// layer tree + JSON export).
+  final VoidCallback? onLongPress;
 
   @override
   State<SvgGalleryCard> createState() => _SvgGalleryCardState();
@@ -82,6 +87,8 @@ class _SvgGalleryCardState extends State<SvgGalleryCard> {
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
         onTap: widget.onTap,
+        onLongPress: widget.onLongPress,
+        onSecondaryTap: widget.onLongPress,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
           decoration: BoxDecoration(

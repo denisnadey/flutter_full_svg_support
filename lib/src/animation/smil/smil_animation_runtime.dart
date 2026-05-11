@@ -7,12 +7,44 @@ extension SmilAnimationRuntimeExtension on SmilAnimation {
       attr.setAnimatedValue(value);
     } else {
       // If the attribute doesn't exist, create it.
-      // This happens for animateTransform when the element initially has no transform
-      targetNode.setAttribute(attributeName, value, type: attributeType);
+      // This happens for animateTransform and animateMotion when the
+      // element initially has no transform.
+      //
+      // CRITICAL: we must seed the new attribute with an *identity* base
+      // value, NOT the computed [value]. Otherwise a subsequent tick
+      // running under additive="sum" (the SMIL default for animateMotion)
+      // will compute `add(baseValue, newValue)` and the formerly-correct
+      // [value] becomes a phantom static offset that gets pre-pended to
+      // every later transform. The visible effect is the animated element
+      // sliding off by exactly the starting-point coordinates.
+      final identityBase = _identityBaseValueFor(attributeType, value);
+      targetNode.setAttribute(attributeName, identityBase,
+          type: attributeType);
       final newAttr = targetNode.getAttribute(attributeName);
       if (newAttr != null) {
         newAttr.setAnimatedValue(value);
       }
+    }
+  }
+
+  /// Returns a neutral identity baseValue for [type] so additive="sum"
+  /// chains don't accidentally accumulate the first-written animated value
+  /// as a static offset. See [_applyValue].
+  Object _identityBaseValueFor(SvgAttributeType type, Object fallback) {
+    switch (type) {
+      case SvgAttributeType.transform:
+        return '';
+      case SvgAttributeType.number:
+      case SvgAttributeType.length:
+        return 0;
+      case SvgAttributeType.list:
+      case SvgAttributeType.points:
+        return const <double>[];
+      default:
+        // For attribute types we don't have a sensible identity for
+        // (colors, strings, paths, …), keep the existing behavior — it
+        // was correct in practice for everything except additive=sum.
+        return fallback;
     }
   }
 

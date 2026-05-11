@@ -68,6 +68,16 @@ extension _AnimatedSvgPictureStateLifecycleExtension
 
       // Parse SVG
       _document = SvgParser.parse(widget._svgString);
+      // Wire debug hooks on the controller so external tooling can read
+      // live state at any time. Cleared in [_dispose].
+      if (widget.controller != null) {
+        widget.controller!
+          ..debugSnapshotProvider = _captureDebugSnapshot
+          ..debugCurrentTimeMsProvider = _debugCurrentTimeMs
+          ..debugJsEvaluator =
+              (code) => _jsBridge?.evaluateForDebug(code);
+      }
+
       _trace(
         category: 'init',
         message: 'SVG parsed successfully',
@@ -411,6 +421,14 @@ extension _AnimatedSvgPictureStateLifecycleExtension
     _imageLoadGeneration++;
     _disposeResolvedImages();
     widget.controller?.removeListener(_onControllerUpdate);
+    // Clear debug hooks so the controller doesn't hold stale references
+    // to a torn-down widget tree.
+    if (widget.controller != null) {
+      widget.controller!
+        ..debugSnapshotProvider = null
+        ..debugCurrentTimeMsProvider = null
+        ..debugJsEvaluator = null;
+    }
     _controller?.removeListener(_onAnimationTick);
     _controller?.dispose();
     _controller = null;
@@ -419,6 +437,176 @@ extension _AnimatedSvgPictureStateLifecycleExtension
     _hoveredAnchorInfo = null;
     _jsBridge?.dispose();
     _jsBridge = null;
+  }
+
+  // ── Debug snapshot ──────────────────────────────────────────────────────
+  //
+  // Walks the live SvgDocument tree and produces a JSON-ready map suitable
+  // for the debug viewer (gallery card → long-press → inspector). Captures
+  // every element's id/tag/depth/attrs as of right now (i.e. *after* SMIL
+  // + CSS + JS have written their animated values for the current frame).
+  // For elements with their own geometry it also computes a root-space
+  // bounding box so the viewer can draw selection outlines and do
+  // tap-to-select hit-testing.
+
+  double _debugCurrentTimeMs() {
+    final c = _controller;
+    final t = _timeline;
+    if (c == null || t == null) return 0;
+    return c.value * t.totalDuration.inMilliseconds;
+  }
+
+  Map<String, Object?> _captureDebugSnapshot() {
+    final elements = <Map<String, Object?>>[];
+    void walk(SvgNode node, int depth, _M2 parentToRoot) {
+      final attrs = <String, String>{};
+      for (final entry in node.attributes.entries) {
+        final v = entry.value.effectiveValue;
+        if (v == null) continue;
+        attrs[entry.key] = v.toString();
+      }
+      // `id` and `class` are stored as dedicated fields, not in attributes.
+      if (node.id != null && !attrs.containsKey('id')) attrs['id'] = node.id!;
+      if (node.className != null && !attrs.containsKey('class')) {
+        attrs['class'] = node.className!;
+      }
+      // Compose this node's local transform on top of the parent's.
+      final local = _parseTransformAttr(attrs['transform']);
+      final toRoot = parentToRoot.multiply(local);
+      // Local geometric bbox (if any) projected to root.
+      Map<String, double>? bboxRoot;
+      final local2d = _localGeometryBbox(node);
+      if (local2d != null) {
+        final corners = <List<double>>[
+          [local2d.left, local2d.top],
+          [local2d.right, local2d.top],
+          [local2d.right, local2d.bottom],
+          [local2d.left, local2d.bottom],
+        ];
+        double minX = double.infinity, minY = double.infinity;
+        double maxX = -double.infinity, maxY = -double.infinity;
+        for (final c in corners) {
+          final p = toRoot.transformPoint(c[0], c[1]);
+          if (p[0] < minX) minX = p[0];
+          if (p[1] < minY) minY = p[1];
+          if (p[0] > maxX) maxX = p[0];
+          if (p[1] > maxY) maxY = p[1];
+        }
+        bboxRoot = <String, double>{
+          'x': minX, 'y': minY, 'w': maxX - minX, 'h': maxY - minY,
+        };
+      }
+      elements.add(<String, Object?>{
+        'id': node.id,
+        'tag': node.tagName,
+        'depth': depth,
+        'attrs': attrs,
+        if (bboxRoot != null) 'bboxRoot': bboxRoot,
+        'hasAnimations': node.hasAnimations,
+      });
+      for (final child in node.children) {
+        walk(child, depth + 1, toRoot);
+      }
+    }
+    try {
+      walk(_document.root, 0, _M2.identity());
+    } catch (_) {
+      // Snapshot is best-effort: failures should not crash the host app.
+    }
+    final vb = _document.viewBox;
+    return <String, Object?>{
+      'capturedAtMs': _debugCurrentTimeMs(),
+      'totalDurationMs': _timeline?.totalDuration.inMilliseconds,
+      'isPaused': widget.controller?.isPaused,
+      'playbackRate': widget.playbackRate,
+      'autoPlay': widget.autoPlay,
+      'viewBox': vb == null
+          ? null
+          : <String, double>{
+              'x': vb.left,
+              'y': vb.top,
+              'width': vb.width,
+              'height': vb.height,
+            },
+      'elementCount': elements.length,
+      'elements': elements,
+    };
+  }
+
+  /// Returns the geometric bbox of [node] in its own local coordinate
+  /// space (i.e. *before* its own `transform` is applied), or `null` if
+  /// the element has no inherent geometry (groups, defs, etc.).
+  Rect? _localGeometryBbox(SvgNode node) {
+    double? d(String name) {
+      final v = node.getAttributeValue(name);
+      if (v is num) return v.toDouble();
+      if (v is String) return double.tryParse(v);
+      return null;
+    }
+    switch (node.tagName) {
+      case 'rect':
+        final x = d('x') ?? 0, y = d('y') ?? 0;
+        final w = d('width') ?? 0, h = d('height') ?? 0;
+        if (w <= 0 || h <= 0) return null;
+        return Rect.fromLTWH(x, y, w, h);
+      case 'circle':
+        final cx = d('cx') ?? 0, cy = d('cy') ?? 0, r = d('r') ?? 0;
+        if (r <= 0) return null;
+        return Rect.fromCircle(center: Offset(cx, cy), radius: r);
+      case 'ellipse':
+        final cx = d('cx') ?? 0, cy = d('cy') ?? 0;
+        final rx = d('rx') ?? 0, ry = d('ry') ?? 0;
+        if (rx <= 0 || ry <= 0) return null;
+        return Rect.fromCenter(
+            center: Offset(cx, cy), width: rx * 2, height: ry * 2);
+      case 'line':
+        final x1 = d('x1') ?? 0, y1 = d('y1') ?? 0;
+        final x2 = d('x2') ?? 0, y2 = d('y2') ?? 0;
+        return Rect.fromLTRB(
+          x1 < x2 ? x1 : x2,
+          y1 < y2 ? y1 : y2,
+          x1 < x2 ? x2 : x1,
+          y1 < y2 ? y2 : y1,
+        );
+      default:
+        return null;
+    }
+  }
+
+  static final RegExp _translateRe =
+      RegExp(r'translate\(\s*(-?\d+\.?\d*)[\s,]+(-?\d+\.?\d*)\s*\)');
+  static final RegExp _matrixRe = RegExp(
+      r'matrix\(\s*(-?\d+\.?\d*(?:[eE][+\-]?\d+)?)[\s,]+'
+      r'(-?\d+\.?\d*(?:[eE][+\-]?\d+)?)[\s,]+'
+      r'(-?\d+\.?\d*(?:[eE][+\-]?\d+)?)[\s,]+'
+      r'(-?\d+\.?\d*(?:[eE][+\-]?\d+)?)[\s,]+'
+      r'(-?\d+\.?\d*(?:[eE][+\-]?\d+)?)[\s,]+'
+      r'(-?\d+\.?\d*(?:[eE][+\-]?\d+)?)\s*\)');
+
+  /// Parses a sequence of `translate(...)` / `matrix(...)` transform
+  /// functions into a 2D affine matrix. Anything else (rotate/scale/skew)
+  /// would require more work; the snapshot is best-effort so unknown
+  /// transforms simply fall back to identity. This is good enough for the
+  /// bbox overlay since the bulk of authored transforms are translate
+  /// and matrix.
+  _M2 _parseTransformAttr(String? s) {
+    if (s == null || s.isEmpty) return _M2.identity();
+    var m = _M2.identity();
+    for (final tx in _translateRe.allMatches(s)) {
+      final dx = double.tryParse(tx.group(1)!) ?? 0;
+      final dy = double.tryParse(tx.group(2)!) ?? 0;
+      m = m.multiply(_M2.translate(dx, dy));
+    }
+    for (final mx in _matrixRe.allMatches(s)) {
+      final a = double.tryParse(mx.group(1)!) ?? 1;
+      final b = double.tryParse(mx.group(2)!) ?? 0;
+      final c = double.tryParse(mx.group(3)!) ?? 0;
+      final dd = double.tryParse(mx.group(4)!) ?? 1;
+      final e = double.tryParse(mx.group(5)!) ?? 0;
+      final f = double.tryParse(mx.group(6)!) ?? 0;
+      m = m.multiply(_M2(a, b, c, dd, e, f));
+    }
+    return m;
   }
 
   /// Schedules font registration for embedded @font-face fonts.
@@ -594,4 +782,28 @@ extension _AnimatedSvgPictureStateLifecycleExtension
         time.inMicroseconds / _timeline!.totalDuration.inMicroseconds;
     _controller!.value = progress.clamp(0.0, 1.0);
   }
+}
+
+/// 2D affine matrix [a b c d e f] representing `[a c e; b d f; 0 0 1]`,
+/// matching SVG's `matrix(...)` order. Used by the debug snapshot pass to
+/// project per-element local geometry into root coordinates so the viewer
+/// can draw bbox overlays.
+class _M2 {
+  _M2(this.a, this.b, this.c, this.d, this.e, this.f);
+  factory _M2.identity() => _M2(1, 0, 0, 1, 0, 0);
+  factory _M2.translate(double dx, double dy) => _M2(1, 0, 0, 1, dx, dy);
+
+  final double a, b, c, d, e, f;
+
+  _M2 multiply(_M2 o) => _M2(
+        a * o.a + c * o.b,
+        b * o.a + d * o.b,
+        a * o.c + c * o.d,
+        b * o.c + d * o.d,
+        a * o.e + c * o.f + e,
+        b * o.e + d * o.f + f,
+      );
+
+  List<double> transformPoint(double x, double y) =>
+      <double>[a * x + c * y + e, b * x + d * y + f];
 }

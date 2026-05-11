@@ -5,8 +5,8 @@
 import FlutterMacOS
 import Foundation
 
-import flutter_js
+import full_svg_flutter_js
 
 func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
-  FlutterJsPlugin.register(with: registry.registrar(forPlugin: "FlutterJsPlugin"))
+  FullSvgFlutterJsPlugin.register(with: registry.registrar(forPlugin: "FullSvgFlutterJsPlugin"))
 }

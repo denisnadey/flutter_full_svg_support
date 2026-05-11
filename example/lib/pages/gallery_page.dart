@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/svg_animations.dart';
+import '../pages/svg_debug_viewer_page.dart';
 import '../pages/svg_detail_page.dart';
 import '../widgets/svg_gallery_card.dart';
 
@@ -115,6 +116,12 @@ class _GalleryPageState extends State<GalleryPage> {
                 context,
                 MaterialPageRoute(
                   builder: (_) => SvgDetailPage(item: item),
+                ),
+              ),
+              onLongPress: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => SvgDebugViewerPage(item: item),
                 ),
               ),
             );

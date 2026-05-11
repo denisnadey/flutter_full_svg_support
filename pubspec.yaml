@@ -20,7 +20,8 @@ dependencies:
   vector_graphics_codec: ^1.1.11+1
   vector_graphics_compiler: ^1.1.14
   xml: '>=6.0.0 <8.0.0'
-  flutter_js: '>=0.7.0 <2.0.0'
+  full_svg_flutter_js:
+    path: packages/full_svg_flutter_js
 
 dev_dependencies:
   flutter_test:

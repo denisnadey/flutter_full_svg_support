@@ -4,7 +4,7 @@ import 'dart:developer' as developer;
 import 'dart:ui' as ui;
 
 import 'package:flutter/scheduler.dart';
-import 'package:flutter_js/flutter_js.dart';
+import 'package:full_svg_flutter_js/full_svg_flutter_js.dart';
 import 'package:http/http.dart' as http;
 
 import 'css_animations.dart';
@@ -548,6 +548,116 @@ class SvgJsBridge {
     return tl;
   }
 
+  // ── Path-length / point-at-length for virtual <path> elements ──────────
+  //
+  // SVGator's player builds a hidden <path> via createElementNS, sets its
+  // `d` attribute (one of three shapes: M..L.., M..Q.., M..C..), then
+  // calls getTotalLength / getPointAtLength to do arc-length-parameterized
+  // bezier interpolation. The native browser implements these on the
+  // SVGPathElement; we have to do the math ourselves.
+  //
+  // Approach: tokenize `d`, sample each curve segment at 100 sub-steps,
+  // build a cumulative arc-length table, then binary-search for the
+  // target distance. Cached per-vid keyed by the literal `d` string.
+  var _pathCache = {};
+  function _parsePathSegs(d) {
+    var tokens = d.match(/[MLCQ]|-?\d+\.?\d*(?:[eE][+\-]?\d+)?/g);
+    if (!tokens) return [];
+    var segs = [], i = 0, cur = {x: 0, y: 0};
+    while (i < tokens.length) {
+      var cmd = tokens[i++];
+      if (cmd === 'M') {
+        cur = {x: parseFloat(tokens[i++]), y: parseFloat(tokens[i++])};
+      } else if (cmd === 'L') {
+        var e = {x: parseFloat(tokens[i++]), y: parseFloat(tokens[i++])};
+        segs.push({k: 'L', p0: cur, p3: e});
+        cur = e;
+      } else if (cmd === 'Q') {
+        var c = {x: parseFloat(tokens[i++]), y: parseFloat(tokens[i++])};
+        var e2 = {x: parseFloat(tokens[i++]), y: parseFloat(tokens[i++])};
+        segs.push({k: 'Q', p0: cur, p1: c, p3: e2});
+        cur = e2;
+      } else if (cmd === 'C') {
+        var c1 = {x: parseFloat(tokens[i++]), y: parseFloat(tokens[i++])};
+        var c2 = {x: parseFloat(tokens[i++]), y: parseFloat(tokens[i++])};
+        var e3 = {x: parseFloat(tokens[i++]), y: parseFloat(tokens[i++])};
+        segs.push({k: 'C', p0: cur, p1: c1, p2: c2, p3: e3});
+        cur = e3;
+      }
+    }
+    return segs;
+  }
+  function _sampleSeg(seg, n) {
+    var out = [];
+    for (var k = 0; k <= n; k++) {
+      var t = k / n, mt = 1 - t, x, y;
+      if (seg.k === 'L') {
+        x = seg.p0.x + (seg.p3.x - seg.p0.x) * t;
+        y = seg.p0.y + (seg.p3.y - seg.p0.y) * t;
+      } else if (seg.k === 'Q') {
+        x = mt*mt*seg.p0.x + 2*mt*t*seg.p1.x + t*t*seg.p3.x;
+        y = mt*mt*seg.p0.y + 2*mt*t*seg.p1.y + t*t*seg.p3.y;
+      } else {
+        var mt2 = mt*mt, mt3 = mt2*mt, t2 = t*t, t3 = t2*t;
+        x = mt3*seg.p0.x + 3*mt2*t*seg.p1.x + 3*mt*t2*seg.p2.x + t3*seg.p3.x;
+        y = mt3*seg.p0.y + 3*mt2*t*seg.p1.y + 3*mt*t2*seg.p2.y + t3*seg.p3.y;
+      }
+      out.push({x: x, y: y});
+    }
+    return out;
+  }
+  function _virtPathTable(vid) {
+    var attrs = _virtAttrs[vid] && _virtAttrs[vid].attrs;
+    var d = attrs && attrs.d;
+    if (!d) return null;
+    var cached = _pathCache[vid];
+    if (cached && cached.d === d) return cached;
+    var segs = _parsePathSegs(d);
+    var samples = [];
+    for (var i = 0; i < segs.length; i++) {
+      var sub = _sampleSeg(segs[i], 100);
+      // Skip the leading sample of subsequent segments to avoid double-counting joins.
+      if (i > 0) sub = sub.slice(1);
+      for (var j = 0; j < sub.length; j++) samples.push(sub[j]);
+    }
+    var cum = [0];
+    for (var k = 1; k < samples.length; k++) {
+      var dx = samples[k].x - samples[k-1].x;
+      var dy = samples[k].y - samples[k-1].y;
+      cum.push(cum[k-1] + Math.sqrt(dx*dx + dy*dy));
+    }
+    cached = {d: d, samples: samples, cum: cum, total: cum[cum.length - 1] || 0};
+    _pathCache[vid] = cached;
+    return cached;
+  }
+  function _virtPathLength(vid) {
+    var t = _virtPathTable(vid);
+    return t ? t.total : 0;
+  }
+  function _virtPathPointAt(vid, distance) {
+    var t = _virtPathTable(vid);
+    if (!t || t.samples.length === 0) return {x: 0, y: 0};
+    if (!(distance > 0)) return {x: t.samples[0].x, y: t.samples[0].y};
+    if (distance >= t.total) {
+      var last = t.samples[t.samples.length - 1];
+      return {x: last.x, y: last.y};
+    }
+    var lo = 0, hi = t.cum.length - 1;
+    while (lo < hi) {
+      var mid = (lo + hi) >> 1;
+      if (t.cum[mid] < distance) lo = mid + 1; else hi = mid;
+    }
+    var i1 = lo, i0 = lo - 1;
+    if (i0 < 0) return {x: t.samples[0].x, y: t.samples[0].y};
+    var l0 = t.cum[i0], l1 = t.cum[i1];
+    var span = l1 - l0;
+    var f = span > 1e-12 ? (distance - l0) / span : 0;
+    return {
+      x: t.samples[i0].x + (t.samples[i1].x - t.samples[i0].x) * f,
+      y: t.samples[i0].y + (t.samples[i1].y - t.samples[i0].y) * f
+    };
+  }
+
   // SVGAnimatedString — baseVal/animVal wrapper around a single attribute
   function _makeSVGAnimatedString(getFn, setFn) {
     var as = {};
@@ -697,8 +807,17 @@ class SvgJsBridge {
     el.replaceChild = function(newChild, oldChild) { return newChild; };
     el.replaceWith = function(node) {};
     el.getBBox = function() { return {x:0, y:0, width:0, height:0}; };
-    el.getTotalLength = function() { return 0; };
-    el.getPointAtLength = function(d) { return {x:0, y:0}; };
+    // Compute arc length / point-at-length for virtual <path> elements
+    // built by the SVGator player (Pt). The player emits a single
+    // M-then-(L|Q|C) path per query; we parse that, subdivide the curve
+    // into 100 samples, and use a cumulative-arc-length table.
+    //
+    // This MUST return real values (not {x:0,y:0}) — otherwise the
+    // player's Ft() consumes the bogus point as truthy and computes
+    // key.o = (0,0), producing translate(data.t.x, data.t.y) — i.e. the
+    // SVGator "data.t-only" bug we used to mask with a Dart-side override.
+    el.getTotalLength = function() { return _virtPathLength(vid); };
+    el.getPointAtLength = function(d) { return _virtPathPointAt(vid, d); };
     el.matches = function(selector) { return false; };
     el.closest = function(selector) { return null; };
     el.contains = function(other) { return false; };
@@ -2055,6 +2174,24 @@ class SvgJsBridge {
   } catch(e) { console.error('inline handler:', String(e)); }
 })();''',
     );
+  }
+
+  /// Evaluate arbitrary JS in the bridge's runtime — used by the debug
+  /// viewer to drive `svg.svgatorPlayer.seekTo(t)` from outside.
+  /// Returns the string result, or `null` if evaluation threw.
+  String? evaluateForDebug(String code) {
+    try {
+      final result = _runtime.evaluate(code);
+      if (result.isError) {
+        developer.log('debug-eval error: ${result.stringResult}',
+            name: 'SVG/JS');
+        return null;
+      }
+      return result.stringResult;
+    } catch (e) {
+      developer.log('debug-eval threw: $e', name: 'SVG/JS');
+      return null;
+    }
   }
 
   void dispose() {

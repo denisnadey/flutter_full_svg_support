@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 
 import '../data/svg_animations.dart';
 import '../widgets/svg_gallery_card.dart'; // for shared svgNetworkCache
+import 'svg_debug_viewer_page.dart';
 
 class SvgDetailPage extends StatefulWidget {
   const SvgDetailPage({super.key, required this.item});
@@ -69,6 +70,17 @@ class _SvgDetailPageState extends State<SvgDetailPage> {
               padding: EdgeInsets.zero,
               visualDensity: VisualDensity.compact,
               avatar: Icon(cat.icon, size: 14, color: Colors.white),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.bug_report_rounded, size: 20),
+            tooltip: 'Open in Debug viewer (scrubber + layer tree + JSON)',
+            color: Colors.amberAccent,
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => SvgDebugViewerPage(item: widget.item),
+              ),
             ),
           ),
           IconButton(

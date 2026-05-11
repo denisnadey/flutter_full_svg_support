@@ -156,4 +156,44 @@ class AnimatedSvgController extends ChangeNotifier {
   /// Get available view IDs from the document.
   /// This must be populated by the widget after parsing.
   List<String> availableViews = [];
+
+  // ── Debug inspection ──────────────────────────────────────────────────────
+  //
+  // The widget populates these hooks at init() and clears them at dispose().
+  // External tools (debug viewer) can call [captureDebugSnapshot] to get the
+  // live state of the SVG document at the current animation time.
+
+  /// Internal: the widget assigns a callback here that returns a JSON-ready
+  /// snapshot of the live document state. `null` means no widget is bound
+  /// (controller created but not yet attached, or already disposed).
+  Map<String, Object?> Function()? debugSnapshotProvider;
+
+  /// Internal: the widget assigns a callback that returns the current
+  /// animation time in milliseconds.
+  double Function()? debugCurrentTimeMsProvider;
+
+  /// Internal: the widget assigns a callback that evaluates arbitrary JS
+  /// in the SVGator/JS bridge runtime, returning the result as a string
+  /// (or `null` if there is no bridge or evaluation failed).
+  String? Function(String code)? debugJsEvaluator;
+
+  /// Evaluate JS code in the SVG's JS bridge (if any) — used by the debug
+  /// viewer to drive `svg.svgatorPlayer.seekTo(t)` directly.
+  ///
+  /// Returns the string result of the JS expression, or `null` if no JS
+  /// bridge exists (e.g. an SVG with no `<script>` content) or evaluation
+  /// threw.
+  String? evaluateJsForDebug(String code) => debugJsEvaluator?.call(code);
+
+  /// Capture a snapshot of the live SVG document state for debugging.
+  ///
+  /// Returns a JSON-encodable map describing every element in the tree along
+  /// with its current attribute values (after SMIL/CSS/SVGator-JS have
+  /// applied their writes for the current animation time).
+  ///
+  /// Returns `null` if the controller is not yet attached to a widget.
+  Map<String, Object?>? captureDebugSnapshot() => debugSnapshotProvider?.call();
+
+  /// Current animation time in milliseconds, or `null` if not bound.
+  double? get currentTimeMs => debugCurrentTimeMsProvider?.call();
 }
