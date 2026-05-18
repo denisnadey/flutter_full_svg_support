@@ -12,7 +12,7 @@ Render *any* SVG directly inside Flutter — crisp static icons and illustration
 
 `full_svg_flutter` gives you a `flutter_svg`-compatible `SvgPicture` API for static graphics **and** `FSvgPicture` / `AnimatedSvgPicture` for animation — all rendered by the same DOM-preserving engine, so static SVGs get the *exact* same fidelity (filters, masks, text, gradients) as animated ones.
 
-> **🆕 New in 2.0.0 — one engine, zero rendering dependencies.**
+> **🆕 New in 1.2.0 — one engine, zero rendering dependencies.**
 > Static SVG rendering no longer routes through the `vector_graphics` /
 > `vector_graphics_compiler` / `vector_graphics_codec` packages — they have
 > been **removed entirely**. Both static and animated SVGs are now rendered
@@ -29,13 +29,13 @@ Render *any* SVG directly inside Flutter — crisp static icons and illustration
 ### The animated Flutter logo — one live SVG file
 
 <div align="center">
-<img src="assets/flutter_logo_animated.svg" width="190" alt="Animated Flutter logo rendered from SVG"/>
+<img src="assets/flutter_logo_animated.svg" width="210" alt="Animated Flutter logo — one self-contained SVG file"/>
 </div>
 
-The logo above is a single hand-authored `.svg`: the three beams **assemble** with a staggered ease-out, then the whole mark keeps a slow, gentle float while the fold highlight breathes — all in plain SVG + SMIL. No GIF, no Lottie, no conversion step, no WebView. Drop the file into your app and render it:
+The logo above is a single hand-authored `.svg` file. Its four facets **slide together** with a staggered ease-out, a soft light **sheen sweeps** across on a loop, and the whole mark **floats** gently — all expressed in plain SVG + SMIL. No GIF, no Lottie, no conversion step, no WebView. Drop the file into your app and render it:
 
 ```dart
-FSvgPicture.asset('assets/flutter_logo_animated.svg', width: 190)
+FSvgPicture.asset('assets/flutter_logo_animated.svg', width: 210)
 ```
 
 ---
@@ -84,7 +84,7 @@ There are several ways to use animated vector graphics in Flutter: static SVG pa
 ```yaml
 # pubspec.yaml
 dependencies:
-  full_svg_flutter: ^2.0.0
+  full_svg_flutter: ^1.2.0
 ```
 
 ```dart
@@ -396,7 +396,7 @@ Known limitations:
 
 ```yaml
 dependencies:
-  full_svg_flutter: ^2.0.0
+  full_svg_flutter: ^1.2.0
 ```
 
 ```bash

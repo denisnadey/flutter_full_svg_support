@@ -1,4 +1,4 @@
-## 2.0.0
+## 1.2.0
 
 ### One self-contained rendering engine 🎉
 
@@ -7,9 +7,10 @@ family. Both static (`SvgPicture`) and animated (`FSvgPicture` /
 `AnimatedSvgPicture`) SVGs are now rendered by this package's own
 DOM-preserving engine — one consistent code path, fewer transitive
 dependencies, and the full feature set (filters, masks, gradients, text)
-available to static SVGs too.
+available to static SVGs too. The public `SvgPicture` / `FSvgPicture` API is
+unchanged, so this is a drop-in upgrade for the common case.
 
-**Breaking changes**
+**Changed**
 
 - Removed the dependencies on `vector_graphics`, `vector_graphics_compiler`,
   and `vector_graphics_codec`. They are no longer pulled into your app.
