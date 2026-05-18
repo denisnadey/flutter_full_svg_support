@@ -45,6 +45,13 @@ available to static SVGs too.
 - New demo assets: an animated Flutter logo (`assets/flutter_logo_animated.svg`)
   and a CSS `@keyframes` loader (`assets/demo_css.svg`).
 
+**Fixed**
+
+- Relaxed the `meta` dependency constraint from `^1.17.0` to `^1.16.0` so it
+  no longer conflicts with the `meta` version pinned by the SDK's
+  `flutter_test` (Flutter 3.32 ships `meta 1.16.0`), which previously made
+  version resolution fail for projects that also use `flutter_test`.
+
 **Migration**
 
 For static SVGs no code change is required — `SvgPicture.asset` /

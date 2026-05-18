@@ -15,7 +15,7 @@ dependencies:
     sdk: flutter
   es_compression: ^2.0.0
   http: ^1.0.0
-  meta: ^1.17.0
+  meta: ^1.16.0
   xml: '>=6.0.0 <8.0.0'
   # Embedded JavaScript runtime — used by the SVG JS bridge.
   # The local source lives under packages/quickjs_engine and is also
