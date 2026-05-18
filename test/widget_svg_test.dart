@@ -919,7 +919,7 @@ void main() {
     await tester.pumpAndSettle();
 
     await expectLater(
-      find.byType(RepaintBoundary),
+      find.byType(RepaintBoundary).first,
       matchesGoldenFile('golden_widget/two_of_same.png'),
     );
   });
@@ -952,8 +952,9 @@ void main() {
       await tester.pumpWidget(
         RepaintBoundary(child: SvgPicture.string(svgStr)),
       );
+      await tester.pumpAndSettle();
       await tester.runAsync(
-        () => Future<void>.delayed(const Duration(milliseconds: 100)),
+        () => Future<void>.delayed(const Duration(milliseconds: 200)),
       );
       await tester.pumpAndSettle();
 
@@ -971,8 +972,9 @@ void main() {
           child: SvgPicture.memory(utf8.encode(svgStr) as Uint8List),
         ),
       );
+      await tester.pumpAndSettle();
       await tester.runAsync(
-        () => Future<void>.delayed(const Duration(milliseconds: 100)),
+        () => Future<void>.delayed(const Duration(milliseconds: 200)),
       );
       await tester.pumpAndSettle();
 

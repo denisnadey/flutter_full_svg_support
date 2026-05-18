@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:flutter/foundation.dart';
 
 import 'svg_theme.dart';
@@ -175,11 +173,18 @@ class Cache {
       stats.recordMiss();
       pendingResult = loader();
       _pending[key] = pendingResult;
-      pendingResult.then((ByteData data) {
-        _pending.remove(key);
-        _add(key, data);
-        result = data; // in case it was a synchronous future.
-      });
+      pendingResult.then(
+        (ByteData data) {
+          _pending.remove(key);
+          _add(key, data);
+          result = data; // in case it was a synchronous future.
+        },
+        // Drop failed entries so the load can be retried, and so the failure
+        // is observed here rather than surfacing as an unhandled async error.
+        onError: (Object _, StackTrace __) {
+          _pending.remove(key);
+        },
+      );
     }
     stats.updatePeakSize(_cache.length);
     if (result != null) {

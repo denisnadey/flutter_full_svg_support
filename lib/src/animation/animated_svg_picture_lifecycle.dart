@@ -726,7 +726,7 @@ extension _AnimatedSvgPictureStateLifecycleExtension
     // viewBox using its own preserveAspectRatio.
     Widget svgWidget = CustomPaint(
       painter: painter,
-      size: useFittedBox ? intrinsicSize! : (intrinsicSize ?? Size.infinite),
+      size: useFittedBox ? intrinsicSize : (intrinsicSize ?? Size.infinite),
     );
 
     if (useFittedBox) {
@@ -797,6 +797,7 @@ extension _AnimatedSvgPictureStateLifecycleExtension
         button: accessibleRole == 'button',
         link: accessibleRole == 'link',
         excludeSemantics: false,
+        textDirection: Directionality.maybeOf(context) ?? TextDirection.ltr,
         child: svgWidget,
       );
     }

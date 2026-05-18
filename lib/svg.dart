@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'dart:convert' show utf8;
 
@@ -8,6 +7,7 @@ import 'package:http/http.dart' as http;
 
 import 'src/animation/animated_svg_picture.dart';
 import 'src/animation/animation_detector.dart';
+import 'src/animation/svg_parser.dart';
 import 'src/cache.dart';
 import 'src/default_theme.dart';
 import 'src/loaders.dart';
@@ -1162,8 +1162,23 @@ class _StaticSvgView extends StatefulWidget {
   State<_StaticSvgView> createState() => _StaticSvgViewState();
 }
 
+/// The outcome of loading and validating an SVG: either a validated [source]
+/// or an [error].
+class _SvgResolution {
+  const _SvgResolution.success(this.source) : error = null, stackTrace = null;
+
+  const _SvgResolution.failure(Object this.error, StackTrace this.stackTrace)
+    : source = null;
+
+  final String? source;
+  final Object? error;
+  final StackTrace? stackTrace;
+
+  bool get isError => error != null;
+}
+
 class _StaticSvgViewState extends State<_StaticSvgView> {
-  Future<ByteData>? _future;
+  Future<_SvgResolution>? _future;
   Object? _cacheKey;
 
   @override
@@ -1186,7 +1201,29 @@ class _StaticSvgViewState extends State<_StaticSvgView> {
     final Object key = widget.loader.cacheKey(context);
     if (_future == null || key != _cacheKey) {
       _cacheKey = key;
-      _future = widget.loader.loadBytes(context);
+      _future = _resolveSource(context);
+    }
+  }
+
+  /// Loads, decodes, and validates the SVG.
+  ///
+  /// Every failure — a synchronous throw from a loader, an async load error,
+  /// or a parse error from a malformed SVG — is caught and returned as a
+  /// [_SvgResolution.failure] so the returned future itself never completes
+  /// with an error, and [_StaticSvgView.errorBuilder] is invoked uniformly.
+  Future<_SvgResolution> _resolveSource(BuildContext context) async {
+    try {
+      final ByteData data = await widget.loader.loadBytes(context);
+      final String source = utf8.decode(
+        Uint8List.sublistView(data),
+        allowMalformed: true,
+      );
+      // Parse once to validate; a malformed SVG throws here. The validated
+      // source is parsed again by the AnimatedSvgPicture below.
+      SvgParser.parse(source);
+      return _SvgResolution.success(source);
+    } catch (error, stackTrace) {
+      return _SvgResolution.failure(error, stackTrace);
     }
   }
 
@@ -1205,12 +1242,7 @@ class _StaticSvgViewState extends State<_StaticSvgView> {
     return alignment.resolve(Directionality.maybeOf(context));
   }
 
-  Widget _buildResolved(BuildContext context, ByteData data) {
-    final String source = utf8.decode(
-      Uint8List.sublistView(data),
-      allowMalformed: true,
-    );
-
+  Widget _buildResolved(BuildContext context, String source) {
     final BytesLoader loader = widget.loader;
     final SvgTheme? theme =
         (loader is SvgLoader ? loader.theme : null) ??
@@ -1246,10 +1278,12 @@ class _StaticSvgViewState extends State<_StaticSvgView> {
 
     if (widget.excludeFromSemantics) {
       result = ExcludeSemantics(child: result);
-    } else if (widget.semanticsLabel != null) {
+    } else {
       result = Semantics(
         label: widget.semanticsLabel,
         image: true,
+        textDirection:
+            Directionality.maybeOf(context) ?? TextDirection.ltr,
         child: result,
       );
     }
@@ -1264,25 +1298,25 @@ class _StaticSvgViewState extends State<_StaticSvgView> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<ByteData>(
+    return FutureBuilder<_SvgResolution>(
       future: _future,
       builder: (context, snapshot) {
-        if (snapshot.hasError) {
+        final _SvgResolution? resolution = snapshot.data;
+        if (resolution == null) {
+          return widget.placeholderBuilder?.call(context) ??
+              _buildDefaultPlaceholder(context);
+        }
+        if (resolution.isError) {
           if (widget.errorBuilder != null) {
             return widget.errorBuilder!(
               context,
-              snapshot.error!,
-              snapshot.stackTrace ?? StackTrace.current,
+              resolution.error!,
+              resolution.stackTrace!,
             );
           }
           return _buildDefaultPlaceholder(context);
         }
-        final ByteData? data = snapshot.data;
-        if (data == null) {
-          return widget.placeholderBuilder?.call(context) ??
-              _buildDefaultPlaceholder(context);
-        }
-        return _buildResolved(context, data);
+        return _buildResolved(context, resolution.source!);
       },
     );
   }
