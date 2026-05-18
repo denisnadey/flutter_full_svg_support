@@ -12,9 +12,6 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:full_svg_flutter/full_svg_flutter.dart';
-// #docregion PrecompiledAsset
-import 'package:vector_graphics/vector_graphics.dart';
-// #enddocregion PrecompiledAsset
 
 /// Loads an SVG asset.
 Widget loadAsset() {
@@ -67,36 +64,24 @@ Widget loadNetworkAssetWithPlaceholder() {
   return networkSvg;
 }
 
-/// Demonstrates loading a precompiled asset.
-// This asset doesn't exist in the example app, but this code can still be run
-// to sanity-check the structure of the example code.
-Widget loadPrecompiledAsset() {
-  // #docregion PrecompiledAsset
-  const Widget svg = SvgPicture(AssetBytesLoader('assets/foo.svg.vec'));
-  // #enddocregion PrecompiledAsset
-  return svg;
-}
-
-/// Demonstrates converting SVG to another type.
+/// Demonstrates rendering an SVG into a [ui.Image].
 Future<ui.Image> convertSvgOutput() async {
-  final Canvas canvas = Canvas(ui.PictureRecorder());
-  const int width = 100;
-  const int height = 100;
-
   // #docregion OutputConversion
-  const String rawSvg = '''<svg ...>...</svg>''';
-  final PictureInfo pictureInfo = await vg.loadPicture(
-    const SvgStringLoader(rawSvg),
-    null,
-  );
+  const String rawSvg = '''<svg viewBox="0 0 100 100">
+  <circle cx="50" cy="50" r="40" fill="#2563EB" />
+</svg>''';
 
-  // You can draw the picture to a canvas:
+  // Parse and record the SVG into a ui.Picture.
+  final PictureInfo pictureInfo = renderSvgToPicture(rawSvg);
+
+  // Draw the picture onto any canvas:
+  final Canvas canvas = Canvas(ui.PictureRecorder());
   canvas.drawPicture(pictureInfo.picture);
 
-  // Or convert the picture to an image:
-  final ui.Image image = await pictureInfo.picture.toImage(width, height);
+  // Or rasterize it to an image:
+  final ui.Image image = await pictureInfo.picture.toImage(100, 100);
 
-  pictureInfo.picture.dispose();
+  pictureInfo.dispose();
   // #enddocregion OutputConversion
   return image;
 }

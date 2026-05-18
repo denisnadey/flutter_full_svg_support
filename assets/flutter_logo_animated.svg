@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-30 -42 316 401">
+  <!--
+    Animated Flutter logo — full_svg_flutter demo asset.
+    The three beams assemble with a staggered ease-out, then the whole mark
+    keeps a slow, gentle vertical float while the fold highlight breathes.
+    Pure SVG + SMIL: no GIF, no Lottie, no runtime conversion.
+  -->
+  <g id="logo">
+    <!-- Slow vertical float once the logo has assembled. -->
+    <animateTransform attributeName="transform" type="translate"
+      values="0 0; 0 -9; 0 0" keyTimes="0;0.5;1"
+      calcMode="spline" keySplines="0.45 0 0.55 1; 0.45 0 0.55 1"
+      begin="1.1s" dur="3.6s" repeatCount="indefinite"/>
+
+    <!-- Light beams. -->
+    <path fill="#47C5FB" opacity="0"
+      d="M157.666 0L0 157.667l48.8 48.8L255.268 0zM156.864 145.4l-84.706
+         84.708 48.984 49.151 48.71-48.71 86.05-86.886z">
+      <animate attributeName="opacity" from="0" to="1"
+        begin="0s" dur="0.55s" fill="freeze"/>
+      <animateTransform attributeName="transform" type="translate"
+        from="0 30" to="0 0" begin="0s" dur="0.72s" fill="freeze"
+        calcMode="spline" keySplines="0.16 0.84 0.24 1"/>
+    </path>
+
+    <!-- Mid-blue square. -->
+    <path fill="#00B5F8" opacity="0"
+      d="M71.324 230.107l48.818-48.817 48.806 48.802-48.81 48.81z">
+      <animate attributeName="opacity" from="0" to="1"
+        begin="0.12s" dur="0.55s" fill="freeze"/>
+      <animateTransform attributeName="transform" type="translate"
+        from="0 30" to="0 0" begin="0.12s" dur="0.72s" fill="freeze"
+        calcMode="spline" keySplines="0.16 0.84 0.24 1"/>
+    </path>
+
+    <!-- Navy fold. -->
+    <path fill="#00569E" opacity="0"
+      d="M120.142 279.258l37.087 37.086h98.039l-86.05-86.236z">
+      <animate attributeName="opacity" from="0" to="1"
+        begin="0.24s" dur="0.55s" fill="freeze"/>
+      <animateTransform attributeName="transform" type="translate"
+        from="0 30" to="0 0" begin="0.24s" dur="0.72s" fill="freeze"
+        calcMode="spline" keySplines="0.16 0.84 0.24 1"/>
+    </path>
+
+    <!-- Fold highlight — breathes gently after the intro. -->
+    <path fill="#FFFFFF" fill-opacity="0" opacity="0"
+      d="M120.142 279.258l40.69-13.504 4.025-31.075z">
+      <animate attributeName="opacity" from="0" to="1"
+        begin="0.4s" dur="0.5s" fill="freeze"/>
+      <animate attributeName="fill-opacity" from="0" to="0.8"
+        begin="0.4s" dur="0.5s" fill="freeze"/>
+      <animate attributeName="fill-opacity" values="0.8;0.45;0.8"
+        keyTimes="0;0.5;1" begin="1.1s" dur="3.6s" repeatCount="indefinite"/>
+    </path>
+  </g>
+</svg>

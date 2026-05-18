@@ -1,5 +1,8 @@
+import 'dart:typed_data';
+
 import 'package:flutter/foundation.dart';
-import 'package:vector_graphics_compiler/vector_graphics_compiler.dart';
+
+import 'svg_theme.dart';
 
 /// Statistics for cache profiling and diagnostics.
 class CacheStats {

@@ -4,7 +4,7 @@ repository: https://github.com/denisnadey/flutter_full_svg_support
 homepage: https://github.com/denisnadey/flutter_full_svg_support
 issue_tracker: https://github.com/denisnadey/flutter_full_svg_support/issues
 documentation: https://github.com/denisnadey/flutter_full_svg_support/tree/main/doc
-version: 1.1.1
+version: 2.0.0
 
 environment:
   sdk: ^3.8.0
@@ -16,9 +16,6 @@ dependencies:
   es_compression: ^2.0.0
   http: ^1.0.0
   meta: ^1.17.0
-  vector_graphics: ^1.1.13
-  vector_graphics_codec: ^1.1.11+1
-  vector_graphics_compiler: ^1.1.14
   xml: '>=6.0.0 <8.0.0'
   # Embedded JavaScript runtime — used by the SVG JS bridge.
   # The local source lives under packages/quickjs_engine and is also

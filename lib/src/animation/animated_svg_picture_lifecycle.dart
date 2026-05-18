@@ -10,8 +10,10 @@ extension _AnimatedSvgPictureStateLifecycleExtension
       widget.controller?.addListener(_onControllerUpdate);
     }
 
-    if (widget._svgString != oldWidget._svgString) {
-      // SVG changed - full re-initialization
+    if (widget._svgString != oldWidget._svgString ||
+        widget.theme != oldWidget.theme ||
+        widget.colorMapper != oldWidget.colorMapper) {
+      // SVG, theme, or color mapping changed - full re-initialization
       _dispose();
       _initialize();
     } else if (widget.playbackRate != oldWidget.playbackRate &&
@@ -68,6 +70,12 @@ extension _AnimatedSvgPictureStateLifecycleExtension
 
       // Parse SVG
       _document = SvgParser.parse(widget._svgString);
+      // Apply theme (currentColor / font-size) and color substitution.
+      applySvgTheme(
+        _document,
+        theme: widget.theme,
+        colorMapper: widget.colorMapper,
+      );
       // Wire debug hooks on the controller so external tooling can read
       // live state at any time. Cleared in [_dispose].
       if (widget.controller != null) {
@@ -670,24 +678,64 @@ extension _AnimatedSvgPictureStateLifecycleExtension
     }
   }
 
+  /// Returns the intrinsic size of the document, or null when it declares no
+  /// usable dimensions.
+  ui.Size? _intrinsicCanvasSize() {
+    final viewBox = _document.activeViewBox;
+    if (viewBox != null && viewBox.width > 0 && viewBox.height > 0) {
+      return viewBox.size;
+    }
+    final w = _document.width;
+    final h = _document.height;
+    if (w != null && h != null && w > 0 && h > 0) {
+      return ui.Size(w, h);
+    }
+    return null;
+  }
+
   /// Builds the widget tree for the animated SVG.
   Widget _buildWidget(BuildContext context) {
-    Widget svgWidget = CustomPaint(
-      painter: AnimatedSvgPainter(
-        document: _document,
-        backgroundColor: widget.backgroundColor,
-        imagesByHref: _imagesByHref,
-        convolvedImagesByFilterKey: _convolvedImagesByFilterKey,
-        lightingImagesByFilterKey: _lightingImagesByFilterKey,
-        displacementImagesByFilterKey: _displacementImagesByFilterKey,
-        animationTime: _timeline == null
-            ? null
-            : _timeline!.currentTime.inMicroseconds / 1000000.0,
-        hasAnimations: _hasAnimations,
-        clipToViewBox: widget.clipToViewBox,
-      ),
-      size: Size.infinite,
+    final painter = AnimatedSvgPainter(
+      document: _document,
+      backgroundColor: widget.backgroundColor,
+      imagesByHref: _imagesByHref,
+      convolvedImagesByFilterKey: _convolvedImagesByFilterKey,
+      lightingImagesByFilterKey: _lightingImagesByFilterKey,
+      displacementImagesByFilterKey: _displacementImagesByFilterKey,
+      animationTime: _timeline == null
+          ? null
+          : _timeline!.currentTime.inMicroseconds / 1000000.0,
+      hasAnimations: _hasAnimations,
+      clipToViewBox: widget.clipToViewBox,
     );
+
+    // For the default contain/center layout the painter maps the viewBox
+    // straight into the viewport, so no extra layout work is needed. For any
+    // other BoxFit/alignment the SVG is painted at its intrinsic size and
+    // then scaled by a FittedBox.
+    final intrinsicSize = _intrinsicCanvasSize();
+    final useFittedBox =
+        intrinsicSize != null &&
+        (widget.fit != BoxFit.contain ||
+            widget.alignment != Alignment.center);
+
+    // `CustomPaint.size` is used only for axes the parent leaves
+    // unconstrained, so falling back to the intrinsic size lets the SVG lay
+    // out correctly inside scroll views, rows, and columns. In constrained
+    // axes the parent's constraints still win and the painter maps the
+    // viewBox using its own preserveAspectRatio.
+    Widget svgWidget = CustomPaint(
+      painter: painter,
+      size: useFittedBox ? intrinsicSize! : (intrinsicSize ?? Size.infinite),
+    );
+
+    if (useFittedBox) {
+      svgWidget = FittedBox(
+        fit: widget.fit,
+        alignment: widget.alignment,
+        child: svgWidget,
+      );
+    }
 
     // Wrap with gesture detection for event-based animations or link handling
     final needsGestureDetection =

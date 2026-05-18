@@ -1,143 +1,61 @@
 import 'dart:convert' show utf8;
+import 'dart:typed_data';
 
-import 'package:flutter/foundation.dart' hide compute;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
-import 'package:vector_graphics/vector_graphics.dart';
-import 'package:vector_graphics_compiler/vector_graphics_compiler.dart' as vg;
 
 import '../svg.dart' show svg;
 import 'default_theme.dart';
-import 'utilities/compute.dart';
+import 'svg_theme.dart';
 import 'utilities/file.dart';
 
-/// A theme used when decoding an SVG picture.
-@immutable
-class SvgTheme {
-  /// Instantiates an SVG theme with the [currentColor]
-  /// and [fontSize].
-  ///
-  /// Defaults the [fontSize] to 14.
-  // WARNING WARNING WARNING
-  // If this codebase ever decides to default the font size to something off the
-  // BuildContext, caching logic will have to be updated. The font size can
-  // temporarily and unexpectedly change during route transitions in common
-  // patterns used in `MaterialApp`. This busts caching and destroys
-  // performance.
-  const SvgTheme({
-    this.currentColor = const Color(0xFF000000),
-    this.fontSize = 14,
-    double? xHeight,
-  }) : xHeight = xHeight ?? fontSize / 2;
-
-  /// The default color applied to SVG elements that inherit the color property.
-  /// See: https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#currentcolor_keyword
-  final Color currentColor;
-
-  /// The font size used when calculating em units of SVG elements.
-  /// See: https://www.w3.org/TR/SVG11/coords.html#Units
-  final double fontSize;
-
-  /// The x-height (corpus size) of the font used when calculating ex units of SVG elements.
-  /// Defaults to [fontSize] / 2 if not provided.
-  /// See: https://www.w3.org/TR/SVG11/coords.html#Units, https://en.wikipedia.org/wiki/X-height
-  final double xHeight;
-
-  /// Creates a [vg.SvgTheme] from this.
-  vg.SvgTheme toVgTheme() {
-    return vg.SvgTheme(
-      currentColor: vg.Color(currentColor.toARGB32()),
-      fontSize: fontSize,
-      xHeight: xHeight,
-    );
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType) {
-      return false;
-    }
-
-    return other is SvgTheme &&
-        currentColor == other.currentColor &&
-        fontSize == other.fontSize &&
-        xHeight == other.xHeight;
-  }
-
-  @override
-  int get hashCode => Object.hash(currentColor, fontSize, xHeight);
-
-  @override
-  String toString() =>
-      'SvgTheme(currentColor: $currentColor, fontSize: $fontSize, xHeight: $xHeight)';
-}
-
-/// A class that transforms from one color to another during SVG parsing.
+/// Resolves the raw bytes of an SVG document for an [SvgPicture].
 ///
-/// This object must be immutable so that it is suitable for use in the
-/// [svg.cache].
+/// Earlier versions of this package re-exported `BytesLoader` from the
+/// `vector_graphics` package, where the bytes were a compiled binary vector
+/// format. `full_svg_flutter` now parses SVG directly, so [loadBytes] returns
+/// the UTF-8 encoded SVG source.
 @immutable
-abstract class ColorMapper {
+abstract class BytesLoader {
   /// Allows const constructors on subclasses.
-  const ColorMapper();
+  const BytesLoader();
 
-  /// Returns a new color to use in place of [color] during SVG parsing.
+  /// Loads the UTF-8 encoded SVG source for this loader.
+  Future<ByteData> loadBytes(BuildContext? context);
+
+  /// An object that uniquely identifies the SVG resolved by this loader.
   ///
-  /// The SVG parser will call this method every time it parses a color
-  Color substitute(
-    String? id,
-    String elementName,
-    String attributeName,
-    Color color,
-  );
+  /// Used as the key into the shared decode cache ([svg]'s `cache`).
+  Object cacheKey(BuildContext? context);
 }
 
-class _DelegateVgColorMapper extends vg.ColorMapper {
-  _DelegateVgColorMapper(this.colorMapper);
-
-  final ColorMapper colorMapper;
-
-  @override
-  vg.Color substitute(
-    String? id,
-    String elementName,
-    String attributeName,
-    vg.Color color,
-  ) {
-    final Color substituteColor = colorMapper.substitute(
-      id,
-      elementName,
-      attributeName,
-      Color(color.value),
-    );
-    return vg.Color(substituteColor.toARGB32());
-  }
-}
-
-/// A [BytesLoader] that parses a SVG data in an isolate and creates a
-/// vector_graphics binary representation.
+/// A [BytesLoader] that resolves an SVG document and caches its UTF-8 source.
 @immutable
 abstract class SvgLoader<T> extends BytesLoader {
   /// See class doc.
   const SvgLoader({this.theme, this.colorMapper});
 
-  /// The theme to determine currentColor and font sizing attributes.
+  /// The theme controlling `currentColor` and font-relative units.
   final SvgTheme? theme;
 
-  /// The [ColorMapper] used to transform colors from the SVG, if any.
+  /// The [ColorMapper] used to substitute colors in the SVG, if any.
   final ColorMapper? colorMapper;
 
-  /// Will be called in [compute] with the result of [prepareMessage].
+  /// Returns the SVG source for the prepared [message].
+  ///
+  /// Called with the result of [prepareMessage].
   @protected
   String provideSvg(T? message);
 
-  /// Will be called
+  /// Performs any asynchronous work (asset/network/file IO) needed before
+  /// [provideSvg] can run.
   @protected
   Future<T?> prepareMessage(BuildContext? context) =>
       SynchronousFuture<T?>(null);
 
-  /// Returns the svg theme.
+  /// Resolves the effective [SvgTheme] for this loader.
   @visibleForTesting
   @protected
   SvgTheme getTheme(BuildContext? context) {
@@ -154,33 +72,17 @@ abstract class SvgLoader<T> extends BytesLoader {
   }
 
   Future<ByteData> _load(BuildContext? context) {
-    final SvgTheme theme = getTheme(context);
     return prepareMessage(context).then((T? message) {
-      return compute(
-        (T? message) {
-          return vg
-              .encodeSvg(
-                xml: provideSvg(message),
-                theme: theme.toVgTheme(),
-                colorMapper: colorMapper == null
-                    ? null
-                    : _DelegateVgColorMapper(colorMapper!),
-                debugName: 'Svg loader',
-                enableClippingOptimizer: false,
-                enableMaskingOptimizer: false,
-                enableOverdrawOptimizer: false,
-              )
-              .buffer
-              .asByteData();
-        },
-        message,
-        debugLabel: 'Load Bytes',
+      final Uint8List bytes = utf8.encode(provideSvg(message));
+      return bytes.buffer.asByteData(
+        bytes.offsetInBytes,
+        bytes.lengthInBytes,
       );
     });
   }
 
-  /// This method intentionally avoids using `await` to avoid unnecessary event
-  /// loop turns. This is meant to to help tests in particular.
+  /// This method intentionally avoids using `await` to avoid unnecessary
+  /// event loop turns. This helps tests in particular.
   @override
   Future<ByteData> loadBytes(BuildContext? context) {
     return svg.cache.putIfAbsent(cacheKey(context), () => _load(context));
@@ -193,10 +95,10 @@ abstract class SvgLoader<T> extends BytesLoader {
   }
 }
 
-/// A [SvgTheme] aware cache key.
+/// A theme- and color-mapper-aware cache key.
 ///
-/// The theme must be part of the cache key to ensure that otherwise similar
-/// SVGs get cached separately.
+/// The theme must be part of the cache key so otherwise-identical SVGs that
+/// are rendered with a different theme are cached separately.
 @immutable
 class SvgCacheKey {
   /// See [SvgCacheKey].
@@ -229,8 +131,7 @@ class SvgCacheKey {
   }
 }
 
-/// A [BytesLoader] that parses an SVG string in an isolate and creates a
-/// vector_graphics binary representation.
+/// A [BytesLoader] that resolves an SVG from a raw string.
 class SvgStringLoader extends SvgLoader<void> {
   /// See class doc.
   const SvgStringLoader(this._svg, {super.theme, super.colorMapper});
@@ -254,9 +155,7 @@ class SvgStringLoader extends SvgLoader<void> {
   }
 }
 
-/// A [BytesLoader] that decodes and parses a UTF-8 encoded SVG string from a
-/// [Uint8List] in an isolate and creates a vector_graphics binary
-/// representation.
+/// A [BytesLoader] that resolves an SVG from a UTF-8 encoded [Uint8List].
 class SvgBytesLoader extends SvgLoader<void> {
   /// See class doc.
   const SvgBytesLoader(this.bytes, {super.theme, super.colorMapper});
@@ -279,8 +178,7 @@ class SvgBytesLoader extends SvgLoader<void> {
   }
 }
 
-/// A [BytesLoader] that decodes SVG data from a file in an isolate and creates
-/// a vector_graphics binary representation.
+/// A [BytesLoader] that resolves an SVG from a file.
 class SvgFileLoader extends SvgLoader<void> {
   /// See class doc.
   const SvgFileLoader(this.file, {super.theme, super.colorMapper});
@@ -306,7 +204,7 @@ class SvgFileLoader extends SvgLoader<void> {
   }
 }
 
-// Replaces the cache key for [AssetBytesLoader] to account for the fact that
+// Replaces the cache key for [SvgAssetLoader] to account for the fact that
 // different widgets may select a different asset bundle based on the return
 // value of `DefaultAssetBundle.of(context)`.
 @immutable
@@ -335,11 +233,10 @@ class _AssetByteLoaderCacheKey {
 
   @override
   String toString() =>
-      'VectorGraphicAsset(${packageName != null ? '$packageName/' : ''}$assetName)';
+      'SvgAsset(${packageName != null ? '$packageName/' : ''}$assetName)';
 }
 
-/// A [BytesLoader] that decodes and parses an SVG asset in an isolate and
-/// creates a vector_graphics binary representation.
+/// A [BytesLoader] that resolves an SVG from an asset bundle.
 class SvgAssetLoader extends SvgLoader<ByteData> {
   /// See class doc.
   const SvgAssetLoader(
@@ -412,8 +309,7 @@ class SvgAssetLoader extends SvgLoader<ByteData> {
   String toString() => 'SvgAssetLoader($assetName)';
 }
 
-/// A [BytesLoader] that decodes and parses a UTF-8 encoded SVG string the
-/// network in an isolate and creates a vector_graphics binary representation.
+/// A [BytesLoader] that resolves an SVG from the network.
 class SvgNetworkLoader extends SvgLoader<Uint8List> {
   /// See class doc.
   const SvgNetworkLoader(

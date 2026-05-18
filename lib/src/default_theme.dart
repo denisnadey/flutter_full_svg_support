@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 
-import 'loaders.dart';
+import 'svg_theme.dart';
 
 /// The SVG theme to apply to descendant [SvgPicture] widgets
 /// which don't have explicit theme values.
