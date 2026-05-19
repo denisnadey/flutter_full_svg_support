@@ -7,7 +7,6 @@ import 'package:full_svg_flutter/full_svg_flutter.dart';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
-import 'package:vector_graphics/vector_graphics_compat.dart';
 
 class _TolerantComparator extends LocalFileComparator {
   _TolerantComparator(super.testFile);
@@ -920,7 +919,7 @@ void main() {
     await tester.pumpAndSettle();
 
     await expectLater(
-      find.byType(RepaintBoundary),
+      find.byType(RepaintBoundary).first,
       matchesGoldenFile('golden_widget/two_of_same.png'),
     );
   });
@@ -953,7 +952,10 @@ void main() {
       await tester.pumpWidget(
         RepaintBoundary(child: SvgPicture.string(svgStr)),
       );
-      await tester.runAsync(() => vg.waitForPendingDecodes());
+      await tester.pumpAndSettle();
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 200)),
+      );
       await tester.pumpAndSettle();
 
       Finder widgetFinder = find.byType(SvgPicture);
@@ -970,7 +972,10 @@ void main() {
           child: SvgPicture.memory(utf8.encode(svgStr) as Uint8List),
         ),
       );
-      await tester.runAsync(() => vg.waitForPendingDecodes());
+      await tester.pumpAndSettle();
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 200)),
+      );
       await tester.pumpAndSettle();
 
       widgetFinder = find.byType(SvgPicture);

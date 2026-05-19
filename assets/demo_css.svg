@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <!-- Driven entirely by CSS @keyframes inside the SVG. -->
+  <defs>
+    <linearGradient id="cssGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6C63FF"/>
+      <stop offset="100%" stop-color="#FF6B9D"/>
+    </linearGradient>
+    <style>
+      @keyframes spin   { from { transform: rotate(0deg); }   to { transform: rotate(360deg); } }
+      @keyframes spincc { from { transform: rotate(0deg); }   to { transform: rotate(-360deg); } }
+      @keyframes pulse  { 0%, 100% { opacity: 1; }            50% { opacity: 0.25; } }
+      .ring  { transform-origin: 60px 60px; }
+      #outer { animation: spin 2.4s linear infinite; }
+      #inner { animation: spincc 1.6s linear infinite; }
+      #core  { animation: pulse 1.6s ease-in-out infinite; }
+    </style>
+  </defs>
+  <circle id="outer" class="ring" cx="60" cy="60" r="46" fill="none"
+    stroke="url(#cssGrad)" stroke-width="7" stroke-linecap="round"
+    stroke-dasharray="60 230"/>
+  <circle id="inner" class="ring" cx="60" cy="60" r="30" fill="none"
+    stroke="#3EC6E0" stroke-width="6" stroke-linecap="round"
+    stroke-dasharray="40 150"/>
+  <circle id="core" cx="60" cy="60" r="12" fill="url(#cssGrad)"/>
+</svg>

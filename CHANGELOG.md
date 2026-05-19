@@ -1,3 +1,66 @@
+## 1.2.0
+
+### One self-contained rendering engine 🎉
+
+Static SVG rendering no longer depends on the `vector_graphics` package
+family. Both static (`SvgPicture`) and animated (`FSvgPicture` /
+`AnimatedSvgPicture`) SVGs are now rendered by this package's own
+DOM-preserving engine — one consistent code path, fewer transitive
+dependencies, and the full feature set (filters, masks, gradients, text)
+available to static SVGs too. The public `SvgPicture` / `FSvgPicture` API is
+unchanged, so this is a drop-in upgrade for the common case.
+
+**Changed**
+
+- Removed the dependencies on `vector_graphics`, `vector_graphics_compiler`,
+  and `vector_graphics_codec`. They are no longer pulled into your app.
+- `SvgPicture` is now rendered by the built-in engine instead of
+  `vector_graphics`' `createCompatVectorGraphic`. The public `SvgPicture`
+  API — every constructor, `SvgTheme`, `ColorMapper`, and all loaders — is
+  unchanged.
+- Types previously re-exported from `vector_graphics` are now owned by this
+  package:
+  - `BytesLoader` resolves the raw UTF-8 SVG source rather than a compiled
+    binary vector format.
+  - `PictureInfo` is now this package's own class (`picture` + `size`),
+    produced by the new `renderSvgToPicture` helper.
+  - `RenderingStrategy` is retained for source compatibility but is now a
+    no-op hint.
+- Removed precompiled `.vec` asset support (`AssetBytesLoader`) — it was a
+  `vector_graphics_compiler` feature. SVGs are parsed directly at runtime
+  and the decoded source is cached.
+- `vg` / `VectorGraphicUtilities` are no longer exported. Use
+  `renderSvgToPicture` to render an SVG to a `ui.Picture` / `ui.Image`.
+
+**New**
+
+- `renderSvgToPicture(String svg, {Size?, SvgTheme?, ColorMapper?})` renders
+  an SVG to a `PictureInfo` outside the widget tree.
+- `SvgTheme` (`currentColor`, `font-size`) and `ColorMapper` (per-attribute
+  color substitution) are now honored by the engine for both static and
+  animated SVGs.
+- `AnimatedSvgPicture` accepts `theme` and `colorMapper`.
+- `BoxFit` / `alignment` are now honored for non-`contain` fits.
+- `SvgPicture` without an explicit `width`/`height` lays out at its
+  intrinsic size in unbounded contexts (rows, columns, scroll views).
+- New demo assets: an animated Flutter logo (`assets/flutter_logo_animated.svg`)
+  and a CSS `@keyframes` loader (`assets/demo_css.svg`).
+
+**Fixed**
+
+- Relaxed the `meta` dependency constraint from `^1.17.0` to `^1.16.0` so it
+  no longer conflicts with the `meta` version pinned by the SDK's
+  `flutter_test` (Flutter 3.32 ships `meta 1.16.0`), which previously made
+  version resolution fail for projects that also use `flutter_test`.
+
+**Migration**
+
+For static SVGs no code change is required — `SvgPicture.asset` /
+`.network` / `.string` / `.memory` / `.file` work exactly as before. If you
+imported `vector_graphics` types directly, switch to the package's own
+(`BytesLoader`, `PictureInfo`, `renderSvgToPicture`) exported from
+`package:full_svg_flutter/full_svg_flutter.dart`.
+
 ## 1.1.1
 
 Documentation fixes for the 1.1.0 release — no code changes.

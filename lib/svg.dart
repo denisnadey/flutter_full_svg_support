@@ -4,20 +4,23 @@ import 'dart:convert' show utf8;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
-import 'package:vector_graphics/vector_graphics_compat.dart';
 
 import 'src/animation/animated_svg_picture.dart';
 import 'src/animation/animation_detector.dart';
+import 'src/animation/svg_parser.dart';
 import 'src/cache.dart';
+import 'src/default_theme.dart';
 import 'src/loaders.dart';
+import 'src/rendering_strategy.dart';
+import 'src/svg_theme.dart';
 import 'src/utilities/file.dart';
-
-export 'package:vector_graphics/vector_graphics.dart'
-    show BytesLoader, PictureInfo, VectorGraphicUtilities, vg;
 
 export 'src/cache.dart';
 export 'src/default_theme.dart';
 export 'src/loaders.dart';
+export 'src/rendering_strategy.dart';
+export 'src/render_svg.dart';
+export 'src/svg_theme.dart';
 
 /// Builder function to create an error widget. This builder is called when
 /// the image failed loading.
@@ -447,6 +450,8 @@ class _FSvgPictureState extends State<FSvgPicture> {
       playbackRate: widget.playbackRate,
       autoPlay: widget.autoPlay,
       initialTime: widget.initialTime,
+      theme: widget.theme,
+      colorMapper: widget.colorMapper,
     );
 
     if (widget.colorFilter != null) {
@@ -1034,21 +1039,20 @@ class SvgPicture extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return createCompatVectorGraphic(
+    return _StaticSvgView(
       loader: bytesLoader,
       width: width,
       height: height,
       fit: fit,
       alignment: alignment,
+      matchTextDirection: matchTextDirection,
+      allowDrawingOutsideViewBox: allowDrawingOutsideViewBox,
+      placeholderBuilder: placeholderBuilder,
+      colorFilter: colorFilter,
       semanticsLabel: semanticsLabel,
       excludeFromSemantics: excludeFromSemantics,
       clipBehavior: clipBehavior,
       errorBuilder: errorBuilder,
-      colorFilter: colorFilter,
-      placeholderBuilder: placeholderBuilder,
-      strategy: renderingStrategy,
-      clipViewbox: !allowDrawingOutsideViewBox,
-      matchTextDirection: matchTextDirection,
     );
   }
 
@@ -1115,5 +1119,205 @@ class SvgPicture extends StatelessWidget {
       ..add(
         StringProperty('semanticsLabel', semanticsLabel, defaultValue: null),
       );
+  }
+}
+
+/// Resolves a [BytesLoader], parses the SVG, and renders it statically through
+/// the shared rendering engine.
+///
+/// This is the rendering backend of [SvgPicture]. Animated SVG content is
+/// rendered at its first frame ([AnimatedSvgPicture] with `autoPlay: false`).
+class _StaticSvgView extends StatefulWidget {
+  const _StaticSvgView({
+    required this.loader,
+    required this.width,
+    required this.height,
+    required this.fit,
+    required this.alignment,
+    required this.matchTextDirection,
+    required this.allowDrawingOutsideViewBox,
+    required this.placeholderBuilder,
+    required this.colorFilter,
+    required this.semanticsLabel,
+    required this.excludeFromSemantics,
+    required this.clipBehavior,
+    required this.errorBuilder,
+  });
+
+  final BytesLoader loader;
+  final double? width;
+  final double? height;
+  final BoxFit fit;
+  final AlignmentGeometry alignment;
+  final bool matchTextDirection;
+  final bool allowDrawingOutsideViewBox;
+  final WidgetBuilder? placeholderBuilder;
+  final ColorFilter? colorFilter;
+  final String? semanticsLabel;
+  final bool excludeFromSemantics;
+  final Clip clipBehavior;
+  final SvgErrorWidgetBuilder? errorBuilder;
+
+  @override
+  State<_StaticSvgView> createState() => _StaticSvgViewState();
+}
+
+/// The outcome of loading and validating an SVG: either a validated [source]
+/// or an [error].
+class _SvgResolution {
+  const _SvgResolution.success(this.source) : error = null, stackTrace = null;
+
+  const _SvgResolution.failure(Object this.error, StackTrace this.stackTrace)
+    : source = null;
+
+  final String? source;
+  final Object? error;
+  final StackTrace? stackTrace;
+
+  bool get isError => error != null;
+}
+
+class _StaticSvgViewState extends State<_StaticSvgView> {
+  Future<_SvgResolution>? _future;
+  Object? _cacheKey;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _ensureFuture();
+  }
+
+  @override
+  void didUpdateWidget(covariant _StaticSvgView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.loader != widget.loader) {
+      _future = null;
+      _cacheKey = null;
+    }
+    _ensureFuture();
+  }
+
+  void _ensureFuture() {
+    final Object key = widget.loader.cacheKey(context);
+    if (_future == null || key != _cacheKey) {
+      _cacheKey = key;
+      _future = _resolveSource(context);
+    }
+  }
+
+  /// Loads, decodes, and validates the SVG.
+  ///
+  /// Every failure — a synchronous throw from a loader, an async load error,
+  /// or a parse error from a malformed SVG — is caught and returned as a
+  /// [_SvgResolution.failure] so the returned future itself never completes
+  /// with an error, and [_StaticSvgView.errorBuilder] is invoked uniformly.
+  Future<_SvgResolution> _resolveSource(BuildContext context) async {
+    try {
+      final ByteData data = await widget.loader.loadBytes(context);
+      final String source = utf8.decode(
+        Uint8List.sublistView(data),
+        allowMalformed: true,
+      );
+      // Parse once to validate; a malformed SVG throws here. The validated
+      // source is parsed again by the AnimatedSvgPicture below.
+      SvgParser.parse(source);
+      return _SvgResolution.success(source);
+    } catch (error, stackTrace) {
+      return _SvgResolution.failure(error, stackTrace);
+    }
+  }
+
+  Widget _buildDefaultPlaceholder(BuildContext context) {
+    if (widget.width != null || widget.height != null) {
+      return SizedBox(width: widget.width, height: widget.height);
+    }
+    return SvgPicture.defaultPlaceholderBuilder(context);
+  }
+
+  Alignment _resolveAlignment(BuildContext context) {
+    final AlignmentGeometry alignment = widget.alignment;
+    if (alignment is Alignment) {
+      return alignment;
+    }
+    return alignment.resolve(Directionality.maybeOf(context));
+  }
+
+  Widget _buildResolved(BuildContext context, String source) {
+    final BytesLoader loader = widget.loader;
+    final SvgTheme? theme =
+        (loader is SvgLoader ? loader.theme : null) ??
+        DefaultSvgTheme.of(context)?.theme;
+    final ColorMapper? colorMapper = loader is SvgLoader
+        ? loader.colorMapper
+        : null;
+
+    Widget result = AnimatedSvgPicture.string(
+      source,
+      width: widget.width,
+      height: widget.height,
+      fit: widget.fit,
+      alignment: _resolveAlignment(context),
+      autoPlay: false,
+      theme: theme,
+      colorMapper: colorMapper,
+      clipToViewBox: !widget.allowDrawingOutsideViewBox,
+    );
+
+    if (widget.colorFilter != null) {
+      result = ColorFiltered(colorFilter: widget.colorFilter!, child: result);
+    }
+
+    if (widget.matchTextDirection &&
+        Directionality.maybeOf(context) == TextDirection.rtl) {
+      result = Transform(
+        alignment: Alignment.center,
+        transform: Matrix4.diagonal3Values(-1, 1, 1),
+        child: result,
+      );
+    }
+
+    if (widget.excludeFromSemantics) {
+      result = ExcludeSemantics(child: result);
+    } else {
+      result = Semantics(
+        label: widget.semanticsLabel,
+        image: true,
+        textDirection:
+            Directionality.maybeOf(context) ?? TextDirection.ltr,
+        child: result,
+      );
+    }
+
+    if (!widget.allowDrawingOutsideViewBox &&
+        widget.clipBehavior != Clip.none) {
+      result = ClipRect(clipBehavior: widget.clipBehavior, child: result);
+    }
+
+    return RepaintBoundary(child: result);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<_SvgResolution>(
+      future: _future,
+      builder: (context, snapshot) {
+        final _SvgResolution? resolution = snapshot.data;
+        if (resolution == null) {
+          return widget.placeholderBuilder?.call(context) ??
+              _buildDefaultPlaceholder(context);
+        }
+        if (resolution.isError) {
+          if (widget.errorBuilder != null) {
+            return widget.errorBuilder!(
+              context,
+              resolution.error!,
+              resolution.stackTrace!,
+            );
+          }
+          return _buildDefaultPlaceholder(context);
+        }
+        return _buildResolved(context, resolution.source!);
+      },
+    );
   }
 }

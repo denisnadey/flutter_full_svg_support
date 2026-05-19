@@ -6,34 +6,66 @@
 [![Flutter](https://img.shields.io/badge/Flutter-%3E%3D3.32-blue.svg)](https://flutter.dev)
 [![Platform](https://img.shields.io/badge/platform-android%20%7C%20ios%20%7C%20macos%20%7C%20windows%20%7C%20linux%20%7C%20web-lightgrey)](https://pub.dev/packages/full_svg_flutter)
 
-**Animated SVG renderer for Flutter** — SMIL, CSS keyframes, path morphing, filters, masks, text, and playback control.
+**The complete SVG runtime for Flutter** — static *and* animated, powered by one self-contained engine with **zero external rendering dependencies**.
 
-Use animated SVG files directly in Flutter without converting them to Lottie, Rive, GIF, WebP, or rendering them inside a WebView.
+Render *any* SVG directly inside Flutter — crisp static icons and illustrations, SMIL and CSS `@keyframes` animation, path morphing, the full filter stack, masks, gradients, rich text, even JavaScript-driven SVGator exports — without ever converting them to Lottie, Rive, GIF, WebP, or stuffing them into a WebView.
 
-`full_svg_flutter` is designed as a full SVG runtime for Flutter and a migration path from `flutter_svg`: keep the familiar `SvgPicture`-style API while gaining support for animated SVG content through `FSvgPicture`.
+`full_svg_flutter` gives you a `flutter_svg`-compatible `SvgPicture` API for static graphics **and** `FSvgPicture` / `AnimatedSvgPicture` for animation — all rendered by the same DOM-preserving engine, so static SVGs get the *exact* same fidelity (filters, masks, text, gradients) as animated ones.
 
-> **🆕 New in 1.1.0 — JavaScript runtime + SVGator export support.**
-> Animated SVGs that drive their animation via inline `<script>` (the
-> JS-export mode in [SVGator][svgator-site], hand-written JS animations,
-> custom CSS-keyframe controllers) now render correctly. A modern QuickJS
-> engine ([quickjs_engine][qjs-engine-pkg]) is bundled into the app and
-> runs the SVG's JavaScript with a polyfilled SVG DOM — no WebView, no
-> conversion step. See the [JavaScript runtime](#javascript-runtime--svgator-runtime) section below.
+> **🆕 New in 1.2.0 — one engine, zero rendering dependencies.**
+> Static SVG rendering no longer routes through the `vector_graphics` /
+> `vector_graphics_compiler` / `vector_graphics_codec` packages — they have
+> been **removed entirely**. Both static and animated SVGs are now rendered
+> by the package's own DOM-preserving engine: fewer transitive
+> dependencies, one consistent code path, and the complete feature set
+> available to static SVGs too. The `SvgPicture` API is unchanged — see the
+> [migration notes](#migration-from-flutter_svg).
 
 [svgator-site]: https://www.svgator.com/
 [qjs-engine-pkg]: https://pub.dev/packages/quickjs_engine
 
 ---
 
+### The animated Flutter logo — one live SVG file
+
+<div align="center">
+<img src="assets/flutter_logo_animated.svg" width="210" alt="Animated Flutter logo — one self-contained SVG file"/>
+</div>
+
+The logo above is a single hand-authored `.svg` file. Its four facets **slide together** with a staggered ease-out, a soft light **sheen sweeps** across on a loop, and the whole mark **floats** gently — all expressed in plain SVG + SMIL. No GIF, no Lottie, no conversion step, no WebView. Drop the file into your app and render it:
+
+```dart
+FSvgPicture.asset('assets/flutter_logo_animated.svg', width: 210)
+```
+
+---
+
 <div align="center">
 
-| Spinner (SMIL) | Heartbeat (dash animation) | Path morphing | Filter stack |
-|:-:|:-:|:-:|:-:|
-| <img src="assets/demo_spinner.svg" width="80" alt="Spinner SVG animation"/> | <img src="assets/demo_pulse.svg" width="160" alt="Pulse SVG dash animation"/> | <img src="assets/demo_morph.svg" width="80" alt="SVG path morphing"/> | <img src="assets/demo_filters.svg" width="200" alt="SVG filter effects"/> |
+| Spinner (SMIL) | Heartbeat (dash) | Path morphing | CSS `@keyframes` | Filter stack |
+|:-:|:-:|:-:|:-:|:-:|
+| <img src="assets/demo_spinner.svg" width="72" alt="Spinner SVG animation"/> | <img src="assets/demo_pulse.svg" width="150" alt="Pulse SVG dash animation"/> | <img src="assets/demo_morph.svg" width="72" alt="SVG path morphing"/> | <img src="assets/demo_css.svg" width="72" alt="CSS keyframes SVG animation"/> | <img src="assets/demo_filters.svg" width="180" alt="SVG filter effects"/> |
 
-*All four are live SVG files — no GIFs, no Lottie, no third-party runtimes.*
+*Every tile is a live SVG file rendered by `full_svg_flutter` — no GIFs, no Lottie, no third-party runtimes.*
 
 </div>
+
+---
+
+## What kind of SVG can it render?
+
+Pretty much all of it. `full_svg_flutter` is built to treat SVG as a first-class runtime format, not a lowest-common-denominator icon format:
+
+- **Static graphics** — icons, logos, illustrations, maps, charts. All 8 basic shapes, paths, `<use>` / `<symbol>` / `<defs>`, the full transform set.
+- **Gradients & patterns** — linear and radial gradients with focal points and `gradientUnits`, tiled `<pattern>` fills.
+- **Clipping & masking** — `clipPath` (nested, `clip-rule`), luminance and alpha masks with `maskUnits` / `maskContentUnits`.
+- **The whole filter stack** — all 17 `fe*` primitives with real math: Gaussian blur, color matrices, lighting, displacement, turbulence, convolution, drop shadows.
+- **Rich text** — `<text>`, `<tspan>`, `<textPath>`, per-character positioning and rotation, decorations, writing modes, bidi/RTL.
+- **SMIL animation** — `<animate>`, `<animateTransform>`, `<animateMotion>`, `<set>`, full timing/easing, path morphing.
+- **CSS animation** — `@keyframes`, `animation-*`, transitions, 3D transforms, `calc()` and `var()`.
+- **JavaScript-driven SVG** — inline `<script>` (including SVGator's JS export) executed by a bundled QuickJS engine against a polyfilled SVG DOM.
+
+If it renders in a browser, there's a very good chance it renders here — directly, with no conversion.
 
 ---
 
@@ -52,7 +84,7 @@ There are several ways to use animated vector graphics in Flutter: static SVG pa
 ```yaml
 # pubspec.yaml
 dependencies:
-  full_svg_flutter: ^1.1.0
+  full_svg_flutter: ^1.2.0
 ```
 
 ```dart
@@ -87,6 +119,7 @@ FSvgPicture.memory(bytes)
 | No asset conversion required | ✅ | ✅ | ❌ |
 | No WebView | ✅ | ✅ | ✅ |
 | flutter_svg drop-in migration | ✅ | — | ❌ |
+| Self-contained renderer (no `vector_graphics` dependency) | ✅ | ❌ | ✅ |
 | Desktop (macOS / Windows / Linux) | ✅ | ✅ | varies |
 
 > "⚠️ partial" means the feature exists but coverage or fidelity may be limited.
@@ -139,7 +172,7 @@ import 'package:full_svg_flutter/full_svg_flutter.dart';
 SvgPicture.asset('assets/icon.svg');   // identical signature, works as-is
 ```
 
-`SvgPicture` is re-exported with the same API as `flutter_svg`. `ColorMapper`, all loaders, and all constructor signatures are unchanged.
+`SvgPicture` keeps the same public API as `flutter_svg` — `SvgTheme`, `ColorMapper`, every loader, and all constructor signatures are unchanged. Internally it is now rendered by this package's own engine instead of the `vector_graphics` backend, so static SVGs gain the same filter / mask / text fidelity as animated ones with no API change on your side.
 
 For animated SVGs, switch to `FSvgPicture`:
 
@@ -363,7 +396,7 @@ Known limitations:
 
 ```yaml
 dependencies:
-  full_svg_flutter: ^1.1.0
+  full_svg_flutter: ^1.2.0
 ```
 
 ```bash
@@ -372,8 +405,8 @@ flutter pub add full_svg_flutter
 
 ### Native dependencies
 
-1.1.0 pulls in [`quickjs_engine`][qjs-engine-pkg], the embedded JavaScript
-runtime used for SVGs that contain inline `<script>` blocks (SVGator
+`full_svg_flutter` pulls in [`quickjs_engine`][qjs-engine-pkg], the embedded
+JavaScript runtime used for SVGs that contain inline `<script>` blocks (SVGator
 JS-export, custom JS animations). It is a pure Flutter plugin — `flutter pub
 get` followed by your usual build command (`flutter run` /
 `flutter build`) does everything: the plugin compiles the native bridge,
@@ -432,18 +465,25 @@ output folder (`macos/Frameworks/`, `linux/`, or `windows/`). They require:
 
 ## Render to canvas / image
 
+Use `renderSvgToPicture` to rasterize an SVG outside the widget tree — for thumbnails, share images, or custom `CustomPainter` work:
+
 ```dart
 import 'dart:ui' as ui;
 
-final PictureInfo info = await vg.loadPicture(
-  const SvgStringLoader('<svg>...</svg>'),
-  null,
-);
+// Parse and record the SVG into a ui.Picture (at its intrinsic size,
+// or pass `size:` to record at a specific size).
+final PictureInfo info = renderSvgToPicture('<svg viewBox="0 0 100 100">...</svg>');
 
+// Draw it onto any canvas:
 canvas.drawPicture(info.picture);
 
-final ui.Image image = await info.picture.toImage(width, height);
-info.picture.dispose();
+// Or rasterize it to a ui.Image:
+final ui.Image image = await info.picture.toImage(
+  info.size.width.round(),
+  info.size.height.round(),
+);
+
+info.dispose();
 ```
 
 ---
@@ -452,27 +492,9 @@ info.picture.dispose();
 
 Gradient shaders, pattern images, text paragraphs, and hit-test geometry are cached with smart invalidation tied to animation frame changes.
 
-Optional raster render strategy for `drawImage` performance on complex static content:
+Static SVGs are painted once and cached inside a `RepaintBoundary`, so they only repaint when their layout actually changes — the same layer-caching behavior you'd expect from a static raster image. Decoded SVG sources are also cached (`svg.cache`, LRU, configurable via `svg.cache.maximumSize`) so the same asset is never fetched or decoded twice.
 
-```dart
-FSvgPicture.asset('assets/icon.svg', renderingStrategy: RenderingStrategy.raster)
-```
-
----
-
-## Precompiled SVGs (optional)
-
-The `vector_graphics` backend supports binary compilation for faster first-frame parsing:
-
-```sh
-dart run vector_graphics_compiler -i assets/foo.svg -o assets/foo.svg.vec
-```
-
-```dart
-import 'package:vector_graphics/vector_graphics.dart';
-
-const Widget svg = SvgPicture(AssetBytesLoader('assets/foo.svg.vec'));
-```
+> The `renderingStrategy` parameter is retained for source compatibility with the `flutter_svg` API, but it is now a no-op hint: the engine always paints vector content directly and caches it in a repaint boundary.
 
 ---
 
@@ -601,7 +623,7 @@ Yes — both the **SMIL/CSS export** mode and the **JavaScript export** mode wor
 
 ### Is this a drop-in replacement for flutter_svg?
 
-For static SVGs — yes, `SvgPicture` is re-exported with the same API. For animated SVGs, use `FSvgPicture` or `AnimatedSvgPicture` instead.
+For static SVGs — yes, `SvgPicture` keeps the same public API. For animated SVGs, use `FSvgPicture` or `AnimatedSvgPicture` instead.
 
 ### Does this package use a WebView?
 

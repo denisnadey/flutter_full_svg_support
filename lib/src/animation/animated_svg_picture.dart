@@ -22,8 +22,10 @@ import 'svg_dom.dart';
 import 'svg_filters.dart';
 import 'svg_js_bridge.dart';
 import 'svg_parser.dart';
+import 'svg_theme_apply.dart';
 import 'svg_transform.dart';
 import 'transform_3d.dart';
+import '../svg_theme.dart';
 import '../utilities/file.dart';
 
 part 'animated_svg_picture_pointer_events.dart';
@@ -95,6 +97,8 @@ class AnimatedSvgPicture extends StatefulWidget {
     this.foreignObjectBuilder,
     this.imageLoader,
     this.fontLoader,
+    this.theme,
+    this.colorMapper,
     this.clipToViewBox = false,
   }) : _svgString = svgString;
 
@@ -119,6 +123,8 @@ class AnimatedSvgPicture extends StatefulWidget {
     SvgForeignObjectBuilder? foreignObjectBuilder,
     SvgImageLoader? imageLoader,
     SvgFontLoader? fontLoader,
+    SvgTheme? theme,
+    ColorMapper? colorMapper,
     WidgetBuilder? placeholderBuilder,
     AnimatedSvgErrorWidgetBuilder? errorBuilder,
     bool clipToViewBox = false,
@@ -143,6 +149,8 @@ class AnimatedSvgPicture extends StatefulWidget {
       foreignObjectBuilder: foreignObjectBuilder,
       imageLoader: imageLoader,
       fontLoader: fontLoader,
+      theme: theme,
+      colorMapper: colorMapper,
       placeholderBuilder: placeholderBuilder,
       errorBuilder: errorBuilder,
       clipToViewBox: clipToViewBox,
@@ -170,6 +178,8 @@ class AnimatedSvgPicture extends StatefulWidget {
     SvgForeignObjectBuilder? foreignObjectBuilder,
     SvgImageLoader? imageLoader,
     SvgFontLoader? fontLoader,
+    SvgTheme? theme,
+    ColorMapper? colorMapper,
     WidgetBuilder? placeholderBuilder,
     AnimatedSvgErrorWidgetBuilder? errorBuilder,
     bool clipToViewBox = false,
@@ -194,6 +204,8 @@ class AnimatedSvgPicture extends StatefulWidget {
       foreignObjectBuilder: foreignObjectBuilder,
       imageLoader: imageLoader,
       fontLoader: fontLoader,
+      theme: theme,
+      colorMapper: colorMapper,
       placeholderBuilder: placeholderBuilder,
       errorBuilder: errorBuilder,
       clipToViewBox: clipToViewBox,
@@ -219,6 +231,8 @@ class AnimatedSvgPicture extends StatefulWidget {
     SvgForeignObjectBuilder? foreignObjectBuilder,
     SvgImageLoader? imageLoader,
     SvgFontLoader? fontLoader,
+    SvgTheme? theme,
+    ColorMapper? colorMapper,
     WidgetBuilder? placeholderBuilder,
     AnimatedSvgErrorWidgetBuilder? errorBuilder,
     bool clipToViewBox = false,
@@ -241,6 +255,8 @@ class AnimatedSvgPicture extends StatefulWidget {
       foreignObjectBuilder: foreignObjectBuilder,
       imageLoader: imageLoader,
       fontLoader: fontLoader,
+      theme: theme,
+      colorMapper: colorMapper,
       placeholderBuilder: placeholderBuilder,
       errorBuilder: errorBuilder,
       clipToViewBox: clipToViewBox,
@@ -266,6 +282,8 @@ class AnimatedSvgPicture extends StatefulWidget {
     SvgForeignObjectBuilder? foreignObjectBuilder,
     SvgImageLoader? imageLoader,
     SvgFontLoader? fontLoader,
+    SvgTheme? theme,
+    ColorMapper? colorMapper,
     WidgetBuilder? placeholderBuilder,
     AnimatedSvgErrorWidgetBuilder? errorBuilder,
     bool clipToViewBox = false,
@@ -288,6 +306,8 @@ class AnimatedSvgPicture extends StatefulWidget {
       foreignObjectBuilder: foreignObjectBuilder,
       imageLoader: imageLoader,
       fontLoader: fontLoader,
+      theme: theme,
+      colorMapper: colorMapper,
       placeholderBuilder: placeholderBuilder,
       errorBuilder: errorBuilder,
       clipToViewBox: clipToViewBox,
@@ -359,6 +379,18 @@ class AnimatedSvgPicture extends StatefulWidget {
   /// Defaults to false for backward compatibility.
   final bool clipToViewBox;
 
+  /// Theme controlling the `currentColor` keyword and font-relative units.
+  ///
+  /// When provided, seeds the document-wide `color` and `font-size` values
+  /// for any element that does not declare them itself.
+  final SvgTheme? theme;
+
+  /// Substitutes colors while parsing the SVG.
+  ///
+  /// Applied to every literal color presentation attribute (`fill`,
+  /// `stroke`, `stop-color`, and similar).
+  final ColorMapper? colorMapper;
+
   @override
   State<AnimatedSvgPicture> createState() => _AnimatedSvgPictureState();
 }
@@ -385,6 +417,8 @@ class _DeferredAnimatedSvgPicture extends AnimatedSvgPicture {
     super.imageLoader,
     super.fontLoader,
     super.clipToViewBox,
+    super.theme,
+    super.colorMapper,
     this.placeholderBuilder,
     this.errorBuilder,
   }) : _loadSvg = ((BuildContext context) {
@@ -419,6 +453,8 @@ class _DeferredAnimatedSvgPicture extends AnimatedSvgPicture {
     super.imageLoader,
     super.fontLoader,
     super.clipToViewBox,
+    super.theme,
+    super.colorMapper,
     this.placeholderBuilder,
     this.errorBuilder,
   }) : _loadSvg = ((BuildContext context) async {
@@ -455,6 +491,8 @@ class _DeferredAnimatedSvgPicture extends AnimatedSvgPicture {
     super.imageLoader,
     super.fontLoader,
     super.clipToViewBox,
+    super.theme,
+    super.colorMapper,
     this.placeholderBuilder,
     this.errorBuilder,
   }) : _loadSvg = ((BuildContext context) async {
@@ -484,6 +522,8 @@ class _DeferredAnimatedSvgPicture extends AnimatedSvgPicture {
     super.imageLoader,
     super.fontLoader,
     super.clipToViewBox,
+    super.theme,
+    super.colorMapper,
     this.placeholderBuilder,
     this.errorBuilder,
   }) : _loadSvg = ((BuildContext context) {
@@ -588,6 +628,8 @@ class _DeferredAnimatedSvgPictureState
           foreignObjectBuilder: widget.foreignObjectBuilder,
           imageLoader: widget.imageLoader,
           fontLoader: widget.fontLoader,
+          theme: widget.theme,
+          colorMapper: widget.colorMapper,
           clipToViewBox: widget.clipToViewBox,
         );
       },

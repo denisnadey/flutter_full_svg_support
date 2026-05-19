@@ -1,7 +1,7 @@
 /// Utility for quickly detecting the presence of animations in an SVG
 ///
-/// Used to choose between the fast static pipeline (vector_graphics)
-/// and the full-featured animation pipeline with the DOM tree.
+/// Used by [FSvgPicture] to decide whether a document needs the animation
+/// timeline at all, or can be rendered as a single static frame.
 class AnimationDetector {
   AnimationDetector._();
 

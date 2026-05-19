@@ -47,9 +47,15 @@ void main() {
       await tester.pump(const Duration(milliseconds: 50));
 
       expect(find.byType(SvgPicture), findsOneWidget);
+      // SvgPicture renders through the shared engine: for a static SVG it
+      // delegates to AnimatedSvgPicture with autoPlay disabled.
+      final animatedFinder = find.byWidgetPredicate(
+        (w) => w is AnimatedSvgPicture,
+      );
+      expect(animatedFinder, findsOneWidget);
       expect(
-        find.byWidgetPredicate((w) => w is AnimatedSvgPicture),
-        findsNothing,
+        (tester.widget(animatedFinder) as AnimatedSvgPicture).autoPlay,
+        isFalse,
       );
     });
 
