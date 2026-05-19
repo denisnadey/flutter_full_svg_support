@@ -1,0 +1,17 @@
+# Local dev artifacts not needed at consumer's end.
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+pubspec.lock
+
+# `flutter test` produces these in the package root after the first
+# test run. They're huge (compiled-dill caches, shader binaries) and
+# bloat the published archive 10×.
+build/
+
+# Example build outputs.
+example/build/
+example/.dart_tool/
+example/.flutter-plugins
+example/.flutter-plugins-dependencies
+example/pubspec.lock

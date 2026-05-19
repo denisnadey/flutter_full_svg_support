@@ -1,0 +1,20 @@
+name: woff2_example
+description: Minimal example of loading a WOFF2 font into Flutter.
+publish_to: 'none'
+version: 1.0.0
+
+environment:
+  sdk: ^3.8.0
+  flutter: ">=3.32.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  woff2:
+    path: ../
+
+flutter:
+  uses-material-design: true
+  # Add your .woff2 file under assets/fonts/ in a real app:
+  # assets:
+  #   - assets/fonts/Inter.woff2
