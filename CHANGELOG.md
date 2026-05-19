@@ -31,6 +31,15 @@ unchanged, so this is a drop-in upgrade for the common case.
   and the decoded source is cached.
 - `vg` / `VectorGraphicUtilities` are no longer exported. Use
   `renderSvgToPicture` to render an SVG to a `ui.Picture` / `ui.Image`.
+- WOFF/WOFF2 font decoding for SVG `@font-face` rules now lives in
+  the new standalone [`woff2`](https://pub.dev/packages/woff2)
+  package (added as a dependency). Same code, lifted out so apps
+  that don't render SVGs but do need WOFF/WOFF2 font loading can
+  use it directly. `es_compression` moved from a direct dependency
+  to a `dev_dependencies` entry used only by the test config.
+  The `SvgFontLoader` typedef (re-exported from
+  `lib/src/animation.dart`) is now an alias for `WoffSrcResolver`
+  with the same signature — no source changes required for callers.
 
 **New**
 

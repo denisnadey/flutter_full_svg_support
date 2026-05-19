@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:full_svg_flutter/src/animation/svg_woff_decoder.dart';
+import 'package:woff2/woff2.dart';
 
 void main() {
   group('decodeFontIfWoff', () {

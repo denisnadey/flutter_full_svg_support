@@ -13,7 +13,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  es_compression: ^2.0.0
   http: ^1.0.0
   meta: ^1.16.0
   xml: '>=6.0.0 <8.0.0'
@@ -21,6 +20,10 @@ dependencies:
   # The local source lives under packages/quickjs_engine and is also
   # published independently on pub.dev as `quickjs_engine`.
   quickjs_engine: ^0.1.0
+  # WOFF / WOFF2 font decoder + Flutter FontLoader integration —
+  # used for SVG @font-face rules. The local source lives under
+  # packages/woff2 and is also published independently on pub.dev.
+  woff2: ^0.1.0
 
 dev_dependencies:
   flutter_test:
@@ -28,6 +31,9 @@ dev_dependencies:
   flutter_lints: ^5.0.0
   flutter_svg_example:
     path: example
+  # Test config only: lets us swap the Brotli dylib path on macOS
+  # ARM64 where es_compression ships an x86_64-only binary.
+  es_compression: ^2.0.0
 
 topics:
   - svg
