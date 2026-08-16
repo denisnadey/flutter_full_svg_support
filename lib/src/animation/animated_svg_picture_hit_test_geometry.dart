@@ -260,24 +260,27 @@ extension _AnimatedSvgPictureStateHitTestGeometryExtension
         }
         return false;
       case 'image':
-        final x = _getNumber(node, 'x') ?? 0.0;
-        final y = _getNumber(node, 'y') ?? 0.0;
-        final width = _getNumber(node, 'width') ?? 0.0;
-        final height = _getNumber(node, 'height') ?? 0.0;
-        if (width <= 0 ||
-            height <= 0 ||
-            !_pointerEventsAllowsBoundingBox(
-              pointerEvents,
-              visibilityHidden: visibilityHidden,
-            )) {
-          return false;
-        }
-        return Rect.fromLTWH(x, y, width, height).contains(point);
       case 'foreignObject':
-        final x = _getNumber(node, 'x') ?? 0.0;
-        final y = _getNumber(node, 'y') ?? 0.0;
-        final width = _getNumber(node, 'width') ?? 0.0;
-        final height = _getNumber(node, 'height') ?? 0.0;
+        final x =
+            _resolveHitTestLength(node, 'x', SvgLengthReference.horizontal) ??
+            0.0;
+        final y =
+            _resolveHitTestLength(node, 'y', SvgLengthReference.vertical) ??
+            0.0;
+        final width =
+            _resolveHitTestLength(
+              node,
+              'width',
+              SvgLengthReference.horizontal,
+            ) ??
+            0.0;
+        final height =
+            _resolveHitTestLength(
+              node,
+              'height',
+              SvgLengthReference.vertical,
+            ) ??
+            0.0;
         if (width <= 0 ||
             height <= 0 ||
             !_pointerEventsAllowsBoundingBox(

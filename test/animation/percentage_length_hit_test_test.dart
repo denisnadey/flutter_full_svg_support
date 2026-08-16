@@ -103,6 +103,22 @@ void main() {
       );
     });
 
+    testWidgets('resolves image viewport percentages', (
+      WidgetTester tester,
+    ) async {
+      await expectTapTarget(
+        tester,
+        svg: '''
+          <svg viewBox="0 0 200 100">
+            <image id="image-target" x="50%" y="20%" width="25%" height="20%"
+                href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLwzAAAAABJRU5ErkJggg=="/>
+          </svg>
+        ''',
+        documentOffset: const Offset(125, 30),
+        targetId: 'image-target',
+      );
+    });
+
     testWidgets('resolves use viewport percentages before hit testing', (
       WidgetTester tester,
     ) async {
