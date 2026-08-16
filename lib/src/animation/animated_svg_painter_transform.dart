@@ -910,7 +910,22 @@ extension AnimatedSvgPainterCanvasTransformExtension on AnimatedSvgPainter {
     // traversal applies the same translation in _mapChildBoundsToParent.
     if (node.tagName.toLowerCase() == 'use') {
       return bounds.shift(
-        ui.Offset(_getNumber(node, 'x') ?? 0.0, _getNumber(node, 'y') ?? 0.0),
+        ui.Offset(
+          resolveSvgLength(
+                node,
+                document,
+                'x',
+                reference: SvgLengthReference.horizontal,
+              ) ??
+              0.0,
+          resolveSvgLength(
+                node,
+                document,
+                'y',
+                reference: SvgLengthReference.vertical,
+              ) ??
+              0.0,
+        ),
       );
     }
 
@@ -950,10 +965,38 @@ extension AnimatedSvgPainterCanvasTransformExtension on AnimatedSvgPainter {
         final y2 = _getNumber(node, 'y2') ?? 0.0;
         return ui.Rect.fromPoints(ui.Offset(x1, y1), ui.Offset(x2, y2));
       case 'image':
-        final x = _getNumber(node, 'x') ?? 0.0;
-        final y = _getNumber(node, 'y') ?? 0.0;
-        final width = _getNumber(node, 'width') ?? 0.0;
-        final height = _getNumber(node, 'height') ?? 0.0;
+        final x =
+            resolveSvgLength(
+              node,
+              document,
+              'x',
+              reference: SvgLengthReference.horizontal,
+            ) ??
+            0.0;
+        final y =
+            resolveSvgLength(
+              node,
+              document,
+              'y',
+              reference: SvgLengthReference.vertical,
+            ) ??
+            0.0;
+        final width =
+            resolveSvgLength(
+              node,
+              document,
+              'width',
+              reference: SvgLengthReference.horizontal,
+            ) ??
+            0.0;
+        final height =
+            resolveSvgLength(
+              node,
+              document,
+              'height',
+              reference: SvgLengthReference.vertical,
+            ) ??
+            0.0;
         return ui.Rect.fromLTWH(x, y, width, height);
       default:
         // Non-renderable definitions may still expose a viewBox, but have no
@@ -1076,8 +1119,18 @@ extension AnimatedSvgPainterCanvasTransformExtension on AnimatedSvgPainter {
               if (overflow == 'visible') {
                 return contentBounds;
               }
-              final useWidth = _getNumber(node, 'width');
-              final useHeight = _getNumber(node, 'height');
+              final useWidth = resolveSvgLength(
+                node,
+                document,
+                'width',
+                reference: SvgLengthReference.horizontal,
+              );
+              final useHeight = resolveSvgLength(
+                node,
+                document,
+                'height',
+                reference: SvgLengthReference.vertical,
+              );
               ui.Rect? rendererClip;
               if (useWidth != null &&
                   useHeight != null &&
@@ -1280,16 +1333,40 @@ extension AnimatedSvgPainterCanvasTransformExtension on AnimatedSvgPainter {
       transform =
           transform *
           Matrix4x4.translation(
-            _getNumber(child, 'x') ?? 0.0,
-            _getNumber(child, 'y') ?? 0.0,
+            resolveSvgLength(
+                  child,
+                  document,
+                  'x',
+                  reference: SvgLengthReference.horizontal,
+                ) ??
+                0.0,
+            resolveSvgLength(
+                  child,
+                  document,
+                  'y',
+                  reference: SvgLengthReference.vertical,
+                ) ??
+                0.0,
             0,
           );
     } else if (child.tagName == 'svg' && !identical(child, document.root)) {
       transform =
           transform *
           Matrix4x4.translation(
-            _getNumber(child, 'x') ?? 0.0,
-            _getNumber(child, 'y') ?? 0.0,
+            resolveSvgLength(
+                  child,
+                  document,
+                  'x',
+                  reference: SvgLengthReference.horizontal,
+                ) ??
+                0.0,
+            resolveSvgLength(
+                  child,
+                  document,
+                  'y',
+                  reference: SvgLengthReference.vertical,
+                ) ??
+                0.0,
             0,
           );
       final viewportTransform = _computeSingleViewportTransform(child);
@@ -1302,8 +1379,20 @@ extension AnimatedSvgPainterCanvasTransformExtension on AnimatedSvgPainter {
       transform =
           transform *
           Matrix4x4.translation(
-            _getNumber(child, 'x') ?? 0.0,
-            _getNumber(child, 'y') ?? 0.0,
+            resolveSvgLength(
+                  child,
+                  document,
+                  'x',
+                  reference: SvgLengthReference.horizontal,
+                ) ??
+                0.0,
+            resolveSvgLength(
+                  child,
+                  document,
+                  'y',
+                  reference: SvgLengthReference.vertical,
+                ) ??
+                0.0,
             0,
           );
     }

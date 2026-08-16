@@ -140,11 +140,22 @@ extension AnimatedSvgPainterShapesImageExtension on AnimatedSvgPainter {
       return;
     }
 
-    final x = _getNumber(node, 'x') ?? 0.0;
-    final y = _getNumber(node, 'y') ?? 0.0;
-
-    // Resolve width/height with percentage support
-    final viewportSize = _getImageViewportSize(node);
+    final x =
+        resolveSvgLength(
+          node,
+          document,
+          'x',
+          reference: SvgLengthReference.horizontal,
+        ) ??
+        0.0;
+    final y =
+        resolveSvgLength(
+          node,
+          document,
+          'y',
+          reference: SvgLengthReference.vertical,
+        ) ??
+        0.0;
 
     final filterId = _getFilterId(node);
     ui.Image? image = imagesByHref[href];
@@ -152,18 +163,12 @@ extension AnimatedSvgPainterShapesImageExtension on AnimatedSvgPainter {
     // If image failed to load, render a transparent fallback rect
     // This provides graceful degradation without throwing exceptions
     if (image == null) {
-      _renderImageFallback(
-        canvas,
-        node,
-        x: x,
-        y: y,
-        viewportSize: viewportSize,
-      );
+      _renderImageFallback(canvas, node, x: x, y: y);
       return;
     }
 
-    final rawWidth = _resolveImageLength(node, 'width', viewportSize.width);
-    final rawHeight = _resolveImageLength(node, 'height', viewportSize.height);
+    final rawWidth = _resolveImageLength(node, 'width');
+    final rawHeight = _resolveImageLength(node, 'height');
     // Per SVG spec: if only one dimension is given, compute the other to
     // preserve aspect ratio. Falling back to raw pixel size causes the
     // viewport to mismatch and resolveSvgViewportLayout to shift the image.
@@ -264,11 +269,10 @@ extension AnimatedSvgPainterShapesImageExtension on AnimatedSvgPainter {
     SvgNode node, {
     required double x,
     required double y,
-    required ui.Size viewportSize,
   }) {
     // Get explicit dimensions from the element
-    final width = _resolveImageLength(node, 'width', viewportSize.width);
-    final height = _resolveImageLength(node, 'height', viewportSize.height);
+    final width = _resolveImageLength(node, 'width');
+    final height = _resolveImageLength(node, 'height');
 
     // If no dimensions specified, we can't render a fallback
     if (width == null || height == null || width <= 0 || height <= 0) {
@@ -308,16 +312,25 @@ extension AnimatedSvgPainterShapesImageExtension on AnimatedSvgPainter {
     // ignore: unused_element_parameter
     ui.BlendMode? blendMode,
   }) {
-    final x = _getNumber(imageNode, 'x') ?? 0.0;
-    final y = _getNumber(imageNode, 'y') ?? 0.0;
-
-    final viewportSize = _getImageViewportSize(imageNode);
-    final width =
-        _resolveImageLength(imageNode, 'width', viewportSize.width) ??
-        innerViewBox.width;
+    final x =
+        resolveSvgLength(
+          imageNode,
+          document,
+          'x',
+          reference: SvgLengthReference.horizontal,
+        ) ??
+        0.0;
+    final y =
+        resolveSvgLength(
+          imageNode,
+          document,
+          'y',
+          reference: SvgLengthReference.vertical,
+        ) ??
+        0.0;
+    final width = _resolveImageLength(imageNode, 'width') ?? innerViewBox.width;
     final height =
-        _resolveImageLength(imageNode, 'height', viewportSize.height) ??
-        innerViewBox.height;
+        _resolveImageLength(imageNode, 'height') ?? innerViewBox.height;
 
     if (width <= 0 || height <= 0) {
       return;
@@ -372,15 +385,24 @@ extension AnimatedSvgPainterShapesImageExtension on AnimatedSvgPainter {
     final ancestorTransform = _computeNestedViewportTransform(imageNode);
 
     // Get image element positioning
-    final x = _getNumber(imageNode, 'x') ?? 0.0;
-    final y = _getNumber(imageNode, 'y') ?? 0.0;
-    final viewportSize = _getImageViewportSize(imageNode);
-    final width = _resolveImageLength(imageNode, 'width', viewportSize.width);
-    final height = _resolveImageLength(
-      imageNode,
-      'height',
-      viewportSize.height,
-    );
+    final x =
+        resolveSvgLength(
+          imageNode,
+          document,
+          'x',
+          reference: SvgLengthReference.horizontal,
+        ) ??
+        0.0;
+    final y =
+        resolveSvgLength(
+          imageNode,
+          document,
+          'y',
+          reference: SvgLengthReference.vertical,
+        ) ??
+        0.0;
+    final width = _resolveImageLength(imageNode, 'width');
+    final height = _resolveImageLength(imageNode, 'height');
 
     // Image element transform (position only, dimensions affect viewport)
     final imageTransform = Matrix4.identity()..translateByDouble(x, y, 0, 1);
@@ -634,76 +656,16 @@ extension AnimatedSvgPainterShapesImageExtension on AnimatedSvgPainter {
     return null;
   }
 
-  /// Resolves an image dimension that may be a percentage value.
-  /// Returns null if the attribute is missing or invalid.
-  double? _resolveImageLength(
-    SvgNode node,
-    String attributeName,
-    double viewportDimension,
-  ) {
-    final value = node.getAttributeValue(attributeName);
-    if (value == null) return null;
-
-    final str = value.toString().trim();
-    if (str.isEmpty) return null;
-
-    // Check for percentage value
-    if (str.endsWith('%')) {
-      final percentStr = str.substring(0, str.length - 1);
-      final percent = double.tryParse(percentStr);
-      if (percent == null) return null;
-      return (percent / 100.0) * viewportDimension;
-    }
-
-    // Handle other units by stripping them and parsing the number
-    final cleaned = str.replaceAll(RegExp(r'[a-zA-Z]+$'), '');
-    return double.tryParse(cleaned);
-  }
-
-  /// Gets the viewport size for resolving percentage-based image dimensions.
-  /// Returns the nearest SVG element's viewBox/viewport dimensions.
-  /// Handles nested SVG-in-SVG transforms by walking up the hierarchy.
-  ui.Size _getImageViewportSize(SvgNode node) {
-    // Walk up to find nearest SVG viewport
-    SvgNode? current = node.parent;
-    while (current != null) {
-      if (current.tagName == 'svg' || current.tagName == 'symbol') {
-        // Try to get viewBox dimensions
-        final viewBox = _parseViewBox(_getString(current, 'viewBox'));
-        if (viewBox != null && viewBox.width > 0 && viewBox.height > 0) {
-          return ui.Size(viewBox.width, viewBox.height);
-        }
-        // Try width/height attributes
-        final svgWidth = _getNumber(current, 'width');
-        final svgHeight = _getNumber(current, 'height');
-        if (svgWidth != null &&
-            svgHeight != null &&
-            svgWidth > 0 &&
-            svgHeight > 0) {
-          return ui.Size(svgWidth, svgHeight);
-        }
-      }
-      // Check foreignObject viewport
-      if (current.tagName == 'foreignObject') {
-        final foWidth = _getNumber(current, 'width') ?? 0.0;
-        final foHeight = _getNumber(current, 'height') ?? 0.0;
-        if (foWidth > 0 && foHeight > 0) {
-          return ui.Size(foWidth, foHeight);
-        }
-      }
-      current = current.parent;
-    }
-
-    // Fall back to root document viewBox
-    final rootViewBox = document.activeViewBox;
-    if (rootViewBox != null &&
-        rootViewBox.width > 0 &&
-        rootViewBox.height > 0) {
-      return ui.Size(rootViewBox.width, rootViewBox.height);
-    }
-
-    // Default to 100x100 if no viewport found
-    return const ui.Size(100, 100);
+  /// Resolves an image width or height in its current SVG viewport.
+  double? _resolveImageLength(SvgNode node, String attributeName) {
+    return resolveSvgLength(
+      node,
+      document,
+      attributeName,
+      reference: attributeName == 'height'
+          ? SvgLengthReference.vertical
+          : SvgLengthReference.horizontal,
+    );
   }
 
   /// Computes the accumulated viewport transform chain for SVG-in-SVG nesting.
@@ -749,8 +711,18 @@ extension AnimatedSvgPainterShapesImageExtension on AnimatedSvgPainter {
     }
 
     // Get SVG/symbol viewport dimensions
-    final width = _getNumber(svgNode, 'width');
-    final height = _getNumber(svgNode, 'height');
+    final width = resolveSvgLength(
+      svgNode,
+      document,
+      'width',
+      reference: SvgLengthReference.horizontal,
+    );
+    final height = resolveSvgLength(
+      svgNode,
+      document,
+      'height',
+      reference: SvgLengthReference.vertical,
+    );
     if (width == null || height == null || width <= 0 || height <= 0) {
       // Without explicit dimensions, use viewBox dimensions (1:1)
       return Matrix4.identity()
@@ -802,8 +774,18 @@ extension AnimatedSvgPainterShapesImageExtension on AnimatedSvgPainter {
     SvgNode nestedSvgNode,
   ) {
     // Get foreignObject dimensions
-    final foWidth = _getNumber(foreignObjectNode, 'width');
-    final foHeight = _getNumber(foreignObjectNode, 'height');
+    final foWidth = resolveSvgLength(
+      foreignObjectNode,
+      document,
+      'width',
+      reference: SvgLengthReference.horizontal,
+    );
+    final foHeight = resolveSvgLength(
+      foreignObjectNode,
+      document,
+      'height',
+      reference: SvgLengthReference.vertical,
+    );
     if (foWidth == null || foHeight == null || foWidth <= 0 || foHeight <= 0) {
       return null;
     }
@@ -825,10 +807,38 @@ extension AnimatedSvgPainterShapesImageExtension on AnimatedSvgPainter {
     );
 
     // Compute the viewport for the nested SVG within foreignObject
-    final nestedX = _getNumber(nestedSvgNode, 'x') ?? 0.0;
-    final nestedY = _getNumber(nestedSvgNode, 'y') ?? 0.0;
-    final nestedWidth = _getNumber(nestedSvgNode, 'width') ?? foWidth;
-    final nestedHeight = _getNumber(nestedSvgNode, 'height') ?? foHeight;
+    final nestedX =
+        resolveSvgLength(
+          nestedSvgNode,
+          document,
+          'x',
+          reference: SvgLengthReference.horizontal,
+        ) ??
+        0.0;
+    final nestedY =
+        resolveSvgLength(
+          nestedSvgNode,
+          document,
+          'y',
+          reference: SvgLengthReference.vertical,
+        ) ??
+        0.0;
+    final nestedWidth =
+        resolveSvgLength(
+          nestedSvgNode,
+          document,
+          'width',
+          reference: SvgLengthReference.horizontal,
+        ) ??
+        foWidth;
+    final nestedHeight =
+        resolveSvgLength(
+          nestedSvgNode,
+          document,
+          'height',
+          reference: SvgLengthReference.vertical,
+        ) ??
+        foHeight;
 
     final viewport = ui.Rect.fromLTWH(
       nestedX,

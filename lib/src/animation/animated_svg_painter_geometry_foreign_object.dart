@@ -9,17 +9,59 @@ extension AnimatedSvgPainterGeometryForeignObjectExtension
   // ignore: unused_element
   ui.Path? _buildNestedSvgPath(SvgNode svgNode, SvgNode foreignObjectParent) {
     // Get foreignObject dimensions
-    final foWidth = _getNumber(foreignObjectParent, 'width') ?? 0.0;
-    final foHeight = _getNumber(foreignObjectParent, 'height') ?? 0.0;
+    final foWidth =
+        resolveSvgLength(
+          foreignObjectParent,
+          document,
+          'width',
+          reference: SvgLengthReference.horizontal,
+        ) ??
+        0.0;
+    final foHeight =
+        resolveSvgLength(
+          foreignObjectParent,
+          document,
+          'height',
+          reference: SvgLengthReference.vertical,
+        ) ??
+        0.0;
     if (foWidth <= 0 || foHeight <= 0) {
       return null;
     }
 
     // Get SVG element positioning
-    final svgX = _getNumber(svgNode, 'x') ?? 0.0;
-    final svgY = _getNumber(svgNode, 'y') ?? 0.0;
-    final svgWidth = _getNumber(svgNode, 'width') ?? foWidth;
-    final svgHeight = _getNumber(svgNode, 'height') ?? foHeight;
+    final svgX =
+        resolveSvgLength(
+          svgNode,
+          document,
+          'x',
+          reference: SvgLengthReference.horizontal,
+        ) ??
+        0.0;
+    final svgY =
+        resolveSvgLength(
+          svgNode,
+          document,
+          'y',
+          reference: SvgLengthReference.vertical,
+        ) ??
+        0.0;
+    final svgWidth =
+        resolveSvgLength(
+          svgNode,
+          document,
+          'width',
+          reference: SvgLengthReference.horizontal,
+        ) ??
+        foWidth;
+    final svgHeight =
+        resolveSvgLength(
+          svgNode,
+          document,
+          'height',
+          reference: SvgLengthReference.vertical,
+        ) ??
+        foHeight;
 
     if (svgWidth <= 0 || svgHeight <= 0) {
       return null;
@@ -34,8 +76,22 @@ extension AnimatedSvgPainterGeometryForeignObjectExtension
   /// ForeignObject establishes a new stacking context with transform reset.
   // ignore: unused_element
   Matrix4 _resolveForeignObjectContentTransform(SvgNode foreignObjectNode) {
-    final x = _getNumber(foreignObjectNode, 'x') ?? 0.0;
-    final y = _getNumber(foreignObjectNode, 'y') ?? 0.0;
+    final x =
+        resolveSvgLength(
+          foreignObjectNode,
+          document,
+          'x',
+          reference: SvgLengthReference.horizontal,
+        ) ??
+        0.0;
+    final y =
+        resolveSvgLength(
+          foreignObjectNode,
+          document,
+          'y',
+          reference: SvgLengthReference.vertical,
+        ) ??
+        0.0;
 
     // ForeignObject translates content to (x, y) position
     // Transform is reset - foreignObject content starts fresh
@@ -245,10 +301,38 @@ extension AnimatedSvgPainterGeometryForeignObjectExtension
       return null;
     }
 
-    final x = _getNumber(foreignObjectNode, 'x') ?? 0.0;
-    final y = _getNumber(foreignObjectNode, 'y') ?? 0.0;
-    final width = _getNumber(foreignObjectNode, 'width') ?? 0.0;
-    final height = _getNumber(foreignObjectNode, 'height') ?? 0.0;
+    final x =
+        resolveSvgLength(
+          foreignObjectNode,
+          document,
+          'x',
+          reference: SvgLengthReference.horizontal,
+        ) ??
+        0.0;
+    final y =
+        resolveSvgLength(
+          foreignObjectNode,
+          document,
+          'y',
+          reference: SvgLengthReference.vertical,
+        ) ??
+        0.0;
+    final width =
+        resolveSvgLength(
+          foreignObjectNode,
+          document,
+          'width',
+          reference: SvgLengthReference.horizontal,
+        ) ??
+        0.0;
+    final height =
+        resolveSvgLength(
+          foreignObjectNode,
+          document,
+          'height',
+          reference: SvgLengthReference.vertical,
+        ) ??
+        0.0;
 
     if (width <= 0 || height <= 0) {
       return null;
@@ -292,8 +376,22 @@ extension AnimatedSvgPainterGeometryForeignObjectExtension
       return null;
     }
 
-    final width = _getNumber(foreignObjectNode, 'width') ?? 0.0;
-    final height = _getNumber(foreignObjectNode, 'height') ?? 0.0;
+    final width =
+        resolveSvgLength(
+          foreignObjectNode,
+          document,
+          'width',
+          reference: SvgLengthReference.horizontal,
+        ) ??
+        0.0;
+    final height =
+        resolveSvgLength(
+          foreignObjectNode,
+          document,
+          'height',
+          reference: SvgLengthReference.vertical,
+        ) ??
+        0.0;
 
     if (width <= 0 || height <= 0) {
       return null;
@@ -478,8 +576,22 @@ extension AnimatedSvgPainterGeometryForeignObjectExtension
     }
 
     // 3. Apply x,y translation for viewport positioning
-    final x = _getNumber(foreignObjectNode, 'x') ?? 0.0;
-    final y = _getNumber(foreignObjectNode, 'y') ?? 0.0;
+    final x =
+        resolveSvgLength(
+          foreignObjectNode,
+          document,
+          'x',
+          reference: SvgLengthReference.horizontal,
+        ) ??
+        0.0;
+    final y =
+        resolveSvgLength(
+          foreignObjectNode,
+          document,
+          'y',
+          reference: SvgLengthReference.vertical,
+        ) ??
+        0.0;
     if (x != 0.0 || y != 0.0) {
       result.translateByDouble(x, y, 0, 1);
     }
