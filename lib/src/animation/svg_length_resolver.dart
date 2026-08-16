@@ -27,7 +27,17 @@ double? resolveSvgLength(
   String attributeName, {
   required SvgLengthReference reference,
 }) {
-  final value = node.getAttributeValue(attributeName);
+  final attribute = node.getAttribute(attributeName);
+  final rawValue = node.getRawAttributeValue(attributeName)?.trim();
+  // The parser stores many length values as numbers, which would lose the
+  // percentage unit. Keep using the raw value while the attribute is not
+  // animated; animated values must use their effective value instead.
+  final value =
+      !((attribute?.isAnimated) ?? false) &&
+          rawValue != null &&
+          rawValue.isNotEmpty
+      ? rawValue
+      : node.getAttributeValue(attributeName);
   if (value == null) {
     return null;
   }

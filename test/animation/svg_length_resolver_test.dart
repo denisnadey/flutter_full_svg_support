@@ -130,6 +130,53 @@ void main() {
     );
   });
 
+  test('uses raw percentages for unanimated parsed length values', () {
+    final root = SvgNode(
+      tagName: 'svg',
+      attributes: <String, AnimatableSvgAttribute>{
+        'viewBox': AnimatableSvgAttribute(
+          name: 'viewBox',
+          baseValue: '0 0 200 100',
+          type: SvgAttributeType.string,
+        ),
+      },
+    );
+    final rect = SvgNode(tagName: 'rect');
+    rect.setAttribute(
+      'x',
+      25.0,
+      type: SvgAttributeType.length,
+      rawValue: '25%',
+    );
+    rect.setAttribute(
+      'height',
+      50.0,
+      type: SvgAttributeType.length,
+      rawValue: '50%',
+    );
+    root.addChild(rect);
+    final document = documentWithRoot(root);
+
+    expect(
+      resolveSvgLength(
+        rect,
+        document,
+        'x',
+        reference: SvgLengthReference.horizontal,
+      ),
+      50,
+    );
+    expect(
+      resolveSvgLength(
+        rect,
+        document,
+        'height',
+        reference: SvgLengthReference.vertical,
+      ),
+      50,
+    );
+  });
+
   test('keeps unitless and px lengths numeric', () {
     final root = SvgNode(tagName: 'svg');
     final rect = SvgNode(
