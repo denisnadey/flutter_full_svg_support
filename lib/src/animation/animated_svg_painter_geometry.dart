@@ -43,17 +43,66 @@ extension AnimatedSvgPainterGeometryExtension on AnimatedSvgPainter {
         }
         return ui.Path()..addRect(rect);
       case 'circle':
-        final cx = _getNumber(node, 'cx') ?? 0.0;
-        final cy = _getNumber(node, 'cy') ?? 0.0;
-        final r = _getNumber(node, 'r') ?? 0.0;
+        final cx =
+            resolveSvgLength(
+              node,
+              document,
+              'cx',
+              reference: SvgLengthReference.horizontal,
+            ) ??
+            0.0;
+        final cy =
+            resolveSvgLength(
+              node,
+              document,
+              'cy',
+              reference: SvgLengthReference.vertical,
+            ) ??
+            0.0;
+        final r =
+            resolveSvgLength(
+              node,
+              document,
+              'r',
+              reference: SvgLengthReference.normalizedDiagonal,
+            ) ??
+            0.0;
         if (r <= 0) return null;
         return ui.Path()
           ..addOval(ui.Rect.fromCircle(center: ui.Offset(cx, cy), radius: r));
       case 'ellipse':
-        final cx = _getNumber(node, 'cx') ?? 0.0;
-        final cy = _getNumber(node, 'cy') ?? 0.0;
-        final rx = _getNumber(node, 'rx') ?? 0.0;
-        final ry = _getNumber(node, 'ry') ?? 0.0;
+        final cx =
+            resolveSvgLength(
+              node,
+              document,
+              'cx',
+              reference: SvgLengthReference.horizontal,
+            ) ??
+            0.0;
+        final cy =
+            resolveSvgLength(
+              node,
+              document,
+              'cy',
+              reference: SvgLengthReference.vertical,
+            ) ??
+            0.0;
+        final rx =
+            resolveSvgLength(
+              node,
+              document,
+              'rx',
+              reference: SvgLengthReference.horizontal,
+            ) ??
+            0.0;
+        final ry =
+            resolveSvgLength(
+              node,
+              document,
+              'ry',
+              reference: SvgLengthReference.vertical,
+            ) ??
+            0.0;
         if (rx <= 0 || ry <= 0) return null;
         return ui.Path()..addOval(
           ui.Rect.fromCenter(
@@ -63,10 +112,38 @@ extension AnimatedSvgPainterGeometryExtension on AnimatedSvgPainter {
           ),
         );
       case 'line':
-        final x1 = _getNumber(node, 'x1') ?? 0.0;
-        final y1 = _getNumber(node, 'y1') ?? 0.0;
-        final x2 = _getNumber(node, 'x2') ?? 0.0;
-        final y2 = _getNumber(node, 'y2') ?? 0.0;
+        final x1 =
+            resolveSvgLength(
+              node,
+              document,
+              'x1',
+              reference: SvgLengthReference.horizontal,
+            ) ??
+            0.0;
+        final y1 =
+            resolveSvgLength(
+              node,
+              document,
+              'y1',
+              reference: SvgLengthReference.vertical,
+            ) ??
+            0.0;
+        final x2 =
+            resolveSvgLength(
+              node,
+              document,
+              'x2',
+              reference: SvgLengthReference.horizontal,
+            ) ??
+            0.0;
+        final y2 =
+            resolveSvgLength(
+              node,
+              document,
+              'y2',
+              reference: SvgLengthReference.vertical,
+            ) ??
+            0.0;
         return ui.Path()
           ..moveTo(x1, y1)
           ..lineTo(x2, y2);
