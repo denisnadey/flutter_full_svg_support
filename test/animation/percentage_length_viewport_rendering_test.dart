@@ -109,4 +109,35 @@ void main() {
       expect(analysis.boundingBox.height, greaterThan(25));
     });
   });
+
+  test('resolves percentage basic-shape bounds for fill-box and filters', () {
+    const svg = '''
+      <svg viewBox="0 0 200 100">
+        <rect id="rect" x="25%" y="20%" width="50%" height="40%"/>
+        <circle id="circle" cx="75%" cy="50%" r="10%"/>
+        <ellipse id="ellipse" cx="25%" cy="75%" rx="10%" ry="20%"/>
+        <line id="line" x1="10%" y1="20%" x2="80%" y2="90%"/>
+      </svg>
+    ''';
+
+    final document = SvgParser.parse(svg);
+    final painter = AnimatedSvgPainter(document: document);
+
+    expect(
+      painter.measureNodeBounds(document.root.findById('rect')!),
+      const Rect.fromLTWH(50, 20, 100, 40),
+    );
+    final circle = painter.measureNodeBounds(document.root.findById('circle')!);
+    expect(circle.center, const Offset(150, 50));
+    expect(circle.width, closeTo(31.6227766, 0.0001));
+    expect(circle.height, closeTo(31.6227766, 0.0001));
+    expect(
+      painter.measureNodeBounds(document.root.findById('ellipse')!),
+      const Rect.fromLTWH(30, 55, 40, 40),
+    );
+    expect(
+      painter.measureNodeBounds(document.root.findById('line')!),
+      const Rect.fromLTRB(20, 20, 160, 90),
+    );
+  });
 }

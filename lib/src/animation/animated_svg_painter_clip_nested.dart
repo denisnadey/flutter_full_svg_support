@@ -321,9 +321,16 @@ extension AnimatedSvgPainterClipNestedExtension on AnimatedSvgPainter {
         case 'ellipse':
         case 'polygon':
         case 'polyline':
+        case 'line':
         case 'text':
+        case 'tspan':
         case 'use':
+        case 'image':
+        case 'foreignObject':
         case 'g':
+        case 'svg':
+        case 'symbol':
+        case 'switch':
           // Has at least one potentially valid child
           return false;
         default:

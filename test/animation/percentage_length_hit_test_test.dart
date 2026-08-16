@@ -58,6 +58,25 @@ void main() {
       );
     });
 
+    testWidgets('matches percentage rect corner radii during hit testing', (
+      tester,
+    ) async {
+      await expectTapTarget(
+        tester,
+        svg: '''
+          <svg viewBox="0 0 200 100">
+            <rect id="background" width="200" height="100" fill="black"/>
+            <rect id="rounded-target" x="25%" width="50%" height="100%"
+                rx="25%" ry="25%" fill="red"/>
+          </svg>
+        ''',
+        // This point is inside a raw 25x25 corner radius, but outside the
+        // correctly resolved 50x25 corner radius.
+        documentOffset: const Offset(58, 10),
+        targetId: 'background',
+      );
+    });
+
     testWidgets('resolves circle center and radius percentages', (
       WidgetTester tester,
     ) async {

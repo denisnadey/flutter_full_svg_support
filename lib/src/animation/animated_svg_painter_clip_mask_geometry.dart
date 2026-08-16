@@ -260,7 +260,8 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
       return;
     }
     final referenced = document.root.findById(hrefId);
-    if (referenced == null || !isSvgUseReferenceAllowedTag(referenced.tagName)) {
+    if (referenced == null ||
+        !isSvgUseReferenceAllowedTag(referenced.tagName)) {
       return;
     }
 
@@ -423,10 +424,34 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
   /// Per SVG spec, image within clipPath contributes its bounding rectangle.
   /// The actual image content is not used - only the geometric bounds.
   ui.Path? _buildImageClipPath(SvgNode imageNode) {
-    final imgX = _getNumber(imageNode, 'x') ?? 0.0;
-    final imgY = _getNumber(imageNode, 'y') ?? 0.0;
-    final imgWidth = _getNumber(imageNode, 'width');
-    final imgHeight = _getNumber(imageNode, 'height');
+    final imgX =
+        resolveSvgLength(
+          imageNode,
+          document,
+          'x',
+          reference: SvgLengthReference.horizontal,
+        ) ??
+        0.0;
+    final imgY =
+        resolveSvgLength(
+          imageNode,
+          document,
+          'y',
+          reference: SvgLengthReference.vertical,
+        ) ??
+        0.0;
+    final imgWidth = resolveSvgLength(
+      imageNode,
+      document,
+      'width',
+      reference: SvgLengthReference.horizontal,
+    );
+    final imgHeight = resolveSvgLength(
+      imageNode,
+      document,
+      'height',
+      reference: SvgLengthReference.vertical,
+    );
 
     // Try to get dimensions from loaded image if not specified
     final href = _extractImageHref(imageNode);

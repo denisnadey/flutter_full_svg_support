@@ -4,14 +4,52 @@ extension AnimatedSvgPainterGeometryExtension on AnimatedSvgPainter {
   ui.Path? _buildGeometryPath(SvgNode node) {
     switch (node.tagName) {
       case 'rect':
-        final x = _getNumber(node, 'x') ?? 0.0;
-        final y = _getNumber(node, 'y') ?? 0.0;
-        final width = _getNumber(node, 'width') ?? 0.0;
-        final height = _getNumber(node, 'height') ?? 0.0;
+        final x =
+            resolveSvgLength(
+              node,
+              document,
+              'x',
+              reference: SvgLengthReference.horizontal,
+            ) ??
+            0.0;
+        final y =
+            resolveSvgLength(
+              node,
+              document,
+              'y',
+              reference: SvgLengthReference.vertical,
+            ) ??
+            0.0;
+        final width =
+            resolveSvgLength(
+              node,
+              document,
+              'width',
+              reference: SvgLengthReference.horizontal,
+            ) ??
+            0.0;
+        final height =
+            resolveSvgLength(
+              node,
+              document,
+              'height',
+              reference: SvgLengthReference.vertical,
+            ) ??
+            0.0;
 
         // SVG spec: rx/ry handling
-        final rxRaw = _getNumber(node, 'rx');
-        final ryRaw = _getNumber(node, 'ry');
+        final rxRaw = resolveSvgLength(
+          node,
+          document,
+          'rx',
+          reference: SvgLengthReference.horizontal,
+        );
+        final ryRaw = resolveSvgLength(
+          node,
+          document,
+          'ry',
+          reference: SvgLengthReference.vertical,
+        );
 
         double rx;
         double ry;
@@ -180,12 +218,36 @@ extension AnimatedSvgPainterGeometryExtension on AnimatedSvgPainter {
         // Per SVG spec, image in clipPath contributes its bounding rectangle.
         // The alpha channel of the image content defines the clip region,
         // but for geometry-based clipping, we use the image bounds.
-        final imgX = _getNumber(node, 'x') ?? 0.0;
-        final imgY = _getNumber(node, 'y') ?? 0.0;
+        final imgX =
+            resolveSvgLength(
+              node,
+              document,
+              'x',
+              reference: SvgLengthReference.horizontal,
+            ) ??
+            0.0;
+        final imgY =
+            resolveSvgLength(
+              node,
+              document,
+              'y',
+              reference: SvgLengthReference.vertical,
+            ) ??
+            0.0;
         // For clip/mask geometry, we need dimensions. If not specified,
         // we cannot determine the image bounds, so return null.
-        final imgWidth = _getNumber(node, 'width');
-        final imgHeight = _getNumber(node, 'height');
+        final imgWidth = resolveSvgLength(
+          node,
+          document,
+          'width',
+          reference: SvgLengthReference.horizontal,
+        );
+        final imgHeight = resolveSvgLength(
+          node,
+          document,
+          'height',
+          reference: SvgLengthReference.vertical,
+        );
         // If width/height are not specified, try to get from loaded image
         final href = _extractImageHref(node);
         final actualWidth =
@@ -205,10 +267,38 @@ extension AnimatedSvgPainterGeometryExtension on AnimatedSvgPainter {
       case 'foreignObject':
         // ForeignObject geometry is its viewport rectangle.
         // Used for clip/mask region calculation.
-        final foX = _getNumber(node, 'x') ?? 0.0;
-        final foY = _getNumber(node, 'y') ?? 0.0;
-        final foWidth = _getNumber(node, 'width') ?? 0.0;
-        final foHeight = _getNumber(node, 'height') ?? 0.0;
+        final foX =
+            resolveSvgLength(
+              node,
+              document,
+              'x',
+              reference: SvgLengthReference.horizontal,
+            ) ??
+            0.0;
+        final foY =
+            resolveSvgLength(
+              node,
+              document,
+              'y',
+              reference: SvgLengthReference.vertical,
+            ) ??
+            0.0;
+        final foWidth =
+            resolveSvgLength(
+              node,
+              document,
+              'width',
+              reference: SvgLengthReference.horizontal,
+            ) ??
+            0.0;
+        final foHeight =
+            resolveSvgLength(
+              node,
+              document,
+              'height',
+              reference: SvgLengthReference.vertical,
+            ) ??
+            0.0;
         if (foWidth <= 0 || foHeight <= 0) {
           return null;
         }
