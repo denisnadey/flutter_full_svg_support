@@ -126,13 +126,37 @@ extension _AnimatedSvgPictureStateForeignObjectExtension
       }
 
       final x =
-          _parseNumberForForeignObject(node.getAttributeValue('x')) ?? 0.0;
+          resolveSvgLength(
+            node,
+            _document,
+            'x',
+            reference: SvgLengthReference.horizontal,
+          ) ??
+          0.0;
       final y =
-          _parseNumberForForeignObject(node.getAttributeValue('y')) ?? 0.0;
+          resolveSvgLength(
+            node,
+            _document,
+            'y',
+            reference: SvgLengthReference.vertical,
+          ) ??
+          0.0;
       final width =
-          _parseNumberForForeignObject(node.getAttributeValue('width')) ?? 0.0;
+          resolveSvgLength(
+            node,
+            _document,
+            'width',
+            reference: SvgLengthReference.horizontal,
+          ) ??
+          0.0;
       final height =
-          _parseNumberForForeignObject(node.getAttributeValue('height')) ?? 0.0;
+          resolveSvgLength(
+            node,
+            _document,
+            'height',
+            reference: SvgLengthReference.vertical,
+          ) ??
+          0.0;
 
       if (width > 0 && height > 0) {
         result.add(
@@ -156,14 +180,5 @@ extension _AnimatedSvgPictureStateForeignObjectExtension
     for (final child in node.children) {
       _collectForeignObjects(child, result);
     }
-  }
-
-  double? _parseNumberForForeignObject(Object? value) {
-    if (value == null) return null;
-    if (value is num) return value.toDouble();
-    final str = value.toString().trim();
-    if (str.isEmpty) return null;
-    final cleaned = str.replaceAll(RegExp(r'[a-zA-Z%]+$'), '');
-    return double.tryParse(cleaned);
   }
 }

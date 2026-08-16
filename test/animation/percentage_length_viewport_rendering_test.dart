@@ -86,6 +86,28 @@ void main() {
       expect(bounds.height, 50);
     });
 
+    testWidgets('resolves normal use viewport width and height percentages', (
+      tester,
+    ) async {
+      const svg = '''
+        <svg viewBox="0 0 200 100">
+          <defs>
+            <symbol id="source" viewBox="0 0 100 100"
+                    preserveAspectRatio="none">
+              <rect width="100" height="100" fill="red"/>
+            </symbol>
+          </defs>
+          <use href="#source" x="25%" width="50%" height="50%"/>
+        </svg>
+      ''';
+
+      final analysis = await renderRedSvg(tester, svg);
+
+      expect(analysis.boundingBox.left, closeTo(50, 1));
+      expect(analysis.objectWidth, closeTo(100, 1));
+      expect(analysis.objectHeight, closeTo(50, 1));
+    });
+
     testWidgets('resolves percentage use geometry inside clip paths', (
       tester,
     ) async {
@@ -160,6 +182,33 @@ void main() {
       expect(analysis.boundingBox.left, closeTo(50, 1));
       expect(analysis.objectWidth, greaterThan(90));
     });
+
+    testWidgets(
+      'keeps percentage use coordinates viewport-relative in objectBoundingBox clip paths',
+      (tester) async {
+        const svg = '''
+          <svg viewBox="0 0 200 100">
+            <defs>
+              <symbol id="source" viewBox="0 0 100 100"
+                      preserveAspectRatio="none">
+                <rect width="100" height="100"/>
+              </symbol>
+              <clipPath id="clip" clipPathUnits="objectBoundingBox">
+                <use href="#source" x="25%" width="50%" height="100%"/>
+              </clipPath>
+            </defs>
+            <rect x="20" y="30" width="100" height="40" fill="red"
+                  clip-path="url(#clip)"/>
+          </svg>
+        ''';
+
+        final analysis = await renderRedSvg(tester, svg);
+
+        // Percentages in clipPath content use the SVG viewport (x=50), then
+        // clipPathUnits maps that coordinate through the target bounding box.
+        expect(analysis.pixelCount, 0);
+      },
+    );
 
     testWidgets('resolves foreignObject and nested SVG viewport percentages', (
       tester,

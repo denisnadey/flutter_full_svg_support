@@ -701,8 +701,18 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
     required SvgNode referenceNode,
   }) {
     final viewBox = _parseViewBox(_getString(referenceNode, 'viewBox'));
-    final width = _getNumber(useNode, 'width');
-    final height = _getNumber(useNode, 'height');
+    final width = resolveSvgLength(
+      useNode,
+      document,
+      'width',
+      reference: SvgLengthReference.horizontal,
+    );
+    final height = resolveSvgLength(
+      useNode,
+      document,
+      'height',
+      reference: SvgLengthReference.vertical,
+    );
     if (viewBox == null ||
         width == null ||
         height == null ||

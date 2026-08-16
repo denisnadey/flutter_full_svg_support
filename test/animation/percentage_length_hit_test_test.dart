@@ -175,6 +175,80 @@ void main() {
       );
     });
 
+    testWidgets('resolves percentage rect geometry in clip-path hit testing', (
+      WidgetTester tester,
+    ) async {
+      await expectTapTarget(
+        tester,
+        svg: '''
+          <svg viewBox="0 0 200 100">
+            <defs>
+              <clipPath id="clip">
+                <rect x="25%" width="50%" height="100%"/>
+              </clipPath>
+            </defs>
+            <rect id="background" width="200" height="100" fill="black"/>
+            <rect id="target" width="200" height="100" fill="red"
+                  clip-path="url(#clip)"/>
+          </svg>
+        ''',
+        // Correct clip range is x=50..150; raw values would reject x=120.
+        documentOffset: const Offset(120, 50),
+        targetId: 'target',
+      );
+    });
+
+    testWidgets('resolves percentage rect geometry in mask hit testing', (
+      WidgetTester tester,
+    ) async {
+      await expectTapTarget(
+        tester,
+        svg: '''
+          <svg viewBox="0 0 200 100">
+            <defs>
+              <mask id="mask" type="luminance"
+                    maskUnits="userSpaceOnUse"
+                    maskContentUnits="userSpaceOnUse"
+                    x="0" y="0" width="200" height="100">
+                <rect x="25%" width="50%" height="100%" fill="white"/>
+              </mask>
+            </defs>
+            <rect id="background" width="200" height="100" fill="black"/>
+            <rect id="target" width="200" height="100" fill="red"
+                  mask="url(#mask)"/>
+          </svg>
+        ''',
+        // Correct mask range is x=50..150; raw values would reject x=120.
+        documentOffset: const Offset(120, 50),
+        targetId: 'target',
+      );
+    });
+
+    testWidgets(
+      'resolves percentage circle geometry in clip-path hit testing',
+      (WidgetTester tester) async {
+        await expectTapTarget(
+          tester,
+          svg: '''
+          <svg viewBox="0 0 200 100">
+            <defs>
+              <clipPath id="clip">
+                <circle cx="75%" cy="50%" r="10%"/>
+              </clipPath>
+            </defs>
+            <rect id="background" width="200" height="100" fill="black"/>
+            <rect id="target" width="200" height="100" fill="red"
+                  clip-path="url(#clip)"/>
+          </svg>
+        ''',
+          // Correct circle is centered at x=150 with a normalized-diagonal
+          // radius; raw values would reject this point.
+          documentOffset: const Offset(160, 50),
+          targetId: 'target',
+        );
+      },
+    );
+
     testWidgets('resolves percentage use geometry in clip-path hit testing', (
       WidgetTester tester,
     ) async {
