@@ -15,6 +15,7 @@ import 'smil/motion_path.dart';
 import 'switch_processing.dart';
 import 'svg_dom.dart';
 import 'svg_filters.dart';
+import 'svg_length_resolver.dart';
 import 'svg_transform.dart';
 import 'svg_use_references.dart';
 import 'transform_3d.dart';
