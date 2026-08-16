@@ -210,7 +210,8 @@ extension _AnimatedSvgPictureStateHitTestUseExtension
     }
 
     final referenced = _document.root.findById(hrefId);
-    if (referenced == null || !isSvgUseReferenceAllowedTag(referenced.tagName)) {
+    if (referenced == null ||
+        !isSvgUseReferenceAllowedTag(referenced.tagName)) {
       // Referenced element not found or not allowed - no hit
       return null;
     }
@@ -257,8 +258,20 @@ extension _AnimatedSvgPictureStateHitTestUseExtension
 
     // Apply x/y translation after any explicit transform
     referenceTransform.translateByDouble(
-      _getNumber(useNode, 'x') ?? 0.0,
-      _getNumber(useNode, 'y') ?? 0.0,
+      resolveSvgLength(
+            useNode,
+            _document,
+            'x',
+            reference: SvgLengthReference.horizontal,
+          ) ??
+          0.0,
+      resolveSvgLength(
+            useNode,
+            _document,
+            'y',
+            reference: SvgLengthReference.vertical,
+          ) ??
+          0.0,
       0,
       1,
     );
@@ -466,8 +479,18 @@ extension _AnimatedSvgPictureStateHitTestUseExtension
     SvgNode referencedNode,
   ) {
     final viewBox = _parseViewBox(referencedNode.getAttributeValue('viewBox'));
-    final width = _getNumber(useNode, 'width');
-    final height = _getNumber(useNode, 'height');
+    final width = resolveSvgLength(
+      useNode,
+      _document,
+      'width',
+      reference: SvgLengthReference.horizontal,
+    );
+    final height = resolveSvgLength(
+      useNode,
+      _document,
+      'height',
+      reference: SvgLengthReference.vertical,
+    );
     if (viewBox == null ||
         width == null ||
         height == null ||

@@ -2,6 +2,19 @@ part of 'animated_svg_picture.dart';
 
 extension _AnimatedSvgPictureStateHitTestGeometryExtension
     on _AnimatedSvgPictureState {
+  double? _resolveHitTestLength(
+    SvgNode node,
+    String attributeName,
+    SvgLengthReference reference,
+  ) {
+    return resolveSvgLength(
+      node,
+      _document,
+      attributeName,
+      reference: reference,
+    );
+  }
+
   bool _nodeContainsPoint(
     SvgNode node,
     Offset documentPoint,
@@ -17,18 +30,42 @@ extension _AnimatedSvgPictureStateHitTestGeometryExtension
 
     switch (node.tagName) {
       case 'rect':
-        final x = _getNumber(node, 'x') ?? 0.0;
-        final y = _getNumber(node, 'y') ?? 0.0;
-        final width = _getNumber(node, 'width') ?? 0.0;
-        final height = _getNumber(node, 'height') ?? 0.0;
+        final x =
+            _resolveHitTestLength(node, 'x', SvgLengthReference.horizontal) ??
+            0.0;
+        final y =
+            _resolveHitTestLength(node, 'y', SvgLengthReference.vertical) ??
+            0.0;
+        final width =
+            _resolveHitTestLength(
+              node,
+              'width',
+              SvgLengthReference.horizontal,
+            ) ??
+            0.0;
+        final height =
+            _resolveHitTestLength(
+              node,
+              'height',
+              SvgLengthReference.vertical,
+            ) ??
+            0.0;
         if (width <= 0 || height <= 0) return false;
         if (pointerEvents == 'bounding-box') {
           return Rect.fromLTWH(x, y, width, height).contains(point);
         }
 
         // SVG spec: rx/ry handling
-        final rxRaw = _getNumber(node, 'rx');
-        final ryRaw = _getNumber(node, 'ry');
+        final rxRaw = _resolveHitTestLength(
+          node,
+          'rx',
+          SvgLengthReference.horizontal,
+        );
+        final ryRaw = _resolveHitTestLength(
+          node,
+          'ry',
+          SvgLengthReference.vertical,
+        );
 
         double rx;
         double ry;
@@ -78,9 +115,19 @@ extension _AnimatedSvgPictureStateHitTestGeometryExtension
         }
         return false;
       case 'circle':
-        final cx = _getNumber(node, 'cx') ?? 0.0;
-        final cy = _getNumber(node, 'cy') ?? 0.0;
-        final r = _getNumber(node, 'r') ?? 0.0;
+        final cx =
+            _resolveHitTestLength(node, 'cx', SvgLengthReference.horizontal) ??
+            0.0;
+        final cy =
+            _resolveHitTestLength(node, 'cy', SvgLengthReference.vertical) ??
+            0.0;
+        final r =
+            _resolveHitTestLength(
+              node,
+              'r',
+              SvgLengthReference.normalizedDiagonal,
+            ) ??
+            0.0;
         if (r <= 0) return false;
         if (pointerEvents == 'bounding-box') {
           return Rect.fromCircle(
@@ -108,10 +155,18 @@ extension _AnimatedSvgPictureStateHitTestGeometryExtension
         }
         return false;
       case 'ellipse':
-        final cx = _getNumber(node, 'cx') ?? 0.0;
-        final cy = _getNumber(node, 'cy') ?? 0.0;
-        final rx = _getNumber(node, 'rx') ?? 0.0;
-        final ry = _getNumber(node, 'ry') ?? 0.0;
+        final cx =
+            _resolveHitTestLength(node, 'cx', SvgLengthReference.horizontal) ??
+            0.0;
+        final cy =
+            _resolveHitTestLength(node, 'cy', SvgLengthReference.vertical) ??
+            0.0;
+        final rx =
+            _resolveHitTestLength(node, 'rx', SvgLengthReference.horizontal) ??
+            0.0;
+        final ry =
+            _resolveHitTestLength(node, 'ry', SvgLengthReference.vertical) ??
+            0.0;
         if (rx <= 0 || ry <= 0) return false;
         if (pointerEvents == 'bounding-box') {
           return Rect.fromCenter(
@@ -146,10 +201,18 @@ extension _AnimatedSvgPictureStateHitTestGeometryExtension
         }
         return false;
       case 'line':
-        final x1 = _getNumber(node, 'x1') ?? 0.0;
-        final y1 = _getNumber(node, 'y1') ?? 0.0;
-        final x2 = _getNumber(node, 'x2') ?? 0.0;
-        final y2 = _getNumber(node, 'y2') ?? 0.0;
+        final x1 =
+            _resolveHitTestLength(node, 'x1', SvgLengthReference.horizontal) ??
+            0.0;
+        final y1 =
+            _resolveHitTestLength(node, 'y1', SvgLengthReference.vertical) ??
+            0.0;
+        final x2 =
+            _resolveHitTestLength(node, 'x2', SvgLengthReference.horizontal) ??
+            0.0;
+        final y2 =
+            _resolveHitTestLength(node, 'y2', SvgLengthReference.vertical) ??
+            0.0;
         if (pointerEvents == 'bounding-box') {
           final bounds = Rect.fromLTRB(
             math.min(x1, x2),
