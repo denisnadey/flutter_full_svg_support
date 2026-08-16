@@ -285,8 +285,22 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
     }
 
     // Apply use element's x/y translation
-    final x = _getNumber(useNode, 'x') ?? 0.0;
-    final y = _getNumber(useNode, 'y') ?? 0.0;
+    final x =
+        resolveSvgLength(
+          useNode,
+          document,
+          'x',
+          reference: SvgLengthReference.horizontal,
+        ) ??
+        0.0;
+    final y =
+        resolveSvgLength(
+          useNode,
+          document,
+          'y',
+          reference: SvgLengthReference.vertical,
+        ) ??
+        0.0;
     if (x != 0.0 || y != 0.0) {
       translated.multiply(
         Matrix4.identity()
@@ -379,8 +393,18 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
     }
 
     // Get use element's width/height (for symbol/svg references)
-    final width = _getNumber(useNode, 'width');
-    final height = _getNumber(useNode, 'height');
+    final width = resolveSvgLength(
+      useNode,
+      document,
+      'width',
+      reference: SvgLengthReference.horizontal,
+    );
+    final height = resolveSvgLength(
+      useNode,
+      document,
+      'height',
+      reference: SvgLengthReference.vertical,
+    );
 
     if (width == null || height == null || width <= 0 || height <= 0) {
       // No explicit width/height, use viewBox dimensions

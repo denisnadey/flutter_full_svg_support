@@ -6,13 +6,41 @@ extension _AnimatedSvgPictureStateTransformExtension
     if (node.tagName != 'foreignObject') {
       return;
     }
-    final width = _getNumber(node, 'width') ?? 0.0;
-    final height = _getNumber(node, 'height') ?? 0.0;
+    final width =
+        resolveSvgLength(
+          node,
+          _document,
+          'width',
+          reference: SvgLengthReference.horizontal,
+        ) ??
+        0.0;
+    final height =
+        resolveSvgLength(
+          node,
+          _document,
+          'height',
+          reference: SvgLengthReference.vertical,
+        ) ??
+        0.0;
     if (width <= 0 || height <= 0) {
       return;
     }
-    final x = _getNumber(node, 'x') ?? 0.0;
-    final y = _getNumber(node, 'y') ?? 0.0;
+    final x =
+        resolveSvgLength(
+          node,
+          _document,
+          'x',
+          reference: SvgLengthReference.horizontal,
+        ) ??
+        0.0;
+    final y =
+        resolveSvgLength(
+          node,
+          _document,
+          'y',
+          reference: SvgLengthReference.vertical,
+        ) ??
+        0.0;
     matrix.translateByDouble(x, y, 0, 1);
   }
 
@@ -30,17 +58,55 @@ extension _AnimatedSvgPictureStateTransformExtension
     }
 
     // Get foreignObject viewport dimensions
-    final foWidth = _getNumber(foreignObjectNode, 'width') ?? 0.0;
-    final foHeight = _getNumber(foreignObjectNode, 'height') ?? 0.0;
+    final foWidth =
+        resolveSvgLength(
+          foreignObjectNode,
+          _document,
+          'width',
+          reference: SvgLengthReference.horizontal,
+        ) ??
+        0.0;
+    final foHeight =
+        resolveSvgLength(
+          foreignObjectNode,
+          _document,
+          'height',
+          reference: SvgLengthReference.vertical,
+        ) ??
+        0.0;
     if (foWidth <= 0 || foHeight <= 0) {
       return;
     }
 
     // Get nested SVG attributes
-    final svgX = _getNumber(svgNode, 'x') ?? 0.0;
-    final svgY = _getNumber(svgNode, 'y') ?? 0.0;
-    var svgWidth = _getNumber(svgNode, 'width');
-    var svgHeight = _getNumber(svgNode, 'height');
+    final svgX =
+        resolveSvgLength(
+          svgNode,
+          _document,
+          'x',
+          reference: SvgLengthReference.horizontal,
+        ) ??
+        0.0;
+    final svgY =
+        resolveSvgLength(
+          svgNode,
+          _document,
+          'y',
+          reference: SvgLengthReference.vertical,
+        ) ??
+        0.0;
+    var svgWidth = resolveSvgLength(
+      svgNode,
+      _document,
+      'width',
+      reference: SvgLengthReference.horizontal,
+    );
+    var svgHeight = resolveSvgLength(
+      svgNode,
+      _document,
+      'height',
+      reference: SvgLengthReference.vertical,
+    );
 
     // Default width/height to 100% of foreignObject viewport
     svgWidth ??= foWidth;

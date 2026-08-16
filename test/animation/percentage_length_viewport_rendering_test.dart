@@ -86,6 +86,81 @@ void main() {
       expect(bounds.height, 50);
     });
 
+    testWidgets('resolves percentage use geometry inside clip paths', (
+      tester,
+    ) async {
+      const svg = '''
+        <svg viewBox="0 0 200 100">
+          <defs>
+            <rect id="source" width="40" height="20"/>
+            <clipPath id="clip">
+              <use href="#source" x="25%" y="25%"/>
+            </clipPath>
+          </defs>
+          <rect width="200" height="100" fill="red"
+                clip-path="url(#clip)"/>
+        </svg>
+      ''';
+
+      final analysis = await renderRedSvg(tester, svg);
+
+      // The clip geometry should begin at document x=50, not the raw x=25.
+      expect(analysis.boundingBox.left, closeTo(50, 1));
+      expect(analysis.boundingBox.top, closeTo(25, 1));
+      expect(analysis.objectWidth, greaterThan(35));
+      expect(analysis.objectHeight, greaterThan(15));
+    });
+
+    testWidgets('resolves percentage use geometry inside masks', (
+      tester,
+    ) async {
+      const svg = '''
+        <svg viewBox="0 0 200 100">
+          <defs>
+            <rect id="source" width="40" height="20" fill="white"/>
+            <mask id="mask" type="luminance"
+                  maskUnits="userSpaceOnUse"
+                  maskContentUnits="userSpaceOnUse"
+                  x="0" y="0" width="200" height="100">
+              <use href="#source" x="25%" y="25%"/>
+            </mask>
+          </defs>
+          <rect width="200" height="100" fill="red" mask="url(#mask)"/>
+        </svg>
+      ''';
+
+      final analysis = await renderRedSvg(tester, svg);
+
+      expect(analysis.boundingBox.left, closeTo(50, 1));
+      expect(analysis.boundingBox.top, closeTo(25, 1));
+      expect(analysis.objectWidth, greaterThan(35));
+      expect(analysis.objectHeight, greaterThan(15));
+    });
+    testWidgets('resolves percentage use viewport inside clip paths', (
+      tester,
+    ) async {
+      const svg = '''
+        <svg viewBox="0 0 200 100">
+          <defs>
+            <symbol id="source" viewBox="0 0 100 100">
+              <rect width="100" height="100"/>
+            </symbol>
+            <clipPath id="clip">
+              <use href="#source" x="25%" width="50%" height="100%"/>
+            </clipPath>
+          </defs>
+          <rect width="200" height="100" fill="red"
+                clip-path="url(#clip)"/>
+        </svg>
+      ''';
+
+      final analysis = await renderRedSvg(tester, svg);
+
+      // x=25% and width=50% resolve to a 100x100 clip in this viewport.
+      expect(analysis.boundingBox.left, closeTo(50, 1));
+      expect(analysis.objectWidth, greaterThan(90));
+    });
+
     testWidgets('resolves foreignObject and nested SVG viewport percentages', (
       tester,
     ) async {

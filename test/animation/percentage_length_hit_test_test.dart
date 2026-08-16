@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:full_svg_flutter/src/animation/animated_svg_picture.dart';
 
+import 'visual_test_utils.dart';
+
 void main() {
   Future<void> expectTapTarget(
     WidgetTester tester, {
@@ -40,6 +42,41 @@ void main() {
     );
     expect(tapTrace.data['targetId'], targetId);
     expect(tapTrace.data['retargetedId'], retargetedId ?? targetId);
+  }
+
+  Future<void> expectForeignObjectClickStartsAnimation(
+    WidgetTester tester, {
+    required String svg,
+    required Offset documentOffset,
+  }) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: AnimatedSvgPicture.string(
+              svg,
+              width: 200,
+              height: 100,
+              autoPlay: true,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    final beforePixels = await VisualTestUtils.captureWidgetPixels(tester);
+    final before = VisualTestUtils.analyzeRedPixels(beforePixels, 800, 600);
+    final pictureTopLeft = tester.getTopLeft(find.byType(AnimatedSvgPicture));
+
+    await tester.tapAt(pictureTopLeft + documentOffset);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    final afterPixels = await VisualTestUtils.captureWidgetPixels(tester);
+    final after = VisualTestUtils.analyzeRedPixels(afterPixels, 800, 600);
+    expect(after.centroid.dx, greaterThan(before.centroid.dx + 10));
   }
 
   group('percentage SVG lengths in hit testing', () {
@@ -138,6 +175,103 @@ void main() {
       );
     });
 
+    testWidgets('resolves percentage use geometry in clip-path hit testing', (
+      WidgetTester tester,
+    ) async {
+      await expectTapTarget(
+        tester,
+        svg: '''
+          <svg viewBox="0 0 200 100">
+            <defs>
+              <rect id="source" width="30" height="30"/>
+              <clipPath id="clip">
+                <use href="#source" x="25%" y="25%"/>
+              </clipPath>
+            </defs>
+            <rect id="background" width="200" height="100" fill="black"/>
+            <rect id="target" width="200" height="100" fill="red"
+                  clip-path="url(#clip)"/>
+          </svg>
+        ''',
+        // Correct clip position is x=50..80; raw x=25 would miss x=70.
+        documentOffset: const Offset(70, 40),
+        targetId: 'target',
+      );
+    });
+
+    testWidgets('resolves percentage use geometry in mask hit testing', (
+      WidgetTester tester,
+    ) async {
+      await expectTapTarget(
+        tester,
+        svg: '''
+          <svg viewBox="0 0 200 100">
+            <defs>
+              <rect id="source" width="40" height="20" fill="white"/>
+              <mask id="mask" type="luminance"
+                    maskUnits="userSpaceOnUse"
+                    maskContentUnits="userSpaceOnUse"
+                    x="0" y="0" width="200" height="100">
+                <use href="#source" x="25%" y="25%"/>
+              </mask>
+            </defs>
+            <rect id="background" width="200" height="100" fill="black"/>
+            <rect id="target" width="200" height="100" fill="red"
+                  mask="url(#mask)"/>
+          </svg>
+        ''',
+        // Correct mask position is x=50..90; raw x=25 would miss x=70.
+        documentOffset: const Offset(70, 40),
+        targetId: 'target',
+      );
+    });
+    testWidgets(
+      'resolves percentage foreignObject coordinates in hit testing',
+      (WidgetTester tester) async {
+        await expectForeignObjectClickStartsAnimation(
+          tester,
+          svg: '''
+          <svg viewBox="0 0 200 100">
+            <foreignObject x="25%" y="10%" width="50%" height="50%">
+              <rect id="target" width="100" height="50" fill="blue"/>
+            </foreignObject>
+            <rect x="10" y="80" width="20" height="10" fill="red">
+              <animate attributeName="x" from="10" to="150" dur="1s"
+                       begin="target.click" fill="freeze"/>
+            </rect>
+          </svg>
+        ''',
+          // Actual foreignObject viewport is x=50..150 and y=10..60.
+          documentOffset: const Offset(100, 35),
+        );
+      },
+    );
+
+    testWidgets(
+      'resolves percentage nested SVG viewport in foreignObject hit testing',
+      (WidgetTester tester) async {
+        await expectForeignObjectClickStartsAnimation(
+          tester,
+          svg: '''
+            <svg viewBox="0 0 200 100">
+              <foreignObject x="25%" y="10%" width="25%" height="50%">
+                <svg x="50%" y="50%" width="50%" height="50%"
+                     viewBox="0 0 25 25" preserveAspectRatio="none">
+                  <rect id="target" width="25" height="25" fill="blue"/>
+                </svg>
+              </foreignObject>
+              <rect x="10" y="80" width="20" height="10" fill="red">
+                <animate attributeName="x" from="10" to="150" dur="1s"
+                         begin="target.click" fill="freeze"/>
+              </rect>
+            </svg>
+          ''',
+          // The nested SVG is x=75..100 and y=35..60 in document space.
+          documentOffset: const Offset(85, 45),
+        );
+      },
+    );
+
     testWidgets('resolves use viewport percentages before hit testing', (
       WidgetTester tester,
     ) async {
@@ -150,10 +284,12 @@ void main() {
                 <rect id="symbol-child" width="100" height="100" fill="black"/>
               </symbol>
             </defs>
-            <use id="use-target" href="#symbol-source" width="50%" height="50%"/>
+            <use id="use-target" href="#symbol-source" x="25%"
+                 width="50%" height="50%"/>
           </svg>
         ''',
-        documentOffset: const Offset(60, 25),
+        // Correct symbol content is x=75..125; raw x=25 would miss x=120.
+        documentOffset: const Offset(120, 25),
         targetId: 'symbol-child',
         retargetedId: 'use-target',
       );

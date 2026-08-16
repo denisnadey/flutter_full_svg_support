@@ -182,8 +182,20 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
         }
         final translated = Matrix4.copy(matrix)
           ..translateByDouble(
-            _getNumber(node, 'x') ?? 0.0,
-            _getNumber(node, 'y') ?? 0.0,
+            resolveSvgLength(
+                  node,
+                  _document,
+                  'x',
+                  reference: SvgLengthReference.horizontal,
+                ) ??
+                0.0,
+            resolveSvgLength(
+                  node,
+                  _document,
+                  'y',
+                  reference: SvgLengthReference.vertical,
+                ) ??
+                0.0,
             0,
             1,
           );
@@ -416,8 +428,20 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
         }
         final translated = Matrix4.copy(matrix)
           ..translateByDouble(
-            _getNumber(node, 'x') ?? 0.0,
-            _getNumber(node, 'y') ?? 0.0,
+            resolveSvgLength(
+                  node,
+                  _document,
+                  'x',
+                  reference: SvgLengthReference.horizontal,
+                ) ??
+                0.0,
+            resolveSvgLength(
+                  node,
+                  _document,
+                  'y',
+                  reference: SvgLengthReference.vertical,
+                ) ??
+                0.0,
             0,
             1,
           );
@@ -823,10 +847,38 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
       return false;
     }
 
-    final x = _getNumber(node, 'x') ?? 0.0;
-    final y = _getNumber(node, 'y') ?? 0.0;
-    final width = _getNumber(node, 'width') ?? 0.0;
-    final height = _getNumber(node, 'height') ?? 0.0;
+    final x =
+        resolveSvgLength(
+          node,
+          _document,
+          'x',
+          reference: SvgLengthReference.horizontal,
+        ) ??
+        0.0;
+    final y =
+        resolveSvgLength(
+          node,
+          _document,
+          'y',
+          reference: SvgLengthReference.vertical,
+        ) ??
+        0.0;
+    final width =
+        resolveSvgLength(
+          node,
+          _document,
+          'width',
+          reference: SvgLengthReference.horizontal,
+        ) ??
+        0.0;
+    final height =
+        resolveSvgLength(
+          node,
+          _document,
+          'height',
+          reference: SvgLengthReference.vertical,
+        ) ??
+        0.0;
     if (width <= 0 || height <= 0) {
       return false;
     }

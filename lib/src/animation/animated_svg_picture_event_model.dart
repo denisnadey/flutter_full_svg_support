@@ -259,7 +259,8 @@ extension _AnimatedSvgPictureStateEventModelExtension
     }
 
     final referenced = _document.root.findById(hrefId);
-    if (referenced == null || !isSvgUseReferenceAllowedTag(referenced.tagName)) {
+    if (referenced == null ||
+        !isSvgUseReferenceAllowedTag(referenced.tagName)) {
       return const _EventHitTestResult();
     }
 
@@ -276,8 +277,20 @@ extension _AnimatedSvgPictureStateEventModelExtension
 
     final referenceTransform = Matrix4.copy(currentTransform)
       ..translateByDouble(
-        _getNumber(useNode, 'x') ?? 0.0,
-        _getNumber(useNode, 'y') ?? 0.0,
+        resolveSvgLength(
+              useNode,
+              _document,
+              'x',
+              reference: SvgLengthReference.horizontal,
+            ) ??
+            0.0,
+        resolveSvgLength(
+              useNode,
+              _document,
+              'y',
+              reference: SvgLengthReference.vertical,
+            ) ??
+            0.0,
         0,
         1,
       );
