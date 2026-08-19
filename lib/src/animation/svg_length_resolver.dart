@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
+import 'css_cascade.dart';
 import 'svg_dom.dart';
 
 /// The reference dimension used when resolving an SVG percentage length.
@@ -13,6 +14,57 @@ enum SvgLengthReference {
 
   /// Resolve against the nearest SVG viewport's normalized diagonal.
   normalizedDiagonal,
+}
+
+Object? _resolveSvgLengthAttributeValue(
+  SvgNode node,
+  SvgDocument document,
+  String attributeName, {
+  required bool isAnimated,
+}) {
+  final rawValue = node.getRawAttributeValue(attributeName)?.trim();
+  if (isAnimated) {
+    return node.getAttributeValue(attributeName);
+  }
+
+  final cssRules = document.cssSelectorRules ?? const [];
+  final cascadeResolver = CssCascadeResolver(cssRules: cssRules);
+  final inlineValue = _extractInlineStyleValue(node, attributeName);
+  final stylesheetValue = cascadeResolver.resolveFromStyleRulesOnly(
+    node,
+    attributeName,
+  );
+  if (inlineValue != null || stylesheetValue != null) {
+    return cascadeResolver.resolveOwnProperty(node, attributeName);
+  }
+
+  if (rawValue != null && rawValue.isNotEmpty) {
+    return rawValue;
+  }
+  return node.getAttributeValue(attributeName);
+}
+
+String? _extractInlineStyleValue(SvgNode node, String property) {
+  final style =
+      node.getRawAttributeValue('style') ??
+      node.getAttributeValue('style')?.toString();
+  if (style == null || style.trim().isEmpty) {
+    return null;
+  }
+
+  final normalizedProperty = property.trim().toLowerCase();
+  for (final declaration in style.split(';')) {
+    final separator = declaration.indexOf(':');
+    if (separator <= 0) {
+      continue;
+    }
+    final name = declaration.substring(0, separator).trim().toLowerCase();
+    if (name == normalizedProperty) {
+      final value = declaration.substring(separator + 1).trim();
+      return value.isEmpty ? null : value;
+    }
+  }
+  return null;
 }
 
 /// Resolves an SVG length attribute in the coordinate system of [node].
@@ -28,16 +80,16 @@ double? resolveSvgLength(
   required SvgLengthReference reference,
 }) {
   final attribute = node.getAttribute(attributeName);
-  final rawValue = node.getRawAttributeValue(attributeName)?.trim();
   // The parser stores many length values as numbers, which would lose the
-  // percentage unit. Keep using the raw value while the attribute is not
-  // animated; animated values must use their effective value instead.
-  final value =
-      !((attribute?.isAnimated) ?? false) &&
-          rawValue != null &&
-          rawValue.isNotEmpty
-      ? rawValue
-      : node.getAttributeValue(attributeName);
+  // percentage unit. Preserve the raw presentation-attribute text only when
+  // that attribute wins the cascade; inline styles and stylesheet rules must
+  // remain the effective value.
+  final value = _resolveSvgLengthAttributeValue(
+    node,
+    document,
+    attributeName,
+    isAnimated: attribute?.isAnimated ?? false,
+  );
   if (value == null) {
     return null;
   }

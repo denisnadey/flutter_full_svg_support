@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:full_svg_flutter/src/animation/svg_dom.dart';
+import 'package:full_svg_flutter/src/animation/svg_parser.dart';
 import 'package:full_svg_flutter/src/animation/svg_length_resolver.dart';
 
 void main() {
@@ -214,6 +215,45 @@ void main() {
         reference: SvgLengthReference.vertical,
       ),
       4,
+    );
+  });
+
+  test('uses an inline style value instead of the presentation attribute', () {
+    final document = SvgParser.parse('''
+      <svg viewBox="0 0 200 100">
+        <rect id="target" x="10" style="x: 50%" />
+      </svg>
+    ''');
+    final rect = document.root.findById('target')!;
+
+    expect(
+      resolveSvgLength(
+        rect,
+        document,
+        'x',
+        reference: SvgLengthReference.horizontal,
+      ),
+      100,
+    );
+  });
+
+  test('uses a stylesheet value instead of the presentation attribute', () {
+    final document = SvgParser.parse('''
+      <svg viewBox="0 0 200 100">
+        <style>#target { x: 25%; }</style>
+        <rect id="target" x="10" />
+      </svg>
+    ''');
+    final rect = document.root.findById('target')!;
+
+    expect(
+      resolveSvgLength(
+        rect,
+        document,
+        'x',
+        reference: SvgLengthReference.horizontal,
+      ),
+      50,
     );
   });
 }
