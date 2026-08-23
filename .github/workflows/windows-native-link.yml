@@ -1,0 +1,50 @@
+name: Windows Native Link
+
+on:
+  pull_request:
+    paths:
+      - "packages/quickjs_engine/**"
+      - ".github/workflows/windows-native-link.yml"
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - "packages/quickjs_engine/**"
+      - ".github/workflows/windows-native-link.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: windows-native-link-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release_build:
+    name: Windows release build
+    runs-on: windows-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.38.1"
+          channel: stable
+          cache: true
+
+      - name: Create clean Flutter app
+        shell: pwsh
+        run: flutter create --platforms windows "$env:RUNNER_TEMP\quickjs_windows_smoke"
+
+      - name: Add local quickjs_engine dependency
+        working-directory: ${{ runner.temp }}\quickjs_windows_smoke
+        shell: pwsh
+        run: flutter pub add quickjs_engine --path "$env:GITHUB_WORKSPACE\packages\quickjs_engine"
+
+      - name: Build Windows release
+        working-directory: ${{ runner.temp }}\quickjs_windows_smoke
+        shell: pwsh
+        run: flutter build windows --release
