@@ -21,7 +21,9 @@ concurrency:
 jobs:
   release_build:
     name: Windows release build
-    runs-on: windows-latest
+    # Flutter 3.38.1 selects the VS 2019/2022 generator and cannot build on
+    # the windows-2025 image, which now ships Visual Studio 2026 only.
+    runs-on: windows-2022
     timeout-minutes: 45
 
     steps:
