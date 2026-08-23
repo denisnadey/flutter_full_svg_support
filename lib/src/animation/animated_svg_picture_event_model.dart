@@ -57,24 +57,29 @@ extension _AnimatedSvgPictureStateEventModelExtension
       return const _EventHitTestResult();
     }
 
-    _prepareHitTestCache(_timeline?.currentTime.inMicroseconds.toDouble());
-
-    final documentPoint = _localToDocumentPoint(
-      localPosition,
+    return SvgLengthResolutionContext.runWithRootViewport(
       renderObject.size,
-    );
-    if (documentPoint == null) return const _EventHitTestResult();
+      () {
+        _prepareHitTestCache(_timeline?.currentTime.inMicroseconds.toDouble());
 
-    final pathBuilder = <String>[];
-    return _hitTestNodeWithEventPath(
-      _document.root,
-      documentPoint,
-      Matrix4.identity(),
-      useStack: const <String>{},
-      foreignObjectParent: null,
-      currentAnchor: null,
-      pathBuilder: pathBuilder,
-      useContext: null,
+        final documentPoint = _localToDocumentPoint(
+          localPosition,
+          renderObject.size,
+        );
+        if (documentPoint == null) return const _EventHitTestResult();
+
+        final pathBuilder = <String>[];
+        return _hitTestNodeWithEventPath(
+          _document.root,
+          documentPoint,
+          Matrix4.identity(),
+          useStack: const <String>{},
+          foreignObjectParent: null,
+          currentAnchor: null,
+          pathBuilder: pathBuilder,
+          useContext: null,
+        );
+      },
     );
   }
 
@@ -134,12 +139,10 @@ extension _AnimatedSvgPictureStateEventModelExtension
     final childTransform = Matrix4.copy(currentTransform);
     _applyForeignObjectChildTransform(childTransform, node);
 
-    if (node.tagName == 'svg' && foreignObjectParent != null) {
-      _applyNestedSvgTransformInForeignObject(
-        childTransform,
-        node,
-        foreignObjectParent,
-      );
+    // Nested SVG viewports apply to all child hit testing, not only SVGs
+    // embedded by foreignObject.
+    if (node.tagName == 'svg') {
+      _applyNestedSvgViewportTransform(childTransform, node);
     }
 
     // Add to path if has ID

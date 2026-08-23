@@ -368,5 +368,88 @@ void main() {
         retargetedId: 'use-target',
       );
     });
+
+    testWidgets(
+      'resolves a dimensionless root against the embedding viewport in hit testing',
+      (WidgetTester tester) async {
+        await expectTapTarget(
+          tester,
+          svg: '''
+            <svg>
+              <rect id="rect-target" width="50%" height="100%" fill="black"/>
+            </svg>
+          ''',
+          // width="50%" of a 200-wide embedding is x=0..100.
+          documentOffset: const Offset(75, 50),
+          targetId: 'rect-target',
+        );
+      },
+    );
+
+    testWidgets(
+      'resolves a no-viewBox symbol child against the use viewport in hit testing',
+      (WidgetTester tester) async {
+        await expectTapTarget(
+          tester,
+          svg: '''
+            <svg viewBox="0 0 200 100">
+              <defs>
+                <symbol id="symbol-source">
+                  <rect id="symbol-child" width="50%" height="50%" fill="black"/>
+                </symbol>
+              </defs>
+              <use id="use-target" href="#symbol-source" width="100" height="40"/>
+            </svg>
+          ''',
+          // 50% of the 100x40 use viewport is 50x20.
+          documentOffset: const Offset(25, 10),
+          targetId: 'symbol-child',
+          retargetedId: 'use-target',
+        );
+      },
+    );
+
+    testWidgets(
+      'prefers the referenced viewBox over the use viewport in hit testing',
+      (WidgetTester tester) async {
+        await expectTapTarget(
+          tester,
+          svg: '''
+            <svg viewBox="0 0 200 100">
+              <defs>
+                <symbol id="symbol-source" viewBox="0 0 200 100"
+                        preserveAspectRatio="none">
+                  <rect id="symbol-child" width="50%" height="50%" fill="black"/>
+                </symbol>
+              </defs>
+              <use id="use-target" href="#symbol-source" width="100" height="40"/>
+            </svg>
+          ''',
+          // viewBox 200x100 scaled to the 100x40 use viewport maps the 50%
+          // child to 50x20; (40,10) sits inside it.
+          documentOffset: const Offset(40, 10),
+          targetId: 'symbol-child',
+          retargetedId: 'use-target',
+        );
+      },
+    );
+
+    testWidgets('defaults an omitted nested svg axis in hit testing', (
+      WidgetTester tester,
+    ) async {
+      await expectTapTarget(
+        tester,
+        svg: '''
+            <svg viewBox="0 0 200 100">
+              <svg width="100">
+                <rect id="rect-target" width="100%" height="100%" fill="black"/>
+              </svg>
+            </svg>
+          ''',
+        // Nested viewport defaults to 100x100; the child fills it.
+        documentOffset: const Offset(50, 50),
+        targetId: 'rect-target',
+      );
+    });
   });
 }

@@ -114,13 +114,10 @@ extension _AnimatedSvgPictureStateHitTestTraversalExtension
     final childTransform = Matrix4.copy(currentTransform);
     _applyForeignObjectChildTransform(childTransform, node);
 
-    // Apply nested SVG transform within foreignObject
-    if (node.tagName == 'svg' && foreignObjectParent != null) {
-      _applyNestedSvgTransformInForeignObject(
-        childTransform,
-        node,
-        foreignObjectParent,
-      );
+    // Nested SVG viewports apply to all child hit testing, not only SVGs
+    // embedded by foreignObject.
+    if (node.tagName == 'svg') {
+      _applyNestedSvgViewportTransform(childTransform, node);
     }
 
     if (node.tagName == 'switch') {

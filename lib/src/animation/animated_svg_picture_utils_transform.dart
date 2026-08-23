@@ -44,42 +44,17 @@ extension _AnimatedSvgPictureStateTransformExtension
     matrix.translateByDouble(x, y, 0, 1);
   }
 
-  /// Applies nested SVG viewport transform within foreignObject for hit-testing.
-  void _applyNestedSvgTransformInForeignObject(
-    Matrix4 matrix,
-    SvgNode svgNode,
-    SvgNode foreignObjectNode,
-  ) {
-    if (svgNode.tagName != 'svg') {
-      return;
-    }
-    if (foreignObjectNode.tagName != 'foreignObject') {
+  /// Applies a nested SVG viewport transform for hit-testing.
+  ///
+  /// A nested `<svg>` establishes a viewport in its parent coordinate system
+  /// even when it is not inside a `<foreignObject>`. Its optional viewBox then
+  /// maps that viewport into the child user coordinate system.
+  void _applyNestedSvgViewportTransform(Matrix4 matrix, SvgNode svgNode) {
+    if (svgNode.tagName != 'svg' || svgNode.parent == null) {
       return;
     }
 
-    // Get foreignObject viewport dimensions
-    final foWidth =
-        resolveSvgLength(
-          foreignObjectNode,
-          _document,
-          'width',
-          reference: SvgLengthReference.horizontal,
-        ) ??
-        0.0;
-    final foHeight =
-        resolveSvgLength(
-          foreignObjectNode,
-          _document,
-          'height',
-          reference: SvgLengthReference.vertical,
-        ) ??
-        0.0;
-    if (foWidth <= 0 || foHeight <= 0) {
-      return;
-    }
-
-    // Get nested SVG attributes
-    final svgX =
+    final x =
         resolveSvgLength(
           svgNode,
           _document,
@@ -87,7 +62,7 @@ extension _AnimatedSvgPictureStateTransformExtension
           reference: SvgLengthReference.horizontal,
         ) ??
         0.0;
-    final svgY =
+    final y =
         resolveSvgLength(
           svgNode,
           _document,
@@ -95,55 +70,37 @@ extension _AnimatedSvgPictureStateTransformExtension
           reference: SvgLengthReference.vertical,
         ) ??
         0.0;
-    var svgWidth = resolveSvgLength(
-      svgNode,
-      _document,
-      'width',
-      reference: SvgLengthReference.horizontal,
-    );
-    var svgHeight = resolveSvgLength(
-      svgNode,
-      _document,
-      'height',
-      reference: SvgLengthReference.vertical,
-    );
+    if (x != 0 || y != 0) {
+      matrix.translateByDouble(x, y, 0, 1);
+    }
 
-    // Default width/height to 100% of foreignObject viewport
-    svgWidth ??= foWidth;
-    svgHeight ??= foHeight;
-
-    if (svgWidth <= 0 || svgHeight <= 0) {
+    final viewBoxAttr = svgNode.getAttributeValue('viewBox')?.toString();
+    if (viewBoxAttr == null || viewBoxAttr.trim().isEmpty) {
+      return;
+    }
+    final viewBox = _parseViewBoxRect(viewBoxAttr);
+    final viewport = resolveSvgViewportSize(svgNode, _document);
+    if (viewBox == null ||
+        viewport == null ||
+        viewBox.width <= 0 ||
+        viewBox.height <= 0) {
       return;
     }
 
-    // Translate to SVG position
-    if (svgX != 0 || svgY != 0) {
-      matrix.translateByDouble(svgX, svgY, 0, 1);
-    }
-
-    // Apply viewBox transform if present
-    final viewBoxAttr = svgNode.getAttributeValue('viewBox')?.toString();
-    if (viewBoxAttr != null && viewBoxAttr.trim().isNotEmpty) {
-      final viewBox = _parseViewBoxRect(viewBoxAttr);
-      if (viewBox != null && viewBox.width > 0 && viewBox.height > 0) {
-        final layout = resolveSvgViewportLayout(
-          viewport: Rect.fromLTWH(0, 0, svgWidth, svgHeight),
-          sourceSize: Size(viewBox.width, viewBox.height),
-          preserveAspectRatio: svgNode
-              .getAttributeValue('preserveAspectRatio')
-              ?.toString(),
-        );
-
-        // Compute viewBox to viewport transform
-        final scaleX = layout.destinationRect.width / viewBox.width;
-        final scaleY = layout.destinationRect.height / viewBox.height;
-        final translateX = layout.destinationRect.left - viewBox.left * scaleX;
-        final translateY = layout.destinationRect.top - viewBox.top * scaleY;
-
-        matrix.translateByDouble(translateX, translateY, 0, 1);
-        matrix.scaleByDouble(scaleX, scaleY, 1, 1);
-      }
-    }
+    final layout = resolveSvgViewportLayout(
+      viewport: Rect.fromLTWH(0, 0, viewport.width, viewport.height),
+      sourceSize: Size(viewBox.width, viewBox.height),
+      preserveAspectRatio: svgNode
+          .getAttributeValue('preserveAspectRatio')
+          ?.toString(),
+    );
+    final scaleX = layout.destinationRect.width / viewBox.width;
+    final scaleY = layout.destinationRect.height / viewBox.height;
+    final translateX = layout.destinationRect.left - viewBox.left * scaleX;
+    final translateY = layout.destinationRect.top - viewBox.top * scaleY;
+    matrix
+      ..translateByDouble(translateX, translateY, 0, 1)
+      ..scaleByDouble(scaleX, scaleY, 1, 1);
   }
 
   Rect? _parseViewBoxRect(String viewBoxStr) {

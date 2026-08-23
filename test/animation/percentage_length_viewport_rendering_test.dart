@@ -232,6 +232,83 @@ void main() {
       expect(analysis.boundingBox.width, greaterThan(70));
       expect(analysis.boundingBox.height, greaterThan(25));
     });
+
+    testWidgets(
+      'resolves a dimensionless root against the embedding widget viewport',
+      (tester) async {
+        const svg = '''
+          <svg>
+            <rect width="50%" height="100%" fill="red"/>
+          </svg>
+        ''';
+
+        final analysis = await renderRedSvg(tester, svg);
+
+        expect(analysis.objectWidth, closeTo(100, 1));
+        expect(analysis.objectHeight, closeTo(100, 1));
+      },
+    );
+
+    testWidgets(
+      'resolves a no-viewBox symbol child against the use instance viewport',
+      (tester) async {
+        const svg = '''
+          <svg viewBox="0 0 200 100">
+            <defs>
+              <symbol id="source">
+                <rect width="50%" height="50%" fill="red"/>
+              </symbol>
+            </defs>
+            <use href="#source" width="100" height="40"/>
+          </svg>
+        ''';
+
+        final analysis = await renderRedSvg(tester, svg);
+
+        expect(analysis.objectWidth, closeTo(50, 1));
+        expect(analysis.objectHeight, closeTo(20, 1));
+      },
+    );
+
+    testWidgets(
+      'prefers the referenced viewBox over the physical use viewport',
+      (tester) async {
+        const svg = '''
+          <svg viewBox="0 0 200 100">
+            <defs>
+              <symbol id="source" viewBox="0 0 200 100"
+                      preserveAspectRatio="none">
+                <rect width="50%" height="50%" fill="red"/>
+              </symbol>
+            </defs>
+            <use href="#source" width="100" height="40"/>
+          </svg>
+        ''';
+
+        final analysis = await renderRedSvg(tester, svg);
+
+        expect(analysis.objectWidth, closeTo(50, 1));
+        expect(analysis.objectHeight, closeTo(20, 1));
+      },
+    );
+
+    testWidgets(
+      'defaults an omitted nested svg axis to 100% of the parent viewport',
+      (tester) async {
+        const svg = '''
+          <svg viewBox="0 0 200 100">
+            <svg width="100">
+              <rect width="100%" height="100%" fill="red"/>
+            </svg>
+          </svg>
+        ''';
+
+        final analysis = await renderRedSvg(tester, svg);
+
+        expect(analysis.objectWidth, closeTo(100, 1));
+        expect(analysis.objectHeight, closeTo(100, 1));
+      },
+    );
   });
 
   test('resolves percentage basic-shape bounds for fill-box and filters', () {

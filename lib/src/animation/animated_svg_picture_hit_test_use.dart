@@ -296,33 +296,47 @@ extension _AnimatedSvgPictureStateHitTestUseExtension
           return null;
         }
         if (referenced.tagName == 'symbol') {
-          for (int i = referenced.children.length - 1; i >= 0; i--) {
-            final hitChild = _hitTestNodeWithUseContext(
-              referenced.children[i],
+          return _withUseInstanceViewport(
+            referencedNode: referenced,
+            viewport: _resolveUseInstanceViewportSize(useNode),
+            callback: () {
+              for (int i = referenced.children.length - 1; i >= 0; i--) {
+                final hitChild = _hitTestNodeWithUseContext(
+                  referenced.children[i],
+                  documentPoint,
+                  useReferenceTransform,
+                  useStack: nextUseStack,
+                  foreignObjectParent: null,
+                  useContext: useContext,
+                );
+                if (hitChild != null) {
+                  // Apply event retargeting - return use element ID instead
+                  // This implements event bubbling from use content
+                  return useContext.getRetargetedId(hitChild);
+                }
+              }
+              return null;
+            },
+          );
+        }
+        return _withUseInstanceViewport(
+          referencedNode: referenced,
+          viewport: _resolveUseInstanceViewportSize(useNode),
+          callback: () {
+            final hitResult = _hitTestNodeWithUseContext(
+              referenced,
               documentPoint,
               useReferenceTransform,
               useStack: nextUseStack,
               foreignObjectParent: null,
               useContext: useContext,
             );
-            if (hitChild != null) {
-              // Apply event retargeting - return use element ID instead
-              // This implements event bubbling from use content
-              return useContext.getRetargetedId(hitChild);
-            }
-          }
-          return null;
-        }
-        final hitResult = _hitTestNodeWithUseContext(
-          referenced,
-          documentPoint,
-          useReferenceTransform,
-          useStack: nextUseStack,
-          foreignObjectParent: null,
-          useContext: useContext,
+            // Apply event retargeting - events bubble up to use element
+            return hitResult != null
+                ? useContext.getRetargetedId(hitResult)
+                : null;
+          },
         );
-        // Apply event retargeting - events bubble up to use element
-        return hitResult != null ? useContext.getRetargetedId(hitResult) : null;
       }
 
       final hitResult = _hitTestNodeWithUseContext(
@@ -391,13 +405,10 @@ extension _AnimatedSvgPictureStateHitTestUseExtension
     final childTransform = Matrix4.copy(currentTransform);
     _applyForeignObjectChildTransform(childTransform, node);
 
-    // Apply nested SVG transform within foreignObject
-    if (node.tagName == 'svg' && foreignObjectParent != null) {
-      _applyNestedSvgTransformInForeignObject(
-        childTransform,
-        node,
-        foreignObjectParent,
-      );
+    // Nested SVG viewports apply to all child hit testing, not only SVGs
+    // embedded by foreignObject.
+    if (node.tagName == 'svg') {
+      _applyNestedSvgViewportTransform(childTransform, node);
     }
 
     if (node.tagName == 'switch') {
@@ -471,6 +482,40 @@ extension _AnimatedSvgPictureStateHitTestUseExtension
 
   bool _isUseViewportReferenceTag(String tagName) {
     return tagName == 'symbol' || tagName == 'svg';
+  }
+
+  Size? _resolveUseInstanceViewportSize(SvgNode useNode) {
+    final width = resolveSvgLength(
+      useNode,
+      _document,
+      'width',
+      reference: SvgLengthReference.horizontal,
+    );
+    final height = resolveSvgLength(
+      useNode,
+      _document,
+      'height',
+      reference: SvgLengthReference.vertical,
+    );
+    if (width == null || height == null || width <= 0 || height <= 0) {
+      return null;
+    }
+    return Size(width, height);
+  }
+
+  T _withUseInstanceViewport<T>({
+    required SvgNode referencedNode,
+    required Size? viewport,
+    required T Function() callback,
+  }) {
+    if (viewport == null) {
+      return callback();
+    }
+    return SvgLengthResolutionContext.runWithViewportForNode(
+      referencedNode,
+      viewport,
+      callback,
+    );
   }
 
   Rect? _applyUseViewportTransform(
