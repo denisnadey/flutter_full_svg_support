@@ -21,6 +21,8 @@ Object? _resolveSvgLengthAttributeValue(
   SvgDocument document,
   String attributeName, {
   required bool isAnimated,
+  CssCascadeResolver? cascadeResolver,
+  String? shadowBoundaryId,
 }) {
   final rawValue = node.getRawAttributeValue(attributeName)?.trim();
   if (isAnimated) {
@@ -28,14 +30,21 @@ Object? _resolveSvgLengthAttributeValue(
   }
 
   final cssRules = document.cssSelectorRules ?? const [];
-  final cascadeResolver = CssCascadeResolver(cssRules: cssRules);
+  final baseResolver = cascadeResolver ??
+      (CssCascadeResolver(cssRules: cssRules)
+        ..pseudoClassState = document.pseudoClassState);
+  final resolver = (shadowBoundaryId == null ||
+          shadowBoundaryId == baseResolver.shadowBoundaryId)
+      ? baseResolver
+      : baseResolver.withShadowBoundary(shadowBoundaryId);
+
   final inlineValue = _extractInlineStyleValue(node, attributeName);
-  final stylesheetValue = cascadeResolver.resolveFromStyleRulesOnly(
+  final stylesheetValue = resolver.resolveFromStyleRulesOnly(
     node,
     attributeName,
   );
   if (inlineValue != null || stylesheetValue != null) {
-    return cascadeResolver.resolveOwnProperty(node, attributeName);
+    return resolver.resolveOwnProperty(node, attributeName);
   }
 
   if (rawValue != null && rawValue.isNotEmpty) {
@@ -73,11 +82,19 @@ String? _extractInlineStyleValue(SvgNode node, String property) {
 /// the nearest ancestral SVG viewport, using [reference]. Other units retain
 /// the renderer's existing numeric fallback behavior and use their numeric
 /// component without CSS-unit conversion.
+///
+/// When [cascadeResolver] is provided it is reused for stylesheet-rule
+/// matching (preserving its rule cache and pseudo-class state); otherwise a
+/// resolver carrying [SvgDocument.pseudoClassState] is built. [shadowBoundaryId]
+/// scopes combinator selector matching to the referenced content of a `<use>`
+/// instance, matching the renderer's shadow-boundary cascade semantics.
 double? resolveSvgLength(
   SvgNode node,
   SvgDocument document,
   String attributeName, {
   required SvgLengthReference reference,
+  CssCascadeResolver? cascadeResolver,
+  String? shadowBoundaryId,
 }) {
   final attribute = node.getAttribute(attributeName);
   // The parser stores many length values as numbers, which would lose the
@@ -89,6 +106,8 @@ double? resolveSvgLength(
     document,
     attributeName,
     isAnimated: attribute?.isAnimated ?? false,
+    cascadeResolver: cascadeResolver,
+    shadowBoundaryId: shadowBoundaryId,
   );
   if (value == null) {
     return null;

@@ -256,4 +256,77 @@ void main() {
       50,
     );
   });
+
+  test('respects dynamic pseudo-class state from the document', () {
+    final document = SvgParser.parse('''
+      <svg viewBox="0 0 200 100">
+        <style>#target:hover { x: 50%; }</style>
+        <rect id="target" x="10" />
+      </svg>
+    ''');
+    final rect = document.root.findById('target')!;
+
+    // Not hovered: the :hover rule does not match, so the presentation
+    // attribute wins and x resolves to 10.
+    expect(
+      resolveSvgLength(
+        rect,
+        document,
+        'x',
+        reference: SvgLengthReference.horizontal,
+      ),
+      10,
+    );
+
+    document.pseudoClassState.setHovered('target', true);
+
+    // Hovered: the :hover rule wins and 50% resolves against the 200-wide
+    // viewBox to 100.
+    expect(
+      resolveSvgLength(
+        rect,
+        document,
+        'x',
+        reference: SvgLengthReference.horizontal,
+      ),
+      100,
+    );
+  });
+
+  test('stops descendant combinator matching at the use shadow boundary', () {
+    final document = SvgParser.parse('''
+      <svg viewBox="0 0 200 100">
+        <style>svg rect { x: 50%; }</style>
+        <g id="shadow">
+          <rect id="target" x="10" />
+        </g>
+      </svg>
+    ''');
+    final rect = document.root.findById('target')!;
+
+    // Without a shadow boundary, `svg rect` matches through the <g> ancestor,
+    // so 50% resolves against the 200-wide viewBox to 100.
+    expect(
+      resolveSvgLength(
+        rect,
+        document,
+        'x',
+        reference: SvgLengthReference.horizontal,
+      ),
+      100,
+    );
+
+    // With the referenced <g> declared as the shadow root, the descendant
+    // combinator must stop before crossing it, falling back to x="10".
+    expect(
+      resolveSvgLength(
+        rect,
+        document,
+        'x',
+        reference: SvgLengthReference.horizontal,
+        shadowBoundaryId: 'shadow',
+      ),
+      10,
+    );
+  });
 }

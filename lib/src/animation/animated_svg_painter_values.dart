@@ -58,6 +58,8 @@ extension AnimatedSvgPainterValuesExtension on AnimatedSvgPainter {
       reference: isHorizontal
           ? SvgLengthReference.horizontal
           : SvgLengthReference.vertical,
+      cascadeResolver: _currentDocumentCssResolver,
+      shadowBoundaryId: _currentUseContext?.shadowRootId,
     );
   }
 
