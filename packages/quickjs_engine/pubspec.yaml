@@ -3,7 +3,7 @@ description: >
   Modern QuickJS-NG 0.14.0 (2026) bundled for Flutter — same JS engine on
   every platform (Android, iOS, macOS, Linux, Windows). API-compatible
   fork of flutter_js with the bridge patched against QuickJS-NG's new API.
-version: 0.1.3
+version: 0.1.4
 homepage: https://github.com/denisnadey/flutter_full_svg_support
 repository: https://github.com/denisnadey/flutter_full_svg_support
 issue_tracker: https://github.com/denisnadey/flutter_full_svg_support/issues
