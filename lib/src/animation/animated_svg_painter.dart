@@ -161,7 +161,7 @@ class AnimatedSvgPainter extends CustomPainter {
     _currentDocumentCssResolver = _currentDocumentCssRules == null
         ? null
         : (CssCascadeResolver(cssRules: _currentDocumentCssRules!)
-          ..pseudoClassState = document.pseudoClassState);
+            ..pseudoClassState = document.pseudoClassState);
 
     // Compute the viewBox → size transform
     final transform = _computeViewBoxTransform(size);
@@ -363,7 +363,7 @@ class AnimatedSvgPainter extends CustomPainter {
       _currentDocumentCssResolver = _currentDocumentCssRules == null
           ? null
           : (CssCascadeResolver(cssRules: _currentDocumentCssRules!)
-            ..pseudoClassState = document.pseudoClassState);
+              ..pseudoClassState = document.pseudoClassState);
     }
 
     try {

@@ -30,10 +30,12 @@ Object? _resolveSvgLengthAttributeValue(
   }
 
   final cssRules = document.cssSelectorRules ?? const [];
-  final baseResolver = cascadeResolver ??
+  final baseResolver =
+      cascadeResolver ??
       (CssCascadeResolver(cssRules: cssRules)
         ..pseudoClassState = document.pseudoClassState);
-  final resolver = (shadowBoundaryId == null ||
+  final resolver =
+      (shadowBoundaryId == null ||
           shadowBoundaryId == baseResolver.shadowBoundaryId)
       ? baseResolver
       : baseResolver.withShadowBoundary(shadowBoundaryId);
