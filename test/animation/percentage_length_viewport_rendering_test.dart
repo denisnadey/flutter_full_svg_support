@@ -309,6 +309,24 @@ void main() {
         expect(analysis.objectHeight, closeTo(100, 1));
       },
     );
+
+    testWidgets(
+      'defaults an omitted nested svg width to 100% of the parent viewport',
+      (tester) async {
+        const svg = '''
+          <svg viewBox="0 0 200 100">
+            <svg height="40">
+              <rect width="100%" height="100%" fill="red"/>
+            </svg>
+          </svg>
+        ''';
+
+        final analysis = await renderRedSvg(tester, svg);
+
+        expect(analysis.objectWidth, closeTo(200, 1));
+        expect(analysis.objectHeight, closeTo(40, 1));
+      },
+    );
   });
 
   test('resolves percentage basic-shape bounds for fill-box and filters', () {

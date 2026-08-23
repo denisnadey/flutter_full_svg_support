@@ -451,5 +451,23 @@ void main() {
         targetId: 'rect-target',
       );
     });
+
+    testWidgets('defaults an omitted nested svg width in hit testing', (
+      WidgetTester tester,
+    ) async {
+      await expectTapTarget(
+        tester,
+        svg: '''
+            <svg viewBox="0 0 200 100">
+              <svg height="40">
+                <rect id="rect-target" width="100%" height="100%" fill="black"/>
+              </svg>
+            </svg>
+          ''',
+        // Nested viewport defaults to 200x40; the child fills it.
+        documentOffset: const Offset(100, 20),
+        targetId: 'rect-target',
+      );
+    });
   });
 }
