@@ -12,10 +12,10 @@ Render *any* SVG directly inside Flutter — crisp static icons and illustration
 
 `full_svg_flutter` gives you a `flutter_svg`-compatible `SvgPicture` API for static graphics **and** `FSvgPicture` / `AnimatedSvgPicture` for animation — all rendered by the same DOM-preserving engine, so static SVGs get the *exact* same fidelity (filters, masks, text, gradients) as animated ones.
 
-> **🆕 New in 1.4.2 — correct filters for repeated `<use>` instances.**
-> Source-based lighting and displacement filters now keep each rendered use
-> instance separate, including inherited styles and nested scale, rotate, and
-> x/y placement. See the [changelog](CHANGELOG.md) for details.
+> **🆕 New in 1.4.3 — Windows build fix.**
+> `quickjs_engine` now uses Flutter's canonical Windows C API registration
+> layout, fixing generated registrant compile/link failures. See the
+> [changelog](CHANGELOG.md) for details.
 
 [svgator-site]: https://www.svgator.com/
 [qjs-engine-pkg]: https://pub.dev/packages/quickjs_engine
@@ -80,7 +80,7 @@ There are several ways to use animated vector graphics in Flutter: static SVG pa
 ```yaml
 # pubspec.yaml
 dependencies:
-  full_svg_flutter: ^1.4.2
+  full_svg_flutter: ^1.4.3
 ```
 
 ```dart
@@ -392,7 +392,7 @@ Known limitations:
 
 ```yaml
 dependencies:
-  full_svg_flutter: ^1.4.2
+  full_svg_flutter: ^1.4.3
 ```
 
 ```bash

@@ -1,3 +1,23 @@
+## 1.4.3
+
+### Windows plugin registration
+
+**Fixed**
+
+- Updated `quickjs_engine` to `^0.1.4`, fixing Windows builds that failed when
+  Flutter's generated plugin registrant called the missing
+  `QuickjsEnginePluginRegisterWithRegistrar` symbol.
+- The Windows plugin now declares its exported C API class consistently and
+  provides the canonical header expected by Flutter's generated registrant.
+
+**Maintenance**
+
+- Added a clean Windows release-build workflow that compiles and links a fresh
+  Flutter application against the local `quickjs_engine` package.
+- Thanks to [@dariyooo](https://github.com/dariyooo) for reporting the issue
+  and contributing the manifest fix in
+  [#36](https://github.com/denisnadey/flutter_full_svg_support/pull/36).
+
 ## 1.4.2
 
 ### Correct SourceGraphic filters for repeated use instances

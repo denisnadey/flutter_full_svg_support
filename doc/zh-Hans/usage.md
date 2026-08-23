@@ -16,7 +16,7 @@ flutter pub add full_svg_flutter
 
 ```yaml
 dependencies:
-  full_svg_flutter: ^1.4.2
+  full_svg_flutter: ^1.4.3
 ```
 
 在 Dart 文件中导入：
