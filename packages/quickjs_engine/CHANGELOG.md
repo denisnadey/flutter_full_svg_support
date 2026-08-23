@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.4
+
+- Fixed Windows builds by declaring the exported C API plugin class in the
+  Flutter manifest, so generated registrants call
+  `QuickjsEnginePluginCApiRegisterWithRegistrar` instead of the missing
+  `QuickjsEnginePluginRegisterWithRegistrar` symbol.
+- Added the canonical `quickjs_engine_plugin_c_api.h` public header expected by
+  Flutter's Windows tooling while preserving the previous header as a
+  compatibility include.
+- Added a clean Windows release-build workflow to catch plugin registration,
+  header, and native-link regressions.
+
 ## 0.1.3
 
 - Linked Android native libraries with 16 KB ELF `LOAD` segment alignment so

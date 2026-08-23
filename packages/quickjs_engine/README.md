@@ -35,7 +35,7 @@ mystery platform divergence.
 
 ```yaml
 dependencies:
-  quickjs_engine: ^0.1.3
+  quickjs_engine: ^0.1.4
 ```
 
 ```dart
