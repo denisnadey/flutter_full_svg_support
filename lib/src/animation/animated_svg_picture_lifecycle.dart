@@ -82,8 +82,7 @@ extension _AnimatedSvgPictureStateLifecycleExtension
         widget.controller!
           ..debugSnapshotProvider = _captureDebugSnapshot
           ..debugCurrentTimeMsProvider = _debugCurrentTimeMs
-          ..debugJsEvaluator =
-              (code) => _jsBridge?.evaluateForDebug(code);
+          ..debugJsEvaluator = (code) => _jsBridge?.evaluateForDebug(code);
       }
 
       _trace(
@@ -229,11 +228,13 @@ extension _AnimatedSvgPictureStateLifecycleExtension
         );
         // Fire load events after all external scripts have been fetched and executed.
         final generation = _imageLoadGeneration;
-        unawaited(_jsBridge!.externalScriptsLoaded.then((_) {
-          if (!mounted || generation != _imageLoadGeneration) return;
-          _jsBridge?.fireLoadEvents();
-          _trace(category: 'js', message: 'JS load events fired');
-        }));
+        unawaited(
+          _jsBridge!.externalScriptsLoaded.then((_) {
+            if (!mounted || generation != _imageLoadGeneration) return;
+            _jsBridge?.fireLoadEvents();
+            _trace(category: 'js', message: 'JS load events fired');
+          }),
+        );
       }
       _registerWithFullSvgDevTools();
     } catch (error, stackTrace) {
@@ -502,7 +503,10 @@ extension _AnimatedSvgPictureStateLifecycleExtension
           if (p[1] > maxY) maxY = p[1];
         }
         bboxRoot = <String, double>{
-          'x': minX, 'y': minY, 'w': maxX - minX, 'h': maxY - minY,
+          'x': minX,
+          'y': minY,
+          'w': maxX - minX,
+          'h': maxY - minY,
         };
       }
       elements.add(<String, Object?>{
@@ -517,6 +521,7 @@ extension _AnimatedSvgPictureStateLifecycleExtension
         walk(child, depth + 1, toRoot);
       }
     }
+
     try {
       walk(_document.root, 0, _M2.identity());
     } catch (_) {
@@ -552,6 +557,7 @@ extension _AnimatedSvgPictureStateLifecycleExtension
       if (v is String) return double.tryParse(v);
       return null;
     }
+
     switch (node.tagName) {
       case 'rect':
         final x = d('x') ?? 0, y = d('y') ?? 0;
@@ -567,7 +573,10 @@ extension _AnimatedSvgPictureStateLifecycleExtension
         final rx = d('rx') ?? 0, ry = d('ry') ?? 0;
         if (rx <= 0 || ry <= 0) return null;
         return Rect.fromCenter(
-            center: Offset(cx, cy), width: rx * 2, height: ry * 2);
+          center: Offset(cx, cy),
+          width: rx * 2,
+          height: ry * 2,
+        );
       case 'line':
         final x1 = d('x1') ?? 0, y1 = d('y1') ?? 0;
         final x2 = d('x2') ?? 0, y2 = d('y2') ?? 0;
@@ -582,15 +591,17 @@ extension _AnimatedSvgPictureStateLifecycleExtension
     }
   }
 
-  static final RegExp _translateRe =
-      RegExp(r'translate\(\s*(-?\d+\.?\d*)[\s,]+(-?\d+\.?\d*)\s*\)');
+  static final RegExp _translateRe = RegExp(
+    r'translate\(\s*(-?\d+\.?\d*)[\s,]+(-?\d+\.?\d*)\s*\)',
+  );
   static final RegExp _matrixRe = RegExp(
-      r'matrix\(\s*(-?\d+\.?\d*(?:[eE][+\-]?\d+)?)[\s,]+'
-      r'(-?\d+\.?\d*(?:[eE][+\-]?\d+)?)[\s,]+'
-      r'(-?\d+\.?\d*(?:[eE][+\-]?\d+)?)[\s,]+'
-      r'(-?\d+\.?\d*(?:[eE][+\-]?\d+)?)[\s,]+'
-      r'(-?\d+\.?\d*(?:[eE][+\-]?\d+)?)[\s,]+'
-      r'(-?\d+\.?\d*(?:[eE][+\-]?\d+)?)\s*\)');
+    r'matrix\(\s*(-?\d+\.?\d*(?:[eE][+\-]?\d+)?)[\s,]+'
+    r'(-?\d+\.?\d*(?:[eE][+\-]?\d+)?)[\s,]+'
+    r'(-?\d+\.?\d*(?:[eE][+\-]?\d+)?)[\s,]+'
+    r'(-?\d+\.?\d*(?:[eE][+\-]?\d+)?)[\s,]+'
+    r'(-?\d+\.?\d*(?:[eE][+\-]?\d+)?)[\s,]+'
+    r'(-?\d+\.?\d*(?:[eE][+\-]?\d+)?)\s*\)',
+  );
 
   /// Parses a sequence of `translate(...)` / `matrix(...)` transform
   /// functions into a 2D affine matrix. Anything else (rotate/scale/skew)
@@ -720,8 +731,7 @@ extension _AnimatedSvgPictureStateLifecycleExtension
     final intrinsicSize = _intrinsicCanvasSize();
     final useFittedBox =
         intrinsicSize != null &&
-        (widget.fit != BoxFit.contain ||
-            widget.alignment != Alignment.center);
+        (widget.fit != BoxFit.contain || widget.alignment != Alignment.center);
 
     // `CustomPaint.size` is used only for axes the parent leaves
     // unconstrained, so falling back to the intrinsic size lets the SVG lay
@@ -732,6 +742,17 @@ extension _AnimatedSvgPictureStateLifecycleExtension
       painter: painter,
       size: useFittedBox ? intrinsicSize : (intrinsicSize ?? Size.infinite),
     );
+
+    // Add foreignObject overlay widgets before the FittedBox so the overlay
+    // and the painted SVG share the same fit/alignment transform.
+    if (widget.foreignObjectBuilder != null) {
+      svgWidget = _buildWithForeignObjectOverlay(
+        context,
+        svgWidget,
+        useFittedBox: useFittedBox,
+        intrinsicSize: intrinsicSize,
+      );
+    }
 
     if (useFittedBox) {
       svgWidget = FittedBox(
@@ -772,11 +793,6 @@ extension _AnimatedSvgPictureStateLifecycleExtension
           ),
         ),
       );
-    }
-
-    // Add foreignObject overlay widgets if builder is provided
-    if (widget.foreignObjectBuilder != null) {
-      svgWidget = _buildWithForeignObjectOverlay(context, svgWidget);
     }
 
     // Wrap in SizedBox if dimensions are specified
@@ -847,14 +863,16 @@ class _M2 {
   final double a, b, c, d, e, f;
 
   _M2 multiply(_M2 o) => _M2(
-        a * o.a + c * o.b,
-        b * o.a + d * o.b,
-        a * o.c + c * o.d,
-        b * o.c + d * o.d,
-        a * o.e + c * o.f + e,
-        b * o.e + d * o.f + f,
-      );
+    a * o.a + c * o.b,
+    b * o.a + d * o.b,
+    a * o.c + c * o.d,
+    b * o.c + d * o.d,
+    a * o.e + c * o.f + e,
+    b * o.e + d * o.f + f,
+  );
 
-  List<double> transformPoint(double x, double y) =>
-      <double>[a * x + c * y + e, b * x + d * y + f];
+  List<double> transformPoint(double x, double y) => <double>[
+    a * x + c * y + e,
+    b * x + d * y + f,
+  ];
 }

@@ -763,19 +763,26 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
     required String defaultRaw,
   }) {
     // The parser stores percentage lengths as bare numbers, which loses the
-    // `%` suffix. Detect percentages from the raw attribute text first.
-    final rawAttribute = maskNode.getRawAttributeValue(attributeName);
-    final raw = rawAttribute?.trim();
-    if (raw != null && raw.endsWith('%')) {
-      return _resolveMaskUserSpacePercentage(
-        raw,
-        horizontal: horizontal,
-        isSize: isSize,
-      );
+    // `%` suffix. Detect percentages from the raw attribute text first, but
+    // only when the attribute is not currently animated: an active SMIL value
+    // is already the effective resolved number and must win over the raw
+    // presentation-attribute spelling.
+    final isAnimated =
+        maskNode.getAttribute(attributeName)?.isAnimated ?? false;
+    if (!isAnimated) {
+      final rawAttribute = maskNode.getRawAttributeValue(attributeName);
+      final raw = rawAttribute?.trim();
+      if (raw != null && raw.endsWith('%')) {
+        return _resolveMaskUserSpacePercentage(
+          raw,
+          horizontal: horizontal,
+          isSize: isSize,
+        );
+      }
     }
 
-    // Non-percentage: keep the existing parsed-value behavior (including
-    // SMIL-animated values and the -10%/120% defaults).
+    // Keep the existing parsed-value behavior (including SMIL-animated values
+    // and the -10%/120% defaults).
     final parsedValue = maskNode.getAttributeValue(attributeName) ?? defaultRaw;
     if (parsedValue is num) {
       return parsedValue.toDouble();

@@ -351,6 +351,51 @@ void main() {
         expect(analysis.objectWidth, closeTo(100, 1));
       },
     );
+
+    testWidgets(
+      'uses the animated mask value instead of the raw percentage base',
+      (tester) async {
+        const svg = '''
+          <svg viewBox="0 0 100 100">
+            <defs>
+              <mask id="mask" maskUnits="userSpaceOnUse"
+                    maskContentUnits="userSpaceOnUse"
+                    x="0%" y="0" width="50%" height="100%">
+                <rect width="100" height="100" fill="white"/>
+                <animate attributeName="x" from="0" to="50" dur="2s"
+                         fill="freeze"/>
+              </mask>
+            </defs>
+            <rect width="100" height="100" fill="red" mask="url(#mask)"/>
+          </svg>
+        ''';
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: RepaintBoundary(
+                child: AnimatedSvgPicture.string(
+                  svg,
+                  width: 100,
+                  height: 100,
+                  autoPlay: false,
+                  initialTime: const Duration(seconds: 1),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        final pixels = await VisualTestUtils.captureWidgetPixels(tester);
+        final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
+
+        // The x="0%" base is animated numerically to 25 at 1s; the visible
+        // mask region is x=25..75 rather than the raw base x=0..50.
+        expect(analysis.boundingBox.left, closeTo(25, 2));
+        expect(analysis.objectWidth, closeTo(50, 2));
+      },
+    );
   });
 
   test('resolves percentage basic-shape bounds for fill-box and filters', () {

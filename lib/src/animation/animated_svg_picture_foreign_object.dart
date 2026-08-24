@@ -43,94 +43,113 @@ extension _AnimatedSvgPictureStateForeignObjectExtension
   /// Builds the SVG widget with foreignObject overlay widgets.
   Widget _buildWithForeignObjectOverlay(
     BuildContext context,
-    Widget svgWidget,
-  ) {
+    Widget svgWidget, {
+    required bool useFittedBox,
+    required ui.Size? intrinsicSize,
+  }) {
+    // When the painted SVG is scaled by a FittedBox, the overlay must live in
+    // the same pre-transform coordinate space (the intrinsic canvas size) so
+    // both layers receive the identical fit/alignment transform.
+    if (useFittedBox) {
+      final viewport = intrinsicSize;
+      if (viewport == null || viewport.width <= 0 || viewport.height <= 0) {
+        return svgWidget;
+      }
+      return SvgLengthResolutionContext.runWithRootViewport(
+        viewport,
+        () => _buildOverlayStack(context, svgWidget, viewport),
+      );
+    }
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final viewport = ui.Size(constraints.maxWidth, constraints.maxHeight);
-        if (viewport.width <= 0 || viewport.height <= 0) {
+        if (!viewport.width.isFinite ||
+            !viewport.height.isFinite ||
+            viewport.width <= 0 ||
+            viewport.height <= 0) {
           return svgWidget;
         }
 
         // Resolve foreignObject geometry and invoke the builder inside the
         // negotiated root viewport so percentage lengths use the embedding
         // size, matching the painter and hit-test paths.
-        return SvgLengthResolutionContext.runWithRootViewport(viewport, () {
-          final foreignObjects = <SvgForeignObjectInfo>[];
-          _collectForeignObjects(_document.root, foreignObjects);
-          if (foreignObjects.isEmpty) {
-            return svgWidget;
-          }
-
-          final overlayWidgets = <SvgForeignObjectInfo, Widget>{};
-          for (final foInfo in foreignObjects) {
-            final foWidget = widget.foreignObjectBuilder!(context, foInfo);
-            if (foWidget != null) {
-              overlayWidgets[foInfo] = foWidget;
-            }
-          }
-          if (overlayWidgets.isEmpty) {
-            return svgWidget;
-          }
-
-          final viewBox = _effectiveRootViewBox();
-          final layout = viewBox == null
-              ? null
-              : resolveSvgViewportLayout(
-                  viewport: ui.Rect.fromLTWH(
-                    0,
-                    0,
-                    viewport.width,
-                    viewport.height,
-                  ),
-                  sourceSize: viewBox.size,
-                  preserveAspectRatio: _document.activePreserveAspectRatio,
-                );
-
-          final positionedWidgets = <Widget>[];
-          for (final entry in overlayWidgets.entries) {
-            final foInfo = entry.key;
-            final foWidget = entry.value;
-
-            final double left;
-            final double top;
-            final double width;
-            final double height;
-            if (layout == null) {
-              // No effective viewBox: document coordinates map 1:1 to the
-              // widget pixels, mirroring the painter's identity transform.
-              left = foInfo.x;
-              top = foInfo.y;
-              width = foInfo.width;
-              height = foInfo.height;
-            } else {
-              final scaleX = layout.destinationRect.width / viewBox!.width;
-              final scaleY = layout.destinationRect.height / viewBox.height;
-              left =
-                  layout.destinationRect.left +
-                  (foInfo.x - viewBox.left) * scaleX;
-              top =
-                  layout.destinationRect.top +
-                  (foInfo.y - viewBox.top) * scaleY;
-              width = foInfo.width * scaleX;
-              height = foInfo.height * scaleY;
-            }
-
-            positionedWidgets.add(
-              Positioned(
-                left: left,
-                top: top,
-                width: width,
-                height: height,
-                child: foWidget,
-              ),
-            );
-          }
-
-          return Stack(children: [svgWidget, ...positionedWidgets]);
-        });
+        return SvgLengthResolutionContext.runWithRootViewport(
+          viewport,
+          () => _buildOverlayStack(context, svgWidget, viewport),
+        );
       },
     );
+  }
+
+  Widget _buildOverlayStack(
+    BuildContext context,
+    Widget svgWidget,
+    ui.Size viewport,
+  ) {
+    final foreignObjects = <SvgForeignObjectInfo>[];
+    _collectForeignObjects(_document.root, foreignObjects);
+    if (foreignObjects.isEmpty) {
+      return svgWidget;
+    }
+
+    final overlayWidgets = <SvgForeignObjectInfo, Widget>{};
+    for (final foInfo in foreignObjects) {
+      final foWidget = widget.foreignObjectBuilder!(context, foInfo);
+      if (foWidget != null) {
+        overlayWidgets[foInfo] = foWidget;
+      }
+    }
+    if (overlayWidgets.isEmpty) {
+      return svgWidget;
+    }
+
+    final viewBox = _effectiveRootViewBox();
+    final layout = viewBox == null
+        ? null
+        : resolveSvgViewportLayout(
+            viewport: ui.Rect.fromLTWH(0, 0, viewport.width, viewport.height),
+            sourceSize: viewBox.size,
+            preserveAspectRatio: _document.activePreserveAspectRatio,
+          );
+
+    final positionedWidgets = <Widget>[];
+    for (final entry in overlayWidgets.entries) {
+      final foInfo = entry.key;
+      final foWidget = entry.value;
+
+      final double left;
+      final double top;
+      final double width;
+      final double height;
+      if (layout == null) {
+        // No effective viewBox: document coordinates map 1:1 to the viewport,
+        // mirroring the painter's identity transform.
+        left = foInfo.x;
+        top = foInfo.y;
+        width = foInfo.width;
+        height = foInfo.height;
+      } else {
+        final scaleX = layout.destinationRect.width / viewBox!.width;
+        final scaleY = layout.destinationRect.height / viewBox.height;
+        left = layout.destinationRect.left + (foInfo.x - viewBox.left) * scaleX;
+        top = layout.destinationRect.top + (foInfo.y - viewBox.top) * scaleY;
+        width = foInfo.width * scaleX;
+        height = foInfo.height * scaleY;
+      }
+
+      positionedWidgets.add(
+        Positioned(
+          left: left,
+          top: top,
+          width: width,
+          height: height,
+          child: foWidget,
+        ),
+      );
+    }
+
+    return Stack(children: [svgWidget, ...positionedWidgets]);
   }
 
   /// The root viewBox used to map document coordinates into widget pixels.

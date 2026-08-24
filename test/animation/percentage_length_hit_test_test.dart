@@ -525,5 +525,71 @@ void main() {
         );
       },
     );
+
+    testWidgets(
+      'uses the animated mask value instead of the raw percentage base in hit testing',
+      (WidgetTester tester) async {
+        const svg = '''
+          <svg viewBox="0 0 100 100">
+            <defs>
+              <mask id="mask" maskUnits="userSpaceOnUse"
+                    maskContentUnits="userSpaceOnUse"
+                    x="0%" y="0" width="50%" height="100%">
+                <rect width="100" height="100" fill="white"/>
+                <animate attributeName="x" from="0" to="50" dur="2s"
+                         fill="freeze"/>
+              </mask>
+            </defs>
+            <rect id="background" width="100" height="100" fill="black"/>
+            <rect id="target" width="100" height="100" fill="red"
+                  mask="url(#mask)"/>
+          </svg>
+        ''';
+
+        final traceEvents = <SvgTraceEvent>[];
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: Center(
+                child: AnimatedSvgPicture.string(
+                  svg,
+                  width: 100,
+                  height: 100,
+                  autoPlay: false,
+                  initialTime: const Duration(seconds: 1),
+                  onTrace: traceEvents.add,
+                  onLinkTap: (_) {},
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        final pictureTopLeft = tester.getTopLeft(
+          find.byType(AnimatedSvgPicture),
+        );
+
+        Future<void> tapAndExpect(
+          Offset documentOffset,
+          String targetId,
+        ) async {
+          traceEvents.clear();
+          await tester.tapAt(pictureTopLeft + documentOffset);
+          await tester.pump();
+          final tapTrace = traceEvents.lastWhere(
+            (event) =>
+                event.category == 'event' && event.message == 'Tap detected',
+          );
+          expect(tapTrace.data['targetId'], targetId);
+        }
+
+        // The x="0%" base is animated numerically to 25 at 1s; the visible
+        // mask region is x=25..75, so (50,50) hits the target and (10,50)
+        // falls through to the background.
+        await tapAndExpect(const Offset(50, 50), 'target');
+        await tapAndExpect(const Offset(10, 50), 'background');
+      },
+    );
   });
 }
