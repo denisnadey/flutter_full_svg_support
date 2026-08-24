@@ -29,6 +29,7 @@ SmilAnimation? _createSmilAnimation({
   required CssKeyframes keyframes,
   required CssAnimation animation,
   required SvgNode targetNode,
+  required SvgDocument document,
   required String attributeName,
   required SvgAttributeType attributeType,
   required List<Object> values,
@@ -146,6 +147,7 @@ SmilAnimation? _createSmilAnimation({
     return SmilAnimation(
       type: type,
       targetNode: targetNode,
+      document: document,
       attributeName: attributeName,
       attributeType: attributeType,
       transformType: transformType,

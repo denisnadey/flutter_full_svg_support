@@ -37,21 +37,32 @@ SmilAnimation? _parseAnimationElement(
       }
     }
 
-    // Parse animation values
+    // Parse animation values. Only attributes with a known percentage
+    // semantic retain % through interpolation; other numeric attributes keep
+    // their established raw-number behavior rather than producing a deferred
+    // value that no consumer can resolve.
+    final percentageSemantics = smilPercentageSemanticsForAttribute(
+      attributeName,
+      targetNode: targetNode,
+    );
+    final preservePercentages = percentageSemantics.preservesPercentage;
     final from = _parseValue(
       animNode.getAttributeValue('from'),
       attributeType,
       transformType: transformType,
+      preservePercentages: preservePercentages,
     );
     final to = _parseValue(
       animNode.getAttributeValue('to'),
       attributeType,
       transformType: transformType,
+      preservePercentages: preservePercentages,
     );
     final by = _parseValue(
       animNode.getAttributeValue('by'),
       attributeType,
       transformType: transformType,
+      preservePercentages: preservePercentages,
     );
 
     // Parse values and keyTimes
@@ -63,6 +74,7 @@ SmilAnimation? _parseAnimationElement(
         valuesStr,
         attributeType,
         transformType: transformType,
+        preservePercentages: preservePercentages,
       );
     }
 
@@ -156,6 +168,7 @@ SmilAnimation? _parseAnimationElement(
       id: id,
       type: type,
       targetNode: targetNode,
+      document: document,
       attributeName: attributeName,
       attributeType: attributeType,
       transformType: transformType,
@@ -176,6 +189,7 @@ SmilAnimation? _parseAnimationElement(
       calcMode: calcMode,
       additive: additive,
       accumulate: accumulate,
+      percentageSemantics: percentageSemantics,
     );
   } catch (_) {
     // Ignore invalid animations
@@ -206,6 +220,10 @@ SvgAttributeType _inferAttributeType(String attributeName, SvgNode targetNode) {
   // feColorMatrix animates its `values` list; this must be interpolated
   // numerically instead of treated as a discrete string.
   if (attributeName == 'values' && targetNode.tagName == 'feColorMatrix') {
+    return SvgAttributeType.list;
+  }
+
+  if (attributeName == 'stroke-dasharray') {
     return SvgAttributeType.list;
   }
 
@@ -243,6 +261,7 @@ Object? _parseValue(
   Object? value,
   SvgAttributeType type, {
   String? transformType,
+  bool preservePercentages = false,
 }) {
   if (value == null) {
     return null;
@@ -255,7 +274,13 @@ Object? _parseValue(
         return value.toDouble();
       }
       if (value is String) {
-        final cleaned = value.trim().replaceAll(RegExp(r'[a-zA-Z%]+$'), '');
+        final trimmed = value.trim();
+        // Keep percentage units through interpolation so the renderer can
+        // resolve the animated value against the active SVG viewport.
+        if (trimmed.endsWith('%') && preservePercentages) {
+          return trimmed;
+        }
+        final cleaned = trimmed.replaceAll(RegExp(r'[a-zA-Z%]+$'), '');
         return double.tryParse(cleaned);
       }
       return null;
@@ -281,6 +306,7 @@ List<Object> _parseValues(
   String valuesStr,
   SvgAttributeType type, {
   String? transformType,
+  bool preservePercentages = false,
 }) {
   // values are separated by semicolons
   final parts = valuesStr
@@ -290,7 +316,12 @@ List<Object> _parseValues(
 
   final result = <Object>[];
   for (final part in parts) {
-    final value = _parseValue(part, type, transformType: transformType);
+    final value = _parseValue(
+      part,
+      type,
+      transformType: transformType,
+      preservePercentages: preservePercentages,
+    );
     if (value != null) {
       result.add(value);
     }

@@ -43,6 +43,7 @@ class CssToSmilConverter {
         keyframes: keyframes,
         animation: animation,
         targetNode: targetNode,
+        document: document,
         attributeName: propertyName,
         attributeType: attributeType,
         values: values,

@@ -81,10 +81,19 @@ extension SmilAnimationValueComputationExtension on SmilAnimation {
     Object? fromValue = from;
     Object? toValue = to;
 
-    // If from is absent, use the base attribute value
+    // If from is absent, use the underlying value after CSS cascade
+    // resolution. The animated presentation value must not be used here,
+    // otherwise a later frame can become the next frame's base value.
     if (fromValue == null) {
-      final attr = targetNode.getAttribute(attributeName);
-      fromValue = attr?.baseValue;
+      final cascadeResolver = document == null
+          ? null
+          : CssCascadeResolver(
+              cssRules: document!.cssSelectorRules ?? const [],
+            );
+      fromValue =
+          cascadeResolver?.resolveBaseProperty(targetNode, attributeName) ??
+          targetNode.getRawAttributeValue(attributeName) ??
+          targetNode.getAttribute(attributeName)?.baseValue;
     }
 
     // If by is present instead of to, compute to
@@ -280,13 +289,24 @@ extension SmilAnimationValueComputationExtension on SmilAnimation {
   /// Uses Interpolators for typed interpolation
   @protected
   Object? _interpolate(Object from, Object to, double t) {
-    return Interpolators.interpolate(from, to, t, attributeType);
+    return Interpolators.interpolate(
+      from,
+      to,
+      t,
+      attributeType,
+      preservePercentages: percentageSemantics.preservesPercentage,
+    );
   }
 
   /// Add two values together (for by)
   @protected
   Object? _addValues(Object base, Object delta) {
-    return Interpolators.add(base, delta, attributeType);
+    return Interpolators.add(
+      base,
+      delta,
+      attributeType,
+      preservePercentages: percentageSemantics.preservesPercentage,
+    );
   }
 
   /// Apply accumulate="sum" — add the final value * number of completed repeats
@@ -320,7 +340,12 @@ extension SmilAnimationValueComputationExtension on SmilAnimation {
     // and to support non-numeric types that implement addition
     Object accumulated = animValue;
     for (int i = 0; i < completedRepeats; i++) {
-      final result = Interpolators.add(accumulated, finalValue, attributeType);
+      final result = Interpolators.add(
+        accumulated,
+        finalValue,
+        attributeType,
+        preservePercentages: percentageSemantics.preservesPercentage,
+      );
       if (result == null) break;
       accumulated = result;
     }
@@ -340,6 +365,10 @@ extension SmilAnimationValueComputationExtension on SmilAnimation {
     // For from/to: the to value
     return to ?? from;
   }
+
+  Object? _staticBaseValue() =>
+      targetNode.getRawAttributeValue(attributeName) ??
+      targetNode.getAttribute(attributeName)?.baseValue;
 
   /// Apply additive="sum" — add to the base value of the element
   /// Per SMIL spec: additive="sum" means the animation value is added to
@@ -361,15 +390,21 @@ extension SmilAnimationValueComputationExtension on SmilAnimation {
     }
 
     // additive="sum" - add to the static base value.
-    // Used for single-animation case (no sandwich model involvement).
-    final baseAttr = targetNode.getAttribute(attributeName);
-    final baseValue = baseAttr?.baseValue;
+    // Used for single-animation case (no sandwich model involvement). Parsed
+    // numeric attributes discard a trailing percentage, so prefer the raw
+    // source value when it exists.
+    final baseValue = _staticBaseValue();
 
     if (baseValue == null) {
       return animValue;
     }
 
-    return Interpolators.add(baseValue, animValue, attributeType);
+    return Interpolators.add(
+      baseValue,
+      animValue,
+      attributeType,
+      preservePercentages: percentageSemantics.preservesPercentage,
+    );
   }
 
   /// Apply additive with an explicit accumulated base value.
@@ -382,12 +417,21 @@ extension SmilAnimationValueComputationExtension on SmilAnimation {
     // additive == sum
     if (currentBase == null) {
       // Fall back to static base if no sandwich base has been set yet.
-      final baseAttr = targetNode.getAttribute(attributeName);
-      final base = baseAttr?.baseValue;
+      final base = _staticBaseValue();
       if (base == null) return rawValue;
-      return Interpolators.add(base, rawValue, attributeType);
+      return Interpolators.add(
+        base,
+        rawValue,
+        attributeType,
+        preservePercentages: percentageSemantics.preservesPercentage,
+      );
     }
-    return Interpolators.add(currentBase, rawValue, attributeType);
+    return Interpolators.add(
+      currentBase,
+      rawValue,
+      attributeType,
+      preservePercentages: percentageSemantics.preservesPercentage,
+    );
   }
 
   /// Update the animation state for the given global time
