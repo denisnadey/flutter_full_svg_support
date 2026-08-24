@@ -126,7 +126,10 @@ The package ships two equivalent build scripts under `tool/`:
 
 Both scripts:
 
-1. Run `cmake -S native -B native/build -DCMAKE_BUILD_TYPE=Release`
+1. Run a Release CMake build. On macOS, the default is a universal
+   `arm64;x86_64` bridge with the package's declared macOS deployment target;
+   set `CMAKE_OSX_ARCHITECTURES` or `CMAKE_OSX_DEPLOYMENT_TARGET` to override
+   either value when maintaining a platform-specific build.
 2. Build with `cmake --build native/build -j`
 3. Copy the resulting library into the host's plugin output folder:
    - macOS → `macos/Frameworks/libquickjs_c_bridge_plugin.dylib`
@@ -176,11 +179,10 @@ and run `tool/build_native.sh` or `tool/build_native.ps1`.
 
 ### "ld: warning: building for macOS-11.0, but linking with dylib which was built for newer version"
 
-The prebuilt macOS dylib in the package was built with the host's default
-`MACOSX_DEPLOYMENT_TARGET`. If your app targets an older macOS than the
-build host, the link is still successful (Mach-O is forward-compatible)
-and the warning is harmless. To suppress it, rebuild with an explicit
-target:
+The prebuilt macOS dylib in an older package may have been built with the
+host's default `MACOSX_DEPLOYMENT_TARGET`. If your app targets an older macOS than the
+build host, rebuild the bridge with an explicit target using the current
+script:
 
 ```bash
 MACOSX_DEPLOYMENT_TARGET=10.13 sh tool/build_native.sh

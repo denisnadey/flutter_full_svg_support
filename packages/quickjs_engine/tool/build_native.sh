@@ -12,7 +12,22 @@ PKG_ROOT="$(pwd)"
 BUILD_DIR="$PKG_ROOT/native/build"
 
 echo "[quickjs_engine] Configuring (cmake -S native -B native/build)..."
-cmake -S "$PKG_ROOT/native" -B "$BUILD_DIR" -DCMAKE_BUILD_TYPE=Release
+case "$(uname -s)" in
+  Darwin*)
+    # The macOS package ships this library as a prebuilt CocoaPods artifact.
+    # Build both slices so universal Flutter apps do not silently lose QuickJS
+    # on Intel, and avoid inheriting the host SDK's deployment target.
+    MACOS_ARCHITECTURES="${CMAKE_OSX_ARCHITECTURES:-arm64;x86_64}"
+    MACOS_DEPLOYMENT_TARGET="${CMAKE_OSX_DEPLOYMENT_TARGET:-${MACOSX_DEPLOYMENT_TARGET:-10.13}}"
+    cmake -S "$PKG_ROOT/native" -B "$BUILD_DIR" \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_OSX_ARCHITECTURES="$MACOS_ARCHITECTURES" \
+      -DCMAKE_OSX_DEPLOYMENT_TARGET="$MACOS_DEPLOYMENT_TARGET"
+    ;;
+  *)
+    cmake -S "$PKG_ROOT/native" -B "$BUILD_DIR" -DCMAKE_BUILD_TYPE=Release
+    ;;
+esac
 
 echo "[quickjs_engine] Building..."
 JOBS=$(getconf _NPROCESSORS_ONLN 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
