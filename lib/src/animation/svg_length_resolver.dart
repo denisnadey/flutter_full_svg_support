@@ -17,6 +17,78 @@ enum SvgLengthReference {
   normalizedDiagonal,
 }
 
+/// A length represented as the sum of an absolute user-unit component and a
+/// viewport-relative percentage component.
+///
+/// SMIL computes animation values before painting, when an embedding viewport
+/// may not be available. Keeping both components preserves their semantics
+/// until [resolveSvgLength] / [resolveSvgLengthValue] can resolve the
+/// percentage in the active viewport.
+class SvgLengthPercentageValue {
+  const SvgLengthPercentageValue({
+    required this.absolute,
+    required this.percentage,
+  });
+
+  /// The unitless / absolute component in SVG user units.
+  final double absolute;
+
+  /// The percentage component, expressed as percentage points.
+  final double percentage;
+
+  static final RegExp _pattern = RegExp(
+    r'^([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)\s*(%|[a-zA-Z]*)$',
+  );
+
+  /// Parses the renderer's supported length syntax into its two components.
+  ///
+  /// Non-percentage units intentionally retain the renderer's existing numeric
+  /// fallback behavior and use their numeric component as an absolute length.
+  static SvgLengthPercentageValue? tryParse(Object? value) {
+    if (value is SvgLengthPercentageValue) {
+      return value;
+    }
+    if (value is num) {
+      return SvgLengthPercentageValue(
+        absolute: value.toDouble(),
+        percentage: 0,
+      );
+    }
+    if (value is! String) {
+      return null;
+    }
+
+    final match = _pattern.firstMatch(value.trim());
+    if (match == null) {
+      return null;
+    }
+    final number = double.tryParse(match.group(1)!);
+    if (number == null) {
+      return null;
+    }
+    return SvgLengthPercentageValue(
+      absolute: match.group(2) == '%' ? 0 : number,
+      percentage: match.group(2) == '%' ? number : 0,
+    );
+  }
+
+  /// Resolves this value against [viewport] using [reference].
+  double resolve(ui.Size viewport, SvgLengthReference reference) {
+    final dimension = switch (reference) {
+      SvgLengthReference.horizontal => viewport.width,
+      SvgLengthReference.vertical => viewport.height,
+      SvgLengthReference.normalizedDiagonal => math.sqrt(
+        (viewport.width * viewport.width + viewport.height * viewport.height) /
+            2,
+      ),
+    };
+    return absolute + percentage * dimension / 100;
+  }
+
+  /// Avoids introducing a wrapper for values that remain purely absolute.
+  Object toAnimatedValue() => percentage == 0 ? absolute : this;
+}
+
 /// Synchronous rendering context used to resolve viewport-relative lengths.
 ///
 /// The DOM alone cannot represent the viewport negotiated by the embedding
@@ -179,40 +251,45 @@ double? resolveSvgLength(
     cascadeResolver: cascadeResolver,
     shadowBoundaryId: shadowBoundaryId,
   );
-  if (value == null) {
+  final length = SvgLengthPercentageValue.tryParse(value);
+  if (length == null) {
     return null;
   }
-  if (value is num) {
-    return value.toDouble();
-  }
-  if (value is! String) {
-    return null;
-  }
+  return _resolveSvgLengthPercentageValue(
+    node,
+    length,
+    reference: reference,
+    document: document,
+  );
+}
 
-  final match = RegExp(
-    r'^([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)\s*(%|[a-zA-Z]*)$',
-  ).firstMatch(value.trim());
-  if (match == null) {
+/// Resolves an already-computed length in [node]'s coordinate system.
+///
+/// Unlike [resolveSvgLength], [value] does not have to be an attribute stored
+/// on the node — it may be a `SvgLengthPercentageValue` produced by SMIL
+/// interpolation, a percentage string, or a plain number.
+double? resolveSvgLengthValue(
+  SvgNode node,
+  Object? value, {
+  required SvgLengthReference reference,
+}) {
+  final length = SvgLengthPercentageValue.tryParse(value);
+  if (length == null) {
     return null;
   }
+  return _resolveSvgLengthPercentageValue(node, length, reference: reference);
+}
 
-  final number = double.tryParse(match.group(1)!);
-  if (number == null) {
-    return null;
+double _resolveSvgLengthPercentageValue(
+  SvgNode node,
+  SvgLengthPercentageValue length, {
+  required SvgLengthReference reference,
+  SvgDocument? document,
+}) {
+  if (length.percentage == 0) {
+    return length.absolute;
   }
-  if (match.group(2) != '%') {
-    return number;
-  }
-
-  final viewport = _resolveNearestViewportSize(node, document);
-  final dimension = switch (reference) {
-    SvgLengthReference.horizontal => viewport.width,
-    SvgLengthReference.vertical => viewport.height,
-    SvgLengthReference.normalizedDiagonal => math.sqrt(
-      (viewport.width * viewport.width + viewport.height * viewport.height) / 2,
-    ),
-  };
-  return number * dimension / 100;
+  return length.resolve(_resolveNearestViewportSize(node, document), reference);
 }
 
 /// Resolves the used physical viewport established by an `<svg>` element.
@@ -246,7 +323,7 @@ ui.Size? resolveSvgViewportSize(SvgNode node, SvgDocument document) {
   return ui.Size(width, height);
 }
 
-ui.Size _resolveNearestViewportSize(SvgNode node, SvgDocument document) {
+ui.Size _resolveNearestViewportSize(SvgNode node, [SvgDocument? document]) {
   for (
     SvgNode? current = node.parent;
     current != null;
@@ -279,18 +356,30 @@ ui.Size _resolveNearestViewportSize(SvgNode node, SvgDocument document) {
       return contextualViewport;
     }
 
-    var width = resolveSvgLength(
-      current,
-      document,
-      'width',
-      reference: SvgLengthReference.horizontal,
-    );
-    var height = resolveSvgLength(
-      current,
-      document,
-      'height',
-      reference: SvgLengthReference.vertical,
-    );
+    var width = document == null
+        ? resolveSvgLengthValue(
+            current,
+            current.getAttributeValue('width'),
+            reference: SvgLengthReference.horizontal,
+          )
+        : resolveSvgLength(
+            current,
+            document,
+            'width',
+            reference: SvgLengthReference.horizontal,
+          );
+    var height = document == null
+        ? resolveSvgLengthValue(
+            current,
+            current.getAttributeValue('height'),
+            reference: SvgLengthReference.vertical,
+          )
+        : resolveSvgLength(
+            current,
+            document,
+            'height',
+            reference: SvgLengthReference.vertical,
+          );
 
     // For nested <svg>, an omitted viewport dimension has a used value of
     // 100% of the parent viewport. This default does not apply to
@@ -305,7 +394,7 @@ ui.Size _resolveNearestViewportSize(SvgNode node, SvgDocument document) {
     }
   }
 
-  final rootViewBox = document.activeViewBox;
+  final rootViewBox = document?.activeViewBox;
   if (rootViewBox != null && rootViewBox.width > 0 && rootViewBox.height > 0) {
     return ui.Size(rootViewBox.width, rootViewBox.height);
   }
@@ -319,8 +408,8 @@ ui.Size _resolveNearestViewportSize(SvgNode node, SvgDocument document) {
     return rootViewport;
   }
 
-  final documentWidth = document.width;
-  final documentHeight = document.height;
+  final documentWidth = document?.width;
+  final documentHeight = document?.height;
   if (documentWidth != null &&
       documentHeight != null &&
       documentWidth > 0 &&
