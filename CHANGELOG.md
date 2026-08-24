@@ -1,3 +1,21 @@
+## 1.4.4
+
+### Universal macOS QuickJS bridge
+
+**Fixed**
+
+- Updated `quickjs_engine` to `^0.1.5`, so universal macOS applications ship
+  working QuickJS bridge slices for both Apple Silicon and Intel.
+- The prebuilt macOS bridge now uses the package's declared deployment target
+  instead of inheriting the build host's SDK default.
+
+**Maintenance**
+
+- Added a clean macOS release-build workflow that verifies the committed and
+  rebuilt universal dylib, the application executable, and the embedded bridge.
+- Thanks to [@OrPudding](https://github.com/OrPudding) for contributing the fix
+  in [#40](https://github.com/denisnadey/flutter_full_svg_support/pull/40).
+
 ## 1.4.3
 
 ### Windows plugin registration

@@ -4,7 +4,7 @@ repository: https://github.com/denisnadey/flutter_full_svg_support
 homepage: https://github.com/denisnadey/flutter_full_svg_support
 issue_tracker: https://github.com/denisnadey/flutter_full_svg_support/issues
 documentation: https://github.com/denisnadey/flutter_full_svg_support/tree/main/doc
-version: 1.4.3
+version: 1.4.4
 
 environment:
   sdk: ^3.8.0
@@ -19,7 +19,7 @@ dependencies:
   # Embedded JavaScript runtime — used by the SVG JS bridge.
   # The local source lives under packages/quickjs_engine and is also
   # published independently on pub.dev as `quickjs_engine`.
-  quickjs_engine: ^0.1.4
+  quickjs_engine: ^0.1.5
   # WOFF / WOFF2 font decoder + Flutter FontLoader integration —
   # used for SVG @font-face rules. The local source lives under
   # packages/woff2 and is also published independently on pub.dev.
