@@ -257,28 +257,41 @@ extension _AnimatedSvgPictureStateHitTestTraversalExtension
         // Handle symbol specially - iterate children directly since symbol
         // is a definition-only tag that would be rejected by _hitTestNodeWithAnchor
         if (referenced.tagName == 'symbol') {
-          for (int i = referenced.children.length - 1; i >= 0; i--) {
-            final hitResult = _hitTestNodeWithAnchor(
-              referenced.children[i],
+          return _withUseInstanceViewport(
+            referencedNode: referenced,
+            viewport: _resolveUseInstanceViewportSize(useNode),
+            callback: () {
+              for (int i = referenced.children.length - 1; i >= 0; i--) {
+                final hitResult = _hitTestNodeWithAnchor(
+                  referenced.children[i],
+                  documentPoint,
+                  useReferenceTransform,
+                  useStack: nextUseStack,
+                  foreignObjectParent: null,
+                  currentAnchor: currentAnchor,
+                );
+                if (hitResult.elementId != null ||
+                    hitResult.anchorInfo != null) {
+                  return hitResult;
+                }
+              }
+              return const _HitTestResult();
+            },
+          );
+        }
+        return _withUseInstanceViewport(
+          referencedNode: referenced,
+          viewport: _resolveUseInstanceViewportSize(useNode),
+          callback: () {
+            return _hitTestNodeWithAnchor(
+              referenced,
               documentPoint,
               useReferenceTransform,
               useStack: nextUseStack,
               foreignObjectParent: null,
               currentAnchor: currentAnchor,
             );
-            if (hitResult.elementId != null || hitResult.anchorInfo != null) {
-              return hitResult;
-            }
-          }
-          return const _HitTestResult();
-        }
-        return _hitTestNodeWithAnchor(
-          referenced,
-          documentPoint,
-          useReferenceTransform,
-          useStack: nextUseStack,
-          foreignObjectParent: null,
-          currentAnchor: currentAnchor,
+          },
         );
       }
 

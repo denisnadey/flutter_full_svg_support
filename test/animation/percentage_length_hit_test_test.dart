@@ -410,6 +410,29 @@ void main() {
     );
 
     testWidgets(
+      'does not hit a no-viewBox symbol child outside the use viewport',
+      (WidgetTester tester) async {
+        await expectTapTarget(
+          tester,
+          svg: '''
+            <svg viewBox="0 0 200 100">
+              <defs>
+                <symbol id="symbol-source">
+                  <rect id="symbol-child" width="50%" height="50%" fill="black"/>
+                </symbol>
+              </defs>
+              <rect id="background" width="200" height="100" fill="black"/>
+              <use id="use-target" href="#symbol-source" width="100" height="40"/>
+            </svg>
+          ''',
+          // The child is 50x20; y=30 is outside it, so the background wins.
+          documentOffset: const Offset(25, 30),
+          targetId: 'background',
+        );
+      },
+    );
+
+    testWidgets(
       'prefers the referenced viewBox over the use viewport in hit testing',
       (WidgetTester tester) async {
         await expectTapTarget(
@@ -469,5 +492,38 @@ void main() {
         targetId: 'rect-target',
       );
     });
+
+    testWidgets(
+      'resolves userSpaceOnUse mask regions against the runtime viewport in hit testing',
+      (WidgetTester tester) async {
+        const svg = '''
+          <svg>
+            <defs>
+              <mask id="mask" maskUnits="userSpaceOnUse"
+                    maskContentUnits="userSpaceOnUse"
+                    x="25%" y="0" width="50%" height="100%">
+                <rect width="200" height="100" fill="white"/>
+              </mask>
+            </defs>
+            <rect id="background" width="200" height="100" fill="black"/>
+            <rect id="target" width="200" height="100" fill="red"
+                  mask="url(#mask)"/>
+          </svg>
+        ''';
+        // x="25%" width="50%" of the 200x100 embedding is x=50..150.
+        await expectTapTarget(
+          tester,
+          svg: svg,
+          documentOffset: const Offset(120, 50),
+          targetId: 'target',
+        );
+        await expectTapTarget(
+          tester,
+          svg: svg,
+          documentOffset: const Offset(30, 50),
+          targetId: 'background',
+        );
+      },
+    );
   });
 }

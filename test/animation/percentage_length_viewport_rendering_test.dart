@@ -327,6 +327,30 @@ void main() {
         expect(analysis.objectHeight, closeTo(40, 1));
       },
     );
+
+    testWidgets(
+      'resolves userSpaceOnUse mask regions against the runtime viewport',
+      (tester) async {
+        const svg = '''
+          <svg>
+            <defs>
+              <mask id="mask" maskUnits="userSpaceOnUse"
+                    maskContentUnits="userSpaceOnUse"
+                    x="25%" y="0" width="50%" height="100%">
+                <rect width="200" height="100" fill="white"/>
+              </mask>
+            </defs>
+            <rect width="200" height="100" fill="red" mask="url(#mask)"/>
+          </svg>
+        ''';
+
+        final analysis = await renderRedSvg(tester, svg);
+
+        // x="25%" width="50%" of the 200x100 embedding is x=50..150.
+        expect(analysis.boundingBox.left, closeTo(50, 1));
+        expect(analysis.objectWidth, closeTo(100, 1));
+      },
+    );
   });
 
   test('resolves percentage basic-shape bounds for fill-box and filters', () {

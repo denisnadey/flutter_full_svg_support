@@ -319,9 +319,43 @@ extension _AnimatedSvgPictureStateEventModelExtension
           return const _EventHitTestResult();
         }
         if (referenced.tagName == 'symbol') {
-          for (int i = referenced.children.length - 1; i >= 0; i--) {
+          return _withUseInstanceViewport(
+            referencedNode: referenced,
+            viewport: _resolveUseInstanceViewportSize(useNode),
+            callback: () {
+              for (int i = referenced.children.length - 1; i >= 0; i--) {
+                final hitResult = _hitTestNodeWithEventPath(
+                  referenced.children[i],
+                  documentPoint,
+                  useReferenceTransform,
+                  useStack: nextUseStack,
+                  foreignObjectParent: null,
+                  currentAnchor: currentAnchor,
+                  pathBuilder: List.of(pathBuilder),
+                  useContext: useContext,
+                );
+                if (hitResult.elementId != null ||
+                    hitResult.anchorInfo != null ||
+                    hitResult.useElementId != null) {
+                  return _EventHitTestResult(
+                    elementId: hitResult.elementId,
+                    anchorInfo: hitResult.anchorInfo,
+                    useElementId: useNode.id,
+                    composedPath: hitResult.composedPath,
+                    shadowPath: useContext.shadowPathBuilder,
+                  );
+                }
+              }
+              return const _EventHitTestResult();
+            },
+          );
+        }
+        return _withUseInstanceViewport(
+          referencedNode: referenced,
+          viewport: _resolveUseInstanceViewportSize(useNode),
+          callback: () {
             final hitResult = _hitTestNodeWithEventPath(
-              referenced.children[i],
+              referenced,
               documentPoint,
               useReferenceTransform,
               useStack: nextUseStack,
@@ -341,31 +375,9 @@ extension _AnimatedSvgPictureStateEventModelExtension
                 shadowPath: useContext.shadowPathBuilder,
               );
             }
-          }
-          return const _EventHitTestResult();
-        }
-        final hitResult = _hitTestNodeWithEventPath(
-          referenced,
-          documentPoint,
-          useReferenceTransform,
-          useStack: nextUseStack,
-          foreignObjectParent: null,
-          currentAnchor: currentAnchor,
-          pathBuilder: List.of(pathBuilder),
-          useContext: useContext,
+            return hitResult;
+          },
         );
-        if (hitResult.elementId != null ||
-            hitResult.anchorInfo != null ||
-            hitResult.useElementId != null) {
-          return _EventHitTestResult(
-            elementId: hitResult.elementId,
-            anchorInfo: hitResult.anchorInfo,
-            useElementId: useNode.id,
-            composedPath: hitResult.composedPath,
-            shadowPath: useContext.shadowPathBuilder,
-          );
-        }
-        return hitResult;
       }
 
       final hitResult = _hitTestNodeWithEventPath(

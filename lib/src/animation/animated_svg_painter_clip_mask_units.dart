@@ -133,36 +133,73 @@ extension AnimatedSvgPainterClipMaskUnitsExtension on AnimatedSvgPainter {
     required bool isSize,
     required String defaultRaw,
   }) {
-    final rawValue = maskNode.getAttributeValue(attributeName) ?? defaultRaw;
-    if (rawValue is num) {
-      return rawValue.toDouble();
+    // The parser stores percentage lengths as bare numbers, which loses the
+    // `%` suffix. Detect percentages from the raw attribute text first.
+    final rawAttribute = maskNode.getRawAttributeValue(attributeName);
+    final raw = rawAttribute?.trim();
+    if (raw != null && raw.endsWith('%')) {
+      return _resolveMaskUserSpacePercentage(
+        raw,
+        horizontal: horizontal,
+        isSize: isSize,
+      );
     }
-    final raw = rawValue.toString().trim();
-    if (raw.isEmpty) {
+
+    // Non-percentage: keep the existing parsed-value behavior (including
+    // SMIL-animated values and the -10%/120% defaults).
+    final parsedValue = maskNode.getAttributeValue(attributeName) ?? defaultRaw;
+    if (parsedValue is num) {
+      return parsedValue.toDouble();
+    }
+    final parsedRaw = parsedValue.toString().trim();
+    if (parsedRaw.isEmpty) {
       return null;
     }
-    if (raw.endsWith('%')) {
-      final percent = double.tryParse(raw.substring(0, raw.length - 1));
-      final viewport = _resolveMaskUnitsViewportRect();
-      if (percent == null || viewport == null) {
-        return null;
-      }
-      final dimension = horizontal ? viewport.width : viewport.height;
-      final value = dimension * percent / 100.0;
-      if (isSize) {
-        return value;
-      }
-      final origin = horizontal ? viewport.left : viewport.top;
-      return origin + value;
+    if (parsedRaw.endsWith('%')) {
+      return _resolveMaskUserSpacePercentage(
+        parsedRaw,
+        horizontal: horizontal,
+        isSize: isSize,
+      );
     }
-    final cleaned = raw.replaceAll(RegExp(r'[a-zA-Z]+$'), '');
+    final cleaned = parsedRaw.replaceAll(RegExp(r'[a-zA-Z]+$'), '');
     return double.tryParse(cleaned);
+  }
+
+  double? _resolveMaskUserSpacePercentage(
+    String raw, {
+    required bool horizontal,
+    required bool isSize,
+  }) {
+    final percent = double.tryParse(raw.substring(0, raw.length - 1));
+    final viewport = _resolveMaskUnitsViewportRect();
+    if (percent == null || viewport == null) {
+      return null;
+    }
+    final dimension = horizontal ? viewport.width : viewport.height;
+    final value = dimension * percent / 100.0;
+    if (isSize) {
+      return value;
+    }
+    final origin = horizontal ? viewport.left : viewport.top;
+    return origin + value;
   }
 
   ui.Rect? _resolveMaskUnitsViewportRect() {
     final viewBox = document.viewBox;
     if (viewBox != null && viewBox.width > 0 && viewBox.height > 0) {
       return viewBox;
+    }
+    final runtimeViewport = SvgLengthResolutionContext.rootViewport;
+    if (runtimeViewport != null &&
+        runtimeViewport.width > 0 &&
+        runtimeViewport.height > 0) {
+      return ui.Rect.fromLTWH(
+        0,
+        0,
+        runtimeViewport.width,
+        runtimeViewport.height,
+      );
     }
     final root = document.root;
     final width = _getNumber(root, 'width');
