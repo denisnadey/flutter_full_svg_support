@@ -14,6 +14,10 @@
 # Internal dev tooling (Puppeteer node_modules, snapshot scripts, etc.).
 /tool/
 
+# DevTools Flutter Web source is maintained in-repo but only its validated
+# companion build under /extension/devtools is published with this package.
+/packages/full_svg_devtools_extension/
+
 # External test fixtures committed for cross-referencing — they're huge and
 # not part of the published API surface.
 /W3C_SVG_11_TestSuite/

@@ -17,6 +17,7 @@ import 'preserve_aspect_ratio.dart';
 import 'svg_font_registry.dart' show SvgFontLoader;
 import 'switch_processing.dart';
 import 'smil/smil_parser.dart';
+import 'smil/smil_animation.dart';
 import 'smil/smil_timeline.dart';
 import 'svg_dom.dart';
 import 'svg_filters.dart';
@@ -27,6 +28,9 @@ import 'svg_transform.dart';
 import 'svg_use_references.dart';
 import 'transform_3d.dart';
 import '../svg_theme.dart';
+import '../debug/full_svg_debug_protocol.dart';
+import '../debug/full_svg_debug_registry.dart';
+import '../debug/full_svg_debug_source.dart';
 import '../utilities/file.dart';
 
 part 'animated_svg_picture_pointer_events.dart';
@@ -51,6 +55,7 @@ part 'animated_svg_picture_paths.dart';
 part 'animated_svg_picture_path_parser.dart';
 part 'animated_svg_picture_event_model.dart';
 part 'animated_svg_picture_hit_test_advanced.dart';
+part 'animated_svg_picture_devtools.dart';
 
 /// Builder function to create an error widget for animated SVG loading errors.
 typedef AnimatedSvgErrorWidgetBuilder =
@@ -431,6 +436,8 @@ class _DeferredAnimatedSvgPicture extends AnimatedSvgPicture {
        }),
        _cacheKey = Object.hash(assetName, package, bundle),
        _usesDefaultBundle = bundle == null,
+       _debugSourceType = 'asset',
+       _debugSourceLabel = assetName,
        super.string('');
 
   _DeferredAnimatedSvgPicture.network(
@@ -471,6 +478,8 @@ class _DeferredAnimatedSvgPicture extends AnimatedSvgPicture {
        }),
        _cacheKey = Object.hash(url, _mapHash(headers), httpClient),
        _usesDefaultBundle = false,
+       _debugSourceType = 'network',
+       _debugSourceLabel = url,
        super.string('');
 
   _DeferredAnimatedSvgPicture.file(
@@ -502,6 +511,8 @@ class _DeferredAnimatedSvgPicture extends AnimatedSvgPicture {
        }),
        _cacheKey = file.path,
        _usesDefaultBundle = false,
+       _debugSourceType = 'file',
+       _debugSourceLabel = file.path,
        super.string('');
 
   _DeferredAnimatedSvgPicture.memory(
@@ -532,11 +543,15 @@ class _DeferredAnimatedSvgPicture extends AnimatedSvgPicture {
        }),
        _cacheKey = Object.hashAll(bytes),
        _usesDefaultBundle = false,
+       _debugSourceType = 'memory',
+       _debugSourceLabel = 'Memory SVG',
        super.string('');
 
   final Future<String> Function(BuildContext context) _loadSvg;
   final Object _cacheKey;
   final bool _usesDefaultBundle;
+  final String _debugSourceType;
+  final String _debugSourceLabel;
   final WidgetBuilder? placeholderBuilder;
   final AnimatedSvgErrorWidgetBuilder? errorBuilder;
 
@@ -612,26 +627,30 @@ class _DeferredAnimatedSvgPictureState
               _buildDefaultPlaceholder();
         }
 
-        return AnimatedSvgPicture.string(
-          svgString,
-          width: widget.width,
-          height: widget.height,
-          fit: widget.fit,
-          alignment: widget.alignment,
-          backgroundColor: widget.backgroundColor,
-          playbackRate: widget.playbackRate,
-          autoPlay: widget.autoPlay,
-          initialTime: widget.initialTime,
-          controller: widget.controller,
-          onTrace: widget.onTrace,
-          traceFrameTicks: widget.traceFrameTicks,
-          onLinkTap: widget.onLinkTap,
-          foreignObjectBuilder: widget.foreignObjectBuilder,
-          imageLoader: widget.imageLoader,
-          fontLoader: widget.fontLoader,
-          theme: widget.theme,
-          colorMapper: widget.colorMapper,
-          clipToViewBox: widget.clipToViewBox,
+        return wrapWithFullSvgDebugSource(
+          sourceType: widget._debugSourceType,
+          sourceLabel: widget._debugSourceLabel,
+          child: AnimatedSvgPicture.string(
+            svgString,
+            width: widget.width,
+            height: widget.height,
+            fit: widget.fit,
+            alignment: widget.alignment,
+            backgroundColor: widget.backgroundColor,
+            playbackRate: widget.playbackRate,
+            autoPlay: widget.autoPlay,
+            initialTime: widget.initialTime,
+            controller: widget.controller,
+            onTrace: widget.onTrace,
+            traceFrameTicks: widget.traceFrameTicks,
+            onLinkTap: widget.onLinkTap,
+            foreignObjectBuilder: widget.foreignObjectBuilder,
+            imageLoader: widget.imageLoader,
+            fontLoader: widget.fontLoader,
+            theme: widget.theme,
+            colorMapper: widget.colorMapper,
+            clipToViewBox: widget.clipToViewBox,
+          ),
         );
       },
     );
@@ -656,6 +675,10 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
       <String, ui.Image>{};
   final Set<String> _pendingImageHrefs = <String>{};
   int _imageLoadGeneration = 0;
+  _AnimatedSvgDebugAdapter? _debugAdapter;
+  SvgNode? _debugHighlightedNode;
+  String _debugSourceType = 'string';
+  String _debugSourceLabel = 'Inline SVG';
 
   /// Cached hit-test paths keyed by element ID + path data hash.
   final Map<String, Path> _hitTestPathCache = <String, Path>{};
@@ -675,6 +698,19 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
   void didUpdateWidget(AnimatedSvgPicture oldWidget) {
     super.didUpdateWidget(oldWidget);
     _handleWidgetUpdate(oldWidget);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    assert(() {
+      final source = FullSvgDebugSourceScope.maybeOf(context);
+      if (source != null) {
+        _debugSourceType = source.sourceType;
+        _debugSourceLabel = source.sourceLabel;
+      }
+      return true;
+    }());
   }
 
   @override

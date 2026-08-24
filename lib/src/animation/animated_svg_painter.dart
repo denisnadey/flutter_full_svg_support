@@ -69,6 +69,7 @@ part 'animated_svg_painter_transform.dart';
 part 'animated_svg_painter_markers.dart';
 part 'animated_svg_painter_patterns.dart';
 part 'animated_svg_painter_paint_order.dart';
+part 'animated_svg_painter_devtools.dart';
 
 /// CustomPainter for rendering an animated SVG
 ///
@@ -89,6 +90,7 @@ class AnimatedSvgPainter extends CustomPainter {
     this.animationTime,
     this.hasAnimations = false,
     this.clipToViewBox = false,
+    this.debugHighlightedNode,
     // ignore: library_private_types_in_public_api
     _RenderCache? renderCache,
   }) : _renderCache = renderCache ?? _RenderCache();
@@ -125,6 +127,9 @@ class AnimatedSvgPainter extends CustomPainter {
   /// the behaviour of browsers viewing the SVG file directly (not embedded
   /// in an HTML page with CSS-forced dimensions).
   final bool clipToViewBox;
+
+  /// Debug-only live DOM node to outline after normal SVG painting.
+  final SvgNode? debugHighlightedNode;
 
   /// Performance cache for computed render values.
   final _RenderCache _renderCache;
@@ -205,6 +210,11 @@ class AnimatedSvgPainter extends CustomPainter {
 
     // Paint the root node
     _paintNode(canvas, document.root);
+
+    final highlightedNode = debugHighlightedNode;
+    if (highlightedNode != null) {
+      _paintFullSvgDebugHighlight(this, canvas, document.root, highlightedNode);
+    }
 
     canvas.restore();
 

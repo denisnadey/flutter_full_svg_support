@@ -235,6 +235,7 @@ extension _AnimatedSvgPictureStateLifecycleExtension
           _trace(category: 'js', message: 'JS load events fired');
         }));
       }
+      _registerWithFullSvgDevTools();
     } catch (error, stackTrace) {
       _trace(
         category: 'init',
@@ -428,6 +429,7 @@ extension _AnimatedSvgPictureStateLifecycleExtension
     _trace(category: 'lifecycle', message: 'Disposing AnimatedSvgPicture');
     _imageLoadGeneration++;
     _disposeResolvedImages();
+    _unregisterFromFullSvgDevTools();
     widget.controller?.removeListener(_onControllerUpdate);
     // Clear debug hooks so the controller doesn't hold stale references
     // to a torn-down widget tree.
@@ -441,6 +443,7 @@ extension _AnimatedSvgPictureStateLifecycleExtension
     _controller?.dispose();
     _controller = null;
     _timeline = null;
+    _debugHighlightedNode = null;
     _hoveredElementId = null;
     _hoveredAnchorInfo = null;
     _jsBridge?.dispose();
@@ -707,6 +710,7 @@ extension _AnimatedSvgPictureStateLifecycleExtension
           : _timeline!.currentTime.inMicroseconds / 1000000.0,
       hasAnimations: _hasAnimations,
       clipToViewBox: widget.clipToViewBox,
+      debugHighlightedNode: _debugHighlightedNode,
     );
 
     // For the default contain/center layout the painter maps the viewBox

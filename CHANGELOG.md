@@ -1,3 +1,29 @@
+## 1.5.0
+
+### FullSVG DevTools Inspector
+
+**New**
+
+- Added an official Flutter DevTools companion extension that discovers every
+  live FullSVG renderer in a connected debug application.
+- Added scalable, lazy SVG DOM inspection with stable per-document node IDs,
+  raw and resolved attributes, animation descriptors, and runtime statistics.
+- Added live animation controls for play, pause, restart, seeking, and playback
+  rate using the renderer's existing deterministic timeline.
+- Added transformed geometry highlighting for selected SVG nodes inside the
+  running application without modifying document attributes.
+
+**Developer tooling**
+
+- Added a versioned, structured VM service-extension protocol with validated
+  commands and machine-readable errors.
+- Added weak-reference instance tracking with deterministic lifecycle cleanup
+  and debug-only registration, preserving release behavior.
+- Added reconnect handling for hot reload, hot restart, main-isolate changes,
+  disposed instances, and applications without the runtime bridge.
+- Added a four-renderer manual verification screen, runtime and extension test
+  coverage, publishing documentation, and repeatable build/validation tooling.
+
 ## 1.4.4
 
 ### Universal macOS QuickJS bridge

@@ -10,6 +10,7 @@ import 'src/animation/animation_detector.dart';
 import 'src/animation/svg_parser.dart';
 import 'src/cache.dart';
 import 'src/default_theme.dart';
+import 'src/debug/full_svg_debug_source.dart';
 import 'src/loaders.dart';
 import 'src/rendering_strategy.dart';
 import 'src/svg_theme.dart';
@@ -491,28 +492,44 @@ class _FSvgPictureState extends State<FSvgPicture> {
   }
 
   Widget _buildResolvedSvg(BuildContext context, String svgString) {
+    late final Widget result;
     if (AnimationDetector.hasAnimations(svgString)) {
-      return _buildAnimated(context, svgString);
+      result = _buildAnimated(context, svgString);
+    } else {
+      result = SvgPicture.string(
+        svgString,
+        width: widget.width,
+        height: widget.height,
+        fit: widget.fit,
+        alignment: widget.alignment,
+        matchTextDirection: widget.matchTextDirection,
+        allowDrawingOutsideViewBox: widget.allowDrawingOutsideViewBox,
+        placeholderBuilder: widget.placeholderBuilder,
+        colorFilter: widget.colorFilter,
+        semanticsLabel: widget.semanticsLabel,
+        excludeFromSemantics: widget.excludeFromSemantics,
+        clipBehavior: widget.clipBehavior,
+        errorBuilder: widget.errorBuilder,
+        theme: widget.theme,
+        colorMapper: widget.colorMapper,
+        renderingStrategy: widget.renderingStrategy,
+      );
     }
-
-    return SvgPicture.string(
-      svgString,
-      width: widget.width,
-      height: widget.height,
-      fit: widget.fit,
-      alignment: widget.alignment,
-      matchTextDirection: widget.matchTextDirection,
-      allowDrawingOutsideViewBox: widget.allowDrawingOutsideViewBox,
-      placeholderBuilder: widget.placeholderBuilder,
-      colorFilter: widget.colorFilter,
-      semanticsLabel: widget.semanticsLabel,
-      excludeFromSemantics: widget.excludeFromSemantics,
-      clipBehavior: widget.clipBehavior,
-      errorBuilder: widget.errorBuilder,
-      theme: widget.theme,
-      colorMapper: widget.colorMapper,
-      renderingStrategy: widget.renderingStrategy,
+    return wrapWithFullSvgDebugSource(
+      child: result,
+      sourceType: widget._sourceType.name,
+      sourceLabel: _debugSourceLabel(),
     );
+  }
+
+  String _debugSourceLabel() {
+    return switch (widget._sourceType) {
+      _FSvgSourceType.string => 'Inline SVG',
+      _FSvgSourceType.asset => widget._assetName!,
+      _FSvgSourceType.network => widget._url!,
+      _FSvgSourceType.file => widget._file!.path,
+      _FSvgSourceType.memory => 'Memory SVG',
+    };
   }
 
   @override
@@ -1263,6 +1280,15 @@ class _StaticSvgViewState extends State<_StaticSvgView> {
       clipToViewBox: !widget.allowDrawingOutsideViewBox,
     );
 
+    if (FullSvgDebugSourceScope.maybeOf(context) == null) {
+      final sourceInfo = _debugSourceForLoader(widget.loader);
+      result = wrapWithFullSvgDebugSource(
+        child: result,
+        sourceType: sourceInfo.$1,
+        sourceLabel: sourceInfo.$2,
+      );
+    }
+
     if (widget.colorFilter != null) {
       result = ColorFiltered(colorFilter: widget.colorFilter!, child: result);
     }
@@ -1294,6 +1320,17 @@ class _StaticSvgViewState extends State<_StaticSvgView> {
     }
 
     return RepaintBoundary(child: result);
+  }
+
+  (String, String) _debugSourceForLoader(BytesLoader loader) {
+    return switch (loader) {
+      SvgAssetLoader() => ('asset', loader.assetName),
+      SvgNetworkLoader() => ('network', loader.url),
+      SvgFileLoader() => ('file', loader.file.path),
+      SvgBytesLoader() => ('memory', 'Memory SVG'),
+      SvgStringLoader() => ('string', 'Inline SVG'),
+      _ => ('unknown', 'SVG'),
+    };
   }
 
   @override

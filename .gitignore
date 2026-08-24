@@ -10,6 +10,9 @@ Thumbs.db
 # === Dart / Flutter ===
 .dart_tool/
 build/
+# The official DevTools companion build is a required pub package artifact.
+!extension/devtools/build/
+!extension/devtools/build/**
 .packages
 .flutter-plugins
 .flutter-plugins-dependencies

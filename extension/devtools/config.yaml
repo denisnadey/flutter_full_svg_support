@@ -1,0 +1,5 @@
+name: full_svg_flutter
+issueTracker: https://github.com/denisnadey/flutter_full_svg_support/issues
+version: 1.0.0
+materialIconCodePoint: "0xf0552"
+requiresConnection: true

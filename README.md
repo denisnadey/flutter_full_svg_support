@@ -12,10 +12,10 @@ Render *any* SVG directly inside Flutter — crisp static icons and illustration
 
 `full_svg_flutter` gives you a `flutter_svg`-compatible `SvgPicture` API for static graphics **and** `FSvgPicture` / `AnimatedSvgPicture` for animation — all rendered by the same DOM-preserving engine, so static SVGs get the *exact* same fidelity (filters, masks, text, gradients) as animated ones.
 
-> **🆕 New in 1.4.4 — universal macOS QuickJS bridge.**
-> Universal macOS apps now bundle working Apple Silicon and Intel QuickJS
-> slices, with explicit deployment-target handling. See the
-> [changelog](CHANGELOG.md) for details.
+> **🆕 New in 1.5.0 — FullSVG DevTools Inspector.**
+> Inspect live SVG DOM trees, animation state, runtime statistics, and exact
+> node geometry directly from Flutter DevTools. See the
+> [Inspector guide](doc/en/devtools.md) for details.
 
 [svgator-site]: https://www.svgator.com/
 [qjs-engine-pkg]: https://pub.dev/packages/quickjs_engine
@@ -80,7 +80,7 @@ There are several ways to use animated vector graphics in Flutter: static SVG pa
 ```yaml
 # pubspec.yaml
 dependencies:
-  full_svg_flutter: ^1.4.4
+  full_svg_flutter: ^1.5.0
 ```
 
 ```dart
@@ -94,6 +94,19 @@ FSvgPicture.string(rawSvgString)
 FSvgPicture.file(file)
 FSvgPicture.memory(bytes)
 ```
+
+## FullSVG DevTools Inspector
+
+`full_svg_flutter` ships an official Flutter DevTools companion extension for
+inspecting real mounted renderers. It discovers live instances, lazily explores
+their SVG DOM, shows raw and animated attributes, controls the existing
+animation timeline, reports runtime statistics, and highlights selected nodes
+inside the running application.
+
+Run the app in debug mode, enable DevTools extensions, and open the
+`full_svg_flutter` extension; its inspector UI is titled **FullSVG**. See the
+[FullSVG DevTools Inspector guide](doc/en/devtools.md) for usage,
+troubleshooting, limitations, and the extension development workflow.
 
 ---
 
@@ -392,7 +405,7 @@ Known limitations:
 
 ```yaml
 dependencies:
-  full_svg_flutter: ^1.4.4
+  full_svg_flutter: ^1.5.0
 ```
 
 ```bash

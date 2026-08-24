@@ -1,0 +1,24 @@
+name: full_svg_devtools_extension
+description: Flutter DevTools companion extension for full_svg_flutter.
+publish_to: none
+version: 1.0.0
+
+environment:
+  sdk: ^3.8.0
+  flutter: ">=3.32.0"
+
+dependencies:
+  devtools_app_shared: ^0.5.1
+  devtools_extensions: ^0.5.1
+  flutter:
+    sdk: flutter
+  full_svg_flutter:
+    path: ../..
+
+dev_dependencies:
+  flutter_lints: ^5.0.0
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true

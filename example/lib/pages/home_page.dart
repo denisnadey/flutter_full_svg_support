@@ -11,6 +11,7 @@ import 'js_demo_page.dart';
 import 'svgator_demo_page.dart';
 import 'w3c_playground_page.dart';
 import 'gallery_page.dart';
+import 'devtools_inspector_page.dart';
 
 /// The SVG to display on home page
 const String svgString = '''
@@ -238,6 +239,19 @@ class HomePage extends StatelessWidget {
           crossAxisSpacing: 12,
           childAspectRatio: isMobile ? 2.5 : 2.2,
           children: [
+            _buildNavigationCard(
+              context,
+              title: 'FullSVG DevTools',
+              subtitle: 'Live inspector verification screen',
+              icon: Icons.polyline,
+              color: Colors.cyan,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const DevToolsInspectorPage(),
+                ),
+              ),
+            ),
             _buildNavigationCard(
               context,
               title: 'SVGator Gallery',
