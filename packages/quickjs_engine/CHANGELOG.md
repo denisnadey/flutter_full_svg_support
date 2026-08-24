@@ -1,9 +1,16 @@
 # Changelog
 
-## Unreleased
+## 0.1.5
 
 - Fixed the macOS prebuilt bridge so it contains both arm64 and x86_64
   slices and is built with an explicit deployment target.
+- Updated the native build script to produce a universal macOS bridge by
+  default while preserving architecture and deployment-target overrides.
+- Added a clean macOS release-build workflow that verifies the shipped and
+  rebuilt bridge, the universal app executable, and the embedded dylib.
+- Thanks to [@OrPudding](https://github.com/OrPudding) for contributing the
+  universal macOS bridge fix in
+  [#40](https://github.com/denisnadey/flutter_full_svg_support/pull/40).
 
 ## 0.1.4
 
