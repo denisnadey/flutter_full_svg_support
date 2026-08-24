@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Fixed the macOS prebuilt bridge so it contains both arm64 and x86_64
+  slices and is built with an explicit deployment target.
+
 ## 0.1.4
 
 - Fixed Windows builds by declaring the exported C API plugin class in the

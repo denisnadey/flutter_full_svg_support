@@ -1,0 +1,75 @@
+name: macOS Native Link
+
+on:
+  pull_request:
+    paths:
+      - "packages/quickjs_engine/**"
+      - ".github/workflows/macos-native-link.yml"
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - "packages/quickjs_engine/**"
+      - ".github/workflows/macos-native-link.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: macos-native-link-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  universal_release:
+    name: macOS universal release
+    runs-on: macos-14
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.38.1"
+          channel: stable
+          cache: true
+
+      - name: Verify shipped bridge is universal
+        run: |
+          bridge="packages/quickjs_engine/macos/Frameworks/libquickjs_c_bridge_plugin.dylib"
+          test -f "$bridge"
+          lipo "$bridge" -verify_arch x86_64 arm64
+
+      - name: Rebuild universal bridge
+        working-directory: packages/quickjs_engine
+        run: sh tool/build_native.sh
+
+      - name: Verify rebuilt bridge is universal
+        run: |
+          bridge="packages/quickjs_engine/macos/Frameworks/libquickjs_c_bridge_plugin.dylib"
+          lipo "$bridge" -verify_arch x86_64 arm64
+
+      - name: Create clean Flutter app
+        run: flutter create --platforms macos "$RUNNER_TEMP/quickjs_macos_smoke"
+
+      - name: Add local quickjs_engine dependency
+        working-directory: ${{ runner.temp }}/quickjs_macos_smoke
+        run: flutter pub add quickjs_engine --path "$GITHUB_WORKSPACE/packages/quickjs_engine"
+
+      - name: Build macOS release
+        working-directory: ${{ runner.temp }}/quickjs_macos_smoke
+        run: flutter build macos --release
+
+      - name: Verify app and embedded bridge are universal
+        working-directory: ${{ runner.temp }}/quickjs_macos_smoke
+        run: |
+          app="$(find build/macos/Build/Products/Release -maxdepth 1 -type d -name '*.app' -print -quit)"
+          executable="$app/Contents/MacOS/$(basename "$app" .app)"
+          bridge="$app/Contents/Frameworks/libquickjs_c_bridge_plugin.dylib"
+
+          test -n "$app"
+          test -f "$executable"
+          test -f "$bridge"
+          lipo "$executable" -verify_arch x86_64 arm64
+          lipo "$bridge" -verify_arch x86_64 arm64
