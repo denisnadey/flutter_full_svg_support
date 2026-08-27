@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 
+import '../css_cascade.dart';
 import '../svg_dom.dart';
+import '../svg_length_resolver.dart';
 import 'distance_calculator.dart';
 import 'interpolators.dart';
 import 'motion_path.dart';
@@ -82,6 +84,106 @@ enum SmilPlaybackDirection {
   alternateReverse,
 }
 
+/// How percentages on an animated numeric attribute must be interpreted.
+enum SmilPercentageSemantics {
+  /// Percentages are not retained by the SMIL interpolator for this attribute.
+  none,
+
+  /// A viewport-relative horizontal length, resolved by the geometry consumer.
+  horizontalLength,
+
+  /// A viewport-relative vertical length, resolved by the geometry consumer.
+  verticalLength,
+
+  /// A length relative to the normalized viewport diagonal.
+  normalizedDiagonalLength,
+}
+
+SmilPercentageSemantics smilPercentageSemanticsForAttribute(
+  String attributeName, {
+  SvgNode? targetNode,
+}) {
+  // Follow-up B only preserves percentages for shape/viewport geometry.
+  // Definition coordinate systems (gradient/mask/pattern/filter) keep their
+  // prior numeric behavior until Follow-up C teaches those consumers their
+  // attribute-specific percentage bases.
+  if (_isDefinitionCoordinateTarget(targetNode)) {
+    return SmilPercentageSemantics.none;
+  }
+
+  // Follow-up B only enables deferred values for consumers already migrated
+  // to the shared viewport-aware geometry resolver. Attribute names alone are
+  // insufficient: for example, `x` on <text> still uses the numeric text
+  // positioning path and must retain its established numeric behavior until
+  // Follow-up C migrates that consumer.
+  if (targetNode != null && !_supportsDeferredGeometryLength(targetNode)) {
+    return SmilPercentageSemantics.none;
+  }
+
+  switch (attributeName) {
+    case 'x':
+    case 'cx':
+    case 'fx':
+    case 'x1':
+    case 'x2':
+    case 'width':
+    case 'rx':
+      return SmilPercentageSemantics.horizontalLength;
+    case 'y':
+    case 'cy':
+    case 'fy':
+    case 'y1':
+    case 'y2':
+    case 'height':
+    case 'ry':
+      return SmilPercentageSemantics.verticalLength;
+    case 'r':
+    case 'fr':
+      return SmilPercentageSemantics.normalizedDiagonalLength;
+    default:
+      return SmilPercentageSemantics.none;
+  }
+}
+
+bool _supportsDeferredGeometryLength(SvgNode node) {
+  return switch (node.tagName) {
+    'rect' ||
+    'circle' ||
+    'ellipse' ||
+    'line' ||
+    'use' ||
+    'svg' ||
+    'symbol' ||
+    'image' ||
+    'foreignObject' => true,
+    _ => false,
+  };
+}
+
+bool _isDefinitionCoordinateTarget(SvgNode? node) {
+  for (SvgNode? current = node; current != null; current = current.parent) {
+    switch (current.tagName) {
+      case 'linearGradient':
+      case 'radialGradient':
+      case 'conicGradient':
+      case 'mask':
+      case 'pattern':
+      case 'filter':
+        return true;
+      case 'svg':
+      case 'symbol':
+        // A nested viewport establishes a new percentage coordinate system
+        // for its descendants.
+        return false;
+    }
+  }
+  return false;
+}
+
+extension SmilPercentageSemanticsExtension on SmilPercentageSemantics {
+  bool get preservesPercentage => this != SmilPercentageSemantics.none;
+}
+
 /// Base class for SMIL animation
 class SmilAnimation {
   /// Creates a SMIL animation
@@ -89,6 +191,7 @@ class SmilAnimation {
     this.id,
     required this.type,
     required this.targetNode,
+    this.document,
     required this.attributeName,
     required this.attributeType,
     this.transformType,
@@ -115,7 +218,13 @@ class SmilAnimation {
     this.endConditions = const [],
     this.isPaused = false,
     this.documentOrder = 0,
-  }) {
+    SmilPercentageSemantics? percentageSemantics,
+  }) : percentageSemantics =
+           percentageSemantics ??
+           smilPercentageSemanticsForAttribute(
+             attributeName,
+             targetNode: targetNode,
+           ) {
     // Validation
     if (values != null) {
       if (keyTimes != null && keyTimes!.length != values!.length) {
@@ -132,6 +241,7 @@ class SmilAnimation {
       // Generate keyTimes for paced mode if not explicitly specified.
       // Implementation based on Blink SVGAnimationElement::calculateKeyTimesForCalcModePaced()
       if (calcMode == SmilCalcMode.paced &&
+          this.percentageSemantics == SmilPercentageSemantics.none &&
           keyTimes == null &&
           values != null &&
           values!.length >= 2) {
@@ -197,11 +307,17 @@ class SmilAnimation {
   /// Target node to which the animation is applied
   final SvgNode targetNode;
 
+  /// The document whose CSS cascade provides the underlying value.
+  final SvgDocument? document;
+
   /// Name of the animated attribute
   final String attributeName;
 
   /// Attribute type (for correct interpolation)
   final SvgAttributeType attributeType;
+
+  /// The percentage semantics for [attributeName].
+  final SmilPercentageSemantics percentageSemantics;
 
   /// Transform type for animateTransform (translate, rotate, scale, etc.)
   final String? transformType;
@@ -274,6 +390,27 @@ class SmilAnimation {
 
   /// Intermediate value calculation mode
   final SmilCalcMode calcMode;
+
+  bool get _hasViewportRelativePercentage =>
+      percentageSemantics == SmilPercentageSemantics.horizontalLength ||
+      percentageSemantics == SmilPercentageSemantics.verticalLength ||
+      percentageSemantics == SmilPercentageSemantics.normalizedDiagonalLength;
+
+  bool get _requiresDefinitionViewportResolution {
+    if (!_hasViewportRelativePercentage) {
+      return false;
+    }
+
+    return switch (targetNode.tagName) {
+      'linearGradient' ||
+      'radialGradient' ||
+      'conicGradient' ||
+      'mask' ||
+      'pattern' ||
+      'filter' => true,
+      _ => false,
+    };
+  }
 
   /// Playback direction for iterations (used for CSS animation-direction)
   final SmilPlaybackDirection playbackDirection;
@@ -442,7 +579,52 @@ class SmilAnimation {
   /// [completedRepeats] - the number of completed repetitions (for accumulate)
   Object? computeValue(double t, {int completedRepeats = 0}) {
     final raw = computeRawValue(t, completedRepeats: completedRepeats);
-    return _applyAdditive(raw);
+    return resolveFinalAnimatedValue(_applyAdditive(raw));
+  }
+
+  /// Resolves a deferred percentage value before it is stored on a numeric
+  /// consumer. Geometry lengths stay deferred so their existing
+  /// attribute-specific resolvers retain control; definition coordinates are
+  /// resolved in the active render viewport.
+  Object? resolveFinalAnimatedValue(Object? value) {
+    final length = SvgLengthPercentageValue.tryParse(value);
+    if (length == null || !percentageSemantics.preservesPercentage) {
+      return value;
+    }
+
+    switch (percentageSemantics) {
+      case SmilPercentageSemantics.none:
+        return value;
+      case SmilPercentageSemantics.horizontalLength:
+        return _resolveDefinitionViewportLength(
+              length,
+              SvgLengthReference.horizontal,
+            ) ??
+            value;
+      case SmilPercentageSemantics.verticalLength:
+        return _resolveDefinitionViewportLength(
+              length,
+              SvgLengthReference.vertical,
+            ) ??
+            value;
+      case SmilPercentageSemantics.normalizedDiagonalLength:
+        return _resolveDefinitionViewportLength(
+              length,
+              SvgLengthReference.normalizedDiagonal,
+            ) ??
+            value;
+    }
+  }
+
+  double? _resolveDefinitionViewportLength(
+    SvgLengthPercentageValue length,
+    SvgLengthReference reference,
+  ) {
+    if (!_requiresDefinitionViewportResolution ||
+        SvgLengthResolutionContext.rootViewport == null) {
+      return null;
+    }
+    return resolveSvgLengthValue(targetNode, length, reference: reference);
   }
 
   /// Compute the raw animated value without applying additive stacking.

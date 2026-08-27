@@ -5,6 +5,7 @@ import '../path_data.dart';
 import '../path_normalizer.dart';
 import '../path_parser.dart';
 import '../svg_dom.dart';
+import '../svg_length_resolver.dart';
 import '../svg_transform.dart';
 
 part 'interpolators_color_parsing.dart';
@@ -20,12 +21,18 @@ class Interpolators {
     Object from,
     Object to,
     double t,
-    SvgAttributeType type,
-  ) {
+    SvgAttributeType type, {
+    bool preservePercentages = false,
+  }) {
     switch (type) {
       case SvgAttributeType.number:
       case SvgAttributeType.length:
-        return interpolateNumber(from, to, t);
+        return interpolateNumber(
+          from,
+          to,
+          t,
+          preservePercentages: preservePercentages,
+        );
       case SvgAttributeType.color:
         return interpolateColor(from, to, t);
       case SvgAttributeType.transform:
@@ -42,14 +49,36 @@ class Interpolators {
   }
 
   /// Interpolate a numeric value.
-  static double interpolateNumber(Object from, Object to, double t) {
-    final fromNum = _toNumber(from);
-    final toNum = _toNumber(to);
+  static Object interpolateNumber(
+    Object from,
+    Object to,
+    double t, {
+    bool preservePercentages = false,
+  }) {
+    if (!preservePercentages) {
+      final fromNum = _toNumber(from);
+      final toNum = _toNumber(to);
+      if (fromNum == null || toNum == null) {
+        return toNum ?? fromNum ?? 0.0;
+      }
+      return fromNum + (toNum - fromNum) * t;
+    }
 
-    if (fromNum == null || toNum == null) {
+    final fromLength = SvgLengthPercentageValue.tryParse(from);
+    final toLength = SvgLengthPercentageValue.tryParse(to);
+    if (fromLength == null || toLength == null) {
+      final fromNum = _toNumber(from);
+      final toNum = _toNumber(to);
       return toNum ?? fromNum ?? 0.0;
     }
-    return fromNum + (toNum - fromNum) * t;
+
+    return SvgLengthPercentageValue(
+      absolute:
+          fromLength.absolute + (toLength.absolute - fromLength.absolute) * t,
+      percentage:
+          fromLength.percentage +
+          (toLength.percentage - fromLength.percentage) * t,
+    ).toAnimatedValue();
   }
 
   /// Interpolate a color.
@@ -116,16 +145,32 @@ class Interpolators {
   }
 
   /// Add two values together (for additive='sum').
-  static Object? add(Object base, Object delta, SvgAttributeType type) {
+  static Object? add(
+    Object base,
+    Object delta,
+    SvgAttributeType type, {
+    bool preservePercentages = false,
+  }) {
     switch (type) {
       case SvgAttributeType.number:
       case SvgAttributeType.length:
-        final baseNum = _toNumber(base);
-        final deltaNum = _toNumber(delta);
-        if (baseNum != null && deltaNum != null) {
-          return baseNum + deltaNum;
+        if (!preservePercentages) {
+          final baseNumber = _toNumber(base);
+          final deltaNumber = _toNumber(delta);
+          if (baseNumber == null || deltaNumber == null) {
+            return base;
+          }
+          return baseNumber + deltaNumber;
         }
-        return base;
+        final baseLength = SvgLengthPercentageValue.tryParse(base);
+        final deltaLength = SvgLengthPercentageValue.tryParse(delta);
+        if (baseLength == null || deltaLength == null) {
+          return base;
+        }
+        return SvgLengthPercentageValue(
+          absolute: baseLength.absolute + deltaLength.absolute,
+          percentage: baseLength.percentage + deltaLength.percentage,
+        ).toAnimatedValue();
       case SvgAttributeType.list:
       case SvgAttributeType.points:
         final baseList = _toNumberList(base);

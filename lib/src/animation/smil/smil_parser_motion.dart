@@ -211,6 +211,7 @@ SmilAnimation? _parseAnimateMotion(
       id: id,
       type: SmilAnimationType.animateMotion,
       targetNode: targetNode,
+      document: document,
       attributeName:
           'transform', // Use 'transform' so renderer picks up the value
       attributeType: SvgAttributeType.transform,

@@ -147,6 +147,41 @@ mixin _ResolutionMixin on _SelectorMatchingMixin {
     return winner?.value;
   }
 
+  /// Resolves the underlying value of a property for animation.
+  ///
+  /// Unlike [resolveProperty], this method never reads an animated
+  /// presentation value. It preserves the raw presentation-attribute text so
+  /// units such as `%` remain available to length interpolation, while still
+  /// honoring inline styles, stylesheet rules, and inherited CSS values.
+  Object? resolveBaseProperty(SvgNode node, String property) {
+    final normalizedProperty = property.trim().toLowerCase();
+    final inlineValue = _extractInlineStyleValue(node, normalizedProperty);
+    final stylesheetValue = resolveFromStyleRulesOnly(node, normalizedProperty);
+
+    if (inlineValue != null || stylesheetValue != null) {
+      return resolveProperty(node, normalizedProperty);
+    }
+
+    final rawPresentationValue = node
+        .getRawAttributeValue(normalizedProperty)
+        ?.trim();
+    if (rawPresentationValue != null && rawPresentationValue.isNotEmpty) {
+      return rawPresentationValue;
+    }
+
+    final baseAttribute = node.getAttribute(normalizedProperty);
+    if (baseAttribute != null) {
+      return baseAttribute.baseValue;
+    }
+
+    if (cssInheritableProperties.contains(normalizedProperty) &&
+        node.parent != null) {
+      return resolveBaseProperty(node.parent!, normalizedProperty);
+    }
+
+    return null;
+  }
+
   /// Resolves a property value, checking only the node itself (no inheritance).
   String? resolveOwnProperty(SvgNode node, String property) {
     return resolveProperty(node, property, checkInheritance: false);
