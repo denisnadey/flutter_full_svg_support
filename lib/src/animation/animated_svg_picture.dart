@@ -22,6 +22,7 @@ import 'smil/smil_timeline.dart';
 import 'svg_dom.dart';
 import 'svg_filters.dart';
 import 'svg_js_bridge.dart';
+import 'svg_length_resolver.dart';
 import 'svg_parser.dart';
 import 'svg_theme_apply.dart';
 import 'svg_transform.dart';

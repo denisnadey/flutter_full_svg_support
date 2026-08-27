@@ -217,8 +217,22 @@ extension AnimatedSvgPainterClipMaskExtension on AnimatedSvgPainter {
     if (refBounds == null) return null;
 
     // Apply the use element's x/y offset
-    final x = _getNumber(useNode, 'x') ?? 0.0;
-    final y = _getNumber(useNode, 'y') ?? 0.0;
+    final x =
+        resolveSvgLength(
+          useNode,
+          document,
+          'x',
+          reference: SvgLengthReference.horizontal,
+        ) ??
+        0.0;
+    final y =
+        resolveSvgLength(
+          useNode,
+          document,
+          'y',
+          reference: SvgLengthReference.vertical,
+        ) ??
+        0.0;
 
     return refBounds.translate(x, y);
   }

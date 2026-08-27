@@ -122,7 +122,8 @@ extension AnimatedSvgPainterUseExtension on AnimatedSvgPainter {
       return;
     }
     final referenced = document.root.findById(hrefId);
-    if (referenced == null || !isSvgUseReferenceAllowedTag(referenced.tagName)) {
+    if (referenced == null ||
+        !isSvgUseReferenceAllowedTag(referenced.tagName)) {
       return;
     }
 
@@ -137,8 +138,22 @@ extension AnimatedSvgPainterUseExtension on AnimatedSvgPainter {
       return;
     }
 
-    final x = _getNumber(node, 'x') ?? 0.0;
-    final y = _getNumber(node, 'y') ?? 0.0;
+    final x =
+        resolveSvgLength(
+          node,
+          document,
+          'x',
+          reference: SvgLengthReference.horizontal,
+        ) ??
+        0.0;
+    final y =
+        resolveSvgLength(
+          node,
+          document,
+          'y',
+          reference: SvgLengthReference.vertical,
+        ) ??
+        0.0;
     canvas.save();
     // NOTE: the `transform` attribute is already applied by _paintNodeImplWithUseContext
     // via _applyTransform() before this method is called. Applying it again here
@@ -265,26 +280,39 @@ extension AnimatedSvgPainterUseExtension on AnimatedSvgPainter {
     required Set<String> useStack,
     _UseInheritanceContext? useContext,
   }) {
-    final viewportTransform = _resolveUseViewportTransform(
-      useNode: useNode,
-      referenceNode: symbolNode,
-    );
-    if (viewportTransform != null) {
-      if (viewportTransform.clipRect != null) {
-        canvas.clipRect(viewportTransform.clipRect!, doAntiAlias: true);
-      }
-      canvas.transform(viewportTransform.matrix.storage);
-    } else {
-      _applySymbolOverflowClipping(canvas, useNode, symbolNode);
-    }
-    for (final child in symbolNode.children) {
-      _paintNodeWithUseContext(
-        canvas,
-        child,
-        useStack: useStack,
-        useContext: useContext,
+    void paintSymbolContent() {
+      final viewportTransform = _resolveUseViewportTransform(
+        useNode: useNode,
+        referenceNode: symbolNode,
       );
+      if (viewportTransform != null) {
+        if (viewportTransform.clipRect != null) {
+          canvas.clipRect(viewportTransform.clipRect!, doAntiAlias: true);
+        }
+        canvas.transform(viewportTransform.matrix.storage);
+      } else {
+        _applySymbolOverflowClipping(canvas, useNode, symbolNode);
+      }
+      for (final child in symbolNode.children) {
+        _paintNodeWithUseContext(
+          canvas,
+          child,
+          useStack: useStack,
+          useContext: useContext,
+        );
+      }
     }
+
+    final viewport = _resolveUseInstanceViewportSize(useNode);
+    if (viewport == null) {
+      paintSymbolContent();
+      return;
+    }
+    SvgLengthResolutionContext.runWithViewportForNode(
+      symbolNode,
+      viewport,
+      paintSymbolContent,
+    );
   }
 
   void _applySymbolOverflowClipping(
@@ -296,8 +324,18 @@ extension AnimatedSvgPainterUseExtension on AnimatedSvgPainter {
     if (overflow == 'visible') {
       return;
     }
-    final useWidth = _getNumber(useNode, 'width');
-    final useHeight = _getNumber(useNode, 'height');
+    final useWidth = resolveSvgLength(
+      useNode,
+      document,
+      'width',
+      reference: SvgLengthReference.horizontal,
+    );
+    final useHeight = resolveSvgLength(
+      useNode,
+      document,
+      'height',
+      reference: SvgLengthReference.vertical,
+    );
     if (useWidth != null &&
         useHeight != null &&
         useWidth > 0 &&
@@ -321,22 +359,54 @@ extension AnimatedSvgPainterUseExtension on AnimatedSvgPainter {
     required Set<String> useStack,
     _UseInheritanceContext? useContext,
   }) {
-    final viewportTransform = _resolveUseViewportTransform(
-      useNode: useNode,
-      referenceNode: svgNode,
-    );
-    if (viewportTransform != null) {
-      if (viewportTransform.clipRect != null) {
-        canvas.clipRect(viewportTransform.clipRect!, doAntiAlias: true);
+    void paintSvgContent() {
+      final viewportTransform = _resolveUseViewportTransform(
+        useNode: useNode,
+        referenceNode: svgNode,
+      );
+      if (viewportTransform != null) {
+        if (viewportTransform.clipRect != null) {
+          canvas.clipRect(viewportTransform.clipRect!, doAntiAlias: true);
+        }
+        canvas.transform(viewportTransform.matrix.storage);
       }
-      canvas.transform(viewportTransform.matrix.storage);
+      _paintNodeWithUseContext(
+        canvas,
+        svgNode,
+        useStack: useStack,
+        useContext: useContext,
+      );
     }
-    _paintNodeWithUseContext(
-      canvas,
+
+    final viewport = _resolveUseInstanceViewportSize(useNode);
+    if (viewport == null) {
+      paintSvgContent();
+      return;
+    }
+    SvgLengthResolutionContext.runWithViewportForNode(
       svgNode,
-      useStack: useStack,
-      useContext: useContext,
+      viewport,
+      paintSvgContent,
     );
+  }
+
+  ui.Size? _resolveUseInstanceViewportSize(SvgNode useNode) {
+    final width = resolveSvgLength(
+      useNode,
+      document,
+      'width',
+      reference: SvgLengthReference.horizontal,
+    );
+    final height = resolveSvgLength(
+      useNode,
+      document,
+      'height',
+      reference: SvgLengthReference.vertical,
+    );
+    if (width == null || height == null || width <= 0 || height <= 0) {
+      return null;
+    }
+    return ui.Size(width, height);
   }
 
   void _paintNodeWithUseContext(
@@ -389,8 +459,22 @@ extension AnimatedSvgPainterUseExtension on AnimatedSvgPainter {
         if (!_shouldRenderForeignObject(node)) {
           return false;
         }
-        final width = _getNumber(node, 'width') ?? 0.0;
-        final height = _getNumber(node, 'height') ?? 0.0;
+        final width =
+            resolveSvgLength(
+              node,
+              document,
+              'width',
+              reference: SvgLengthReference.horizontal,
+            ) ??
+            0.0;
+        final height =
+            resolveSvgLength(
+              node,
+              document,
+              'height',
+              reference: SvgLengthReference.vertical,
+            ) ??
+            0.0;
         return width > 0 && height > 0;
       default:
         return true;

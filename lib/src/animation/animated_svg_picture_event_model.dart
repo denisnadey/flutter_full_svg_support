@@ -57,24 +57,29 @@ extension _AnimatedSvgPictureStateEventModelExtension
       return const _EventHitTestResult();
     }
 
-    _prepareHitTestCache(_timeline?.currentTime.inMicroseconds.toDouble());
-
-    final documentPoint = _localToDocumentPoint(
-      localPosition,
+    return SvgLengthResolutionContext.runWithRootViewport(
       renderObject.size,
-    );
-    if (documentPoint == null) return const _EventHitTestResult();
+      () {
+        _prepareHitTestCache(_timeline?.currentTime.inMicroseconds.toDouble());
 
-    final pathBuilder = <String>[];
-    return _hitTestNodeWithEventPath(
-      _document.root,
-      documentPoint,
-      Matrix4.identity(),
-      useStack: const <String>{},
-      foreignObjectParent: null,
-      currentAnchor: null,
-      pathBuilder: pathBuilder,
-      useContext: null,
+        final documentPoint = _localToDocumentPoint(
+          localPosition,
+          renderObject.size,
+        );
+        if (documentPoint == null) return const _EventHitTestResult();
+
+        final pathBuilder = <String>[];
+        return _hitTestNodeWithEventPath(
+          _document.root,
+          documentPoint,
+          Matrix4.identity(),
+          useStack: const <String>{},
+          foreignObjectParent: null,
+          currentAnchor: null,
+          pathBuilder: pathBuilder,
+          useContext: null,
+        );
+      },
     );
   }
 
@@ -134,12 +139,10 @@ extension _AnimatedSvgPictureStateEventModelExtension
     final childTransform = Matrix4.copy(currentTransform);
     _applyForeignObjectChildTransform(childTransform, node);
 
-    if (node.tagName == 'svg' && foreignObjectParent != null) {
-      _applyNestedSvgTransformInForeignObject(
-        childTransform,
-        node,
-        foreignObjectParent,
-      );
+    // Nested SVG viewports apply to all child hit testing, not only SVGs
+    // embedded by foreignObject.
+    if (node.tagName == 'svg') {
+      _applyNestedSvgViewportTransform(childTransform, node);
     }
 
     // Add to path if has ID
@@ -259,7 +262,8 @@ extension _AnimatedSvgPictureStateEventModelExtension
     }
 
     final referenced = _document.root.findById(hrefId);
-    if (referenced == null || !isSvgUseReferenceAllowedTag(referenced.tagName)) {
+    if (referenced == null ||
+        !isSvgUseReferenceAllowedTag(referenced.tagName)) {
       return const _EventHitTestResult();
     }
 
@@ -276,8 +280,20 @@ extension _AnimatedSvgPictureStateEventModelExtension
 
     final referenceTransform = Matrix4.copy(currentTransform)
       ..translateByDouble(
-        _getNumber(useNode, 'x') ?? 0.0,
-        _getNumber(useNode, 'y') ?? 0.0,
+        resolveSvgLength(
+              useNode,
+              _document,
+              'x',
+              reference: SvgLengthReference.horizontal,
+            ) ??
+            0.0,
+        resolveSvgLength(
+              useNode,
+              _document,
+              'y',
+              reference: SvgLengthReference.vertical,
+            ) ??
+            0.0,
         0,
         1,
       );
@@ -303,9 +319,43 @@ extension _AnimatedSvgPictureStateEventModelExtension
           return const _EventHitTestResult();
         }
         if (referenced.tagName == 'symbol') {
-          for (int i = referenced.children.length - 1; i >= 0; i--) {
+          return _withUseInstanceViewport(
+            referencedNode: referenced,
+            viewport: _resolveUseInstanceViewportSize(useNode),
+            callback: () {
+              for (int i = referenced.children.length - 1; i >= 0; i--) {
+                final hitResult = _hitTestNodeWithEventPath(
+                  referenced.children[i],
+                  documentPoint,
+                  useReferenceTransform,
+                  useStack: nextUseStack,
+                  foreignObjectParent: null,
+                  currentAnchor: currentAnchor,
+                  pathBuilder: List.of(pathBuilder),
+                  useContext: useContext,
+                );
+                if (hitResult.elementId != null ||
+                    hitResult.anchorInfo != null ||
+                    hitResult.useElementId != null) {
+                  return _EventHitTestResult(
+                    elementId: hitResult.elementId,
+                    anchorInfo: hitResult.anchorInfo,
+                    useElementId: useNode.id,
+                    composedPath: hitResult.composedPath,
+                    shadowPath: useContext.shadowPathBuilder,
+                  );
+                }
+              }
+              return const _EventHitTestResult();
+            },
+          );
+        }
+        return _withUseInstanceViewport(
+          referencedNode: referenced,
+          viewport: _resolveUseInstanceViewportSize(useNode),
+          callback: () {
             final hitResult = _hitTestNodeWithEventPath(
-              referenced.children[i],
+              referenced,
               documentPoint,
               useReferenceTransform,
               useStack: nextUseStack,
@@ -325,31 +375,9 @@ extension _AnimatedSvgPictureStateEventModelExtension
                 shadowPath: useContext.shadowPathBuilder,
               );
             }
-          }
-          return const _EventHitTestResult();
-        }
-        final hitResult = _hitTestNodeWithEventPath(
-          referenced,
-          documentPoint,
-          useReferenceTransform,
-          useStack: nextUseStack,
-          foreignObjectParent: null,
-          currentAnchor: currentAnchor,
-          pathBuilder: List.of(pathBuilder),
-          useContext: useContext,
+            return hitResult;
+          },
         );
-        if (hitResult.elementId != null ||
-            hitResult.anchorInfo != null ||
-            hitResult.useElementId != null) {
-          return _EventHitTestResult(
-            elementId: hitResult.elementId,
-            anchorInfo: hitResult.anchorInfo,
-            useElementId: useNode.id,
-            composedPath: hitResult.composedPath,
-            shadowPath: useContext.shadowPathBuilder,
-          );
-        }
-        return hitResult;
       }
 
       final hitResult = _hitTestNodeWithEventPath(

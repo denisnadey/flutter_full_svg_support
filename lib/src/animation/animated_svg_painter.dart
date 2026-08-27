@@ -150,79 +150,86 @@ class AnimatedSvgPainter extends CustomPainter {
 
   @override
   void paint(ui.Canvas canvas, ui.Size size) {
-    // Prepare cache for this frame
-    _renderCache.prepareFrame(animationTime, hasAnimations);
+    SvgLengthResolutionContext.runWithRootViewport(size, () {
+      // Prepare cache for this frame
+      _renderCache.prepareFrame(animationTime, hasAnimations);
 
-    // Clear definition caches when animation time changes, so animated
-    // stop-color, marker, and pattern values are re-read from DOM nodes.
-    if (hasAnimations) {
-      _gradientCache.clear();
-      _markerCache.clear();
-      _patternCache.clear();
-    }
+      // Clear definition caches when animation time changes, so animated
+      // stop-color, marker, and pattern values are re-read from DOM nodes.
+      if (hasAnimations) {
+        _gradientCache.clear();
+        _markerCache.clear();
+        _patternCache.clear();
+      }
 
-    // Set up CSS rules from document for use-referenced content resolution
-    _currentDocumentCssRules = document.cssSelectorRules;
-    _currentDocumentCssResolver = _currentDocumentCssRules == null
-        ? null
-        : (CssCascadeResolver(cssRules: _currentDocumentCssRules!)
-            ..pseudoClassState = document.pseudoClassState);
+      // Set up CSS rules from document for use-referenced content resolution
+      _currentDocumentCssRules = document.cssSelectorRules;
+      _currentDocumentCssResolver = _currentDocumentCssRules == null
+          ? null
+          : (CssCascadeResolver(cssRules: _currentDocumentCssRules!)
+              ..pseudoClassState = document.pseudoClassState);
 
-    // Compute the viewBox → size transform
-    final transform = _computeViewBoxTransform(size);
+      // Compute the viewBox → size transform
+      final transform = _computeViewBoxTransform(size);
 
-    canvas.save();
-    canvas.transform(transform.storage);
+      canvas.save();
+      canvas.transform(transform.storage);
 
-    // When clipToViewBox is enabled, clip to the SVG viewBox in SVG
-    // coordinate space so that content outside it (e.g. coins animated
-    // beyond the card boundary) is hidden, matching browser direct-URL
-    // rendering where overflow:hidden clips to the SVG viewport.
-    final viewBox = document.activeViewBox;
-    if (clipToViewBox && viewBox != null) {
-      canvas.clipRect(
-        ui.Rect.fromLTWH(
-          viewBox.left,
-          viewBox.top,
-          viewBox.width,
-          viewBox.height,
-        ),
-      );
-    }
+      // When clipToViewBox is enabled, clip to the SVG viewBox in SVG
+      // coordinate space so that content outside it (e.g. coins animated
+      // beyond the card boundary) is hidden, matching browser direct-URL
+      // rendering where overflow:hidden clips to the SVG viewport.
+      final viewBox = document.activeViewBox;
+      if (clipToViewBox && viewBox != null) {
+        canvas.clipRect(
+          ui.Rect.fromLTWH(
+            viewBox.left,
+            viewBox.top,
+            viewBox.width,
+            viewBox.height,
+          ),
+        );
+      }
 
-    // Apply background inside the transformed (and possibly clipped) context:
-    // 1) explicit widget parameter backgroundColor
-    // 2) fallback to root SVG style/background-color
-    // Drawing in SVG coordinate space ensures the background respects both
-    // the viewBox transform and the clipToViewBox clip, matching browser
-    // behaviour where background-color is bounded by the SVG viewport.
-    final resolvedBackgroundColor =
-        backgroundColor ?? _resolveDocumentBackgroundColor();
-    if (resolvedBackgroundColor != null) {
-      final bgRect = viewBox != null
-          ? ui.Rect.fromLTWH(
-              viewBox.left,
-              viewBox.top,
-              viewBox.width,
-              viewBox.height,
-            )
-          : ui.Rect.fromLTWH(0, 0, size.width, size.height);
-      canvas.drawRect(bgRect, ui.Paint()..color = resolvedBackgroundColor);
-    }
+      // Apply background inside the transformed (and possibly clipped) context:
+      // 1) explicit widget parameter backgroundColor
+      // 2) fallback to root SVG style/background-color
+      // Drawing in SVG coordinate space ensures the background respects both
+      // the viewBox transform and the clipToViewBox clip, matching browser
+      // behaviour where background-color is bounded by the SVG viewport.
+      final resolvedBackgroundColor =
+          backgroundColor ?? _resolveDocumentBackgroundColor();
+      if (resolvedBackgroundColor != null) {
+        final bgRect = viewBox != null
+            ? ui.Rect.fromLTWH(
+                viewBox.left,
+                viewBox.top,
+                viewBox.width,
+                viewBox.height,
+              )
+            : ui.Rect.fromLTWH(0, 0, size.width, size.height);
+        canvas.drawRect(bgRect, ui.Paint()..color = resolvedBackgroundColor);
+      }
 
-    // Paint the root node
-    _paintNode(canvas, document.root);
+      // Paint the root node
+      _paintNode(canvas, document.root);
 
-    final highlightedNode = debugHighlightedNode;
-    if (highlightedNode != null) {
-      _paintFullSvgDebugHighlight(this, canvas, document.root, highlightedNode);
-    }
+      final highlightedNode = debugHighlightedNode;
+      if (highlightedNode != null) {
+        _paintFullSvgDebugHighlight(
+          this,
+          canvas,
+          document.root,
+          highlightedNode,
+        );
+      }
 
-    canvas.restore();
+      canvas.restore();
 
-    // Clean up global CSS rules reference
-    _currentDocumentCssRules = null;
-    _currentDocumentCssResolver = null;
+      // Clean up global CSS rules reference
+      _currentDocumentCssRules = null;
+      _currentDocumentCssResolver = null;
+    });
   }
 
   /// Computes the transformation matrix for the viewBox

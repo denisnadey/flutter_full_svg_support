@@ -182,8 +182,20 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
         }
         final translated = Matrix4.copy(matrix)
           ..translateByDouble(
-            _getNumber(node, 'x') ?? 0.0,
-            _getNumber(node, 'y') ?? 0.0,
+            resolveSvgLength(
+                  node,
+                  _document,
+                  'x',
+                  reference: SvgLengthReference.horizontal,
+                ) ??
+                0.0,
+            resolveSvgLength(
+                  node,
+                  _document,
+                  'y',
+                  reference: SvgLengthReference.vertical,
+                ) ??
+                0.0,
             0,
             1,
           );
@@ -416,8 +428,20 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
         }
         final translated = Matrix4.copy(matrix)
           ..translateByDouble(
-            _getNumber(node, 'x') ?? 0.0,
-            _getNumber(node, 'y') ?? 0.0,
+            resolveSvgLength(
+                  node,
+                  _document,
+                  'x',
+                  reference: SvgLengthReference.horizontal,
+                ) ??
+                0.0,
+            resolveSvgLength(
+                  node,
+                  _document,
+                  'y',
+                  reference: SvgLengthReference.vertical,
+                ) ??
+                0.0,
             0,
             1,
           );
@@ -738,36 +762,75 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
     required bool isSize,
     required String defaultRaw,
   }) {
-    final rawValue = maskNode.getAttributeValue(attributeName) ?? defaultRaw;
-    if (rawValue is num) {
-      return rawValue.toDouble();
+    // The parser stores percentage lengths as bare numbers, which loses the
+    // `%` suffix. Detect percentages from the raw attribute text first, but
+    // only when the attribute is not currently animated: an active SMIL value
+    // is already the effective resolved number and must win over the raw
+    // presentation-attribute spelling.
+    final isAnimated =
+        maskNode.getAttribute(attributeName)?.isAnimated ?? false;
+    if (!isAnimated) {
+      final rawAttribute = maskNode.getRawAttributeValue(attributeName);
+      final raw = rawAttribute?.trim();
+      if (raw != null && raw.endsWith('%')) {
+        return _resolveMaskUserSpacePercentage(
+          raw,
+          horizontal: horizontal,
+          isSize: isSize,
+        );
+      }
     }
-    final raw = rawValue.toString().trim();
-    if (raw.isEmpty) {
+
+    // Keep the existing parsed-value behavior (including SMIL-animated values
+    // and the -10%/120% defaults).
+    final parsedValue = maskNode.getAttributeValue(attributeName) ?? defaultRaw;
+    if (parsedValue is num) {
+      return parsedValue.toDouble();
+    }
+    final parsedRaw = parsedValue.toString().trim();
+    if (parsedRaw.isEmpty) {
       return null;
     }
-    if (raw.endsWith('%')) {
-      final percent = double.tryParse(raw.substring(0, raw.length - 1));
-      final viewport = _resolveMaskUnitsViewportRect();
-      if (percent == null || viewport == null) {
-        return null;
-      }
-      final dimension = horizontal ? viewport.width : viewport.height;
-      final value = dimension * percent / 100.0;
-      if (isSize) {
-        return value;
-      }
-      final origin = horizontal ? viewport.left : viewport.top;
-      return origin + value;
+    if (parsedRaw.endsWith('%')) {
+      return _resolveMaskUserSpacePercentage(
+        parsedRaw,
+        horizontal: horizontal,
+        isSize: isSize,
+      );
     }
-    final cleaned = raw.replaceAll(RegExp(r'[a-zA-Z]+$'), '');
+    final cleaned = parsedRaw.replaceAll(RegExp(r'[a-zA-Z]+$'), '');
     return double.tryParse(cleaned);
+  }
+
+  double? _resolveMaskUserSpacePercentage(
+    String raw, {
+    required bool horizontal,
+    required bool isSize,
+  }) {
+    final percent = double.tryParse(raw.substring(0, raw.length - 1));
+    final viewport = _resolveMaskUnitsViewportRect();
+    if (percent == null || viewport == null) {
+      return null;
+    }
+    final dimension = horizontal ? viewport.width : viewport.height;
+    final value = dimension * percent / 100.0;
+    if (isSize) {
+      return value;
+    }
+    final origin = horizontal ? viewport.left : viewport.top;
+    return origin + value;
   }
 
   Rect? _resolveMaskUnitsViewportRect() {
     final viewBox = _document.viewBox;
     if (viewBox != null && viewBox.width > 0 && viewBox.height > 0) {
       return viewBox;
+    }
+    final runtimeViewport = SvgLengthResolutionContext.rootViewport;
+    if (runtimeViewport != null &&
+        runtimeViewport.width > 0 &&
+        runtimeViewport.height > 0) {
+      return Rect.fromLTWH(0, 0, runtimeViewport.width, runtimeViewport.height);
     }
     final root = _document.root;
     final width = _getNumber(root, 'width');
@@ -823,10 +886,38 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
       return false;
     }
 
-    final x = _getNumber(node, 'x') ?? 0.0;
-    final y = _getNumber(node, 'y') ?? 0.0;
-    final width = _getNumber(node, 'width') ?? 0.0;
-    final height = _getNumber(node, 'height') ?? 0.0;
+    final x =
+        resolveSvgLength(
+          node,
+          _document,
+          'x',
+          reference: SvgLengthReference.horizontal,
+        ) ??
+        0.0;
+    final y =
+        resolveSvgLength(
+          node,
+          _document,
+          'y',
+          reference: SvgLengthReference.vertical,
+        ) ??
+        0.0;
+    final width =
+        resolveSvgLength(
+          node,
+          _document,
+          'width',
+          reference: SvgLengthReference.horizontal,
+        ) ??
+        0.0;
+    final height =
+        resolveSvgLength(
+          node,
+          _document,
+          'height',
+          reference: SvgLengthReference.vertical,
+        ) ??
+        0.0;
     if (width <= 0 || height <= 0) {
       return false;
     }

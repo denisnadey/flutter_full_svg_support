@@ -10,9 +10,30 @@ extension AnimatedSvgPainterShapesBasicExtension on AnimatedSvgPainter {
     ui.ColorFilter? colorFilter,
     ui.BlendMode? blendMode,
   }) {
-    final cx = _getNumber(node, 'cx') ?? 0.0;
-    final cy = _getNumber(node, 'cy') ?? 0.0;
-    final r = _getNumber(node, 'r') ?? 0.0;
+    final cx =
+        resolveSvgLength(
+          node,
+          document,
+          'cx',
+          reference: SvgLengthReference.horizontal,
+        ) ??
+        0.0;
+    final cy =
+        resolveSvgLength(
+          node,
+          document,
+          'cy',
+          reference: SvgLengthReference.vertical,
+        ) ??
+        0.0;
+    final r =
+        resolveSvgLength(
+          node,
+          document,
+          'r',
+          reference: SvgLengthReference.normalizedDiagonal,
+        ) ??
+        0.0;
 
     if (r <= 0) return;
 
@@ -58,10 +79,38 @@ extension AnimatedSvgPainterShapesBasicExtension on AnimatedSvgPainter {
     ui.ColorFilter? colorFilter,
     ui.BlendMode? blendMode,
   }) {
-    final cx = _getNumber(node, 'cx') ?? 0.0;
-    final cy = _getNumber(node, 'cy') ?? 0.0;
-    final rx = _getNumber(node, 'rx') ?? 0.0;
-    final ry = _getNumber(node, 'ry') ?? 0.0;
+    final cx =
+        resolveSvgLength(
+          node,
+          document,
+          'cx',
+          reference: SvgLengthReference.horizontal,
+        ) ??
+        0.0;
+    final cy =
+        resolveSvgLength(
+          node,
+          document,
+          'cy',
+          reference: SvgLengthReference.vertical,
+        ) ??
+        0.0;
+    final rx =
+        resolveSvgLength(
+          node,
+          document,
+          'rx',
+          reference: SvgLengthReference.horizontal,
+        ) ??
+        0.0;
+    final ry =
+        resolveSvgLength(
+          node,
+          document,
+          'ry',
+          reference: SvgLengthReference.vertical,
+        ) ??
+        0.0;
 
     if (rx <= 0 || ry <= 0) return;
 

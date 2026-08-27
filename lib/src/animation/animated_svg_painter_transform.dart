@@ -910,7 +910,22 @@ extension AnimatedSvgPainterCanvasTransformExtension on AnimatedSvgPainter {
     // traversal applies the same translation in _mapChildBoundsToParent.
     if (node.tagName.toLowerCase() == 'use') {
       return bounds.shift(
-        ui.Offset(_getNumber(node, 'x') ?? 0.0, _getNumber(node, 'y') ?? 0.0),
+        ui.Offset(
+          resolveSvgLength(
+                node,
+                document,
+                'x',
+                reference: SvgLengthReference.horizontal,
+              ) ??
+              0.0,
+          resolveSvgLength(
+                node,
+                document,
+                'y',
+                reference: SvgLengthReference.vertical,
+              ) ??
+              0.0,
+        ),
       );
     }
 
@@ -923,37 +938,170 @@ extension AnimatedSvgPainterCanvasTransformExtension on AnimatedSvgPainter {
     final name = node.tagName.toLowerCase();
     switch (name) {
       case 'rect':
-        final x = _getNumber(node, 'x') ?? 0.0;
-        final y = _getNumber(node, 'y') ?? 0.0;
-        final width = _getNumber(node, 'width') ?? 0.0;
-        final height = _getNumber(node, 'height') ?? 0.0;
+        final x =
+            resolveSvgLength(
+              node,
+              document,
+              'x',
+              reference: SvgLengthReference.horizontal,
+            ) ??
+            0.0;
+        final y =
+            resolveSvgLength(
+              node,
+              document,
+              'y',
+              reference: SvgLengthReference.vertical,
+            ) ??
+            0.0;
+        final width =
+            resolveSvgLength(
+              node,
+              document,
+              'width',
+              reference: SvgLengthReference.horizontal,
+            ) ??
+            0.0;
+        final height =
+            resolveSvgLength(
+              node,
+              document,
+              'height',
+              reference: SvgLengthReference.vertical,
+            ) ??
+            0.0;
         return ui.Rect.fromLTWH(x, y, width, height);
       case 'circle':
-        final cx = _getNumber(node, 'cx') ?? 0.0;
-        final cy = _getNumber(node, 'cy') ?? 0.0;
-        final r = _getNumber(node, 'r') ?? 0.0;
+        final cx =
+            resolveSvgLength(
+              node,
+              document,
+              'cx',
+              reference: SvgLengthReference.horizontal,
+            ) ??
+            0.0;
+        final cy =
+            resolveSvgLength(
+              node,
+              document,
+              'cy',
+              reference: SvgLengthReference.vertical,
+            ) ??
+            0.0;
+        final r =
+            resolveSvgLength(
+              node,
+              document,
+              'r',
+              reference: SvgLengthReference.normalizedDiagonal,
+            ) ??
+            0.0;
         return ui.Rect.fromCircle(center: ui.Offset(cx, cy), radius: r);
       case 'ellipse':
-        final cx = _getNumber(node, 'cx') ?? 0.0;
-        final cy = _getNumber(node, 'cy') ?? 0.0;
-        final rx = _getNumber(node, 'rx') ?? 0.0;
-        final ry = _getNumber(node, 'ry') ?? 0.0;
+        final cx =
+            resolveSvgLength(
+              node,
+              document,
+              'cx',
+              reference: SvgLengthReference.horizontal,
+            ) ??
+            0.0;
+        final cy =
+            resolveSvgLength(
+              node,
+              document,
+              'cy',
+              reference: SvgLengthReference.vertical,
+            ) ??
+            0.0;
+        final rx =
+            resolveSvgLength(
+              node,
+              document,
+              'rx',
+              reference: SvgLengthReference.horizontal,
+            ) ??
+            0.0;
+        final ry =
+            resolveSvgLength(
+              node,
+              document,
+              'ry',
+              reference: SvgLengthReference.vertical,
+            ) ??
+            0.0;
         return ui.Rect.fromCenter(
           center: ui.Offset(cx, cy),
           width: rx * 2,
           height: ry * 2,
         );
       case 'line':
-        final x1 = _getNumber(node, 'x1') ?? 0.0;
-        final y1 = _getNumber(node, 'y1') ?? 0.0;
-        final x2 = _getNumber(node, 'x2') ?? 0.0;
-        final y2 = _getNumber(node, 'y2') ?? 0.0;
+        final x1 =
+            resolveSvgLength(
+              node,
+              document,
+              'x1',
+              reference: SvgLengthReference.horizontal,
+            ) ??
+            0.0;
+        final y1 =
+            resolveSvgLength(
+              node,
+              document,
+              'y1',
+              reference: SvgLengthReference.vertical,
+            ) ??
+            0.0;
+        final x2 =
+            resolveSvgLength(
+              node,
+              document,
+              'x2',
+              reference: SvgLengthReference.horizontal,
+            ) ??
+            0.0;
+        final y2 =
+            resolveSvgLength(
+              node,
+              document,
+              'y2',
+              reference: SvgLengthReference.vertical,
+            ) ??
+            0.0;
         return ui.Rect.fromPoints(ui.Offset(x1, y1), ui.Offset(x2, y2));
       case 'image':
-        final x = _getNumber(node, 'x') ?? 0.0;
-        final y = _getNumber(node, 'y') ?? 0.0;
-        final width = _getNumber(node, 'width') ?? 0.0;
-        final height = _getNumber(node, 'height') ?? 0.0;
+        final x =
+            resolveSvgLength(
+              node,
+              document,
+              'x',
+              reference: SvgLengthReference.horizontal,
+            ) ??
+            0.0;
+        final y =
+            resolveSvgLength(
+              node,
+              document,
+              'y',
+              reference: SvgLengthReference.vertical,
+            ) ??
+            0.0;
+        final width =
+            resolveSvgLength(
+              node,
+              document,
+              'width',
+              reference: SvgLengthReference.horizontal,
+            ) ??
+            0.0;
+        final height =
+            resolveSvgLength(
+              node,
+              document,
+              'height',
+              reference: SvgLengthReference.vertical,
+            ) ??
+            0.0;
         return ui.Rect.fromLTWH(x, y, width, height);
       default:
         // Non-renderable definitions may still expose a viewBox, but have no
@@ -1076,8 +1224,18 @@ extension AnimatedSvgPainterCanvasTransformExtension on AnimatedSvgPainter {
               if (overflow == 'visible') {
                 return contentBounds;
               }
-              final useWidth = _getNumber(node, 'width');
-              final useHeight = _getNumber(node, 'height');
+              final useWidth = resolveSvgLength(
+                node,
+                document,
+                'width',
+                reference: SvgLengthReference.horizontal,
+              );
+              final useHeight = resolveSvgLength(
+                node,
+                document,
+                'height',
+                reference: SvgLengthReference.vertical,
+              );
               ui.Rect? rendererClip;
               if (useWidth != null &&
                   useHeight != null &&
@@ -1280,16 +1438,40 @@ extension AnimatedSvgPainterCanvasTransformExtension on AnimatedSvgPainter {
       transform =
           transform *
           Matrix4x4.translation(
-            _getNumber(child, 'x') ?? 0.0,
-            _getNumber(child, 'y') ?? 0.0,
+            resolveSvgLength(
+                  child,
+                  document,
+                  'x',
+                  reference: SvgLengthReference.horizontal,
+                ) ??
+                0.0,
+            resolveSvgLength(
+                  child,
+                  document,
+                  'y',
+                  reference: SvgLengthReference.vertical,
+                ) ??
+                0.0,
             0,
           );
     } else if (child.tagName == 'svg' && !identical(child, document.root)) {
       transform =
           transform *
           Matrix4x4.translation(
-            _getNumber(child, 'x') ?? 0.0,
-            _getNumber(child, 'y') ?? 0.0,
+            resolveSvgLength(
+                  child,
+                  document,
+                  'x',
+                  reference: SvgLengthReference.horizontal,
+                ) ??
+                0.0,
+            resolveSvgLength(
+                  child,
+                  document,
+                  'y',
+                  reference: SvgLengthReference.vertical,
+                ) ??
+                0.0,
             0,
           );
       final viewportTransform = _computeSingleViewportTransform(child);
@@ -1302,8 +1484,20 @@ extension AnimatedSvgPainterCanvasTransformExtension on AnimatedSvgPainter {
       transform =
           transform *
           Matrix4x4.translation(
-            _getNumber(child, 'x') ?? 0.0,
-            _getNumber(child, 'y') ?? 0.0,
+            resolveSvgLength(
+                  child,
+                  document,
+                  'x',
+                  reference: SvgLengthReference.horizontal,
+                ) ??
+                0.0,
+            resolveSvgLength(
+                  child,
+                  document,
+                  'y',
+                  reference: SvgLengthReference.vertical,
+                ) ??
+                0.0,
             0,
           );
     }

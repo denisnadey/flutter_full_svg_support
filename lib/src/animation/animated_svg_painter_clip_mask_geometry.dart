@@ -260,7 +260,8 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
       return;
     }
     final referenced = document.root.findById(hrefId);
-    if (referenced == null || !isSvgUseReferenceAllowedTag(referenced.tagName)) {
+    if (referenced == null ||
+        !isSvgUseReferenceAllowedTag(referenced.tagName)) {
       return;
     }
 
@@ -284,8 +285,22 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
     }
 
     // Apply use element's x/y translation
-    final x = _getNumber(useNode, 'x') ?? 0.0;
-    final y = _getNumber(useNode, 'y') ?? 0.0;
+    final x =
+        resolveSvgLength(
+          useNode,
+          document,
+          'x',
+          reference: SvgLengthReference.horizontal,
+        ) ??
+        0.0;
+    final y =
+        resolveSvgLength(
+          useNode,
+          document,
+          'y',
+          reference: SvgLengthReference.vertical,
+        ) ??
+        0.0;
     if (x != 0.0 || y != 0.0) {
       translated.multiply(
         Matrix4.identity()
@@ -378,8 +393,18 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
     }
 
     // Get use element's width/height (for symbol/svg references)
-    final width = _getNumber(useNode, 'width');
-    final height = _getNumber(useNode, 'height');
+    final width = resolveSvgLength(
+      useNode,
+      document,
+      'width',
+      reference: SvgLengthReference.horizontal,
+    );
+    final height = resolveSvgLength(
+      useNode,
+      document,
+      'height',
+      reference: SvgLengthReference.vertical,
+    );
 
     if (width == null || height == null || width <= 0 || height <= 0) {
       // No explicit width/height, use viewBox dimensions
@@ -423,10 +448,34 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
   /// Per SVG spec, image within clipPath contributes its bounding rectangle.
   /// The actual image content is not used - only the geometric bounds.
   ui.Path? _buildImageClipPath(SvgNode imageNode) {
-    final imgX = _getNumber(imageNode, 'x') ?? 0.0;
-    final imgY = _getNumber(imageNode, 'y') ?? 0.0;
-    final imgWidth = _getNumber(imageNode, 'width');
-    final imgHeight = _getNumber(imageNode, 'height');
+    final imgX =
+        resolveSvgLength(
+          imageNode,
+          document,
+          'x',
+          reference: SvgLengthReference.horizontal,
+        ) ??
+        0.0;
+    final imgY =
+        resolveSvgLength(
+          imageNode,
+          document,
+          'y',
+          reference: SvgLengthReference.vertical,
+        ) ??
+        0.0;
+    final imgWidth = resolveSvgLength(
+      imageNode,
+      document,
+      'width',
+      reference: SvgLengthReference.horizontal,
+    );
+    final imgHeight = resolveSvgLength(
+      imageNode,
+      document,
+      'height',
+      reference: SvgLengthReference.vertical,
+    );
 
     // Try to get dimensions from loaded image if not specified
     final href = _extractImageHref(imageNode);
@@ -652,8 +701,18 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
     required SvgNode referenceNode,
   }) {
     final viewBox = _parseViewBox(_getString(referenceNode, 'viewBox'));
-    final width = _getNumber(useNode, 'width');
-    final height = _getNumber(useNode, 'height');
+    final width = resolveSvgLength(
+      useNode,
+      document,
+      'width',
+      reference: SvgLengthReference.horizontal,
+    );
+    final height = resolveSvgLength(
+      useNode,
+      document,
+      'height',
+      reference: SvgLengthReference.vertical,
+    );
     if (viewBox == null ||
         width == null ||
         height == null ||

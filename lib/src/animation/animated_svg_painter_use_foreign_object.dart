@@ -19,10 +19,38 @@ extension AnimatedSvgPainterUseForeignObjectExtension on AnimatedSvgPainter {
     if (node.tagName != 'foreignObject') {
       return;
     }
-    final x = _getNumber(node, 'x') ?? 0.0;
-    final y = _getNumber(node, 'y') ?? 0.0;
-    final width = _getNumber(node, 'width') ?? 0.0;
-    final height = _getNumber(node, 'height') ?? 0.0;
+    final x =
+        resolveSvgLength(
+          node,
+          document,
+          'x',
+          reference: SvgLengthReference.horizontal,
+        ) ??
+        0.0;
+    final y =
+        resolveSvgLength(
+          node,
+          document,
+          'y',
+          reference: SvgLengthReference.vertical,
+        ) ??
+        0.0;
+    final width =
+        resolveSvgLength(
+          node,
+          document,
+          'width',
+          reference: SvgLengthReference.horizontal,
+        ) ??
+        0.0;
+    final height =
+        resolveSvgLength(
+          node,
+          document,
+          'height',
+          reference: SvgLengthReference.vertical,
+        ) ??
+        0.0;
     if (width <= 0 || height <= 0) {
       return;
     }
@@ -56,22 +84,58 @@ extension AnimatedSvgPainterUseForeignObjectExtension on AnimatedSvgPainter {
     if (foreignObjectParent.tagName != 'foreignObject') {
       return;
     }
-    final foWidth = _getNumber(foreignObjectParent, 'width') ?? 0.0;
-    final foHeight = _getNumber(foreignObjectParent, 'height') ?? 0.0;
+    final foWidth =
+        resolveSvgLength(
+          foreignObjectParent,
+          document,
+          'width',
+          reference: SvgLengthReference.horizontal,
+        ) ??
+        0.0;
+    final foHeight =
+        resolveSvgLength(
+          foreignObjectParent,
+          document,
+          'height',
+          reference: SvgLengthReference.vertical,
+        ) ??
+        0.0;
     if (foWidth <= 0 || foHeight <= 0) {
       return;
     }
 
     // Handle nested SVG position (x, y)
-    final svgX = _getNumber(svgNode, 'x') ?? 0.0;
-    final svgY = _getNumber(svgNode, 'y') ?? 0.0;
-
-    // Resolve nested SVG dimensions - support percentages relative to foreignObject
+    final svgX =
+        resolveSvgLength(
+          svgNode,
+          document,
+          'x',
+          reference: SvgLengthReference.horizontal,
+        ) ??
+        0.0;
+    final svgY =
+        resolveSvgLength(
+          svgNode,
+          document,
+          'y',
+          reference: SvgLengthReference.vertical,
+        ) ??
+        0.0;
     final svgWidth =
-        _resolveForeignObjectNestedDimension(svgNode, 'width', foWidth) ??
+        resolveSvgLength(
+          svgNode,
+          document,
+          'width',
+          reference: SvgLengthReference.horizontal,
+        ) ??
         foWidth;
     final svgHeight =
-        _resolveForeignObjectNestedDimension(svgNode, 'height', foHeight) ??
+        resolveSvgLength(
+          svgNode,
+          document,
+          'height',
+          reference: SvgLengthReference.vertical,
+        ) ??
         foHeight;
 
     if (svgWidth <= 0 || svgHeight <= 0) {
@@ -157,8 +221,22 @@ extension AnimatedSvgPainterUseForeignObjectExtension on AnimatedSvgPainter {
       return;
     }
 
-    final svgX = _getNumber(svgNode, 'x') ?? 0.0;
-    final svgY = _getNumber(svgNode, 'y') ?? 0.0;
+    final svgX =
+        resolveSvgLength(
+          svgNode,
+          document,
+          'x',
+          reference: SvgLengthReference.horizontal,
+        ) ??
+        0.0;
+    final svgY =
+        resolveSvgLength(
+          svgNode,
+          document,
+          'y',
+          reference: SvgLengthReference.vertical,
+        ) ??
+        0.0;
     if (svgX != 0 || svgY != 0) {
       canvas.translate(svgX, svgY);
     }
@@ -184,37 +262,25 @@ extension AnimatedSvgPainterUseForeignObjectExtension on AnimatedSvgPainter {
       return;
     }
 
-    final width = _getNumber(svgNode, 'width') ?? 0.0;
-    final height = _getNumber(svgNode, 'height') ?? 0.0;
+    final width =
+        resolveSvgLength(
+          svgNode,
+          document,
+          'width',
+          reference: SvgLengthReference.horizontal,
+        ) ??
+        0.0;
+    final height =
+        resolveSvgLength(
+          svgNode,
+          document,
+          'height',
+          reference: SvgLengthReference.vertical,
+        ) ??
+        0.0;
     if (width > 0 && height > 0) {
       canvas.clipRect(ui.Rect.fromLTWH(0, 0, width, height), doAntiAlias: true);
     }
-  }
-
-  /// Resolves a dimension value for nested SVG within foreignObject.
-  /// Supports percentage values relative to the foreignObject viewport.
-  double? _resolveForeignObjectNestedDimension(
-    SvgNode node,
-    String attributeName,
-    double referenceValue,
-  ) {
-    final value = node.getAttributeValue(attributeName);
-    if (value == null) return null;
-
-    final str = value.toString().trim();
-    if (str.isEmpty) return null;
-
-    // Handle percentage values
-    if (str.endsWith('%')) {
-      final percentStr = str.substring(0, str.length - 1);
-      final percent = double.tryParse(percentStr);
-      if (percent == null) return null;
-      return (percent / 100.0) * referenceValue;
-    }
-
-    // Handle absolute values with units
-    final cleaned = str.replaceAll(RegExp(r'[a-zA-Z]+$'), '');
-    return double.tryParse(cleaned);
   }
 
   ui.Rect? _parseForeignObjectViewBox(String viewBoxStr) {

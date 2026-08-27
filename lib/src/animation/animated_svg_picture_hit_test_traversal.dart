@@ -114,13 +114,10 @@ extension _AnimatedSvgPictureStateHitTestTraversalExtension
     final childTransform = Matrix4.copy(currentTransform);
     _applyForeignObjectChildTransform(childTransform, node);
 
-    // Apply nested SVG transform within foreignObject
-    if (node.tagName == 'svg' && foreignObjectParent != null) {
-      _applyNestedSvgTransformInForeignObject(
-        childTransform,
-        node,
-        foreignObjectParent,
-      );
+    // Nested SVG viewports apply to all child hit testing, not only SVGs
+    // embedded by foreignObject.
+    if (node.tagName == 'svg') {
+      _applyNestedSvgViewportTransform(childTransform, node);
     }
 
     if (node.tagName == 'switch') {
@@ -211,14 +208,27 @@ extension _AnimatedSvgPictureStateHitTestTraversalExtension
     }
 
     final referenced = _document.root.findById(hrefId);
-    if (referenced == null || !isSvgUseReferenceAllowedTag(referenced.tagName)) {
+    if (referenced == null ||
+        !isSvgUseReferenceAllowedTag(referenced.tagName)) {
       return const _HitTestResult();
     }
 
     final referenceTransform = Matrix4.copy(currentTransform)
       ..translateByDouble(
-        _getNumber(useNode, 'x') ?? 0.0,
-        _getNumber(useNode, 'y') ?? 0.0,
+        resolveSvgLength(
+              useNode,
+              _document,
+              'x',
+              reference: SvgLengthReference.horizontal,
+            ) ??
+            0.0,
+        resolveSvgLength(
+              useNode,
+              _document,
+              'y',
+              reference: SvgLengthReference.vertical,
+            ) ??
+            0.0,
         0,
         1,
       );
@@ -247,28 +257,41 @@ extension _AnimatedSvgPictureStateHitTestTraversalExtension
         // Handle symbol specially - iterate children directly since symbol
         // is a definition-only tag that would be rejected by _hitTestNodeWithAnchor
         if (referenced.tagName == 'symbol') {
-          for (int i = referenced.children.length - 1; i >= 0; i--) {
-            final hitResult = _hitTestNodeWithAnchor(
-              referenced.children[i],
+          return _withUseInstanceViewport(
+            referencedNode: referenced,
+            viewport: _resolveUseInstanceViewportSize(useNode),
+            callback: () {
+              for (int i = referenced.children.length - 1; i >= 0; i--) {
+                final hitResult = _hitTestNodeWithAnchor(
+                  referenced.children[i],
+                  documentPoint,
+                  useReferenceTransform,
+                  useStack: nextUseStack,
+                  foreignObjectParent: null,
+                  currentAnchor: currentAnchor,
+                );
+                if (hitResult.elementId != null ||
+                    hitResult.anchorInfo != null) {
+                  return hitResult;
+                }
+              }
+              return const _HitTestResult();
+            },
+          );
+        }
+        return _withUseInstanceViewport(
+          referencedNode: referenced,
+          viewport: _resolveUseInstanceViewportSize(useNode),
+          callback: () {
+            return _hitTestNodeWithAnchor(
+              referenced,
               documentPoint,
               useReferenceTransform,
               useStack: nextUseStack,
               foreignObjectParent: null,
               currentAnchor: currentAnchor,
             );
-            if (hitResult.elementId != null || hitResult.anchorInfo != null) {
-              return hitResult;
-            }
-          }
-          return const _HitTestResult();
-        }
-        return _hitTestNodeWithAnchor(
-          referenced,
-          documentPoint,
-          useReferenceTransform,
-          useStack: nextUseStack,
-          foreignObjectParent: null,
-          currentAnchor: currentAnchor,
+          },
         );
       }
 

@@ -24,8 +24,18 @@ extension AnimatedSvgPainterShapesRectExtension on AnimatedSvgPainter {
     // - If rx is specified but not ry, ry = rx (and vice versa)
     // - Negative values are an error (don't render)
     // - Values greater than half width/height are clamped
-    final rxRaw = _getNumber(node, 'rx');
-    final ryRaw = _getNumber(node, 'ry');
+    final rxRaw = resolveSvgLength(
+      node,
+      document,
+      'rx',
+      reference: SvgLengthReference.horizontal,
+    );
+    final ryRaw = resolveSvgLength(
+      node,
+      document,
+      'ry',
+      reference: SvgLengthReference.vertical,
+    );
 
     double rx;
     double ry;

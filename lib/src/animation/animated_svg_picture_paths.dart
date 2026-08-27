@@ -41,17 +41,55 @@ extension _AnimatedSvgPictureStatePathsExtension on _AnimatedSvgPictureState {
   Path? _buildGeometryPath(SvgNode node) {
     switch (node.tagName) {
       case 'rect':
-        final x = _getNumber(node, 'x') ?? 0.0;
-        final y = _getNumber(node, 'y') ?? 0.0;
-        final width = _getNumber(node, 'width') ?? 0.0;
-        final height = _getNumber(node, 'height') ?? 0.0;
+        final x =
+            resolveSvgLength(
+              node,
+              _document,
+              'x',
+              reference: SvgLengthReference.horizontal,
+            ) ??
+            0.0;
+        final y =
+            resolveSvgLength(
+              node,
+              _document,
+              'y',
+              reference: SvgLengthReference.vertical,
+            ) ??
+            0.0;
+        final width =
+            resolveSvgLength(
+              node,
+              _document,
+              'width',
+              reference: SvgLengthReference.horizontal,
+            ) ??
+            0.0;
+        final height =
+            resolveSvgLength(
+              node,
+              _document,
+              'height',
+              reference: SvgLengthReference.vertical,
+            ) ??
+            0.0;
         if (width <= 0 || height <= 0) {
           return null;
         }
 
         // SVG spec: rx/ry handling
-        final rxRaw = _getNumber(node, 'rx');
-        final ryRaw = _getNumber(node, 'ry');
+        final rxRaw = resolveSvgLength(
+          node,
+          _document,
+          'rx',
+          reference: SvgLengthReference.horizontal,
+        );
+        final ryRaw = resolveSvgLength(
+          node,
+          _document,
+          'ry',
+          reference: SvgLengthReference.vertical,
+        );
 
         double rx;
         double ry;
@@ -83,19 +121,68 @@ extension _AnimatedSvgPictureStatePathsExtension on _AnimatedSvgPictureState {
         }
         return Path()..addRect(Rect.fromLTWH(x, y, width, height));
       case 'circle':
-        final cx = _getNumber(node, 'cx') ?? 0.0;
-        final cy = _getNumber(node, 'cy') ?? 0.0;
-        final r = _getNumber(node, 'r') ?? 0.0;
+        final cx =
+            resolveSvgLength(
+              node,
+              _document,
+              'cx',
+              reference: SvgLengthReference.horizontal,
+            ) ??
+            0.0;
+        final cy =
+            resolveSvgLength(
+              node,
+              _document,
+              'cy',
+              reference: SvgLengthReference.vertical,
+            ) ??
+            0.0;
+        final r =
+            resolveSvgLength(
+              node,
+              _document,
+              'r',
+              reference: SvgLengthReference.normalizedDiagonal,
+            ) ??
+            0.0;
         if (r <= 0) {
           return null;
         }
         return Path()
           ..addOval(Rect.fromCircle(center: Offset(cx, cy), radius: r));
       case 'ellipse':
-        final cx = _getNumber(node, 'cx') ?? 0.0;
-        final cy = _getNumber(node, 'cy') ?? 0.0;
-        final rx = _getNumber(node, 'rx') ?? 0.0;
-        final ry = _getNumber(node, 'ry') ?? 0.0;
+        final cx =
+            resolveSvgLength(
+              node,
+              _document,
+              'cx',
+              reference: SvgLengthReference.horizontal,
+            ) ??
+            0.0;
+        final cy =
+            resolveSvgLength(
+              node,
+              _document,
+              'cy',
+              reference: SvgLengthReference.vertical,
+            ) ??
+            0.0;
+        final rx =
+            resolveSvgLength(
+              node,
+              _document,
+              'rx',
+              reference: SvgLengthReference.horizontal,
+            ) ??
+            0.0;
+        final ry =
+            resolveSvgLength(
+              node,
+              _document,
+              'ry',
+              reference: SvgLengthReference.vertical,
+            ) ??
+            0.0;
         if (rx <= 0 || ry <= 0) {
           return null;
         }
@@ -107,10 +194,38 @@ extension _AnimatedSvgPictureStatePathsExtension on _AnimatedSvgPictureState {
           ),
         );
       case 'line':
-        final x1 = _getNumber(node, 'x1') ?? 0.0;
-        final y1 = _getNumber(node, 'y1') ?? 0.0;
-        final x2 = _getNumber(node, 'x2') ?? 0.0;
-        final y2 = _getNumber(node, 'y2') ?? 0.0;
+        final x1 =
+            resolveSvgLength(
+              node,
+              _document,
+              'x1',
+              reference: SvgLengthReference.horizontal,
+            ) ??
+            0.0;
+        final y1 =
+            resolveSvgLength(
+              node,
+              _document,
+              'y1',
+              reference: SvgLengthReference.vertical,
+            ) ??
+            0.0;
+        final x2 =
+            resolveSvgLength(
+              node,
+              _document,
+              'x2',
+              reference: SvgLengthReference.horizontal,
+            ) ??
+            0.0;
+        final y2 =
+            resolveSvgLength(
+              node,
+              _document,
+              'y2',
+              reference: SvgLengthReference.vertical,
+            ) ??
+            0.0;
         return Path()
           ..moveTo(x1, y1)
           ..lineTo(x2, y2);
