@@ -84,17 +84,7 @@ extension SmilAnimationValueComputationExtension on SmilAnimation {
     // If from is absent, use the underlying value after CSS cascade
     // resolution. The animated presentation value must not be used here,
     // otherwise a later frame can become the next frame's base value.
-    if (fromValue == null) {
-      final cascadeResolver = document == null
-          ? null
-          : CssCascadeResolver(
-              cssRules: document!.cssSelectorRules ?? const [],
-            );
-      fromValue =
-          cascadeResolver?.resolveBaseProperty(targetNode, attributeName) ??
-          targetNode.getRawAttributeValue(attributeName) ??
-          targetNode.getAttribute(attributeName)?.baseValue;
-    }
+    fromValue ??= _staticBaseValue();
 
     // If by is present instead of to, compute to
     if (toValue == null && by != null && fromValue != null) {
@@ -366,9 +356,15 @@ extension SmilAnimationValueComputationExtension on SmilAnimation {
     return to ?? from;
   }
 
-  Object? _staticBaseValue() =>
-      targetNode.getRawAttributeValue(attributeName) ??
-      targetNode.getAttribute(attributeName)?.baseValue;
+  Object? _staticBaseValue() {
+    final cascadeResolver = document == null
+        ? null
+        : (CssCascadeResolver(cssRules: document!.cssSelectorRules ?? const [])
+            ..pseudoClassState = document!.pseudoClassState);
+    return cascadeResolver?.resolveBaseProperty(targetNode, attributeName) ??
+        targetNode.getRawAttributeValue(attributeName) ??
+        targetNode.getAttribute(attributeName)?.baseValue;
+  }
 
   /// Apply additive="sum" — add to the base value of the element
   /// Per SMIL spec: additive="sum" means the animation value is added to

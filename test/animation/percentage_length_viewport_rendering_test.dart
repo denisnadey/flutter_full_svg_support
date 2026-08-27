@@ -7,12 +7,22 @@ import 'package:full_svg_flutter/src/animation/svg_parser.dart';
 import 'visual_test_utils.dart';
 
 void main() {
-  Future<PixelAnalysis> renderRedSvg(WidgetTester tester, String svg) async {
+  Future<PixelAnalysis> renderRedSvg(
+    WidgetTester tester,
+    String svg, {
+    Duration? initialTime,
+  }) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
           body: RepaintBoundary(
-            child: AnimatedSvgPicture.string(svg, width: 200, height: 100),
+            child: AnimatedSvgPicture.string(
+              svg,
+              width: 200,
+              height: 100,
+              autoPlay: initialTime == null,
+              initialTime: initialTime,
+            ),
           ),
         ),
       ),
@@ -396,6 +406,65 @@ void main() {
         expect(analysis.objectWidth, closeTo(50, 2));
       },
     );
+
+    testWidgets('renders a mixed percentage SMIL midpoint', (tester) async {
+      const svg = '''
+        <svg viewBox="0 0 200 100">
+          <rect y="20" width="20" height="20" fill="red">
+            <animate attributeName="x" from="0%" to="100%" dur="2s"
+                     fill="freeze"/>
+          </rect>
+        </svg>
+      ''';
+
+      final analysis = await renderRedSvg(
+        tester,
+        svg,
+        initialTime: const Duration(seconds: 1),
+      );
+
+      expect(analysis.boundingBox.left, closeTo(100, 1));
+    });
+
+    testWidgets('adds an absolute delta to a percentage base', (tester) async {
+      const svg = '''
+        <svg viewBox="0 0 200 100">
+          <rect x="10%" y="20" width="20" height="20" fill="red">
+            <animate attributeName="x" from="0" to="10" additive="sum"
+                     dur="2s" fill="freeze"/>
+          </rect>
+        </svg>
+      ''';
+
+      final analysis = await renderRedSvg(
+        tester,
+        svg,
+        initialTime: const Duration(seconds: 1),
+      );
+
+      expect(analysis.boundingBox.left, closeTo(25, 1));
+    });
+
+    testWidgets('adds multiple deltas to a percentage base', (tester) async {
+      const svg = '''
+        <svg viewBox="0 0 200 100">
+          <rect x="10%" y="20" width="20" height="20" fill="red">
+            <animate attributeName="x" from="0" to="10" additive="sum"
+                     dur="2s" fill="freeze"/>
+            <animate attributeName="x" from="0" to="20" additive="sum"
+                     dur="2s" fill="freeze"/>
+          </rect>
+        </svg>
+      ''';
+
+      final analysis = await renderRedSvg(
+        tester,
+        svg,
+        initialTime: const Duration(seconds: 1),
+      );
+
+      expect(analysis.boundingBox.left, closeTo(35, 1));
+    });
   });
 
   test('resolves percentage basic-shape bounds for fill-box and filters', () {

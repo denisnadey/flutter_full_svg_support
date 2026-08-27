@@ -111,6 +111,15 @@ SmilPercentageSemantics smilPercentageSemanticsForAttribute(
     return SmilPercentageSemantics.none;
   }
 
+  // Follow-up B only enables deferred values for consumers already migrated
+  // to the shared viewport-aware geometry resolver. Attribute names alone are
+  // insufficient: for example, `x` on <text> still uses the numeric text
+  // positioning path and must retain its established numeric behavior until
+  // Follow-up C migrates that consumer.
+  if (targetNode != null && !_supportsDeferredGeometryLength(targetNode)) {
+    return SmilPercentageSemantics.none;
+  }
+
   switch (attributeName) {
     case 'x':
     case 'cx':
@@ -134,6 +143,21 @@ SmilPercentageSemantics smilPercentageSemanticsForAttribute(
     default:
       return SmilPercentageSemantics.none;
   }
+}
+
+bool _supportsDeferredGeometryLength(SvgNode node) {
+  return switch (node.tagName) {
+    'rect' ||
+    'circle' ||
+    'ellipse' ||
+    'line' ||
+    'use' ||
+    'svg' ||
+    'symbol' ||
+    'image' ||
+    'foreignObject' => true,
+    _ => false,
+  };
 }
 
 bool _isDefinitionCoordinateTarget(SvgNode? node) {
@@ -197,7 +221,10 @@ class SmilAnimation {
     SmilPercentageSemantics? percentageSemantics,
   }) : percentageSemantics =
            percentageSemantics ??
-           smilPercentageSemanticsForAttribute(attributeName) {
+           smilPercentageSemanticsForAttribute(
+             attributeName,
+             targetNode: targetNode,
+           ) {
     // Validation
     if (values != null) {
       if (keyTimes != null && keyTimes!.length != values!.length) {
@@ -214,7 +241,7 @@ class SmilAnimation {
       // Generate keyTimes for paced mode if not explicitly specified.
       // Implementation based on Blink SVGAnimationElement::calculateKeyTimesForCalcModePaced()
       if (calcMode == SmilCalcMode.paced &&
-          percentageSemantics == SmilPercentageSemantics.none &&
+          this.percentageSemantics == SmilPercentageSemantics.none &&
           keyTimes == null &&
           values != null &&
           values!.length >= 2) {
