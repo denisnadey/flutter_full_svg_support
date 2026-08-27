@@ -15,6 +15,7 @@ import 'smil/motion_path.dart';
 import 'switch_processing.dart';
 import 'svg_dom.dart';
 import 'svg_filters.dart';
+import 'svg_length_resolver.dart';
 import 'svg_transform.dart';
 import 'svg_use_references.dart';
 import 'transform_3d.dart';
@@ -164,7 +165,8 @@ class AnimatedSvgPainter extends CustomPainter {
     _currentDocumentCssRules = document.cssSelectorRules;
     _currentDocumentCssResolver = _currentDocumentCssRules == null
         ? null
-        : CssCascadeResolver(cssRules: _currentDocumentCssRules!);
+        : (CssCascadeResolver(cssRules: _currentDocumentCssRules!)
+            ..pseudoClassState = document.pseudoClassState);
 
     // Compute the viewBox → size transform
     final transform = _computeViewBoxTransform(size);
@@ -370,7 +372,8 @@ class AnimatedSvgPainter extends CustomPainter {
       _currentDocumentCssRules = document.cssSelectorRules;
       _currentDocumentCssResolver = _currentDocumentCssRules == null
           ? null
-          : CssCascadeResolver(cssRules: _currentDocumentCssRules!);
+          : (CssCascadeResolver(cssRules: _currentDocumentCssRules!)
+              ..pseudoClassState = document.pseudoClassState);
     }
 
     try {
