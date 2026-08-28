@@ -313,6 +313,30 @@ void main() {
     expect(firstRed!, greaterThan(70));
   });
 
+  testWidgets('animated text dx percentage places the glyph at x=100', (
+    tester,
+  ) async {
+    const svg = '''
+      <svg viewBox="0 0 200 100">
+        <text x="0" y="60" font-size="40" fill="red">X
+          <animate attributeName="dx" from="0%" to="100%" dur="2s"/>
+        </text>
+      </svg>
+    ''';
+    final pixels = await _renderSvgPixels(
+      tester,
+      svg,
+      width: 200,
+      height: 100,
+      initialTime: const Duration(seconds: 1),
+    );
+    final firstRed = _firstRedColumn(pixels, 200, 100);
+    expect(firstRed, isNotNull);
+    // dx = 50% of 200 = 100 at the midpoint, so the glyph moves to x≈100
+    // instead of the numeric 50.
+    expect(firstRed!, greaterThan(70));
+  });
+
   testWidgets(
     'paced mixed percentage on a dimensionless root uses the widget viewport',
     (tester) async {

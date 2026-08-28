@@ -129,6 +129,7 @@ SmilPercentageSemantics smilPercentageSemanticsForAttribute(
     case 'fx':
     case 'x1':
     case 'x2':
+    case 'dx':
     case 'width':
     case 'rx':
       return SmilPercentageSemantics.horizontalLength;
@@ -137,6 +138,7 @@ SmilPercentageSemantics smilPercentageSemanticsForAttribute(
     case 'fy':
     case 'y1':
     case 'y2':
+    case 'dy':
     case 'height':
     case 'ry':
       return SmilPercentageSemantics.verticalLength;

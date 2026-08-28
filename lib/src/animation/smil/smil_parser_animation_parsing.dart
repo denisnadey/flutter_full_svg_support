@@ -228,6 +228,20 @@ SvgAttributeType _inferAttributeType(String attributeName, SvgNode targetNode) {
     return SvgAttributeType.list;
   }
 
+  // Text dx/dy are per-character lists; filter (feOffset) dx/dy are single
+  // numbers. Distinguish by the target element so animated text dx/dy
+  // interpolate as lists.
+  if (attributeName == 'dx' || attributeName == 'dy') {
+    final isTextTarget =
+        targetNode.tagName == 'text' ||
+        targetNode.tagName == 'tspan' ||
+        targetNode.tagName == 'tref' ||
+        targetNode.tagName == 'textPath';
+    if (isTextTarget) {
+      return SvgAttributeType.list;
+    }
+  }
+
   // Check known attribute types first — these should always use their canonical
   // type for animation interpolation, regardless of how they're stored on the
   // node (e.g. filter primitive attributes may be stored as strings but need

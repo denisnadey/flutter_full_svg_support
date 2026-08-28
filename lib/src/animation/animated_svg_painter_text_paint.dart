@@ -76,8 +76,22 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
     if (nodeYList.isEmpty) {
       nodeYList = _getNumberList(node, 'y');
     }
-    final nodeDxList = _getNumberList(node, 'dx');
-    final nodeDyList = _getNumberList(node, 'dy');
+    var nodeDxList = _resolveDeferredCoordinateList(
+      node,
+      'dx',
+      isHorizontal: true,
+    );
+    if (nodeDxList.isEmpty) {
+      nodeDxList = _getNumberList(node, 'dx');
+    }
+    var nodeDyList = _resolveDeferredCoordinateList(
+      node,
+      'dy',
+      isHorizontal: false,
+    );
+    if (nodeDyList.isEmpty) {
+      nodeDyList = _getNumberList(node, 'dy');
+    }
     final nodeRotateList = _getNumberList(node, 'rotate');
     final hasAbsoluteX = nodeXList.isNotEmpty;
     final hasAbsoluteY = nodeYList.isNotEmpty;
