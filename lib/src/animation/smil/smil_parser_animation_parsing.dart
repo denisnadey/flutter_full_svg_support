@@ -44,6 +44,7 @@ SmilAnimation? _parseAnimationElement(
     final percentageSemantics = smilPercentageSemanticsForAttribute(
       attributeName,
       targetNode: targetNode,
+      document: document,
     );
     final preservePercentages = percentageSemantics.preservesPercentage;
     final from = _parseValue(

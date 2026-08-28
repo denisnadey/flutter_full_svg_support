@@ -110,8 +110,9 @@ enum SmilPercentageSemantics {
 SmilPercentageSemantics smilPercentageSemanticsForAttribute(
   String attributeName, {
   SvgNode? targetNode,
+  SvgDocument? document,
 }) {
-  if (_isObjectBoundingBoxCoordinate(targetNode, attributeName)) {
+  if (_isObjectBoundingBoxCoordinate(targetNode, attributeName, document)) {
     return SmilPercentageSemantics.objectBoundingBox;
   }
 
@@ -175,7 +176,11 @@ const Set<String> _objectBoundingBoxCoordinateAttributes = <String>{
   'height',
 };
 
-bool _isObjectBoundingBoxCoordinate(SvgNode? node, String attributeName) {
+bool _isObjectBoundingBoxCoordinate(
+  SvgNode? node,
+  String attributeName, [
+  SvgDocument? document,
+]) {
   if (node == null ||
       !_objectBoundingBoxCoordinateAttributes.contains(attributeName)) {
     return false;
@@ -187,7 +192,7 @@ bool _isObjectBoundingBoxCoordinate(SvgNode? node, String attributeName) {
   // their prior numeric behavior: those objectBoundingBox consumers are not
   // migrated yet, and emitting a deferred wrapper into them would leak a
   // viewport-length into a bbox transform.
-  return _usesObjectBoundingBoxUnitsForOwnCoordinates(node);
+  return _usesObjectBoundingBoxUnitsForOwnCoordinates(node, document);
 }
 
 /// Whether [attributeName] on [node] is a definition-space coordinate whose
@@ -227,17 +232,65 @@ bool _isUnmigratedDefinitionCoordinate(SvgNode? node, String attributeName) {
   return false;
 }
 
-bool _usesObjectBoundingBoxUnitsForOwnCoordinates(SvgNode node) {
+bool _usesObjectBoundingBoxUnitsForOwnCoordinates(
+  SvgNode node, [
+  SvgDocument? document,
+]) {
   switch (node.tagName) {
     case 'linearGradient':
     case 'radialGradient':
     case 'conicGradient':
-      return _usesObjectBoundingBoxUnits(node, 'gradientUnits');
+      return _usesResolvedGradientObjectBoundingBoxUnits(node, document);
     case 'pattern':
       return _usesObjectBoundingBoxUnits(node, 'patternUnits');
     default:
       return false;
   }
+}
+
+/// Whether a gradient's coordinates resolve against objectBoundingBox units
+/// after following its `href` chain.
+///
+/// The nearest explicit `gradientUnits` declaration wins (own attribute first,
+/// then the referenced base gradient); the SVG default is objectBoundingBox.
+bool _usesResolvedGradientObjectBoundingBoxUnits(
+  SvgNode node,
+  SvgDocument? document,
+) {
+  final seen = <SvgNode>{};
+  for (SvgNode? current = node; current != null && seen.add(current);) {
+    final value = current
+        .getAttributeValue('gradientUnits')
+        ?.toString()
+        .trim()
+        .toLowerCase();
+    if (value != null && value.isNotEmpty) {
+      return value == 'objectboundingbox';
+    }
+    final hrefId = _extractGradientHrefId(
+      current.getAttributeValue('href') ??
+          current.getAttributeValue('xlink:href'),
+    );
+    current = hrefId == null || document == null
+        ? null
+        : document.root.findById(hrefId);
+  }
+  return true;
+}
+
+String? _extractGradientHrefId(Object? hrefValue) {
+  final raw = hrefValue?.toString().trim();
+  if (raw == null || raw.isEmpty) {
+    return null;
+  }
+  if (raw.startsWith('#')) {
+    return raw.substring(1);
+  }
+  final match = RegExp(
+    r'''url\(\s*['"]?#([^'")\s]+)['"]?\s*\)''',
+    caseSensitive: false,
+  ).firstMatch(raw);
+  return match?.group(1);
 }
 
 bool _usesObjectBoundingBoxUnits(
@@ -296,6 +349,7 @@ class SmilAnimation {
            smilPercentageSemanticsForAttribute(
              attributeName,
              targetNode: targetNode,
+             document: document,
            ) {
     // Validation
     if (values != null) {

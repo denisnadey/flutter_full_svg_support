@@ -112,6 +112,30 @@ void main() {
         SmilPercentageSemantics.none,
       );
     });
+
+    test(
+      'href-inherited userSpaceOnUse gradient units stay viewport-relative',
+      () {
+        final document = SvgParser.parse('''
+        <svg viewBox="0 0 200 100">
+          <defs>
+            <linearGradient id="base" gradientUnits="userSpaceOnUse"/>
+            <linearGradient id="derived" href="#base"/>
+          </defs>
+        </svg>
+      ''');
+        final derived = document.root.findById('derived')!;
+
+        expect(
+          smilPercentageSemanticsForAttribute(
+            'x2',
+            targetNode: derived,
+            document: document,
+          ),
+          SmilPercentageSemantics.horizontalLength,
+        );
+      },
+    );
   });
 
   group('resolveSvgNumericAttributeValue', () {
@@ -183,6 +207,38 @@ void main() {
         height: 100,
       );
       expect(_pixelAt(pixels, 200, 100, 50)[3], closeTo(127, 12));
+    },
+  );
+
+  testWidgets(
+    'href-inherited userSpaceOnUse gradient animates x2 as a viewport length',
+    (tester) async {
+      const svg = '''
+      <svg viewBox="0 0 200 100">
+        <defs>
+          <linearGradient id="base" gradientUnits="userSpaceOnUse"
+                           x1="0" y1="0" x2="100" y2="0">
+            <stop offset="0" stop-color="red"/>
+            <stop offset="1" stop-color="blue"/>
+          </linearGradient>
+          <linearGradient id="derived" href="#base">
+            <animate attributeName="x2" from="0%" to="100%" dur="2s"/>
+          </linearGradient>
+        </defs>
+        <rect width="200" height="100" fill="url(#derived)"/>
+      </svg>
+    ''';
+      final pixels = await _renderSvgPixels(
+        tester,
+        svg,
+        width: 200,
+        height: 100,
+        initialTime: const Duration(seconds: 1),
+      );
+      // x2 = 50% of the 200-wide viewBox = 100, so the gradient spans x=0..100;
+      // x=50 is its midpoint (red-dominant), not solid blue.
+      final mid = _pixelAt(pixels, 200, 50, 50);
+      expect(mid[0], greaterThan(80));
     },
   );
 
