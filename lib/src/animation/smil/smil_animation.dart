@@ -244,7 +244,11 @@ bool _usesObjectBoundingBoxUnitsForOwnCoordinates(
     case 'conicGradient':
       return _usesResolvedGradientObjectBoundingBoxUnits(node, document);
     case 'pattern':
-      return _usesObjectBoundingBoxUnits(node, 'patternUnits');
+      return _usesResolvedObjectBoundingBoxUnitsThroughHrefChain(
+        node,
+        document,
+        'patternUnits',
+      );
     default:
       return false;
   }
@@ -252,24 +256,36 @@ bool _usesObjectBoundingBoxUnitsForOwnCoordinates(
 
 /// Whether a gradient's coordinates resolve against objectBoundingBox units
 /// after following its `href` chain.
-///
-/// The nearest explicit `gradientUnits` declaration wins (own attribute first,
-/// then the referenced base gradient); the SVG default is objectBoundingBox.
 bool _usesResolvedGradientObjectBoundingBoxUnits(
   SvgNode node,
   SvgDocument? document,
+) => _usesResolvedObjectBoundingBoxUnitsThroughHrefChain(
+  node,
+  document,
+  'gradientUnits',
+);
+
+/// Whether a definition's coordinate system resolves against
+/// objectBoundingBox units after following its `href` chain.
+///
+/// The nearest explicit units declaration wins (own attribute first, then the
+/// referenced base definition); the SVG default is objectBoundingBox.
+bool _usesResolvedObjectBoundingBoxUnitsThroughHrefChain(
+  SvgNode node,
+  SvgDocument? document,
+  String unitsAttributeName,
 ) {
   final seen = <SvgNode>{};
   for (SvgNode? current = node; current != null && seen.add(current);) {
     final value = current
-        .getAttributeValue('gradientUnits')
+        .getAttributeValue(unitsAttributeName)
         ?.toString()
         .trim()
         .toLowerCase();
     if (value != null && value.isNotEmpty) {
       return value == 'objectboundingbox';
     }
-    final hrefId = _extractGradientHrefId(
+    final hrefId = _extractHrefChainId(
       current.getAttributeValue('href') ??
           current.getAttributeValue('xlink:href'),
     );
@@ -280,7 +296,7 @@ bool _usesResolvedGradientObjectBoundingBoxUnits(
   return true;
 }
 
-String? _extractGradientHrefId(Object? hrefValue) {
+String? _extractHrefChainId(Object? hrefValue) {
   final raw = hrefValue?.toString().trim();
   if (raw == null || raw.isEmpty) {
     return null;
@@ -293,18 +309,6 @@ String? _extractGradientHrefId(Object? hrefValue) {
     caseSensitive: false,
   ).firstMatch(raw);
   return match?.group(1);
-}
-
-bool _usesObjectBoundingBoxUnits(
-  SvgNode node,
-  String attributeName, {
-  bool defaultToObjectBoundingBox = true,
-}) {
-  final value = node.getAttributeValue(attributeName)?.toString().trim();
-  if (value == null || value.isEmpty) {
-    return defaultToObjectBoundingBox;
-  }
-  return value.toLowerCase() == 'objectboundingbox';
 }
 
 extension SmilPercentageSemanticsExtension on SmilPercentageSemantics {

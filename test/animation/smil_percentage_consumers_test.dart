@@ -136,6 +136,43 @@ void main() {
         );
       },
     );
+
+    test('pattern patternUnits resolves through the href chain', () {
+      final document = SvgParser.parse('''
+        <svg viewBox="0 0 200 100">
+          <defs>
+            <pattern id="base" patternUnits="userSpaceOnUse"
+                     width="10" height="10"/>
+            <pattern id="child" href="#base" width="20" height="20"/>
+            <pattern id="explicit" href="#base" patternUnits="objectBoundingBox"
+                     width="0.5" height="0.5"/>
+          </defs>
+        </svg>
+      ''');
+      final child = document.root.findById('child')!;
+      final explicit = document.root.findById('explicit')!;
+
+      // The child inherits userSpaceOnUse through the href chain, so its own
+      // percentage width resolves against the viewport width (not the
+      // bounding box) — matching the painter's resolved units.
+      expect(
+        smilPercentageSemanticsForAttribute(
+          'width',
+          targetNode: child,
+          document: document,
+        ),
+        SmilPercentageSemantics.horizontalLength,
+      );
+      // The nearest explicit declaration wins over the inherited one.
+      expect(
+        smilPercentageSemanticsForAttribute(
+          'width',
+          targetNode: explicit,
+          document: document,
+        ),
+        SmilPercentageSemantics.objectBoundingBox,
+      );
+    });
   });
 
   group('resolveSvgNumericAttributeValue', () {
@@ -336,6 +373,60 @@ void main() {
     // instead of the numeric 50.
     expect(firstRed!, greaterThan(70));
   });
+
+  testWidgets(
+    'animated text dx percentage shifts glyph-precision hit targets',
+    (tester) async {
+      final traceEvents = <SvgTraceEvent>[];
+      const svg = '''
+      <svg viewBox="0 0 200 100">
+        <text id="target" x="0" y="60" font-size="40" fill="red">X
+          <animate attributeName="dx" from="0%" to="100%" dur="2s"/>
+        </text>
+      </svg>
+    ''';
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: Align(
+            alignment: Alignment.topLeft,
+            child: SizedBox(
+              width: 200,
+              height: 100,
+              child: AnimatedSvgPicture.string(
+                svg,
+                autoPlay: false,
+                initialTime: const Duration(seconds: 1),
+                onTrace: traceEvents.add,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final topLeft = tester.getTopLeft(find.byType(AnimatedSvgPicture));
+      bool hitTarget() => traceEvents.any(
+        (event) =>
+            event.category == 'event' &&
+            event.message == 'Tap detected' &&
+            event.data['targetId'] == 'target',
+      );
+
+      // dx = 50% of 200 = 100 at the midpoint, so the glyph sits near x=100.
+      traceEvents.clear();
+      await tester.tapAt(topLeft + const Offset(110, 50));
+      await tester.pump();
+      expect(hitTarget(), isTrue);
+
+      // The glyph no longer occupies its pre-animation position at x≈0;
+      // the glyph-precision path must not report a stale hit there.
+      traceEvents.clear();
+      await tester.tapAt(topLeft + const Offset(10, 50));
+      await tester.pump();
+      expect(hitTarget(), isFalse);
+    },
+  );
 
   testWidgets(
     'paced mixed percentage on a dimensionless root uses the widget viewport',
