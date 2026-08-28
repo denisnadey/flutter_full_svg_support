@@ -115,6 +115,13 @@ SmilPercentageSemantics smilPercentageSemanticsForAttribute(
     return SmilPercentageSemantics.objectBoundingBox;
   }
 
+  // Definition coordinates that are not migrated (mask/filter own units, or
+  // content inside clipPath/mask/pattern/filter) keep numeric behavior so no
+  // deferred wrapper leaks into a viewport/bbox consumer that cannot read it.
+  if (_isUnmigratedDefinitionCoordinate(targetNode, attributeName)) {
+    return SmilPercentageSemantics.none;
+  }
+
   switch (attributeName) {
     case 'x':
     case 'cx':
@@ -174,37 +181,50 @@ bool _isObjectBoundingBoxCoordinate(SvgNode? node, String attributeName) {
     return false;
   }
 
-  if (_usesObjectBoundingBoxUnitsForOwnCoordinates(node)) {
+  // Only consumers that have been taught to resolve a deferred
+  // objectBoundingBox value are classified here (gradient coordinates and
+  // pattern x/y/width/height). Clip/mask/filter regions and their content keep
+  // their prior numeric behavior: those objectBoundingBox consumers are not
+  // migrated yet, and emitting a deferred wrapper into them would leak a
+  // viewport-length into a bbox transform.
+  return _usesObjectBoundingBoxUnitsForOwnCoordinates(node);
+}
+
+/// Whether [attributeName] on [node] is a definition-space coordinate whose
+/// consumer has not been migrated to read a deferred percentage value.
+///
+/// This covers mask/filter own coordinates and content inside
+/// clipPath/mask/pattern/filter. Those coordinates must keep numeric SMIL
+/// behavior so no wrapper reaches a consumer that treats it as a viewport
+/// length or a bbox fraction.
+bool _isUnmigratedDefinitionCoordinate(SvgNode? node, String attributeName) {
+  if (node == null ||
+      !_objectBoundingBoxCoordinateAttributes.contains(attributeName)) {
+    return false;
+  }
+
+  if (node.tagName == 'mask' || node.tagName == 'filter') {
     return true;
   }
 
   for (
-    SvgNode? ancestor = node.parent;
-    ancestor != null;
-    ancestor = ancestor.parent
+    SvgNode? current = node.parent;
+    current != null;
+    current = current.parent
   ) {
-    if (_usesObjectBoundingBoxUnitsForContent(ancestor)) {
-      return true;
-    }
-    // A nested viewport establishes a new percentage coordinate system for
-    // its descendants. Do not let objectBoundingBox semantics from an outer
-    // clip/mask/pattern/filter leak into that viewport.
-    if (_establishesIndependentViewport(ancestor)) {
-      break;
+    switch (current.tagName) {
+      case 'clipPath':
+      case 'mask':
+      case 'pattern':
+      case 'filter':
+        return true;
+      case 'svg':
+      case 'symbol':
+      case 'foreignObject':
+        return false;
     }
   }
   return false;
-}
-
-bool _establishesIndependentViewport(SvgNode node) {
-  switch (node.tagName) {
-    case 'svg':
-    case 'symbol':
-    case 'foreignObject':
-      return true;
-    default:
-      return false;
-  }
 }
 
 bool _usesObjectBoundingBoxUnitsForOwnCoordinates(SvgNode node) {
@@ -213,43 +233,8 @@ bool _usesObjectBoundingBoxUnitsForOwnCoordinates(SvgNode node) {
     case 'radialGradient':
     case 'conicGradient':
       return _usesObjectBoundingBoxUnits(node, 'gradientUnits');
-    case 'mask':
-      return _usesObjectBoundingBoxUnits(node, 'maskUnits');
     case 'pattern':
       return _usesObjectBoundingBoxUnits(node, 'patternUnits');
-    case 'filter':
-      return _usesObjectBoundingBoxUnits(node, 'filterUnits');
-    default:
-      return false;
-  }
-}
-
-bool _usesObjectBoundingBoxUnitsForContent(SvgNode node) {
-  switch (node.tagName) {
-    case 'clipPath':
-      return _usesObjectBoundingBoxUnits(
-        node,
-        'clipPathUnits',
-        defaultToObjectBoundingBox: false,
-      );
-    case 'mask':
-      return _usesObjectBoundingBoxUnits(
-        node,
-        'maskContentUnits',
-        defaultToObjectBoundingBox: false,
-      );
-    case 'pattern':
-      return _usesObjectBoundingBoxUnits(
-        node,
-        'patternContentUnits',
-        defaultToObjectBoundingBox: false,
-      );
-    case 'filter':
-      return _usesObjectBoundingBoxUnits(
-        node,
-        'primitiveUnits',
-        defaultToObjectBoundingBox: false,
-      );
     default:
       return false;
   }

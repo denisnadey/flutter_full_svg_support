@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:full_svg_flutter/src/animation/animated_svg_picture.dart';
+import 'package:full_svg_flutter/src/animation/smil/smil_animation.dart';
 import 'package:full_svg_flutter/src/animation/svg_length_resolver.dart';
 import 'package:full_svg_flutter/src/animation/svg_parser.dart';
 
@@ -72,6 +73,47 @@ int? _firstRedColumn(Uint8List pixels, int width, int height) {
 }
 
 void main() {
+  group('SmilPercentageSemantics classification', () {
+    test('only migrated objectBoundingBox consumers are classified', () {
+      final document = SvgParser.parse('''
+        <svg viewBox="0 0 200 100">
+          <defs>
+            <linearGradient id="g">
+              <stop offset="0" stop-color="red"/>
+            </linearGradient>
+            <pattern id="p" patternUnits="objectBoundingBox"
+                     width="0.5" height="0.5"/>
+            <clipPath id="c">
+              <rect id="clip-rect" width="0.5"/>
+            </clipPath>
+            <mask id="m" x="0" width="1" height="1"/>
+          </defs>
+        </svg>
+      ''');
+      final gradient = document.root.findById('g')!;
+      final pattern = document.root.findById('p')!;
+      final clipRect = document.root.findById('clip-rect')!;
+      final mask = document.root.findById('m')!;
+
+      expect(
+        smilPercentageSemanticsForAttribute('x1', targetNode: gradient),
+        SmilPercentageSemantics.objectBoundingBox,
+      );
+      expect(
+        smilPercentageSemanticsForAttribute('width', targetNode: pattern),
+        SmilPercentageSemantics.objectBoundingBox,
+      );
+      expect(
+        smilPercentageSemanticsForAttribute('x', targetNode: clipRect),
+        SmilPercentageSemantics.none,
+      );
+      expect(
+        smilPercentageSemanticsForAttribute('x', targetNode: mask),
+        SmilPercentageSemantics.none,
+      );
+    });
+  });
+
   group('resolveSvgNumericAttributeValue', () {
     test('resolves opacity as a unit interval', () {
       final document = SvgParser.parse(
@@ -251,6 +293,64 @@ void main() {
       final firstRed = _firstRedColumn(pixels, 200, 100);
       expect(firstRed, isNotNull);
       expect(firstRed!, closeTo(50, 2));
+    },
+  );
+
+  testWidgets(
+    'clipPath objectBoundingBox content with an animated percentage stays numeric',
+    (tester) async {
+      const svg = '''
+      <svg viewBox="0 0 200 100">
+        <defs>
+          <clipPath id="c" clipPathUnits="objectBoundingBox">
+            <rect width="0.5" height="1">
+              <animate attributeName="x" from="0%" to="100%" dur="2s"/>
+            </rect>
+          </clipPath>
+        </defs>
+        <rect width="200" height="100" fill="red" clip-path="url(#c)"/>
+      </svg>
+    ''';
+      final pixels = await _renderSvgPixels(
+        tester,
+        svg,
+        width: 200,
+        height: 100,
+        initialTime: const Duration(seconds: 1),
+      );
+      // Narrowed classification keeps the clip content numeric, so the target is
+      // fully clipped (numeric 50 is outside the 0..1 objectBoundingBox fraction
+      // range) rather than leaking a viewport wrapper into the bbox transform.
+      // The correct objectBoundingBox consumer behavior is deferred (#42).
+      expect(_firstRedColumn(pixels, 200, 100), isNull);
+    },
+  );
+
+  testWidgets(
+    'objectBoundingBox mask region with an animated percentage stays numeric',
+    (tester) async {
+      const svg = '''
+      <svg viewBox="0 0 200 100">
+        <defs>
+          <mask id="m" maskUnits="objectBoundingBox"
+                maskContentUnits="userSpaceOnUse"
+                x="0%" y="0" width="50%" height="100%">
+            <rect width="200" height="100" fill="white"/>
+            <animate attributeName="x" from="0%" to="100%" dur="2s"/>
+          </mask>
+        </defs>
+        <rect width="200" height="100" fill="red" mask="url(#m)"/>
+      </svg>
+    ''';
+      final pixels = await _renderSvgPixels(
+        tester,
+        svg,
+        width: 200,
+        height: 100,
+        initialTime: const Duration(seconds: 1),
+      );
+      // Narrowed classification keeps the mask region numeric and bounded.
+      expect(_firstRedColumn(pixels, 200, 100), isNotNull);
     },
   );
 }
