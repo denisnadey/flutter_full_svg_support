@@ -147,6 +147,45 @@ void main() {
     });
   });
 
+  testWidgets(
+    'inline style percentage wins over the raw presentation attribute',
+    (tester) async {
+      const svg = '''
+      <svg viewBox="0 0 200 100">
+        <rect width="200" height="100" fill="red"
+              opacity="25%" style="opacity: 50%"/>
+      </svg>
+    ''';
+      final pixels = await _renderSvgPixels(
+        tester,
+        svg,
+        width: 200,
+        height: 100,
+      );
+      // The inline 50% wins, so alpha ≈ 127, not 64 from the 25% presentation.
+      expect(_pixelAt(pixels, 200, 100, 50)[3], closeTo(127, 12));
+    },
+  );
+
+  testWidgets(
+    'stylesheet percentage wins over the raw presentation attribute',
+    (tester) async {
+      const svg = '''
+      <svg viewBox="0 0 200 100">
+        <style>#target { opacity: 50%; }</style>
+        <rect id="target" width="200" height="100" fill="red" opacity="25%"/>
+      </svg>
+    ''';
+      final pixels = await _renderSvgPixels(
+        tester,
+        svg,
+        width: 200,
+        height: 100,
+      );
+      expect(_pixelAt(pixels, 200, 100, 50)[3], closeTo(127, 12));
+    },
+  );
+
   testWidgets('animated opacity percentage reaches 0.5 at the midpoint', (
     tester,
   ) async {

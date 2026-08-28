@@ -359,8 +359,26 @@ extension AnimatedSvgPainterValuesExtension on AnimatedSvgPainter {
     }
 
     final source = _findInheritedAttributeSourceNode(node, attributeName);
-    final sourceAttribute = source?.getAttribute(attributeName);
-    final rawValue = source?.getRawAttributeValue(attributeName);
+    if (source == null) {
+      return value;
+    }
+
+    // Only preserve raw presentation-attribute text when the presentation
+    // attribute itself won the cascade. Inline style and stylesheet rules are
+    // already strings and must not be overridden by a lower-priority raw
+    // presentation attribute on the same node.
+    final normalized = attributeName.trim().toLowerCase();
+    final inline = _extractStyleValue(source, normalized);
+    if (inline != null && !_isInheritKeyword(inline)) {
+      return value;
+    }
+    final cssRule = _resolveCssRuleValue(source, normalized);
+    if (cssRule != null && !_isInheritKeyword(cssRule)) {
+      return value;
+    }
+
+    final sourceAttribute = source.getAttribute(attributeName);
+    final rawValue = source.getRawAttributeValue(attributeName);
     if (sourceAttribute != null &&
         !sourceAttribute.isAnimated &&
         rawValue != null &&
