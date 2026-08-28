@@ -172,7 +172,7 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
     if (textRoot.tagName != 'text') {
       return const <_TextHitRun>[];
     }
-    var xList = _resolveDeferredTextCoordinateList(
+    var xList = resolveSvgDeferredCoordinateList(
       textRoot,
       'x',
       isHorizontal: true,
@@ -180,7 +180,7 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
     if (xList.isEmpty) {
       xList = _getNumberList(textRoot, 'x');
     }
-    var yList = _resolveDeferredTextCoordinateList(
+    var yList = resolveSvgDeferredCoordinateList(
       textRoot,
       'y',
       isHorizontal: false,
@@ -190,7 +190,7 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
     }
     final startX = xList.isNotEmpty ? xList[0] : 0.0;
     final startY = yList.isNotEmpty ? yList[0] : 0.0;
-    var dxList = _resolveDeferredTextCoordinateList(
+    var dxList = resolveSvgDeferredCoordinateList(
       textRoot,
       'dx',
       isHorizontal: true,
@@ -198,7 +198,7 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
     if (dxList.isEmpty) {
       dxList = _getNumberList(textRoot, 'dx');
     }
-    var dyList = _resolveDeferredTextCoordinateList(
+    var dyList = resolveSvgDeferredCoordinateList(
       textRoot,
       'dy',
       isHorizontal: false,
@@ -239,7 +239,7 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
     bool forceCharacterPrecise = false,
   }) {
     // Parse position lists from this node
-    var nodeXList = _resolveDeferredTextCoordinateList(
+    var nodeXList = resolveSvgDeferredCoordinateList(
       node,
       'x',
       isHorizontal: true,
@@ -247,7 +247,7 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
     if (nodeXList.isEmpty) {
       nodeXList = _getNumberList(node, 'x');
     }
-    var nodeYList = _resolveDeferredTextCoordinateList(
+    var nodeYList = resolveSvgDeferredCoordinateList(
       node,
       'y',
       isHorizontal: false,
@@ -255,7 +255,7 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
     if (nodeYList.isEmpty) {
       nodeYList = _getNumberList(node, 'y');
     }
-    var nodeDxList = _resolveDeferredTextCoordinateList(
+    var nodeDxList = resolveSvgDeferredCoordinateList(
       node,
       'dx',
       isHorizontal: true,
@@ -263,7 +263,7 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
     if (nodeDxList.isEmpty) {
       nodeDxList = _getNumberList(node, 'dx');
     }
-    var nodeDyList = _resolveDeferredTextCoordinateList(
+    var nodeDyList = resolveSvgDeferredCoordinateList(
       node,
       'dy',
       isHorizontal: false,

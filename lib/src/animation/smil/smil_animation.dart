@@ -116,10 +116,11 @@ SmilPercentageSemantics smilPercentageSemanticsForAttribute(
     return SmilPercentageSemantics.objectBoundingBox;
   }
 
-  // Definition coordinates that are not migrated (mask/filter own units, or
-  // content inside clipPath/mask/pattern/filter) keep numeric behavior so no
-  // deferred wrapper leaks into a viewport/bbox consumer that cannot read it.
-  if (_isUnmigratedDefinitionCoordinate(targetNode, attributeName)) {
+  // Definition coordinates whose consumers only read plain numbers
+  // (mask/filter own units, or content inside clipPath/mask/pattern/filter)
+  // keep numeric behavior so no deferred wrapper leaks into a viewport/bbox
+  // consumer that cannot read it.
+  if (_keepsNumericDefinitionCoordinate(targetNode, attributeName)) {
     return SmilPercentageSemantics.none;
   }
 
@@ -188,23 +189,23 @@ bool _isObjectBoundingBoxCoordinate(
     return false;
   }
 
-  // Only consumers that have been taught to resolve a deferred
-  // objectBoundingBox value are classified here (gradient coordinates and
-  // pattern x/y/width/height). Clip/mask/filter regions and their content keep
-  // their prior numeric behavior: those objectBoundingBox consumers are not
-  // migrated yet, and emitting a deferred wrapper into them would leak a
-  // viewport-length into a bbox transform.
+  // Only consumers that can resolve a deferred objectBoundingBox value are
+  // classified here (gradient coordinates and pattern x/y/width/height).
+  // Clip/mask/filter regions and their content keep their prior numeric
+  // behavior: their objectBoundingBox consumers only read plain numbers, and
+  // emitting a deferred wrapper into them would leak a viewport-length into a
+  // bbox transform.
   return _usesObjectBoundingBoxUnitsForOwnCoordinates(node, document);
 }
 
 /// Whether [attributeName] on [node] is a definition-space coordinate whose
-/// consumer has not been migrated to read a deferred percentage value.
+/// consumer only reads plain numbers, so SMIL must keep numeric behavior.
 ///
 /// This covers mask/filter own coordinates and content inside
 /// clipPath/mask/pattern/filter. Those coordinates must keep numeric SMIL
 /// behavior so no wrapper reaches a consumer that treats it as a viewport
 /// length or a bbox fraction.
-bool _isUnmigratedDefinitionCoordinate(SvgNode? node, String attributeName) {
+bool _keepsNumericDefinitionCoordinate(SvgNode? node, String attributeName) {
   if (node == null ||
       !_objectBoundingBoxCoordinateAttributes.contains(attributeName)) {
     return false;
@@ -242,35 +243,20 @@ bool _usesObjectBoundingBoxUnitsForOwnCoordinates(
     case 'linearGradient':
     case 'radialGradient':
     case 'conicGradient':
-      return _usesResolvedGradientObjectBoundingBoxUnits(node, document);
+      return _effectiveObjectBoundingBoxUnits(node, document, 'gradientUnits');
     case 'pattern':
-      return _usesResolvedObjectBoundingBoxUnitsThroughHrefChain(
-        node,
-        document,
-        'patternUnits',
-      );
+      return _effectiveObjectBoundingBoxUnits(node, document, 'patternUnits');
     default:
       return false;
   }
 }
-
-/// Whether a gradient's coordinates resolve against objectBoundingBox units
-/// after following its `href` chain.
-bool _usesResolvedGradientObjectBoundingBoxUnits(
-  SvgNode node,
-  SvgDocument? document,
-) => _usesResolvedObjectBoundingBoxUnitsThroughHrefChain(
-  node,
-  document,
-  'gradientUnits',
-);
 
 /// Whether a definition's coordinate system resolves against
 /// objectBoundingBox units after following its `href` chain.
 ///
 /// The nearest explicit units declaration wins (own attribute first, then the
 /// referenced base definition); the SVG default is objectBoundingBox.
-bool _usesResolvedObjectBoundingBoxUnitsThroughHrefChain(
+bool _effectiveObjectBoundingBoxUnits(
   SvgNode node,
   SvgDocument? document,
   String unitsAttributeName,

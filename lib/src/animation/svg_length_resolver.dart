@@ -280,6 +280,41 @@ double? resolveSvgLengthValue(
   return _resolveSvgLengthPercentageValue(node, length, reference: reference);
 }
 
+/// Resolves a deferred SMIL coordinate list (text/tspan x/y/dx/dy) against
+/// the active viewport.
+///
+/// Returns an empty list when the attribute value is not deferred, so callers
+/// fall back to their prior numeric list parsing.
+List<double> resolveSvgDeferredCoordinateList(
+  SvgNode node,
+  String attributeName, {
+  required bool isHorizontal,
+}) {
+  final value = node.getAttributeValue(attributeName);
+  final reference = isHorizontal
+      ? SvgLengthReference.horizontal
+      : SvgLengthReference.vertical;
+  if (value is SvgLengthPercentageValue) {
+    final resolved = resolveSvgLengthValue(node, value, reference: reference);
+    return resolved == null ? const <double>[] : <double>[resolved];
+  }
+  if (value is List) {
+    final result = <double>[];
+    for (final item in value) {
+      if (item is! SvgLengthPercentageValue) {
+        return const <double>[];
+      }
+      final resolved = resolveSvgLengthValue(node, item, reference: reference);
+      if (resolved == null) {
+        return const <double>[];
+      }
+      result.add(resolved);
+    }
+    return result;
+  }
+  return const <double>[];
+}
+
 /// Resolves a numeric SVG attribute whose percentage semantics are not
 /// geometry-specific.
 ///

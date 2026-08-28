@@ -51,43 +51,6 @@ extension AnimatedSvgPainterValuesExtension on AnimatedSvgPainter {
     return resolveSvgLengthValue(node, value, reference: reference);
   }
 
-  /// Resolves a deferred SMIL coordinate list (text/tspan x/y) against the
-  /// viewport. Returns an empty list when the value is not deferred so callers
-  /// fall back to their prior numeric list parsing.
-  List<double> _resolveDeferredCoordinateList(
-    SvgNode node,
-    String attributeName, {
-    required bool isHorizontal,
-  }) {
-    final value = node.getAttributeValue(attributeName);
-    final reference = isHorizontal
-        ? SvgLengthReference.horizontal
-        : SvgLengthReference.vertical;
-    if (value is SvgLengthPercentageValue) {
-      final resolved = resolveSvgLengthValue(node, value, reference: reference);
-      return resolved == null ? const <double>[] : <double>[resolved];
-    }
-    if (value is List) {
-      final result = <double>[];
-      for (final item in value) {
-        if (item is! SvgLengthPercentageValue) {
-          return const <double>[];
-        }
-        final resolved = resolveSvgLengthValue(
-          node,
-          item,
-          reference: reference,
-        );
-        if (resolved == null) {
-          return const <double>[];
-        }
-        result.add(resolved);
-      }
-      return result;
-    }
-    return const <double>[];
-  }
-
   double? _getNumber(SvgNode node, String attributeName) {
     final value = node.getAttributeValue(attributeName);
     if (value == null) return null;

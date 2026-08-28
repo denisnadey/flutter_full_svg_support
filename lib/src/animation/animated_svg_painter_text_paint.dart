@@ -60,7 +60,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
     _TextLengthDistribution? inheritedDistribution,
     void Function(ui.Rect rect)? boundsRecorder,
   }) {
-    var nodeXList = _resolveDeferredCoordinateList(
+    var nodeXList = resolveSvgDeferredCoordinateList(
       node,
       'x',
       isHorizontal: true,
@@ -68,7 +68,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
     if (nodeXList.isEmpty) {
       nodeXList = _getNumberList(node, 'x');
     }
-    var nodeYList = _resolveDeferredCoordinateList(
+    var nodeYList = resolveSvgDeferredCoordinateList(
       node,
       'y',
       isHorizontal: false,
@@ -76,7 +76,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
     if (nodeYList.isEmpty) {
       nodeYList = _getNumberList(node, 'y');
     }
-    var nodeDxList = _resolveDeferredCoordinateList(
+    var nodeDxList = resolveSvgDeferredCoordinateList(
       node,
       'dx',
       isHorizontal: true,
@@ -84,7 +84,7 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
     if (nodeDxList.isEmpty) {
       nodeDxList = _getNumberList(node, 'dx');
     }
-    var nodeDyList = _resolveDeferredCoordinateList(
+    var nodeDyList = resolveSvgDeferredCoordinateList(
       node,
       'dy',
       isHorizontal: false,

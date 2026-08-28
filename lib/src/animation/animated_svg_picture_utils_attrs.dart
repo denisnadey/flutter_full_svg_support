@@ -93,42 +93,6 @@ extension _AnimatedSvgPictureStateAttrsExtension on _AnimatedSvgPictureState {
         .toList();
   }
 
-  /// Resolves a deferred SMIL text coordinate list (text/tspan x/y) against
-  /// the viewport. Returns an empty list when the value is not deferred.
-  List<double> _resolveDeferredTextCoordinateList(
-    SvgNode node,
-    String attributeName, {
-    required bool isHorizontal,
-  }) {
-    final value = node.getAttributeValue(attributeName);
-    final reference = isHorizontal
-        ? SvgLengthReference.horizontal
-        : SvgLengthReference.vertical;
-    if (value is SvgLengthPercentageValue) {
-      final resolved = resolveSvgLengthValue(node, value, reference: reference);
-      return resolved == null ? const <double>[] : <double>[resolved];
-    }
-    if (value is List) {
-      final result = <double>[];
-      for (final item in value) {
-        if (item is! SvgLengthPercentageValue) {
-          return const <double>[];
-        }
-        final resolved = resolveSvgLengthValue(
-          node,
-          item,
-          reference: reference,
-        );
-        if (resolved == null) {
-          return const <double>[];
-        }
-        result.add(resolved);
-      }
-      return result;
-    }
-    return const <double>[];
-  }
-
   Object? _getInheritedAttributeValue(SvgNode node, String attributeName) {
     final normalizedName = attributeName.trim().toLowerCase();
     SvgNode? current = node;
