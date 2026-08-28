@@ -10,8 +10,24 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
     ui.BlendMode? blendMode,
     void Function(ui.Rect rect)? boundsRecorder,
   }) {
-    final startX = _getNumber(node, 'x') ?? 0.0;
-    final startY = _getNumber(node, 'y') ?? 0.0;
+    final startX =
+        _resolveDeferredDefinitionCoordinate(
+          node,
+          'x',
+          objectBoundingBoxUnits: false,
+          reference: SvgLengthReference.horizontal,
+        ) ??
+        _getNumber(node, 'x') ??
+        0.0;
+    final startY =
+        _resolveDeferredDefinitionCoordinate(
+          node,
+          'y',
+          objectBoundingBoxUnits: false,
+          reference: SvgLengthReference.vertical,
+        ) ??
+        _getNumber(node, 'y') ??
+        0.0;
     final cursor = _TextCursor(x: startX, y: startY);
     cursor.isFirstLine = true;
     _paintTextNode(
@@ -44,8 +60,22 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
     _TextLengthDistribution? inheritedDistribution,
     void Function(ui.Rect rect)? boundsRecorder,
   }) {
-    final nodeXList = _getNumberList(node, 'x');
-    final nodeYList = _getNumberList(node, 'y');
+    var nodeXList = _resolveDeferredCoordinateList(
+      node,
+      'x',
+      isHorizontal: true,
+    );
+    if (nodeXList.isEmpty) {
+      nodeXList = _getNumberList(node, 'x');
+    }
+    var nodeYList = _resolveDeferredCoordinateList(
+      node,
+      'y',
+      isHorizontal: false,
+    );
+    if (nodeYList.isEmpty) {
+      nodeYList = _getNumberList(node, 'y');
+    }
     final nodeDxList = _getNumberList(node, 'dx');
     final nodeDyList = _getNumberList(node, 'dy');
     final nodeRotateList = _getNumberList(node, 'rotate');

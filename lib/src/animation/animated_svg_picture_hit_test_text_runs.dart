@@ -172,8 +172,22 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
     if (textRoot.tagName != 'text') {
       return const <_TextHitRun>[];
     }
-    final xList = _getNumberList(textRoot, 'x');
-    final yList = _getNumberList(textRoot, 'y');
+    var xList = _resolveDeferredTextCoordinateList(
+      textRoot,
+      'x',
+      isHorizontal: true,
+    );
+    if (xList.isEmpty) {
+      xList = _getNumberList(textRoot, 'x');
+    }
+    var yList = _resolveDeferredTextCoordinateList(
+      textRoot,
+      'y',
+      isHorizontal: false,
+    );
+    if (yList.isEmpty) {
+      yList = _getNumberList(textRoot, 'y');
+    }
     final startX = xList.isNotEmpty ? xList[0] : 0.0;
     final startY = yList.isNotEmpty ? yList[0] : 0.0;
     final cursor = _HitTextCursor(x: startX, y: startY);
@@ -209,8 +223,22 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
     bool forceCharacterPrecise = false,
   }) {
     // Parse position lists from this node
-    final nodeXList = _getNumberList(node, 'x');
-    final nodeYList = _getNumberList(node, 'y');
+    var nodeXList = _resolveDeferredTextCoordinateList(
+      node,
+      'x',
+      isHorizontal: true,
+    );
+    if (nodeXList.isEmpty) {
+      nodeXList = _getNumberList(node, 'x');
+    }
+    var nodeYList = _resolveDeferredTextCoordinateList(
+      node,
+      'y',
+      isHorizontal: false,
+    );
+    if (nodeYList.isEmpty) {
+      nodeYList = _getNumberList(node, 'y');
+    }
     final nodeDxList = _getNumberList(node, 'dx');
     final nodeDyList = _getNumberList(node, 'dy');
     final nodeRotateList = _getNumberList(node, 'rotate');

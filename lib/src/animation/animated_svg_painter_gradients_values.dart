@@ -220,6 +220,16 @@ extension AnimatedSvgPainterGradientValuesExtension on AnimatedSvgPainter {
       return _GradientLength(defaultValue, true);
     }
 
+    // A deferred SMIL percentage value on an objectBoundingBox coordinate
+    // resolves to its objectBoundingBox fraction. userSpaceOnUse coordinates
+    // are resolved against the viewport before they reach this consumer.
+    if (rawValue is SvgLengthPercentageValue) {
+      return _GradientLength(
+        rawValue.absolute + rawValue.percentage / 100,
+        false,
+      );
+    }
+
     if (rawValue is num) {
       return _GradientLength(rawValue.toDouble(), false);
     }

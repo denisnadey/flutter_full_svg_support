@@ -280,6 +280,41 @@ double? resolveSvgLengthValue(
   return _resolveSvgLengthPercentageValue(node, length, reference: reference);
 }
 
+/// Resolves a numeric SVG attribute whose percentage semantics are not
+/// geometry-specific.
+///
+/// Geometry attributes remain the responsibility of their existing horizontal,
+/// vertical, or radial length resolvers. This helper closes the consumers for
+/// deferred SMIL values used by stroke painting and opacity.
+double? resolveSvgNumericAttributeValue(
+  SvgNode node,
+  Object? value,
+  String attributeName,
+) {
+  final length = SvgLengthPercentageValue.tryParse(value);
+  if (length == null) {
+    return null;
+  }
+
+  switch (attributeName) {
+    case 'stroke-width':
+    case 'stroke-dashoffset':
+      return resolveSvgLengthValue(
+        node,
+        length,
+        reference: SvgLengthReference.normalizedDiagonal,
+      );
+    case 'opacity':
+    case 'fill-opacity':
+    case 'stroke-opacity':
+    case 'stop-opacity':
+    case 'offset':
+      return length.absolute + length.percentage / 100;
+    default:
+      return null;
+  }
+}
+
 double _resolveSvgLengthPercentageValue(
   SvgNode node,
   SvgLengthPercentageValue length, {
@@ -290,6 +325,17 @@ double _resolveSvgLengthPercentageValue(
     return length.absolute;
   }
   return length.resolve(_resolveNearestViewportSize(node, document), reference);
+}
+
+/// Returns the viewport against which [node]'s percentage lengths resolve.
+///
+/// This is the same nearest-viewport lookup used by [resolveSvgLengthValue],
+/// exposed so callers such as the SMIL paced key-time cache can key on the
+/// actually-applicable viewport (root embedding viewport for a `<use>`'s own
+/// attributes, or a scoped `<use>`-instance viewport when one is active)
+/// rather than only the root embedding viewport.
+ui.Size resolveSvgNodeViewport(SvgNode node, SvgDocument? document) {
+  return _resolveNearestViewportSize(node, document);
 }
 
 /// Resolves the used physical viewport established by an `<svg>` element.

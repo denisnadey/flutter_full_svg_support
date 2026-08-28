@@ -1373,8 +1373,24 @@ extension AnimatedSvgPainterCanvasTransformExtension on AnimatedSvgPainter {
     if (fontSize <= 0) {
       return ui.Rect.zero;
     }
-    final x = _getNumber(node, 'x') ?? 0.0;
-    final y = _getNumber(node, 'y') ?? 0.0;
+    final x =
+        _resolveDeferredDefinitionCoordinate(
+          node,
+          'x',
+          objectBoundingBoxUnits: false,
+          reference: SvgLengthReference.horizontal,
+        ) ??
+        _getNumber(node, 'x') ??
+        0.0;
+    final y =
+        _resolveDeferredDefinitionCoordinate(
+          node,
+          'y',
+          objectBoundingBoxUnits: false,
+          reference: SvgLengthReference.vertical,
+        ) ??
+        _getNumber(node, 'y') ??
+        0.0;
     final fontFamily = _getInheritedString(node, 'font-family');
 
     final builder = ui.ParagraphBuilder(

@@ -97,6 +97,15 @@ class SvgTimeline {
     _updateAnimations(_currentTime);
   }
 
+  /// Recomputes animation values in the active rendering context.
+  ///
+  /// Percentage-aware paced animations resolve their segment distances against
+  /// the embedding viewport, which is available only while painting or hit
+  /// testing. This intentionally does not dispatch timing events again.
+  void refreshForRendering() {
+    _refreshAnimationValuesImpl(this, _currentTime);
+  }
+
   /// Reset the timeline to the beginning
   void reset() {
     _currentTime = Duration.zero;

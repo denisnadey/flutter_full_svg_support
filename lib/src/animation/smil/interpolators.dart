@@ -41,7 +41,12 @@ class Interpolators {
         return interpolatePath(from, to, t);
       case SvgAttributeType.points:
       case SvgAttributeType.list:
-        return interpolateList(from, to, t);
+        return interpolateList(
+          from,
+          to,
+          t,
+          preservePercentages: preservePercentages,
+        );
       case SvgAttributeType.string:
       case SvgAttributeType.url:
         return t < 0.5 ? from : to;
@@ -120,21 +125,47 @@ class Interpolators {
   }
 
   /// Interpolate a list of values (e.g., for points, stroke-dasharray).
-  static List<double> interpolateList(Object from, Object to, double t) {
-    final fromList = _toNumberList(from);
-    final toList = _toNumberList(to);
+  static List<Object> interpolateList(
+    Object from,
+    Object to,
+    double t, {
+    bool preservePercentages = false,
+  }) {
+    final fromList = preservePercentages
+        ? _toLengthPercentageList(from)
+        : _toNumberList(from)?.cast<Object>();
+    final toList = preservePercentages
+        ? _toLengthPercentageList(to)
+        : _toNumberList(to)?.cast<Object>();
 
     if (fromList == null || toList == null) {
-      return toList ?? fromList ?? <double>[];
+      return toList ?? fromList ?? <Object>[];
     }
 
     if (fromList.length != toList.length) {
       return t < 0.5 ? fromList : toList;
     }
 
-    final result = <double>[];
+    final result = <Object>[];
     for (int i = 0; i < fromList.length; i++) {
-      result.add(fromList[i] + (toList[i] - fromList[i]) * t);
+      if (preservePercentages) {
+        final fromLength = fromList[i] as SvgLengthPercentageValue;
+        final toLength = toList[i] as SvgLengthPercentageValue;
+        result.add(
+          SvgLengthPercentageValue(
+            absolute:
+                fromLength.absolute +
+                (toLength.absolute - fromLength.absolute) * t,
+            percentage:
+                fromLength.percentage +
+                (toLength.percentage - fromLength.percentage) * t,
+          ).toAnimatedValue(),
+        );
+      } else {
+        final fromNumber = fromList[i] as num;
+        final toNumber = toList[i] as num;
+        result.add(fromNumber + (toNumber - fromNumber) * t);
+      }
     }
     return result;
   }
@@ -172,17 +203,43 @@ class Interpolators {
           percentage: baseLength.percentage + deltaLength.percentage,
         ).toAnimatedValue();
       case SvgAttributeType.list:
+        if (preservePercentages) {
+          final baseList = _toLengthPercentageList(base);
+          final deltaList = _toLengthPercentageList(delta);
+          if (baseList != null &&
+              deltaList != null &&
+              baseList.length == deltaList.length) {
+            return List<Object>.generate(
+              baseList.length,
+              (i) => SvgLengthPercentageValue(
+                absolute: baseList[i].absolute + deltaList[i].absolute,
+                percentage: baseList[i].percentage + deltaList[i].percentage,
+              ).toAnimatedValue(),
+            );
+          }
+          return base;
+        }
+        final baseList = _toNumberList(base);
+        final deltaList = _toNumberList(delta);
+        if (baseList != null &&
+            deltaList != null &&
+            baseList.length == deltaList.length) {
+          return List<Object>.generate(
+            baseList.length,
+            (i) => baseList[i] + deltaList[i],
+          );
+        }
+        return base;
       case SvgAttributeType.points:
         final baseList = _toNumberList(base);
         final deltaList = _toNumberList(delta);
         if (baseList != null &&
             deltaList != null &&
             baseList.length == deltaList.length) {
-          final result = <double>[];
-          for (int i = 0; i < baseList.length; i++) {
-            result.add(baseList[i] + deltaList[i]);
-          }
-          return result;
+          return List<Object>.generate(
+            baseList.length,
+            (i) => baseList[i] + deltaList[i],
+          );
         }
         return base;
       case SvgAttributeType.transform:

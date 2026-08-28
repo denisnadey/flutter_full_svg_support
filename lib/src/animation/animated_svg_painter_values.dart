@@ -30,9 +30,76 @@ extension AnimatedSvgPainterValuesExtension on AnimatedSvgPainter {
         .toList();
   }
 
+  /// Resolves a deferred SMIL coordinate on a definition consumer that reads a
+  /// single coordinate attribute (pattern x/y/width/height, text x/y).
+  ///
+  /// Returns null when the value is not a deferred [SvgLengthPercentageValue]
+  /// so callers fall back to their prior numeric parsing.
+  double? _resolveDeferredDefinitionCoordinate(
+    SvgNode node,
+    String attributeName, {
+    required bool objectBoundingBoxUnits,
+    required SvgLengthReference reference,
+  }) {
+    final value = node.getAttributeValue(attributeName);
+    if (value is! SvgLengthPercentageValue) {
+      return null;
+    }
+    if (objectBoundingBoxUnits) {
+      return value.absolute + value.percentage / 100;
+    }
+    return resolveSvgLengthValue(node, value, reference: reference);
+  }
+
+  /// Resolves a deferred SMIL coordinate list (text/tspan x/y) against the
+  /// viewport. Returns an empty list when the value is not deferred so callers
+  /// fall back to their prior numeric list parsing.
+  List<double> _resolveDeferredCoordinateList(
+    SvgNode node,
+    String attributeName, {
+    required bool isHorizontal,
+  }) {
+    final value = node.getAttributeValue(attributeName);
+    final reference = isHorizontal
+        ? SvgLengthReference.horizontal
+        : SvgLengthReference.vertical;
+    if (value is SvgLengthPercentageValue) {
+      final resolved = resolveSvgLengthValue(node, value, reference: reference);
+      return resolved == null ? const <double>[] : <double>[resolved];
+    }
+    if (value is List) {
+      final result = <double>[];
+      for (final item in value) {
+        if (item is! SvgLengthPercentageValue) {
+          return const <double>[];
+        }
+        final resolved = resolveSvgLengthValue(
+          node,
+          item,
+          reference: reference,
+        );
+        if (resolved == null) {
+          return const <double>[];
+        }
+        result.add(resolved);
+      }
+      return result;
+    }
+    return const <double>[];
+  }
+
   double? _getNumber(SvgNode node, String attributeName) {
     final value = node.getAttributeValue(attributeName);
     if (value == null) return null;
+
+    final resolvedNumeric = resolveSvgNumericAttributeValue(
+      node,
+      value,
+      attributeName,
+    );
+    if (resolvedNumeric != null) {
+      return resolvedNumeric;
+    }
 
     if (value is num) {
       return value.toDouble();
@@ -281,6 +348,28 @@ extension AnimatedSvgPainterValuesExtension on AnimatedSvgPainter {
     return null;
   }
 
+  /// Gets an inherited property while preserving the original presentation
+  /// attribute text when the parser has normalized it (for example, `100%` to
+  /// a numeric-looking value). CSS and inline-style values are already strings
+  /// and therefore remain unchanged.
+  Object? _getInheritedValuePreservingRaw(SvgNode node, String attributeName) {
+    final value = _getInheritedAttributeValue(node, attributeName);
+    if (value == null) {
+      return null;
+    }
+
+    final source = _findInheritedAttributeSourceNode(node, attributeName);
+    final sourceAttribute = source?.getAttribute(attributeName);
+    final rawValue = source?.getRawAttributeValue(attributeName);
+    if (sourceAttribute != null &&
+        !sourceAttribute.isAnimated &&
+        rawValue != null &&
+        rawValue.trim().isNotEmpty) {
+      return rawValue;
+    }
+    return value;
+  }
+
   String? _getInheritedString(SvgNode node, String attributeName) {
     final value = _getInheritedAttributeValue(node, attributeName);
     final str = value?.toString();
@@ -292,9 +381,17 @@ extension AnimatedSvgPainterValuesExtension on AnimatedSvgPainter {
   }
 
   double? _getInheritedNumber(SvgNode node, String attributeName) {
-    final value = _getInheritedAttributeValue(node, attributeName);
+    final value = _getInheritedValuePreservingRaw(node, attributeName);
     if (value == null) {
       return null;
+    }
+    final resolvedNumeric = resolveSvgNumericAttributeValue(
+      node,
+      value,
+      attributeName,
+    );
+    if (resolvedNumeric != null) {
+      return resolvedNumeric;
     }
     if (value is num) {
       return value.toDouble();
