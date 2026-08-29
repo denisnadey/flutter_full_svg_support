@@ -531,7 +531,7 @@ void main() {
       // Narrowed classification keeps the clip content numeric, so the target is
       // fully clipped (numeric 50 is outside the 0..1 objectBoundingBox fraction
       // range) rather than leaking a viewport wrapper into the bbox transform.
-      // The correct objectBoundingBox consumer behavior is deferred (#42).
+      // The correct objectBoundingBox consumer behavior is deferred (#46).
       expect(_firstRedColumn(pixels, 200, 100), isNull);
     },
   );
@@ -563,4 +563,193 @@ void main() {
       expect(_firstRedColumn(pixels, 200, 100), isNotNull);
     },
   );
+
+  group('discrete and set raw percentage values', () {
+    testWidgets('discrete percentage dx values place the glyph at x=100', (
+      tester,
+    ) async {
+      const svg = '''
+      <svg viewBox="0 0 200 100">
+        <text x="0" y="60" font-size="40" fill="red">X
+          <animate attributeName="dx" values="50%;0%"
+                   calcMode="discrete" dur="2s"/>
+        </text>
+      </svg>
+    ''';
+      final pixels = await _renderSvgPixels(
+        tester,
+        svg,
+        width: 200,
+        height: 100,
+        initialTime: const Duration(milliseconds: 500),
+      );
+      final firstRed = _firstRedColumn(pixels, 200, 100);
+      expect(firstRed, isNotNull);
+      // The discrete segment selects the raw string "50%", which must resolve
+      // against the 200-wide viewport (dx = 100) instead of collapsing to the
+      // numeric fallback at x=0.
+      expect(firstRed!, greaterThan(70));
+    });
+
+    testWidgets('set percentage dx places the glyph at x=100', (tester) async {
+      const svg = '''
+      <svg viewBox="0 0 200 100">
+        <text x="0" y="60" font-size="40" fill="red">X
+          <set attributeName="dx" to="50%" dur="4s"/>
+        </text>
+      </svg>
+    ''';
+      final pixels = await _renderSvgPixels(
+        tester,
+        svg,
+        width: 200,
+        height: 100,
+        initialTime: const Duration(seconds: 1),
+      );
+      final firstRed = _firstRedColumn(pixels, 200, 100);
+      expect(firstRed, isNotNull);
+      // <set> assigns the raw "50%" string for its whole active period.
+      expect(firstRed!, greaterThan(70));
+    });
+
+    testWidgets('discrete percentage x values place the glyph at x=50', (
+      tester,
+    ) async {
+      const svg = '''
+      <svg viewBox="0 0 200 100">
+        <text x="0" y="60" font-size="40" fill="red">X
+          <animate attributeName="x" values="25%;75%"
+                   calcMode="discrete" dur="2s"/>
+        </text>
+      </svg>
+    ''';
+      final pixels = await _renderSvgPixels(
+        tester,
+        svg,
+        width: 200,
+        height: 100,
+        initialTime: const Duration(milliseconds: 500),
+      );
+      final firstRed = _firstRedColumn(pixels, 200, 100);
+      expect(firstRed, isNotNull);
+      // First discrete segment selects "25%" of the 200-wide viewport = 50.
+      expect(firstRed!, closeTo(50, 5));
+    });
+
+    testWidgets('discrete percentage dx shifts glyph-precision hit targets', (
+      tester,
+    ) async {
+      final traceEvents = <SvgTraceEvent>[];
+      const svg = '''
+      <svg viewBox="0 0 200 100">
+        <text id="target" x="0" y="60" font-size="40" fill="red">X
+          <animate attributeName="dx" values="50%;0%"
+                   calcMode="discrete" dur="2s"/>
+        </text>
+      </svg>
+    ''';
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: Align(
+            alignment: Alignment.topLeft,
+            child: SizedBox(
+              width: 200,
+              height: 100,
+              child: AnimatedSvgPicture.string(
+                svg,
+                autoPlay: false,
+                initialTime: const Duration(milliseconds: 500),
+                onTrace: traceEvents.add,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final topLeft = tester.getTopLeft(find.byType(AnimatedSvgPicture));
+      bool hitTarget() => traceEvents.any(
+        (event) =>
+            event.category == 'event' &&
+            event.message == 'Tap detected' &&
+            event.data['targetId'] == 'target',
+      );
+
+      // dx = 50% of 200 = 100 during the first discrete segment, so the
+      // glyph sits near x=100 and the hit path must follow it.
+      traceEvents.clear();
+      await tester.tapAt(topLeft + const Offset(110, 50));
+      await tester.pump();
+      expect(hitTarget(), isTrue);
+
+      // The pre-animation position at x≈0 must not report a stale hit.
+      traceEvents.clear();
+      await tester.tapAt(topLeft + const Offset(10, 50));
+      await tester.pump();
+      expect(hitTarget(), isFalse);
+    });
+  });
+
+  group('tref and textPath percentage classification', () {
+    testWidgets('animated tref percentage dx shifts the referenced text', (
+      tester,
+    ) async {
+      const svg = '''
+      <svg viewBox="0 0 200 100">
+        <defs>
+          <text id="src">X</text>
+        </defs>
+        <text x="0" y="60" font-size="40" fill="red">
+          <tref href="#src">
+            <animate attributeName="dx" from="0%" to="100%" dur="2s"/>
+          </tref>
+        </text>
+      </svg>
+    ''';
+      final pixels = await _renderSvgPixels(
+        tester,
+        svg,
+        width: 200,
+        height: 100,
+        initialTime: const Duration(seconds: 1),
+      );
+      final firstRed = _firstRedColumn(pixels, 200, 100);
+      expect(firstRed, isNotNull);
+      // tref is a migrated text consumer: dx = 50% of 200 = 100 at the
+      // midpoint, so the referenced glyph paints near x=100 instead of the
+      // x=0 produced when the deferred wrapper is discarded.
+      expect(firstRed!, greaterThan(70));
+    });
+
+    testWidgets('animated textPath percentage dx keeps the text on its path', (
+      tester,
+    ) async {
+      const svg = '''
+      <svg viewBox="0 0 200 100">
+        <defs>
+          <path id="p" d="M 10 60 L 190 60"/>
+        </defs>
+        <text font-size="40" fill="red">
+          <textPath href="#p">XX
+            <animate attributeName="dx" from="0%" to="100%" dur="2s"/>
+          </textPath>
+        </text>
+      </svg>
+    ''';
+      final pixels = await _renderSvgPixels(
+        tester,
+        svg,
+        width: 200,
+        height: 100,
+        initialTime: const Duration(seconds: 1),
+      );
+      final firstRed = _firstRedColumn(pixels, 200, 100);
+      expect(firstRed, isNotNull);
+      // Narrowed classification keeps textPath dx numeric: the text stays at
+      // the path start (x≈10) instead of shifting with the discarded (or
+      // honored) percentage offset.
+      expect(firstRed!, lessThan(30));
+    });
+  });
 }

@@ -279,10 +279,38 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
   }) {
     final referencedText = _resolveTrefText(trefNode);
     if (referencedText == null || referencedText.isEmpty) return 0.0;
-    final nodeXList = _getNumberList(trefNode, 'x');
-    final nodeYList = _getNumberList(trefNode, 'y');
-    final nodeDxList = _getNumberList(trefNode, 'dx');
-    final nodeDyList = _getNumberList(trefNode, 'dy');
+    var nodeXList = resolveSvgDeferredCoordinateList(
+      trefNode,
+      'x',
+      isHorizontal: true,
+    );
+    if (nodeXList.isEmpty) {
+      nodeXList = _getNumberList(trefNode, 'x');
+    }
+    var nodeYList = resolveSvgDeferredCoordinateList(
+      trefNode,
+      'y',
+      isHorizontal: false,
+    );
+    if (nodeYList.isEmpty) {
+      nodeYList = _getNumberList(trefNode, 'y');
+    }
+    var nodeDxList = resolveSvgDeferredCoordinateList(
+      trefNode,
+      'dx',
+      isHorizontal: true,
+    );
+    if (nodeDxList.isEmpty) {
+      nodeDxList = _getNumberList(trefNode, 'dx');
+    }
+    var nodeDyList = resolveSvgDeferredCoordinateList(
+      trefNode,
+      'dy',
+      isHorizontal: false,
+    );
+    if (nodeDyList.isEmpty) {
+      nodeDyList = _getNumberList(trefNode, 'dy');
+    }
     final nodeRotateList = _getNumberList(trefNode, 'rotate');
     final hasAbsoluteX = nodeXList.isNotEmpty;
     final hasAbsoluteY = nodeYList.isNotEmpty;

@@ -230,13 +230,15 @@ SvgAttributeType _inferAttributeType(String attributeName, SvgNode targetNode) {
 
   // Text dx/dy are per-character lists; filter (feOffset) dx/dy are single
   // numbers. Distinguish by the target element so animated text dx/dy
-  // interpolate as lists.
+  // interpolate as lists. `textPath` is intentionally excluded: its paint and
+  // hit-test consumers do not read dx/dy at all yet, so emitting deferred
+  // percentage wrappers would only produce values that get discarded (the
+  // same narrow-preservation rule as clip/mask definition coordinates).
   if (attributeName == 'dx' || attributeName == 'dy') {
     final isTextTarget =
         targetNode.tagName == 'text' ||
         targetNode.tagName == 'tspan' ||
-        targetNode.tagName == 'tref' ||
-        targetNode.tagName == 'textPath';
+        targetNode.tagName == 'tref';
     if (isTextTarget) {
       return SvgAttributeType.list;
     }
