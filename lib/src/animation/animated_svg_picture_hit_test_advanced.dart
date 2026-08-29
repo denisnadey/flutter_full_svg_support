@@ -559,7 +559,9 @@ extension _AnimatedSvgPictureStateHitTestAdvancedExtension
     if (nodeXList.isNotEmpty) cursor.x = nodeXList[0];
     if (nodeYList.isNotEmpty) cursor.y = nodeYList[0];
 
-    final text = _extractTextContent(node);
+    final text = node.tagName == 'tref'
+        ? _resolveTrefTextContent(node)
+        : _extractTextContent(node);
     if (text != null && text.isNotEmpty) {
       final runes = text.runes.toList();
       final letterSpacing = _getInheritedNumber(node, 'letter-spacing') ?? 0.0;
@@ -654,6 +656,18 @@ extension _AnimatedSvgPictureStateHitTestAdvancedExtension
     // Process children
     for (final child in node.children) {
       if (child.tagName == 'tspan') {
+        _appendGlyphPrecisionRuns(
+          child,
+          cursor,
+          runs,
+          xList: effectiveXList,
+          yList: effectiveYList,
+          dxList: effectiveDxList,
+          dyList: effectiveDyList,
+          rotateList: effectiveRotateList,
+          rotateListStartIndex: effectiveRotateStartIndex,
+        );
+      } else if (child.tagName == 'tref') {
         _appendGlyphPrecisionRuns(
           child,
           cursor,

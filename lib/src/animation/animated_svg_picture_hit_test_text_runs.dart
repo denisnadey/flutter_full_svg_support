@@ -303,7 +303,9 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
       cursor.y += dyList[cursor.charIndex];
     }
 
-    final text = _extractTextContent(node);
+    final text = node.tagName == 'tref'
+        ? _resolveTrefTextContent(node)
+        : _extractTextContent(node);
     if (text != null && text.isNotEmpty) {
       // Apply NFC normalization per SVG spec before segmentation
       final normalizedText = _normalizeHitTestTextToNFC(text);
@@ -354,6 +356,20 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
 
     for (final child in node.children) {
       if (child.tagName == 'tspan') {
+        _appendTextNodeHitRuns(
+          child,
+          cursor,
+          runs,
+          parentXList: xList,
+          parentYList: yList,
+          parentDxList: dxList,
+          parentDyList: dyList,
+          parentRotateList: rotateList,
+          parentRotateStartIndex: rotateListStartIndex,
+          writingMode: writingMode,
+          forceCharacterPrecise: forceCharacterPrecise,
+        );
+      } else if (child.tagName == 'tref') {
         _appendTextNodeHitRuns(
           child,
           cursor,

@@ -320,6 +320,7 @@ extension _AnimatedSvgPictureStateHitTestTraversalExtension
         tagName == 'foreignObject' ||
         tagName == 'text' ||
         tagName == 'tspan' ||
+        tagName == 'tref' ||
         tagName == 'textPath';
   }
 
