@@ -14,6 +14,8 @@ void main() {
     WidgetTester tester, {
     required String svg,
     required Offset documentOffset,
+    bool autoPlay = true,
+    Duration? initialTime,
   }) async {
     final traceEvents = <SvgTraceEvent>[];
     await tester.pumpWidget(
@@ -25,6 +27,8 @@ void main() {
               svg,
               width: 300,
               height: 100,
+              autoPlay: autoPlay,
+              initialTime: initialTime,
               onTrace: traceEvents.add,
               // Providing a link callback forces the gesture layer to be
               // installed even though these fixtures have no animations.
@@ -241,5 +245,47 @@ void main() {
         isNull,
       );
     });
+
+    testWidgets(
+      'animated percentage tref dx shifts hit targets with the paint path',
+      (tester) async {
+        const svg =
+            '''<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <text id="src">Hello</text>
+        </defs>
+        <text id="text-target" x="10" y="60" font-size="20" fill="black">
+          <tref href="#src">
+            <animate attributeName="dx" from="0%" to="100%" dur="2s"/>
+          </tref>
+        </text>
+      </svg>''';
+
+        // At t=1s the dx percentage resolves to 50% of the 300-wide viewport,
+        // shifting the painted run to start near x=160. The hit path must use
+        // the same deferred resolution as the paint path (via #43's resolver).
+        expect(
+          await tapTargetAt(
+            tester,
+            svg: svg,
+            documentOffset: const Offset(180, 55),
+            autoPlay: false,
+            initialTime: const Duration(seconds: 1),
+          ),
+          'text-target',
+        );
+        // The pre-animation position near x=10 is no longer occupied.
+        expect(
+          await tapTargetAt(
+            tester,
+            svg: svg,
+            documentOffset: const Offset(25, 55),
+            autoPlay: false,
+            initialTime: const Duration(seconds: 1),
+          ),
+          isNull,
+        );
+      },
+    );
   });
 }
