@@ -752,4 +752,85 @@ void main() {
       expect(firstRed!, lessThan(30));
     });
   });
+
+  group('continuous mixed percentage/absolute dx lists', () {
+    testWidgets('interpolated mixed dx list paints the first glyph at x=150', (
+      tester,
+    ) async {
+      const svg = '''
+      <svg viewBox="0 0 300 100">
+        <text x="0" y="60" font-size="40" fill="red">XX
+          <animate attributeName="dx" from="0% 0" to="100% 0" dur="2s"/>
+        </text>
+      </svg>
+    ''';
+      final pixels = await _renderSvgPixels(
+        tester,
+        svg,
+        width: 300,
+        height: 100,
+        initialTime: const Duration(seconds: 1),
+      );
+      final firstRed = _firstRedColumn(pixels, 300, 100);
+      expect(firstRed, isNotNull);
+      // At the midpoint the interpolated list is [50%-wrapper, 0.0]: the
+      // first member resolves to 150 (50% of 300) and the numeric member
+      // stays an absolute 0 for the second character. Rejecting the numeric
+      // member collapses the whole list and paints at x=0.
+      expect(firstRed!, closeTo(150, 8));
+    });
+
+    testWidgets(
+      'interpolated mixed dx list shifts glyph-precision hit targets',
+      (tester) async {
+        final traceEvents = <SvgTraceEvent>[];
+        const svg = '''
+      <svg viewBox="0 0 300 100">
+        <text id="target" x="0" y="60" font-size="40" fill="red">XX
+          <animate attributeName="dx" from="0% 0" to="100% 0" dur="2s"/>
+        </text>
+      </svg>
+    ''';
+        await tester.pumpWidget(
+          Directionality(
+            textDirection: TextDirection.ltr,
+            child: Align(
+              alignment: Alignment.topLeft,
+              child: SizedBox(
+                width: 300,
+                height: 100,
+                child: AnimatedSvgPicture.string(
+                  svg,
+                  autoPlay: false,
+                  initialTime: const Duration(seconds: 1),
+                  onTrace: traceEvents.add,
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        final topLeft = tester.getTopLeft(find.byType(AnimatedSvgPicture));
+        bool hitTarget() => traceEvents.any(
+          (event) =>
+              event.category == 'event' &&
+              event.message == 'Tap detected' &&
+              event.data['targetId'] == 'target',
+        );
+
+        // The glyphs sit at x≈150 during the midpoint state, so the shifted
+        // position hits and the pre-animation position must not.
+        traceEvents.clear();
+        await tester.tapAt(topLeft + const Offset(165, 50));
+        await tester.pump();
+        expect(hitTarget(), isTrue);
+
+        traceEvents.clear();
+        await tester.tapAt(topLeft + const Offset(10, 50));
+        await tester.pump();
+        expect(hitTarget(), isFalse);
+      },
+    );
+  });
 }

@@ -325,6 +325,15 @@ List<double> resolveSvgDeferredCoordinateList(
         result.add(resolved);
         continue;
       }
+      if (item is num) {
+        // Interpolated mixed lists carry plain numeric members for entries
+        // whose percentage component is zero (toAnimatedValue collapses
+        // them, so the midpoint of "0% 0" -> "100% 0" is [wrapper, 0.0]).
+        // Treat numeric members as absolute user-unit values and keep the
+        // member order so per-character positioning stays aligned.
+        result.add(item.toDouble());
+        continue;
+      }
       if (item is String && isAnimated) {
         // Raw string list items come from the same discrete/<set> path and
         // are parsed consistently with the scalar case above.
