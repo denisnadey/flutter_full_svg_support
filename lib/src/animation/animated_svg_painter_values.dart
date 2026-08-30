@@ -30,9 +30,39 @@ extension AnimatedSvgPainterValuesExtension on AnimatedSvgPainter {
         .toList();
   }
 
+  /// Resolves a deferred SMIL coordinate on a definition consumer that reads a
+  /// single coordinate attribute (pattern x/y/width/height, text x/y).
+  ///
+  /// Returns null when the value is not a deferred [SvgLengthPercentageValue]
+  /// so callers fall back to their prior numeric parsing.
+  double? _resolveDeferredDefinitionCoordinate(
+    SvgNode node,
+    String attributeName, {
+    required bool objectBoundingBoxUnits,
+    required SvgLengthReference reference,
+  }) {
+    final value = node.getAttributeValue(attributeName);
+    if (value is! SvgLengthPercentageValue) {
+      return null;
+    }
+    if (objectBoundingBoxUnits) {
+      return value.absolute + value.percentage / 100;
+    }
+    return resolveSvgLengthValue(node, value, reference: reference);
+  }
+
   double? _getNumber(SvgNode node, String attributeName) {
     final value = node.getAttributeValue(attributeName);
     if (value == null) return null;
+
+    final resolvedNumeric = resolveSvgNumericAttributeValue(
+      node,
+      value,
+      attributeName,
+    );
+    if (resolvedNumeric != null) {
+      return resolvedNumeric;
+    }
 
     if (value is num) {
       return value.toDouble();
@@ -281,6 +311,46 @@ extension AnimatedSvgPainterValuesExtension on AnimatedSvgPainter {
     return null;
   }
 
+  /// Gets an inherited property while preserving the original presentation
+  /// attribute text when the parser has normalized it (for example, `100%` to
+  /// a numeric-looking value). CSS and inline-style values are already strings
+  /// and therefore remain unchanged.
+  Object? _getInheritedValuePreservingRaw(SvgNode node, String attributeName) {
+    final value = _getInheritedAttributeValue(node, attributeName);
+    if (value == null) {
+      return null;
+    }
+
+    final source = _findInheritedAttributeSourceNode(node, attributeName);
+    if (source == null) {
+      return value;
+    }
+
+    // Only preserve raw presentation-attribute text when the presentation
+    // attribute itself won the cascade. Inline style and stylesheet rules are
+    // already strings and must not be overridden by a lower-priority raw
+    // presentation attribute on the same node.
+    final normalized = attributeName.trim().toLowerCase();
+    final inline = _extractStyleValue(source, normalized);
+    if (inline != null && !_isInheritKeyword(inline)) {
+      return value;
+    }
+    final cssRule = _resolveCssRuleValue(source, normalized);
+    if (cssRule != null && !_isInheritKeyword(cssRule)) {
+      return value;
+    }
+
+    final sourceAttribute = source.getAttribute(attributeName);
+    final rawValue = source.getRawAttributeValue(attributeName);
+    if (sourceAttribute != null &&
+        !sourceAttribute.isAnimated &&
+        rawValue != null &&
+        rawValue.trim().isNotEmpty) {
+      return rawValue;
+    }
+    return value;
+  }
+
   String? _getInheritedString(SvgNode node, String attributeName) {
     final value = _getInheritedAttributeValue(node, attributeName);
     final str = value?.toString();
@@ -292,9 +362,17 @@ extension AnimatedSvgPainterValuesExtension on AnimatedSvgPainter {
   }
 
   double? _getInheritedNumber(SvgNode node, String attributeName) {
-    final value = _getInheritedAttributeValue(node, attributeName);
+    final value = _getInheritedValuePreservingRaw(node, attributeName);
     if (value == null) {
       return null;
+    }
+    final resolvedNumeric = resolveSvgNumericAttributeValue(
+      node,
+      value,
+      attributeName,
+    );
+    if (resolvedNumeric != null) {
+      return resolvedNumeric;
     }
     if (value is num) {
       return value.toDouble();

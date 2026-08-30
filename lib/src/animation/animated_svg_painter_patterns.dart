@@ -33,13 +33,8 @@ extension AnimatedSvgPainterPatternsExtension on AnimatedSvgPainter {
       inherited = _resolvePatternDefinition(hrefId, visited: localVisited);
     }
 
-    // Parse attributes with inheritance fallback
-    final x = _getNumber(node, 'x') ?? inherited?.x ?? 0.0;
-    final y = _getNumber(node, 'y') ?? inherited?.y ?? 0.0;
-    final width = _getNumber(node, 'width') ?? inherited?.width ?? 0.0;
-    final height = _getNumber(node, 'height') ?? inherited?.height ?? 0.0;
-
-    // Parse patternUnits (default: objectBoundingBox)
+    // Parse patternUnits (default: objectBoundingBox) first so deferred
+    // animated width/height/x/y can be resolved with the correct basis.
     final patternUnitsStr = _getString(node, 'patternUnits')?.toLowerCase();
     _SvgPatternUnits patternUnits;
     if (patternUnitsStr != null) {
@@ -50,6 +45,52 @@ extension AnimatedSvgPainterPatternsExtension on AnimatedSvgPainter {
       patternUnits =
           inherited?.patternUnits ?? _SvgPatternUnits.objectBoundingBox;
     }
+    final usesObjectBoundingBoxUnits =
+        patternUnits == _SvgPatternUnits.objectBoundingBox;
+
+    // Parse attributes with inheritance fallback. Deferred SMIL values resolve
+    // against the pattern's own unit basis before falling back to the numeric
+    // parser.
+    final x =
+        _resolveDeferredDefinitionCoordinate(
+          node,
+          'x',
+          objectBoundingBoxUnits: usesObjectBoundingBoxUnits,
+          reference: SvgLengthReference.horizontal,
+        ) ??
+        _getNumber(node, 'x') ??
+        inherited?.x ??
+        0.0;
+    final y =
+        _resolveDeferredDefinitionCoordinate(
+          node,
+          'y',
+          objectBoundingBoxUnits: usesObjectBoundingBoxUnits,
+          reference: SvgLengthReference.vertical,
+        ) ??
+        _getNumber(node, 'y') ??
+        inherited?.y ??
+        0.0;
+    final width =
+        _resolveDeferredDefinitionCoordinate(
+          node,
+          'width',
+          objectBoundingBoxUnits: usesObjectBoundingBoxUnits,
+          reference: SvgLengthReference.horizontal,
+        ) ??
+        _getNumber(node, 'width') ??
+        inherited?.width ??
+        0.0;
+    final height =
+        _resolveDeferredDefinitionCoordinate(
+          node,
+          'height',
+          objectBoundingBoxUnits: usesObjectBoundingBoxUnits,
+          reference: SvgLengthReference.vertical,
+        ) ??
+        _getNumber(node, 'height') ??
+        inherited?.height ??
+        0.0;
 
     // Parse patternContentUnits (default: userSpaceOnUse)
     final contentUnitsStr = _getString(

@@ -60,6 +60,14 @@ extension _AnimatedSvgPictureStateAttrsExtension on _AnimatedSvgPictureState {
 
   double? _getNumber(SvgNode node, String attributeName) {
     final value = node.getAttributeValue(attributeName);
+    final resolvedNumeric = resolveSvgNumericAttributeValue(
+      node,
+      value,
+      attributeName,
+    );
+    if (resolvedNumeric != null) {
+      return resolvedNumeric;
+    }
     if (value is num) {
       return value.toDouble();
     }
@@ -116,6 +124,14 @@ extension _AnimatedSvgPictureStateAttrsExtension on _AnimatedSvgPictureState {
     final value = _getInheritedAttributeValue(node, attributeName);
     if (value == null) {
       return null;
+    }
+    final resolvedNumeric = resolveSvgNumericAttributeValue(
+      node,
+      value,
+      attributeName,
+    );
+    if (resolvedNumeric != null) {
+      return resolvedNumeric;
     }
     if (value is num) {
       return value.toDouble();

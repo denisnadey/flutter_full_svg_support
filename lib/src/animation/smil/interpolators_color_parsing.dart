@@ -114,3 +114,36 @@ ui.Color? _parseRgbColor(String rgb) {
 }
 
 const Map<String, ui.Color> _namedColors = cssNamedColors;
+
+List<SvgLengthPercentageValue>? _toLengthPercentageList(Object? value) {
+  if (value == null) {
+    return null;
+  }
+  if (value is List) {
+    final result = <SvgLengthPercentageValue>[];
+    for (final item in value) {
+      final parsed = SvgLengthPercentageValue.tryParse(item);
+      if (parsed == null) {
+        return null;
+      }
+      result.add(parsed);
+    }
+    return result;
+  }
+  if (value is String) {
+    final parts = value
+        .trim()
+        .split(RegExp(r'[\s,]+'))
+        .where((part) => part.isNotEmpty);
+    final result = <SvgLengthPercentageValue>[];
+    for (final part in parts) {
+      final parsed = SvgLengthPercentageValue.tryParse(part);
+      if (parsed == null) {
+        return null;
+      }
+      result.add(parsed);
+    }
+    return result.isEmpty ? null : result;
+  }
+  return null;
+}

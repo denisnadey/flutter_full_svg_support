@@ -102,7 +102,7 @@ void main() {
     });
 
     test(
-      'definition coordinates keep numeric behavior (no deferred wrapper)',
+      'definition coordinates keep objectBoundingBox percentage semantics',
       () {
         final document = SvgParser.parse('''
         <svg viewBox="0 0 200 100">
@@ -119,7 +119,7 @@ void main() {
 
         expect(
           smilPercentageSemanticsForAttribute('x1', targetNode: gradient),
-          SmilPercentageSemantics.none,
+          SmilPercentageSemantics.objectBoundingBox,
         );
         expect(
           smilPercentageSemanticsForAttribute('x1'),
@@ -128,24 +128,34 @@ void main() {
       },
     );
 
-    test(
-      'text coordinates keep numeric behavior until the consumer migrates',
-      () {
-        final document = SvgParser.parse('''
+    test('text coordinates defer percentages for the text consumer', () {
+      final document = SvgParser.parse('''
         <svg viewBox="0 0 200 100">
           <text id="target" x="0">A
             <animate attributeName="x" from="0%" to="100%" dur="2s"/>
           </text>
         </svg>
       ''');
-        final animation = SmilParser.parseAnimations(document).single;
+      final target = document.root.findById('target')!;
+      final animation = SmilParser.parseAnimations(document).single;
 
-        expect(animation.percentageSemantics, SmilPercentageSemantics.none);
-        expect(animation.computeValue(0.5), 50);
-      },
-    );
+      expect(
+        animation.percentageSemantics,
+        SmilPercentageSemantics.horizontalLength,
+      );
+      final value = animation.computeValue(0.5);
+      expect(value, isA<SvgLengthPercentageValue>());
+      expect(
+        resolveSvgLengthValue(
+          target,
+          value,
+          reference: SvgLengthReference.horizontal,
+        ),
+        100,
+      );
+    });
 
-    test('constructor infers definition-coordinate safety from its target', () {
+    test('constructor infers objectBoundingBox semantics for gradient x1', () {
       final document = SvgParser.parse('''
         <svg viewBox="0 0 200 100">
           <defs><linearGradient id="gradient"/></defs>
@@ -163,8 +173,13 @@ void main() {
         dur: const Duration(seconds: 2),
       );
 
-      expect(animation.percentageSemantics, SmilPercentageSemantics.none);
-      expect(animation.computeValue(0.5), 50);
+      expect(
+        animation.percentageSemantics,
+        SmilPercentageSemantics.objectBoundingBox,
+      );
+      final value = animation.computeValue(0.5);
+      expect(value, isA<SvgLengthPercentageValue>());
+      expect((value as SvgLengthPercentageValue).percentage, 50);
     });
 
     test('constructor generates paced key times from inferred semantics', () {

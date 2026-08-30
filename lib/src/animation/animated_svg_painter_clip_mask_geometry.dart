@@ -539,8 +539,24 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
     }
 
     // Get text position and font metrics
-    final x = _getNumber(textNode, 'x') ?? 0.0;
-    final y = _getNumber(textNode, 'y') ?? 0.0;
+    final x =
+        _resolveDeferredDefinitionCoordinate(
+          textNode,
+          'x',
+          objectBoundingBoxUnits: false,
+          reference: SvgLengthReference.horizontal,
+        ) ??
+        _getNumber(textNode, 'x') ??
+        0.0;
+    final y =
+        _resolveDeferredDefinitionCoordinate(
+          textNode,
+          'y',
+          objectBoundingBoxUnits: false,
+          reference: SvgLengthReference.vertical,
+        ) ??
+        _getNumber(textNode, 'y') ??
+        0.0;
     final fontSize = _getInheritedNumber(textNode, 'font-size') ?? 16.0;
 
     // Character metrics estimation
@@ -600,8 +616,24 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
   /// - text-anchor for horizontal alignment
   ui.Rect? _computeTextClipBounds(SvgNode textNode) {
     // Get text position
-    final x = _getNumber(textNode, 'x') ?? 0.0;
-    final y = _getNumber(textNode, 'y') ?? 0.0;
+    final x =
+        _resolveDeferredDefinitionCoordinate(
+          textNode,
+          'x',
+          objectBoundingBoxUnits: false,
+          reference: SvgLengthReference.horizontal,
+        ) ??
+        _getNumber(textNode, 'x') ??
+        0.0;
+    final y =
+        _resolveDeferredDefinitionCoordinate(
+          textNode,
+          'y',
+          objectBoundingBoxUnits: false,
+          reference: SvgLengthReference.vertical,
+        ) ??
+        _getNumber(textNode, 'y') ??
+        0.0;
 
     // Get font metrics for text bounds computation
     final fontSize = _getInheritedNumber(textNode, 'font-size') ?? 16.0;

@@ -216,14 +216,18 @@ extension AnimatedSvgPainterPaintsExtension on AnimatedSvgPainter {
   /// When pathLength is specified, all dash values are scaled by the ratio
   /// of actual path length to pathLength.
   ui.Path _buildDashedPath(ui.Path path, SvgNode node) {
-    final dashArrayRaw = _getInheritedString(node, 'stroke-dasharray')?.trim();
-    if (dashArrayRaw == null ||
-        dashArrayRaw.isEmpty ||
-        dashArrayRaw.toLowerCase() == 'none') {
+    final dashArrayValue = _getInheritedValuePreservingRaw(
+      node,
+      'stroke-dasharray',
+    );
+    if (dashArrayValue == null ||
+        (dashArrayValue is String &&
+            (dashArrayValue.trim().isEmpty ||
+                dashArrayValue.trim().toLowerCase() == 'none'))) {
       return path;
     }
 
-    final dashes = _parseDashArray(dashArrayRaw);
+    final dashes = _parseDashArray(node, dashArrayValue);
     if (dashes.isEmpty || dashes.every((d) => d == 0)) {
       return path;
     }
@@ -249,7 +253,18 @@ extension AnimatedSvgPainterPaintsExtension on AnimatedSvgPainter {
     final totalDash = pattern.fold<double>(0.0, (s, d) => s + d);
     if (totalDash <= 0) return path;
 
-    var rawOffset = _getInheritedNumber(node, 'stroke-dashoffset') ?? 0.0;
+    final offsetValue = _getInheritedValuePreservingRaw(
+      node,
+      'stroke-dashoffset',
+    );
+    var rawOffset = offsetValue == null
+        ? 0.0
+        : (resolveSvgLengthValue(
+                node,
+                offsetValue,
+                reference: SvgLengthReference.normalizedDiagonal,
+              ) ??
+              0.0);
     // Scale dashoffset by same factor if pathLength is specified
     if (scaleFactor != null) {
       rawOffset = rawOffset * scaleFactor;
@@ -331,22 +346,40 @@ extension AnimatedSvgPainterPaintsExtension on AnimatedSvgPainter {
     return dashedPath;
   }
 
-  /// Parses stroke-dasharray value into a list of doubles.
-  /// Filters out near-zero values to prevent infinite loops in dashing.
-  List<double> _parseDashArray(String value) {
-    final parsed = value
-        .split(RegExp(r'[\s,]+'))
-        .map((s) {
-          final cleaned = s.trim().replaceAll(RegExp(r'[a-zA-Z%]+$'), '');
-          return double.tryParse(cleaned) ?? 0.0;
-        })
+  /// Parses and resolves stroke-dasharray values against the active viewport
+  /// normalized diagonal. The raw presentation attribute is used when
+  /// available because the DOM parser may otherwise discard the `%` unit.
+  List<double> _parseDashArray(SvgNode node, Object value) {
+    final values = <Object>[];
+    if (value is List) {
+      values.addAll(value.cast<Object>());
+    } else {
+      values.addAll(
+        value
+            .toString()
+            .trim()
+            .split(RegExp(r'[\s,]+'))
+            .where((part) => part.isNotEmpty),
+      );
+    }
+
+    final parsed = values
+        .map(
+          (item) => resolveSvgLengthValue(
+            node,
+            item,
+            reference: SvgLengthReference.normalizedDiagonal,
+          ),
+        )
+        .whereType<double>()
         .where((d) => d >= 0)
         .toList();
 
-    // Filter near-zero values to prevent degenerate patterns
+    // Filter near-zero values to prevent degenerate patterns.
     final filtered = parsed.where((d) => d > 1e-6).toList();
 
-    // If all values were filtered out, return original to let caller handle it
+    // If all values were filtered out, return the original resolved values so
+    // the caller can preserve the existing degenerate-pattern behavior.
     return filtered.isNotEmpty ? filtered : parsed;
   }
 }

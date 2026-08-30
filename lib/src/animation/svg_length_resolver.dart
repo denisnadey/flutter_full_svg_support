@@ -280,6 +280,150 @@ double? resolveSvgLengthValue(
   return _resolveSvgLengthPercentageValue(node, length, reference: reference);
 }
 
+/// Resolves a deferred SMIL coordinate list (text/tspan/tref x/y/dx/dy)
+/// against the active viewport.
+///
+/// Returns an empty list when the attribute value is not deferred, so callers
+/// fall back to their prior numeric list parsing.
+List<double> resolveSvgDeferredCoordinateList(
+  SvgNode node,
+  String attributeName, {
+  required bool isHorizontal,
+}) {
+  final value = node.getAttributeValue(attributeName);
+  final reference = isHorizontal
+      ? SvgLengthReference.horizontal
+      : SvgLengthReference.vertical;
+  // Raw strings carry percentage text only when a discrete/<set> animation
+  // wrote them; a static percentage attribute must keep its existing numeric
+  // fallback behavior.
+  final isAnimated = node.getAttribute(attributeName)?.isAnimated ?? false;
+  if (value is SvgLengthPercentageValue) {
+    final resolved = resolveSvgLengthValue(node, value, reference: reference);
+    return resolved == null ? const <double>[] : <double>[resolved];
+  }
+  if (value is String && isAnimated) {
+    // `calcMode="discrete"` and `<set>` assign the selected raw value string
+    // (for example "50%" or "10% 20%") instead of an interpolated wrapper.
+    // Parse percentage-bearing raw strings here so those execution paths keep
+    // viewport-relative semantics too. Strings without a percentage fall back
+    // to the caller's numeric parsing, which handles them identically.
+    return _resolveDeferredPercentageTokens(node, value, reference);
+  }
+  if (value is List) {
+    final result = <double>[];
+    for (final item in value) {
+      if (item is SvgLengthPercentageValue) {
+        final resolved = resolveSvgLengthValue(
+          node,
+          item,
+          reference: reference,
+        );
+        if (resolved == null) {
+          return const <double>[];
+        }
+        result.add(resolved);
+        continue;
+      }
+      if (item is num) {
+        // Interpolated mixed lists carry plain numeric members for entries
+        // whose percentage component is zero (toAnimatedValue collapses
+        // them, so the midpoint of "0% 0" -> "100% 0" is [wrapper, 0.0]).
+        // Treat numeric members as absolute user-unit values and keep the
+        // member order so per-character positioning stays aligned.
+        result.add(item.toDouble());
+        continue;
+      }
+      if (item is String && isAnimated) {
+        // Raw string list items come from the same discrete/<set> path and
+        // are parsed consistently with the scalar case above.
+        final resolvedItems = _resolveDeferredPercentageTokens(
+          node,
+          item,
+          reference,
+        );
+        if (resolvedItems.isEmpty && item.contains('%')) {
+          return const <double>[];
+        }
+        result.addAll(resolvedItems);
+        continue;
+      }
+      return const <double>[];
+    }
+    return result;
+  }
+  return const <double>[];
+}
+
+/// Resolves a raw percentage-bearing value string ("50%", "10% 20%") against
+/// [reference]. Returns an empty list when the string carries no percentage or
+/// any token cannot be parsed, preserving the caller's numeric fallback.
+List<double> _resolveDeferredPercentageTokens(
+  SvgNode node,
+  String raw,
+  SvgLengthReference reference,
+) {
+  if (!raw.contains('%')) {
+    return const <double>[];
+  }
+  final tokens = raw
+      .trim()
+      .split(RegExp(r'[\s,]+'))
+      .where((token) => token.isNotEmpty)
+      .toList();
+  if (tokens.isEmpty) {
+    return const <double>[];
+  }
+  final result = <double>[];
+  for (final token in tokens) {
+    final length = SvgLengthPercentageValue.tryParse(token);
+    if (length == null) {
+      return const <double>[];
+    }
+    final resolved = resolveSvgLengthValue(node, length, reference: reference);
+    if (resolved == null) {
+      return const <double>[];
+    }
+    result.add(resolved);
+  }
+  return result;
+}
+
+/// Resolves a numeric SVG attribute whose percentage semantics are not
+/// geometry-specific.
+///
+/// Geometry attributes remain the responsibility of their existing horizontal,
+/// vertical, or radial length resolvers. This helper closes the consumers for
+/// deferred SMIL values used by stroke painting and opacity.
+double? resolveSvgNumericAttributeValue(
+  SvgNode node,
+  Object? value,
+  String attributeName,
+) {
+  final length = SvgLengthPercentageValue.tryParse(value);
+  if (length == null) {
+    return null;
+  }
+
+  switch (attributeName) {
+    case 'stroke-width':
+    case 'stroke-dashoffset':
+      return resolveSvgLengthValue(
+        node,
+        length,
+        reference: SvgLengthReference.normalizedDiagonal,
+      );
+    case 'opacity':
+    case 'fill-opacity':
+    case 'stroke-opacity':
+    case 'stop-opacity':
+    case 'offset':
+      return length.absolute + length.percentage / 100;
+    default:
+      return null;
+  }
+}
+
 double _resolveSvgLengthPercentageValue(
   SvgNode node,
   SvgLengthPercentageValue length, {
@@ -290,6 +434,17 @@ double _resolveSvgLengthPercentageValue(
     return length.absolute;
   }
   return length.resolve(_resolveNearestViewportSize(node, document), reference);
+}
+
+/// Returns the viewport against which [node]'s percentage lengths resolve.
+///
+/// This is the same nearest-viewport lookup used by [resolveSvgLengthValue],
+/// exposed so callers such as the SMIL paced key-time cache can key on the
+/// actually-applicable viewport (root embedding viewport for a `<use>`'s own
+/// attributes, or a scoped `<use>`-instance viewport when one is active)
+/// rather than only the root embedding viewport.
+ui.Size resolveSvgNodeViewport(SvgNode node, SvgDocument? document) {
+  return _resolveNearestViewportSize(node, document);
 }
 
 /// Resolves the used physical viewport established by an `<svg>` element.

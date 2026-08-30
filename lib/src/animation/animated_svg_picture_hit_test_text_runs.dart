@@ -172,10 +172,40 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
     if (textRoot.tagName != 'text') {
       return const <_TextHitRun>[];
     }
-    final xList = _getNumberList(textRoot, 'x');
-    final yList = _getNumberList(textRoot, 'y');
+    var xList = resolveSvgDeferredCoordinateList(
+      textRoot,
+      'x',
+      isHorizontal: true,
+    );
+    if (xList.isEmpty) {
+      xList = _getNumberList(textRoot, 'x');
+    }
+    var yList = resolveSvgDeferredCoordinateList(
+      textRoot,
+      'y',
+      isHorizontal: false,
+    );
+    if (yList.isEmpty) {
+      yList = _getNumberList(textRoot, 'y');
+    }
     final startX = xList.isNotEmpty ? xList[0] : 0.0;
     final startY = yList.isNotEmpty ? yList[0] : 0.0;
+    var dxList = resolveSvgDeferredCoordinateList(
+      textRoot,
+      'dx',
+      isHorizontal: true,
+    );
+    if (dxList.isEmpty) {
+      dxList = _getNumberList(textRoot, 'dx');
+    }
+    var dyList = resolveSvgDeferredCoordinateList(
+      textRoot,
+      'dy',
+      isHorizontal: false,
+    );
+    if (dyList.isEmpty) {
+      dyList = _getNumberList(textRoot, 'dy');
+    }
     final cursor = _HitTextCursor(x: startX, y: startY);
     final runs = <_TextHitRun>[];
     final writingMode = _resolveWritingMode(textRoot);
@@ -185,8 +215,8 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
       runs,
       parentXList: xList,
       parentYList: yList,
-      parentDxList: _getNumberList(textRoot, 'dx'),
-      parentDyList: _getNumberList(textRoot, 'dy'),
+      parentDxList: dxList,
+      parentDyList: dyList,
       parentRotateList: _getNumberList(textRoot, 'rotate'),
       isRootText: true,
       writingMode: writingMode,
@@ -209,10 +239,38 @@ extension _AnimatedSvgPictureStateHitTestTextRunsExtension
     bool forceCharacterPrecise = false,
   }) {
     // Parse position lists from this node
-    final nodeXList = _getNumberList(node, 'x');
-    final nodeYList = _getNumberList(node, 'y');
-    final nodeDxList = _getNumberList(node, 'dx');
-    final nodeDyList = _getNumberList(node, 'dy');
+    var nodeXList = resolveSvgDeferredCoordinateList(
+      node,
+      'x',
+      isHorizontal: true,
+    );
+    if (nodeXList.isEmpty) {
+      nodeXList = _getNumberList(node, 'x');
+    }
+    var nodeYList = resolveSvgDeferredCoordinateList(
+      node,
+      'y',
+      isHorizontal: false,
+    );
+    if (nodeYList.isEmpty) {
+      nodeYList = _getNumberList(node, 'y');
+    }
+    var nodeDxList = resolveSvgDeferredCoordinateList(
+      node,
+      'dx',
+      isHorizontal: true,
+    );
+    if (nodeDxList.isEmpty) {
+      nodeDxList = _getNumberList(node, 'dx');
+    }
+    var nodeDyList = resolveSvgDeferredCoordinateList(
+      node,
+      'dy',
+      isHorizontal: false,
+    );
+    if (nodeDyList.isEmpty) {
+      nodeDyList = _getNumberList(node, 'dy');
+    }
     final nodeRotateList = _getNumberList(node, 'rotate');
 
     // Check if this tspan creates a new text chunk (has absolute positioning)

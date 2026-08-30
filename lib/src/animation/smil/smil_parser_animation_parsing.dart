@@ -44,6 +44,7 @@ SmilAnimation? _parseAnimationElement(
     final percentageSemantics = smilPercentageSemanticsForAttribute(
       attributeName,
       targetNode: targetNode,
+      document: document,
     );
     final preservePercentages = percentageSemantics.preservesPercentage;
     final from = _parseValue(
@@ -225,6 +226,22 @@ SvgAttributeType _inferAttributeType(String attributeName, SvgNode targetNode) {
 
   if (attributeName == 'stroke-dasharray') {
     return SvgAttributeType.list;
+  }
+
+  // Text dx/dy are per-character lists; filter (feOffset) dx/dy are single
+  // numbers. Distinguish by the target element so animated text dx/dy
+  // interpolate as lists. `textPath` is intentionally excluded: its paint and
+  // hit-test consumers do not read dx/dy at all yet, so emitting deferred
+  // percentage wrappers would only produce values that get discarded (the
+  // same narrow-preservation rule as clip/mask definition coordinates).
+  if (attributeName == 'dx' || attributeName == 'dy') {
+    final isTextTarget =
+        targetNode.tagName == 'text' ||
+        targetNode.tagName == 'tspan' ||
+        targetNode.tagName == 'tref';
+    if (isTextTarget) {
+      return SvgAttributeType.list;
+    }
   }
 
   // Check known attribute types first — these should always use their canonical

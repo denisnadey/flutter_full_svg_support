@@ -34,8 +34,15 @@ extension SmilAnimationValueComputationExtension on SmilAnimation {
     int toIndex = 1;
     double segmentProgress = t;
 
-    // Use paced keyTimes if available, otherwise use regular keyTimes
-    final effectiveKeyTimes = _pacedKeyTimes ?? keyTimes;
+    // Percentage-aware paced keyTimes depend on the active SVG viewport, so
+    // calculate them lazily instead of using constructor-time stripped numeric
+    // values.
+    final effectiveKeyTimes =
+        calcMode == SmilCalcMode.paced &&
+            keyTimes == null &&
+            percentageSemantics.preservesPercentage
+        ? _pacedKeyTimesForCurrentViewport()
+        : (_pacedKeyTimes ?? keyTimes);
 
     if (effectiveKeyTimes != null) {
       // With explicit keyTimes (or generated ones for paced)

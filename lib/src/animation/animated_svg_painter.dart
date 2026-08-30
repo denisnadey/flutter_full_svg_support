@@ -91,6 +91,7 @@ class AnimatedSvgPainter extends CustomPainter {
     this.animationTime,
     this.hasAnimations = false,
     this.clipToViewBox = false,
+    this.refreshAnimationValues,
     this.debugHighlightedNode,
     // ignore: library_private_types_in_public_api
     _RenderCache? renderCache,
@@ -119,6 +120,9 @@ class AnimatedSvgPainter extends CustomPainter {
 
   /// Whether the document has animations.
   final bool hasAnimations;
+
+  /// Refreshes viewport-dependent animation values before rendering.
+  final void Function()? refreshAnimationValues;
 
   /// When true, clips rendered content to the SVG viewBox.
   ///
@@ -151,6 +155,8 @@ class AnimatedSvgPainter extends CustomPainter {
   @override
   void paint(ui.Canvas canvas, ui.Size size) {
     SvgLengthResolutionContext.runWithRootViewport(size, () {
+      refreshAnimationValues?.call();
+
       // Prepare cache for this frame
       _renderCache.prepareFrame(animationTime, hasAnimations);
 

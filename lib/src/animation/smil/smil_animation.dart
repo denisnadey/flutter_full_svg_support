@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/foundation.dart';
 
 import '../css_cascade.dart';
@@ -97,26 +99,28 @@ enum SmilPercentageSemantics {
 
   /// A length relative to the normalized viewport diagonal.
   normalizedDiagonalLength,
+
+  /// A unit-interval percentage, such as opacity or a gradient stop offset.
+  unitInterval,
+
+  /// A coordinate relative to an object bounding box, where 100% is 1.0.
+  objectBoundingBox,
 }
 
 SmilPercentageSemantics smilPercentageSemanticsForAttribute(
   String attributeName, {
   SvgNode? targetNode,
+  SvgDocument? document,
 }) {
-  // Follow-up B only preserves percentages for shape/viewport geometry.
-  // Definition coordinate systems (gradient/mask/pattern/filter) keep their
-  // prior numeric behavior until Follow-up C teaches those consumers their
-  // attribute-specific percentage bases.
-  if (_isDefinitionCoordinateTarget(targetNode)) {
-    return SmilPercentageSemantics.none;
+  if (_isObjectBoundingBoxCoordinate(targetNode, attributeName, document)) {
+    return SmilPercentageSemantics.objectBoundingBox;
   }
 
-  // Follow-up B only enables deferred values for consumers already migrated
-  // to the shared viewport-aware geometry resolver. Attribute names alone are
-  // insufficient: for example, `x` on <text> still uses the numeric text
-  // positioning path and must retain its established numeric behavior until
-  // Follow-up C migrates that consumer.
-  if (targetNode != null && !_supportsDeferredGeometryLength(targetNode)) {
+  // Definition coordinates whose consumers only read plain numbers
+  // (mask/filter own units, or content inside clipPath/mask/pattern/filter)
+  // keep numeric behavior so no deferred wrapper leaks into a viewport/bbox
+  // consumer that cannot read it.
+  if (_keepsNumericDefinitionCoordinate(targetNode, attributeName)) {
     return SmilPercentageSemantics.none;
   }
 
@@ -126,6 +130,7 @@ SmilPercentageSemantics smilPercentageSemanticsForAttribute(
     case 'fx':
     case 'x1':
     case 'x2':
+    case 'dx':
     case 'width':
     case 'rx':
       return SmilPercentageSemantics.horizontalLength;
@@ -134,50 +139,162 @@ SmilPercentageSemantics smilPercentageSemanticsForAttribute(
     case 'fy':
     case 'y1':
     case 'y2':
+    case 'dy':
     case 'height':
     case 'ry':
       return SmilPercentageSemantics.verticalLength;
     case 'r':
     case 'fr':
+    case 'stroke-width':
+    case 'stroke-dashoffset':
+    case 'stroke-dasharray':
       return SmilPercentageSemantics.normalizedDiagonalLength;
+    case 'opacity':
+    case 'fill-opacity':
+    case 'stroke-opacity':
+    case 'stop-opacity':
+    case 'offset':
+      return SmilPercentageSemantics.unitInterval;
     default:
       return SmilPercentageSemantics.none;
   }
 }
 
-bool _supportsDeferredGeometryLength(SvgNode node) {
-  return switch (node.tagName) {
-    'rect' ||
-    'circle' ||
-    'ellipse' ||
-    'line' ||
-    'use' ||
-    'svg' ||
-    'symbol' ||
-    'image' ||
-    'foreignObject' => true,
-    _ => false,
-  };
+const Set<String> _objectBoundingBoxCoordinateAttributes = <String>{
+  'x',
+  'y',
+  'x1',
+  'y1',
+  'x2',
+  'y2',
+  'cx',
+  'cy',
+  'fx',
+  'fy',
+  'r',
+  'fr',
+  'rx',
+  'ry',
+  'width',
+  'height',
+};
+
+bool _isObjectBoundingBoxCoordinate(
+  SvgNode? node,
+  String attributeName, [
+  SvgDocument? document,
+]) {
+  if (node == null ||
+      !_objectBoundingBoxCoordinateAttributes.contains(attributeName)) {
+    return false;
+  }
+
+  // Only consumers that can resolve a deferred objectBoundingBox value are
+  // classified here (gradient coordinates and pattern x/y/width/height).
+  // Clip/mask/filter regions and their content keep their prior numeric
+  // behavior: their objectBoundingBox consumers only read plain numbers, and
+  // emitting a deferred wrapper into them would leak a viewport-length into a
+  // bbox transform.
+  return _usesObjectBoundingBoxUnitsForOwnCoordinates(node, document);
 }
 
-bool _isDefinitionCoordinateTarget(SvgNode? node) {
-  for (SvgNode? current = node; current != null; current = current.parent) {
+/// Whether [attributeName] on [node] is a definition-space coordinate whose
+/// consumer only reads plain numbers, so SMIL must keep numeric behavior.
+///
+/// This covers mask/filter own coordinates and content inside
+/// clipPath/mask/pattern/filter. Those coordinates must keep numeric SMIL
+/// behavior so no wrapper reaches a consumer that treats it as a viewport
+/// length or a bbox fraction.
+bool _keepsNumericDefinitionCoordinate(SvgNode? node, String attributeName) {
+  if (node == null ||
+      !_objectBoundingBoxCoordinateAttributes.contains(attributeName)) {
+    return false;
+  }
+
+  if (node.tagName == 'mask' || node.tagName == 'filter') {
+    return true;
+  }
+
+  for (
+    SvgNode? current = node.parent;
+    current != null;
+    current = current.parent
+  ) {
     switch (current.tagName) {
-      case 'linearGradient':
-      case 'radialGradient':
-      case 'conicGradient':
+      case 'clipPath':
       case 'mask':
       case 'pattern':
       case 'filter':
         return true;
       case 'svg':
       case 'symbol':
-        // A nested viewport establishes a new percentage coordinate system
-        // for its descendants.
+      case 'foreignObject':
         return false;
     }
   }
   return false;
+}
+
+bool _usesObjectBoundingBoxUnitsForOwnCoordinates(
+  SvgNode node, [
+  SvgDocument? document,
+]) {
+  switch (node.tagName) {
+    case 'linearGradient':
+    case 'radialGradient':
+    case 'conicGradient':
+      return _effectiveObjectBoundingBoxUnits(node, document, 'gradientUnits');
+    case 'pattern':
+      return _effectiveObjectBoundingBoxUnits(node, document, 'patternUnits');
+    default:
+      return false;
+  }
+}
+
+/// Whether a definition's coordinate system resolves against
+/// objectBoundingBox units after following its `href` chain.
+///
+/// The nearest explicit units declaration wins (own attribute first, then the
+/// referenced base definition); the SVG default is objectBoundingBox.
+bool _effectiveObjectBoundingBoxUnits(
+  SvgNode node,
+  SvgDocument? document,
+  String unitsAttributeName,
+) {
+  final seen = <SvgNode>{};
+  for (SvgNode? current = node; current != null && seen.add(current);) {
+    final value = current
+        .getAttributeValue(unitsAttributeName)
+        ?.toString()
+        .trim()
+        .toLowerCase();
+    if (value != null && value.isNotEmpty) {
+      return value == 'objectboundingbox';
+    }
+    final hrefId = _extractHrefChainId(
+      current.getAttributeValue('href') ??
+          current.getAttributeValue('xlink:href'),
+    );
+    current = hrefId == null || document == null
+        ? null
+        : document.root.findById(hrefId);
+  }
+  return true;
+}
+
+String? _extractHrefChainId(Object? hrefValue) {
+  final raw = hrefValue?.toString().trim();
+  if (raw == null || raw.isEmpty) {
+    return null;
+  }
+  if (raw.startsWith('#')) {
+    return raw.substring(1);
+  }
+  final match = RegExp(
+    r'''url\(\s*['"]?#([^'")\s]+)['"]?\s*\)''',
+    caseSensitive: false,
+  ).firstMatch(raw);
+  return match?.group(1);
 }
 
 extension SmilPercentageSemanticsExtension on SmilPercentageSemantics {
@@ -224,6 +341,7 @@ class SmilAnimation {
            smilPercentageSemanticsForAttribute(
              attributeName,
              targetNode: targetNode,
+             document: document,
            ) {
     // Validation
     if (values != null) {
@@ -260,9 +378,12 @@ class SmilAnimation {
     double totalDistance = 0.0;
     final distances = <double>[];
 
-    // Compute distances between consecutive values
+    // Compute distances between consecutive values. For percentage-aware
+    // attributes this runs at value-computation time, when the active SVG
+    // viewport context is available, rather than freezing stripped numeric
+    // values in the constructor.
     for (int i = 0; i < values!.length - 1; i++) {
-      final distance = calculator.distance(values![i], values![i + 1]);
+      final distance = _pacedDistance(calculator, values![i], values![i + 1]);
       if (distance < 0) {
         // If the distance cannot be computed, return null.
         // This means paced mode is not supported for this type
@@ -295,6 +416,80 @@ class SmilAnimation {
     keyTimesForPaced[values!.length - 1] = 1.0;
 
     return keyTimesForPaced;
+  }
+
+  /// Returns percentage-aware paced keyTimes resolved for the viewport actually
+  /// applicable to [targetNode].
+  ///
+  /// Timeline ticks run without a viewport, so they must not create a cache
+  /// entry from the resolver's fallback viewport. Unit-interval and
+  /// objectBoundingBox semantics resolve without a viewport and can be
+  /// computed eagerly.
+  ///
+  /// Known limitation: the refresh that triggers this runs at the start of
+  /// `paint()`, before `<use>`-instance viewport scopes are established, so a
+  /// paced animation on shared `<symbol>` content instantiated by multiple
+  /// differently-sized `<use>` elements still resolves against the
+  /// definition/root viewport. Per-instance animation state is out of scope
+  /// here and is tracked separately if required.
+  List<double>? _pacedKeyTimesForCurrentViewport() {
+    if (_hasViewportRelativePercentage &&
+        SvgLengthResolutionContext.rootViewport == null) {
+      return null;
+    }
+
+    final viewport = resolveSvgNodeViewport(targetNode, document);
+    if (!_hasResolvedPacedKeyTimes || _pacedKeyTimesViewport != viewport) {
+      _pacedKeyTimesViewport = viewport;
+      _resolvedPacedKeyTimes = _generatePacedKeyTimes();
+      _hasResolvedPacedKeyTimes = true;
+    }
+    return _resolvedPacedKeyTimes;
+  }
+
+  double _pacedDistance(DistanceCalculator calculator, Object from, Object to) {
+    if (!percentageSemantics.preservesPercentage) {
+      return calculator.distance(from, to);
+    }
+
+    final fromValue = _resolvePacedNumericValue(from);
+    final toValue = _resolvePacedNumericValue(to);
+    if (fromValue == null || toValue == null) {
+      return -1;
+    }
+    return (toValue - fromValue).abs();
+  }
+
+  double? _resolvePacedNumericValue(Object value) {
+    final length = SvgLengthPercentageValue.tryParse(value);
+    if (length == null) {
+      return null;
+    }
+    switch (percentageSemantics) {
+      case SmilPercentageSemantics.none:
+        return length.absolute;
+      case SmilPercentageSemantics.horizontalLength:
+        return resolveSvgLengthValue(
+          targetNode,
+          length,
+          reference: SvgLengthReference.horizontal,
+        );
+      case SmilPercentageSemantics.verticalLength:
+        return resolveSvgLengthValue(
+          targetNode,
+          length,
+          reference: SvgLengthReference.vertical,
+        );
+      case SmilPercentageSemantics.normalizedDiagonalLength:
+        return resolveSvgLengthValue(
+          targetNode,
+          length,
+          reference: SvgLengthReference.normalizedDiagonal,
+        );
+      case SmilPercentageSemantics.unitInterval:
+      case SmilPercentageSemantics.objectBoundingBox:
+        return length.absolute + length.percentage / 100;
+    }
   }
 
   /// Animation ID (from xml:id or id attribute).
@@ -341,6 +536,16 @@ class SmilAnimation {
 
   /// Generated keyTimes for paced mode (if calcMode == paced and keyTimes are not specified)
   List<double>? _pacedKeyTimes;
+
+  /// The root viewport for [_resolvedPacedKeyTimes].
+  ui.Size? _pacedKeyTimesViewport;
+
+  /// Whether [_resolvedPacedKeyTimes] was computed for
+  /// [_pacedKeyTimesViewport], including when the result is null.
+  bool _hasResolvedPacedKeyTimes = false;
+
+  /// Percentage-aware paced keyTimes resolved in the active render viewport.
+  List<double>? _resolvedPacedKeyTimes;
 
   /// Control points of cubic Bezier curves for spline interpolation.
   /// Each element represents a curve between two adjacent keyframes
@@ -390,6 +595,17 @@ class SmilAnimation {
 
   /// Intermediate value calculation mode
   final SmilCalcMode calcMode;
+
+  /// Whether this animation must be recomputed in the active render viewport.
+  ///
+  /// Timeline updates run before painting, when viewport-relative percentages
+  /// cannot always be resolved. Most geometry consumers retain those values
+  /// until they resolve their own attributes; definition coordinates such as a
+  /// userSpaceOnUse gradient must instead be converted before their numeric
+  /// consumers read them.
+  bool get needsRenderingRefresh =>
+      (calcMode == SmilCalcMode.paced && _hasViewportRelativePercentage) ||
+      _requiresDefinitionViewportResolution;
 
   bool get _hasViewportRelativePercentage =>
       percentageSemantics == SmilPercentageSemantics.horizontalLength ||
@@ -613,6 +829,12 @@ class SmilAnimation {
               SvgLengthReference.normalizedDiagonal,
             ) ??
             value;
+      case SmilPercentageSemantics.unitInterval:
+        return length.absolute + length.percentage / 100;
+      case SmilPercentageSemantics.objectBoundingBox:
+        // Keep the value deferred. Gradient/mask/pattern/filter consumers
+        // resolve it against their own objectBoundingBox or viewport basis.
+        return value;
     }
   }
 

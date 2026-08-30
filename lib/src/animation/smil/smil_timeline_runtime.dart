@@ -68,6 +68,21 @@ void _dispatchAnimationDOMEvent(
   }
 }
 
+void _refreshAnimationValuesImpl(SvgTimeline timeline, Duration time) {
+  final refreshedTargets = <(SvgNode, String)>{};
+  for (final animation in timeline.animations) {
+    if (!animation.needsRenderingRefresh) {
+      continue;
+    }
+    animation.updateForTime(time);
+    refreshedTargets.add((animation.targetNode, animation.attributeName));
+  }
+
+  if (refreshedTargets.isNotEmpty) {
+    _applyAnimationSandwichModel(timeline, targetFilter: refreshedTargets);
+  }
+}
+
 void _updateAnimationsImpl(SvgTimeline timeline, Duration time) {
   // Track previous states and iterations for detecting transitions and repeats
   final previousStates = <SmilAnimation, bool>{};
@@ -125,14 +140,20 @@ void _updateAnimationsImpl(SvgTimeline timeline, Duration time) {
 /// - Later animations (higher document order) override earlier ones
 /// - Additive animations stack with the base value and other additive animations
 /// - The "last wins" rule applies for non-additive animations
-void _applyAnimationSandwichModel(SvgTimeline timeline) {
-  // Group active animations by target element and attribute
+void _applyAnimationSandwichModel(
+  SvgTimeline timeline, {
+  Set<(SvgNode, String)>? targetFilter,
+}) {
+  // Group active animations by target element and attribute.
   final animationsByTarget = <(SvgNode, String), List<SmilAnimation>>{};
 
   for (final anim in timeline.animations) {
     if (!anim.isActive) continue;
 
     final key = (anim.targetNode, anim.attributeName);
+    if (targetFilter != null && !targetFilter.contains(key)) {
+      continue;
+    }
     animationsByTarget.putIfAbsent(key, () => []).add(anim);
   }
 
@@ -165,7 +186,9 @@ void _applyAnimationSandwichModel(SvgTimeline timeline) {
       targetAttr = anim.targetNode.getAttribute(anim.attributeName);
     }
     if (accumulated != null && targetAttr != null) {
-      targetAttr.setAnimatedValue(accumulated);
+      targetAttr.setAnimatedValue(
+        animations.last.resolveFinalAnimatedValue(accumulated),
+      );
     }
   }
 }

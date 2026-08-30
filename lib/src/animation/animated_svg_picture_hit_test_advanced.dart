@@ -446,10 +446,38 @@ extension _AnimatedSvgPictureStateHitTestAdvancedExtension
     if (textRoot.tagName != 'text') return const [];
 
     final runs = <_GlyphHitRun>[];
-    final xList = _getNumberList(textRoot, 'x');
-    final yList = _getNumberList(textRoot, 'y');
-    final dxList = _getNumberList(textRoot, 'dx');
-    final dyList = _getNumberList(textRoot, 'dy');
+    var xList = resolveSvgDeferredCoordinateList(
+      textRoot,
+      'x',
+      isHorizontal: true,
+    );
+    if (xList.isEmpty) {
+      xList = _getNumberList(textRoot, 'x');
+    }
+    var yList = resolveSvgDeferredCoordinateList(
+      textRoot,
+      'y',
+      isHorizontal: false,
+    );
+    if (yList.isEmpty) {
+      yList = _getNumberList(textRoot, 'y');
+    }
+    var dxList = resolveSvgDeferredCoordinateList(
+      textRoot,
+      'dx',
+      isHorizontal: true,
+    );
+    if (dxList.isEmpty) {
+      dxList = _getNumberList(textRoot, 'dx');
+    }
+    var dyList = resolveSvgDeferredCoordinateList(
+      textRoot,
+      'dy',
+      isHorizontal: false,
+    );
+    if (dyList.isEmpty) {
+      dyList = _getNumberList(textRoot, 'dy');
+    }
     final rotateList = _getNumberList(textRoot, 'rotate');
 
     final startX = xList.isNotEmpty ? xList[0] : 0.0;
@@ -482,10 +510,38 @@ extension _AnimatedSvgPictureStateHitTestAdvancedExtension
     int rotateListStartIndex = 0,
   }) {
     // Parse position lists from this node
-    final nodeXList = _getNumberList(node, 'x');
-    final nodeYList = _getNumberList(node, 'y');
-    final nodeDxList = _getNumberList(node, 'dx');
-    final nodeDyList = _getNumberList(node, 'dy');
+    var nodeXList = resolveSvgDeferredCoordinateList(
+      node,
+      'x',
+      isHorizontal: true,
+    );
+    if (nodeXList.isEmpty) {
+      nodeXList = _getNumberList(node, 'x');
+    }
+    var nodeYList = resolveSvgDeferredCoordinateList(
+      node,
+      'y',
+      isHorizontal: false,
+    );
+    if (nodeYList.isEmpty) {
+      nodeYList = _getNumberList(node, 'y');
+    }
+    var nodeDxList = resolveSvgDeferredCoordinateList(
+      node,
+      'dx',
+      isHorizontal: true,
+    );
+    if (nodeDxList.isEmpty) {
+      nodeDxList = _getNumberList(node, 'dx');
+    }
+    var nodeDyList = resolveSvgDeferredCoordinateList(
+      node,
+      'dy',
+      isHorizontal: false,
+    );
+    if (nodeDyList.isEmpty) {
+      nodeDyList = _getNumberList(node, 'dy');
+    }
     final nodeRotateList = _getNumberList(node, 'rotate');
 
     // Merge with parent lists

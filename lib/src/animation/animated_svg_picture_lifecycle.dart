@@ -721,6 +721,7 @@ extension _AnimatedSvgPictureStateLifecycleExtension
           : _timeline!.currentTime.inMicroseconds / 1000000.0,
       hasAnimations: _hasAnimations,
       clipToViewBox: widget.clipToViewBox,
+      refreshAnimationValues: _timeline?.refreshForRendering,
       debugHighlightedNode: _debugHighlightedNode,
     );
 

@@ -10,8 +10,24 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
     ui.BlendMode? blendMode,
     void Function(ui.Rect rect)? boundsRecorder,
   }) {
-    final startX = _getNumber(node, 'x') ?? 0.0;
-    final startY = _getNumber(node, 'y') ?? 0.0;
+    final startX =
+        _resolveDeferredDefinitionCoordinate(
+          node,
+          'x',
+          objectBoundingBoxUnits: false,
+          reference: SvgLengthReference.horizontal,
+        ) ??
+        _getNumber(node, 'x') ??
+        0.0;
+    final startY =
+        _resolveDeferredDefinitionCoordinate(
+          node,
+          'y',
+          objectBoundingBoxUnits: false,
+          reference: SvgLengthReference.vertical,
+        ) ??
+        _getNumber(node, 'y') ??
+        0.0;
     final cursor = _TextCursor(x: startX, y: startY);
     cursor.isFirstLine = true;
     _paintTextNode(
@@ -44,10 +60,38 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
     _TextLengthDistribution? inheritedDistribution,
     void Function(ui.Rect rect)? boundsRecorder,
   }) {
-    final nodeXList = _getNumberList(node, 'x');
-    final nodeYList = _getNumberList(node, 'y');
-    final nodeDxList = _getNumberList(node, 'dx');
-    final nodeDyList = _getNumberList(node, 'dy');
+    var nodeXList = resolveSvgDeferredCoordinateList(
+      node,
+      'x',
+      isHorizontal: true,
+    );
+    if (nodeXList.isEmpty) {
+      nodeXList = _getNumberList(node, 'x');
+    }
+    var nodeYList = resolveSvgDeferredCoordinateList(
+      node,
+      'y',
+      isHorizontal: false,
+    );
+    if (nodeYList.isEmpty) {
+      nodeYList = _getNumberList(node, 'y');
+    }
+    var nodeDxList = resolveSvgDeferredCoordinateList(
+      node,
+      'dx',
+      isHorizontal: true,
+    );
+    if (nodeDxList.isEmpty) {
+      nodeDxList = _getNumberList(node, 'dx');
+    }
+    var nodeDyList = resolveSvgDeferredCoordinateList(
+      node,
+      'dy',
+      isHorizontal: false,
+    );
+    if (nodeDyList.isEmpty) {
+      nodeDyList = _getNumberList(node, 'dy');
+    }
     final nodeRotateList = _getNumberList(node, 'rotate');
     final hasAbsoluteX = nodeXList.isNotEmpty;
     final hasAbsoluteY = nodeYList.isNotEmpty;
@@ -235,10 +279,38 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
   }) {
     final referencedText = _resolveTrefText(trefNode);
     if (referencedText == null || referencedText.isEmpty) return 0.0;
-    final nodeXList = _getNumberList(trefNode, 'x');
-    final nodeYList = _getNumberList(trefNode, 'y');
-    final nodeDxList = _getNumberList(trefNode, 'dx');
-    final nodeDyList = _getNumberList(trefNode, 'dy');
+    var nodeXList = resolveSvgDeferredCoordinateList(
+      trefNode,
+      'x',
+      isHorizontal: true,
+    );
+    if (nodeXList.isEmpty) {
+      nodeXList = _getNumberList(trefNode, 'x');
+    }
+    var nodeYList = resolveSvgDeferredCoordinateList(
+      trefNode,
+      'y',
+      isHorizontal: false,
+    );
+    if (nodeYList.isEmpty) {
+      nodeYList = _getNumberList(trefNode, 'y');
+    }
+    var nodeDxList = resolveSvgDeferredCoordinateList(
+      trefNode,
+      'dx',
+      isHorizontal: true,
+    );
+    if (nodeDxList.isEmpty) {
+      nodeDxList = _getNumberList(trefNode, 'dx');
+    }
+    var nodeDyList = resolveSvgDeferredCoordinateList(
+      trefNode,
+      'dy',
+      isHorizontal: false,
+    );
+    if (nodeDyList.isEmpty) {
+      nodeDyList = _getNumberList(trefNode, 'dy');
+    }
     final nodeRotateList = _getNumberList(trefNode, 'rotate');
     final hasAbsoluteX = nodeXList.isNotEmpty;
     final hasAbsoluteY = nodeYList.isNotEmpty;
