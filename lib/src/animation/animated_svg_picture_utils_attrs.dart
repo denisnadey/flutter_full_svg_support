@@ -162,4 +162,36 @@ extension _AnimatedSvgPictureStateAttrsExtension on _AnimatedSvgPictureState {
     final normalized = raw.replaceAll(RegExp(r'\s+'), ' ').trim();
     return normalized.isEmpty ? null : normalized;
   }
+
+  /// Resolves the text content referenced by a `tref` node's href.
+  ///
+  /// Mirrors the paint-side `tref` handling: the referenced element's text
+  /// (including nested children) is collected raw so hit runs occupy the same
+  /// positions the painter produces.
+  String? _resolveTrefTextContent(SvgNode trefNode) {
+    final hrefId = _extractHrefId(trefNode);
+    if (hrefId == null || hrefId.isEmpty) {
+      return null;
+    }
+
+    final referenced = _document.root.findById(hrefId);
+    if (referenced == null) {
+      return null;
+    }
+
+    final collected = _collectNodeTextContent(referenced);
+    return collected.isEmpty ? null : collected;
+  }
+
+  String _collectNodeTextContent(SvgNode node) {
+    final buffer = StringBuffer();
+    final directText = node.getAttributeValue('__text')?.toString();
+    if (directText != null) {
+      buffer.write(directText);
+    }
+    for (final child in node.children) {
+      buffer.write(_collectNodeTextContent(child));
+    }
+    return buffer.toString();
+  }
 }

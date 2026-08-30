@@ -443,6 +443,7 @@ extension _AnimatedSvgPictureStateHitTestGeometryExtension
         return false;
       case 'text':
       case 'tspan':
+      case 'tref':
         // Use glyph-precision hit-testing for better accuracy
         if (_glyphPrecisionTextContainsPoint(
           node,
