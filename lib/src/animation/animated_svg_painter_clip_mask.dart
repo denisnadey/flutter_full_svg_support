@@ -150,9 +150,17 @@ extension AnimatedSvgPainterClipMaskExtension on AnimatedSvgPainter {
   /// Computes local bounds for a node, including stroke width expansion.
   /// This is used for objectBoundingBox calculations in clip-path and mask.
   ui.Rect? _computeNodeLocalBoundsWithStroke(SvgNode node) {
-    // For text elements, use enhanced text bounds computation
+    // Text object bounds come from the shared fill-geometry resolver, which
+    // runs the real text layout pipeline and records glyph-cell boxes.
+    // objectBoundingBox coordinates must use unpainted bounds (no stroke,
+    // text-decoration, or text-emphasis expansion), so unlike shape bounds
+    // this branch does not inflate for painted effects.
     if (node.tagName == 'text' || node.tagName == 'tspan') {
-      return _computeTextMaskBounds(node);
+      final textBounds = _resolveTextGeometryBounds(node);
+      if (textBounds.width <= 0 || textBounds.height <= 0) {
+        return null;
+      }
+      return textBounds;
     }
 
     // For groups, compute union of all children's bounds
@@ -235,63 +243,5 @@ extension AnimatedSvgPainterClipMaskExtension on AnimatedSvgPainter {
         0.0;
 
     return refBounds.translate(x, y);
-  }
-
-  /// Computes mask bounds for text elements including stroke, decorations,
-  /// and emphasis marks per SVG spec.
-  ui.Rect? _computeTextMaskBounds(SvgNode textNode) {
-    final baseBounds = _computeNodeLocalBounds(textNode);
-    if (baseBounds == null) return null;
-
-    // Start with base bounds
-    var expandedBounds = baseBounds;
-
-    // Expand by stroke width
-    final strokeWidth = _getInheritedNumber(textNode, 'stroke-width') ?? 1.0;
-    final stroke = _getStyleOrAttributeValue(textNode, 'stroke');
-    if (stroke != null && stroke.toString().toLowerCase() != 'none') {
-      expandedBounds = expandedBounds.inflate(strokeWidth / 2);
-    }
-
-    // Expand for text decoration (underline, overline, line-through)
-    final decoration = _getInheritedString(
-      textNode,
-      'text-decoration',
-    )?.toLowerCase();
-    if (decoration != null && decoration != 'none') {
-      final fontSize = _getInheritedNumber(textNode, 'font-size') ?? 16.0;
-      // Expand by ~10% of font size for decoration thickness
-      final decorationExpand = fontSize * 0.1;
-      if (decoration.contains('underline')) {
-        expandedBounds = ui.Rect.fromLTRB(
-          expandedBounds.left,
-          expandedBounds.top,
-          expandedBounds.right,
-          expandedBounds.bottom + decorationExpand,
-        );
-      }
-      if (decoration.contains('overline')) {
-        expandedBounds = ui.Rect.fromLTRB(
-          expandedBounds.left,
-          expandedBounds.top - decorationExpand,
-          expandedBounds.right,
-          expandedBounds.bottom,
-        );
-      }
-    }
-
-    // Expand for text-emphasis marks (dots, circles, etc.)
-    final emphasis = _getInheritedString(
-      textNode,
-      'text-emphasis',
-    )?.toLowerCase();
-    if (emphasis != null && emphasis != 'none') {
-      final fontSize = _getInheritedNumber(textNode, 'font-size') ?? 16.0;
-      // Emphasis marks are typically placed above/below text
-      final emphasisExpand = fontSize * 0.5;
-      expandedBounds = expandedBounds.inflate(emphasisExpand);
-    }
-
-    return expandedBounds;
   }
 }

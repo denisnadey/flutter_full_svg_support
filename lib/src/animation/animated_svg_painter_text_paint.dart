@@ -183,6 +183,14 @@ extension AnimatedSvgPainterTextPaintExtension on AnimatedSvgPainter {
       );
       cursor.x += consumed;
     }
+    // SVG 1.1 §14 applies `clip-path` and `mask` only to container elements
+    // and graphics elements. Text content elements (`tspan`, `tref`, `bdo`,
+    // `textPath`) are neither, so those painting effects are intentionally
+    // not consulted on this recursive path — they never reach the tree-level
+    // `_applyClipPath` / `_applyMask` calls in _paintNodeImpl. SVG 2 / CSS
+    // Masking L1 broadens the applies-to to all elements, but support for
+    // effects on individual text content elements remains ambiguous in
+    // browsers (https://github.com/w3c/svgwg/issues/103); we follow SVG 1.1.
     for (final child in node.children) {
       if (child.tagName == 'tspan') {
         final childText = _extractTextContent(child);
