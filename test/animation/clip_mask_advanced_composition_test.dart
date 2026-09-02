@@ -529,20 +529,22 @@ void main() {
     });
   });
 
-  group('Bounds Computation with Stroke', () {
-    testWidgets('objectBoundingBox includes stroke width', (
+  group('Unpainted Object Bounds', () {
+    testWidgets('objectBoundingBox excludes stroke width', (
       WidgetTester tester,
     ) async {
-      // Stroke width should be included in bounding box for objectBoundingBox
+      // The object bounding box is the unpainted fill geometry (30..70), so
+      // a unit clip region hides the stroke that lies outside it (25..30 and
+      // 70..75) even though the stroke is painted.
       const svgXml = '''
         <svg viewBox="0 0 100 100">
           <defs>
             <clipPath id="clip" clipPathUnits="objectBoundingBox">
-              <rect x="-0.1" y="-0.1" width="1.2" height="1.2"/>
+              <rect width="1" height="1"/>
             </clipPath>
           </defs>
           <rect x="30" y="30" width="40" height="40"
-                fill="red" stroke="blue" stroke-width="10"
+                fill="red" stroke="red" stroke-width="10"
                 clip-path="url(#clip)"/>
         </svg>
       ''';
@@ -560,8 +562,13 @@ void main() {
       final pixels = await VisualTestUtils.captureWidgetPixels(tester);
       final analysis = VisualTestUtils.analyzeRedPixels(pixels, 800, 600);
 
-      // Should include stroke within mask bounds
-      expect(analysis.pixelCount, greaterThan(300));
+      // 200×200 widget over a 100-unit viewBox: 2px per unit. Visible red is
+      // the 40-unit fill square (80px), not the stroke-inflated 50 units.
+      expect(analysis.pixelCount, greaterThan(0));
+      expect(analysis.boundingBox.width, closeTo(80, 3));
+      expect(analysis.boundingBox.height, closeTo(80, 3));
+      expect(analysis.boundingBox.left, closeTo(60, 3));
+      expect(analysis.boundingBox.top, closeTo(60, 3));
     });
   });
 

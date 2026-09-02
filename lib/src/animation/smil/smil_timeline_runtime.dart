@@ -68,10 +68,18 @@ void _dispatchAnimationDOMEvent(
   }
 }
 
-void _refreshAnimationValuesImpl(SvgTimeline timeline, Duration time) {
+void _refreshAnimationValuesImpl(
+  SvgTimeline timeline,
+  Duration time, {
+  SvgNode? scopeRoot,
+}) {
   final refreshedTargets = <(SvgNode, String)>{};
   for (final animation in timeline.animations) {
     if (!animation.needsRenderingRefresh) {
+      continue;
+    }
+    if (scopeRoot != null &&
+        !_isNodeWithinSubtree(animation.targetNode, scopeRoot)) {
       continue;
     }
     animation.updateForTime(time);
@@ -81,6 +89,15 @@ void _refreshAnimationValuesImpl(SvgTimeline timeline, Duration time) {
   if (refreshedTargets.isNotEmpty) {
     _applyAnimationSandwichModel(timeline, targetFilter: refreshedTargets);
   }
+}
+
+bool _isNodeWithinSubtree(SvgNode node, SvgNode root) {
+  for (SvgNode? current = node; current != null; current = current.parent) {
+    if (identical(current, root)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 void _updateAnimationsImpl(SvgTimeline timeline, Duration time) {

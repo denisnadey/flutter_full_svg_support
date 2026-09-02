@@ -1300,6 +1300,30 @@ extension AnimatedSvgPainterCanvasTransformExtension on AnimatedSvgPainter {
     return _resolveGeometryBounds(node);
   }
 
+  /// Object bounding box of a clip-path or mask target, used by
+  /// `clipPathUnits`, `maskUnits`, and `maskContentUnits` objectBoundingBox
+  /// coordinate systems.
+  ///
+  /// SVG object bounding boxes are the unpainted fill geometry: stroke,
+  /// markers, filters, text decorations, and other paint effects do not
+  /// expand them. Clip paths and masks therefore share this resolver with
+  /// filters and `transform-box`, so text, groups, `<use>` instances, and
+  /// nested viewports have one definition of geometry bounds. Like
+  /// [_getNodeBounds], a `<use>` target includes its own x/y translation:
+  /// clip and mask effects are applied before `_paintUse` translates the
+  /// referenced content, so the bounds must be expressed in that space.
+  ///
+  /// Returns null for degenerate bounds so callers keep their existing
+  /// "nothing to clip or mask" handling.
+  ui.Rect? _computeNodeObjectBounds(SvgNode node) {
+    final bounds = _getNodeBounds(node);
+    if (bounds.width.abs() < _kMinBoundingBoxDimension ||
+        bounds.height.abs() < _kMinBoundingBoxDimension) {
+      return null;
+    }
+    return bounds;
+  }
+
   /// Unites [node]'s geometric children in its local coordinate system.
   ui.Rect _unionChildrenGeometryBounds(SvgNode node, Set<String>? useGuard) {
     ui.Rect? bounds;

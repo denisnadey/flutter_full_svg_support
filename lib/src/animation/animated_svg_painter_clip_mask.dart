@@ -100,7 +100,7 @@ extension AnimatedSvgPainterClipMaskExtension on AnimatedSvgPainter {
             .trim()
             .toLowerCase();
     if (contentUnits == 'objectboundingbox') {
-      final localBounds = _computeNodeLocalBoundsWithStroke(maskedNode);
+      final localBounds = _computeNodeObjectBounds(maskedNode);
       if (localBounds == null) {
         return null;
       }
@@ -145,103 +145,5 @@ extension AnimatedSvgPainterClipMaskExtension on AnimatedSvgPainter {
     }
 
     return effectiveMaskPath;
-  }
-
-  /// Computes local bounds for a node, including stroke width expansion.
-  /// This is used for objectBoundingBox calculations in clip-path and mask.
-  ui.Rect? _computeNodeLocalBoundsWithStroke(SvgNode node) {
-    // Text object bounds come from the shared fill-geometry resolver, which
-    // runs the real text layout pipeline and records glyph-cell boxes.
-    // objectBoundingBox coordinates must use unpainted bounds (no stroke,
-    // text-decoration, or text-emphasis expansion), so unlike shape bounds
-    // this branch does not inflate for painted effects.
-    if (node.tagName == 'text' || node.tagName == 'tspan') {
-      final textBounds = _resolveTextGeometryBounds(node);
-      if (textBounds.width <= 0 || textBounds.height <= 0) {
-        return null;
-      }
-      return textBounds;
-    }
-
-    // For groups, compute union of all children's bounds
-    if (node.tagName == 'g' || node.tagName == 'svg' || node.tagName == 'a') {
-      return _computeGroupBoundsWithStroke(node);
-    }
-
-    // For use elements, resolve the referenced element and compute bounds
-    if (node.tagName == 'use') {
-      return _computeUseBoundsWithStroke(node);
-    }
-
-    final baseBounds = _computeNodeLocalBounds(node);
-    if (baseBounds == null) return null;
-
-    // Expand bounds by stroke width if stroke is applied
-    final strokeWidth = _getInheritedNumber(node, 'stroke-width') ?? 1.0;
-    final stroke = _getStyleOrAttributeValue(node, 'stroke');
-    if (stroke != null && stroke.toString().toLowerCase() != 'none') {
-      final halfStroke = strokeWidth / 2;
-      return baseBounds.inflate(halfStroke);
-    }
-
-    return baseBounds;
-  }
-
-  /// Computes bounds for a group element by unioning all children's bounds.
-  ui.Rect? _computeGroupBoundsWithStroke(SvgNode group) {
-    ui.Rect? combinedBounds;
-    for (final child in group.children) {
-      final childBounds = _computeNodeLocalBoundsWithStroke(child);
-      if (childBounds != null) {
-        if (combinedBounds == null) {
-          combinedBounds = childBounds;
-        } else {
-          combinedBounds = combinedBounds.expandToInclude(childBounds);
-        }
-      }
-    }
-    return combinedBounds;
-  }
-
-  /// Computes bounds for a use element by resolving the referenced element
-  /// and applying the use element's x/y offset.
-  ui.Rect? _computeUseBoundsWithStroke(SvgNode useNode) {
-    // Extract href to find referenced element
-    final href =
-        useNode.getAttributeValue('href')?.toString() ??
-        useNode.getAttributeValue('xlink:href')?.toString();
-    if (href == null || href.isEmpty) return null;
-
-    // Extract ID from href (remove leading #)
-    final hrefId = href.startsWith('#') ? href.substring(1) : href;
-    if (hrefId.isEmpty) return null;
-
-    // Find the referenced element
-    final referencedNode = document.root.findById(hrefId);
-    if (referencedNode == null) return null;
-
-    // Compute bounds of the referenced element
-    final refBounds = _computeNodeLocalBoundsWithStroke(referencedNode);
-    if (refBounds == null) return null;
-
-    // Apply the use element's x/y offset
-    final x =
-        resolveSvgLength(
-          useNode,
-          document,
-          'x',
-          reference: SvgLengthReference.horizontal,
-        ) ??
-        0.0;
-    final y =
-        resolveSvgLength(
-          useNode,
-          document,
-          'y',
-          reference: SvgLengthReference.vertical,
-        ) ??
-        0.0;
-
-    return refBounds.translate(x, y);
   }
 }

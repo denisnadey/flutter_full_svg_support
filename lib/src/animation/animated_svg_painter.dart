@@ -122,7 +122,11 @@ class AnimatedSvgPainter extends CustomPainter {
   final bool hasAnimations;
 
   /// Refreshes viewport-dependent animation values before rendering.
-  final void Function()? refreshAnimationValues;
+  ///
+  /// Passing [scopeRoot] limits the refresh to animations targeting that
+  /// subtree; `<use>` instance viewports use it to re-evaluate shared
+  /// definition content in their own viewport.
+  final void Function({SvgNode? scopeRoot})? refreshAnimationValues;
 
   /// When true, clips rendered content to the SVG viewBox.
   ///

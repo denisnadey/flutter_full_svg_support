@@ -42,7 +42,7 @@ extension AnimatedSvgPainterClipMaskUnitsExtension on AnimatedSvgPainter {
     required SvgNode maskedNode,
     required SvgNode maskNode,
   }) {
-    final targetBounds = _computeNodeLocalBoundsWithStroke(maskedNode);
+    final targetBounds = _computeNodeObjectBounds(maskedNode);
     if (targetBounds == null) {
       return null;
     }
@@ -158,6 +158,18 @@ extension AnimatedSvgPainterClipMaskUnitsExtension on AnimatedSvgPainter {
     if (parsedValue is num) {
       return parsedValue.toDouble();
     }
+    // A deferred SMIL percentage that the rendering refresh has not resolved
+    // yet (for example outside a paint or hit-test scope) resolves against
+    // the mask's nearest viewport like any other userSpaceOnUse length.
+    if (parsedValue is SvgLengthPercentageValue) {
+      return resolveSvgLengthValue(
+        maskNode,
+        parsedValue,
+        reference: horizontal
+            ? SvgLengthReference.horizontal
+            : SvgLengthReference.vertical,
+      );
+    }
     final parsedRaw = parsedValue.toString().trim();
     if (parsedRaw.isEmpty) {
       return null;
@@ -225,7 +237,7 @@ extension AnimatedSvgPainterClipMaskUnitsExtension on AnimatedSvgPainter {
     SvgNode targetNode, {
     bool preserveAspectRatio = false,
   }) {
-    final bounds = _computeNodeLocalBoundsWithStroke(targetNode);
+    final bounds = _computeNodeObjectBounds(targetNode);
     if (bounds == null) {
       return null;
     }
@@ -273,7 +285,7 @@ extension AnimatedSvgPainterClipMaskUnitsExtension on AnimatedSvgPainter {
     SvgNode maskedNode, {
     bool clampToSafe = true,
   }) {
-    final bounds = _computeNodeLocalBoundsWithStroke(maskedNode);
+    final bounds = _computeNodeObjectBounds(maskedNode);
     if (bounds == null) {
       return null;
     }
@@ -326,7 +338,7 @@ extension AnimatedSvgPainterClipMaskUnitsExtension on AnimatedSvgPainter {
     SvgNode maskedNode,
     SvgNode maskNode,
   ) {
-    final bounds = _computeNodeLocalBoundsWithStroke(maskedNode);
+    final bounds = _computeNodeObjectBounds(maskedNode);
     if (bounds == null) {
       return null;
     }
@@ -366,52 +378,5 @@ extension AnimatedSvgPainterClipMaskUnitsExtension on AnimatedSvgPainter {
       maskedNode,
       clampToSafe: true,
     );
-  }
-
-  /// Resolves percentage values in mask region attributes.
-  ///
-  /// Handles both objectBoundingBox percentages (relative to bbox)
-  /// and userSpaceOnUse percentages (relative to viewport).
-  // ignore: unused_element
-  double? _resolveMaskPercentageValue(
-    SvgNode maskNode,
-    String attributeName,
-    bool isObjectBoundingBox,
-    ui.Rect? targetBounds,
-    bool isHorizontal,
-  ) {
-    final rawValue = maskNode.getAttributeValue(attributeName);
-    if (rawValue == null) {
-      return null;
-    }
-
-    final raw = rawValue.toString().trim();
-    if (raw.isEmpty) {
-      return null;
-    }
-
-    // Check for percentage
-    if (raw.endsWith('%')) {
-      final percent = double.tryParse(raw.substring(0, raw.length - 1));
-      if (percent == null) {
-        return null;
-      }
-
-      if (isObjectBoundingBox) {
-        // Percentage relative to objectBoundingBox is already in 0-1 range
-        return percent / 100.0;
-      } else {
-        // Percentage relative to viewport
-        final viewport = _resolveMaskUnitsViewportRect();
-        if (viewport == null) {
-          return null;
-        }
-        final dimension = isHorizontal ? viewport.width : viewport.height;
-        return dimension * percent / 100.0;
-      }
-    }
-
-    // Try parsing as number
-    return double.tryParse(raw);
   }
 }

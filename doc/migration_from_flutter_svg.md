@@ -13,7 +13,7 @@ dependencies:
 
 # After
 dependencies:
-  full_svg_flutter: ^1.4.4
+  full_svg_flutter: ^1.5.1
 ```
 
 You can remove `flutter_svg` entirely; `full_svg_flutter` re-exports the same `SvgPicture` API.

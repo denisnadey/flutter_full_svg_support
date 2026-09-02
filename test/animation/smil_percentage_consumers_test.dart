@@ -74,7 +74,7 @@ int? _firstRedColumn(Uint8List pixels, int width, int height) {
 
 void main() {
   group('SmilPercentageSemantics classification', () {
-    test('only migrated objectBoundingBox consumers are classified', () {
+    test('objectBoundingBox definitions and clip content are classified', () {
       final document = SvgParser.parse('''
         <svg viewBox="0 0 200 100">
           <defs>
@@ -103,13 +103,18 @@ void main() {
         smilPercentageSemanticsForAttribute('width', targetNode: pattern),
         SmilPercentageSemantics.objectBoundingBox,
       );
+      // Clip content resolves percentages against the viewport (as in
+      // browsers), so it keeps ordinary length semantics instead of being
+      // stripped to a number.
       expect(
         smilPercentageSemanticsForAttribute('x', targetNode: clipRect),
-        SmilPercentageSemantics.none,
+        SmilPercentageSemantics.horizontalLength,
       );
+      // The mask region defaults to maskUnits="objectBoundingBox", where
+      // percentages are bounding-box fractions.
       expect(
         smilPercentageSemanticsForAttribute('x', targetNode: mask),
-        SmilPercentageSemantics.none,
+        SmilPercentageSemantics.objectBoundingBox,
       );
     });
 
@@ -507,7 +512,7 @@ void main() {
   );
 
   testWidgets(
-    'clipPath objectBoundingBox content with an animated percentage stays numeric',
+    'clipPath objectBoundingBox content keeps a viewport-relative animated percentage',
     (tester) async {
       const svg = '''
       <svg viewBox="0 0 200 100">
@@ -528,16 +533,18 @@ void main() {
         height: 100,
         initialTime: const Duration(seconds: 1),
       );
-      // Narrowed classification keeps the clip content numeric, so the target is
-      // fully clipped (numeric 50 is outside the 0..1 objectBoundingBox fraction
-      // range) rather than leaking a viewport wrapper into the bbox transform.
-      // The correct objectBoundingBox consumer behavior is deferred (#46).
+      // Percentages inside clipPath content resolve against the SVG viewport
+      // even under objectBoundingBox units (Blink semantics): the midpoint
+      // 50% is 100 user units, read as 100 bbox units, so the clip lies far
+      // outside the target and nothing is visible. See #46 and
+      // object_bounding_box_animated_percentage_test.dart for the typed
+      // midpoint assertions.
       expect(_firstRedColumn(pixels, 200, 100), isNull);
     },
   );
 
   testWidgets(
-    'objectBoundingBox mask region with an animated percentage stays numeric',
+    'objectBoundingBox mask region resolves an animated percentage as a bbox fraction',
     (tester) async {
       const svg = '''
       <svg viewBox="0 0 200 100">
@@ -559,8 +566,10 @@ void main() {
         height: 100,
         initialTime: const Duration(seconds: 1),
       );
-      // Narrowed classification keeps the mask region numeric and bounded.
-      expect(_firstRedColumn(pixels, 200, 100), isNotNull);
+      // maskUnits="objectBoundingBox" region attributes are bbox fractions:
+      // the midpoint 50% is x = 0.5 with width 0.5, so the visible region is
+      // the right half of the target.
+      expect(_firstRedColumn(pixels, 200, 100), closeTo(100, 1.5));
     },
   );
 

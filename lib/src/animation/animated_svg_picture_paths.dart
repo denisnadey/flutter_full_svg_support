@@ -259,14 +259,302 @@ extension _AnimatedSvgPictureStatePathsExtension on _AnimatedSvgPictureState {
     }
   }
 
-  Rect? _computeNodeLocalBounds(SvgNode node) {
-    final path = _buildGeometryPath(node);
-    if (path == null) {
+  /// Unpainted object bounds of [node] in its local user coordinate system.
+  ///
+  /// Mirrors the painter's `_computeNodeObjectBounds`: fill geometry only,
+  /// without stroke or other paint effects, so objectBoundingBox clip and
+  /// mask hit testing shares one bounds definition with painting. Containers
+  /// unite their children mapped through each child's own transform, `<use>`
+  /// resolves the referenced content through the same viewport mapping as
+  /// hit traversal and (like the painter) includes its own x/y translation,
+  /// and text bounds come from the glyph-precision hit runs.
+  ///
+  /// [useGuard] breaks circular `<use>` reference chains.
+  Rect? _computeNodeLocalBounds(SvgNode node, [Set<String>? useGuard]) {
+    var bounds = _resolveObjectBoundsForHitTesting(node, useGuard);
+    if (bounds == null) {
       return null;
     }
-    final bounds = path.getBounds();
+    if (node.tagName == 'use') {
+      bounds = bounds.shift(
+        Offset(
+          _resolveHitTestLength(node, 'x', horizontal: true),
+          _resolveHitTestLength(node, 'y', horizontal: false),
+        ),
+      );
+    }
     if (bounds.width.abs() < 1e-6 || bounds.height.abs() < 1e-6) {
       return null;
+    }
+    return bounds;
+  }
+
+  /// Fill geometry of [node] excluding its own transform and, for `<use>`,
+  /// its x/y translation. Container traversal applies both in
+  /// [_mapChildObjectBoundsToParentForHitTesting].
+  Rect? _resolveObjectBoundsForHitTesting(SvgNode node, Set<String>? useGuard) {
+    switch (node.tagName) {
+      case 'text':
+      case 'tspan':
+      case 'tref':
+        return _computeTextObjectBoundsForHitTesting(node);
+      case 'g':
+      case 'a':
+      case 'svg':
+      case 'symbol':
+      case 'foreignObject':
+        return _unionChildObjectBoundsForHitTesting(node, useGuard);
+      case 'switch':
+        final activeChild = resolveActiveSwitchChild(node);
+        if (activeChild == null || _isDisplayNoneForBounds(activeChild)) {
+          return null;
+        }
+        final childBounds = _resolveObjectBoundsForHitTesting(
+          activeChild,
+          useGuard,
+        );
+        if (childBounds == null) {
+          return null;
+        }
+        return _mapChildObjectBoundsToParentForHitTesting(
+          activeChild,
+          childBounds,
+        );
+      case 'use':
+        return _resolveUseObjectBoundsForHitTesting(node, useGuard);
+      case 'image':
+        return Rect.fromLTWH(
+          _resolveHitTestLength(node, 'x', horizontal: true),
+          _resolveHitTestLength(node, 'y', horizontal: false),
+          _resolveHitTestLength(node, 'width', horizontal: true),
+          _resolveHitTestLength(node, 'height', horizontal: false),
+        );
+      default:
+        return _buildGeometryPath(node)?.getBounds();
+    }
+  }
+
+  Rect? _unionChildObjectBoundsForHitTesting(
+    SvgNode node,
+    Set<String>? useGuard,
+  ) {
+    Rect? bounds;
+    for (final child in node.children) {
+      if (_isDisplayNoneForBounds(child)) {
+        continue;
+      }
+      final childBounds = _resolveObjectBoundsForHitTesting(child, useGuard);
+      if (childBounds == null ||
+          childBounds.width <= 0 ||
+          childBounds.height <= 0) {
+        continue;
+      }
+      final mapped = _mapChildObjectBoundsToParentForHitTesting(
+        child,
+        childBounds,
+      );
+      bounds = bounds == null ? mapped : bounds.expandToInclude(mapped);
+    }
+    return bounds;
+  }
+
+  /// Maps a child's local bounds into its parent's coordinate system using
+  /// the same transform chain as hit traversal: the child's transform
+  /// attribute, then the x/y translation of `<foreignObject>`, nested
+  /// `<svg>` (with its viewBox mapping), and `<use>`.
+  Rect _mapChildObjectBoundsToParentForHitTesting(SvgNode child, Rect bounds) {
+    final matrix = Matrix4.identity();
+    _applyNodeTransform(matrix, child);
+    switch (child.tagName) {
+      case 'foreignObject':
+      case 'use':
+        matrix.translateByDouble(
+          _resolveHitTestLength(child, 'x', horizontal: true),
+          _resolveHitTestLength(child, 'y', horizontal: false),
+          0,
+          1,
+        );
+      case 'svg':
+        if (!identical(child, _document.root)) {
+          _applyNestedSvgViewportTransform(matrix, child);
+        }
+    }
+    return MatrixUtils.transformRect(matrix, bounds);
+  }
+
+  Rect? _resolveUseObjectBoundsForHitTesting(
+    SvgNode useNode,
+    Set<String>? useGuard,
+  ) {
+    final hrefId = _extractHrefId(useNode);
+    if (hrefId == null || hrefId.isEmpty) {
+      return null;
+    }
+    final guard = useGuard ?? <String>{};
+    if (!guard.add(hrefId)) {
+      return null;
+    }
+    try {
+      final referenced = _document.root.findById(hrefId);
+      if (referenced == null ||
+          !isSvgUseReferenceAllowedTag(referenced.tagName) ||
+          _isDisplayNoneForBounds(referenced)) {
+        return null;
+      }
+      if (!_isUseViewportReferenceTag(referenced.tagName)) {
+        final referencedBounds = _resolveObjectBoundsForHitTesting(
+          referenced,
+          guard,
+        );
+        if (referencedBounds == null) {
+          return null;
+        }
+        return _mapChildObjectBoundsToParentForHitTesting(
+          referenced,
+          referencedBounds,
+        );
+      }
+
+      // use → symbol / svg establishes a viewport sized by the use element.
+      var contentBounds = _unionChildObjectBoundsForHitTesting(
+        referenced,
+        guard,
+      );
+      if (contentBounds == null) {
+        return null;
+      }
+      if (referenced.tagName == 'svg') {
+        // A referenced <svg> is traversed as a normal nested svg after the
+        // use viewport mapping, so its own x/y and viewBox apply as well.
+        contentBounds = _mapChildObjectBoundsToParentForHitTesting(
+          referenced,
+          contentBounds,
+        );
+      }
+      final viewBox = _parseViewBox(referenced.getAttributeValue('viewBox'));
+      final useWidth = resolveSvgLength(
+        useNode,
+        _document,
+        'width',
+        reference: SvgLengthReference.horizontal,
+      );
+      final useHeight = resolveSvgLength(
+        useNode,
+        _document,
+        'height',
+        reference: SvgLengthReference.vertical,
+      );
+      final hasViewportTransform =
+          viewBox != null &&
+          viewBox.width > 0 &&
+          viewBox.height > 0 &&
+          useWidth != null &&
+          useHeight != null &&
+          useWidth > 0 &&
+          useHeight > 0;
+      if (!hasViewportTransform) {
+        // No viewBox-to-viewport mapping: the content is rendered unscaled
+        // but still clipped to the use width/height (or the viewBox) unless
+        // overflow is visible. Mirror the painter's bounds resolver.
+        final overflow = _getInheritedString(
+          referenced,
+          'overflow',
+        )?.toLowerCase();
+        if (overflow == 'visible') {
+          return contentBounds;
+        }
+        Rect? rendererClip;
+        if (useWidth != null &&
+            useHeight != null &&
+            useWidth > 0 &&
+            useHeight > 0) {
+          rendererClip = Rect.fromLTWH(0, 0, useWidth, useHeight);
+        } else if (viewBox != null && viewBox.width > 0 && viewBox.height > 0) {
+          rendererClip = viewBox;
+        }
+        return rendererClip == null
+            ? contentBounds
+            : _intersectBoundsOrNull(contentBounds, rendererClip);
+      }
+      final matrix = Matrix4.identity();
+      final clipRect = _applyUseViewportTransform(matrix, useNode, referenced);
+      final mapped = MatrixUtils.transformRect(matrix, contentBounds);
+      return clipRect == null
+          ? mapped
+          : _intersectBoundsOrNull(mapped, clipRect);
+    } finally {
+      guard.remove(hrefId);
+    }
+  }
+
+  Rect? _intersectBoundsOrNull(Rect a, Rect b) {
+    final intersection = a.intersect(b);
+    if (intersection.width <= 0 || intersection.height <= 0) {
+      return null;
+    }
+    return intersection;
+  }
+
+  bool _isDisplayNoneForBounds(SvgNode node) {
+    final display =
+        (_extractStyleValue(node, 'display') ??
+                node.getAttributeValue('display'))
+            ?.toString()
+            .trim()
+            .toLowerCase();
+    return display == 'none';
+  }
+
+  double _resolveHitTestLength(
+    SvgNode node,
+    String attributeName, {
+    required bool horizontal,
+  }) {
+    return resolveSvgLength(
+          node,
+          _document,
+          attributeName,
+          reference: horizontal
+              ? SvgLengthReference.horizontal
+              : SvgLengthReference.vertical,
+        ) ??
+        0.0;
+  }
+
+  /// Unpainted bounds of a text node or text content child from the glyph
+  /// runs the glyph-precision hit path builds, in the text's local space.
+  Rect? _computeTextObjectBoundsForHitTesting(SvgNode node) {
+    final textRoot = _findTextLayoutRoot(node);
+    if (textRoot == null) {
+      return null;
+    }
+    Rect? bounds;
+    for (final run in _buildGlyphPrecisionHitRuns(textRoot)) {
+      if (!_isNodeOrDescendant(run.owner, node)) {
+        continue;
+      }
+      var runBounds = run.bounds ?? run.glyphPath?.getBounds();
+      if (runBounds == null || runBounds.isEmpty) {
+        continue;
+      }
+      if (run.rotation != 0.0) {
+        final rotation = Matrix4.identity()
+          ..translateByDouble(
+            run.rotationCenter.dx,
+            run.rotationCenter.dy,
+            0,
+            1,
+          )
+          ..rotateZ(run.rotation * math.pi / 180.0)
+          ..translateByDouble(
+            -run.rotationCenter.dx,
+            -run.rotationCenter.dy,
+            0,
+            1,
+          );
+        runBounds = MatrixUtils.transformRect(rotation, runBounds);
+      }
+      bounds = bounds == null ? runBounds : bounds.expandToInclude(runBounds);
     }
     return bounds;
   }

@@ -308,10 +308,10 @@ extension AnimatedSvgPainterUseExtension on AnimatedSvgPainter {
       paintSymbolContent();
       return;
     }
-    SvgLengthResolutionContext.runWithViewportForNode(
-      symbolNode,
-      viewport,
-      paintSymbolContent,
+    _runWithUseInstanceViewport(
+      referencedNode: symbolNode,
+      viewport: viewport,
+      callback: paintSymbolContent,
     );
   }
 
@@ -383,11 +383,40 @@ extension AnimatedSvgPainterUseExtension on AnimatedSvgPainter {
       paintSvgContent();
       return;
     }
-    SvgLengthResolutionContext.runWithViewportForNode(
-      svgNode,
-      viewport,
-      paintSvgContent,
+    _runWithUseInstanceViewport(
+      referencedNode: svgNode,
+      viewport: viewport,
+      callback: paintSvgContent,
     );
+  }
+
+  /// Paints referenced content inside the viewport a `<use>` instance
+  /// establishes for [referencedNode].
+  ///
+  /// The definition DOM is shared by every instance, so viewport-dependent
+  /// animation values (percentage-aware paced timing) targeting the
+  /// referenced subtree are re-evaluated on entry, in this instance's
+  /// viewport, and restored to the surrounding viewport's values on exit so
+  /// later siblings outside this shadow tree read the right state. For a
+  /// nested `<use>` the exit refresh still runs inside the outer instance
+  /// scope, so it restores the outer instance's values.
+  void _runWithUseInstanceViewport({
+    required SvgNode referencedNode,
+    required ui.Size viewport,
+    required void Function() callback,
+  }) {
+    try {
+      SvgLengthResolutionContext.runWithViewportForNode(
+        referencedNode,
+        viewport,
+        () {
+          refreshAnimationValues?.call(scopeRoot: referencedNode);
+          callback();
+        },
+      );
+    } finally {
+      refreshAnimationValues?.call(scopeRoot: referencedNode);
+    }
   }
 
   ui.Size? _resolveUseInstanceViewportSize(SvgNode useNode) {

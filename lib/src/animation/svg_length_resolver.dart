@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 
 import 'css_cascade.dart';
 import 'svg_dom.dart';
+import 'svg_filters.dart';
 
 /// The reference dimension used when resolving an SVG percentage length.
 enum SvgLengthReference {
@@ -422,6 +423,94 @@ double? resolveSvgNumericAttributeValue(
     default:
       return null;
   }
+}
+
+/// Resolves a value expressed in an objectBoundingBox coordinate system to a
+/// bounding-box fraction, where `100%` is `1.0`.
+///
+/// Accepts the deferred [SvgLengthPercentageValue] produced by SMIL
+/// interpolation, the raw percentage or number text written by `<set>` and
+/// discrete animations or present on a static attribute, and plain numbers.
+/// Returns null when [value] is not a length.
+///
+/// This is the fraction semantics browsers apply to the *own* attributes of
+/// elements with an objectBoundingBox unit mode (mask region, gradient and
+/// pattern coordinates); geometry inside clipPath/mask content instead keeps
+/// viewport-relative percentages and goes through [resolveSvgLength].
+double? resolveSvgObjectBoundingBoxFraction(Object? value) {
+  final length = SvgLengthPercentageValue.tryParse(value);
+  if (length == null) {
+    return null;
+  }
+  return length.absolute + length.percentage / 100;
+}
+
+/// Resolves [attributeName] on [node] as an objectBoundingBox fraction.
+///
+/// An active SMIL value wins over the raw presentation attribute. Otherwise
+/// the raw attribute text is used so a static `25%` keeps its percentage
+/// unit, which the parser strips from numeric attribute values; the parsed
+/// value is the last fallback.
+double? resolveSvgObjectBoundingBoxAttribute(
+  SvgNode node,
+  String attributeName,
+) {
+  if (node.getAttribute(attributeName)?.isAnimated ?? false) {
+    return resolveSvgObjectBoundingBoxFraction(
+      node.getAttributeValue(attributeName),
+    );
+  }
+  final raw = node.getRawAttributeValue(attributeName)?.trim();
+  if (raw != null && raw.isNotEmpty) {
+    return resolveSvgObjectBoundingBoxFraction(raw);
+  }
+  return resolveSvgObjectBoundingBoxFraction(
+    node.getAttributeValue(attributeName),
+  );
+}
+
+/// Effective `<filter>` region for [filterId]: the statically parsed region
+/// with any active SMIL value on the filter element's own `x`, `y`, `width`,
+/// or `height` applied on top.
+///
+/// Under `filterUnits="objectBoundingBox"` (the default) an animated value is
+/// a bounding-box fraction (`50%` → 0.5, like the mask region); under
+/// `userSpaceOnUse` it is a viewport-relative length resolved in the filter
+/// element's coordinate system. Attributes without an active animation keep
+/// the parsed value, so static documents are unaffected.
+SvgFilterRegion resolveSvgEffectiveFilterRegion(
+  SvgDocument document,
+  String filterId,
+) {
+  final staticRegion =
+      document.filters?.getFilterRegion(filterId) ?? const SvgFilterRegion();
+  final filterNode = document.root.findById(filterId);
+  if (filterNode == null) {
+    return staticRegion;
+  }
+
+  double resolve(
+    String attributeName,
+    double fallback,
+    SvgLengthReference reference,
+  ) {
+    if (!(filterNode.getAttribute(attributeName)?.isAnimated ?? false)) {
+      return fallback;
+    }
+    final value = filterNode.getAttributeValue(attributeName);
+    final resolved = staticRegion.isObjectBoundingBox
+        ? resolveSvgObjectBoundingBoxFraction(value)
+        : resolveSvgLengthValue(filterNode, value, reference: reference);
+    return resolved ?? fallback;
+  }
+
+  return SvgFilterRegion(
+    x: resolve('x', staticRegion.x, SvgLengthReference.horizontal),
+    y: resolve('y', staticRegion.y, SvgLengthReference.vertical),
+    width: resolve('width', staticRegion.width, SvgLengthReference.horizontal),
+    height: resolve('height', staticRegion.height, SvgLengthReference.vertical),
+    isObjectBoundingBox: staticRegion.isObjectBoundingBox,
+  );
 }
 
 double _resolveSvgLengthPercentageValue(

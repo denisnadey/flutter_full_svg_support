@@ -787,6 +787,18 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
     if (parsedValue is num) {
       return parsedValue.toDouble();
     }
+    // A deferred SMIL percentage that the rendering refresh has not resolved
+    // yet resolves against the mask's nearest viewport like any other
+    // userSpaceOnUse length, matching the painter.
+    if (parsedValue is SvgLengthPercentageValue) {
+      return resolveSvgLengthValue(
+        maskNode,
+        parsedValue,
+        reference: horizontal
+            ? SvgLengthReference.horizontal
+            : SvgLengthReference.vertical,
+      );
+    }
     final parsedRaw = parsedValue.toString().trim();
     if (parsedRaw.isEmpty) {
       return null;
@@ -841,37 +853,14 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
     return Rect.fromLTWH(0, 0, width, height);
   }
 
-  /// Parses a mask region attribute for objectBoundingBox units in hit-testing.
-  ///
-  /// Uses raw attribute values to properly detect percentage values,
-  /// since the SVG parser strips the '%' suffix from numeric attributes.
-  /// In objectBoundingBox mode, percentages like "25%" should be treated
-  /// as 0.25 (a fraction of the bounding box).
+  /// Parses a mask region attribute for objectBoundingBox units in hit-testing
+  /// as a bounding-box fraction (`25%` → 0.25), using the same animated-first
+  /// resolution as the painter's `_parseMaskRegionBoundingBoxValue`.
   double? _parseMaskRegionBoundingBoxValueForHitTest(
     SvgNode maskNode,
     String attrName,
   ) {
-    // First check the raw value to detect percentages
-    final rawValue = maskNode.getRawAttributeValue(attrName);
-    if (rawValue != null) {
-      final trimmed = rawValue.trim();
-      if (trimmed.endsWith('%')) {
-        // Parse as percentage and convert to fraction
-        final numericPart = trimmed.substring(0, trimmed.length - 1);
-        final percent = double.tryParse(numericPart);
-        if (percent != null) {
-          return percent / 100.0;
-        }
-      }
-      // Try parsing as a plain number
-      return double.tryParse(trimmed);
-    }
-
-    // Fall back to parsed value (handles numeric values)
-    final parsedValue = maskNode.getAttributeValue(attrName);
-    if (parsedValue == null) return null;
-    if (parsedValue is num) return parsedValue.toDouble();
-    return double.tryParse(parsedValue.toString());
+    return resolveSvgObjectBoundingBoxAttribute(maskNode, attrName);
   }
 
   bool _isPointInsideForeignObjectViewport(SvgNode node, Offset localPoint) {

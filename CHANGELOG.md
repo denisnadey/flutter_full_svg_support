@@ -1,3 +1,59 @@
+## 1.5.1
+
+### Percentage lengths, objectBoundingBox effects, and per-instance paced timing
+
+**Fixed**
+
+- Percentage lengths resolve against the correct viewport everywhere: basic
+  shapes, `<use>` geometry and instance viewports, nested `<svg>` and
+  `<foreignObject>`, text coordinates, mask regions, and hit testing, including
+  a dimensionless root whose viewport is the embedding widget size.
+- SMIL animations between mixed percentage and absolute values keep both units
+  through interpolation, additive composition, and `calcMode="paced"` timing;
+  gradient, pattern, text, stroke, and opacity consumers resolve the deferred
+  value at render time, including `calcMode="discrete"` and `<set>` values.
+- `clipPathUnits`, `maskUnits`, and `maskContentUnits` objectBoundingBox
+  coordinate systems use the unpainted object bounds: stroke and other paint
+  effects no longer inflate the bounding box, group children are mapped through
+  their own transforms, `<use>` targets keep their x/y offset, and `<text>` /
+  `<tspan>` targets contribute layout-derived bounds instead of being clipped
+  out. Hit testing shares the same bounds for container, use, image, and text
+  targets.
+- Animated percentages on `<mask>` region attributes are bounding-box fractions
+  under `maskUnits="objectBoundingBox"` and no longer ignore the animation in
+  favor of the static attribute. Percentages inside clipPath and mask content
+  stay viewport-relative, matching browsers, and keep their unit through
+  interpolation instead of being stripped to a number.
+- Animated percentages on the `<filter>` region (`x`, `y`, `width`, `height`)
+  now take effect: bounding-box fractions under `filterUnits="objectBoundingBox"`
+  and viewport lengths under `userSpaceOnUse`. The region was previously
+  parsed once from the source and never re-read during animation.
+- Animated percentages on a `<mask maskUnits="userSpaceOnUse">` region resolve
+  against the viewport instead of being stripped to bare numbers.
+- Percentage-aware paced animations inside shared `<symbol>` and `<svg>`
+  content are evaluated per `<use>` instance viewport in painting and hit
+  testing, with a per-viewport key-time cache that invalidates when the
+  instance viewport changes.
+- `<tref>` painted text is hit-testable at its painted glyph positions.
+- The QuickJS engine asset path uses `packages/quickjs_engine` after the
+  package rename.
+
+**Maintenance**
+
+- Hit testing refreshes viewport-dependent animation values before resolving
+  geometry instead of reading the last painted state.
+- Thanks to [@oierxjn](https://github.com/oierxjn) for the percentage-length
+  stack ([#33](https://github.com/denisnadey/flutter_full_svg_support/pull/33),
+  [#39](https://github.com/denisnadey/flutter_full_svg_support/pull/39),
+  [#41](https://github.com/denisnadey/flutter_full_svg_support/pull/41),
+  [#43](https://github.com/denisnadey/flutter_full_svg_support/pull/43)), the
+  `tref` hit-testing fix
+  ([#48](https://github.com/denisnadey/flutter_full_svg_support/pull/48)), and
+  the text object-bounds fix
+  ([#49](https://github.com/denisnadey/flutter_full_svg_support/pull/49)), and
+  to [@remtrik](https://github.com/remtrik) for the QuickJS asset path fix
+  ([#45](https://github.com/denisnadey/flutter_full_svg_support/pull/45)).
+
 ## 1.5.0
 
 ### FullSVG DevTools Inspector

@@ -794,11 +794,12 @@ extension _AnimatedSvgPictureStateImagesExtension on _AnimatedSvgPictureState {
         continue;
       }
 
-      final captureRect =
-          _document.filters
-              ?.getFilterRegion(request.filterId)
-              .computeRect(nodeBounds) ??
-          nodeBounds;
+      final captureRect = _document.filters == null
+          ? nodeBounds
+          : resolveSvgEffectiveFilterRegion(
+              _document,
+              request.filterId,
+            ).computeRect(nodeBounds);
       final captureWidth = captureRect.width.round();
       final captureHeight = captureRect.height.round();
       if (captureWidth <= 0 || captureHeight <= 0) {
@@ -949,11 +950,12 @@ extension _AnimatedSvgPictureStateImagesExtension on _AnimatedSvgPictureState {
         if (nodeBounds.width <= 0 || nodeBounds.height <= 0) {
           continue;
         }
-        final captureRect =
-            _document.filters
-                ?.getFilterRegion(request.filterId)
-                .computeRect(nodeBounds) ??
-            nodeBounds;
+        final captureRect = _document.filters == null
+            ? nodeBounds
+            : resolveSvgEffectiveFilterRegion(
+                _document,
+                request.filterId,
+              ).computeRect(nodeBounds);
         final captureWidth = captureRect.width.round();
         final captureHeight = captureRect.height.round();
         if (captureWidth <= 0 || captureHeight <= 0) {

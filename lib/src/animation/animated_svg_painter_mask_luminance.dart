@@ -135,7 +135,7 @@ extension AnimatedSvgPainterMaskLuminanceExtension on AnimatedSvgPainter {
     required SvgNode maskedNode,
     required SvgNode maskNode,
   }) {
-    final targetBounds = _computeNodeLocalBoundsWithStroke(maskedNode);
+    final targetBounds = _computeNodeObjectBounds(maskedNode);
     if (targetBounds == null) return null;
 
     // Edge case: degenerate bounding box
@@ -177,34 +177,15 @@ extension AnimatedSvgPainterMaskLuminanceExtension on AnimatedSvgPainter {
     );
   }
 
-  /// Parses a mask region attribute for objectBoundingBox units.
+  /// Parses a mask region attribute for objectBoundingBox units as a
+  /// bounding-box fraction (`25%` → 0.25).
   ///
-  /// Uses raw attribute values to properly detect percentage values,
-  /// since the SVG parser strips the '%' suffix from numeric attributes.
-  /// In objectBoundingBox mode, percentages like "25%" should be treated
-  /// as 0.25 (a fraction of the bounding box).
+  /// An active SMIL value (a deferred `SvgLengthPercentageValue`, or the raw
+  /// `50%`/number written by `<set>` and discrete animations) wins over the
+  /// raw presentation attribute; otherwise the raw text is consulted so a
+  /// static percentage keeps the unit the parser strips from numeric values.
   double? _parseMaskRegionBoundingBoxValue(SvgNode maskNode, String attrName) {
-    // First check the raw value to detect percentages
-    final rawValue = maskNode.getRawAttributeValue(attrName);
-    if (rawValue != null) {
-      final trimmed = rawValue.trim();
-      if (trimmed.endsWith('%')) {
-        // Parse as percentage and convert to fraction
-        final numericPart = trimmed.substring(0, trimmed.length - 1);
-        final percent = double.tryParse(numericPart);
-        if (percent != null) {
-          return percent / 100.0;
-        }
-      }
-      // Try parsing as a plain number
-      return double.tryParse(trimmed);
-    }
-
-    // Fall back to parsed value (handles numeric values)
-    final parsedValue = maskNode.getAttributeValue(attrName);
-    if (parsedValue == null) return null;
-    if (parsedValue is num) return parsedValue.toDouble();
-    return double.tryParse(parsedValue.toString());
+    return resolveSvgObjectBoundingBoxAttribute(maskNode, attrName);
   }
 
   /// Computes mask bounds for userSpaceOnUse units.
@@ -264,7 +245,7 @@ extension AnimatedSvgPainterMaskLuminanceExtension on AnimatedSvgPainter {
 
     Matrix4? contentTransform;
     if (contentUnits == 'objectboundingbox') {
-      final localBounds = _computeNodeLocalBoundsWithStroke(maskedNode);
+      final localBounds = _computeNodeObjectBounds(maskedNode);
       if (localBounds != null &&
           localBounds.width.abs() >= _kMinBoundingBoxDimension &&
           localBounds.height.abs() >= _kMinBoundingBoxDimension) {
@@ -344,7 +325,7 @@ extension AnimatedSvgPainterMaskLuminanceExtension on AnimatedSvgPainter {
 
     Matrix4? contentTransform;
     if (contentUnits == 'objectboundingbox') {
-      final localBounds = _computeNodeLocalBoundsWithStroke(maskedNode);
+      final localBounds = _computeNodeObjectBounds(maskedNode);
       if (localBounds != null &&
           localBounds.width.abs() >= _kMinBoundingBoxDimension &&
           localBounds.height.abs() >= _kMinBoundingBoxDimension) {

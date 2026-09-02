@@ -774,16 +774,4 @@ extension AnimatedSvgPainterClipMaskGeometryExtension on AnimatedSvgPainter {
       clipRect: layout.clipToViewport ? viewport : null,
     );
   }
-
-  ui.Rect? _computeNodeLocalBounds(SvgNode node) {
-    final path = _buildGeometryPath(node);
-    if (path == null) {
-      return null;
-    }
-    final bounds = path.getBounds();
-    if (bounds.width.abs() < 1e-6 || bounds.height.abs() < 1e-6) {
-      return null;
-    }
-    return bounds;
-  }
 }

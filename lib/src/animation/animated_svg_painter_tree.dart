@@ -173,7 +173,8 @@ _ResolvedNodeFilterState _resolveNodeFilterState(
 
   ui.Rect? regionClip;
   if (filterId != null && painter.document.filters != null) {
-    final region = painter.document.filters!.getFilterRegion(filterId);
+    // Applies active SMIL values on the filter's own x/y/width/height.
+    final region = resolveSvgEffectiveFilterRegion(painter.document, filterId);
     if (targetBounds.width > 0 && targetBounds.height > 0) {
       regionClip = region.computeRect(targetBounds);
     }
@@ -1642,7 +1643,10 @@ ui.Rect _resolveFeImageFilterRegionRect(
   if (filters == null) {
     return objectBounds;
   }
-  final region = filters.getFilterRegion(pass.feImageFilter.id);
+  final region = resolveSvgEffectiveFilterRegion(
+    painter.document,
+    pass.feImageFilter.id,
+  );
   return region.computeRect(objectBounds);
 }
 
