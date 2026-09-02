@@ -158,6 +158,18 @@ extension AnimatedSvgPainterClipMaskUnitsExtension on AnimatedSvgPainter {
     if (parsedValue is num) {
       return parsedValue.toDouble();
     }
+    // A deferred SMIL percentage that the rendering refresh has not resolved
+    // yet (for example outside a paint or hit-test scope) resolves against
+    // the mask's nearest viewport like any other userSpaceOnUse length.
+    if (parsedValue is SvgLengthPercentageValue) {
+      return resolveSvgLengthValue(
+        maskNode,
+        parsedValue,
+        reference: horizontal
+            ? SvgLengthReference.horizontal
+            : SvgLengthReference.vertical,
+      );
+    }
     final parsedRaw = parsedValue.toString().trim();
     if (parsedRaw.isEmpty) {
       return null;

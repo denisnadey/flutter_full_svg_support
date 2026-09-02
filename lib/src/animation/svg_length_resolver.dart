@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 
 import 'css_cascade.dart';
 import 'svg_dom.dart';
+import 'svg_filters.dart';
 
 /// The reference dimension used when resolving an SVG percentage length.
 enum SvgLengthReference {
@@ -465,6 +466,50 @@ double? resolveSvgObjectBoundingBoxAttribute(
   }
   return resolveSvgObjectBoundingBoxFraction(
     node.getAttributeValue(attributeName),
+  );
+}
+
+/// Effective `<filter>` region for [filterId]: the statically parsed region
+/// with any active SMIL value on the filter element's own `x`, `y`, `width`,
+/// or `height` applied on top.
+///
+/// Under `filterUnits="objectBoundingBox"` (the default) an animated value is
+/// a bounding-box fraction (`50%` → 0.5, like the mask region); under
+/// `userSpaceOnUse` it is a viewport-relative length resolved in the filter
+/// element's coordinate system. Attributes without an active animation keep
+/// the parsed value, so static documents are unaffected.
+SvgFilterRegion resolveSvgEffectiveFilterRegion(
+  SvgDocument document,
+  String filterId,
+) {
+  final staticRegion =
+      document.filters?.getFilterRegion(filterId) ?? const SvgFilterRegion();
+  final filterNode = document.root.findById(filterId);
+  if (filterNode == null) {
+    return staticRegion;
+  }
+
+  double resolve(
+    String attributeName,
+    double fallback,
+    SvgLengthReference reference,
+  ) {
+    if (!(filterNode.getAttribute(attributeName)?.isAnimated ?? false)) {
+      return fallback;
+    }
+    final value = filterNode.getAttributeValue(attributeName);
+    final resolved = staticRegion.isObjectBoundingBox
+        ? resolveSvgObjectBoundingBoxFraction(value)
+        : resolveSvgLengthValue(filterNode, value, reference: reference);
+    return resolved ?? fallback;
+  }
+
+  return SvgFilterRegion(
+    x: resolve('x', staticRegion.x, SvgLengthReference.horizontal),
+    y: resolve('y', staticRegion.y, SvgLengthReference.vertical),
+    width: resolve('width', staticRegion.width, SvgLengthReference.horizontal),
+    height: resolve('height', staticRegion.height, SvgLengthReference.vertical),
+    isObjectBoundingBox: staticRegion.isObjectBoundingBox,
   );
 }
 

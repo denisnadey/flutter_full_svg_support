@@ -192,11 +192,13 @@ String _maskContentSvg({required String animation}) {
 }
 
 void main() {
-  group('SMIL classification for objectBoundingBox clip and mask consumers', () {
-    test(
-      'mask region coordinates under default maskUnits are bbox fractions',
-      () {
-        final document = SvgParser.parse('''
+  group(
+    'SMIL classification for objectBoundingBox clip and mask consumers',
+    () {
+      test(
+        'mask region coordinates under default maskUnits are bbox fractions',
+        () {
+          final document = SvgParser.parse('''
         <svg viewBox="0 0 200 100">
           <defs>
             <mask id="m">
@@ -205,24 +207,24 @@ void main() {
           </defs>
         </svg>
       ''');
-        final animation = SmilParser.parseAnimations(document).single;
-        expect(
-          animation.percentageSemantics,
-          SmilPercentageSemantics.objectBoundingBox,
-        );
-        final midpoint = animation.computeValue(0.5);
-        expect(midpoint, isA<SvgLengthPercentageValue>());
-        final length = midpoint! as SvgLengthPercentageValue;
-        expect(length.absolute, 0);
-        expect(length.percentage, 50);
-        expect(resolveSvgObjectBoundingBoxFraction(midpoint), 0.5);
-      },
-    );
+          final animation = SmilParser.parseAnimations(document).single;
+          expect(
+            animation.percentageSemantics,
+            SmilPercentageSemantics.objectBoundingBox,
+          );
+          final midpoint = animation.computeValue(0.5);
+          expect(midpoint, isA<SvgLengthPercentageValue>());
+          final length = midpoint! as SvgLengthPercentageValue;
+          expect(length.absolute, 0);
+          expect(length.percentage, 50);
+          expect(resolveSvgObjectBoundingBoxFraction(midpoint), 0.5);
+        },
+      );
 
-    test(
-      'mask region coordinates under userSpaceOnUse keep #43 numeric behavior',
-      () {
-        final document = SvgParser.parse('''
+      test(
+        'mask region coordinates under userSpaceOnUse are viewport lengths',
+        () {
+          final document = SvgParser.parse('''
         <svg viewBox="0 0 200 100">
           <defs>
             <mask id="m" maskUnits="userSpaceOnUse">
@@ -231,13 +233,16 @@ void main() {
           </defs>
         </svg>
       ''');
-        final animation = SmilParser.parseAnimations(document).single;
-        expect(animation.percentageSemantics, SmilPercentageSemantics.none);
-      },
-    );
+          final animation = SmilParser.parseAnimations(document).single;
+          expect(
+            animation.percentageSemantics,
+            SmilPercentageSemantics.horizontalLength,
+          );
+        },
+      );
 
-    test('clipPath content keeps viewport-relative percentage semantics', () {
-      final document = SvgParser.parse('''
+      test('clipPath content keeps viewport-relative percentage semantics', () {
+        final document = SvgParser.parse('''
         <svg viewBox="0 0 200 100">
           <defs>
             <clipPath id="c" clipPathUnits="objectBoundingBox">
@@ -248,20 +253,20 @@ void main() {
           </defs>
         </svg>
       ''');
-      final animation = SmilParser.parseAnimations(document).single;
-      expect(
-        animation.percentageSemantics,
-        SmilPercentageSemantics.horizontalLength,
-      );
-      final midpoint = animation.computeValue(0.5);
-      expect(midpoint, isA<SvgLengthPercentageValue>());
-      final length = midpoint! as SvgLengthPercentageValue;
-      expect(length.absolute, 0);
-      expect(length.percentage, closeTo(0.25, 1e-9));
-    });
+        final animation = SmilParser.parseAnimations(document).single;
+        expect(
+          animation.percentageSemantics,
+          SmilPercentageSemantics.horizontalLength,
+        );
+        final midpoint = animation.computeValue(0.5);
+        expect(midpoint, isA<SvgLengthPercentageValue>());
+        final length = midpoint! as SvgLengthPercentageValue;
+        expect(length.absolute, 0);
+        expect(length.percentage, closeTo(0.25, 1e-9));
+      });
 
-    test('mask content keeps viewport-relative percentage semantics', () {
-      final document = SvgParser.parse('''
+      test('mask content keeps viewport-relative percentage semantics', () {
+        final document = SvgParser.parse('''
         <svg viewBox="0 0 200 100">
           <defs>
             <mask id="m" maskContentUnits="objectBoundingBox">
@@ -272,15 +277,15 @@ void main() {
           </defs>
         </svg>
       ''');
-      final animation = SmilParser.parseAnimations(document).single;
-      expect(
-        animation.percentageSemantics,
-        SmilPercentageSemantics.verticalLength,
-      );
-    });
+        final animation = SmilParser.parseAnimations(document).single;
+        expect(
+          animation.percentageSemantics,
+          SmilPercentageSemantics.verticalLength,
+        );
+      });
 
-    test('pattern and filter content keep numeric behavior', () {
-      final document = SvgParser.parse('''
+      test('pattern and filter content keep numeric behavior', () {
+        final document = SvgParser.parse('''
         <svg viewBox="0 0 200 100">
           <defs>
             <pattern id="p" width="10" height="10">
@@ -289,18 +294,20 @@ void main() {
               </rect>
             </pattern>
             <filter id="f">
-              <animate attributeName="x" from="0%" to="50%" dur="2s"/>
+              <feOffset dx="1" dy="1">
+                <animate attributeName="x" from="0%" to="50%" dur="2s"/>
+              </feOffset>
             </filter>
           </defs>
         </svg>
       ''');
-      for (final animation in SmilParser.parseAnimations(document)) {
-        expect(animation.percentageSemantics, SmilPercentageSemantics.none);
-      }
-    });
+        for (final animation in SmilParser.parseAnimations(document)) {
+          expect(animation.percentageSemantics, SmilPercentageSemantics.none);
+        }
+      });
 
-    test('set keeps the raw percentage for objectBoundingBox consumers', () {
-      final document = SvgParser.parse('''
+      test('set keeps the raw percentage for objectBoundingBox consumers', () {
+        final document = SvgParser.parse('''
         <svg viewBox="0 0 200 100">
           <defs>
             <mask id="m">
@@ -309,33 +316,34 @@ void main() {
           </defs>
         </svg>
       ''');
-      final animation = SmilParser.parseAnimations(document).single;
-      expect(
-        animation.percentageSemantics,
-        SmilPercentageSemantics.objectBoundingBox,
-      );
-      final value = animation.computeValue(0.5);
-      expect(value, '50%');
-      expect(resolveSvgObjectBoundingBoxFraction(value), 0.5);
-    });
-
-    test(
-      'resolveSvgObjectBoundingBoxFraction accepts every consumer input',
-      () {
-        expect(resolveSvgObjectBoundingBoxFraction(0.25), 0.25);
-        expect(resolveSvgObjectBoundingBoxFraction('0.25'), 0.25);
-        expect(resolveSvgObjectBoundingBoxFraction('25%'), 0.25);
+        final animation = SmilParser.parseAnimations(document).single;
         expect(
-          resolveSvgObjectBoundingBoxFraction(
-            const SvgLengthPercentageValue(absolute: 0.1, percentage: 20),
-          ),
-          closeTo(0.3, 1e-9),
+          animation.percentageSemantics,
+          SmilPercentageSemantics.objectBoundingBox,
         );
-        expect(resolveSvgObjectBoundingBoxFraction(null), isNull);
-        expect(resolveSvgObjectBoundingBoxFraction('auto'), isNull);
-      },
-    );
-  });
+        final value = animation.computeValue(0.5);
+        expect(value, '50%');
+        expect(resolveSvgObjectBoundingBoxFraction(value), 0.5);
+      });
+
+      test(
+        'resolveSvgObjectBoundingBoxFraction accepts every consumer input',
+        () {
+          expect(resolveSvgObjectBoundingBoxFraction(0.25), 0.25);
+          expect(resolveSvgObjectBoundingBoxFraction('0.25'), 0.25);
+          expect(resolveSvgObjectBoundingBoxFraction('25%'), 0.25);
+          expect(
+            resolveSvgObjectBoundingBoxFraction(
+              const SvgLengthPercentageValue(absolute: 0.1, percentage: 20),
+            ),
+            closeTo(0.3, 1e-9),
+          );
+          expect(resolveSvgObjectBoundingBoxFraction(null), isNull);
+          expect(resolveSvgObjectBoundingBoxFraction('auto'), isNull);
+        },
+      );
+    },
+  );
 
   group('maskUnits objectBoundingBox region', () {
     testWidgets('animated x resolves as a bbox fraction', (tester) async {

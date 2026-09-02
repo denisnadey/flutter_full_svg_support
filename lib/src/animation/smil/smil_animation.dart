@@ -116,10 +116,9 @@ SmilPercentageSemantics smilPercentageSemanticsForAttribute(
     return SmilPercentageSemantics.objectBoundingBox;
   }
 
-  // Definition coordinates whose consumers only read plain numbers
-  // (userSpaceOnUse mask and filter own units, or content inside
-  // pattern/filter) keep numeric behavior so no deferred wrapper leaks into
-  // a consumer that cannot read it.
+  // Definition coordinates whose consumers only read plain numbers (content
+  // inside pattern/filter) keep numeric behavior so no deferred wrapper
+  // leaks into a consumer that cannot read it.
   if (_keepsNumericDefinitionCoordinate(targetNode, attributeName)) {
     return SmilPercentageSemantics.none;
   }
@@ -190,40 +189,47 @@ bool _isObjectBoundingBoxCoordinate(
   }
 
   // Own coordinates of definitions whose unit mode is objectBoundingBox:
-  // gradient coordinates, pattern x/y/width/height, and the mask region
-  // (maskUnits defaults to objectBoundingBox). Their consumers read the
+  // gradient coordinates, pattern x/y/width/height, the mask region
+  // (maskUnits defaults to objectBoundingBox), and the filter region
+  // (filterUnits defaults to objectBoundingBox). Their consumers read the
   // deferred value as a bounding-box fraction (100% = 1.0), matching Blink's
-  // SVGLengthContext::resolveLength for unit-mode elements.
+  // SVGLengthContext::resolveLength for unit-mode elements. Under
+  // userSpaceOnUse the same attributes take the ordinary viewport-length
+  // semantics below and are resolved to numbers by the rendering refresh.
   //
   // Geometry *inside* a clipPath or mask is deliberately not classified here
   // even under objectBoundingBox units: browsers resolve those percentages
   // against the nearest viewport and only then read the number in
   // bounding-box units, so such content takes the ordinary viewport-length
-  // semantics below. Filter regions keep their prior numeric behavior.
+  // semantics below.
   if (_usesObjectBoundingBoxUnitsForOwnCoordinates(node, document)) {
     return true;
   }
-  return node.tagName == 'mask' &&
-      _effectiveObjectBoundingBoxUnits(node, document, 'maskUnits');
+  switch (node.tagName) {
+    case 'mask':
+      return _effectiveObjectBoundingBoxUnits(node, document, 'maskUnits');
+    case 'filter':
+      return _effectiveObjectBoundingBoxUnits(node, document, 'filterUnits');
+    default:
+      return false;
+  }
 }
 
 /// Whether [attributeName] on [node] is a definition-space coordinate whose
 /// consumer only reads plain numbers, so SMIL must keep numeric behavior.
 ///
-/// This covers userSpaceOnUse mask own coordinates (objectBoundingBox mask
-/// regions are classified first by [_isObjectBoundingBoxCoordinate]), filter
-/// own coordinates, and content inside pattern/filter. Clip-path and mask
-/// content is not listed: its consumers resolve deferred percentages through
-/// the shared viewport length resolver, so those animations keep their
-/// percentage semantics through interpolation.
+/// This covers content inside pattern/filter (primitive subregions and
+/// pattern tiles). Mask and filter own coordinates are not listed: under
+/// objectBoundingBox units they are classified first by
+/// [_isObjectBoundingBoxCoordinate], and under userSpaceOnUse they take
+/// viewport-length semantics that [resolveFinalAnimatedValue] converts to
+/// numbers during the rendering refresh. Clip-path and mask content is not
+/// listed either: its consumers resolve deferred percentages through the
+/// shared viewport length resolver.
 bool _keepsNumericDefinitionCoordinate(SvgNode? node, String attributeName) {
   if (node == null ||
       !_objectBoundingBoxCoordinateAttributes.contains(attributeName)) {
     return false;
-  }
-
-  if (node.tagName == 'mask' || node.tagName == 'filter') {
-    return true;
   }
 
   for (

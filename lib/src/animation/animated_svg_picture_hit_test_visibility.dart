@@ -787,6 +787,18 @@ extension _AnimatedSvgPictureStateHitTestVisibilityExtension
     if (parsedValue is num) {
       return parsedValue.toDouble();
     }
+    // A deferred SMIL percentage that the rendering refresh has not resolved
+    // yet resolves against the mask's nearest viewport like any other
+    // userSpaceOnUse length, matching the painter.
+    if (parsedValue is SvgLengthPercentageValue) {
+      return resolveSvgLengthValue(
+        maskNode,
+        parsedValue,
+        reference: horizontal
+            ? SvgLengthReference.horizontal
+            : SvgLengthReference.vertical,
+      );
+    }
     final parsedRaw = parsedValue.toString().trim();
     if (parsedRaw.isEmpty) {
       return null;
