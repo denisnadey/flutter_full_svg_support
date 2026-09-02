@@ -102,8 +102,13 @@ class SvgTimeline {
   /// Percentage-aware paced animations resolve their segment distances against
   /// the embedding viewport, which is available only while painting or hit
   /// testing. This intentionally does not dispatch timing events again.
-  void refreshForRendering() {
-    _refreshAnimationValuesImpl(this, _currentTime);
+  ///
+  /// When [scopeRoot] is given, only animations targeting that subtree are
+  /// refreshed. `<use>` instances pass the referenced `<symbol>`/`<svg>` so
+  /// shared definition content is re-evaluated in the instance viewport on
+  /// entry and restored to the surrounding viewport on exit.
+  void refreshForRendering({SvgNode? scopeRoot}) {
+    _refreshAnimationValuesImpl(this, _currentTime, scopeRoot: scopeRoot);
   }
 
   /// Reset the timeline to the beginning

@@ -435,12 +435,12 @@ class SmilAnimation {
   /// objectBoundingBox semantics resolve without a viewport and can be
   /// computed eagerly.
   ///
-  /// Known limitation: the refresh that triggers this runs at the start of
-  /// `paint()`, before `<use>`-instance viewport scopes are established, so a
-  /// paced animation on shared `<symbol>` content instantiated by multiple
-  /// differently-sized `<use>` elements still resolves against the
-  /// definition/root viewport. Per-instance animation state is out of scope
-  /// here and is tracked separately if required.
+  /// Shared definition content instantiated by several differently sized
+  /// `<use>` elements is refreshed inside each instance's viewport scope by
+  /// the painter and hit tester, so this is evaluated once per distinct
+  /// viewport. Results are cached per viewport (bounded, most recently used
+  /// kept) so alternating instances do not recompute every frame, and a
+  /// changed viewport simply produces a new entry.
   List<double>? _pacedKeyTimesForCurrentViewport() {
     if (_hasViewportRelativePercentage &&
         SvgLengthResolutionContext.rootViewport == null) {
@@ -448,13 +448,24 @@ class SmilAnimation {
     }
 
     final viewport = resolveSvgNodeViewport(targetNode, document);
-    if (!_hasResolvedPacedKeyTimes || _pacedKeyTimesViewport != viewport) {
-      _pacedKeyTimesViewport = viewport;
-      _resolvedPacedKeyTimes = _generatePacedKeyTimes();
-      _hasResolvedPacedKeyTimes = true;
+    if (_pacedKeyTimesByViewport.containsKey(viewport)) {
+      // Re-insert to mark as most recently used.
+      final cached = _pacedKeyTimesByViewport.remove(viewport);
+      _pacedKeyTimesByViewport[viewport] = cached;
+      return cached;
     }
-    return _resolvedPacedKeyTimes;
+
+    final keyTimes = _generatePacedKeyTimes();
+    debugPacedKeyTimesComputations++;
+    if (_pacedKeyTimesByViewport.length >= _kMaxPacedKeyTimesViewports) {
+      _pacedKeyTimesByViewport.remove(_pacedKeyTimesByViewport.keys.first);
+    }
+    _pacedKeyTimesByViewport[viewport] = keyTimes;
+    return keyTimes;
   }
+
+  /// Upper bound on cached per-viewport paced keyTimes entries.
+  static const int _kMaxPacedKeyTimesViewports = 4;
 
   double _pacedDistance(DistanceCalculator calculator, Object from, Object to) {
     if (!percentageSemantics.preservesPercentage) {
@@ -546,15 +557,15 @@ class SmilAnimation {
   /// Generated keyTimes for paced mode (if calcMode == paced and keyTimes are not specified)
   List<double>? _pacedKeyTimes;
 
-  /// The root viewport for [_resolvedPacedKeyTimes].
-  ui.Size? _pacedKeyTimesViewport;
+  /// Percentage-aware paced keyTimes per resolved viewport, insertion-ordered
+  /// with the most recently used entry last. A null value records that paced
+  /// timing is unsupported for that viewport.
+  final Map<ui.Size, List<double>?> _pacedKeyTimesByViewport =
+      <ui.Size, List<double>?>{};
 
-  /// Whether [_resolvedPacedKeyTimes] was computed for
-  /// [_pacedKeyTimesViewport], including when the result is null.
-  bool _hasResolvedPacedKeyTimes = false;
-
-  /// Percentage-aware paced keyTimes resolved in the active render viewport.
-  List<double>? _resolvedPacedKeyTimes;
+  /// Number of times paced keyTimes were generated for a viewport.
+  @visibleForTesting
+  int debugPacedKeyTimesComputations = 0;
 
   /// Control points of cubic Bezier curves for spline interpolation.
   /// Each element represents a curve between two adjacent keyframes

@@ -60,6 +60,10 @@ extension _AnimatedSvgPictureStateEventModelExtension
     return SvgLengthResolutionContext.runWithRootViewport(
       renderObject.size,
       () {
+        // Hit testing runs outside paint, so viewport-dependent animation
+        // values (percentage-aware paced timing) must be re-evaluated in the
+        // root viewport here rather than relying on the last painted state.
+        _timeline?.refreshForRendering();
         _prepareHitTestCache(_timeline?.currentTime.inMicroseconds.toDouble());
 
         final documentPoint = _localToDocumentPoint(

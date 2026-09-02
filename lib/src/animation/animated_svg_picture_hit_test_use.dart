@@ -503,6 +503,11 @@ extension _AnimatedSvgPictureStateHitTestUseExtension
     return Size(width, height);
   }
 
+  /// Runs [callback] inside the viewport a `<use>` instance establishes for
+  /// [referencedNode], mirroring the painter: viewport-dependent animation
+  /// values for the referenced subtree are re-evaluated in this instance's
+  /// viewport on entry and restored to the surrounding viewport on exit, so
+  /// hit testing sees the same per-instance geometry that was painted.
   T _withUseInstanceViewport<T>({
     required SvgNode referencedNode,
     required Size? viewport,
@@ -511,11 +516,18 @@ extension _AnimatedSvgPictureStateHitTestUseExtension
     if (viewport == null) {
       return callback();
     }
-    return SvgLengthResolutionContext.runWithViewportForNode(
-      referencedNode,
-      viewport,
-      callback,
-    );
+    try {
+      return SvgLengthResolutionContext.runWithViewportForNode(
+        referencedNode,
+        viewport,
+        () {
+          _timeline?.refreshForRendering(scopeRoot: referencedNode);
+          return callback();
+        },
+      );
+    } finally {
+      _timeline?.refreshForRendering(scopeRoot: referencedNode);
+    }
   }
 
   Rect? _applyUseViewportTransform(
