@@ -424,6 +424,50 @@ double? resolveSvgNumericAttributeValue(
   }
 }
 
+/// Resolves a value expressed in an objectBoundingBox coordinate system to a
+/// bounding-box fraction, where `100%` is `1.0`.
+///
+/// Accepts the deferred [SvgLengthPercentageValue] produced by SMIL
+/// interpolation, the raw percentage or number text written by `<set>` and
+/// discrete animations or present on a static attribute, and plain numbers.
+/// Returns null when [value] is not a length.
+///
+/// This is the fraction semantics browsers apply to the *own* attributes of
+/// elements with an objectBoundingBox unit mode (mask region, gradient and
+/// pattern coordinates); geometry inside clipPath/mask content instead keeps
+/// viewport-relative percentages and goes through [resolveSvgLength].
+double? resolveSvgObjectBoundingBoxFraction(Object? value) {
+  final length = SvgLengthPercentageValue.tryParse(value);
+  if (length == null) {
+    return null;
+  }
+  return length.absolute + length.percentage / 100;
+}
+
+/// Resolves [attributeName] on [node] as an objectBoundingBox fraction.
+///
+/// An active SMIL value wins over the raw presentation attribute. Otherwise
+/// the raw attribute text is used so a static `25%` keeps its percentage
+/// unit, which the parser strips from numeric attribute values; the parsed
+/// value is the last fallback.
+double? resolveSvgObjectBoundingBoxAttribute(
+  SvgNode node,
+  String attributeName,
+) {
+  if (node.getAttribute(attributeName)?.isAnimated ?? false) {
+    return resolveSvgObjectBoundingBoxFraction(
+      node.getAttributeValue(attributeName),
+    );
+  }
+  final raw = node.getRawAttributeValue(attributeName)?.trim();
+  if (raw != null && raw.isNotEmpty) {
+    return resolveSvgObjectBoundingBoxFraction(raw);
+  }
+  return resolveSvgObjectBoundingBoxFraction(
+    node.getAttributeValue(attributeName),
+  );
+}
+
 double _resolveSvgLengthPercentageValue(
   SvgNode node,
   SvgLengthPercentageValue length, {
