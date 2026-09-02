@@ -1285,6 +1285,7 @@ extension AnimatedSvgPainterCanvasTransformExtension on AnimatedSvgPainter {
         final childBounds = _resolveGeometryBounds(activeChild, useGuard);
         return _mapChildBoundsToParent(activeChild, childBounds);
       case 'text':
+      case 'tspan':
         return _resolveTextGeometryBounds(node);
     }
     if (!_isGeometryBoundsContainer(node)) {
