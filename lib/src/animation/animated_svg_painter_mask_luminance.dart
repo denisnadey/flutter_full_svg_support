@@ -135,7 +135,7 @@ extension AnimatedSvgPainterMaskLuminanceExtension on AnimatedSvgPainter {
     required SvgNode maskedNode,
     required SvgNode maskNode,
   }) {
-    final targetBounds = _computeNodeLocalBoundsWithStroke(maskedNode);
+    final targetBounds = _computeNodeObjectBounds(maskedNode);
     if (targetBounds == null) return null;
 
     // Edge case: degenerate bounding box
@@ -264,7 +264,7 @@ extension AnimatedSvgPainterMaskLuminanceExtension on AnimatedSvgPainter {
 
     Matrix4? contentTransform;
     if (contentUnits == 'objectboundingbox') {
-      final localBounds = _computeNodeLocalBoundsWithStroke(maskedNode);
+      final localBounds = _computeNodeObjectBounds(maskedNode);
       if (localBounds != null &&
           localBounds.width.abs() >= _kMinBoundingBoxDimension &&
           localBounds.height.abs() >= _kMinBoundingBoxDimension) {
@@ -344,7 +344,7 @@ extension AnimatedSvgPainterMaskLuminanceExtension on AnimatedSvgPainter {
 
     Matrix4? contentTransform;
     if (contentUnits == 'objectboundingbox') {
-      final localBounds = _computeNodeLocalBoundsWithStroke(maskedNode);
+      final localBounds = _computeNodeObjectBounds(maskedNode);
       if (localBounds != null &&
           localBounds.width.abs() >= _kMinBoundingBoxDimension &&
           localBounds.height.abs() >= _kMinBoundingBoxDimension) {

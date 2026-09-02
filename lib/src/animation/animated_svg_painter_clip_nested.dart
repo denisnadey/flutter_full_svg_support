@@ -259,7 +259,7 @@ extension AnimatedSvgPainterClipNestedExtension on AnimatedSvgPainter {
   (Matrix4, ui.Rect)? _computeObjectBoundingBoxTransformForClipWithBounds(
     SvgNode targetNode,
   ) {
-    final bounds = _computeNodeLocalBoundsWithStroke(targetNode);
+    final bounds = _computeNodeObjectBounds(targetNode);
     if (bounds == null) {
       return null;
     }

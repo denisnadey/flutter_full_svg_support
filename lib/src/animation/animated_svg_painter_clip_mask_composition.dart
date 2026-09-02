@@ -347,7 +347,7 @@ extension AnimatedSvgPainterMaskCompositionExtension on AnimatedSvgPainter {
 
     Matrix4? contentTransform;
     if (contentUnits == 'objectboundingbox') {
-      final localBounds = _computeNodeLocalBoundsWithStroke(maskedNode);
+      final localBounds = _computeNodeObjectBounds(maskedNode);
       if (localBounds != null &&
           localBounds.width.abs() >= _kMinBoundingBoxDimension &&
           localBounds.height.abs() >= _kMinBoundingBoxDimension) {

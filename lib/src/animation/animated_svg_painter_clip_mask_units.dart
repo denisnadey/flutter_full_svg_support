@@ -42,7 +42,7 @@ extension AnimatedSvgPainterClipMaskUnitsExtension on AnimatedSvgPainter {
     required SvgNode maskedNode,
     required SvgNode maskNode,
   }) {
-    final targetBounds = _computeNodeLocalBoundsWithStroke(maskedNode);
+    final targetBounds = _computeNodeObjectBounds(maskedNode);
     if (targetBounds == null) {
       return null;
     }
@@ -225,7 +225,7 @@ extension AnimatedSvgPainterClipMaskUnitsExtension on AnimatedSvgPainter {
     SvgNode targetNode, {
     bool preserveAspectRatio = false,
   }) {
-    final bounds = _computeNodeLocalBoundsWithStroke(targetNode);
+    final bounds = _computeNodeObjectBounds(targetNode);
     if (bounds == null) {
       return null;
     }
@@ -273,7 +273,7 @@ extension AnimatedSvgPainterClipMaskUnitsExtension on AnimatedSvgPainter {
     SvgNode maskedNode, {
     bool clampToSafe = true,
   }) {
-    final bounds = _computeNodeLocalBoundsWithStroke(maskedNode);
+    final bounds = _computeNodeObjectBounds(maskedNode);
     if (bounds == null) {
       return null;
     }
@@ -326,7 +326,7 @@ extension AnimatedSvgPainterClipMaskUnitsExtension on AnimatedSvgPainter {
     SvgNode maskedNode,
     SvgNode maskNode,
   ) {
-    final bounds = _computeNodeLocalBoundsWithStroke(maskedNode);
+    final bounds = _computeNodeObjectBounds(maskedNode);
     if (bounds == null) {
       return null;
     }
