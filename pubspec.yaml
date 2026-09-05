@@ -7,8 +7,8 @@ documentation: https://github.com/denisnadey/flutter_full_svg_support/tree/main/
 version: 1.5.1
 
 environment:
-  sdk: ^3.8.0
-  flutter: ">=3.32.0"
+  sdk: ^3.12.0
+  flutter: ">=3.44.0"
 
 dependencies:
   flutter:
@@ -19,7 +19,7 @@ dependencies:
   # Embedded JavaScript runtime — used by the SVG JS bridge.
   # The local source lives under packages/quickjs_engine and is also
   # published independently on pub.dev as `quickjs_engine`.
-  quickjs_engine: ^0.1.5
+  quickjs_engine: ^0.1.6
   # WOFF / WOFF2 font decoder + Flutter FontLoader integration —
   # used for SVG @font-face rules. The local source lives under
   # packages/woff2 and is also published independently on pub.dev.
