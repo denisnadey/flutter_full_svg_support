@@ -2,6 +2,8 @@ name: woff2_example
 description: Minimal example of loading a WOFF2 font into Flutter.
 publish_to: 'none'
 version: 1.0.0
+homepage: https://github.com/denisnadey/flutter_full_svg_support/tree/main/packages/woff2/example
+repository: https://github.com/denisnadey/flutter_full_svg_support
 
 environment:
   sdk: ^3.8.0
