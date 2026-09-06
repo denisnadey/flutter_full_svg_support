@@ -2,7 +2,8 @@ name: full_svg_devtools_extension
 description: Flutter DevTools companion extension for full_svg_flutter.
 publish_to: none
 version: 1.0.0
-repository: https://github.com/denisnadey/flutter_full_svg_support/tree/main/packages/full_svg_devtools_extension
+homepage: https://github.com/denisnadey/flutter_full_svg_support/tree/main/packages/full_svg_devtools_extension
+repository: https://github.com/denisnadey/flutter_full_svg_support
 
 environment:
   sdk: ^3.8.0

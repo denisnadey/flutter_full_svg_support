@@ -4,8 +4,8 @@ description: >
   every platform (Android, iOS, macOS, Linux, Windows). API-compatible
   fork of flutter_js with the bridge patched against QuickJS-NG's new API.
 version: 0.1.5
-homepage: https://github.com/denisnadey/flutter_full_svg_support
-repository: https://github.com/denisnadey/flutter_full_svg_support/tree/main/packages/quickjs_engine
+homepage: https://github.com/denisnadey/flutter_full_svg_support/tree/main/packages/quickjs_engine
+repository: https://github.com/denisnadey/flutter_full_svg_support
 issue_tracker: https://github.com/denisnadey/flutter_full_svg_support/issues
 
 environment:
