@@ -5,7 +5,7 @@ description: >
   high-level Flutter FontLoader wrapper, and a CSS @font-face parser.
 version: 0.1.0
 homepage: https://github.com/denisnadey/flutter_full_svg_support/tree/main/packages/woff2
-repository: https://github.com/denisnadey/flutter_full_svg_support
+repository: https://github.com/denisnadey/flutter_full_svg_support/tree/main/packages/woff2
 issue_tracker: https://github.com/denisnadey/flutter_full_svg_support/issues
 documentation: https://github.com/denisnadey/flutter_full_svg_support/blob/main/packages/woff2/README.md
 
