@@ -89,7 +89,7 @@ QuickJS-NG API (`JS_NewClassID(rt, &id)`, `JS_IsPromise(val)`,
 | Platform | How the library is produced | Action required from you |
 |----------|-----------------------------|--------------------------|
 | **Android** | Built from source by the NDK CMake pipeline (driven by `android/build.gradle` → `native/CMakeLists.txt`). 4 ABIs (`armeabi-v7a`, `arm64-v8a`, `x86`, `x86_64`), with 16 KB ELF page alignment. The Android plugin class is Java and the plugin does not apply the Kotlin Gradle Plugin, so it builds with AGP 8 and AGP 9 (built-in Kotlin on or off). | None — `flutter run -d android` handles it. Apps that package uncompressed native libraries should use Android Gradle Plugin 8.5.1 or newer for 16 KB ZIP alignment. |
-| **iOS** | **Swift Package Manager:** `ios/quickjs_engine/Package.swift` compiles the bridge + QuickJS sources into a small dynamic framework, `quickjs-engine-native.framework`, embedded in your app. **CocoaPods:** the podspec compiles the same sources into the plugin framework. | None — `flutter run -d ios` handles it with either dependency manager. See [Swift Package Manager](#swift-package-manager). |
+| **iOS** | **Swift Package Manager:** `ios/quickjs_engine/Package.swift` compiles the bridge + QuickJS sources into a small dynamic framework, `quickjs-engine-native.framework`, embedded in your app. **CocoaPods:** the podspec compiles the same sources into the plugin framework, which has to be a dynamic framework (Flutter's default `use_frameworks!`). | None — `flutter run -d ios` handles it with either dependency manager. See [Swift Package Manager](#swift-package-manager), and [this workaround](#ios-with-cocoapods-failed-to-lookup-symbol-jsnewruntime) if your Podfile links pods statically. |
 | **macOS** | **Swift Package Manager:** `macos/quickjs_engine/Package.swift` compiles the bridge + QuickJS sources into `quickjs-engine-native.framework` (universal `arm64` + `x86_64` in release builds). **CocoaPods:** a prebuilt `libquickjs_c_bridge_plugin.dylib` ships with the package under `macos/Frameworks/` and is bundled as `vendored_libraries`. | None for app builds. For unit tests run via `flutter test`, see [Tests can't find the dylib](#tests-cant-find-the-dylib) below. |
 | **Linux** | Plugin CMake (`linux/CMakeLists.txt`) does `add_subdirectory(../native)`, compiling the bridge alongside your app. | None — `flutter run -d linux` handles it. |
 | **Windows** | Plugin CMake (`windows/CMakeLists.txt`) does `add_subdirectory(../native)`, same as Linux. | None — `flutter run -d windows` handles it (Visual Studio Build Tools required). |
@@ -105,17 +105,23 @@ path.
 [Swift Package Manager integration][flutter-swiftpm] on iOS and macOS, so
 Flutter no longer reports it under "The following plugins do not support
 Swift Package Manager" or falls back to CocoaPods because of it. SwiftPM
-is on by default in current Flutter releases; on older releases enable it
-per project in `pubspec.yaml`:
+is on by default in recent stable Flutter releases (for example 3.47). On
+older releases, enable it:
 
-```yaml
-flutter:
-  config:
-    enable-swift-package-manager: true
-```
+- **Flutter 3.35 and later** — per project, in the app's `pubspec.yaml`:
 
-or globally with `flutter config --enable-swift-package-manager`. Nothing
-else is required — there is no Podfile to edit and no native build step.
+  ```yaml
+  flutter:
+    config:
+      enable-swift-package-manager: true
+  ```
+
+- **Flutter 3.32 – 3.34** — these releases do not support the `config:`
+  key in `pubspec.yaml`; enable SwiftPM for your Flutter installation
+  instead with `flutter config --enable-swift-package-manager`.
+
+Nothing else is required — there is no Podfile to edit and no native build
+step.
 
 How it is put together, for maintainers and the curious:
 
@@ -260,6 +266,58 @@ The vendored dylib lives at `macos/Frameworks/libquickjs_c_bridge_plugin.dylib`.
 If you pulled the package from pub.dev it's already there. If you're
 working off `path:` source and accidentally deleted `native/build/`, the
 file may be missing — run `sh tool/build_native.sh` to regenerate it.
+
+### iOS with CocoaPods: "Failed to lookup symbol 'jsNewRuntime'"
+
+```
+Invalid argument(s): Failed to lookup symbol 'jsNewRuntime':
+  dlsym(RTLD_DEFAULT, jsNewRuntime): symbol not found
+```
+
+With CocoaPods, the plugin has to be a **dynamic framework**, which is what
+Flutter's default iOS `Podfile` (`use_frameworks!`) produces. Dart looks the
+bridge up at runtime with `DynamicLibrary.process()` and nothing references
+the C functions at link time, so with `use_frameworks! :linkage => :static`
+or without `use_frameworks!` the linker drops them from the app.
+
+Either move the app to [Swift Package Manager](#swift-package-manager),
+which always embeds the bridge as a dynamic framework, or keep the static
+linkage for your other pods and add this to `ios/Podfile`:
+
+```ruby
+# quickjs_engine: Dart finds the QuickJS bridge with DynamicLibrary.process(),
+# so the pod must be a dynamic framework even when other pods are static.
+# Flutter (a prebuilt dynamic framework) is marked dynamic as well, because
+# CocoaPods rejects a dynamic pod that depends on a pod it treats as static.
+pre_install do |installer|
+  installer.pod_targets.each do |pod|
+    next unless %w[Flutter quickjs_engine].include?(pod.name)
+    def pod.build_type
+      Pod::BuildType.dynamic_framework
+    end
+  end
+end
+```
+
+With the default `use_frameworks!`, this error means quickjs_engine 0.1.5
+or older: those versions compiled none of the bridge sources into the iOS
+pod. Upgrade to 0.1.6 or later.
+
+### Swift Package Manager: "FlutterFramework cannot be accessed" after switching Flutter versions
+
+`ios/quickjs_engine/Package.swift` and `macos/quickjs_engine/Package.swift`
+only depend on Flutter's generated `FlutterFramework` package when the
+Flutter version in use generates it (3.41 and later). SwiftPM caches the
+evaluated manifest, so after switching Flutter versions Xcode can keep using
+the previous evaluation and fail with an error such as
+`.../Flutter/ephemeral/Packages/.packages/FlutterFramework cannot be
+accessed`. Clear the SwiftPM manifest cache and rebuild:
+
+```bash
+rm -rf ~/Library/Caches/org.swift.swiftpm/manifests
+flutter clean
+flutter run
+```
 
 ## Acknowledgements
 
