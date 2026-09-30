@@ -1,0 +1,195 @@
+name: Darwin Swift Package Manager
+
+on:
+  pull_request:
+    paths:
+      - "packages/quickjs_engine/**"
+      - ".github/workflows/darwin-swift-package-manager.yml"
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - "packages/quickjs_engine/**"
+      - ".github/workflows/darwin-swift-package-manager.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: darwin-swiftpm-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    # Explicit bash enables -eo pipefail, so `cmd | tee log` fails with cmd.
+    shell: bash
+
+jobs:
+  swiftpm:
+    name: SwiftPM iOS + macOS (Flutter ${{ matrix.flutter-version }})
+    runs-on: macos-15
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        # 3.38.1: no generated FlutterFramework package, SwiftPM opt-in.
+        # 3.41.6: FlutterFramework package that pins iOS 13.0 / macOS 10.15.
+        # 3.47.4: FlutterFramework package generated, SwiftPM on by default.
+        flutter-version: ["3.38.1", "3.41.6", "3.47.4"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ matrix.flutter-version }}
+          channel: stable
+          cache: true
+
+      - name: Create clean Flutter app using the local plugin via SwiftPM
+        run: |
+          app_dir="$RUNNER_TEMP/qjs_spm_smoke"
+          flutter create --platforms ios,macos --org dev.quickjsengine.ci \
+            --project-name qjs_spm_smoke "$app_dir"
+          cd "$app_dir"
+          rm -rf test
+          # Enable SwiftPM for this project only (pubspec config has the
+          # highest precedence over global config and environment). This must
+          # happen before the plugin is added: with SwiftPM still off,
+          # `pub add` would already generate a CocoaPods Podfile.
+          python3 - <<'PY'
+          import pathlib, re
+          p = pathlib.Path("pubspec.yaml")
+          s, n = re.subn(
+              r"^flutter:\n",
+              "flutter:\n  config:\n    enable-swift-package-manager: true\n",
+              p.read_text(), count=1, flags=re.M)
+          assert n == 1, "top-level flutter: section not found"
+          p.write_text(s)
+          PY
+          flutter pub add quickjs_engine --path "$GITHUB_WORKSPACE/packages/quickjs_engine"
+          cat > lib/main.dart <<'DART'
+          import 'dart:io';
+
+          import 'package:flutter/material.dart';
+          import 'package:quickjs_engine/quickjs_engine.dart';
+
+          void main() {
+            WidgetsFlutterBinding.ensureInitialized();
+            String result;
+            try {
+              final js = getJavascriptRuntime(xhr: false);
+              result = js.evaluate('[1,2,3].map(x=>x*2).join(",")').stringResult;
+              js.dispose();
+            } catch (e) {
+              result = 'ERROR: $e';
+            }
+            stdout.writeln('QJS_STDOUT_RESULT=$result');
+            if (Platform.environment['QJS_EXIT'] == '1') {
+              exit(result == '2,4,6' ? 0 : 3);
+            }
+            runApp(MaterialApp(home: Text('QJS_RESULT=$result')));
+          }
+          DART
+          echo "APP_DIR=$app_dir" >> "$GITHUB_ENV"
+
+      - name: Build iOS simulator app (debug)
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          flutter build ios --simulator --debug 2>&1 | tee build_ios.log
+          if grep -q "do not support Swift Package Manager" build_ios.log; then
+            echo "::error::quickjs_engine fell back to CocoaPods"
+            exit 1
+          fi
+          test ! -e ios/Podfile
+          test ! -e ios/Pods
+
+      - name: Verify simulator framework exports the FFI bridge
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          fw="build/ios/iphonesimulator/Runner.app/Frameworks/quickjs-engine-native.framework/quickjs-engine-native"
+          "$GITHUB_WORKSPACE/.github/scripts/check_quickjs_bridge_exports.sh" "$fw"
+
+      - name: Build iOS archive (release, no codesign)
+        working-directory: ${{ env.APP_DIR }}
+        run: flutter build ipa --no-codesign
+
+      - name: Verify archived framework exports the FFI bridge
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          app="build/ios/archive/Runner.xcarchive/Products/Applications/Runner.app"
+          fw="$app/Frameworks/quickjs-engine-native.framework/quickjs-engine-native"
+          otool -L "$app/Runner" | grep -q "@rpath/quickjs-engine-native.framework/"
+          "$GITHUB_WORKSPACE/.github/scripts/check_quickjs_bridge_exports.sh" "$fw"
+
+      - name: Build macOS app (release)
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          flutter build macos --release 2>&1 | tee build_macos.log
+          if grep -q "do not support Swift Package Manager" build_macos.log; then
+            echo "::error::quickjs_engine fell back to CocoaPods"
+            exit 1
+          fi
+          test ! -e macos/Podfile
+          test ! -e macos/Pods
+
+      - name: Verify macOS app is universal and evaluates JavaScript
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          app="$(find build/macos/Build/Products/Release -maxdepth 1 -type d -name '*.app' -print -quit)"
+          exe="$app/Contents/MacOS/$(basename "$app" .app)"
+          fw="$app/Contents/Frameworks/quickjs-engine-native.framework/Versions/A/quickjs-engine-native"
+          lipo "$exe" -verify_arch x86_64 arm64
+          lipo "$fw" -verify_arch x86_64 arm64
+          "$GITHUB_WORKSPACE/.github/scripts/check_quickjs_bridge_exports.sh" "$fw"
+          QJS_EXIT=1 perl -e 'alarm shift; exec @ARGV' 180 "$exe" 2>&1 | tee run_macos.log
+          grep -q "QJS_STDOUT_RESULT=2,4,6" run_macos.log
+
+  cocoapods_ios:
+    name: CocoaPods iOS (Flutter 3.38.1)
+    runs-on: macos-15
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.38.1"
+          channel: stable
+          cache: true
+
+      - name: Create clean Flutter app using the local plugin via CocoaPods
+        run: |
+          app_dir="$RUNNER_TEMP/qjs_pods_smoke"
+          flutter create --platforms ios --org dev.quickjsengine.ci \
+            --project-name qjs_pods_smoke "$app_dir"
+          cd "$app_dir"
+          # Force CocoaPods for this project, whatever the Flutter default is.
+          python3 - <<'PY'
+          import pathlib, re
+          p = pathlib.Path("pubspec.yaml")
+          s, n = re.subn(
+              r"^flutter:\n",
+              "flutter:\n  config:\n    enable-swift-package-manager: false\n",
+              p.read_text(), count=1, flags=re.M)
+          assert n == 1, "top-level flutter: section not found"
+          p.write_text(s)
+          PY
+          flutter pub add quickjs_engine --path "$GITHUB_WORKSPACE/packages/quickjs_engine"
+          echo "APP_DIR=$app_dir" >> "$GITHUB_ENV"
+
+      - name: Build iOS simulator app (debug)
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          flutter build ios --simulator --debug
+          grep -q "quickjs_engine" ios/Podfile.lock
+
+      - name: Verify the pod framework compiled and exports the FFI bridge
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          fw="build/ios/iphonesimulator/Runner.app/Frameworks/quickjs_engine.framework/quickjs_engine"
+          "$GITHUB_WORKSPACE/.github/scripts/check_quickjs_bridge_exports.sh" "$fw"

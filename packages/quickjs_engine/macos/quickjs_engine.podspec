@@ -18,7 +18,10 @@ platform — no JavaScriptCore fallback.
   s.author           = { 'Denis Nadey' => 'denis.nadey@gmail.com' }
   s.source           = { :path => '.' }
 
-  s.source_files = 'Classes/**/*.{swift,h,m}'
+  # The Swift plugin class is shared with the Swift Package Manager manifest
+  # (quickjs_engine/Package.swift). The SwiftPM build compiles the bridge from
+  # ../native/cxx instead of using the prebuilt dylib below.
+  s.source_files = 'quickjs_engine/Sources/quickjs_engine/**/*.swift'
 
   # The bridge dylib (built once via tools/build_native.sh from ../native/).
   s.vendored_libraries = 'Frameworks/libquickjs_c_bridge_plugin.dylib'
