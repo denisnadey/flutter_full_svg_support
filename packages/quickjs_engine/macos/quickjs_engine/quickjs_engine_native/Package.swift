@@ -29,7 +29,17 @@ let package = Package(
         .library(name: "quickjs-engine-native", type: .dynamic, targets: ["quickjs_engine_native"])
     ],
     targets: [
-        .target(name: "quickjs_engine_native")
+        .target(
+            name: "quickjs_engine_native",
+            // Like the CMake Release builds on the other platforms: optimized
+            // builds drop QuickJS assertions and its ENABLE_DUMPS debug code.
+            cSettings: [
+                .define("NDEBUG", .when(configuration: .release))
+            ],
+            cxxSettings: [
+                .define("NDEBUG", .when(configuration: .release))
+            ]
+        )
     ],
     cLanguageStandard: .c11,
     cxxLanguageStandard: .cxx17
