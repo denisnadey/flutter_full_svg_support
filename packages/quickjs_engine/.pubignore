@@ -5,3 +5,7 @@ android/build/
 
 # Local dev artifacts not needed at consumer's end.
 .dart_tool/
+
+# Swift Package Manager / Xcode local-package state.
+.build/
+.swiftpm/

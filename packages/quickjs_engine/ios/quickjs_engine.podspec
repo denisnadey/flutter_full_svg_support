@@ -16,14 +16,17 @@ platform — no JavaScriptCore fallback.
   s.author           = { 'Denis Nadey' => 'denis.nadey@gmail.com' }
   s.source           = { :path => '.' }
 
+  # Sources are shared with the Swift Package Manager manifests
+  # (quickjs_engine/Package.swift and quickjs_engine/quickjs_engine_native/).
+  #
+  # CocoaPods silently drops source_files outside the pod directory, so listing
+  # ../native/cxx/*.c here directly compiled nothing and the bridge symbols
+  # were missing at runtime. The quickjs_engine_native .c/.cpp files are small
+  # forwarders that #include the shared ../native/cxx sources by relative path
+  # (the same technique as Flutter's plugin_ffi template).
   s.source_files = [
-    'Classes/**/*.{swift,h,m}',
-    '../native/cxx/libfastdev_quickjs_runtime.cpp',
-    '../native/cxx/quickjs/quickjs.c',
-    '../native/cxx/quickjs/libregexp.c',
-    '../native/cxx/quickjs/libunicode.c',
-    '../native/cxx/quickjs/dtoa.c',
-    '../native/cxx/quickjs/*.h',
+    'quickjs_engine/Sources/quickjs_engine/**/*.swift',
+    'quickjs_engine/quickjs_engine_native/Sources/quickjs_engine_native/*.{c,cpp}',
   ]
   s.public_header_files = []
 

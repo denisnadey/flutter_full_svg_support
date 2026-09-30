@@ -30,6 +30,9 @@ mystery platform divergence.
   + `flutter run` does everything. The plugin compiles the bridge for
   Android/iOS/Linux/Windows, and ships a prebuilt dylib for macOS so
   CocoaPods doesn't need to compile C++ for that target.
+- 📦 **Swift Package Manager and CocoaPods** on iOS and macOS — works
+  with Flutter's default Swift Package Manager integration, and still
+  supports projects that use CocoaPods.
 
 ## Quick start
 
@@ -86,8 +89,8 @@ QuickJS-NG API (`JS_NewClassID(rt, &id)`, `JS_IsPromise(val)`,
 | Platform | How the library is produced | Action required from you |
 |----------|-----------------------------|--------------------------|
 | **Android** | Built from source by the NDK CMake pipeline (driven by `android/build.gradle` → `native/CMakeLists.txt`). 4 ABIs (`armeabi-v7a`, `arm64-v8a`, `x86`, `x86_64`), with 16 KB ELF page alignment. The Android plugin class is Java and the plugin does not apply the Kotlin Gradle Plugin, so it builds with AGP 8 and AGP 9 (built-in Kotlin on or off). | None — `flutter run -d android` handles it. Apps that package uncompressed native libraries should use Android Gradle Plugin 8.5.1 or newer for 16 KB ZIP alignment. |
-| **iOS** | CocoaPods compiles the bridge + QuickJS sources into the plugin framework via `source_files`. | None — `flutter run -d ios` handles it (assuming Xcode + CocoaPods are installed). |
-| **macOS** | A prebuilt `libquickjs_c_bridge_plugin.dylib` ships with the package under `macos/Frameworks/`. CocoaPods bundles it as `vendored_libraries`. | None for app builds. For unit tests run via `flutter test`, see [Tests can't find the dylib](#tests-cant-find-the-dylib) below. |
+| **iOS** | **Swift Package Manager:** `ios/quickjs_engine/Package.swift` compiles the bridge + QuickJS sources into a small dynamic framework, `quickjs-engine-native.framework`, embedded in your app. **CocoaPods:** the podspec compiles the same sources into the plugin framework. | None — `flutter run -d ios` handles it with either dependency manager. See [Swift Package Manager](#swift-package-manager). |
+| **macOS** | **Swift Package Manager:** `macos/quickjs_engine/Package.swift` compiles the bridge + QuickJS sources into `quickjs-engine-native.framework` (universal `arm64` + `x86_64` in release builds). **CocoaPods:** a prebuilt `libquickjs_c_bridge_plugin.dylib` ships with the package under `macos/Frameworks/` and is bundled as `vendored_libraries`. | None for app builds. For unit tests run via `flutter test`, see [Tests can't find the dylib](#tests-cant-find-the-dylib) below. |
 | **Linux** | Plugin CMake (`linux/CMakeLists.txt`) does `add_subdirectory(../native)`, compiling the bridge alongside your app. | None — `flutter run -d linux` handles it. |
 | **Windows** | Plugin CMake (`windows/CMakeLists.txt`) does `add_subdirectory(../native)`, same as Linux. | None — `flutter run -d windows` handles it (Visual Studio Build Tools required). |
 
@@ -95,6 +98,50 @@ JavaScriptCore bindings inherited from the upstream package are kept in
 `lib/javascriptcore/` for ABI compatibility but unused at runtime — the
 runtime selector (`getJavascriptRuntime()`) always returns the QuickJS
 path.
+
+## Swift Package Manager
+
+`quickjs_engine` supports Flutter's
+[Swift Package Manager integration][flutter-swiftpm] on iOS and macOS, so
+Flutter no longer reports it under "The following plugins do not support
+Swift Package Manager" or falls back to CocoaPods because of it. SwiftPM
+is on by default in current Flutter releases; on older releases enable it
+per project in `pubspec.yaml`:
+
+```yaml
+flutter:
+  config:
+    enable-swift-package-manager: true
+```
+
+or globally with `flutter config --enable-swift-package-manager`. Nothing
+else is required — there is no Podfile to edit and no native build step.
+
+How it is put together, for maintainers and the curious:
+
+- `ios/quickjs_engine/Package.swift` and `macos/quickjs_engine/Package.swift`
+  define the plugin package (product `quickjs-engine`, Swift target
+  `quickjs_engine`). The Swift plugin class lives in
+  `<platform>/quickjs_engine/Sources/quickjs_engine/` and is shared with the
+  podspec.
+- QuickJS-NG and the Dart FFI bridge are a nested package,
+  `<platform>/quickjs_engine/quickjs_engine_native/`, with a **dynamic**
+  library product. Dart finds the bridge with `DynamicLibrary.process()`;
+  a statically linked bridge would end up in the `Runner` executable, whose
+  exported symbols Xcode strips when archiving (`flutter build ipa`), so
+  every lookup would fail in release builds. An embedded framework keeps
+  its exports.
+- The C/C++ files in that package are tiny forwarders that `#include` the
+  shared sources in `native/cxx/` (also used by the podspec and the
+  Android/Linux/Windows CMake builds), so nothing is duplicated.
+- The dependency on Flutter's generated `FlutterFramework` package (and the
+  iOS 13 / macOS 10.15 minimum it requires) is only declared when Flutter
+  generates that package (Flutter 3.41 and later), so the same manifest
+  also works with Flutter 3.38 and older.
+- No privacy manifest is shipped: the compiled code uses none of Apple's
+  required-reason APIs and collects no data.
+
+[flutter-swiftpm]: https://docs.flutter.dev/packages-and-plugins/swift-package-manager/for-app-developers
 
 ## When you might need to rebuild the native library
 
@@ -104,9 +151,10 @@ where you do need to rebuild:
 
 1. **You modified `native/cxx/libfastdev_quickjs_runtime.cpp` or the
    bundled `native/cxx/quickjs/*.c` sources.**
-   App builds for iOS / Android / Linux / Windows pick up the change
-   automatically (CMake/CocoaPods recompile). For **macOS**, you need to
-   refresh the prebuilt `libquickjs_c_bridge_plugin.dylib` under
+   App builds for iOS / Android / Linux / Windows, and macOS builds that
+   use Swift Package Manager, pick up the change automatically
+   (CMake/CocoaPods/SwiftPM recompile). For **macOS with CocoaPods**, you
+   need to refresh the prebuilt `libquickjs_c_bridge_plugin.dylib` under
    `macos/Frameworks/` — that's what the build scripts below do.
 
 2. **You're running unit tests on a desktop platform (`flutter test`
