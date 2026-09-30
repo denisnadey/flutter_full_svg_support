@@ -1,5 +1,50 @@
 # Changelog
 
+## 0.1.6
+
+- Android: the plugin no longer applies the Kotlin Gradle Plugin. The plugin
+  class is now Java, so apps on Android Gradle Plugin 9 build with built-in
+  Kotlin on or off, instead of failing with "The
+  'org.jetbrains.kotlin.android' plugin is no longer required" or warning
+  that the plugin applies KGP
+  ([#52](https://github.com/denisnadey/flutter_full_svg_support/issues/52)).
+  `compileSdk` follows the app's `flutter.compileSdkVersion`, and the plugin
+  compiles with Java 17.
+- iOS and macOS: added Swift Package Manager support, so Flutter no longer
+  lists `quickjs_engine` under "The following plugins do not support Swift
+  Package Manager" and falls back to CocoaPods
+  ([#55](https://github.com/denisnadey/flutter_full_svg_support/issues/55)).
+  The bridge is embedded as a dynamic framework, so its exports survive
+  `flutter build ipa` and macOS archives. One manifest works with Flutter
+  3.38 (no generated `FlutterFramework` package) as well as 3.41 and later.
+- iOS with CocoaPods: fixed the pod framework exporting none of the FFI
+  bridge. CocoaPods silently ignored the podspec's `../native/cxx` sources,
+  so on 0.1.5 and earlier every `evaluate()` on iOS failed with
+  "Failed to lookup symbol 'jsNewRuntime'". The pod now compiles them.
+- Fixed `QuickJsRuntime2(memoryLimit: ...)` with a positive limit throwing
+  "Failed to lookup symbol 'jsSetMemoryLimit'" on every platform: the
+  bridge now exports `jsSetMemoryLimit`. The prebuilt macOS bridge is
+  rebuilt with it (still universal `arm64` + `x86_64`).
+- Optimized iOS and macOS builds (Swift Package Manager release builds and
+  the CocoaPods iOS Profile/Release configurations) define `NDEBUG`, like the
+  CMake Release builds on the other platforms, so QuickJS assertions and
+  debug dump code are no longer compiled in.
+- Documented the Swift Package Manager opt-in per Flutter version, a Podfile
+  workaround for apps that link pods statically, and the SwiftPM manifest
+  cache after switching Flutter versions.
+- CI: an Android Gradle Plugin 9 job builds a fresh app on the latest stable
+  Flutter with built-in Kotlin on and off; a Darwin Swift Package Manager
+  workflow (Flutter 3.38.1, 3.41.6, 3.47.4) builds iOS simulator, iOS
+  archive and macOS release apps, checks that every bridge function and every
+  symbol the Dart side looks up is exported, runs the macOS app, and guards
+  the CocoaPods iOS pod exports; the macOS workflow also runs the package's
+  unit tests.
+- Thanks to [@sufiyansayyed](https://github.com/sufiyansayyed) for reporting
+  the Android Gradle Plugin 9 issue and for the initial Kotlin-free migration
+  in [#53](https://github.com/denisnadey/flutter_full_svg_support/pull/53),
+  and to [@DomingoMG](https://github.com/DomingoMG) for reporting the missing
+  Swift Package Manager support.
+
 ## 0.1.5
 
 - Fixed the macOS prebuilt bridge so it contains both arm64 and x86_64
