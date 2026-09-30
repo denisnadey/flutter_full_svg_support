@@ -438,6 +438,11 @@ extern "C"
         JS_SetMaxStackSize(rt, stack_size);
     }
 
+    DLLEXPORT void jsSetMemoryLimit(JSRuntime *rt, size_t limit)
+    {
+        JS_SetMemoryLimit(rt, limit);
+    }
+
     DLLEXPORT void jsFreeRuntime(JSRuntime *rt)
     {
         JS_SetRuntimeOpaque(rt, nullptr);

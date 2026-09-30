@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "packages/quickjs_engine/**"
+      - ".github/scripts/**"
       - ".github/workflows/darwin-swift-package-manager.yml"
   push:
     branches:
@@ -11,6 +12,7 @@ on:
       - master
     paths:
       - "packages/quickjs_engine/**"
+      - ".github/scripts/**"
       - ".github/workflows/darwin-swift-package-manager.yml"
   workflow_dispatch:
 
