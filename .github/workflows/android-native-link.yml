@@ -110,3 +110,100 @@ jobs:
           test -n "$zipalign"
           test -x "$zipalign"
           "$zipalign" -c -P 16 -v 4 "$apk"
+
+  agp9_builtin_kotlin:
+    # Regression guard for #52: quickjs_engine must not apply the Kotlin Gradle
+    # Plugin (KGP). With AGP 9 built-in Kotlin enabled, a plugin that applies
+    # KGP fails to configure; with it disabled, Flutter prints a "plugins that
+    # apply Kotlin Gradle Plugin (KGP)" warning instead. Build both ways.
+    name: Android AGP 9 built-in Kotlin (latest stable Flutter)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install Android CMake
+        run: |
+          sdkmanager="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$sdkmanager"
+          yes | "$sdkmanager" --sdk_root="$ANDROID_SDK_ROOT" "cmake;3.22.1"
+
+      - name: Create clean Flutter app
+        run: |
+          flutter --version
+          flutter create --platforms android "$RUNNER_TEMP/quickjs_agp9_smoke"
+
+      - name: Require AGP 9 and add local quickjs_engine dependency
+        working-directory: ${{ runner.temp }}/quickjs_agp9_smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          settings=android/settings.gradle.kts
+          [ -f "$settings" ] || settings=android/settings.gradle
+          test -f "$settings"
+          agp_line="$(grep -E 'com\.android\.application' "$settings" | grep -E 'version' | head -n 1 || true)"
+          agp_version="$(printf '%s\n' "$agp_line" | grep -Eo '[0-9]+\.[0-9]+(\.[0-9]+)?' | head -n 1 || true)"
+          echo "Template AGP version: ${agp_version:-<not found>}"
+          if [ -z "$agp_version" ] || [ "${agp_version%%.*}" -lt 9 ]; then
+            echo "::error::Expected the latest stable Flutter template to use AGP 9+, found '${agp_version:-<none>}' in $settings"
+            exit 1
+          fi
+          flutter pub add quickjs_engine --path "$GITHUB_WORKSPACE/packages/quickjs_engine"
+
+      - name: Build release APK with built-in Kotlin enabled and disabled
+        working-directory: ${{ runner.temp }}/quickjs_agp9_smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          props=android/gradle.properties
+
+          set_builtin_kotlin() {
+            # Flutter's migrator appends android.builtInKotlin=false when the
+            # flag is missing, so always write the value explicitly.
+            touch "$props"
+            grep -Ev '^[[:space:]]*android\.builtInKotlin[[:space:]]*[=:]' "$props" > "$props.tmp" || true
+            mv "$props.tmp" "$props"
+            printf '\nandroid.builtInKotlin=%s\n' "$1" >> "$props"
+          }
+
+          build_and_check() {
+            local mode="$1"
+            local log="$RUNNER_TEMP/quickjs_agp9_builtInKotlin_${mode}.log"
+            set_builtin_kotlin "$mode"
+            echo "::group::flutter build apk (android.builtInKotlin=$mode)"
+            cat "$props"
+            flutter build apk --release --target-platform android-arm64 2>&1 | tee "$log"
+            echo "::endgroup::"
+
+            if ! grep -Eq "^[[:space:]]*android\.builtInKotlin[[:space:]]*=[[:space:]]*${mode}[[:space:]]*$" "$props"; then
+              echo "::error::android.builtInKotlin=$mode was not in effect for the build"
+              cat "$props"
+              exit 1
+            fi
+            if grep -E 'apply Kotlin Gradle Plugin \(KGP\):.*quickjs_engine' "$log"; then
+              echo "::error::Flutter reports that quickjs_engine applies the Kotlin Gradle Plugin (android.builtInKotlin=$mode)"
+              exit 1
+            fi
+            test -f build/app/outputs/flutter-apk/app-release.apk
+          }
+
+          # Enabled is the AGP 9 default and the configuration that failed in #52.
+          build_and_check true
+          # Disabled is what `flutter create` currently generates and where
+          # Flutter prints its KGP warning.
+          build_and_check false

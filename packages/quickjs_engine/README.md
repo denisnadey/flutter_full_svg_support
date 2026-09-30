@@ -85,7 +85,7 @@ QuickJS-NG API (`JS_NewClassID(rt, &id)`, `JS_IsPromise(val)`,
 
 | Platform | How the library is produced | Action required from you |
 |----------|-----------------------------|--------------------------|
-| **Android** | Built from source by the NDK CMake pipeline (driven by `android/build.gradle` → `native/CMakeLists.txt`). 4 ABIs (`armeabi-v7a`, `arm64-v8a`, `x86`, `x86_64`), with 16 KB ELF page alignment. | None — `flutter run -d android` handles it. Apps that package uncompressed native libraries should use Android Gradle Plugin 8.5.1 or newer for 16 KB ZIP alignment. |
+| **Android** | Built from source by the NDK CMake pipeline (driven by `android/build.gradle` → `native/CMakeLists.txt`). 4 ABIs (`armeabi-v7a`, `arm64-v8a`, `x86`, `x86_64`), with 16 KB ELF page alignment. The Android plugin class is Java and the plugin does not apply the Kotlin Gradle Plugin, so it builds with AGP 8 and AGP 9 (built-in Kotlin on or off). | None — `flutter run -d android` handles it. Apps that package uncompressed native libraries should use Android Gradle Plugin 8.5.1 or newer for 16 KB ZIP alignment. |
 | **iOS** | CocoaPods compiles the bridge + QuickJS sources into the plugin framework via `source_files`. | None — `flutter run -d ios` handles it (assuming Xcode + CocoaPods are installed). |
 | **macOS** | A prebuilt `libquickjs_c_bridge_plugin.dylib` ships with the package under `macos/Frameworks/`. CocoaPods bundles it as `vendored_libraries`. | None for app builds. For unit tests run via `flutter test`, see [Tests can't find the dylib](#tests-cant-find-the-dylib) below. |
 | **Linux** | Plugin CMake (`linux/CMakeLists.txt`) does `add_subdirectory(../native)`, compiling the bridge alongside your app. | None — `flutter run -d linux` handles it. |
