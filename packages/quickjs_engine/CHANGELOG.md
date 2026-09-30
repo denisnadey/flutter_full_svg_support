@@ -40,8 +40,8 @@
   the CocoaPods iOS pod exports; the macOS workflow also runs the package's
   unit tests.
 - Thanks to [@sufiyansayyed](https://github.com/sufiyansayyed) for reporting
-  the Android Gradle Plugin 9 issue and for the initial Kotlin-free migration
-  in [#53](https://github.com/denisnadey/flutter_full_svg_support/pull/53),
+  the Android Gradle Plugin 9 issue and for the initial built-in Kotlin
+  migration in [#53](https://github.com/denisnadey/flutter_full_svg_support/pull/53),
   and to [@DomingoMG](https://github.com/DomingoMG) for reporting the missing
   Swift Package Manager support.
 
