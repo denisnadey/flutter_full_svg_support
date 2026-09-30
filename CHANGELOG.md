@@ -1,3 +1,38 @@
+## 1.5.2
+
+### quickjs_engine 0.1.6: JavaScript on iOS, Swift Package Manager, and AGP 9
+
+**Fixed**
+
+- JavaScript-driven SVGs (SVGator exports and inline `<script>` run through
+  the JS bridge) work on iOS with CocoaPods. The `quickjs_engine` 0.1.5 pod
+  exported none of the QuickJS bridge functions, so every SVG with a
+  `<script>` failed to initialize with "Failed to lookup symbol
+  'jsNewRuntime'".
+- Android apps on Android Gradle Plugin 9 build with built-in Kotlin:
+  `quickjs_engine` no longer applies the Kotlin Gradle Plugin, which failed
+  the AGP 9 build (or, with built-in Kotlin off, triggered Flutter's KGP
+  warning)
+  ([#52](https://github.com/denisnadey/flutter_full_svg_support/issues/52)).
+
+**New**
+
+- Swift Package Manager support on iOS and macOS: Flutter no longer falls
+  back to CocoaPods because of `quickjs_engine`
+  ([#55](https://github.com/denisnadey/flutter_full_svg_support/issues/55)).
+
+**Maintenance**
+
+- Requires `quickjs_engine: ^0.1.6`. See its
+  [changelog](https://pub.dev/packages/quickjs_engine/changelog) for the
+  details, including a Podfile workaround for apps that link pods
+  statically.
+- Thanks to [@sufiyansayyed](https://github.com/sufiyansayyed) for reporting
+  the Android Gradle Plugin 9 issue and for the initial migration in
+  [#53](https://github.com/denisnadey/flutter_full_svg_support/pull/53), and
+  to [@DomingoMG](https://github.com/DomingoMG) for reporting the missing
+  Swift Package Manager support.
+
 ## 1.5.1
 
 ### Percentage lengths, objectBoundingBox effects, and per-instance paced timing
