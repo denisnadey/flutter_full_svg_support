@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "packages/quickjs_engine/**"
+      - ".github/scripts/**"
       - ".github/workflows/macos-native-link.yml"
   push:
     branches:
@@ -11,6 +12,7 @@ on:
       - master
     paths:
       - "packages/quickjs_engine/**"
+      - ".github/scripts/**"
       - ".github/workflows/macos-native-link.yml"
   workflow_dispatch:
 
@@ -35,11 +37,12 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Verify shipped bridge is universal
+      - name: Verify shipped bridge is universal and exports the FFI bridge
         run: |
           bridge="packages/quickjs_engine/macos/Frameworks/libquickjs_c_bridge_plugin.dylib"
           test -f "$bridge"
           lipo "$bridge" -verify_arch x86_64 arm64
+          .github/scripts/check_quickjs_bridge_exports.sh "$bridge"
 
       - name: Rebuild universal bridge
         working-directory: packages/quickjs_engine
@@ -49,6 +52,10 @@ jobs:
         run: |
           bridge="packages/quickjs_engine/macos/Frameworks/libquickjs_c_bridge_plugin.dylib"
           lipo "$bridge" -verify_arch x86_64 arm64
+
+      - name: Run package unit tests against the rebuilt bridge
+        working-directory: packages/quickjs_engine
+        run: flutter test
 
       - name: Create clean Flutter app
         run: flutter create --platforms macos "$RUNNER_TEMP/quickjs_macos_smoke"

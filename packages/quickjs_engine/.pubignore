@@ -5,3 +5,9 @@ android/build/
 
 # Local dev artifacts not needed at consumer's end.
 .dart_tool/
+# `flutter test` output (this file replaces .gitignore for pub).
+/build/
+
+# Swift Package Manager / Xcode local-package state.
+.build/
+.swiftpm/

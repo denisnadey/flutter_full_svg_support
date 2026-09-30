@@ -19,6 +19,10 @@ build/
 pubspec.lock
 *.g.dart
 
+# === Swift Package Manager (plugin packages under packages/*/ios|macos) ===
+.build/
+.swiftpm/
+
 # === FVM ===
 .fvm/
 
