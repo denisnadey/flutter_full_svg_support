@@ -38,7 +38,7 @@ mystery platform divergence.
 
 ```yaml
 dependencies:
-  quickjs_engine: ^0.1.6
+  quickjs_engine: ^0.1.7
 ```
 
 ```dart
@@ -247,6 +247,17 @@ MACOSX_DEPLOYMENT_TARGET=10.13 sh tool/build_native.sh
 Make sure your `android/app/build.gradle` doesn't pin the NDK to an old
 version that's missing C++17 support. Required: NDK r21 or later (most
 modern Flutter projects use r25+).
+
+### Linux: "'FLUTTER_PLUGIN_EXPORT' does not name a type"
+
+quickjs_engine 0.1.6 and earlier fail to build on Linux with this error in
+`quickjs_engine_plugin.h`: the plugin header used the macro without
+defining it. Upgrade to 0.1.7 or later. If `quickjs_engine` comes in through
+another package, such as `full_svg_flutter`, upgrade it in place:
+
+```bash
+flutter pub upgrade quickjs_engine
+```
 
 ### Windows: CMake "Could not find compiler set in environment variable CC"
 
