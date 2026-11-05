@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.7
+
+- Linux: fixed every Linux build failing on the plugin header with
+  "'FLUTTER_PLUGIN_EXPORT' does not name a type". The header used the macro
+  without defining it, so 0.1.6 and earlier did not build on Linux. It now
+  defines it like Flutter's plugin template, which keeps the plugin's two
+  entry points exported from its shared library even though
+  `linux/CMakeLists.txt` builds it with hidden symbol visibility
+  ([#57](https://github.com/denisnadey/flutter_full_svg_support/pull/57)).
+- Thanks to [@StillMisty](https://github.com/StillMisty) for diagnosing and
+  fixing the Linux build in
+  [#57](https://github.com/denisnadey/flutter_full_svg_support/pull/57), and
+  to [@DaAppLab](https://github.com/DaAppLab) for confirming it.
+
 ## 0.1.6
 
 - Android: the plugin no longer applies the Kotlin Gradle Plugin. The plugin
