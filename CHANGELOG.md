@@ -1,3 +1,14 @@
+## Unreleased
+
+**New**
+
+- SVG 2 `context-fill` and `context-stroke` paint values. Inside a marker
+  they take the fill or stroke of the shape that references the marker, so
+  one arrowhead marker matches every line it ends. Inside `<use>` content
+  they take the `<use>` element's paint. Colors (including `currentColor`)
+  resolve on the context element; outside markers and `<use>` both keywords
+  mean `none`, as in browsers. Previously they rendered black.
+
 ## 1.5.4
 
 ### Web builds compile again

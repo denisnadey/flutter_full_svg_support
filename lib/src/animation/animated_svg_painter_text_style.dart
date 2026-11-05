@@ -32,7 +32,7 @@ extension AnimatedSvgPainterTextStyleExtension on AnimatedSvgPainter {
       1.0,
       4096.0,
     );
-    final fillValue = _getInheritedAttributeValue(node, 'fill');
+    final fillValue = _getInheritedPaintValue(node, 'fill');
     final fillColor = _isPaintNone(fillValue)
         ? const ui.Color(0x00000000)
         : (_resolveColorForNode(fillValue, node) ?? const ui.Color(0xFF000000));

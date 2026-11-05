@@ -149,9 +149,40 @@ extension AnimatedSvgPainterMarkersExtension on AnimatedSvgPainter {
       return;
     }
 
-    final strokeWidth = _getInheritedNumber(node, 'stroke-width') ?? 1.0;
     final vertices = _extractPathVertices(path);
     if (vertices.isEmpty) return;
+
+    // The referencing shape is the context element for context-fill and
+    // context-stroke inside the marker content.
+    _withContextPaint(
+      node,
+      path.getBounds(),
+      () => _paintMarkerInstances(
+        canvas,
+        node,
+        vertices,
+        markerStartId: markerStartId,
+        markerMidId: markerMidId,
+        markerEndId: markerEndId,
+        imageFilter: imageFilter,
+        colorFilter: colorFilter,
+        blendMode: blendMode,
+      ),
+    );
+  }
+
+  void _paintMarkerInstances(
+    ui.Canvas canvas,
+    SvgNode node,
+    List<_PathVertex> vertices, {
+    required String? markerStartId,
+    required String? markerMidId,
+    required String? markerEndId,
+    ui.ImageFilter? imageFilter,
+    ui.ColorFilter? colorFilter,
+    ui.BlendMode? blendMode,
+  }) {
+    final strokeWidth = _getInheritedNumber(node, 'stroke-width') ?? 1.0;
 
     // Paint marker-start
     if (markerStartId != null && vertices.isNotEmpty) {

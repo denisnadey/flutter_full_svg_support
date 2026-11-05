@@ -27,6 +27,7 @@ Status legend:
 | `<image>` (data URI) | ✅ | Base64-encoded inline images |
 | `<image>` (file://) | ✅ | Native platforms only (web: not supported) |
 | Markers (`<marker>`) | ✅ | markerUnits, orient, refX/Y |
+| `context-fill` / `context-stroke` (SVG 2) | ✅ | In markers (referencing shape) and `<use>` content (the `<use>` element); `none` elsewhere |
 | Patterns (`<pattern>`) | ✅ | patternUnits, patternContentUnits, patternTransform |
 
 ---
