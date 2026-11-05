@@ -98,6 +98,28 @@ void main() {
           decoded[3];
       expect(magic, 0x4F54544F);
     });
+
+    test('zlib-compressed WOFF1 table is inflated byte-for-byte', () {
+      final sfnt = buildCompressibleSfnt();
+      final woff1 = wrapInWoff1(sfnt, useZlib: true);
+
+      // The 'name' table must really be stored compressed in the WOFF
+      // directory (compLength < origLength), or zlib is never exercised.
+      final dir = ByteData.sublistView(woff1);
+      var nameCompressed = false;
+      const nameTag = 0x6E616D65; // 'name'
+      for (var i = 0; i < dir.getUint16(12); i++) {
+        final base = 44 + i * 20;
+        if (dir.getUint32(base) == nameTag) {
+          nameCompressed = dir.getUint32(base + 8) < dir.getUint32(base + 12);
+        }
+      }
+      expect(nameCompressed, isTrue);
+
+      final (result, decoded) = decodeFontIfWoff(woff1);
+      expect(result, WoffDecodeResult.ok);
+      expect(_sfntTable(decoded!, nameTag), _sfntTable(sfnt, nameTag));
+    });
   });
 
   group('decodeFontIfWoff — WOFF2 round-trip', () {
@@ -137,4 +159,21 @@ void main() {
       expect(result, WoffDecodeResult.malformed);
     });
   });
+}
+
+/// Returns the bytes of the table tagged [tag] in an SFNT stream.
+Uint8List _sfntTable(Uint8List sfnt, int tag) {
+  final d = ByteData.sublistView(sfnt);
+  for (var i = 0; i < d.getUint16(4); i++) {
+    final base = 12 + i * 16;
+    if (d.getUint32(base) == tag) {
+      final offset = d.getUint32(base + 8);
+      return Uint8List.sublistView(
+        sfnt,
+        offset,
+        offset + d.getUint32(base + 12),
+      );
+    }
+  }
+  throw StateError('table not found');
 }

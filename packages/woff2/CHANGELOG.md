@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.1.1
+
+### Fixed
+
+- The package is now listed as Web-compatible on pub.dev. `dart:io`'s
+  zlib was imported unconditionally, which made pana mark the whole
+  package (and every package depending on it) as not supporting Web.
+  zlib decoding now sits behind a conditional import keyed on
+  `dart.library.js_interop`. Native behaviour is unchanged.
+- On the web, compressed fonts fail gracefully as before. Uncompressed
+  WOFF1 still decodes. zlib-compressed WOFF1 and WOFF2 return
+  `WoffDecodeResult.malformed`, and the loaders return `false`.
+
 ## 0.1.0 — initial release
 
 First public release. The decoder and Flutter FontLoader wrapper

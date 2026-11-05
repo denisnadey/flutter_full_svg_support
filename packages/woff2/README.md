@@ -49,7 +49,7 @@ themes, and `Material` widgets.
 
 ```yaml
 dependencies:
-  woff2: ^0.1.0
+  woff2: ^0.1.1
 ```
 
 ```dart
@@ -234,12 +234,15 @@ switch (result) {
   `WoffDecodeResult.malformed`. TTC support requires reconstructing
   multiple sub-fonts from one shared `glyf` stream and is a
   follow-up item.
-- **Web platform:** the underlying Brotli decoder (from
-  `es_compression`) is FFI-based, which means this package runs on
-  Android, iOS, macOS, Linux, and Windows — but not Flutter Web.
-  On the web, your browser already understands `.woff2` natively, so
-  you don't need this package there; use the standard `@font-face`
-  CSS in `web/index.html` instead.
+- **Web platform:** the package compiles for Flutter Web (dart2js and
+  dart2wasm), but decompression only works on Android, iOS, macOS,
+  Linux, and Windows. The Brotli decoder (from `es_compression`) is
+  FFI-based and `dart:io`'s zlib is native-only. On the web, only WOFF1
+  files with uncompressed tables decode. zlib-compressed WOFF1 and all
+  WOFF2 files return `WoffDecodeResult.malformed`, and the loaders
+  return `false` without throwing. Your browser already understands
+  `.woff2` natively, so on the web you can use the standard
+  `@font-face` CSS in `web/index.html` instead.
 - **Variable fonts** (with `fvar` / `gvar` tables) decode correctly
   on the SFNT level, but Flutter's `FontLoader` doesn't currently
   expose the variable axes to widget styling. The font will load and
