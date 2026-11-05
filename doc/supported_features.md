@@ -199,7 +199,15 @@ Status legend:
 ## JavaScript runtime
 
 As of 1.1.0, SVGs with inline `<script>` blocks (SVGator JS-export, custom
-animations) execute against an embedded QuickJS engine.
+animations) execute against an embedded QuickJS engine on Android, iOS,
+macOS, Windows and Linux.
+
+**Web:** `<script>` is skipped, with a one-time console note and an
+`onTrace` warning event. The rest of the SVG still renders and animates.
+QuickJS is loaded through `dart:ffi`, which web builds don't have. For the
+details and why scripts aren't run in the browser's own engine, see
+[limitations.md › Web platform](limitations.md#web-platform). Every row
+below is native-only.
 
 | Feature | Status |
 |---|---|
@@ -214,6 +222,16 @@ animations) execute against an embedded QuickJS engine.
 | `MutationObserver` / full DOM observers | ❌ not polyfilled |
 | Full browser DOM (window.location, History, layout APIs, IndexedDB, WebGL) | ❌ only SVG-DOM surface |
 | Inline HTML event handlers (`onclick="…"`) | ❌ use `addEventListener` |
+
+---
+
+## Platforms
+
+| Platform | Status | Notes |
+|---|---|---|
+| Android, iOS, macOS, Windows, Linux | ✅ | Full feature set, including `<script>` |
+| Web (dart2js) | ✅ | No `<script>` execution. No compressed WOFF/WOFF2 `@font-face` decoding. No `file://` |
+| Web (`--wasm`) | ✅ | Same as dart2js |
 
 ---
 

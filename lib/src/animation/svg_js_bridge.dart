@@ -12,6 +12,13 @@ import 'path_data.dart';
 import 'path_parser.dart';
 import 'svg_dom.dart';
 
+/// Whether SVG `<script>` elements are executed on this platform.
+///
+/// `true` here (native, QuickJS via FFI). On the web,
+/// `svg_js_bridge_platform.dart` exports `svg_js_bridge_web.dart` instead,
+/// where this is `false`.
+const bool svgJsBridgeSupported = true;
+
 /// JS runtime bridge: maps SVG DOM API calls from JS to the [SvgDocument] tree.
 ///
 /// Executes inline `<script>` blocks and routes DOM operations

@@ -31,9 +31,10 @@ extension _AnimatedSvgPictureDevToolsLifecycle on _AnimatedSvgPictureState {
   void _ensureDebugAnimationController(SvgTimeline timeline) {
     if (_controller != null) return;
     final rate = timeline.playbackRate;
-    final durationMicros = (timeline.totalDuration.inMicroseconds / rate)
-        .round()
-        .clamp(1, 0x7fffffffffffffff);
+    final durationMicros = math.max(
+      1,
+      (timeline.totalDuration.inMicroseconds / rate).round(),
+    );
     _controller = AnimationController(
       vsync: this,
       duration: Duration(microseconds: durationMicros),
@@ -78,9 +79,10 @@ extension _AnimatedSvgPictureDevToolsLifecycle on _AnimatedSvgPictureState {
     if (controller != null) {
       controller.stop();
       controller.duration = Duration(
-        microseconds: (timeline.totalDuration.inMicroseconds / rate)
-            .round()
-            .clamp(1, 0x7fffffffffffffff),
+        microseconds: math.max(
+          1,
+          (timeline.totalDuration.inMicroseconds / rate).round(),
+        ),
       );
       controller.value = currentProgress.clamp(0.0, 1.0);
       if (wasAnimating) _startPlayback();

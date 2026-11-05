@@ -1,5 +1,8 @@
 part of 'animated_svg_picture.dart';
 
+/// Set after the one-time "<script> unsupported on web" console hint.
+bool _svgScriptsUnsupportedWarned = false;
+
 extension _AnimatedSvgPictureStateLifecycleExtension
     on _AnimatedSvgPictureState {
   /// Handles widget updates when configuration changes.
@@ -22,10 +25,11 @@ extension _AnimatedSvgPictureStateLifecycleExtension
       final currentProgress = _controller?.value ?? 0.0;
       _timeline!.playbackRate = widget.playbackRate;
       if (_controller != null) {
-        final newMicros =
-            (_timeline!.totalDuration.inMicroseconds / widget.playbackRate)
-                .round()
-                .clamp(1, 0x7fffffffffffffff);
+        final newMicros = math.max(
+          1,
+          (_timeline!.totalDuration.inMicroseconds / widget.playbackRate)
+              .round(),
+        );
         _controller!.stop();
         _controller!.duration = Duration(microseconds: newMicros);
         _controller!.value = currentProgress;
@@ -204,7 +208,11 @@ extension _AnimatedSvgPictureStateLifecycleExtension
       }
       // Bootstrap JS bridge if the SVG has inline <script> elements
       final scripts = _document.scripts;
-      if (scripts != null && scripts.isNotEmpty) {
+      if (scripts != null && scripts.isNotEmpty && !svgJsBridgeSupported) {
+        // Web: no embedded JS engine (QuickJS needs dart:ffi). Skip the
+        // scripts; SMIL, CSS animations, filters etc. are unaffected.
+        _reportScriptsUnsupported(scripts.length);
+      } else if (scripts != null && scripts.isNotEmpty) {
         _jsBridge = SvgJsBridge(
           document: _document,
           markNeedsRepaint: _markNeedsRepaint,
@@ -246,6 +254,28 @@ extension _AnimatedSvgPictureStateLifecycleExtension
         stackTrace: stackTrace,
       );
       rethrow;
+    }
+  }
+
+  /// Called instead of bootstrapping the JS bridge on platforms without one
+  /// (web). Emits a trace event every time and a console hint once per run.
+  void _reportScriptsUnsupported(int scriptCount) {
+    _trace(
+      category: 'js',
+      level: SvgTraceLevel.warning,
+      message:
+          'SVG <script> skipped: JavaScript execution is not supported on '
+          'this platform (web). SMIL/CSS animations still run.',
+      data: <String, Object?>{'count': scriptCount},
+    );
+    if (!_svgScriptsUnsupportedWarned) {
+      _svgScriptsUnsupportedWarned = true;
+      debugPrint(
+        'full_svg_flutter: skipping $scriptCount SVG <script> element(s) — '
+        'JavaScript in SVG is not supported on the web (the QuickJS runtime '
+        'needs dart:ffi). Static rendering, SMIL and CSS animations are '
+        'unaffected. This message is shown once.',
+      );
     }
   }
 
@@ -360,10 +390,11 @@ extension _AnimatedSvgPictureStateLifecycleExtension
       final currentProgress = _controller?.value ?? 0.0;
       _timeline!.playbackRate = controller.playbackRate;
       if (_controller != null) {
-        final newMicros =
-            (_timeline!.totalDuration.inMicroseconds / controller.playbackRate)
-                .round()
-                .clamp(1, 0x7fffffffffffffff);
+        final newMicros = math.max(
+          1,
+          (_timeline!.totalDuration.inMicroseconds / controller.playbackRate)
+              .round(),
+        );
         _controller!.stop();
         _controller!.duration = Duration(microseconds: newMicros);
         _controller!.value = currentProgress;

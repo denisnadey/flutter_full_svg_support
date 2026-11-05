@@ -8,7 +8,9 @@
 
 As of 1.1.0, JavaScript inside SVG files **is executed** by an embedded
 QuickJS engine ([`quickjs_engine`](https://pub.dev/packages/quickjs_engine))
-running against a polyfilled SVG DOM. This covers:
+running against a polyfilled SVG DOM, on Android, iOS, macOS, Windows and
+Linux. On the web, scripts are skipped. See [Web platform](#web-platform).
+On native platforms this covers:
 
 - inline `<script>` blocks and `<script src="...">` references
 - SVGator files exported in **JavaScript** animation mode
@@ -81,9 +83,50 @@ FSvgPicture.asset('assets/complex.svg', renderingStrategy: RenderingStrategy.ras
 
 ---
 
-## Web platform: `file://` URI images
+## Web platform
 
-`<image href="file://...">` is not supported on the web platform. The web stub returns `null` gracefully, so the image element is silently skipped.
+The package builds and runs on the web with both the default dart2js
+compiler and `flutter build web --wasm`. Static rendering, SMIL and CSS
+animation, filters, masks, gradients and text are all supported on the web.
+The exceptions are below.
+
+### `<script>` is not executed
+
+The embedded JavaScript engine (`quickjs_engine`) is loaded through
+`dart:ffi`, which web builds don't have. On the web, `<script>` elements
+(inline and `src=`) and inline `on*="…"` handlers are **skipped**:
+
+- The rest of the SVG renders and animates as usual.
+- SVGator files exported in *JavaScript* mode show their static,
+  un-animated markup. To animate them on the web, export them in
+  SMIL/CSS mode.
+- The first skipped SVG prints one console line,
+  `full_svg_flutter: skipping N SVG <script> element(s) …`. Every skipped
+  SVG also sends an `SvgTraceEvent` (category `js`, level `warning`) to
+  `onTrace`.
+
+The scripts are deliberately not run through the browser's own JavaScript
+engine. The bridge makes synchronous calls into Dart and replaces `window`,
+`document`, timers and `requestAnimationFrame` with SVG-DOM polyfills. In a
+browser that would need a realm on the host page's origin. An SVG script,
+often loaded from the network, could then reach the app's cookies, storage
+and DOM. On native platforms these scripts can only reach the SVG through
+the bridge.
+
+### Compressed WOFF / WOFF2 `@font-face` fonts
+
+`@font-face` fonts are decoded by the `woff2` package. It uses `dart:io`'s
+zlib for WOFF1 and an FFI Brotli codec for WOFF2, and neither works in the
+browser. On the web, WOFF1 fonts with zlib-compressed tables and all WOFF2
+fonts fail to decode. The failure is caught and recorded, and text falls
+back to the next font in `font-family`. Embedded TTF/OTF fonts and WOFF1
+fonts with uncompressed tables load normally.
+
+### `file://` URIs
+
+`<image href="file://...">` and `AnimatedSvgPicture.file` are not supported
+on the web, because browsers don't allow file access. The web stub returns
+`null`, so the image element is skipped without an error.
 
 ---
 

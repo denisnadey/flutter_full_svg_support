@@ -1,3 +1,41 @@
+## Unreleased
+
+### Web builds compile again
+
+**Fixed**
+
+- Apps that use `full_svg_flutter` build for the web again, with both
+  `flutter build web` (dart2js) and `flutter build web --wasm`. Since the
+  JavaScript bridge arrived in 1.1.0, `quickjs_engine` (which needs
+  `dart:ffi`) was imported on every platform. Every web build failed with
+  "Dart library 'dart:ffi' is not available on this platform", and pub.dev
+  did not list Web as a supported platform.
+- The animation-duration clamp, used when the playback rate changes and by
+  the DevTools adapter, no longer uses the 64-bit literal
+  `0x7fffffffffffffff`. dart2js rejects that literal. Native behaviour is
+  unchanged, because `double.round()` already saturates at the int64
+  maximum.
+
+**Changed**
+
+- On the web, SVG `<script>` elements are skipped. This covers inline
+  scripts, `<script src>` and inline `on*="…"` handlers. Everything else
+  renders and animates as before: static content, SMIL, CSS animations and
+  filters. An SVGator JS-export file shows its static markup. The first
+  skip prints one console line, and every skip sends an `SvgTraceEvent`
+  (category `js`, level `warning`) to `onTrace`. Native platforms still run
+  scripts in QuickJS as before. Scripts are deliberately not run in the
+  browser's own JavaScript engine: that would give SVG scripts the host
+  page's origin (cookies, storage, DOM). See
+  [doc/limitations.md](doc/limitations.md#web-platform).
+
+**Docs**
+
+- README, `doc/supported_features.md` and `doc/limitations.md` now describe
+  what works on the web. Besides `<script>`, `@font-face` fonts in
+  compressed WOFF/WOFF2 are not decoded on the web (text falls back to
+  other fonts), and `file://` is unavailable.
+
 ## 1.5.3
 
 ### quickjs_engine 0.1.7: Linux builds
