@@ -1,4 +1,4 @@
-## Unreleased
+## 1.5.4
 
 ### Web builds compile again
 
@@ -9,7 +9,8 @@
   JavaScript bridge arrived in 1.1.0, `quickjs_engine` (which needs
   `dart:ffi`) was imported on every platform. Every web build failed with
   "Dart library 'dart:ffi' is not available on this platform", and pub.dev
-  did not list Web as a supported platform.
+  did not list Web as a supported platform
+  ([#64](https://github.com/denisnadey/flutter_full_svg_support/pull/64)).
 - The animation-duration clamp, used when the playback rate changes and by
   the DevTools adapter, no longer uses the 64-bit literal
   `0x7fffffffffffffff`. dart2js rejects that literal. Native behaviour is
@@ -35,6 +36,16 @@
   what works on the web. Besides `<script>`, `@font-face` fonts in
   compressed WOFF/WOFF2 are not decoded on the web (text falls back to
   other fonts), and `file://` is unavailable.
+
+**Maintenance**
+
+- Requires `xml: >=6.3.0`. The parser uses `XmlNode.value`, which
+  `xml` 6.3.0 introduced, so resolving an older 6.x release (for example
+  with `flutter pub downgrade` or a pinned lockfile) failed to compile
+  ([#61](https://github.com/denisnadey/flutter_full_svg_support/pull/61)).
+- The example app's macOS deployment target is now 12.0, the minimum
+  Xcode 27 accepts
+  ([#63](https://github.com/denisnadey/flutter_full_svg_support/pull/63)).
 
 ## 1.5.3
 

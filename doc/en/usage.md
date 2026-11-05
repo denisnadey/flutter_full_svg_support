@@ -21,7 +21,7 @@ Or edit `pubspec.yaml` manually:
 
 ```yaml
 dependencies:
-  full_svg_flutter: ^1.5.3
+  full_svg_flutter: ^1.5.4
 ```
 
 Import it in Dart:
