@@ -1,4 +1,7 @@
-platform :osx, '10.15'
+# Xcode 27 supports macOS deployment targets from 12.0 only.
+MACOS_DEPLOYMENT_TARGET = '12.0'
+
+platform :osx, MACOS_DEPLOYMENT_TARGET
 
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
@@ -35,5 +38,15 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_macos_build_settings(target)
+
+    # Pods that pin an older target explicitly (the FlutterMacOS pod pins
+    # 10.15) are not raised by the Flutter helper and fail on Xcode 27.
+    target.build_configurations.each do |config|
+      current = config.build_settings['MACOSX_DEPLOYMENT_TARGET']
+      next if current.nil? || current.empty?
+      if Gem::Version.new(current) < Gem::Version.new(MACOS_DEPLOYMENT_TARGET)
+        config.build_settings['MACOSX_DEPLOYMENT_TARGET'] = MACOS_DEPLOYMENT_TARGET
+      end
+    end
   end
 end
