@@ -18,8 +18,7 @@ extension SmilAnimationRuntimeExtension on SmilAnimation {
       // every later transform. The visible effect is the animated element
       // sliding off by exactly the starting-point coordinates.
       final identityBase = _identityBaseValueFor(attributeType, value);
-      targetNode.setAttribute(attributeName, identityBase,
-          type: attributeType);
+      targetNode.setAttribute(attributeName, identityBase, type: attributeType);
       final newAttr = targetNode.getAttribute(attributeName);
       if (newAttr != null) {
         newAttr.setAnimatedValue(value);

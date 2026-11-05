@@ -73,10 +73,7 @@ abstract class SvgLoader<T> extends BytesLoader {
   Future<ByteData> _load(BuildContext? context) {
     return prepareMessage(context).then((T? message) {
       final Uint8List bytes = utf8.encode(provideSvg(message));
-      return bytes.buffer.asByteData(
-        bytes.offsetInBytes,
-        bytes.lengthInBytes,
-      );
+      return bytes.buffer.asByteData(bytes.offsetInBytes, bytes.lengthInBytes);
     });
   }
 
