@@ -1308,8 +1308,7 @@ class _StaticSvgViewState extends State<_StaticSvgView> {
       result = Semantics(
         label: widget.semanticsLabel,
         image: true,
-        textDirection:
-            Directionality.maybeOf(context) ?? TextDirection.ltr,
+        textDirection: Directionality.maybeOf(context) ?? TextDirection.ltr,
         child: result,
       );
     }
