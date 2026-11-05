@@ -458,13 +458,14 @@ When you might need to do something extra:
 
 | Situation | Action |
 |---|---|
-| **You see "Failed to load dynamic library 'libquickjs_c_bridge_plugin.\*'"** on `flutter test` for macOS, Linux, or Windows | The library hasn't been built. Run `dart run quickjs_engine:build_native` once after `flutter pub get` (or read [Building from source](#building-the-native-library-from-source) below) |
+| **You see "Failed to load dynamic library 'libquickjs_c_bridge_plugin.\*'"** on `flutter test` for macOS, Linux, or Windows | `flutter test` runs in a plain Dart VM that doesn't load plugins, so point `LIBQUICKJSC_TEST_PATH` at the library. On macOS the `quickjs_engine` package ships a prebuilt one: `LIBQUICKJSC_TEST_PATH=<quickjs_engine>/macos/Frameworks/libquickjs_c_bridge_plugin.dylib flutter test`. On Linux and Windows, [build it from source](#building-the-native-library-from-source) first and use the library under `native/build/` |
 | **You ship to a less-common Android ABI** (riscv64, x86 32-bit) | Open `android/app/build.gradle` and add the ABI to `ndk.abiFilters`. Default ABIs (`armeabi-v7a`, `arm64-v8a`, `x86`, `x86_64`) are already configured by `quickjs_engine` |
 | **You target iOS < 11.0 or macOS < 10.13** | Raise the deployment target in your Xcode project — the bridge requires C++17, which needs at least these versions |
 | **You bundle the app as an `.aab` and Play Console rejects 16 KB page size** | Upgrade to `quickjs_engine` 0.1.3 or newer, which links Android libraries with 16 KB ELF alignment. Also use Android Gradle Plugin 8.5.1 or newer so uncompressed native libraries receive 16 KB ZIP alignment. |
 | **An SVG with `<script>` fails on iOS with "Failed to lookup symbol 'jsNewRuntime'"** | Use `quickjs_engine` 0.1.6 or newer (required by `full_svg_flutter` 1.5.2). If your `ios/Podfile` links pods statically (`use_frameworks! :linkage => :static`, or no `use_frameworks!`), switch to Swift Package Manager or apply the [Podfile workaround](packages/quickjs_engine/README.md#ios-with-cocoapods-failed-to-lookup-symbol-jsnewruntime) |
 | **A Linux build fails with "'FLUTTER_PLUGIN_EXPORT' does not name a type"** | Use `quickjs_engine` 0.1.7 or newer (required by `full_svg_flutter` 1.5.3): run `flutter pub upgrade quickjs_engine` |
 | **A web build fails with "Dart library 'dart:ffi' is not available on this platform"** | Use `full_svg_flutter` 1.5.4 or newer: run `flutter pub upgrade full_svg_flutter`. On the web, SVG `<script>` is skipped; see [What platforms are supported?](#what-platforms-are-supported) |
+| **A macOS build fails on Xcode 27: "The macOS deployment target 'MACOSX_DEPLOYMENT_TARGET' is set to 10.15, but the range of supported deployment target versions is 12.0 to 27.0.x"** | Flutter's app template and the `FlutterMacOS` pod target macOS 10.15, which Xcode 27 no longer builds. Set `MACOSX_DEPLOYMENT_TARGET = 12.0` in `macos/Runner.xcodeproj/project.pbxproj` and `platform :osx, '12.0'` in `macos/Podfile`, and raise pods that pin an older target in `post_install`, as the [example app's Podfile](example/macos/Podfile) does |
 
 ### Building the native library from source
 
