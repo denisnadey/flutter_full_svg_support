@@ -221,6 +221,13 @@ extension AnimatedSvgPainterUseExtension on AnimatedSvgPainter {
         return;
       }
       referenced.parent = node;
+      final previousContextPaint = _currentContextPaint;
+      // The <use> element is the context element for context-fill and
+      // context-stroke in the referenced content.
+      _currentContextPaint = _captureContextPaint(
+        node,
+        filterState.targetBounds,
+      );
       try {
         final nextUseStack = <String>{...useStack, hrefId};
         if (referenced.tagName == 'symbol') {
@@ -248,6 +255,7 @@ extension AnimatedSvgPainterUseExtension on AnimatedSvgPainter {
           );
         }
       } finally {
+        _currentContextPaint = previousContextPaint;
         referenced.parent = previousParent;
       }
 
