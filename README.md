@@ -77,7 +77,7 @@ Pretty much all of it. `full_svg_flutter` is built to treat SVG as a first-class
 - **Rich text** — `<text>`, `<tspan>`, `<textPath>`, per-character positioning and rotation, decorations, writing modes, bidi/RTL.
 - **SMIL animation** — `<animate>`, `<animateTransform>`, `<animateMotion>`, `<set>`, full timing/easing, path morphing.
 - **CSS animation** — `@keyframes`, `animation-*`, transitions, 3D transforms, `calc()` and `var()`.
-- **JavaScript-driven SVG** — inline `<script>` (including SVGator's JS export) executed by a bundled QuickJS engine against a polyfilled SVG DOM.
+- **JavaScript-driven SVG** — inline `<script>` (including SVGator's JS export) executed by a bundled QuickJS engine against a polyfilled SVG DOM (Android, iOS, macOS, Windows, Linux; skipped on the web — see [Web support](#what-platforms-are-supported)).
 
 If it renders in a browser, there's a very good chance it renders here — directly, with no conversion.
 
@@ -135,8 +135,8 @@ troubleshooting, limitations, and the extension development workflow.
 | Static SVG rendering | ✅ | ✅ | ❌ needs conversion |
 | Animated SVG (SMIL) | ✅ | ❌ | ❌ needs conversion |
 | CSS `@keyframes` in SVG | ✅ | ❌ | ❌ needs conversion |
-| **Inline `<script>` / JS-driven SVG** | ✅ **(new)** | ❌ | n/a |
-| **SVGator JS-export files** | ✅ **(new)** | ❌ | ❌ needs conversion |
+| **Inline `<script>` / JS-driven SVG** | ✅ **(new)**, native only | ❌ | n/a |
+| **SVGator JS-export files** | ✅ **(new)**, native only | ❌ | ❌ needs conversion |
 | Path morphing | ✅ | ❌ | ❌ needs conversion |
 | SVG filters (all 17 primitives) | ✅ | ⚠️ partial | varies |
 | Clipping & masking | ✅ | ✅ | varies |
@@ -150,6 +150,7 @@ troubleshooting, limitations, and the extension development workflow.
 | Desktop (macOS / Windows / Linux) | ✅ | ✅ | varies |
 
 > "⚠️ partial" means the feature exists but coverage or fidelity may be limited.
+> "native only": Android, iOS, macOS, Windows and Linux. On the web, `<script>` is skipped and the SVG renders without it.
 
 ---
 
@@ -348,7 +349,7 @@ controller.addListener(() {
 | Hit-testing across 12 element types | ✅ Supported |
 | `<a>` with `onLinkTap` | ✅ Supported |
 | Accessibility (`<title>`, `<desc>`, ARIA) | ✅ Supported |
-| JavaScript inside SVG (inline `<script>`, external `<script src>`) | ✅ Supported via bundled QuickJS engine (see [JavaScript runtime](#javascript-runtime--svgator-runtime)) |
+| JavaScript inside SVG (inline `<script>`, external `<script src>`) | ✅ Supported via bundled QuickJS engine on native platforms; ❌ skipped on the web (see [JavaScript runtime](#javascript-runtime--svgator-runtime)) |
 | External cross-origin resources | ❌ Restricted by platform policy |
 
 ---
@@ -364,16 +365,18 @@ If a JS-export SVGator file does not render correctly on your end, open an issue
 
 ## JavaScript runtime & SVGator runtime
 
-`full_svg_flutter` ships with a real JavaScript engine — [quickjs_engine][qjs-engine-pkg], a [QuickJS-NG][qjsng] 0.14.0 fork bundled into your app on every platform (Android, iOS, macOS, Linux, Windows). When an SVG contains inline `<script>` blocks or `<script src="...">` references, they are executed against a polyfilled SVG DOM — `document.getElementById`, `Element.setAttribute`, `requestAnimationFrame`, `addEventListener`, `getTotalLength` / `getPointAtLength` on virtual `<path>` elements, `style` proxies, timers, fetch, and the rest of the surface most player scripts touch.
+`full_svg_flutter` ships with a real JavaScript engine — [quickjs_engine][qjs-engine-pkg], a [QuickJS-NG][qjsng] 0.14.0 fork bundled into your app on every native platform (Android, iOS, macOS, Linux, Windows). When an SVG contains inline `<script>` blocks or `<script src="...">` references, they are executed against a polyfilled SVG DOM — `document.getElementById`, `Element.setAttribute`, `requestAnimationFrame`, `addEventListener`, `getTotalLength` / `getPointAtLength` on virtual `<path>` elements, `style` proxies, timers, fetch, and the rest of the surface most player scripts touch.
 
 What this means concretely:
 
 - **SVGator JS-export files render natively.** Coffee Match Cut, Glowing Gummies, Basketball Boy, Skating Girls, Dog Character, Ramen Raccoon — all play correctly with their original SVGator player script, with no manual conversion to SMIL.
 - **Bezier-path arc-length interpolation is honored.** SVGator's player uses `path.getPointAtLength(d)` for arc-length-parameterized bezier animation between keyframes; the polyfill computes real arc-length tables (not zero stubs).
-- **Cross-platform parity.** The same JS engine runs on every platform — no more "works on Android, broken on iOS" because of JSC-vs-QuickJS divergence.
+- **Cross-platform parity.** The same JS engine runs on every native platform — no more "works on Android, broken on iOS" because of JSC-vs-QuickJS divergence.
 - **No WebView.** No platform channels for animation, no HTML/CSS layout engine pulled in. Pure native Skia/Impeller painting.
 
 The JS engine starts on demand — SVGs with no `<script>` element pay zero cost. When the engine does start, it runs in a sandboxed context (no real DOM, no network access beyond what the bridge intercepts via Dart `http`).
+
+**On the web, `<script>` is not executed.** `quickjs_engine` is loaded through `dart:ffi`, which doesn't exist in web builds, so web builds (dart2js and Wasm) use a stub instead. SVGs that contain `<script>` still render: their static markup, SMIL and CSS animations, filters and so on all work, but the script is skipped. An SVGator JS-export file shows its un-animated markup. The first skipped script in a session prints one console line, and every skip emits an `SvgTraceEvent` (category `js`, level `warning`) to `onTrace`. Running these scripts in the browser's own JS engine was deliberately not done. The bridge needs synchronous calls and replaces `window`/`document`, so it would have to share the host page's origin, and SVG scripts (often loaded from the network) could then read the app's cookies, storage and DOM. On native they stay inside the QuickJS sandbox.
 
 [qjsng]: https://github.com/quickjs-ng/quickjs
 
@@ -410,6 +413,7 @@ FSvgPicture.asset('assets/example.svg'); // animation just runs.
 
 Known limitations:
 
+- On the web, SVG `<script>` is skipped, and WOFF/WOFF2 `@font-face` fonts that need zlib or Brotli decompression are not loaded (text falls back to other fonts). See [doc/limitations.md](doc/limitations.md#web-platform)
 - JavaScript inside SVGs runs against a polyfilled SVG DOM (see the [JavaScript runtime](#javascript-runtime--svgator-runtime) section), not a real browser DOM — pages that rely on the full HTML DOM, `window.location`, layout APIs, or third-party JS frameworks that expect a browser environment will not work
 - External cross-origin resources follow Flutter's platform security policy
 - Some advanced SVG filter combinations may render differently from browsers
@@ -660,7 +664,15 @@ No. Rendering happens entirely inside Flutter's painting infrastructure.
 
 ### What platforms are supported?
 
-Android, iOS, macOS, Windows, Linux, and Web (file:// URIs are web-only disabled; everything else works).
+Android, iOS, macOS, Windows, Linux, and Web (both the default dart2js build and `flutter build web --wasm`).
+
+On the web, everything works except:
+
+- **JavaScript inside SVG:** `<script>` elements are skipped, because the bundled QuickJS engine needs `dart:ffi`. The SVG still renders, including SMIL and CSS animations. SVGator *JS-export* files show their static markup; export them in SMIL/CSS mode to animate them on the web.
+- **Compressed WOFF/WOFF2 `@font-face` fonts:** these are not decoded, because the decoder uses `dart:io` zlib and FFI Brotli. Text falls back to other fonts. Embedded TTF/OTF and uncompressed WOFF fonts work.
+- **`file://` URIs and `AnimatedSvgPicture.file`:** not available, because browsers don't allow file access.
+
+See [doc/limitations.md](doc/limitations.md#web-platform) for details.
 
 ---
 
