@@ -15,7 +15,8 @@ dependencies:
     sdk: flutter
   http: ^1.0.0
   meta: ^1.17.0
-  xml: '>=6.0.0 <8.0.0'
+  # 6.3.0 introduced `XmlNode.value`, which the parser relies on.
+  xml: '>=6.3.0 <8.0.0'
   # Embedded JavaScript runtime — used by the SVG JS bridge.
   # The local source lives under packages/quickjs_engine and is also
   # published independently on pub.dev as `quickjs_engine`.

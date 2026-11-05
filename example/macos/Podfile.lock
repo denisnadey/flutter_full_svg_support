@@ -15,7 +15,7 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   FlutterMacOS: d0db08ddef1a9af05a5ec4b724367152bb0500b1
-  quickjs_engine: f985c2ebce29b932af6f64239b329efeb91c1e6a
+  quickjs_engine: 6905980072fdaf3744effbe2e2996d3a9152490b
 
 PODFILE CHECKSUM: 1b29b575031b812e1e7a7cf698aec84e8b2cab1e
 
