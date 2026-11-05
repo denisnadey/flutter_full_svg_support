@@ -1,7 +1,7 @@
 # Graph Report - /Users/denisnadey/apps/flutter_full_svg_support  (2026-11-05)
 
 ## Corpus Check
-- 1144 files · ~13,623,028 words
+- 1144 files · ~13,622,837 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -2397,11 +2397,11 @@ Nodes (0):
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `assert()` connect `Community 1` to `Community 0`, `Community 5`, `Community 6`, `Community 7`, `Community 11`, `Community 12`, `Community 15`, `Community 20`, `Community 23`, `Community 59`?**
-  _High betweenness centrality (0.240) - this node is a cross-community bridge._
+  _High betweenness centrality (0.249) - this node is a cross-community bridge._
 - **Why does `package:flutter_test/flutter_test.dart` connect `Community 2` to `Community 3`, `Community 8`, `Community 9`, `Community 14`, `Community 17`?**
-  _High betweenness centrality (0.106) - this node is a cross-community bridge._
-- **Why does `package:flutter/material.dart` connect `Community 2` to `Community 34`, `Community 3`, `Community 4`, `Community 6`, `Community 9`, `Community 10`, `Community 12`, `Community 14`, `Community 17`?**
-  _High betweenness centrality (0.093) - this node is a cross-community bridge._
+  _High betweenness centrality (0.104) - this node is a cross-community bridge._
+- **Why does `close` connect `Community 7` to `Community 0`, `Community 2`?**
+  _High betweenness centrality (0.084) - this node is a cross-community bridge._
 - **Are the 478 inferred relationships involving `assert()` (e.g. with `lre_dump_bytecode()` and `lre_compute_stack_size()`) actually correct?**
   _`assert()` has 478 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 28 inferred relationships involving `JS_FreeValue()` (e.g. with `JSEvalWrapper()` and `js_module_loader()`) actually correct?**

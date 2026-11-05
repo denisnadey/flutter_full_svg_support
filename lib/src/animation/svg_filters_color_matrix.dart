@@ -150,8 +150,8 @@ class SvgColorMatrixFilter extends SvgFilter {
   List<double> _convertSvgMatrixToFlutter(List<double> svgMatrix) {
     final m = List<double>.from(svgMatrix);
     // Scale constant column from [0,1] → [0,255].
-    m[4]  *= 255.0;
-    m[9]  *= 255.0;
+    m[4] *= 255.0;
+    m[9] *= 255.0;
     m[14] *= 255.0;
     m[19] *= 255.0;
     return m;

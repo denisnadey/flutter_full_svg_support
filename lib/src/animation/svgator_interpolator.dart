@@ -183,17 +183,14 @@ class SvgatorOriginTrack {
     final k0 = keys[i];
     final k1 = keys[i + 1];
     final span = (k1.timeMs - k0.timeMs).toDouble();
-    final localT =
-        span > 0 ? ((timeMs - k0.timeMs).toDouble() / span) : 0.0;
+    final localT = span > 0 ? ((timeMs - k0.timeMs).toDouble() / span) : 0.0;
     final eased = (k0.easing ?? CubicBezierEasing.linear).transform(localT);
     // Control points: P1 = k0.end (or k0 if absent), P2 = k1.start (or k1).
     final p1x = k0.endX ?? k0.x;
     final p1y = k0.endY ?? k0.y;
     final p2x = k1.startX ?? k1.x;
     final p2y = k1.startY ?? k1.y;
-    return _cubicBezierPoint(
-      k0.x, k0.y, p1x, p1y, p2x, p2y, k1.x, k1.y, eased,
-    );
+    return _cubicBezierPoint(k0.x, k0.y, p1x, p1y, p2x, p2y, k1.x, k1.y, eased);
   }
 }
 
@@ -215,8 +212,7 @@ class SvgatorScalarTrack {
     final k0 = keys[i];
     final k1 = keys[i + 1];
     final span = (k1.timeMs - k0.timeMs).toDouble();
-    final localT =
-        span > 0 ? ((timeMs - k0.timeMs).toDouble() / span) : 0.0;
+    final localT = span > 0 ? ((timeMs - k0.timeMs).toDouble() / span) : 0.0;
     final eased = (k0.easing ?? CubicBezierEasing.linear).transform(localT);
     return k0.value + (k1.value - k0.value) * eased;
   }
@@ -242,13 +238,9 @@ class SvgatorScaleTrack {
     final k0 = keys[i];
     final k1 = keys[i + 1];
     final span = (k1.timeMs - k0.timeMs).toDouble();
-    final localT =
-        span > 0 ? ((timeMs - k0.timeMs).toDouble() / span) : 0.0;
+    final localT = span > 0 ? ((timeMs - k0.timeMs).toDouble() / span) : 0.0;
     final eased = (k0.easing ?? CubicBezierEasing.linear).transform(localT);
-    return (
-      x: k0.x + (k1.x - k0.x) * eased,
-      y: k0.y + (k1.y - k0.y) * eased,
-    );
+    return (x: k0.x + (k1.x - k0.x) * eased, y: k0.y + (k1.y - k0.y) * eased);
   }
 }
 
@@ -431,17 +423,19 @@ SvgatorOriginTrack? _parseOriginTrack(dynamic raw) {
     if (x == null || y == null) continue;
     final start = v['start'] is Map ? v['start'] as Map : null;
     final end = v['end'] is Map ? v['end'] as Map : null;
-    out.add(SvgatorOriginKeyframe(
-      timeMs: t,
-      x: x,
-      y: y,
-      type: (v['type'] as String?) ?? 'corner',
-      startX: (start?['x'] as num?)?.toDouble(),
-      startY: (start?['y'] as num?)?.toDouble(),
-      endX: (end?['x'] as num?)?.toDouble(),
-      endY: (end?['y'] as num?)?.toDouble(),
-      easing: _parseEasing(entry['e']),
-    ));
+    out.add(
+      SvgatorOriginKeyframe(
+        timeMs: t,
+        x: x,
+        y: y,
+        type: (v['type'] as String?) ?? 'corner',
+        startX: (start?['x'] as num?)?.toDouble(),
+        startY: (start?['y'] as num?)?.toDouble(),
+        endX: (end?['x'] as num?)?.toDouble(),
+        endY: (end?['y'] as num?)?.toDouble(),
+        easing: _parseEasing(entry['e']),
+      ),
+    );
   }
   return out.isEmpty ? null : SvgatorOriginTrack(out);
 }
@@ -454,11 +448,13 @@ SvgatorScalarTrack? _parseScalarTrack(dynamic raw) {
     final t = (entry['t'] as num?)?.toInt();
     final v = (entry['v'] as num?)?.toDouble();
     if (t == null || v == null) continue;
-    out.add(SvgatorScalarKeyframe(
-      timeMs: t,
-      value: v,
-      easing: _parseEasing(entry['e']),
-    ));
+    out.add(
+      SvgatorScalarKeyframe(
+        timeMs: t,
+        value: v,
+        easing: _parseEasing(entry['e']),
+      ),
+    );
   }
   return out.isEmpty ? null : SvgatorScalarTrack(out);
 }
@@ -473,12 +469,14 @@ SvgatorScaleTrack? _parseScaleTrack(dynamic raw) {
     if (t == null || v == null) continue;
     final x = (v['x'] as num?)?.toDouble() ?? 1.0;
     final y = (v['y'] as num?)?.toDouble() ?? 1.0;
-    out.add(SvgatorScaleKeyframe(
-      timeMs: t,
-      x: x,
-      y: y,
-      easing: _parseEasing(entry['e']),
-    ));
+    out.add(
+      SvgatorScaleKeyframe(
+        timeMs: t,
+        x: x,
+        y: y,
+        easing: _parseEasing(entry['e']),
+      ),
+    );
   }
   return out.isEmpty ? null : SvgatorScaleTrack(out);
 }

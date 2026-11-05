@@ -87,7 +87,9 @@ class SvgJsBridge {
       if (node == null) return jsonEncode(<String>[]);
       final names = node.attributes.keys.toList();
       if (node.id != null && !names.contains('id')) names.add('id');
-      if (node.className != null && !names.contains('class')) names.add('class');
+      if (node.className != null && !names.contains('class')) {
+        names.add('class');
+      }
       return jsonEncode(names);
     });
 
@@ -116,7 +118,11 @@ class SvgJsBridge {
       final map = args as Map;
       final node = _document.getElementById(map['id'] as String);
       if (node != null) {
-        _setAttr(node, _camelToKebab(map['name'] as String), map['value'] as String);
+        _setAttr(
+          node,
+          _camelToKebab(map['name'] as String),
+          map['value'] as String,
+        );
         _repaint();
       }
       return jsonEncode(null);
@@ -242,8 +248,14 @@ class SvgJsBridge {
         }
       }
       return jsonEncode({
-        'x': 0, 'y': 0, 'width': w, 'height': h,
-        'top': 0, 'left': 0, 'right': w, 'bottom': h,
+        'x': 0,
+        'y': 0,
+        'width': w,
+        'height': h,
+        'top': 0,
+        'left': 0,
+        'right': w,
+        'bottom': h,
       });
     });
 
@@ -275,7 +287,12 @@ class SvgJsBridge {
         return jsonEncode({'x': 0.0, 'y': 0.0, 'width': 0.0, 'height': 0.0});
       }
       final r = _computeBBox(node);
-      return jsonEncode({'x': r.left, 'y': r.top, 'width': r.width, 'height': r.height});
+      return jsonEncode({
+        'x': r.left,
+        'y': r.top,
+        'width': r.width,
+        'height': r.height,
+      });
     });
 
     _runtime.onMessage('getTotalLength', (dynamic args) {
@@ -297,7 +314,10 @@ class SvgJsBridge {
       final id = map['id'] as String;
       final node = _document.getElementById(id);
       if (node == null) return jsonEncode(false);
-      final matches = _querySelectorAll(_document.root, map['selector'] as String);
+      final matches = _querySelectorAll(
+        _document.root,
+        map['selector'] as String,
+      );
       return jsonEncode(matches.any((n) => n.id == id));
     });
 
@@ -326,7 +346,10 @@ class SvgJsBridge {
 
     _runtime.onMessage('injectCSS', (dynamic args) {
       final html = (args as Map)['html'] as String? ?? '';
-      final styleRe = RegExp(r'<style[^>]*>([\s\S]*?)</style>', caseSensitive: false);
+      final styleRe = RegExp(
+        r'<style[^>]*>([\s\S]*?)</style>',
+        caseSensitive: false,
+      );
       for (final m in styleRe.allMatches(html)) {
         _applyCssToDocument(m.group(1) ?? '');
       }
@@ -384,7 +407,10 @@ class SvgJsBridge {
         );
         _eval(response.body, label: 'external:$url');
       } else {
-        developer.log('Fetch failed ${response.statusCode}: $url', name: 'SVG/JS');
+        developer.log(
+          'Fetch failed ${response.statusCode}: $url',
+          name: 'SVG/JS',
+        );
       }
     } catch (e) {
       if (!_disposed) developer.log('Fetch error: $url → $e', name: 'SVG/JS');
@@ -397,7 +423,9 @@ class SvgJsBridge {
   }
 
   void _maybeCompleteExternal() {
-    if (_inlinesDone && _pendingExternal == 0 && !_externalCompleter.isCompleted) {
+    if (_inlinesDone &&
+        _pendingExternal == 0 &&
+        !_externalCompleter.isCompleted) {
       _externalCompleter.complete();
     }
   }
@@ -2172,15 +2200,13 @@ class SvgJsBridge {
 
   /// Dispatch an inline attribute handler (e.g. onclick="...") for [elementId].
   void dispatchInlineHandler(String elementId, String handlerCode) {
-    _runtime.evaluate(
-      '''(function() {
+    _runtime.evaluate('''(function() {
   var el = document.getElementById(${jsonEncode(elementId)});
   try {
     var fn = new Function('event', ${jsonEncode(handlerCode)});
     fn.call(el, {type: 'event', target: el, currentTarget: el, preventDefault: function(){}, stopPropagation: function(){}});
   } catch(e) { console.error('inline handler:', String(e)); }
-})();''',
-    );
+})();''');
   }
 
   /// Evaluate arbitrary JS in the bridge's runtime — used by the debug
@@ -2190,8 +2216,10 @@ class SvgJsBridge {
     try {
       final result = _runtime.evaluate(code);
       if (result.isError) {
-        developer.log('debug-eval error: ${result.stringResult}',
-            name: 'SVG/JS');
+        developer.log(
+          'debug-eval error: ${result.stringResult}',
+          name: 'SVG/JS',
+        );
         return null;
       }
       return result.stringResult;
@@ -2264,7 +2292,10 @@ class SvgJsBridge {
     try {
       final result = _runtime.evaluate(code);
       if (result.isError) {
-        developer.log('SVG/JS [$label] JS error: ${result.stringResult}', name: 'SVG/JS');
+        developer.log(
+          'SVG/JS [$label] JS error: ${result.stringResult}',
+          name: 'SVG/JS',
+        );
         // ignore: avoid_print
         print('[SVG/JS] JS error [$label]: ${result.stringResult}');
       }
@@ -2355,21 +2386,27 @@ class SvgJsBridge {
         return _walkNodes(root).where((n) {
           final v = n.getAttributeValue(attr)?.toString() ?? '';
           switch (op) {
-            case '=':  return v == value;
-            case '*=': return v.contains(value!);
-            case '^=': return v.startsWith(value!);
-            case r'$=': return v.endsWith(value!);
-            case '~=': return v.split(' ').contains(value);
-            default:   return false;
+            case '=':
+              return v == value;
+            case '*=':
+              return v.contains(value!);
+            case '^=':
+              return v.startsWith(value!);
+            case r'$=':
+              return v.endsWith(value!);
+            case '~=':
+              return v.split(' ').contains(value);
+            default:
+              return false;
           }
         }).toList();
       }
     }
     // [attr] — has attribute
     attr = inner.trim();
-    return _walkNodes(root)
-        .where((n) => n.getAttributeValue(attr) != null)
-        .toList();
+    return _walkNodes(
+      root,
+    ).where((n) => n.getAttributeValue(attr) != null).toList();
   }
 
   static Iterable<SvgNode> _walkNodes(SvgNode root) sync* {
@@ -2404,9 +2441,21 @@ class SvgJsBridge {
         return SvgAttributeType.list;
       default:
         const lengthAttrs = {
-          'x', 'y', 'cx', 'cy', 'r', 'rx', 'ry',
-          'width', 'height', 'x1', 'y1', 'x2', 'y2',
-          'stroke-width', 'font-size',
+          'x',
+          'y',
+          'cx',
+          'cy',
+          'r',
+          'rx',
+          'ry',
+          'width',
+          'height',
+          'x1',
+          'y1',
+          'x2',
+          'y2',
+          'stroke-width',
+          'font-size',
         };
         return lengthAttrs.contains(name)
             ? SvgAttributeType.length
@@ -2414,8 +2463,10 @@ class SvgJsBridge {
     }
   }
 
-  static String _camelToKebab(String s) =>
-      s.replaceAllMapped(RegExp(r'([A-Z])'), (m) => '-${m.group(0)!.toLowerCase()}');
+  static String _camelToKebab(String s) => s.replaceAllMapped(
+    RegExp(r'([A-Z])'),
+    (m) => '-${m.group(0)!.toLowerCase()}',
+  );
 
   static double? _parseAttrDouble(String? value) {
     if (value == null || value.isEmpty) return null;
@@ -2429,28 +2480,45 @@ class SvgJsBridge {
     double? n(String k) => _parseAttrDouble(a(k)?.toString());
     switch (node.tagName) {
       case 'rect':
-        final x = n('x') ?? 0; final y = n('y') ?? 0;
-        final w = n('width') ?? 0; final h = n('height') ?? 0;
+        final x = n('x') ?? 0;
+        final y = n('y') ?? 0;
+        final w = n('width') ?? 0;
+        final h = n('height') ?? 0;
         return ui.Rect.fromLTWH(x, y, w, h);
       case 'circle':
-        final cx = n('cx') ?? 0; final cy = n('cy') ?? 0; final r = n('r') ?? 0;
+        final cx = n('cx') ?? 0;
+        final cy = n('cy') ?? 0;
+        final r = n('r') ?? 0;
         return ui.Rect.fromCircle(center: ui.Offset(cx, cy), radius: r);
       case 'ellipse':
-        final cx = n('cx') ?? 0; final cy = n('cy') ?? 0;
-        final rx = n('rx') ?? 0; final ry = n('ry') ?? 0;
-        return ui.Rect.fromCenter(center: ui.Offset(cx, cy), width: rx * 2, height: ry * 2);
+        final cx = n('cx') ?? 0;
+        final cy = n('cy') ?? 0;
+        final rx = n('rx') ?? 0;
+        final ry = n('ry') ?? 0;
+        return ui.Rect.fromCenter(
+          center: ui.Offset(cx, cy),
+          width: rx * 2,
+          height: ry * 2,
+        );
       case 'line':
-        final x1 = n('x1') ?? 0; final y1 = n('y1') ?? 0;
-        final x2 = n('x2') ?? 0; final y2 = n('y2') ?? 0;
+        final x1 = n('x1') ?? 0;
+        final y1 = n('y1') ?? 0;
+        final x2 = n('x2') ?? 0;
+        final y2 = n('y2') ?? 0;
         return ui.Rect.fromPoints(ui.Offset(x1, y1), ui.Offset(x2, y2));
       case 'polyline':
       case 'polygon':
         final pts = _parsePointsList(a('points')?.toString() ?? '');
         if (pts.isEmpty) return ui.Rect.zero;
-        var minX = pts[0].dx, maxX = pts[0].dx, minY = pts[0].dy, maxY = pts[0].dy;
+        var minX = pts[0].dx,
+            maxX = pts[0].dx,
+            minY = pts[0].dy,
+            maxY = pts[0].dy;
         for (final p in pts) {
-          if (p.dx < minX) minX = p.dx; if (p.dx > maxX) maxX = p.dx;
-          if (p.dy < minY) minY = p.dy; if (p.dy > maxY) maxY = p.dy;
+          if (p.dx < minX) minX = p.dx;
+          if (p.dx > maxX) maxX = p.dx;
+          if (p.dy < minY) minY = p.dy;
+          if (p.dy > maxY) maxY = p.dy;
         }
         return ui.Rect.fromLTRB(minX, minY, maxX, maxY);
       case 'path':
@@ -2461,14 +2529,17 @@ class SvgJsBridge {
         }
         return ui.Rect.zero;
       default:
-        final w = n('width'); final h = n('height');
+        final w = n('width');
+        final h = n('height');
         if (w != null && h != null) return ui.Rect.fromLTWH(0, 0, w, h);
         final vb = a('viewBox')?.toString() ?? '';
         final parts = vb.trim().split(RegExp(r'[\s,]+'));
         if (parts.length >= 4) {
           return ui.Rect.fromLTWH(
-            double.tryParse(parts[0]) ?? 0, double.tryParse(parts[1]) ?? 0,
-            double.tryParse(parts[2]) ?? 0, double.tryParse(parts[3]) ?? 0,
+            double.tryParse(parts[0]) ?? 0,
+            double.tryParse(parts[1]) ?? 0,
+            double.tryParse(parts[2]) ?? 0,
+            double.tryParse(parts[3]) ?? 0,
           );
         }
         return ui.Rect.zero;
@@ -2479,7 +2550,9 @@ class SvgJsBridge {
     final path = _nodeToFlutterPath(node);
     if (path == null) return 0;
     double total = 0;
-    for (final m in path.computeMetrics()) { total += m.length; }
+    for (final m in path.computeMetrics()) {
+      total += m.length;
+    }
     return total;
   }
 
@@ -2517,20 +2590,35 @@ class SvgJsBridge {
         final pts = _parsePointsList(a('points')?.toString() ?? '');
         if (pts.length < 2) return null;
         final p = ui.Path()..moveTo(pts[0].dx, pts[0].dy);
-        for (var i = 1; i < pts.length; i++) { p.lineTo(pts[i].dx, pts[i].dy); }
+        for (var i = 1; i < pts.length; i++) {
+          p.lineTo(pts[i].dx, pts[i].dy);
+        }
         if (node.tagName == 'polygon') p.close();
         return p;
       case 'rect':
-        final x = n('x') ?? 0; final y = n('y') ?? 0;
-        final w = n('width') ?? 0; final h = n('height') ?? 0;
+        final x = n('x') ?? 0;
+        final y = n('y') ?? 0;
+        final w = n('width') ?? 0;
+        final h = n('height') ?? 0;
         return ui.Path()..addRect(ui.Rect.fromLTWH(x, y, w, h));
       case 'circle':
-        final cx = n('cx') ?? 0; final cy = n('cy') ?? 0; final r = n('r') ?? 0;
-        return ui.Path()..addOval(ui.Rect.fromCircle(center: ui.Offset(cx, cy), radius: r));
+        final cx = n('cx') ?? 0;
+        final cy = n('cy') ?? 0;
+        final r = n('r') ?? 0;
+        return ui.Path()
+          ..addOval(ui.Rect.fromCircle(center: ui.Offset(cx, cy), radius: r));
       case 'ellipse':
-        final cx = n('cx') ?? 0; final cy = n('cy') ?? 0;
-        final rx = n('rx') ?? 0; final ry = n('ry') ?? 0;
-        return ui.Path()..addOval(ui.Rect.fromCenter(center: ui.Offset(cx, cy), width: rx*2, height: ry*2));
+        final cx = n('cx') ?? 0;
+        final cy = n('cy') ?? 0;
+        final rx = n('rx') ?? 0;
+        final ry = n('ry') ?? 0;
+        return ui.Path()..addOval(
+          ui.Rect.fromCenter(
+            center: ui.Offset(cx, cy),
+            width: rx * 2,
+            height: ry * 2,
+          ),
+        );
       default:
         return null;
     }
@@ -2539,7 +2627,11 @@ class SvgJsBridge {
   ui.Path? _buildFlutterPath(String d) {
     if (d.isEmpty) return null;
     List<PathCommand> commands;
-    try { commands = PathParser().parse(d); } catch (_) { return null; }
+    try {
+      commands = PathParser().parse(d);
+    } catch (_) {
+      return null;
+    }
     if (commands.isEmpty) return null;
     final path = ui.Path();
     double cx = 0, cy = 0, sx = 0, sy = 0;
@@ -2548,28 +2640,61 @@ class SvgJsBridge {
       final abs = cmd.toAbsolute(cx, cy);
       switch (abs) {
         case MoveToCommand(:final x, :final y):
-          path.moveTo(x, y); cx = x; cy = y; sx = x; sy = y;
+          path.moveTo(x, y);
+          cx = x;
+          cy = y;
+          sx = x;
+          sy = y;
         case LineToCommand(:final x, :final y):
-          path.lineTo(x, y); cx = x; cy = y;
+          path.lineTo(x, y);
+          cx = x;
+          cy = y;
         case HorizontalLineToCommand(:final x):
-          path.lineTo(x, cy); cx = x;
+          path.lineTo(x, cy);
+          cx = x;
         case VerticalLineToCommand(:final y):
-          path.lineTo(cx, y); cy = y;
-        case CubicBezierCommand(:final x1, :final y1, :final x2, :final y2, :final x, :final y):
-          path.cubicTo(x1, y1, x2, y2, x, y); cx = x; cy = y;
+          path.lineTo(cx, y);
+          cy = y;
+        case CubicBezierCommand(
+          :final x1,
+          :final y1,
+          :final x2,
+          :final y2,
+          :final x,
+          :final y,
+        ):
+          path.cubicTo(x1, y1, x2, y2, x, y);
+          cx = x;
+          cy = y;
         case SmoothCubicBezierCommand():
-          final c = abs.toCubicBezier(currentX: cx, currentY: cy, previousCommand: prev);
-          path.cubicTo(c.x1, c.y1, c.x2, c.y2, c.x, c.y); cx = c.x; cy = c.y;
+          final c = abs.toCubicBezier(
+            currentX: cx,
+            currentY: cy,
+            previousCommand: prev,
+          );
+          path.cubicTo(c.x1, c.y1, c.x2, c.y2, c.x, c.y);
+          cx = c.x;
+          cy = c.y;
         case QuadraticBezierCommand(:final x1, :final y1, :final x, :final y):
-          path.quadraticBezierTo(x1, y1, x, y); cx = x; cy = y;
+          path.quadraticBezierTo(x1, y1, x, y);
+          cx = x;
+          cy = y;
         case SmoothQuadraticBezierCommand():
-          final q = abs.toQuadraticBezier(currentX: cx, currentY: cy, previousCommand: prev);
-          path.quadraticBezierTo(q.x1, q.y1, q.x, q.y); cx = q.x; cy = q.y;
+          final q = abs.toQuadraticBezier(
+            currentX: cx,
+            currentY: cy,
+            previousCommand: prev,
+          );
+          path.quadraticBezierTo(q.x1, q.y1, q.x, q.y);
+          cx = q.x;
+          cy = q.y;
         case ArcCommand():
           final arc = abs;
-          final rx = arc.rx.abs(); final ry = arc.ry.abs();
-          if (rx == 0 || ry == 0) { path.lineTo(arc.x, arc.y); }
-          else {
+          final rx = arc.rx.abs();
+          final ry = arc.ry.abs();
+          if (rx == 0 || ry == 0) {
+            path.lineTo(arc.x, arc.y);
+          } else {
             path.arcToPoint(
               ui.Offset(arc.x, arc.y),
               radius: ui.Radius.elliptical(rx, ry),
@@ -2578,10 +2703,14 @@ class SvgJsBridge {
               clockwise: arc.sweep,
             );
           }
-          cx = arc.x; cy = arc.y;
+          cx = arc.x;
+          cy = arc.y;
         case ClosePathCommand():
-          path.close(); cx = sx; cy = sy;
-        default: break;
+          path.close();
+          cx = sx;
+          cy = sy;
+        default:
+          break;
       }
       prev = abs;
     }
@@ -2589,8 +2718,12 @@ class SvgJsBridge {
   }
 
   static List<ui.Offset> _parsePointsList(String points) {
-    final nums = points.trim().split(RegExp(r'[\s,]+'))
-        .map((s) => double.tryParse(s)).whereType<double>().toList();
+    final nums = points
+        .trim()
+        .split(RegExp(r'[\s,]+'))
+        .map((s) => double.tryParse(s))
+        .whereType<double>()
+        .toList();
     final result = <ui.Offset>[];
     for (var i = 0; i + 1 < nums.length; i += 2) {
       result.add(ui.Offset(nums[i], nums[i + 1]));
