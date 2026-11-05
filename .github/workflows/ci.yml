@@ -1,0 +1,153 @@
+name: CI
+
+# Analyze, test and build the package on every change to code. The heavier
+# platform workflows (W3C goldens, native link checks) keep their own files.
+
+on:
+  pull_request:
+    paths-ignore:
+      - "**.md"
+      - "doc/**"
+      - "graphify-out/**"
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - "**.md"
+      - "doc/**"
+      - "graphify-out/**"
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FLUTTER_VERSION: "3.38.1"
+
+jobs:
+  analyze:
+    name: Analyze and format
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Get dependencies
+        run: |
+          flutter pub get
+          (cd packages/woff2 && flutter pub get)
+          (cd packages/quickjs_engine && flutter pub get)
+
+      - name: Check formatting
+        run: dart format --output=none --set-exit-if-changed lib packages/woff2/lib
+
+      - name: Analyze full_svg_flutter
+        run: flutter analyze
+
+      - name: Analyze woff2
+        working-directory: packages/woff2
+        run: flutter analyze
+
+      - name: Analyze quickjs_engine
+        working-directory: packages/quickjs_engine
+        run: flutter analyze
+
+      - name: Publish dry-run
+        run: flutter pub publish --dry-run
+
+  test:
+    name: Tests (macOS arm64)
+    # The test setup targets Apple Silicon: test/flutter_test_config.dart
+    # loads an arm64 Brotli dylib, and the QuickJS bridge is taken from the
+    # prebuilt universal macOS library.
+    runs-on: macos-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Install Brotli
+        # test/unit/test_data/esbrotli-mac-arm64.dylib re-exports Homebrew's
+        # libbrotli{enc,dec,common}.
+        run: brew list brotli >/dev/null 2>&1 || brew install brotli
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Test full_svg_flutter
+        env:
+          LIBQUICKJSC_TEST_PATH: ${{ github.workspace }}/packages/quickjs_engine/macos/Frameworks/libquickjs_c_bridge_plugin.dylib
+        run: flutter test --reporter expanded
+
+      - name: Test woff2
+        working-directory: packages/woff2
+        run: |
+          flutter pub get
+          flutter test
+
+  web:
+    name: Web build (dart2js and wasm)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Build example (dart2js)
+        working-directory: example
+        run: flutter build web --no-wasm-dry-run
+
+      - name: Build example (wasm)
+        working-directory: example
+        run: flutter build web --wasm
+
+  linux:
+    name: Linux build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Linux toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Build example (Linux, release)
+        working-directory: example
+        run: flutter build linux --release
