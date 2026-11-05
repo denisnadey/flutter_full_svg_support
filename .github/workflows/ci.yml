@@ -52,7 +52,9 @@ jobs:
         run: dart format --output=none --set-exit-if-changed lib packages/woff2/lib
 
       - name: Analyze full_svg_flutter
-        run: flutter analyze
+        # Explicit paths: benchmark/ holds separate packages with their own
+        # dependencies, which are not fetched here.
+        run: flutter analyze lib test tool example
 
       - name: Analyze woff2
         working-directory: packages/woff2
