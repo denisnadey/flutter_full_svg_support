@@ -4,17 +4,21 @@
 /// SFNT (TTF/OTF) bytes that can be consumed by font engines — most
 /// importantly, Flutter's [FontLoader].
 ///
-/// Pure Dart, no platform plugins, no FFI: WOFF1 uses `dart:io`'s zlib,
-/// WOFF2 uses the `es_compression` Brotli decoder. The WOFF2
-/// glyf/loca/hmtx transformations defined in the W3C spec are implemented
-/// in Dart.
+/// No platform plugins: WOFF1 uses `dart:io`'s zlib, WOFF2 uses the
+/// `es_compression` Brotli decoder. The WOFF2 glyf/loca/hmtx
+/// transformations defined in the W3C spec are implemented in Dart.
+///
+/// On the web neither decompressor is available, so only WOFF1 files with
+/// uncompressed tables decode there; zlib-compressed WOFF1 and all WOFF2
+/// files are reported as [WoffDecodeResult.malformed].
 library;
 
-import 'dart:io' show zlib;
 import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:es_compression/brotli.dart';
+
+import 'zlib_decode.dart';
 
 /// Result of a WOFF decode attempt.
 enum WoffDecodeResult {
@@ -116,7 +120,7 @@ Uint8List? _decodeWoff1(Uint8List woff) {
       // zlib-compressed (RFC 1950)
       Uint8List raw;
       try {
-        raw = Uint8List.fromList(zlib.decode(compData));
+        raw = zlibDecode(compData);
       } catch (_) {
         return null;
       }

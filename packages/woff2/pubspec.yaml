@@ -3,7 +3,7 @@ description: >
   WOFF and WOFF2 font support for Flutter — decodes WOFF1/WOFF2 to SFNT
   (TTF/OTF) so Flutter's FontLoader can load them. Pure-Dart decoder,
   high-level Flutter FontLoader wrapper, and a CSS @font-face parser.
-version: 0.1.0
+version: 0.1.1
 homepage: https://github.com/denisnadey/flutter_full_svg_support/tree/main/packages/woff2
 repository: https://github.com/denisnadey/flutter_full_svg_support
 issue_tracker: https://github.com/denisnadey/flutter_full_svg_support/issues
@@ -17,7 +17,7 @@ dependencies:
   flutter:
     sdk: flutter
   # Brotli decompression — required for WOFF2.
-  # WOFF1 only uses zlib (from dart:io), which is always available.
+  # WOFF1 uses zlib from dart:io (native only; see lib/src/zlib_decode.dart).
   es_compression: ^2.0.0
 
 dev_dependencies:

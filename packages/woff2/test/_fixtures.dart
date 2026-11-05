@@ -34,6 +34,18 @@ Uint8List buildMinimalSfnt() {
   return _packSfnt(0x4F54544F /* 'OTTO' */, tables);
 }
 
+/// Like [buildMinimalSfnt], but the `name` table is 1 KiB of a repeating
+/// pattern, so `zlib.encode` actually shrinks it and
+/// `wrapInWoff1(..., useZlib: true)` stores it compressed. The minimal
+/// font's tables are too small for zlib to win, so they always stay raw.
+Uint8List buildCompressibleSfnt() {
+  final tables = <int, Uint8List>{
+    _tag('cmap'): Uint8List.fromList([0, 0, 0, 0]),
+    _tag('name'): Uint8List.fromList(List<int>.generate(1024, (i) => i % 16)),
+  };
+  return _packSfnt(0x4F54544F /* 'OTTO' */, tables);
+}
+
 /// Wraps a TTF/OTF byte stream in a WOFF1 container (uncompressed
 /// tables). Returns spec-valid `wOFF` bytes that round-trip back to
 /// [sfntBytes] when fed to `decodeFontIfWoff`.
