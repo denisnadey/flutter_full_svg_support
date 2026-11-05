@@ -543,15 +543,23 @@ void main() {
                 backgroundColor: Colors.white,
                 body: RepaintBoundary(
                   key: repaintKey,
-                  child: SizedBox(
-                    width: kViewportWidth,
-                    height: kViewportHeight,
-                    child: AnimatedSvgPicture.string(
-                      svgString,
+                  // The boundary captures only its own subtree, so the
+                  // Scaffold background never reaches the PNG. Paint white
+                  // inside it to match the opaque white browser goldens;
+                  // otherwise every background pixel compares transparent
+                  // against white and fails.
+                  child: ColoredBox(
+                    color: Colors.white,
+                    child: SizedBox(
                       width: kViewportWidth,
                       height: kViewportHeight,
-                      fit: BoxFit.contain,
-                      autoPlay: false,
+                      child: AnimatedSvgPicture.string(
+                        svgString,
+                        width: kViewportWidth,
+                        height: kViewportHeight,
+                        fit: BoxFit.contain,
+                        autoPlay: false,
+                      ),
                     ),
                   ),
                 ),

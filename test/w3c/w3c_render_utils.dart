@@ -17,7 +17,10 @@ const double kW3cViewportHeight = 360.0;
 const double kW3cSimilarityThreshold = 0.95;
 
 bool get _isDebug => Platform.environment['W3C_DEBUG'] == '1';
-Future<void>? _w3cFontAliasesInitFuture;
+// A flag, not a cached Future: each testWidgets body runs in its own
+// FakeAsync zone, and awaiting a Future created in an earlier test's zone
+// schedules its continuation in that dead zone, so the await never resumes.
+bool _w3cFontAliasesRegistered = false;
 
 class W3cCompareConfig {
   const W3cCompareConfig({
@@ -187,17 +190,13 @@ Future<Uint8List> captureSvgFromFile(
   }
 }
 
-Future<void> _ensureW3cTestFontAliasesRegistered() {
-  final existing = _w3cFontAliasesInitFuture;
-  if (existing != null) {
-    return existing;
+Future<void> _ensureW3cTestFontAliasesRegistered() async {
+  if (_w3cFontAliasesRegistered) {
+    return;
   }
-
-  final initFuture = _registerW3cTestFontAliases().then(
-    (_) => _registerW3cCjkFont(),
-  );
-  _w3cFontAliasesInitFuture = initFuture;
-  return initFuture;
+  await _registerW3cTestFontAliases();
+  await _registerW3cCjkFont();
+  _w3cFontAliasesRegistered = true;
 }
 
 Future<void> _registerW3cTestFontAliases() async {
