@@ -1,3 +1,24 @@
+## 1.5.3
+
+### quickjs_engine 0.1.7: Linux builds
+
+**Fixed**
+
+- Apps that use `full_svg_flutter` build on Linux. The `quickjs_engine`
+  Linux plugin header used `FLUTTER_PLUGIN_EXPORT` without defining it, so
+  every Linux build failed with "'FLUTTER_PLUGIN_EXPORT' does not name a
+  type"
+  ([#57](https://github.com/denisnadey/flutter_full_svg_support/pull/57)).
+
+**Maintenance**
+
+- Requires `quickjs_engine: ^0.1.7`. See its
+  [changelog](https://pub.dev/packages/quickjs_engine/changelog).
+- Thanks to [@StillMisty](https://github.com/StillMisty) for diagnosing and
+  fixing the Linux build in
+  [#57](https://github.com/denisnadey/flutter_full_svg_support/pull/57), and
+  to [@DaAppLab](https://github.com/DaAppLab) for confirming it.
+
 ## 1.5.2
 
 ### quickjs_engine 0.1.6: JavaScript on iOS, Swift Package Manager, and AGP 9

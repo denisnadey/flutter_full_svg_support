@@ -12,6 +12,12 @@ Render *any* SVG directly inside Flutter — crisp static icons and illustration
 
 `full_svg_flutter` gives you a `flutter_svg`-compatible `SvgPicture` API for static graphics **and** `FSvgPicture` / `AnimatedSvgPicture` for animation — all rendered by the same DOM-preserving engine, so static SVGs get the *exact* same fidelity (filters, masks, text, gradients) as animated ones.
 
+> **🆕 New in 1.5.3 — Linux builds.**
+> Apps that use `full_svg_flutter` build on Linux: `quickjs_engine` 0.1.7
+> fixes the plugin header that failed every Linux build with
+> "'FLUTTER_PLUGIN_EXPORT' does not name a type". See the
+> [CHANGELOG](CHANGELOG.md#153).
+
 > **🆕 New in 1.5.2 — JavaScript-driven SVGs on iOS, Swift Package Manager, AGP 9.**
 > SVGator exports and inline `<script>` now run on iOS with CocoaPods, iOS and
 > macOS apps can use Swift Package Manager, and Android apps build with
@@ -92,7 +98,7 @@ There are several ways to use animated vector graphics in Flutter: static SVG pa
 ```yaml
 # pubspec.yaml
 dependencies:
-  full_svg_flutter: ^1.5.2
+  full_svg_flutter: ^1.5.3
 ```
 
 ```dart
@@ -417,7 +423,7 @@ Known limitations:
 
 ```yaml
 dependencies:
-  full_svg_flutter: ^1.5.2
+  full_svg_flutter: ^1.5.3
 ```
 
 ```bash
@@ -446,6 +452,7 @@ When you might need to do something extra:
 | **You target iOS < 11.0 or macOS < 10.13** | Raise the deployment target in your Xcode project — the bridge requires C++17, which needs at least these versions |
 | **You bundle the app as an `.aab` and Play Console rejects 16 KB page size** | Upgrade to `quickjs_engine` 0.1.3 or newer, which links Android libraries with 16 KB ELF alignment. Also use Android Gradle Plugin 8.5.1 or newer so uncompressed native libraries receive 16 KB ZIP alignment. |
 | **An SVG with `<script>` fails on iOS with "Failed to lookup symbol 'jsNewRuntime'"** | Use `quickjs_engine` 0.1.6 or newer (required by `full_svg_flutter` 1.5.2). If your `ios/Podfile` links pods statically (`use_frameworks! :linkage => :static`, or no `use_frameworks!`), switch to Swift Package Manager or apply the [Podfile workaround](packages/quickjs_engine/README.md#ios-with-cocoapods-failed-to-lookup-symbol-jsnewruntime) |
+| **A Linux build fails with "'FLUTTER_PLUGIN_EXPORT' does not name a type"** | Use `quickjs_engine` 0.1.7 or newer (required by `full_svg_flutter` 1.5.3): run `flutter pub upgrade quickjs_engine` |
 
 ### Building the native library from source
 
