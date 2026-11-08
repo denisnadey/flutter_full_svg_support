@@ -132,8 +132,8 @@ extension AnimatedSvgPainterTextPlainExtension on AnimatedSvgPainter {
       style: effectiveStyle,
       baselineY: baselineY,
     );
-    final fillValue = _getInheritedAttributeValue(node, 'fill');
-    final strokeValue = _getInheritedAttributeValue(node, 'stroke');
+    final fillValue = _getInheritedPaintValue(node, 'fill');
+    final strokeValue = _getInheritedPaintValue(node, 'stroke');
     final strokeParagraph = _buildStrokeTextParagraph(
       text,
       effectiveStyle,

@@ -68,6 +68,7 @@ part 'animated_svg_painter_matrix.dart';
 part 'animated_svg_painter_values.dart';
 part 'animated_svg_painter_transform.dart';
 part 'animated_svg_painter_markers.dart';
+part 'animated_svg_painter_context_paint.dart';
 part 'animated_svg_painter_patterns.dart';
 part 'animated_svg_painter_paint_order.dart';
 part 'animated_svg_painter_devtools.dart';
@@ -155,6 +156,11 @@ class AnimatedSvgPainter extends CustomPainter {
   Map<String, String>? _svgFontFamilyToFontIdCache;
   _FilterPaintState _currentFilterPaintState =
       const _FilterPaintState.initial();
+
+  /// Fill and stroke of the current SVG 2 context element (the shape that
+  /// references a marker, or a `<use>` element), for `context-fill` and
+  /// `context-stroke`. `null` outside markers and `<use>` content.
+  _ContextPaint? _currentContextPaint;
 
   @override
   void paint(ui.Canvas canvas, ui.Size size) {

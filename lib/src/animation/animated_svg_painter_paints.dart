@@ -31,7 +31,12 @@ extension AnimatedSvgPainterPaintsExtension on AnimatedSvgPainter {
     if (!_currentFilterPaintState.paintFill) {
       return null;
     }
-    final fillValue = _getInheritedAttributeValue(node, 'fill');
+    var fillValue = _getInheritedAttributeValue(node, 'fill');
+    final contextFill = _resolveContextPaintValue(fillValue);
+    if (contextFill != null) {
+      fillValue = contextFill.value;
+      paintBounds = contextFill.bounds ?? paintBounds;
+    }
     if (_isPaintNone(fillValue)) {
       return null;
     }
@@ -128,7 +133,12 @@ extension AnimatedSvgPainterPaintsExtension on AnimatedSvgPainter {
     if (!_currentFilterPaintState.paintStroke) {
       return null;
     }
-    final strokeValue = _getInheritedAttributeValue(node, 'stroke');
+    var strokeValue = _getInheritedAttributeValue(node, 'stroke');
+    final contextStroke = _resolveContextPaintValue(strokeValue);
+    if (contextStroke != null) {
+      strokeValue = contextStroke.value;
+      paintBounds = contextStroke.bounds ?? paintBounds;
+    }
     if (strokeValue == null || _isPaintNone(strokeValue)) {
       return null;
     }

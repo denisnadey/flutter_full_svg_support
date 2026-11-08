@@ -298,7 +298,7 @@ extension AnimatedSvgPainterTextLayoutRenderExtension on AnimatedSvgPainter {
     SvgNode node, {
     ui.Shader? strokeShader,
   }) {
-    final strokeValue = _getInheritedAttributeValue(node, 'stroke');
+    final strokeValue = _getInheritedPaintValue(node, 'stroke');
     if (strokeValue == null ||
         strokeValue.toString().trim() == 'none' ||
         strokeValue.toString().trim().isEmpty) {

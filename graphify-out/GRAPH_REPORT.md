@@ -1,11 +1,11 @@
 # Graph Report - /Users/denisnadey/apps/flutter_full_svg_support  (2026-11-05)
 
 ## Corpus Check
-- 1144 files · ~13,622,837 words
+- 1148 files · ~13,624,986 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 9428 nodes · 21664 edges · 384 communities detected
+- 9444 nodes · 21683 edges · 383 communities detected
 - Extraction: 79% EXTRACTED · 21% INFERRED · 0% AMBIGUOUS · INFERRED: 4558 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
@@ -393,117 +393,116 @@
 - [[_COMMUNITY_Community 380|Community 380]]
 - [[_COMMUNITY_Community 381|Community 381]]
 - [[_COMMUNITY_Community 382|Community 382]]
-- [[_COMMUNITY_Community 383|Community 383]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `assert()` - 488 edges
 2. `JS_FreeValue()` - 429 edges
 3. `JS_IsException()` - 409 edges
-4. `package:flutter_test/flutter_test.dart` - 301 edges
+4. `package:flutter_test/flutter_test.dart` - 302 edges
 5. `js_dup()` - 205 edges
-6. `package:full_svg_flutter/src/animation/animated_svg_picture.dart` - 194 edges
-7. `package:flutter/material.dart` - 177 edges
+6. `package:full_svg_flutter/src/animation/animated_svg_picture.dart` - 195 edges
+7. `package:flutter/material.dart` - 178 edges
 8. `JS_IsUndefined()` - 148 edges
 9. `js_int32()` - 103 edges
 10. `JS_GetProperty()` - 103 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `on_done()` --calls--> `normalize`  [INFERRED]
-  /Users/denisnadey/apps/flutter_full_svg_support/W3C_SVG_11_TestSuite/resources/testharness.js → /Users/denisnadey/apps/flutter_full_svg_support/lib/src/animation/path_normalizer.dart
-- `assert()` --calls--> `SVGAnimatedTransformListAnimator()`  [INFERRED]
-  /Users/denisnadey/apps/flutter_full_svg_support/W3C_SVG_11_TestSuite/resources/testharness.js → /Users/denisnadey/apps/flutter_full_svg_support/blink-b87d44f-Source-core-svg/SVGAnimatedTransformList.cpp
-- `assert()` --calls--> `getBBox()`  [INFERRED]
-  /Users/denisnadey/apps/flutter_full_svg_support/W3C_SVG_11_TestSuite/resources/testharness.js → /Users/denisnadey/apps/flutter_full_svg_support/blink-b87d44f-Source-core-svg/SVGLocatable.cpp
-- `assert()` --calls--> `cleanup()`  [INFERRED]
-  /Users/denisnadey/apps/flutter_full_svg_support/W3C_SVG_11_TestSuite/resources/testharness.js → /Users/denisnadey/apps/flutter_full_svg_support/blink-b87d44f-Source-core-svg/SVGPathParser.cpp
-- `flushQueue()` --calls--> `appendChild()`  [INFERRED]
-  /Users/denisnadey/apps/flutter_full_svg_support/W3C_SVG_11_TestSuite/svgweb/svg.js → /Users/denisnadey/apps/flutter_full_svg_support/blink-b87d44f-Source-core-svg/SVGElementInstance.cpp
+- `assert()` --calls--> `elementFromRenderer()`  [INFERRED]
+  /Users/denisnadey/apps/flutter_full_svg_support/W3C_SVG_11_TestSuite/resources/testharness.js → /Users/denisnadey/apps/flutter_full_svg_support/blink-b87d44f-Source-core-svg/SVGTextContentElement.cpp
+- `assert()` --calls--> `calculateAnimatedValue()`  [INFERRED]
+  /Users/denisnadey/apps/flutter_full_svg_support/W3C_SVG_11_TestSuite/resources/testharness.js → /Users/denisnadey/apps/flutter_full_svg_support/blink-b87d44f-Source-core-svg/SVGAnimatedString.cpp
+- `assert()` --calls--> `moveTo()`  [INFERRED]
+  /Users/denisnadey/apps/flutter_full_svg_support/W3C_SVG_11_TestSuite/resources/testharness.js → /Users/denisnadey/apps/flutter_full_svg_support/blink-b87d44f-Source-core-svg/SVGPathTraversalStateBuilder.cpp
+- `assert()` --calls--> `lineTo()`  [INFERRED]
+  /Users/denisnadey/apps/flutter_full_svg_support/W3C_SVG_11_TestSuite/resources/testharness.js → /Users/denisnadey/apps/flutter_full_svg_support/blink-b87d44f-Source-core-svg/SVGPathTraversalStateBuilder.cpp
+- `assert()` --calls--> `curveToCubic()`  [INFERRED]
+  /Users/denisnadey/apps/flutter_full_svg_support/W3C_SVG_11_TestSuite/resources/testharness.js → /Users/denisnadey/apps/flutter_full_svg_support/blink-b87d44f-Source-core-svg/SVGPathTraversalStateBuilder.cpp
 
 ## Communities
 
 ### Community 0 - "Community 0"
-Cohesion: 0.01
-Nodes (1471): bswap16(), bswap32(), bswap64(), fromfp16(), get_u64(), is_be(), is_surrogate(), js_cond_timedwait() (+1463 more)
+Cohesion: 0.0
+Nodes (1187): addColors(), addToColor(), clampColor(), clampColorValue(), ColorDistance(), distance(), scaledDistance(), GeneratedPluginRegistrant (+1179 more)
 
 ### Community 1 - "Community 1"
-Cohesion: 0.0
-Nodes (1037): GeneratedPluginRegistrant, -registerWithRegistry, operator+(), begin(), elapsed(), isActive(), isPaused(), isStarted() (+1029 more)
+Cohesion: 0.01
+Nodes (1241): from_hex(), from_surrogate(), fromfp16(), is_hi_surrogate(), is_lo_surrogate(), is_surrogate(), max_int(), max_int64() (+1233 more)
 
 ### Community 2 - "Community 2"
 Cohesion: 0.0
-Nodes (718): dart:convert, dart:developer, dart:io, dart:math, dart:typed_data, dart:ui, _fixtures.dart, image_compare.dart (+710 more)
+Nodes (811): animation_theme.dart, dart:convert, dart:developer, dart:io, dart:math, dart:typed_data, dart:ui, _fixtures.dart (+803 more)
 
 ### Community 3 - "Community 3"
 Cohesion: 0.01
-Nodes (385): animation_theme.dart, ../benchmark_runner.dart, ../data/svg_animations.dart, font_face_rule.dart, metrics_collector.dart, package:benchmark_harness/benchmark_harness.dart, package:flutter/services.dart, package:flutter_svg/flutter_svg.dart (+377 more)
+Nodes (471): bswap16(), bswap32(), bswap64(), dbuf_default_realloc(), dbuf_free(), dbuf_init(), dbuf_init2(), dbuf_put_u64() (+463 more)
 
 ### Community 4 - "Community 4"
 Cohesion: 0.01
-Nodes (369): animated_svg_controller.dart, animated_svg_painter.dart, animation/animated_svg_painter.dart, animation_detector.dart, animation/svg_dom.dart, animation/svg_parser.dart, animation/svg_theme_apply.dart, ../css_animations.dart (+361 more)
+Nodes (309): animated_svg_controller.dart, animated_svg_painter.dart, animation_detector.dart, ../css_animations.dart, ../css_cascade.dart, ../css_named_colors.dart, ../css_to_smil_converter.dart, ../css_variables_calc.dart (+301 more)
 
 ### Community 5 - "Community 5"
 Cohesion: 0.02
-Nodes (374): dbuf_claim(), dbuf_default_realloc(), dbuf_error(), dbuf_free(), dbuf_init(), dbuf_init2(), dbuf_put(), dbuf_put_self() (+366 more)
+Nodes (314): dbuf_claim(), dbuf_error(), dbuf_put(), dbuf_put_self(), dbuf_put_u16(), dbuf_put_u32(), dbuf_set_error(), get_i32() (+306 more)
 
 ### Community 6 - "Community 6"
 Cohesion: 0.01
-Nodes (293): getCaseFlags(), doDebugging(), doDebugging(), calculateAnimatedValue(), startAnimValAnimation(), addAnimatedTypes(), calculateAnimatedValue(), startAnimValAnimation() (+285 more)
+Nodes (250): animation/animated_svg_painter.dart, animation/svg_dom.dart, animation/svg_parser.dart, animation/svg_theme_apply.dart, dart:async, default_theme.dart, devtools_transport.dart, full_svg_inspector_controller.dart (+242 more)
 
 ### Community 7 - "Community 7"
 Cohesion: 0.01
-Nodes (206): buildMarkdown(), computeStatusCounts(), groupByCategory(), main(), parseArgs(), safePercent(), toNumber(), BaseHTTPRequestHandler (+198 more)
+Nodes (170): buildMarkdown(), computeStatusCounts(), groupByCategory(), main(), parseArgs(), safePercent(), toNumber(), BaseHTTPRequestHandler (+162 more)
 
 ### Community 8 - "Community 8"
 Cohesion: 0.01
-Nodes (245): ../binding/js_base.dart, ../binding/js_context_ref.dart, ../binding/js_global_context_ref.dart, ../binding/js_object_ref.dart, ../binding/js_string_ref.dart, ../binding/js_typed_array.dart, ../binding/js_value_ref.dart, dart:ffi (+237 more)
+Nodes (194): ../binding/js_base.dart, ../binding/js_context_ref.dart, ../binding/js_global_context_ref.dart, ../binding/js_object_ref.dart, ../binding/js_string_ref.dart, ../binding/js_typed_array.dart, ../binding/js_value_ref.dart, dart:ffi (+186 more)
 
 ### Community 9 - "Community 9"
 Cohesion: 0.01
-Nodes (210): dart:async, devtools_transport.dart, full_svg_inspector_controller.dart, full_svg_protocol_client.dart, full_svg_transport.dart, js_eval_result.dart, package:devtools_extensions/devtools_extensions.dart, package:es_compression/brotli.dart (+202 more)
+Nodes (201): ../data/svg_animations.dart, ./extensions/fetch.dart, ./extensions/handle_promises.dart, font_face_rule.dart, package:flutter/services.dart, package:quickjs_engine/javascript_runtime.dart, package:quickjs_engine/javascriptcore/binding/js_object_ref.dart, package:quickjs_engine/javascriptcore/flutter_jscore.dart (+193 more)
 
 ### Community 10 - "Community 10"
 Cohesion: 0.01
-Nodes (160): ../animated_svg_demo.dart, ../data/examples_data.dart, ../l10n/app_localizations.dart, ../models/svg_example.dart, package:flutter_localizations/flutter_localizations.dart, package:flutter/scheduler.dart, pages/home_page.dart, ../state/app_state.dart (+152 more)
+Nodes (117): WebCore(), WebCore(), WebCore(), WebCore(), SVGAnimationElement(), WebCore(), WebCore(), DECLARE_ANIMATED_ENUMERATION() (+109 more)
 
 ### Community 11 - "Community 11"
-Cohesion: 0.03
-Nodes (161): clz32(), clz64(), ctz32(), float64_as_uint64(), js__strstart(), uint64_as_float64(), build_mul_log2_radix_table(), dtoa_free() (+153 more)
+Cohesion: 0.02
+Nodes (150): getCaseFlags(), js_eval_result.dart, doDebugging(), doDebugging(), ae(), at(), B(), be() (+142 more)
 
 ### Community 12 - "Community 12"
-Cohesion: 0.02
-Nodes (134): astronaut_helmet_page.dart, controller_demo_page.dart, custom_svg_viewer_page.dart, devtools_inspector_page.dart, examples_page.dart, gallery_page.dart, ../generated/w3c_test_catalog.dart, js_demo_page.dart (+126 more)
+Cohesion: 0.01
+Nodes (176): dart:collection, ../data/examples_data.dart, ../l10n/app_localizations.dart, ../models/svg_example.dart, package:flutter_localizations/flutter_localizations.dart, package:flutter_svg_example/playground/playground_models.dart, package:flutter_svg_example/playground/playground_trace_store.dart, package:full_svg_flutter/src/animation.dart (+168 more)
 
 ### Community 13 - "Community 13"
-Cohesion: 0.03
-Nodes (115): FlutterWindow(), OnCreate(), OnDestroy(), RegisterPlugins(), build_flutter_release(), _die(), ensure_macos_platform(), find_built_app() (+107 more)
+Cohesion: 0.01
+Nodes (153): ../animated_svg_demo.dart, astronaut_helmet_page.dart, controller_demo_page.dart, custom_svg_viewer_page.dart, devtools_inspector_page.dart, examples_page.dart, gallery_page.dart, ../generated/w3c_test_catalog.dart (+145 more)
 
 ### Community 14 - "Community 14"
 Cohesion: 0.02
-Nodes (80): dart:collection, package:flutter_svg_example/playground/playground_models.dart, package:flutter_svg_example/playground/playground_trace_store.dart, package:full_svg_flutter/src/animation.dart, playground_models.dart, AstronautHelmetPage, _AstronautHelmetPageState, build (+72 more)
+Nodes (126): ../benchmark_runner.dart, metrics_collector.dart, package:benchmark_harness/benchmark_harness.dart, package:flutter_svg/flutter_svg.dart, ../result_models.dart, screens/animated_svg_benchmark_screen.dart, screens/compatibility_gallery_screen.dart, screens/filter_stress_benchmark_screen.dart (+118 more)
 
 ### Community 15 - "Community 15"
-Cohesion: 0.04
-Nodes (60): parseValue(), stringToAngleType(), SVGAngle(), parsePointInternal(), parseKeySplinesInternal(), buildGenericGlyphIdentifier(), buildGlyphIdentifier(), insertedInto() (+52 more)
+Cohesion: 0.03
+Nodes (114): FlutterWindow(), OnCreate(), OnDestroy(), RegisterPlugins(), build_flutter_release(), _die(), ensure_macos_platform(), find_built_app() (+106 more)
 
 ### Community 16 - "Community 16"
 Cohesion: 0.03
-Nodes (60): copyToHeap(), js_channel(), JS_GetNullValue(), JS_IsArrayDartWrapper(), JS_NewRuntimeDartBridge(), js_promise_rejection_tracker(), jsCall(), jsDefinePropertyValue() (+52 more)
+Nodes (69): parseValue(), stringToAngleType(), SVGAngle(), parsePointInternal(), invalidateGlyphCache(), buildGenericGlyphIdentifier(), buildGlyphIdentifier(), insertedInto() (+61 more)
 
 ### Community 17 - "Community 17"
+Cohesion: 0.03
+Nodes (39): isSupportedAttribute(), parseAttribute(), svgAttributeChanged(), SVGGraphicsElement(), isValid(), selfHasRelativeLengths(), hasFocusEventListeners(), isValid() (+31 more)
+
+### Community 18 - "Community 18"
 Cohesion: 0.04
 Nodes (58): package:full_svg_flutter/src/animation/path_data.dart, package:full_svg_flutter/src/animation/path_interpolation.dart, package:full_svg_flutter/src/animation/path_normalizer.dart, package:full_svg_flutter/src/animation/path_parser.dart, AdvancedMorphingDemo, _AdvancedMorphingDemoState, AdvancedPathMorphingApp, build (+50 more)
 
-### Community 18 - "Community 18"
-Cohesion: 0.05
-Nodes (41): build(), create(), isSupportedAttribute(), parseAttribute(), svgAttributeChanged(), build(), create(), isSupportedAttribute() (+33 more)
-
 ### Community 19 - "Community 19"
-Cohesion: 0.05
-Nodes (30): AppDelegate, -applicationdidFinishLaunchingWithOptions, FlutterAppDelegate, full_svg_debug_protocol.dart, RegisterGeneratedPlugins(), MainFlutterWindow, NSWindow, _animationCommand (+22 more)
+Cohesion: 0.09
+Nodes (48): clz32(), clz64(), ctz32(), float64_as_uint64(), uint64_as_float64(), build_mul_log2_radix_table(), dtoa_free(), dtoa_malloc() (+40 more)
 
 ### Community 20 - "Community 20"
-Cohesion: 0.07
-Nodes (22): addColors(), addToColor(), clampColor(), clampColorValue(), ColorDistance(), distance(), scaledDistance(), addAnimatedTypes() (+14 more)
+Cohesion: 0.05
+Nodes (30): AppDelegate, -applicationdidFinishLaunchingWithOptions, FlutterAppDelegate, full_svg_debug_protocol.dart, RegisterGeneratedPlugins(), MainFlutterWindow, NSWindow, _animationCommand (+22 more)
 
 ### Community 21 - "Community 21"
 Cohesion: 0.05
@@ -514,12 +513,12 @@ Cohesion: 0.06
 Nodes (34): _AccumulatedBaselineOffset, _applyNFCNormalization, _BaselineAncestorInfo, _BaselineContext, _BidiContext, _bidiDetectFirstStrongDirection, _BidiLevel, _bidiMapLogicalToVisualPosition (+26 more)
 
 ### Community 23 - "Community 23"
-Cohesion: 0.09
-Nodes (18): addSupportedAttributes(), dispatchLoadEvent(), finishParsingChildren(), handleAttributeChange(), haveLoadedRequiredResources(), insertedIntoDocument(), isKnownAttribute(), addSubresourceAttributeURLs() (+10 more)
-
-### Community 24 - "Community 24"
 Cohesion: 0.06
 Nodes (33): addHandler, clear, _dispatchEventWithBubbling, _dispatchEventWithW3CFlow, _EventDispatchContext, Function, _handleFocusChange, _handleLongPressEnd (+25 more)
+
+### Community 24 - "Community 24"
+Cohesion: 0.09
+Nodes (16): addSupportedAttributes(), dispatchLoadEvent(), finishParsingChildren(), handleAttributeChange(), haveLoadedRequiredResources(), insertedIntoDocument(), isKnownAttribute(), addSubresourceAttributeURLs() (+8 more)
 
 ### Community 25 - "Community 25"
 Cohesion: 0.07
@@ -534,132 +533,132 @@ Cohesion: 0.08
 Nodes (23): _linkFilterPrimitivesToNodes, _parseBlend, _parseColorMatrix, _parseComponentTransfer, _parseComposite, _parseConvolveMatrix, _parseDiffuseLighting, _parseDisplacementMap (+15 more)
 
 ### Community 28 - "Community 28"
-Cohesion: 0.1
-Nodes (20): applyBlur, _applyBoxBlurApproximation, _applyGaussianBlur, _applyHorizontalBoxBlur, _applyHorizontalConvolution, applyMorphology, _applyVerticalBoxBlur, _applyVerticalConvolution (+12 more)
+Cohesion: 0.08
+Nodes (21): AnimatedSvgDemo, build, Card, _DemoExample, DemoHomePage, _ExampleCard, main, MaterialApp (+13 more)
 
 ### Community 29 - "Community 29"
 Cohesion: 0.1
-Nodes (20): _parseBlend, _parseColorMatrix, _parseComposite, _parseDiffuseLighting, _parseDropShadow, _parseFlood, _parseMerge, _parseOffset (+12 more)
+Nodes (20): applyBlur, _applyBoxBlurApproximation, _applyGaussianBlur, _applyHorizontalBoxBlur, _applyHorizontalConvolution, applyMorphology, _applyVerticalBoxBlur, _applyVerticalConvolution (+12 more)
 
 ### Community 30 - "Community 30"
 Cohesion: 0.1
-Nodes (20): _isEndHangingPunctuation, _isStartHangingPunctuation, _isStopCommaPunctuation, _measureCharWidth, _resolveHangingPunctuation, _resolveHyphenateCharacter, _resolveHyphens, _resolveLineBreak (+12 more)
+Nodes (20): _parseBlend, _parseColorMatrix, _parseComposite, _parseDiffuseLighting, _parseDropShadow, _parseFlood, _parseMerge, _parseOffset (+12 more)
 
 ### Community 31 - "Community 31"
 Cohesion: 0.1
-Nodes (19): copyWith, fractalNoise, generateTiled, _generateTilePixels, getAdjustedFreqX, getAdjustedFreqY, _initPermutation, _lerp (+11 more)
+Nodes (20): _isEndHangingPunctuation, _isStartHangingPunctuation, _isStopCommaPunctuation, _measureCharWidth, _resolveHangingPunctuation, _resolveHyphenateCharacter, _resolveHyphens, _resolveLineBreak (+12 more)
 
 ### Community 32 - "Community 32"
-Cohesion: 0.11
-Nodes (18): benchmark_config.dart, benchmarks/animation_benchmark.dart, benchmarks/animation_render_benchmark.dart, benchmarks/combined_worst_case_benchmark.dart, benchmarks/dash_pattern_benchmark.dart, benchmarks/filter_benchmark.dart, benchmarks/filter_chain_benchmark.dart, benchmarks/memory_benchmark.dart (+10 more)
+Cohesion: 0.1
+Nodes (19): copyWith, fractalNoise, generateTiled, _generateTilePixels, getAdjustedFreqX, getAdjustedFreqY, _initPermutation, _lerp (+11 more)
 
 ### Community 33 - "Community 33"
 Cohesion: 0.11
-Nodes (18): diamond, main, slanted, tight, _writeArcText, _writeBackground, _writeBrightStars, _writeComets (+10 more)
+Nodes (18): benchmark_config.dart, benchmarks/animation_benchmark.dart, benchmarks/animation_render_benchmark.dart, benchmarks/combined_worst_case_benchmark.dart, benchmarks/dash_pattern_benchmark.dart, benchmarks/filter_benchmark.dart, benchmarks/filter_chain_benchmark.dart, benchmarks/memory_benchmark.dart (+10 more)
 
 ### Community 34 - "Community 34"
 Cohesion: 0.11
-Nodes (18): AnimationControlPanel, AnimationExampleLayout, AnimationTheme, BoxDecoration, build, Container, getAnimationDisplayDecoration, getControlPanelDecoration (+10 more)
+Nodes (18): diamond, main, slanted, tight, _writeArcText, _writeBackground, _writeBrightStars, _writeComets (+10 more)
 
 ### Community 35 - "Community 35"
 Cohesion: 0.11
-Nodes (18): _angleBetweenPointsForHit, _appendGlyphPrecisionRuns, _calculateEndAngleForHit, _calculateMidAngleForHit, _calculateStartAngleForHit, _evenoddContainsPointAdvanced, _getEffectiveMarkerAngleForHit, _GlyphCursor (+10 more)
+Nodes (18): AnimationControlPanel, AnimationExampleLayout, AnimationTheme, BoxDecoration, build, Container, getAnimationDisplayDecoration, getControlPanelDecoration (+10 more)
 
 ### Community 36 - "Community 36"
 Cohesion: 0.11
-Nodes (18): _extractAnimations, _extractCssAnimations, _extractCssSelectorAnimations, _isAnimationElement, _isAnimationProperty, _isFirstChild, _isFirstOfType, _isLastChild (+10 more)
+Nodes (18): _angleBetweenPointsForHit, _appendGlyphPrecisionRuns, _calculateEndAngleForHit, _calculateMidAngleForHit, _calculateStartAngleForHit, _evenoddContainsPointAdvanced, _getEffectiveMarkerAngleForHit, _GlyphCursor (+10 more)
 
 ### Community 37 - "Community 37"
 Cohesion: 0.11
-Nodes (17): _collectFeImageHrefs, _collectImageHrefs, _ConvolveImageRequest, _decodeDataUriBytes, _DisplacementImageRequest, _disposeResolvedImages, _isSvgImageHref, _LightingImageRequest (+9 more)
+Nodes (18): _extractAnimations, _extractCssAnimations, _extractCssSelectorAnimations, _isAnimationElement, _isAnimationProperty, _isFirstChild, _isFirstOfType, _isLastChild (+10 more)
 
 ### Community 38 - "Community 38"
 Cohesion: 0.11
-Nodes (17): _applySymbolOverflowClipping, Function, _getAncestorClipPathUnits, _getAncestorMaskContentUnits, _isInClipPathContext, _isInMaskContext, _paintNodeWithUseContext, paintReferencedContent (+9 more)
+Nodes (17): _collectFeImageHrefs, _collectImageHrefs, _ConvolveImageRequest, _decodeDataUriBytes, _DisplacementImageRequest, _disposeResolvedImages, _isSvgImageHref, _LightingImageRequest (+9 more)
 
 ### Community 39 - "Community 39"
 Cohesion: 0.11
-Nodes (17): _colorFromRgba, _computeAccumulatedScale, _hslToColor, _hueToRgb, _isInheritKeyword, _isLinearRGBFilterSpace, _parseAlpha, _parseFraction (+9 more)
+Nodes (17): _applySymbolOverflowClipping, Function, _getAncestorClipPathUnits, _getAncestorMaskContentUnits, _isInClipPathContext, _isInMaskContext, _paintNodeWithUseContext, paintReferencedContent (+9 more)
 
 ### Community 40 - "Community 40"
 Cohesion: 0.11
-Nodes (17): _resolveBlendOutput, _resolveColorMatrixOutput, _resolveComponentTransferOutput, _resolveCompositeOutput, _resolveConvolveMatrixOutput, _resolveDiffuseLightingOutput, _resolveDisplacementMapOutput, _resolveDropShadowOutput (+9 more)
+Nodes (17): _colorFromRgba, _computeAccumulatedScale, _hslToColor, _hueToRgb, _isInheritKeyword, _isLinearRGBFilterSpace, _parseAlpha, _parseFraction (+9 more)
 
 ### Community 41 - "Community 41"
-Cohesion: 0.12
-Nodes (16): _DartFunction, _DartObject, _decodeData, destroy, _encode, invoke, IsolateFunction, JSError (+8 more)
+Cohesion: 0.11
+Nodes (17): _resolveBlendOutput, _resolveColorMatrixOutput, _resolveComponentTransferOutput, _resolveCompositeOutput, _resolveConvolveMatrixOutput, _resolveDiffuseLightingOutput, _resolveDisplacementMapOutput, _resolveDropShadowOutput (+9 more)
 
 ### Community 42 - "Community 42"
 Cohesion: 0.12
-Nodes (16): _appendPerCharacterHitRunsWithGraphemes, _appendSingleTextRunHit, _appendTextNodeHitRuns, _appendTextPathHitRuns, _inverseRotatePoint, _isHitTestCombiningMark, _isNodeOrDescendant, _normalizeHitTestTextToNFC (+8 more)
+Nodes (16): _DartFunction, _DartObject, _decodeData, destroy, _encode, invoke, IsolateFunction, JSError (+8 more)
 
 ### Community 43 - "Community 43"
 Cohesion: 0.12
-Nodes (16): _parseComponentTransfer, _parseComponentTransferFunction, _parseConvolveMatrix, _parseDisplacementMap, _parseFeImage, _parseGaussianBlur, _parseMorphology, _parseTurbulence (+8 more)
+Nodes (16): _appendPerCharacterHitRunsWithGraphemes, _appendSingleTextRunHit, _appendTextNodeHitRuns, _appendTextPathHitRuns, _inverseRotatePoint, _isHitTestCombiningMark, _isNodeOrDescendant, _normalizeHitTestTextToNFC (+8 more)
 
 ### Community 44 - "Community 44"
 Cohesion: 0.12
-Nodes (16): _cubic, CubicBezierEasing, _cubicBezierPoint, _cubicDeriv, _suppress, SvgatorElementAnimation, SvgatorOpacityTrack, SvgatorOriginKeyframe (+8 more)
+Nodes (16): _parseComponentTransfer, _parseComponentTransferFunction, _parseConvolveMatrix, _parseDisplacementMap, _parseFeImage, _parseGaussianBlur, _parseMorphology, _parseTurbulence (+8 more)
 
 ### Community 45 - "Community 45"
 Cohesion: 0.12
-Nodes (16): CssShorthandExpander, _expandAnimation, _expandBackground, _expandBorder, _expandBorderColor, _expandBorderRadius, _expandBorderSide, _expandBorderStyle (+8 more)
+Nodes (16): _cubic, CubicBezierEasing, _cubicBezierPoint, _cubicDeriv, _suppress, SvgatorElementAnimation, SvgatorOpacityTrack, SvgatorOriginKeyframe (+8 more)
 
 ### Community 46 - "Community 46"
 Cohesion: 0.12
-Nodes (16): _buildPseudoStateKey, _isFirstChild, _isFirstOfType, _isLastChild, _isLastOfType, _isOnlyChild, _isOnlyOfType, _isShadowBoundary (+8 more)
+Nodes (16): CssShorthandExpander, _expandAnimation, _expandBackground, _expandBorder, _expandBorderColor, _expandBorderRadius, _expandBorderSide, _expandBorderStyle (+8 more)
 
 ### Community 47 - "Community 47"
 Cohesion: 0.12
-Nodes (15): _computeCompleteNestedTransform, _computeNestedViewportTransform, _extractViewBoxFromSvgString, _getAttributeValueWithinForeignObject, _getInheritedAttributeValue, _getSvgNestingDepth, _isForeignObjectInheritableProperty, _isValidDataUri (+7 more)
+Nodes (16): _buildPseudoStateKey, _isFirstChild, _isFirstOfType, _isLastChild, _isLastOfType, _isOnlyChild, _isOnlyOfType, _isShadowBoundary (+8 more)
 
 ### Community 48 - "Community 48"
 Cohesion: 0.12
-Nodes (15): _areLigatureFeaturesCompatible, _areNumericFeaturesIdentical, FontFallbackResult, _fontFeaturesHashKey, _listEquals, _resolveFontKerning, _resolveFontOpticalSizing, _resolveFontStretch (+7 more)
+Nodes (15): _computeCompleteNestedTransform, _computeNestedViewportTransform, _extractViewBoxFromSvgString, _getAttributeValueWithinForeignObject, _getInheritedAttributeValue, _getSvgNestingDepth, _isForeignObjectInheritableProperty, _isValidDataUri (+7 more)
 
 ### Community 49 - "Community 49"
 Cohesion: 0.12
-Nodes (15): _appendClipPathGeometryWithTransforms, _appendVisibleMaskGeometry, _applyClipRuleToHitTestPath, _computeColorLuminanceForHitTest, _computeRgbLuminance, _hasMaskVisiblePaint, _isPointInsideClipPath, _isPointInsideForeignObjectViewport (+7 more)
+Nodes (15): _areLigatureFeaturesCompatible, _areNumericFeaturesIdentical, FontFallbackResult, _fontFeaturesHashKey, _listEquals, _resolveFontKerning, _resolveFontOpticalSizing, _resolveFontStretch (+7 more)
 
 ### Community 50 - "Community 50"
+Cohesion: 0.12
+Nodes (15): _appendClipPathGeometryWithTransforms, _appendVisibleMaskGeometry, _applyClipRuleToHitTestPath, _computeColorLuminanceForHitTest, _computeRgbLuminance, _hasMaskVisiblePaint, _isPointInsideClipPath, _isPointInsideForeignObjectViewport (+7 more)
+
+### Community 51 - "Community 51"
 Cohesion: 0.13
 Nodes (14): _isSvgJoinCandidate, matches, _matchesSide, _normalizeSvgFontFamily, _normalizeSvgFontId, _paintSvgFontText, _resolveSvgArabicForm, _selectSvgFontGlyph (+6 more)
 
-### Community 51 - "Community 51"
+### Community 52 - "Community 52"
 Cohesion: 0.22
 Nodes (14): to_upper_ascii(), find_abbrev(), js_date_parse_isostring(), js_date_parse_otherstring(), string_get_digits(), string_get_milliseconds(), string_get_month(), string_get_tzabbr() (+6 more)
 
-### Community 52 - "Community 52"
+### Community 53 - "Community 53"
 Cohesion: 0.14
 Nodes (13): _detectHitTestTextDirection, _measureText, _parseTextPathStartOffset, _resolveBaselineReference, _resolveBaselineShift, _resolveDominantBaseline, _resolveTextAnchor, _resolveTextLengthAdjust (+5 more)
 
-### Community 53 - "Community 53"
+### Community 54 - "Community 54"
 Cohesion: 0.14
 Nodes (13): CssAttributeSelector, CssNthPseudoClass, CssSelector, CssSelectorMatchContext, CssSelectorPart, CssSimpleSelector, hasState, _isNameChar (+5 more)
 
-### Community 54 - "Community 54"
+### Community 55 - "Community 55"
 Cohesion: 0.14
 Nodes (13): clear, _enforceGradientCacheLimit, _enforceHitTestCacheLimit, _enforceMaskBoundsCacheLimit, _enforcePatternCacheLimit, _enforceTextCacheLimit, gradientKey, _invalidateAnimatedMaskCaches (+5 more)
 
-### Community 55 - "Community 55"
+### Community 56 - "Community 56"
 Cohesion: 0.14
 Nodes (13): _appendAnimatedAttributesToCacheKey, _applyAdvancedMask, _applySubgraphMaskWithFilter, _checkMaskContentForAnimations, _checkMaskContentForFeathering, _filterContainsBlur, _findMaxBlurRadius, Function (+5 more)
 
-### Community 56 - "Community 56"
+### Community 57 - "Community 57"
 Cohesion: 0.14
 Nodes (13): _DistantLightCalculator, _effectiveLightSourceForImageSize, _extractAlpha, getAverageIntensity, getPrimaryDirection, LightingProcessor, LightingSampler, _LightingVector3 (+5 more)
 
-### Community 57 - "Community 57"
+### Community 58 - "Community 58"
 Cohesion: 0.14
 Nodes (13): CssParser, extractFontFaceRules, _parseAnimation, _parseAnimationFromStyle, _parseKeyframes, _parseMediaRules, _parseMultipleAnimations, _parseMultipleAnimationsFromStyle (+5 more)
 
-### Community 58 - "Community 58"
-Cohesion: 0.14
-Nodes (10): SVGFilter(), add, getFilterRegion, hasFilter, _NestedBackgroundContext, popBackgroundContext, pushBackgroundContext, setFilterRegion (+2 more)
-
 ### Community 59 - "Community 59"
-Cohesion: 0.16
-Nodes (4): isSupportedAttribute(), parseAttribute(), svgAttributeChanged(), SVGGraphicsElement()
+Cohesion: 0.15
+Nodes (12): AppState, resetToDefaults, setAlignment, setAutoPlay, setBackgroundColor, setClipToViewBox, setFit, setInitialTime (+4 more)
 
 ### Community 60 - "Community 60"
 Cohesion: 0.15
@@ -715,155 +714,155 @@ Nodes (10): _computeNestedTspanTotalWidth, _computeTextElementAccumulatedTransfo
 
 ### Community 73 - "Community 73"
 Cohesion: 0.18
-Nodes (10): ArcCommand, ClosePathCommand, HorizontalLineToCommand, LineToCommand, MoveToCommand, PathCommand, toAbsolute, toLineTo (+2 more)
+Nodes (10): _angleBetweenPoints, _calculateEndAngle, _calculateMidAngle, _calculateStartAngle, _getEffectiveMarkerAngle, _paintMarker, _paintMarkerInstances, _paintMarkers (+2 more)
 
 ### Community 74 - "Community 74"
 Cohesion: 0.18
-Nodes (10): _collectTextContent, _hasRenderableElementChildAfter, _inferAttributeType, _isAnimationElement, _parseAndAddChildElement, _parseAttributeValue, _parseColor, _parseElement (+2 more)
+Nodes (10): ArcCommand, ClosePathCommand, HorizontalLineToCommand, LineToCommand, MoveToCommand, PathCommand, toAbsolute, toLineTo (+2 more)
 
 ### Community 75 - "Community 75"
 Cohesion: 0.18
-Nodes (10): _bezierA, _bezierB, _bezierC, _bezierX, _bezierXDerivative, _bezierY, CubicBezier, StepTiming (+2 more)
+Nodes (10): _collectTextContent, _hasRenderableElementChildAfter, _inferAttributeType, _isAnimationElement, _parseAndAddChildElement, _parseAttributeValue, _parseColor, _parseElement (+2 more)
 
 ### Community 76 - "Community 76"
-Cohesion: 0.2
-Nodes (9): _applyTransformToMatrix4, _computeForeignObjectAncestorTransform, _computeForeignObjectCompleteTransform, _getAttributeWithinForeignObject, _getInheritedAttributeValue, _isForeignObjectCssInheritable, _resolveForeignObjectContentTransform, _resolveForeignObjectOverflow (+1 more)
+Cohesion: 0.18
+Nodes (10): _bezierA, _bezierB, _bezierC, _bezierX, _bezierXDerivative, _bezierY, CubicBezier, StepTiming (+2 more)
 
 ### Community 77 - "Community 77"
-Cohesion: 0.2
-Nodes (9): _angleBetweenPoints, _calculateEndAngle, _calculateMidAngle, _calculateStartAngle, _getEffectiveMarkerAngle, _paintMarker, _paintMarkers, _parseAngle (+1 more)
+Cohesion: 0.18
+Nodes (2): calculateAnimatedValue(), startAnimValAnimation()
 
 ### Community 78 - "Community 78"
 Cohesion: 0.2
-Nodes (9): _colorFromRgba, _hslToColor, _hueToRgb, _parseAlpha, _parseColor, _parseFraction, _parseHexColor, _parseHueDegrees (+1 more)
+Nodes (9): _applyTransformToMatrix4, _computeForeignObjectAncestorTransform, _computeForeignObjectCompleteTransform, _getAttributeWithinForeignObject, _getInheritedAttributeValue, _isForeignObjectCssInheritable, _resolveForeignObjectContentTransform, _resolveForeignObjectOverflow (+1 more)
 
 ### Community 79 - "Community 79"
 Cohesion: 0.2
-Nodes (9): _applyArithmeticBias, arithmetic, _combineArithmeticInputs, _isApproximately, _isNoneInputReference, _resolveArithmeticCompositePasses, _resolveGeneralArithmeticComposite, _resolveInputPasses (+1 more)
+Nodes (9): _colorFromRgba, _hslToColor, _hueToRgb, _parseAlpha, _parseColor, _parseFraction, _parseHexColor, _parseHueDegrees (+1 more)
 
 ### Community 80 - "Community 80"
 Cohesion: 0.2
-Nodes (9): drawFill, drawStroke, drawWithShader, Function, _isCjkOrFullwidthRune, _isGlyphUprightInVertical, _paintPlainText, _paintPlainTextVertical (+1 more)
+Nodes (9): _applyArithmeticBias, arithmetic, _combineArithmeticInputs, _isApproximately, _isNoneInputReference, _resolveArithmeticCompositePasses, _resolveGeneralArithmeticComposite, _resolveInputPasses (+1 more)
 
 ### Community 81 - "Community 81"
-Cohesion: 0.22
-Nodes (8): _expandSingleAnimation, _expandSingleTransition, _isAnimationDirection, _isAnimationFillMode, _isAnimationPlayState, _isTimeValue, _parseSingleTransitionToComponents, RegExp
+Cohesion: 0.2
+Nodes (9): drawFill, drawStroke, drawWithShader, Function, _isCjkOrFullwidthRune, _isGlyphUprightInVertical, _paintPlainText, _paintPlainTextVertical (+1 more)
 
 ### Community 82 - "Community 82"
 Cohesion: 0.22
-Nodes (8): _resolveCssDirection, _resolveDominantBaseline, _resolvePaintOrder, _resolveRubyAlign, _resolveRubyPosition, _resolveTextCombineUpright, _resolveTextOrientation, _resolveWritingMode
+Nodes (8): _expandSingleAnimation, _expandSingleTransition, _isAnimationDirection, _isAnimationFillMode, _isAnimationPlayState, _isTimeValue, _parseSingleTransitionToComponents, RegExp
 
 ### Community 83 - "Community 83"
 Cohesion: 0.22
-Nodes (8): _computeViewBoxTransform, _hitTestNodeWithAnchor, _HitTestResult, _hitTestUseReferenceWithAnchor, _isDefinitionOnlyTag, _isHitTestableTag, SvgLinkInfo, _withUseInstanceViewport
+Nodes (8): _resolveCssDirection, _resolveDominantBaseline, _resolvePaintOrder, _resolveRubyAlign, _resolveRubyPosition, _resolveTextCombineUpright, _resolveTextOrientation, _resolveWritingMode
 
 ### Community 84 - "Community 84"
 Cohesion: 0.22
-Nodes (8): _appendClipGeometry, _appendUseClipGeometry, _applyClipRuleToPath, _collectTextContent, _collectTextContentRecursive, _isDisplayNoneInClipMaskChain, _isUseViewportReferenceTag, _UseViewportTransform
+Nodes (8): _computeViewBoxTransform, _hitTestNodeWithAnchor, _HitTestResult, _hitTestUseReferenceWithAnchor, _isDefinitionOnlyTag, _isHitTestableTag, SvgLinkInfo, _withUseInstanceViewport
 
 ### Community 85 - "Community 85"
 Cohesion: 0.22
-Nodes (8): CubicBezierCommand, QuadraticBezierCommand, SmoothCubicBezierCommand, SmoothQuadraticBezierCommand, toAbsolute, toCubicBezier, toQuadraticBezier, toString
+Nodes (8): _appendClipGeometry, _appendUseClipGeometry, _applyClipRuleToPath, _collectTextContent, _collectTextContentRecursive, _isDisplayNoneInClipMaskChain, _isUseViewportReferenceTag, _UseViewportTransform
 
 ### Community 86 - "Community 86"
 Cohesion: 0.22
-Nodes (8): CssCalcEvaluator, _evaluateClampWithDepth, _evaluateExpressionWithDepth, _evaluateMaxWithDepth, _evaluateMinWithDepth, _evaluateWithDepth, _parseAndEvaluate, _parseNumericValue
+Nodes (8): CubicBezierCommand, QuadraticBezierCommand, SmoothCubicBezierCommand, SmoothQuadraticBezierCommand, toAbsolute, toCubicBezier, toQuadraticBezier, toString
 
 ### Community 87 - "Community 87"
 Cohesion: 0.22
-Nodes (8): _applyUnicodeBidi, _composeToNfc, _getUnicodeBidiCategory, _isCombiningMark, _isRegionalIndicator, _isVariationSelector, _normalizeTextNfc, _tryCompose
+Nodes (8): CssCalcEvaluator, _evaluateClampWithDepth, _evaluateExpressionWithDepth, _evaluateMaxWithDepth, _evaluateMinWithDepth, _evaluateWithDepth, _parseAndEvaluate, _parseNumericValue
 
 ### Community 88 - "Community 88"
 Cohesion: 0.22
-Nodes (8): _BidiRun, _GradientLength, _GradientStop, _ResolvedGradientDefinition, _ResolvedMarkerDefinition, _ResolvedPatternDefinition, _TextCursor, _UseViewportTransform
+Nodes (8): _applyUnicodeBidi, _composeToNfc, _getUnicodeBidiCategory, _isCombiningMark, _isRegionalIndicator, _isVariationSelector, _normalizeTextNfc, _tryCompose
 
 ### Community 89 - "Community 89"
 Cohesion: 0.22
-Nodes (8): _parseChannelSelector, _parseComponentTransferType, _parseConvolveEdgeMode, _parseIntWithDefault, _parseSvgBoolean, _parseTurbulenceStitchTiles, _parseTurbulenceType, _stripImportantSuffix
+Nodes (8): _BidiRun, _GradientLength, _GradientStop, _ResolvedGradientDefinition, _ResolvedMarkerDefinition, _ResolvedPatternDefinition, _TextCursor, _UseViewportTransform
 
 ### Community 90 - "Community 90"
 Cohesion: 0.22
-Nodes (8): Duration, _inferAttributeType, _parseAdditiveMode, _parseAnimateMotion, _parseAnimationType, _parseCalcMode, _parseFillMode, SmilAnimation
+Nodes (8): _parseChannelSelector, _parseComponentTransferType, _parseConvolveEdgeMode, _parseIntWithDefault, _parseSvgBoolean, _parseTurbulenceStitchTiles, _parseTurbulenceType, _stripImportantSuffix
 
 ### Community 91 - "Community 91"
-Cohesion: 0.25
-Nodes (7): _Decode, _decodeData, _encode, _encodeData, _IsolateEncodable, IsolateQjs, _runJsIsolate
+Cohesion: 0.22
+Nodes (8): Duration, _inferAttributeType, _parseAdditiveMode, _parseAnimateMotion, _parseAnimationType, _parseCalcMode, _parseFillMode, SmilAnimation
 
 ### Community 92 - "Community 92"
 Cohesion: 0.25
-Nodes (7): directionAt, _DistantLightCalculator, getAverageIntensity, _LightingVector3, normalizeLimitingConeAngle, _PointLightCalculator, _SpotLightCalculator
+Nodes (7): _Decode, _decodeData, _encode, _encodeData, _IsolateEncodable, IsolateQjs, _runJsIsolate
 
 ### Community 93 - "Community 93"
 Cohesion: 0.25
-Nodes (7): _isFontSize, _isFontStretch, _isFontStyle, _isFontVariant, _isFontWeight, _isSystemFont, RegExp
+Nodes (7): directionAt, _DistantLightCalculator, getAverageIntensity, _LightingVector3, normalizeLimitingConeAngle, _PointLightCalculator, _SpotLightCalculator
 
 ### Community 94 - "Community 94"
 Cohesion: 0.25
-Nodes (7): analyzeAnimations, AnimationDetector, AnimationInfo, hasAnimations, hasCssAnimations, hasSmilAnimations, toString
+Nodes (7): _isFontSize, _isFontStretch, _isFontStyle, _isFontVariant, _isFontWeight, _isSystemFont, RegExp
 
 ### Community 95 - "Community 95"
 Cohesion: 0.25
-Nodes (7): copyWith, SvgFeImagePaintPass, SvgFilterPaintPass, SvgFilterSourceContext, SvgInnerShadowPaintPass, SvgOffsetFilter, SvgSolidPaintSourcePass
+Nodes (7): analyzeAnimations, AnimationDetector, AnimationInfo, hasAnimations, hasCssAnimations, hasSmilAnimations, toString
 
 ### Community 96 - "Community 96"
 Cohesion: 0.25
-Nodes (7): ArgumentError, getPathAt, getPathAtPercent, interpolateTo, morphTo, PathInterpolator, PathMorpher
+Nodes (7): copyWith, SvgFeImagePaintPass, SvgFilterPaintPass, SvgFilterSourceContext, SvgInnerShadowPaintPass, SvgOffsetFilter, SvgSolidPaintSourcePass
 
 ### Community 97 - "Community 97"
 Cohesion: 0.25
-Nodes (7): _computeMaskBoundsObjectBoundingBox, _computeMaskBoundsUserSpaceOnUse, _maskHasGradientContent, _paintMaskContent, _paintMaskContentWithFilters, _parseMaskType, resolveSvgObjectBoundingBoxAttribute
+Nodes (7): ArgumentError, getPathAt, getPathAtPercent, interpolateTo, morphTo, PathInterpolator, PathMorpher
 
 ### Community 98 - "Community 98"
 Cohesion: 0.25
-Nodes (7): applyConvolution, ConvolveMatrixProcessor, copyWith, isIdentityKernel, _linearToSrgb, _srgbToLinear, SvgConvolveMatrixPaintPass
+Nodes (7): _computeMaskBoundsObjectBoundingBox, _computeMaskBoundsUserSpaceOnUse, _maskHasGradientContent, _paintMaskContent, _paintMaskContentWithFilters, _parseMaskType, resolveSvgObjectBoundingBoxAttribute
 
 ### Community 99 - "Community 99"
 Cohesion: 0.25
-Nodes (7): _applyNestedMaskWithIntersection, _applySubgraphMask, Function, _maskContentHasFilters, _MaskNestingContext, _renderSubgraphWithMask, withChildMask
+Nodes (7): applyConvolution, ConvolveMatrixProcessor, copyWith, isIdentityKernel, _linearToSrgb, _srgbToLinear, SvgConvolveMatrixPaintPass
 
 ### Community 100 - "Community 100"
 Cohesion: 0.25
-Nodes (7): addToShadowPath, _EventHitTestResult, _hitTestNodeWithEventPath, _hitTestUseReferenceWithEventPath, _hitTestWithEventModel, _UseEventContext, _withUseInstanceViewport
+Nodes (7): _applyNestedMaskWithIntersection, _applySubgraphMask, Function, _maskContentHasFilters, _MaskNestingContext, _renderSubgraphWithMask, withChildMask
 
 ### Community 101 - "Community 101"
 Cohesion: 0.25
-Nodes (7): EventCondition, IndefiniteCondition, isMet, OffsetCondition, SyncbaseCondition, TimingCondition, toString
+Nodes (7): addToShadowPath, _EventHitTestResult, _hitTestNodeWithEventPath, _hitTestUseReferenceWithEventPath, _hitTestWithEventModel, _UseEventContext, _withUseInstanceViewport
 
 ### Community 102 - "Community 102"
 Cohesion: 0.25
-Nodes (7): _activateAnimationByEventImpl, _applyAnimationSandwichModel, _dispatchAnimationDOMEvent, _getEventKeyImpl, _isNodeWithinSubtree, _refreshAnimationValuesImpl, _updateAnimationsImpl
+Nodes (7): EventCondition, IndefiniteCondition, isMet, OffsetCondition, SyncbaseCondition, TimingCondition, toString
 
 ### Community 103 - "Community 103"
 Cohesion: 0.25
-Nodes (7): _canBlendPaths, ClosePathCommand, CubicBezierCommand, _interpolatePathCommand, _interpolatePathValue, MoveToCommand, _pathCommandsToString
+Nodes (7): _activateAnimationByEventImpl, _applyAnimationSandwichModel, _dispatchAnimationDOMEvent, _getEventKeyImpl, _isNodeWithinSubtree, _refreshAnimationValuesImpl, _updateAnimationsImpl
 
 ### Community 104 - "Community 104"
-Cohesion: 0.29
-Nodes (3): addSupportedAttributes(), parseZoomAndPan(), parseZoomAndPanInternal()
+Cohesion: 0.25
+Nodes (7): _canBlendPaths, ClosePathCommand, CubicBezierCommand, _interpolatePathCommand, _interpolatePathValue, MoveToCommand, _pathCommandsToString
 
 ### Community 105 - "Community 105"
-Cohesion: 0.25
-Nodes (1): cloneForCSSOM()
-
-### Community 106 - "Community 106"
 Cohesion: 0.29
 Nodes (6): _buildOverlayStack, _buildWithForeignObjectOverlay, _collectForeignObjects, LayoutBuilder, Stack, SvgForeignObjectInfo
 
-### Community 107 - "Community 107"
+### Community 106 - "Community 106"
 Cohesion: 0.29
 Nodes (6): _bidiAdjustCursorAdvance, _bidiComputeVisualGlyphOffset, Function, _paintComplexScriptText, _paintPlainText, _paintPlainTextWithPositions
 
-### Community 108 - "Community 108"
+### Community 107 - "Community 107"
 Cohesion: 0.29
 Nodes (6): applyDisplacement, copyWith, DisplacementMapProcessor, _getChannelValueNormalized, SvgDisplacementMapFilter, SvgDisplacementMapPaintPass
 
-### Community 109 - "Community 109"
+### Community 108 - "Community 108"
 Cohesion: 0.29
 Nodes (6): CssVariableResolver, CssVariablesCascadeResolver, Function, _replaceVarCalls, resolveValue, _resolveVarOnce
 
-### Community 110 - "Community 110"
+### Community 109 - "Community 109"
 Cohesion: 0.29
 Nodes (6): _buildMaskRegionPathObjectBoundingBox, _buildMaskRegionPathUserSpaceOnUse, _computeMaskContentObjectBoundingBoxTransform, _isZeroAreaMaskRegion, _resolveMaskUserSpacePercentage, resolveSvgLengthValue
+
+### Community 110 - "Community 110"
+Cohesion: 0.29
+Nodes (6): _captureContextPaint, _captureContextPaintValue, _ContextPaint, _resolveColorForNode, _resolveContextPaintValue, _withContextPaint
 
 ### Community 111 - "Community 111"
 Cohesion: 0.29
@@ -914,248 +913,248 @@ Cohesion: 0.29
 Nodes (6): SvgDebugAnimationDescriptor, SvgDebugAttribute, SvgDebugInstanceSummary, SvgDebugNodeDetails, SvgDebugNodeSummary, SvgDebugStats
 
 ### Community 123 - "Community 123"
-Cohesion: 0.38
-Nodes (3): isSupportedAttribute(), parseAttribute(), svgAttributeChanged()
-
-### Community 124 - "Community 124"
-Cohesion: 0.6
-Nodes (6): JS_AddModuleExport(), JS_AddModuleExportList(), JS_NewCModule(), js_init_module_bjson(), js_init_module_os(), js_init_module_std()
-
-### Community 125 - "Community 125"
 Cohesion: 0.33
 Nodes (5): _convertTimingFunction, CubicBezier, _splineTiming, _stepTiming, _TimingConversion
 
-### Community 126 - "Community 126"
+### Community 124 - "Community 124"
 Cohesion: 0.33
 Nodes (5): CssAnimation, CssMediaCondition, CssTransition, Duration, _isTimingFunction
 
-### Community 127 - "Community 127"
+### Community 125 - "Community 125"
 Cohesion: 0.33
 Nodes (5): copyWith, _resolveInputPasses, _resolvePrimitiveInput, SvgFillPaintSourcePass, SvgStrokePaintSourcePass
 
-### Community 128 - "Community 128"
+### Community 126 - "Community 126"
 Cohesion: 0.33
 Nodes (5): _appendClipGeometryWithClipRule, _applyClipPathWithTransformStack, _buildClipPathTransformStack, _isEmptyClipPath, _isZeroAreaClipPath
 
-### Community 129 - "Community 129"
+### Community 127 - "Community 127"
 Cohesion: 0.33
 Nodes (5): beginResolve, endResolve, _FilterPipelineContext, SvgFilterPaintPass, wouldCauseCircular
 
-### Community 130 - "Community 130"
+### Community 128 - "Community 128"
 Cohesion: 0.33
 Nodes (5): _formatDouble, _normalizeCssTransformInternal, _parseAngleToDegrees, _parseLength, _parseNumber
 
-### Community 131 - "Community 131"
+### Community 129 - "Community 129"
 Cohesion: 0.33
 Nodes (5): _convertDirection, _convertFillMode, _inferAttributeType, _normalizeCssTransform, SmilAnimation
 
-### Community 132 - "Community 132"
+### Community 130 - "Community 130"
 Cohesion: 0.33
 Nodes (5): _colorChannelToInt, _lerpInt, _parseColorString, _parseHexColor, _parseRgbColor
 
-### Community 133 - "Community 133"
+### Community 131 - "Community 131"
 Cohesion: 0.33
 Nodes (5): _hasMatchingTransformFunctions, _interpolateMatchingTransformLists, _interpolateSingleTransformValue, _interpolateTransformValue, _isNoneTransform
 
-### Community 134 - "Community 134"
+### Community 132 - "Community 132"
 Cohesion: 0.4
 Nodes (4): _isExplicitNoneInput, _maskPaintSourcePasses, _resolveBackgroundAlphaInput, _resolveBackgroundImageInput
 
-### Community 135 - "Community 135"
+### Community 133 - "Community 133"
 Cohesion: 0.4
 Nodes (4): copyWith, _HitTextCursor, _TextHitRun, _TextMeasure
 
-### Community 136 - "Community 136"
+### Community 134 - "Community 134"
 Cohesion: 0.4
 Nodes (4): _ResolutionMixin, resolveBaseProperty, resolveProperty, _stripImportant
 
-### Community 137 - "Community 137"
+### Community 135 - "Community 135"
 Cohesion: 0.4
 Nodes (4): _alignPaths, _dist, _insertDegenerateCurves, NormalizedPathPair
 
-### Community 138 - "Community 138"
+### Community 136 - "Community 136"
 Cohesion: 0.4
 Nodes (4): copyWith, SvgColorMatrixFilter, SvgDropShadowFilter, SvgDropShadowPaintPass
 
-### Community 139 - "Community 139"
+### Community 137 - "Community 137"
 Cohesion: 0.4
 Nodes (4): _composeObjectBoundingBoxGradientMatrix, _createConicGradientShader, _createGradientShaderCached, _parseConicAngle
 
-### Community 140 - "Community 140"
+### Community 138 - "Community 138"
 Cohesion: 0.4
 Nodes (4): _applyForeignObjectViewport, _applyNestedSvgViewport, _applyNestedSvgViewportInForeignObject, _shouldRenderForeignObject
 
-### Community 141 - "Community 141"
+### Community 139 - "Community 139"
 Cohesion: 0.4
 Nodes (4): _evaluateConditionalAttributes, _evaluateRequiredFeatures, _evaluateSystemLanguage, SmilAnimation
 
-### Community 142 - "Community 142"
+### Community 140 - "Community 140"
 Cohesion: 0.5
 Nodes (2): RunnerTests, XCTestCase
 
-### Community 143 - "Community 143"
+### Community 141 - "Community 141"
 Cohesion: 0.5
 Nodes (2): handle_new_rx_page(), Intercept NOTIFY_DEBUGGER_ABOUT_RX_PAGES and touch the pages.
 
-### Community 144 - "Community 144"
+### Community 142 - "Community 142"
 Cohesion: 0.5
 Nodes (3): CssFontFaceRule, _normalizeFontWeight, toString
 
-### Community 145 - "Community 145"
+### Community 143 - "Community 143"
 Cohesion: 0.5
 Nodes (3): _paintPath, _paintPolygon, _paintPolyline
 
-### Community 146 - "Community 146"
+### Community 144 - "Community 144"
 Cohesion: 0.5
 Nodes (3): _distanceToSegment, _resolveFontStyle, _resolveFontWeight
 
-### Community 147 - "Community 147"
+### Community 145 - "Community 145"
 Cohesion: 0.5
 Nodes (3): calculate, CssSpecificity, CssSpecificityCalculator
 
-### Community 148 - "Community 148"
+### Community 146 - "Community 146"
 Cohesion: 0.5
 Nodes (3): SvgDistantLightSource, SvgPointLightSource, SvgSpotLightSource
 
-### Community 149 - "Community 149"
+### Community 147 - "Community 147"
 Cohesion: 0.5
 Nodes (3): _applyMotionSpline, _computeDiscreteMotionValue, _interpolate
 
-### Community 150 - "Community 150"
+### Community 148 - "Community 148"
 Cohesion: 0.5
 Nodes (0): 
 
-### Community 151 - "Community 151"
+### Community 149 - "Community 149"
 Cohesion: 0.67
 Nodes (2): BenchmarkMetrics, BenchmarkSuiteResult
 
-### Community 152 - "Community 152"
+### Community 150 - "Community 150"
 Cohesion: 1.0
 Nodes (2): download(), main()
 
-### Community 153 - "Community 153"
+### Community 151 - "Community 151"
 Cohesion: 0.67
 Nodes (2): _linearToSrgbOpacity, _resolvePaintOpacityForColorInterpolation
 
-### Community 154 - "Community 154"
+### Community 152 - "Community 152"
 Cohesion: 0.67
 Nodes (2): _interpolateCubicBezier, _interpolateMoveTo
 
-### Community 155 - "Community 155"
+### Community 153 - "Community 153"
 Cohesion: 0.67
 Nodes (2): _normalizeCssTransform, _normalizeCssTransformInternal
 
-### Community 156 - "Community 156"
+### Community 154 - "Community 154"
 Cohesion: 0.67
 Nodes (2): getAverageIntensity, _SpecularLightingCalculator
 
-### Community 157 - "Community 157"
+### Community 155 - "Community 155"
 Cohesion: 0.67
 Nodes (2): _paintCircle, _paintEllipse
 
-### Community 158 - "Community 158"
+### Community 156 - "Community 156"
 Cohesion: 0.67
 Nodes (2): PathParseException, toString
 
-### Community 159 - "Community 159"
+### Community 157 - "Community 157"
 Cohesion: 0.67
 Nodes (2): _applyClipPath, _applyMask
 
-### Community 160 - "Community 160"
+### Community 158 - "Community 158"
 Cohesion: 0.67
 Nodes (2): _appendColorFilterPass, _resolvePrimitiveInput
 
-### Community 161 - "Community 161"
+### Community 159 - "Community 159"
 Cohesion: 0.67
 Nodes (2): _DiffuseLightingCalculator, getAverageIntensity
 
-### Community 162 - "Community 162"
+### Community 160 - "Community 160"
 Cohesion: 0.67
 Nodes (2): _paintFullSvgDebugHighlight, visit
 
-### Community 163 - "Community 163"
+### Community 161 - "Community 161"
 Cohesion: 0.67
 Nodes (2): Function, _paintWithOrder
 
-### Community 164 - "Community 164"
+### Community 162 - "Community 162"
 Cohesion: 0.67
 Nodes (2): copyWith, _ResolvedTextStyle
 
-### Community 165 - "Community 165"
+### Community 163 - "Community 163"
 Cohesion: 0.67
 Nodes (2): _paintTextAlongPath, _paintTextPathNode
 
-### Community 166 - "Community 166"
+### Community 164 - "Community 164"
 Cohesion: 0.67
 Nodes (2): TimelineInfo, toString
 
-### Community 167 - "Community 167"
+### Community 165 - "Community 165"
 Cohesion: 0.67
 Nodes (0): 
 
-### Community 168 - "Community 168"
+### Community 166 - "Community 166"
 Cohesion: 1.0
 Nodes (1): SvgTestContent
 
-### Community 169 - "Community 169"
+### Community 167 - "Community 167"
 Cohesion: 1.0
 Nodes (1): BenchmarkConfig
 
-### Community 170 - "Community 170"
+### Community 168 - "Community 168"
 Cohesion: 1.0
 Nodes (1): MainActivity
 
-### Community 171 - "Community 171"
+### Community 169 - "Community 169"
 Cohesion: 1.0
 Nodes (1): W3cPlaygroundCase
 
-### Community 172 - "Community 172"
+### Community 170 - "Community 170"
 Cohesion: 1.0
 Nodes (1): JsEvalResult
 
-### Community 173 - "Community 173"
+### Community 171 - "Community 171"
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 174 - "Community 174"
+### Community 172 - "Community 172"
 Cohesion: 1.0
 Nodes (1): _paintLine
 
-### Community 175 - "Community 175"
+### Community 173 - "Community 173"
 Cohesion: 1.0
 Nodes (1): _paintRect
 
-### Community 176 - "Community 176"
+### Community 174 - "Community 174"
 Cohesion: 1.0
 Nodes (1): NormalizedPathPair
 
-### Community 177 - "Community 177"
+### Community 175 - "Community 175"
 Cohesion: 1.0
 Nodes (1): _collectNodeTextContent
 
-### Community 178 - "Community 178"
+### Community 176 - "Community 176"
 Cohesion: 1.0
 Nodes (1): _parseNumber
 
-### Community 179 - "Community 179"
+### Community 177 - "Community 177"
 Cohesion: 1.0
 Nodes (1): SvgConvolveMatrixFilter
 
-### Community 180 - "Community 180"
+### Community 178 - "Community 178"
 Cohesion: 1.0
 Nodes (1): isSvgUseReferenceAllowedTag
 
-### Community 181 - "Community 181"
+### Community 179 - "Community 179"
 Cohesion: 1.0
 Nodes (1): _appendTextPathSegmentRuns
 
-### Community 182 - "Community 182"
+### Community 180 - "Community 180"
 Cohesion: 1.0
 Nodes (1): _stripAtRuleBlocks
 
-### Community 183 - "Community 183"
+### Community 181 - "Community 181"
 Cohesion: 1.0
 Nodes (1): SvgTraceEvent
+
+### Community 182 - "Community 182"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 183 - "Community 183"
+Cohesion: 1.0
+Nodes (0): 
 
 ### Community 184 - "Community 184"
 Cohesion: 1.0
@@ -1953,455 +1952,453 @@ Nodes (0):
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 383 - "Community 383"
-Cohesion: 1.0
-Nodes (0): 
-
 ## Knowledge Gaps
-- **3657 isolated node(s):** `BenchmarkResult`, `toString`, `toJson`, `runBenchmark`, `Function` (+3652 more)
+- **3669 isolated node(s):** `BenchmarkResult`, `toString`, `toJson`, `runBenchmark`, `Function` (+3664 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **Thin community `Community 168`** (2 nodes): `svg_content.dart`, `SvgTestContent`
+- **Thin community `Community 166`** (2 nodes): `svg_content.dart`, `SvgTestContent`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 169`** (2 nodes): `benchmark_config.dart`, `BenchmarkConfig`
+- **Thin community `Community 167`** (2 nodes): `benchmark_config.dart`, `BenchmarkConfig`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 170`** (2 nodes): `MainActivity`, `MainActivity.kt`
+- **Thin community `Community 168`** (2 nodes): `MainActivity`, `MainActivity.kt`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 171`** (2 nodes): `w3c_test_catalog.dart`, `W3cPlaygroundCase`
+- **Thin community `Community 169`** (2 nodes): `w3c_test_catalog.dart`, `W3cPlaygroundCase`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 172`** (2 nodes): `js_eval_result.dart`, `JsEvalResult`
+- **Thin community `Community 170`** (2 nodes): `js_eval_result.dart`, `JsEvalResult`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 173`** (2 nodes): `fetch()`, `fetch.js`
+- **Thin community `Community 171`** (2 nodes): `fetch()`, `fetch.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 174`** (2 nodes): `animated_svg_painter_shapes_lines.dart`, `_paintLine`
+- **Thin community `Community 172`** (2 nodes): `animated_svg_painter_shapes_lines.dart`, `_paintLine`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 175`** (2 nodes): `animated_svg_painter_shapes_rect.dart`, `_paintRect`
+- **Thin community `Community 173`** (2 nodes): `animated_svg_painter_shapes_rect.dart`, `_paintRect`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 176`** (2 nodes): `path_normalizer_types.dart`, `NormalizedPathPair`
+- **Thin community `Community 174`** (2 nodes): `path_normalizer_types.dart`, `NormalizedPathPair`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 177`** (2 nodes): `animated_svg_picture_utils_attrs.dart`, `_collectNodeTextContent`
+- **Thin community `Community 175`** (2 nodes): `animated_svg_picture_utils_attrs.dart`, `_collectNodeTextContent`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 178`** (2 nodes): `svg_parser_values.dart`, `_parseNumber`
+- **Thin community `Community 176`** (2 nodes): `svg_parser_values.dart`, `_parseNumber`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 179`** (2 nodes): `svg_filters_primitives.dart`, `SvgConvolveMatrixFilter`
+- **Thin community `Community 177`** (2 nodes): `svg_filters_primitives.dart`, `SvgConvolveMatrixFilter`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 180`** (2 nodes): `svg_use_references.dart`, `isSvgUseReferenceAllowedTag`
+- **Thin community `Community 178`** (2 nodes): `svg_use_references.dart`, `isSvgUseReferenceAllowedTag`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 181`** (2 nodes): `animated_svg_picture_hit_test_text_path_segments.dart`, `_appendTextPathSegmentRuns`
+- **Thin community `Community 179`** (2 nodes): `animated_svg_picture_hit_test_text_path_segments.dart`, `_appendTextPathSegmentRuns`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 182`** (2 nodes): `css_animations_keyframes.dart`, `_stripAtRuleBlocks`
+- **Thin community `Community 180`** (2 nodes): `css_animations_keyframes.dart`, `_stripAtRuleBlocks`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 183`** (2 nodes): `animated_svg_picture_diagnostics.dart`, `SvgTraceEvent`
+- **Thin community `Community 181`** (2 nodes): `animated_svg_picture_diagnostics.dart`, `SvgTraceEvent`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 184`** (2 nodes): `WebCore()`, `SVGAnimatedLengthList.h`
+- **Thin community `Community 182`** (2 nodes): `WebCore()`, `SVGAnimatedLengthList.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 185`** (2 nodes): `WebCore()`, `SVGNumber.h`
+- **Thin community `Community 183`** (2 nodes): `WebCore()`, `SVGNumber.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 186`** (2 nodes): `WebCore()`, `SVGPathSegCurvetoCubicSmoothAbs.h`
+- **Thin community `Community 184`** (2 nodes): `WebCore()`, `SVGPathSegCurvetoCubicSmoothAbs.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 187`** (2 nodes): `WebCore()`, `SVGURIReference.h`
+- **Thin community `Community 185`** (2 nodes): `WebCore()`, `SVGURIReference.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 188`** (2 nodes): `WebCore()`, `SVGPathSegCurvetoCubic.h`
+- **Thin community `Community 186`** (2 nodes): `WebCore()`, `SVGPathSegCurvetoCubic.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 189`** (2 nodes): `WebCore()`, `SVGPathSegListBuilder.h`
+- **Thin community `Community 187`** (2 nodes): `WebCore()`, `SVGPathSegListBuilder.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 190`** (2 nodes): `WebCore()`, `SVGRect.h`
+- **Thin community `Community 188`** (2 nodes): `WebCore()`, `SVGRect.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 191`** (2 nodes): `SVGPathSegList()`, `SVGPathSegList.h`
+- **Thin community `Community 189`** (2 nodes): `SVGPathSegList()`, `SVGPathSegList.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 192`** (2 nodes): `WebCore()`, `SVGFontData.h`
+- **Thin community `Community 190`** (2 nodes): `WebCore()`, `SVGFontData.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 193`** (2 nodes): `WebCore()`, `SVGPathSegArcRel.h`
+- **Thin community `Community 191`** (2 nodes): `WebCore()`, `SVGPathSegArcRel.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 194`** (2 nodes): `WebCore()`, `SVGAnimatedInteger.h`
+- **Thin community `Community 192`** (2 nodes): `WebCore()`, `SVGAnimatedInteger.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 195`** (2 nodes): `WebCore()`, `SVGImageElement.h`
+- **Thin community `Community 193`** (2 nodes): `WebCore()`, `SVGImageElement.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 196`** (2 nodes): `WebCore()`, `SVGPathSegCurvetoQuadraticSmoothRel.h`
+- **Thin community `Community 194`** (2 nodes): `WebCore()`, `SVGPathSegCurvetoQuadraticSmoothRel.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 197`** (2 nodes): `WebCore()`, `SVGAnimatedPreserveAspectRatio.h`
+- **Thin community `Community 195`** (2 nodes): `WebCore()`, `SVGAnimatedPreserveAspectRatio.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 198`** (2 nodes): `WebCore()`, `SVGPathSegLinetoRel.h`
+- **Thin community `Community 196`** (2 nodes): `WebCore()`, `SVGPathSegLinetoRel.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 199`** (2 nodes): `WebCore()`, `SVGZoomEvent.h`
+- **Thin community `Community 197`** (2 nodes): `WebCore()`, `SVGZoomEvent.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 200`** (2 nodes): `WebCore()`, `SVGPaint.h`
+- **Thin community `Community 198`** (2 nodes): `WebCore()`, `SVGPaint.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 201`** (2 nodes): `WebCore()`, `SVGCursorElement.h`
+- **Thin community `Community 199`** (2 nodes): `WebCore()`, `SVGCursorElement.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 202`** (2 nodes): `WebCore()`, `SVGAnimatedTransformList.h`
+- **Thin community `Community 200`** (2 nodes): `WebCore()`, `SVGAnimatedTransformList.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 203`** (2 nodes): `WebCore()`, `SVGAnimatedNumberList.h`
+- **Thin community `Community 201`** (2 nodes): `WebCore()`, `SVGAnimatedNumberList.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 204`** (2 nodes): `WebCore()`, `SVGPathSegLinetoVertical.h`
+- **Thin community `Community 202`** (2 nodes): `WebCore()`, `SVGPathSegLinetoVertical.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 205`** (2 nodes): `WebCore()`, `GradientAttributes.h`
+- **Thin community `Community 203`** (2 nodes): `WebCore()`, `GradientAttributes.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 206`** (2 nodes): `WebCore()`, `SVGLangSpace.h`
+- **Thin community `Community 204`** (2 nodes): `WebCore()`, `SVGLangSpace.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 207`** (2 nodes): `WebCore()`, `SVGParsingError.h`
+- **Thin community `Community 205`** (2 nodes): `WebCore()`, `SVGParsingError.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 208`** (2 nodes): `WebCore()`, `SVGPathSegCurvetoQuadratic.h`
+- **Thin community `Community 206`** (2 nodes): `WebCore()`, `SVGPathSegCurvetoQuadratic.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 209`** (2 nodes): `WebCore()`, `SVGAnimatedPointList.h`
+- **Thin community `Community 207`** (2 nodes): `WebCore()`, `SVGAnimatedPointList.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 210`** (2 nodes): `WebCore()`, `SVGPathSegArc.h`
+- **Thin community `Community 208`** (2 nodes): `WebCore()`, `SVGPathSegArc.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 211`** (2 nodes): `WebCore()`, `SVGAnimatedBoolean.h`
+- **Thin community `Community 209`** (2 nodes): `WebCore()`, `SVGAnimatedBoolean.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 212`** (2 nodes): `WebCore()`, `ColorDistance.h`
+- **Thin community `Community 210`** (2 nodes): `WebCore()`, `ColorDistance.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 213`** (2 nodes): `SVGFilterPrimitiveStandardAttributes()`, `SVGFilterPrimitiveStandardAttributes.h`
+- **Thin community `Community 211`** (2 nodes): `SVGFilterPrimitiveStandardAttributes()`, `SVGFilterPrimitiveStandardAttributes.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 214`** (2 nodes): `WebCore()`, `SVGPathSegCurvetoCubicRel.h`
+- **Thin community `Community 212`** (2 nodes): `WebCore()`, `SVGPathSegCurvetoCubicRel.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 215`** (2 nodes): `WebCore()`, `SVGPathSegLinetoHorizontalRel.h`
+- **Thin community `Community 213`** (2 nodes): `WebCore()`, `SVGPathSegLinetoHorizontalRel.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 216`** (2 nodes): `WebCore()`, `SVGImageLoader.h`
+- **Thin community `Community 214`** (2 nodes): `WebCore()`, `SVGImageLoader.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 217`** (2 nodes): `WebCore()`, `SVGPathBuilder.h`
+- **Thin community `Community 215`** (2 nodes): `WebCore()`, `SVGPathBuilder.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 218`** (2 nodes): `WebCore()`, `SVGPathSegCurvetoQuadraticRel.h`
+- **Thin community `Community 216`** (2 nodes): `WebCore()`, `SVGPathSegCurvetoQuadraticRel.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 219`** (2 nodes): `WebCore()`, `SVGPathStringBuilder.h`
+- **Thin community `Community 217`** (2 nodes): `WebCore()`, `SVGPathStringBuilder.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 220`** (2 nodes): `WebCore()`, `LinearGradientAttributes.h`
+- **Thin community `Community 218`** (2 nodes): `WebCore()`, `LinearGradientAttributes.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 221`** (2 nodes): `WebCore()`, `SVGStringList.h`
+- **Thin community `Community 219`** (2 nodes): `WebCore()`, `SVGStringList.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 222`** (2 nodes): `WebCore()`, `SVGPathSegClosePath.h`
+- **Thin community `Community 220`** (2 nodes): `WebCore()`, `SVGPathSegClosePath.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 223`** (2 nodes): `WebCore()`, `SVGLength.h`
+- **Thin community `Community 221`** (2 nodes): `WebCore()`, `SVGLength.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 224`** (2 nodes): `WebCore()`, `SVGPathSegLinetoVerticalAbs.h`
+- **Thin community `Community 222`** (2 nodes): `WebCore()`, `SVGPathSegLinetoVerticalAbs.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 225`** (2 nodes): `WebCore()`, `SVGAnimatedPath.h`
+- **Thin community `Community 223`** (2 nodes): `WebCore()`, `SVGAnimatedPath.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 226`** (2 nodes): `WebCore()`, `SVGPathSegMovetoAbs.h`
+- **Thin community `Community 224`** (2 nodes): `WebCore()`, `SVGPathSegMovetoAbs.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 227`** (2 nodes): `WebCore()`, `SVGAnimatedAngle.h`
+- **Thin community `Community 225`** (2 nodes): `WebCore()`, `SVGAnimatedAngle.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 228`** (2 nodes): `WebCore()`, `SVGPathSegLinetoAbs.h`
+- **Thin community `Community 226`** (2 nodes): `WebCore()`, `SVGPathSegLinetoAbs.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 229`** (2 nodes): `WebCore()`, `SVGTransformable.h`
+- **Thin community `Community 227`** (2 nodes): `WebCore()`, `SVGTransformable.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 230`** (2 nodes): `WebCore()`, `SVGElementRareData.h`
+- **Thin community `Community 228`** (2 nodes): `WebCore()`, `SVGElementRareData.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 231`** (2 nodes): `WebCore()`, `SVGPathByteStreamBuilder.h`
+- **Thin community `Community 229`** (2 nodes): `WebCore()`, `SVGPathByteStreamBuilder.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 232`** (2 nodes): `WebCore()`, `SVGTextPositioningElement.h`
+- **Thin community `Community 230`** (2 nodes): `WebCore()`, `SVGTextPositioningElement.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 233`** (2 nodes): `WebCore()`, `SVGAnimatedIntegerOptionalInteger.h`
+- **Thin community `Community 231`** (2 nodes): `WebCore()`, `SVGAnimatedIntegerOptionalInteger.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 234`** (2 nodes): `WebCore()`, `SVGAnimatedEnumeration.h`
+- **Thin community `Community 232`** (2 nodes): `WebCore()`, `SVGAnimatedEnumeration.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 235`** (2 nodes): `WebCore()`, `SVGSymbolElement.h`
+- **Thin community `Community 233`** (2 nodes): `WebCore()`, `SVGSymbolElement.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 236`** (2 nodes): `WebCore()`, `SVGAnimatedString.h`
+- **Thin community `Community 234`** (2 nodes): `WebCore()`, `SVGAnimatedString.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 237`** (2 nodes): `WebCore()`, `SVGAnimatedColor.h`
+- **Thin community `Community 235`** (2 nodes): `WebCore()`, `SVGAnimatedColor.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 238`** (2 nodes): `WebCore()`, `SVGLocatable.h`
+- **Thin community `Community 236`** (2 nodes): `WebCore()`, `SVGLocatable.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 239`** (2 nodes): `WebCore()`, `SVGPathUtilities.h`
+- **Thin community `Community 237`** (2 nodes): `WebCore()`, `SVGPathUtilities.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 240`** (2 nodes): `WebCore()`, `SVGFELightElement.h`
+- **Thin community `Community 238`** (2 nodes): `WebCore()`, `SVGFELightElement.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 241`** (2 nodes): `WebCore()`, `SVGPathSegCurvetoQuadraticSmoothAbs.h`
+- **Thin community `Community 239`** (2 nodes): `WebCore()`, `SVGPathSegCurvetoQuadraticSmoothAbs.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 242`** (2 nodes): `WebCore()`, `SVGDocumentExtensions.h`
+- **Thin community `Community 240`** (2 nodes): `WebCore()`, `SVGDocumentExtensions.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 243`** (2 nodes): `WebCore()`, `SVGPathSegWithContext.h`
+- **Thin community `Community 241`** (2 nodes): `WebCore()`, `SVGPathSegWithContext.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 244`** (2 nodes): `WebCore()`, `SVGUnitTypes.h`
+- **Thin community `Community 242`** (2 nodes): `WebCore()`, `SVGUnitTypes.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 245`** (2 nodes): `WebCore()`, `SVGComponentTransferFunctionElement.h`
+- **Thin community `Community 243`** (2 nodes): `WebCore()`, `SVGComponentTransferFunctionElement.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 246`** (2 nodes): `SVGUnknownElement()`, `SVGUnknownElement.cpp`
+- **Thin community `Community 244`** (2 nodes): `SVGUnknownElement()`, `SVGUnknownElement.cpp`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 247`** (2 nodes): `WebCore()`, `SVGMatrix.h`
+- **Thin community `Community 245`** (2 nodes): `WebCore()`, `SVGMatrix.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 248`** (2 nodes): `WebCore()`, `SVGAnimatedNumberOptionalNumber.h`
+- **Thin community `Community 246`** (2 nodes): `WebCore()`, `SVGAnimatedNumberOptionalNumber.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 249`** (2 nodes): `WebCore()`, `SVGNumberList.h`
+- **Thin community `Community 247`** (2 nodes): `WebCore()`, `SVGNumberList.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 250`** (2 nodes): `WebCore()`, `SVGAnimatedNumber.h`
+- **Thin community `Community 248`** (2 nodes): `WebCore()`, `SVGAnimatedNumber.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 251`** (2 nodes): `WebCore()`, `SVGPathSegArcAbs.h`
+- **Thin community `Community 249`** (2 nodes): `WebCore()`, `SVGPathSegArcAbs.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 252`** (2 nodes): `WebCore()`, `SVGPointList.h`
+- **Thin community `Community 250`** (2 nodes): `WebCore()`, `SVGPointList.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 253`** (2 nodes): `WebCore()`, `SVGUnknownElement.h`
+- **Thin community `Community 251`** (2 nodes): `WebCore()`, `SVGUnknownElement.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 254`** (2 nodes): `WebCore()`, `SVGPathSegCurvetoCubicSmooth.h`
+- **Thin community `Community 252`** (2 nodes): `WebCore()`, `SVGPathSegCurvetoCubicSmooth.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 255`** (2 nodes): `WebCore()`, `SVGLengthContext.h`
+- **Thin community `Community 253`** (2 nodes): `WebCore()`, `SVGLengthContext.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 256`** (2 nodes): `WebCore()`, `SVGColor.h`
+- **Thin community `Community 254`** (2 nodes): `WebCore()`, `SVGColor.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 257`** (2 nodes): `WebCore()`, `SVGPathByteStreamSource.h`
+- **Thin community `Community 255`** (2 nodes): `WebCore()`, `SVGPathByteStreamSource.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 258`** (2 nodes): `WebCore()`, `SVGPathSegCurvetoCubicSmoothRel.h`
+- **Thin community `Community 256`** (2 nodes): `WebCore()`, `SVGPathSegCurvetoCubicSmoothRel.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 259`** (2 nodes): `WebCore()`, `SVGTransformDistance.h`
+- **Thin community `Community 257`** (2 nodes): `WebCore()`, `SVGTransformDistance.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 260`** (2 nodes): `WebCore()`, `SVGAnimatedTypeAnimator.h`
+- **Thin community `Community 258`** (2 nodes): `WebCore()`, `SVGAnimatedTypeAnimator.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 261`** (2 nodes): `WebCore()`, `SVGPathBlender.h`
+- **Thin community `Community 259`** (2 nodes): `WebCore()`, `SVGPathBlender.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 262`** (2 nodes): `WebCore()`, `PatternAttributes.h`
+- **Thin community `Community 260`** (2 nodes): `WebCore()`, `PatternAttributes.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 263`** (2 nodes): `WebCore()`, `SVGPathSegMovetoRel.h`
+- **Thin community `Community 261`** (2 nodes): `WebCore()`, `SVGPathSegMovetoRel.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 264`** (2 nodes): `WebCore()`, `SVGZoomAndPan.h`
+- **Thin community `Community 262`** (2 nodes): `WebCore()`, `SVGZoomAndPan.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 265`** (2 nodes): `WebCore()`, `SVGPathSegLinetoVerticalRel.h`
+- **Thin community `Community 263`** (2 nodes): `WebCore()`, `SVGPathSegLinetoVerticalRel.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 266`** (2 nodes): `WebCore()`, `SVGAnimatorFactory.h`
+- **Thin community `Community 264`** (2 nodes): `WebCore()`, `SVGAnimatorFactory.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 267`** (2 nodes): `WebCore()`, `SVGPathStringSource.h`
+- **Thin community `Community 265`** (2 nodes): `WebCore()`, `SVGPathStringSource.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 268`** (2 nodes): `WebCore()`, `SVGRenderingIntent.h`
+- **Thin community `Community 266`** (2 nodes): `WebCore()`, `SVGRenderingIntent.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 269`** (2 nodes): `WebCore()`, `SVGAnimatedLength.h`
+- **Thin community `Community 267`** (2 nodes): `WebCore()`, `SVGAnimatedLength.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 270`** (2 nodes): `WebCore()`, `SVGPreserveAspectRatio.h`
+- **Thin community `Community 268`** (2 nodes): `WebCore()`, `SVGPreserveAspectRatio.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 271`** (2 nodes): `WebCore()`, `SVGPathSegCurvetoQuadraticAbs.h`
+- **Thin community `Community 269`** (2 nodes): `WebCore()`, `SVGPathSegCurvetoQuadraticAbs.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 272`** (2 nodes): `WebCore()`, `SVGAnimatedRect.h`
+- **Thin community `Community 270`** (2 nodes): `WebCore()`, `SVGAnimatedRect.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 273`** (2 nodes): `WebCore()`, `SVGExternalResourcesRequired.h`
+- **Thin community `Community 271`** (2 nodes): `WebCore()`, `SVGExternalResourcesRequired.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 274`** (2 nodes): `WebCore()`, `SVGPathConsumer.h`
+- **Thin community `Community 272`** (2 nodes): `WebCore()`, `SVGPathConsumer.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 275`** (2 nodes): `WebCore()`, `SVGMarkerElement.h`
+- **Thin community `Community 273`** (2 nodes): `WebCore()`, `SVGMarkerElement.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 276`** (2 nodes): `WebCore()`, `SVGPathSegListSource.h`
+- **Thin community `Community 274`** (2 nodes): `WebCore()`, `SVGPathSegListSource.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 277`** (2 nodes): `WebCore()`, `SVGPoint.h`
+- **Thin community `Community 275`** (2 nodes): `WebCore()`, `SVGPoint.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 278`** (2 nodes): `WebCore()`, `SVGPathSegCurvetoCubicAbs.h`
+- **Thin community `Community 276`** (2 nodes): `WebCore()`, `SVGPathSegCurvetoCubicAbs.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 279`** (2 nodes): `WebCore()`, `SVGLengthList.h`
+- **Thin community `Community 277`** (2 nodes): `WebCore()`, `SVGLengthList.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 280`** (2 nodes): `WebCore()`, `SVGPathTraversalStateBuilder.h`
+- **Thin community `Community 278`** (2 nodes): `WebCore()`, `SVGPathTraversalStateBuilder.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 281`** (2 nodes): `WebCore()`, `SVGPathSegLinetoHorizontal.h`
+- **Thin community `Community 279`** (2 nodes): `WebCore()`, `SVGPathSegLinetoHorizontal.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 282`** (2 nodes): `WebCore()`, `SVGPathSegLinetoHorizontalAbs.h`
+- **Thin community `Community 280`** (2 nodes): `WebCore()`, `SVGPathSegLinetoHorizontalAbs.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 283`** (2 nodes): `WebCore()`, `SVGTransformList.h`
+- **Thin community `Community 281`** (2 nodes): `WebCore()`, `SVGTransformList.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 284`** (2 nodes): `WebCore()`, `SVGPathParser.h`
+- **Thin community `Community 282`** (2 nodes): `WebCore()`, `SVGPathParser.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 285`** (2 nodes): `WebCore()`, `SVGSVGElement.h`
+- **Thin community `Community 283`** (2 nodes): `WebCore()`, `SVGSVGElement.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 286`** (2 nodes): `WebCore()`, `SVGTests.h`
+- **Thin community `Community 284`** (2 nodes): `WebCore()`, `SVGTests.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 287`** (2 nodes): `WebCore()`, `SVGPathSource.h`
+- **Thin community `Community 285`** (2 nodes): `WebCore()`, `SVGPathSource.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 288`** (2 nodes): `WebCore()`, `RadialGradientAttributes.h`
+- **Thin community `Community 286`** (2 nodes): `WebCore()`, `RadialGradientAttributes.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 289`** (2 nodes): `WebCore()`, `SVGFitToViewBox.h`
+- **Thin community `Community 287`** (2 nodes): `WebCore()`, `SVGFitToViewBox.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 290`** (2 nodes): `WebCore()`, `SVGPathByteStream.h`
+- **Thin community `Community 288`** (2 nodes): `WebCore()`, `SVGPathByteStream.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 291`** (2 nodes): `WebCore()`, `SVGAElement.h`
+- **Thin community `Community 289`** (2 nodes): `WebCore()`, `SVGAElement.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 292`** (2 nodes): `WebCore()`, `SMILTime.h`
+- **Thin community `Community 290`** (2 nodes): `WebCore()`, `SMILTime.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 293`** (2 nodes): `WebCore()`, `SMILTimeContainer.h`
+- **Thin community `Community 291`** (2 nodes): `WebCore()`, `SMILTimeContainer.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 294`** (2 nodes): `WebCore()`, `SVGAnimatedPathSegListPropertyTearOff.h`
+- **Thin community `Community 292`** (2 nodes): `WebCore()`, `SVGAnimatedPathSegListPropertyTearOff.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 295`** (2 nodes): `WebCore()`, `SVGPropertyTraits.h`
+- **Thin community `Community 293`** (2 nodes): `WebCore()`, `SVGPropertyTraits.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 296`** (2 nodes): `WebCore()`, `SVGProperty.h`
+- **Thin community `Community 294`** (2 nodes): `WebCore()`, `SVGProperty.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 297`** (2 nodes): `WebCore()`, `SVGStaticListPropertyTearOff.h`
+- **Thin community `Community 295`** (2 nodes): `WebCore()`, `SVGStaticListPropertyTearOff.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 298`** (2 nodes): `WebCore()`, `SVGStaticPropertyTearOff.h`
+- **Thin community `Community 296`** (2 nodes): `WebCore()`, `SVGStaticPropertyTearOff.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 299`** (2 nodes): `WebCore()`, `SVGAnimatedTransformListPropertyTearOff.h`
+- **Thin community `Community 297`** (2 nodes): `WebCore()`, `SVGAnimatedTransformListPropertyTearOff.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 300`** (2 nodes): `WebCore()`, `SVGAttributeToPropertyMap.h`
+- **Thin community `Community 298`** (2 nodes): `WebCore()`, `SVGAttributeToPropertyMap.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 301`** (2 nodes): `WebCore()`, `SVGPropertyInfo.h`
+- **Thin community `Community 299`** (2 nodes): `WebCore()`, `SVGPropertyInfo.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 302`** (2 nodes): `WebCore()`, `SVGPathSegListPropertyTearOff.h`
+- **Thin community `Community 300`** (2 nodes): `WebCore()`, `SVGPathSegListPropertyTearOff.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 303`** (2 nodes): `WebCore()`, `SVGAnimatedProperty.h`
+- **Thin community `Community 301`** (2 nodes): `WebCore()`, `SVGAnimatedProperty.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 304`** (2 nodes): `WebCore()`, `SVGStaticPropertyWithParentTearOff.h`
+- **Thin community `Community 302`** (2 nodes): `WebCore()`, `SVGStaticPropertyWithParentTearOff.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 305`** (2 nodes): `WebCore()`, `SVGImageForContainer.h`
+- **Thin community `Community 303`** (2 nodes): `WebCore()`, `SVGImageForContainer.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 306`** (2 nodes): `WebCore()`, `SVGImage.h`
+- **Thin community `Community 304`** (2 nodes): `WebCore()`, `SVGImage.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 307`** (2 nodes): `WebCore()`, `SVGImageCache.h`
+- **Thin community `Community 305`** (2 nodes): `WebCore()`, `SVGImageCache.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 308`** (2 nodes): `WebCore()`, `SVGFilter.h`
+- **Thin community `Community 306`** (2 nodes): `WebCore()`, `SVGFilter.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 309`** (2 nodes): `WebCore()`, `SVGFEImage.h`
+- **Thin community `Community 307`** (2 nodes): `WebCore()`, `SVGFEImage.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 310`** (2 nodes): `WebCore()`, `SVGFilterBuilder.h`
+- **Thin community `Community 308`** (2 nodes): `WebCore()`, `SVGFilterBuilder.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 311`** (1 nodes): `Pods-Runner-umbrella.h`
+- **Thin community `Community 309`** (1 nodes): `quickjs_engine-umbrella.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 312`** (1 nodes): `Pods-RunnerTests-umbrella.h`
+- **Thin community `Community 310`** (1 nodes): `Pods-Runner-umbrella.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 313`** (1 nodes): `empty.js`
+- **Thin community `Community 311`** (1 nodes): `Pods-RunnerTests-umbrella.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 314`** (1 nodes): `f.js`
+- **Thin community `Community 312`** (1 nodes): `empty.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 315`** (1 nodes): `svg-htc.php`
+- **Thin community `Community 313`** (1 nodes): `f.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 316`** (1 nodes): `quickjs_engine-umbrella.h`
+- **Thin community `Community 314`** (1 nodes): `svg-htc.php`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 317`** (1 nodes): `Pods-Runner-umbrella.h`
+- **Thin community `Community 315`** (1 nodes): `quickjs_engine-umbrella.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 318`** (1 nodes): `AppDelegate.h`
+- **Thin community `Community 316`** (1 nodes): `Pods-Runner-umbrella.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 319`** (1 nodes): `Runner-Bridging-Header.h`
+- **Thin community `Community 317`** (1 nodes): `AppDelegate.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 320`** (1 nodes): `GeneratedPluginRegistrant.h`
+- **Thin community `Community 318`** (1 nodes): `Runner-Bridging-Header.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 321`** (1 nodes): `main.m`
+- **Thin community `Community 319`** (1 nodes): `GeneratedPluginRegistrant.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 322`** (1 nodes): `my_application.h`
+- **Thin community `Community 320`** (1 nodes): `main.m`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 323`** (1 nodes): `generated_plugin_registrant.h`
+- **Thin community `Community 321`** (1 nodes): `my_application.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 324`** (1 nodes): `utils.h`
+- **Thin community `Community 322`** (1 nodes): `generated_plugin_registrant.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 325`** (1 nodes): `win32_window.h`
+- **Thin community `Community 323`** (1 nodes): `utils.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 326`** (1 nodes): `resource.h`
+- **Thin community `Community 324`** (1 nodes): `win32_window.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 327`** (1 nodes): `generated_plugin_registrant.h`
+- **Thin community `Community 325`** (1 nodes): `resource.h`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 326`** (1 nodes): `generated_plugin_registrant.h`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 327`** (1 nodes): `Package.swift`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 328`** (1 nodes): `Package.swift`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 329`** (1 nodes): `Package.swift`
+- **Thin community `Community 329`** (1 nodes): `libregexp.c`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 330`** (1 nodes): `libregexp.c`
+- **Thin community `Community 330`** (1 nodes): `quickjs.c`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 331`** (1 nodes): `quickjs.c`
+- **Thin community `Community 331`** (1 nodes): `dtoa.c`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 332`** (1 nodes): `dtoa.c`
+- **Thin community `Community 332`** (1 nodes): `libfastdev_quickjs_runtime.cpp`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 333`** (1 nodes): `libfastdev_quickjs_runtime.cpp`
+- **Thin community `Community 333`** (1 nodes): `libunicode.c`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 334`** (1 nodes): `libunicode.c`
+- **Thin community `Community 334`** (1 nodes): `quickjs_engine_native.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 335`** (1 nodes): `quickjs_engine_native.h`
+- **Thin community `Community 335`** (1 nodes): `builtin-iterator-zip.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 336`** (1 nodes): `builtin-iterator-zip.h`
+- **Thin community `Community 336`** (1 nodes): `libunicode-table.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 337`** (1 nodes): `libunicode-table.h`
+- **Thin community `Community 337`** (1 nodes): `quickjs-c-atomics.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 338`** (1 nodes): `quickjs-c-atomics.h`
+- **Thin community `Community 338`** (1 nodes): `builtin-array-fromasync.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 339`** (1 nodes): `builtin-array-fromasync.h`
+- **Thin community `Community 339`** (1 nodes): `libregexp-opcode.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 340`** (1 nodes): `libregexp-opcode.h`
+- **Thin community `Community 340`** (1 nodes): `quickjs-opcode.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 341`** (1 nodes): `quickjs-opcode.h`
+- **Thin community `Community 341`** (1 nodes): `dtoa.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 342`** (1 nodes): `dtoa.h`
+- **Thin community `Community 342`** (1 nodes): `quickjs-atom.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 343`** (1 nodes): `quickjs-atom.h`
+- **Thin community `Community 343`** (1 nodes): `quickjs-libc.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 344`** (1 nodes): `quickjs-libc.h`
+- **Thin community `Community 344`** (1 nodes): `builtin-iterator-zip-keyed.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 345`** (1 nodes): `builtin-iterator-zip-keyed.h`
+- **Thin community `Community 345`** (1 nodes): `Package.swift`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 346`** (1 nodes): `Package.swift`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 347`** (1 nodes): `Package.swift`
+- **Thin community `Community 347`** (1 nodes): `libregexp.c`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 348`** (1 nodes): `libregexp.c`
+- **Thin community `Community 348`** (1 nodes): `quickjs.c`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 349`** (1 nodes): `quickjs.c`
+- **Thin community `Community 349`** (1 nodes): `dtoa.c`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 350`** (1 nodes): `dtoa.c`
+- **Thin community `Community 350`** (1 nodes): `libfastdev_quickjs_runtime.cpp`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 351`** (1 nodes): `libfastdev_quickjs_runtime.cpp`
+- **Thin community `Community 351`** (1 nodes): `libunicode.c`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 352`** (1 nodes): `libunicode.c`
+- **Thin community `Community 352`** (1 nodes): `quickjs_engine_native.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 353`** (1 nodes): `quickjs_engine_native.h`
+- **Thin community `Community 353`** (1 nodes): `quickjs_engine_plugin.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 354`** (1 nodes): `quickjs_engine_plugin.h`
+- **Thin community `Community 354`** (1 nodes): `jscore_bindings.dart`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 355`** (1 nodes): `jscore_bindings.dart`
+- **Thin community `Community 355`** (1 nodes): `flutter_jscore.dart`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 356`** (1 nodes): `flutter_jscore.dart`
+- **Thin community `Community 356`** (1 nodes): `quickjs_engine_plugin.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 357`** (1 nodes): `quickjs_engine_plugin.h`
+- **Thin community `Community 357`** (1 nodes): `quickjs_engine_plugin_c_api.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 358`** (1 nodes): `quickjs_engine_plugin_c_api.h`
+- **Thin community `Community 358`** (1 nodes): `build_native.ps1`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 359`** (1 nodes): `build_native.ps1`
+- **Thin community `Community 359`** (1 nodes): `woff2.dart`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 360`** (1 nodes): `woff2.dart`
+- **Thin community `Community 360`** (1 nodes): `zlib_decode.dart`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 361`** (1 nodes): `zlib_decode.dart`
+- **Thin community `Community 361`** (1 nodes): `devtools_transport.dart`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 362`** (1 nodes): `devtools_transport.dart`
+- **Thin community `Community 362`** (1 nodes): `full_svg_flutter.dart`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 363`** (1 nodes): `full_svg_flutter.dart`
+- **Thin community `Community 363`** (1 nodes): `full_svg_debug_protocol.dart`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 364`** (1 nodes): `full_svg_debug_protocol.dart`
+- **Thin community `Community 364`** (1 nodes): `flutter_svg.dart`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 365`** (1 nodes): `flutter_svg.dart`
+- **Thin community `Community 365`** (1 nodes): `rendering_strategy.dart`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 366`** (1 nodes): `rendering_strategy.dart`
+- **Thin community `Community 366`** (1 nodes): `animation.dart`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 367`** (1 nodes): `animation.dart`
+- **Thin community `Community 367`** (1 nodes): `animated_svg_painter_clip_mask_advanced.dart`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 368`** (1 nodes): `animated_svg_painter_clip_mask_advanced.dart`
+- **Thin community `Community 368`** (1 nodes): `animated_svg_painter_geometry.dart`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 369`** (1 nodes): `animated_svg_painter_geometry.dart`
+- **Thin community `Community 369`** (1 nodes): `animated_svg_painter_gradients_resolver.dart`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 370`** (1 nodes): `animated_svg_painter_gradients_resolver.dart`
+- **Thin community `Community 370`** (1 nodes): `animated_svg_painter_use_constants.dart`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 371`** (1 nodes): `animated_svg_painter_use_constants.dart`
+- **Thin community `Community 371`** (1 nodes): `path_parser_commands.dart`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 372`** (1 nodes): `path_parser_commands.dart`
+- **Thin community `Community 372`** (1 nodes): `animated_svg_painter_text_style_rendering.dart`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 373`** (1 nodes): `animated_svg_painter_text_style_rendering.dart`
+- **Thin community `Community 373`** (1 nodes): `svg_parser_css.dart`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 374`** (1 nodes): `svg_parser_css.dart`
+- **Thin community `Community 374`** (1 nodes): `path_data.dart`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 375`** (1 nodes): `path_data.dart`
+- **Thin community `Community 375`** (1 nodes): `svg_parser_constants.dart`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 376`** (1 nodes): `svg_parser_constants.dart`
+- **Thin community `Community 376`** (1 nodes): `path_normalizer_single.dart`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 377`** (1 nodes): `path_normalizer_single.dart`
+- **Thin community `Community 377`** (1 nodes): `svg_filters_registry_outputs.dart`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 378`** (1 nodes): `svg_filters_registry_outputs.dart`
+- **Thin community `Community 378`** (1 nodes): `svg_js_bridge_platform.dart`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 379`** (1 nodes): `svg_js_bridge_platform.dart`
+- **Thin community `Community 379`** (1 nodes): `animated_svg_painter_patterns.dart`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 380`** (1 nodes): `animated_svg_painter_patterns.dart`
+- **Thin community `Community 380`** (1 nodes): `animated_svg_painter_matrix.dart`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 381`** (1 nodes): `animated_svg_painter_matrix.dart`
+- **Thin community `Community 381`** (1 nodes): `file.dart`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 382`** (1 nodes): `file.dart`
-  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 383`** (1 nodes): `numbers.dart`
+- **Thin community `Community 382`** (1 nodes): `numbers.dart`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `assert()` connect `Community 1` to `Community 0`, `Community 5`, `Community 6`, `Community 7`, `Community 11`, `Community 12`, `Community 15`, `Community 20`, `Community 23`, `Community 59`?**
-  _High betweenness centrality (0.249) - this node is a cross-community bridge._
-- **Why does `package:flutter_test/flutter_test.dart` connect `Community 2` to `Community 3`, `Community 8`, `Community 9`, `Community 14`, `Community 17`?**
-  _High betweenness centrality (0.104) - this node is a cross-community bridge._
-- **Why does `close` connect `Community 7` to `Community 0`, `Community 2`?**
-  _High betweenness centrality (0.084) - this node is a cross-community bridge._
+- **Why does `assert()` connect `Community 0` to `Community 1`, `Community 3`, `Community 5`, `Community 7`, `Community 10`, `Community 11`, `Community 77`, `Community 16`, `Community 17`, `Community 19`, `Community 24`?**
+  _High betweenness centrality (0.262) - this node is a cross-community bridge._
+- **Why does `package:flutter/material.dart` connect `Community 2` to `Community 35`, `Community 4`, `Community 6`, `Community 9`, `Community 12`, `Community 13`, `Community 14`, `Community 18`, `Community 59`, `Community 28`?**
+  _High betweenness centrality (0.093) - this node is a cross-community bridge._
+- **Why does `package:flutter_test/flutter_test.dart` connect `Community 2` to `Community 8`, `Community 18`, `Community 12`, `Community 6`?**
+  _High betweenness centrality (0.088) - this node is a cross-community bridge._
 - **Are the 478 inferred relationships involving `assert()` (e.g. with `lre_dump_bytecode()` and `lre_compute_stack_size()`) actually correct?**
   _`assert()` has 478 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 28 inferred relationships involving `JS_FreeValue()` (e.g. with `JSEvalWrapper()` and `js_module_loader()`) actually correct?**
@@ -2409,4 +2406,4 @@ _Questions this graph is uniquely positioned to answer:_
 - **Are the 408 inferred relationships involving `JS_IsException()` (e.g. with `JSEvalWrapper()` and `callJsFunction1Arg()`) actually correct?**
   _`JS_IsException()` has 408 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `BenchmarkResult`, `toString`, `toJson` to the rest of the system?**
-  _3657 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _3669 weakly-connected nodes found - possible documentation gaps or missing edges._
