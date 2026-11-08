@@ -1,16 +1,22 @@
 PODS:
   - FlutterMacOS (1.0.0)
+  - quickjs_engine (0.1.0):
+    - FlutterMacOS
 
 DEPENDENCIES:
   - FlutterMacOS (from `Flutter/ephemeral`)
+  - quickjs_engine (from `Flutter/ephemeral/.symlinks/plugins/quickjs_engine/macos`)
 
 EXTERNAL SOURCES:
   FlutterMacOS:
     :path: Flutter/ephemeral
+  quickjs_engine:
+    :path: Flutter/ephemeral/.symlinks/plugins/quickjs_engine/macos
 
 SPEC CHECKSUMS:
   FlutterMacOS: d0db08ddef1a9af05a5ec4b724367152bb0500b1
+  quickjs_engine: 6905980072fdaf3744effbe2e2996d3a9152490b
 
-PODFILE CHECKSUM: 54d867c82ac51cbd61b565781b9fada492027009
+PODFILE CHECKSUM: edc5b5d618f5eac6be0175d6bb049c2aa55cf637
 
 COCOAPODS: 1.16.2
